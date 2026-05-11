@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function MatchScorer({ match, onUpdate }) {
-  const scores = match.scores || [{ team1: 0, team2: 0 }];
+  const scores = (match.scores && match.scores.length > 0) ? match.scores : [{ team1: 0, team2: 0 }];
   const [localScores, setLocalScores] = useState(scores);
   const currentGame = localScores.length - 1;
 
