@@ -27,6 +27,26 @@
       "type": "number",
       "description": "DUPR-style skill rating (2.0 - 6.0)"
     },
+    "dupr_id": {
+      "type": "string",
+      "description": "Official DUPR player ID"
+    },
+    "dupr_rating": {
+      "type": "number",
+      "description": "Latest synced DUPR rating"
+    },
+    "dupr_last_synced": {
+      "type": "string",
+      "description": "ISO date of last DUPR sync"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Linked Base44 user ID (for account linking)"
+    },
+    "linked_user_email": {
+      "type": "string",
+      "description": "Email of the linked user account"
+    },
     "age_group": {
       "type": "string",
       "enum": [

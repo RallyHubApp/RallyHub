@@ -15,6 +15,8 @@ import TournamentDetail from '@/pages/TournamentDetail';
 import MatchCenter from '@/pages/MatchCenter';
 import Leaderboard from '@/pages/Leaderboard';
 import Analytics from '@/pages/Analytics';
+import MyProfile from '@/pages/MyProfile';
+import AdminPanel from '@/pages/AdminPanel';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,6 +54,8 @@ const AuthenticatedApp = () => {
         <Route path="/matches" element={<MatchCenter />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/my-profile" element={<MyProfile />} />
+        <Route path="/admin" element={<AdminPanel />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

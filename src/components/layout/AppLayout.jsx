@@ -1,38 +1,66 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Menu, Bell } from 'lucide-react';
+import { Menu, LogOut, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/AuthContext';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, logout } = useAuth();
+
+  const initials = (user?.full_name || user?.email || 'U')
+    .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <div className="min-h-screen bg-background">
       <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-      
-      {/* Main content */}
+
       <div className="lg:pl-64">
         {/* Top bar */}
         <header className="sticky top-0 z-30 h-16 glass-strong flex items-center justify-between px-4 lg:px-6">
-          <button 
-            onClick={() => setSidebarOpen(true)} 
+          <button
+            onClick={() => setSidebarOpen(true)}
             className="lg:hidden text-muted-foreground hover:text-foreground"
           >
             <Menu className="w-5 h-5" />
           </button>
-          
+
           <div className="flex-1" />
-          
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-              <Bell className="w-4.5 h-4.5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
-            </Button>
-          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-secondary transition-colors">
+                <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary">
+                  {initials}
+                </div>
+                <div className="text-left hidden sm:block">
+                  <p className="text-xs font-medium text-foreground leading-none">{user?.full_name || 'Player'}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{user?.role || 'user'}</p>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-card border-border w-48">
+              <DropdownMenuItem asChild>
+                <Link to="/my-profile" className="flex items-center gap-2 cursor-pointer">
+                  <UserCircle className="w-3.5 h-3.5" /> My Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive flex items-center gap-2 cursor-pointer"
+                onClick={() => logout()}
+              >
+                <LogOut className="w-3.5 h-3.5" /> Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
 
-        {/* Page content */}
         <main className="p-4 lg:p-6">
           <Outlet />
         </main>

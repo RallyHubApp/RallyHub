@@ -2,10 +2,11 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, Trophy, Swords, Crown, 
-  BarChart3, Menu, X, ChevronRight
+  BarChart3, X, ChevronRight, UserCircle, Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/AuthContext';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -18,6 +19,7 @@ const navItems = [
 
 export default function Sidebar({ isOpen, onToggle }) {
   const location = useLocation();
+  const { user } = useAuth();
 
   return (
     <>
@@ -79,11 +81,36 @@ export default function Sidebar({ isOpen, onToggle }) {
           })}
         </nav>
 
-        {/* Bottom */}
+        {/* Bottom links */}
+        <div className="px-3 pb-2 space-y-1">
+          {[
+            { path: '/my-profile', label: 'My Profile', icon: UserCircle },
+            ...(user?.role === 'admin' ? [{ path: '/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
+          ].map(item => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => window.innerWidth < 1024 && onToggle()}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                  isActive
+                    ? item.admin ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary glow-green-sm"
+                    : item.admin ? "text-muted-foreground hover:text-destructive hover:bg-destructive/5" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                )}
+              >
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
         <div className="p-4 border-t border-sidebar-border">
           <div className="glass rounded-lg p-3">
-            <p className="text-xs text-muted-foreground">PickleRank Pro</p>
-            <p className="text-xs text-primary font-medium mt-0.5">Tournament Platform</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.full_name || user?.email || 'PickleRank Pro'}</p>
+            <p className="text-xs text-primary font-medium mt-0.5">{user?.role === 'admin' ? 'Administrator' : 'Player'}</p>
           </div>
         </div>
       </aside>
