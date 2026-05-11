@@ -12,10 +12,58 @@
         "Round Robin",
         "Single Elimination",
         "Double Elimination",
+        "Compass Draw",
+        "Consolation (FRLC)",
         "Ladder League",
         "King of the Court",
         "Mixed Doubles"
       ]
+    },
+    "partnership_type": {
+      "type": "string",
+      "enum": [
+        "Singles",
+        "Fixed Partners",
+        "Random Partners"
+      ],
+      "default": "Singles",
+      "description": "Whether players compete solo or with fixed/random partners"
+    },
+    "inter_club": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is an inter-club challenge"
+    },
+    "clubs_involved": {
+      "type": "array",
+      "description": "Club names involved in inter-club challenge",
+      "items": {
+        "type": "string"
+      }
+    },
+    "partner_pairs": {
+      "type": "array",
+      "description": "Array of fixed partner pairs: [{player1_id, player2_id, pair_name, club}]",
+      "items": {
+        "type": "object",
+        "properties": {
+          "player1_id": {
+            "type": "string"
+          },
+          "player2_id": {
+            "type": "string"
+          },
+          "pair_name": {
+            "type": "string"
+          },
+          "club": {
+            "type": "string"
+          },
+          "seed": {
+            "type": "number"
+          }
+        }
+      }
     },
     "status": {
       "type": "string",
