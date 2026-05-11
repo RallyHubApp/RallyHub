@@ -1,0 +1,37 @@
+{
+  "name": "Court",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Court name or number"
+    },
+    "location": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Available",
+        "In Use",
+        "Maintenance"
+      ],
+      "default": "Available"
+    },
+    "surface_type": {
+      "type": "string",
+      "enum": [
+        "Indoor",
+        "Outdoor - Hard",
+        "Outdoor - Clay",
+        "Outdoor - Grass"
+      ]
+    },
+    "current_match_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "name": "Tournament",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Tournament name"
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "Round Robin",
+        "Single Elimination",
+        "Double Elimination",
+        "Ladder League",
+        "King of the Court",
+        "Mixed Doubles"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Registration Open",
+        "In Progress",
+        "Completed",
+        "Cancelled"
+      ],
+      "default": "Draft"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "location": {
+      "type": "string"
+    },
+    "max_players": {
+      "type": "number"
+    },
+    "player_ids": {
+      "type": "array",
+      "description": "Array of registered player IDs",
+      "items": {
+        "type": "string"
+      }
+    },
+    "description": {
+      "type": "string"
+    },
+    "prize_info": {
+      "type": "string"
+    },
+    "skill_range_min": {
+      "type": "number"
+    },
+    "skill_range_max": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "name",
+    "format"
+  ]
+}

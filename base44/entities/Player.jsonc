@@ -1,0 +1,108 @@
+{
+  "name": "Player",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Player's full name"
+    },
+    "email": {
+      "type": "string",
+      "description": "Player's email address"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female",
+        "Non-binary",
+        "Prefer not to say"
+      ]
+    },
+    "skill_rating": {
+      "type": "number",
+      "description": "DUPR-style skill rating (2.0 - 6.0)"
+    },
+    "age_group": {
+      "type": "string",
+      "enum": [
+        "Junior (U18)",
+        "Open (18-34)",
+        "Adult (35-49)",
+        "Senior (50-64)",
+        "Super Senior (65+)"
+      ]
+    },
+    "club": {
+      "type": "string",
+      "description": "Club affiliation"
+    },
+    "preferred_position": {
+      "type": "string",
+      "enum": [
+        "Left Side",
+        "Right Side",
+        "No Preference"
+      ]
+    },
+    "partner_name": {
+      "type": "string",
+      "description": "Preferred doubles partner"
+    },
+    "emergency_contact": {
+      "type": "string",
+      "description": "Emergency contact info"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "Profile photo URL"
+    },
+    "wins": {
+      "type": "number",
+      "default": 0
+    },
+    "losses": {
+      "type": "number",
+      "default": 0
+    },
+    "matches_played": {
+      "type": "number",
+      "default": 0
+    },
+    "rating_history": {
+      "type": "array",
+      "description": "Array of {date, rating} objects tracking rating changes",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Inactive",
+        "Suspended"
+      ],
+      "default": "Active"
+    }
+  },
+  "required": [
+    "full_name"
+  ]
+}

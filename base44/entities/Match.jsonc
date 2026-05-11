@@ -1,0 +1,85 @@
+{
+  "name": "Match",
+  "type": "object",
+  "properties": {
+    "tournament_id": {
+      "type": "string",
+      "description": "Associated tournament ID"
+    },
+    "team1_player_ids": {
+      "type": "array",
+      "description": "Player IDs for team 1",
+      "items": {
+        "type": "string"
+      }
+    },
+    "team2_player_ids": {
+      "type": "array",
+      "description": "Player IDs for team 2",
+      "items": {
+        "type": "string"
+      }
+    },
+    "team1_names": {
+      "type": "string",
+      "description": "Display names for team 1"
+    },
+    "team2_names": {
+      "type": "string",
+      "description": "Display names for team 2"
+    },
+    "scores": {
+      "type": "array",
+      "description": "Array of {team1, team2} game scores",
+      "items": {
+        "type": "object",
+        "properties": {
+          "team1": {
+            "type": "number"
+          },
+          "team2": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "winner_team": {
+      "type": "string",
+      "enum": [
+        "team1",
+        "team2"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Scheduled",
+        "In Progress",
+        "Completed",
+        "Cancelled"
+      ],
+      "default": "Scheduled"
+    },
+    "court": {
+      "type": "string",
+      "description": "Court assignment"
+    },
+    "scheduled_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "round": {
+      "type": "number",
+      "description": "Round number in tournament"
+    },
+    "match_number": {
+      "type": "number"
+    },
+    "duration_minutes": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "status"
+  ]
+}
