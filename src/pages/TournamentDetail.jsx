@@ -16,6 +16,7 @@ import GlassCard from '@/components/shared/GlassCard';
 import MatchScorer from '@/components/matches/MatchScorer';
 import BracketView from '@/components/tournaments/BracketView';
 import InterClubUploadModal from '@/components/tournaments/InterClubUploadModal';
+import KotcView from '@/components/kotc/KotcView';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { generateDraw, buildEntries } from '@/lib/drawEngine';
@@ -67,6 +68,7 @@ export default function TournamentDetail() {
     );
   }
 
+  const isKotc = tournament.format === 'King of the Court';
   const isFixedPartners = tournament.partnership_type === 'Fixed Partners';
   const isInterClub = tournament.inter_club;
   const registeredPlayers = allPlayers.filter(p => tournament.player_ids?.includes(p.id));
@@ -262,8 +264,18 @@ export default function TournamentDetail() {
         </motion.div>
       )}
 
-      {/* Tabs */}
-      <Tabs defaultValue={matches.length > 0 ? 'draw' : 'players'}>
+      {/* ── King of the Court — dedicated view ── */}
+      {isKotc && (
+        <KotcView
+          tournament={tournament}
+          players={registeredPlayers}
+          allPlayers={allPlayers}
+          queryClient={queryClient}
+        />
+      )}
+
+      {/* Tabs — standard formats only */}
+      {!isKotc && <Tabs defaultValue={matches.length > 0 ? 'draw' : 'players'}>
         <TabsList className="bg-secondary">
           <TabsTrigger value="draw" className="gap-1.5 text-xs">
             <GitBranch className="w-3.5 h-3.5" /> Draw
@@ -457,9 +469,9 @@ export default function TournamentDetail() {
             </div>
           )}
         </TabsContent>
-      </Tabs>
+      </Tabs>}
 
-      {/* Add Players Dialog (singles mode) */}
+      {/* Add Players Dialog (singles mode — standard formats only) */}
       <Dialog open={addPlayersOpen} onOpenChange={setAddPlayersOpen}>
         <DialogContent className="sm:max-w-md bg-card border-border">
           <DialogHeader>

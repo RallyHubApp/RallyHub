@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Users, User, Shuffle } from 'lucide-react';
+import { Users, User, Shuffle, Crown } from 'lucide-react';
 
 const FORMATS = [
   { value: 'Single Elimination', label: 'Single Elimination', desc: 'Classic knockout — lose once and you\'re out. Seeds placed to avoid early top clashes.' },
@@ -33,7 +33,8 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
     name: '', format: 'Single Elimination', partnership_type: 'Singles',
     inter_club: false, start_date: '', end_date: '',
     location: '', max_players: '', description: '', prize_info: '',
-    skill_range_min: '', skill_range_max: ''
+    skill_range_min: '', skill_range_max: '',
+    kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11',
   });
   const [saving, setSaving] = useState(false);
 
@@ -46,6 +47,8 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
       max_players: form.max_players ? Number(form.max_players) : undefined,
       skill_range_min: form.skill_range_min ? Number(form.skill_range_min) : undefined,
       skill_range_max: form.skill_range_max ? Number(form.skill_range_max) : undefined,
+      kotc_num_courts: Number(form.kotc_num_courts) || 4,
+      kotc_num_rounds: Number(form.kotc_num_rounds) || 9,
       status: 'Draft',
       player_ids: [],
       partner_pairs: []
@@ -54,12 +57,13 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
     setSaving(false);
     onCreated?.();
     onOpenChange(false);
-    setForm({ name: '', format: 'Single Elimination', partnership_type: 'Singles', inter_club: false, start_date: '', end_date: '', location: '', max_players: '', description: '', prize_info: '', skill_range_min: '', skill_range_max: '' });
+    setForm({ name: '', format: 'Single Elimination', partnership_type: 'Singles', inter_club: false, start_date: '', end_date: '', location: '', max_players: '', description: '', prize_info: '', skill_range_min: '', skill_range_max: '', kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11' });
   };
 
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
   const selectedFormat = FORMATS.find(f => f.value === form.format);
+  const isKotc = form.format === 'King of the Court';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,6 +97,47 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
               ))}
             </div>
           </div>
+
+          {/* King of the Court config */}
+          {isKotc && (
+            <div className="glass rounded-xl p-4 space-y-3 border border-yellow-500/20">
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-yellow-400" />
+                <p className="text-sm font-semibold text-foreground">King of the Court Settings</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Courts</Label>
+                  <Input type="number" min={1} max={8} value={form.kotc_num_courts}
+                    onChange={e => update('kotc_num_courts', e.target.value)}
+                    className="bg-secondary border-border mt-1" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Rounds</Label>
+                  <Select value={String(form.kotc_num_rounds)} onValueChange={v => update('kotc_num_rounds', v)}>
+                    <SelectTrigger className="mt-1 bg-secondary border-border"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">7 rounds</SelectItem>
+                      <SelectItem value="8">8 rounds</SelectItem>
+                      <SelectItem value="9">9 rounds</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Match Format</Label>
+                <Select value={form.kotc_score_format} onValueChange={v => update('kotc_score_format', v)}>
+                  <SelectTrigger className="mt-1 bg-secondary border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="timed_10">10-min timed rounds</SelectItem>
+                    <SelectItem value="first_7">First to 7</SelectItem>
+                    <SelectItem value="first_11">First to 11</SelectItem>
+                    <SelectItem value="first_15">First to 15</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
 
           {/* Partnership Type */}
           <div>

@@ -26,24 +26,20 @@
         "Fixed Partners",
         "Random Partners"
       ],
-      "default": "Singles",
-      "description": "Whether players compete solo or with fixed/random partners"
+      "default": "Singles"
     },
     "inter_club": {
       "type": "boolean",
-      "default": false,
-      "description": "Whether this is an inter-club challenge"
+      "default": false
     },
     "clubs_involved": {
       "type": "array",
-      "description": "Club names involved in inter-club challenge",
       "items": {
         "type": "string"
       }
     },
     "partner_pairs": {
       "type": "array",
-      "description": "Array of fixed partner pairs: [{player1_id, player2_id, pair_name, club}]",
       "items": {
         "type": "object",
         "properties": {
@@ -92,7 +88,6 @@
     },
     "player_ids": {
       "type": "array",
-      "description": "Array of registered player IDs",
       "items": {
         "type": "string"
       }
@@ -108,6 +103,28 @@
     },
     "skill_range_max": {
       "type": "number"
+    },
+    "kotc_num_courts": {
+      "type": "number",
+      "description": "King of the Court: number of courts",
+      "default": 4
+    },
+    "kotc_num_rounds": {
+      "type": "number",
+      "description": "King of the Court: total rounds",
+      "default": 9
+    },
+    "kotc_score_format": {
+      "type": "string",
+      "description": "King of the Court: scoring format (timed_10, first_7, first_11, first_15)"
+    },
+    "kotc_state": {
+      "type": "string",
+      "description": "King of the Court: JSON-serialised rotation engine state"
+    },
+    "kotc_current_round": {
+      "type": "number",
+      "description": "King of the Court: current round number"
     }
   },
   "required": [
