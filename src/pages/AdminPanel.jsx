@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/shared/PageHeader';
@@ -25,6 +25,9 @@ export default function AdminPanel() {
   const [saving, setSaving] = useState(false);
   const [assignMatchOpen, setAssignMatchOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('user');
+  const [inviting, setInviting] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -110,6 +113,15 @@ export default function AdminPanel() {
     toast.success('Player assigned to match!');
   };
 
+  const sendInvite = async () => {
+    if (!inviteEmail.trim()) { toast.error('Enter an email'); return; }
+    setInviting(true);
+    await base44.users.inviteUser(inviteEmail.trim(), inviteRole);
+    toast.success(`Invitation sent to ${inviteEmail}`);
+    setInviteEmail('');
+    setInviting(false);
+  };
+
   const linkedCount = players.filter(p => p.user_id).length;
   const unlinkedCount = players.length - linkedCount;
 
@@ -142,6 +154,7 @@ export default function AdminPanel() {
           <TabsTrigger value="players" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Players</TabsTrigger>
           <TabsTrigger value="matches" className="text-xs gap-1.5"><Swords className="w-3.5 h-3.5" /> Matches</TabsTrigger>
           <TabsTrigger value="linking" className="text-xs gap-1.5"><Link2 className="w-3.5 h-3.5" /> Account Links</TabsTrigger>
+          <TabsTrigger value="invitations" className="text-xs gap-1.5"><Mail className="w-3.5 h-3.5" /> Invite Users</TabsTrigger>
         </TabsList>
 
         {/* ── PLAYERS TAB ── */}
@@ -261,6 +274,70 @@ export default function AdminPanel() {
             )}
           </div>
         </TabsContent>
+
+        {/* ── INVITATIONS TAB ── */}
+        <TabsContent value="invitations" className="mt-4">
+          <div className="space-y-4">
+            <GlassCard>
+              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-primary" /> Invite a User
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Email Address</label>
+                  <Input
+                    type="email"
+                    placeholder="user@email.com"
+                    value={inviteEmail}
+                    onChange={e => setInviteEmail(e.target.value)}
+                    className="bg-secondary border-border"
+                    onKeyDown={e => e.key === 'Enter' && sendInvite()}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Role</label>
+                  <Select value={inviteRole} onValueChange={setInviteRole}>
+                    <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">Player (user)</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={sendInvite} disabled={inviting || !inviteEmail.trim()} className="w-full bg-primary text-primary-foreground">
+                  {inviting ? 'Sending…' : <><Mail className="w-3.5 h-3.5 mr-1" /> Send Invitation</>}
+                </Button>
+              </div>
+            </GlassCard>
+
+            {/* Quick-invite known admins */}
+            <GlassCard>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Quick Invite Admins</h3>
+              <div className="space-y-2">
+                {['Conall.moore@icloud.com', 'Brian.moore007@gmail.com'].map(email => (
+                  <div key={email} className="flex items-center justify-between p-2 rounded-lg bg-secondary">
+                    <div>
+                      <p className="text-xs font-medium text-foreground">{email}</p>
+                      <p className="text-[10px] text-primary">Admin</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={async () => {
+                        await base44.users.inviteUser(email, 'admin');
+                        toast.success(`Admin invitation sent to ${email}`);
+                      }}
+                    >
+                      <Mail className="w-3 h-3 mr-1" /> Invite
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          </div>
+        </TabsContent>
+
       </Tabs>
 
       {/* Edit Player Dialog */}

@@ -5,8 +5,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Play, Users, Calendar, MapPin, Plus, Shuffle,
   Trophy, Upload, GitBranch, Swords, BarChart2, List, Flag,
-  Pencil, Trash2
+  Pencil, Trash2, Link2, UserPlus
 } from 'lucide-react';
+import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,6 +45,7 @@ export default function TournamentDetail() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [isAdmin, setIsAdmin] = useState(false);
+  const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
@@ -221,6 +223,13 @@ export default function TournamentDetail() {
 
           {/* Action buttons */}
           <div className="flex gap-2 flex-wrap shrink-0">
+            {/* Self-register button — visible to everyone when registration is open */}
+            {(tournament.status === 'Registration Open' || tournament.status === 'Draft') && !isAdmin && (
+              <Button size="sm" className="bg-primary text-primary-foreground gap-1" onClick={() => setSelfRegisterOpen(true)}>
+                <UserPlus className="w-3 h-3" /> Register to Play
+              </Button>
+            )}
+
             {isAdmin && (
               <>
                 <Button variant="outline" size="sm" onClick={handleEdit}>
@@ -228,6 +237,17 @@ export default function TournamentDetail() {
                 </Button>
                 <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteConfirmOpen(true)}>
                   <Trash2 className="w-3 h-3 mr-1" /> Delete
+                </Button>
+                {/* Share registration link */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const url = `${window.location.origin}/register/${tournament.id}`;
+                    navigator.clipboard.writeText(url).then(() => toast.success('Registration link copied!'));
+                  }}
+                >
+                  <Link2 className="w-3 h-3 mr-1" /> Share Link
                 </Button>
               </>
             )}
@@ -628,6 +648,17 @@ export default function TournamentDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Self-register modal */}
+      <PlayerRegisterModal
+        open={selfRegisterOpen}
+        onOpenChange={setSelfRegisterOpen}
+        tournament={tournament}
+        onRegistered={() => {
+          queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+          queryClient.invalidateQueries({ queryKey: ['players'] });
+        }}
+      />
 
       {/* Delete Confirm Dialog */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>

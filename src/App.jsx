@@ -17,9 +17,16 @@ import Leaderboard from '@/pages/Leaderboard';
 import Analytics from '@/pages/Analytics';
 import MyProfile from '@/pages/MyProfile';
 import AdminPanel from '@/pages/AdminPanel';
+import PublicRegister from '@/pages/PublicRegister';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+
+  // Allow public registration pages without auth
+  const isPublicRoute = window.location.pathname.startsWith('/register/');
+  if (isPublicRoute) {
+    return <Routes><Route path="/register/:id" element={<PublicRegister />} /></Routes>;
+  }
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (

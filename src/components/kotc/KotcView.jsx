@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, Download } from 'lucide-react';
+import { Plus, Users, Download, Link2, UserPlus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -9,11 +9,18 @@ import GlassCard from '@/components/shared/GlassCard';
 import KotcSetup from './KotcSetup';
 import KotcRoundView from './KotcRoundView';
 import SpondImportModal from '@/components/spond/SpondImportModal';
+import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
 
 export default function KotcView({ tournament, players, allPlayers, queryClient }) {
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
   const [spondOpen, setSpondOpen] = useState(false);
+  const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
+  }, []);
 
   const isStarted = tournament.status === 'In Progress' || tournament.status === 'Completed';
   const availablePlayers = allPlayers.filter(p => !tournament.player_ids?.includes(p.id));
@@ -35,13 +42,31 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
         <GlassCard>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Players ({players.length})</h3>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSpondOpen(true)}>
-                <Download className="w-3 h-3 mr-1" /> Import Spond
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}>
-                <Plus className="w-3 h-3 mr-1" /> Add Players
-              </Button>
+            <div className="flex gap-2 flex-wrap">
+              {isAdmin ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const url = `${window.location.origin}/register/${tournament.id}`;
+                      navigator.clipboard.writeText(url).then(() => toast.success('Registration link copied!'));
+                    }}
+                  >
+                    <Link2 className="w-3 h-3 mr-1" /> Share Link
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setSpondOpen(true)}>
+                    <Download className="w-3 h-3 mr-1" /> Import Spond
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}>
+                    <Plus className="w-3 h-3 mr-1" /> Add Players
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" className="bg-primary text-primary-foreground gap-1" onClick={() => setSelfRegisterOpen(true)}>
+                  <UserPlus className="w-3 h-3" /> Register to Play
+                </Button>
+              )}
             </div>
           </div>
           {players.length === 0 ? (
@@ -73,6 +98,17 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
       ) : (
         <KotcSetup tournament={tournament} players={players} onStarted={() => {}} queryClient={queryClient} />
       )}
+
+      {/* Self-register modal */}
+      <PlayerRegisterModal
+        open={selfRegisterOpen}
+        onOpenChange={setSelfRegisterOpen}
+        tournament={tournament}
+        onRegistered={() => {
+          queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+          queryClient.invalidateQueries({ queryKey: ['players'] });
+        }}
+      />
 
       {/* Spond Import Modal */}
       <SpondImportModal
