@@ -50,7 +50,13 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
                     size="sm"
                     onClick={() => {
                       const url = `${window.location.origin}/register/${tournament.id}`;
-                      navigator.clipboard.writeText(url).then(() => toast.success('Registration link copied!'));
+                      if (navigator.clipboard?.writeText) {
+                        navigator.clipboard.writeText(url).then(() => toast.success('Registration link copied!')).catch(() => {
+                          prompt('Copy this registration link:', url);
+                        });
+                      } else {
+                        prompt('Copy this registration link:', url);
+                      }
                     }}
                   >
                     <Link2 className="w-3 h-3 mr-1" /> Share Link
