@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Crown, ArrowRight, Users, Clock, ChevronRight, Trophy } from 'lucide-react';
+import { Crown, Users, Clock, ChevronRight, Trophy } from 'lucide-react';
 import { generateNextRound, computeKotcLeaderboard } from '@/lib/kingOfCourtEngine';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import KotcRotationSummary from './KotcRotationSummary';
 
-function CourtCard({ court, playerMap, onResult, roundComplete, result }) {
+// ─── CourtCard ────────────────────────────────────────────────────────────────
+function CourtCard({ court, playerMap, onResult, disabled, result }) {
   const teamANames = court.teamA.map(id => playerMap[id] || id).join(' & ');
   const teamBNames = court.teamB.map(id => playerMap[id] || id).join(' & ');
   const isKing = court.courtNumber === 1;
@@ -19,8 +21,8 @@ function CourtCard({ court, playerMap, onResult, roundComplete, result }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: court.courtNumber * 0.05 }}
       className={cn(
-        "glass rounded-xl p-4 space-y-3",
-        isKing && "glow-green border border-primary/30"
+        'glass rounded-xl p-4 space-y-3',
+        isKing && 'glow-green border border-primary/30'
       )}
     >
       <div className="flex items-center justify-between">
@@ -31,46 +33,41 @@ function CourtCard({ court, playerMap, onResult, roundComplete, result }) {
         </div>
         {result && (
           <Badge className="text-[10px] bg-primary/20 text-primary">
-            {result === 'A' ? teamANames.split(' & ')[0] + '…' : teamBNames.split(' & ')[0] + '…'} won
+            {result === 'A' ? teamANames : teamBNames} won
           </Badge>
         )}
       </div>
 
       {/* Team A */}
       <div className={cn(
-        "rounded-lg p-2.5 flex items-center justify-between",
+        'rounded-lg p-2.5 flex items-center justify-between',
         result === 'A' ? 'bg-primary/10 border border-primary/20' : 'bg-secondary'
       )}>
         <div>
           <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-0.5">Team A</p>
           <p className="text-xs font-semibold text-foreground">{teamANames}</p>
         </div>
-        {!roundComplete && !result && (
+        {!disabled && !result && (
           <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => onResult(court.courtNumber, 'A')}>
-            Won
-          </Button>
+            onClick={() => onResult(court.courtNumber, 'A')}>Won</Button>
         )}
         {result === 'A' && <Trophy className="w-4 h-4 text-primary" />}
       </div>
 
-      {/* VS divider */}
       <div className="text-center text-[10px] text-muted-foreground font-medium">vs</div>
 
       {/* Team B */}
       <div className={cn(
-        "rounded-lg p-2.5 flex items-center justify-between",
+        'rounded-lg p-2.5 flex items-center justify-between',
         result === 'B' ? 'bg-primary/10 border border-primary/20' : 'bg-secondary'
       )}>
         <div>
           <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-0.5">Team B</p>
           <p className="text-xs font-semibold text-foreground">{teamBNames}</p>
         </div>
-        {!roundComplete && !result && (
+        {!disabled && !result && (
           <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => onResult(court.courtNumber, 'B')}>
-            Won
-          </Button>
+            onClick={() => onResult(court.courtNumber, 'B')}>Won</Button>
         )}
         {result === 'B' && <Trophy className="w-4 h-4 text-primary" />}
       </div>
@@ -78,6 +75,7 @@ function CourtCard({ court, playerMap, onResult, roundComplete, result }) {
   );
 }
 
+// ─── TimerDisplay ─────────────────────────────────────────────────────────────
 function TimerDisplay({ scoreFormat }) {
   const isTimed = scoreFormat?.startsWith('timed_');
   const minutes = isTimed ? parseInt(scoreFormat.split('_')[1]) : 0;
@@ -107,8 +105,10 @@ function TimerDisplay({ scoreFormat }) {
           <span className="text-[10px] text-muted-foreground">{minutes}-min round</span>
         </div>
         <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-          <div className={cn("h-full rounded-full transition-all", seconds < 60 ? "bg-destructive" : "bg-primary")}
-            style={{ width: `${pct * 100}%` }} />
+          <div
+            className={cn('h-full rounded-full transition-all', seconds < 60 ? 'bg-destructive' : 'bg-primary')}
+            style={{ width: `${pct * 100}%` }}
+          />
         </div>
       </div>
       <Button size="sm" variant="outline" className="shrink-0" onClick={() => {
@@ -121,28 +121,37 @@ function TimerDisplay({ scoreFormat }) {
   );
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function KotcRoundView({ tournament, players, queryClient }) {
   const [pendingResults, setPendingResults] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  // Rotation summary state: null | { movements, nextRound, nextState, isLast }
+  const [rotationSummary, setRotationSummary] = useState(null);
 
   const rawState = tournament.kotc_state ? JSON.parse(tournament.kotc_state) : null;
-  const state = rawState ? { ...rawState, pairingHistory: new Set(rawState.pairingHistory || []) } : null;
+  const state = rawState ? { ...rawState, pairingHistory: rawState.pairingHistory || [] } : null;
   const currentRoundNum = tournament.kotc_current_round || 1;
   const maxRounds = tournament.kotc_num_rounds || 9;
   const scoreFormat = tournament.kotc_score_format || 'first_11';
 
-  if (!state) return <div className="glass rounded-xl p-8 text-center text-muted-foreground text-sm">No session data found.</div>;
+  if (!state) return (
+    <div className="glass rounded-xl p-8 text-center text-muted-foreground text-sm">
+      No session data found.
+    </div>
+  );
 
   const currentRound = state.rounds[currentRoundNum - 1];
-  if (!currentRound) return <div className="glass rounded-xl p-8 text-center text-muted-foreground text-sm">Round data missing.</div>;
+  if (!currentRound) return (
+    <div className="glass rounded-xl p-8 text-center text-muted-foreground text-sm">
+      Round data missing.
+    </div>
+  );
 
   const playerMap = Object.fromEntries(players.map(p => [p.id, p.full_name || p.id]));
   const numCourts = currentRound.courts.length;
-
-  const roundResults = { ...(state.results[currentRoundNum] || {}), ...pendingResults };
+  const roundResults = { ...(state.results?.[currentRoundNum] || {}), ...pendingResults };
   const allCourtsRecorded = currentRound.courts.every(c => roundResults[c.courtNumber]);
-
   const isLastRound = currentRoundNum >= maxRounds;
   const isCompleted = tournament.status === 'Completed';
 
@@ -150,41 +159,79 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
     setPendingResults(prev => ({ ...prev, [courtNumber]: winner }));
   };
 
-  const handleNextRound = async () => {
+  // Called when organiser presses "Next Round" — compute rotation and show summary
+  const handleCompleteRound = () => {
     if (!allCourtsRecorded) { toast.error('Enter results for all courts first.'); return; }
-    setSubmitting(true);
 
-    // Merge results into state
-    const updatedResults = { ...state.results, [currentRoundNum]: roundResults };
-    const stateWithResults = { ...state, results: updatedResults };
+    const mergedResults = { ...state.results, [currentRoundNum]: roundResults };
+    const stateWithResults = { ...state, results: mergedResults };
 
-    let nextRoundData = null;
-    let finalState = stateWithResults;
-
-    if (!isLastRound) {
-      const { nextRound, updatedState } = generateNextRound(stateWithResults, currentRoundNum, roundResults);
-      nextRoundData = nextRound;
-      finalState = { ...updatedState, rounds: [...updatedState.rounds, nextRound] };
-    } else {
-      finalState = stateWithResults;
+    if (isLastRound) {
+      // No next round — go straight to saving
+      handleSave(stateWithResults, null, null, true);
+      return;
     }
 
-    const serialisable = { ...finalState, pairingHistory: [...finalState.pairingHistory] };
+    const { nextRound, updatedState, movements } = generateNextRound(
+      stateWithResults,
+      currentRoundNum,
+      roundResults
+    );
+
+    setRotationSummary({
+      movements,
+      nextRound,
+      nextState: { ...updatedState, rounds: [...updatedState.rounds, nextRound] },
+      isLast: false,
+    });
+  };
+
+  // Called when organiser confirms rotation summary → persist and advance
+  const handleConfirmRotation = async () => {
+    if (!rotationSummary) return;
+    await handleSave(
+      rotationSummary.nextState,
+      rotationSummary.nextRound,
+      rotationSummary.nextState.pairingHistory,
+      false
+    );
+    setRotationSummary(null);
+    setPendingResults({});
+  };
+
+  const handleSave = async (finalState, nextRound, _history, isLast) => {
+    setSubmitting(true);
+    const serialisable = { ...finalState, pairingHistory: finalState.pairingHistory || [] };
 
     await base44.entities.Tournament.update(tournament.id, {
       kotc_state: JSON.stringify(serialisable),
-      kotc_current_round: isLastRound ? currentRoundNum : currentRoundNum + 1,
-      status: isLastRound ? 'Completed' : 'In Progress',
+      kotc_current_round: isLast ? currentRoundNum : currentRoundNum + 1,
+      status: isLast ? 'Completed' : 'In Progress',
     });
 
-    toast.success(isLastRound ? 'Session complete! 🏆' : `Round ${currentRoundNum + 1} ready!`);
-    setPendingResults({});
+    toast.success(isLast ? 'Session complete! 🏆' : `Round ${currentRoundNum + 1} ready!`);
     setSubmitting(false);
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
   };
 
-  const leaderboard = computeKotcLeaderboard({ ...state, results: { ...state.results, [currentRoundNum]: roundResults } });
+  const leaderboard = computeKotcLeaderboard({
+    ...state,
+    results: { ...state.results, [currentRoundNum]: roundResults },
+  });
 
+  // ── Show rotation summary between rounds ──
+  if (rotationSummary) {
+    return (
+      <KotcRotationSummary
+        movements={rotationSummary.movements}
+        playerMap={playerMap}
+        nextRound={rotationSummary.nextRound}
+        onContinue={handleConfirmRotation}
+      />
+    );
+  }
+
+  // ── Normal round view ──
   return (
     <div className="space-y-4">
       {/* Round header */}
@@ -195,18 +242,20 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">
-              Round {currentRoundNum} <span className="text-muted-foreground font-normal">of {maxRounds}</span>
+              Round {currentRoundNum}
+              <span className="text-muted-foreground font-normal"> of {maxRounds}</span>
             </p>
-            <p className="text-xs text-muted-foreground">{numCourts} courts · {currentRound.bench.length} on bench</p>
+            <p className="text-xs text-muted-foreground">
+              {numCourts} courts · {currentRound.bench.length} on bench
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Progress dots */}
           <div className="hidden sm:flex gap-1">
             {Array.from({ length: maxRounds }, (_, i) => (
-              <div key={i} className={cn("w-2 h-2 rounded-full transition-colors",
-                i + 1 < currentRoundNum ? "bg-primary" :
-                i + 1 === currentRoundNum ? "bg-primary animate-pulse" : "bg-secondary"
+              <div key={i} className={cn('w-2 h-2 rounded-full transition-colors',
+                i + 1 < currentRoundNum ? 'bg-primary' :
+                i + 1 === currentRoundNum ? 'bg-primary animate-pulse' : 'bg-secondary'
               )} />
             ))}
           </div>
@@ -219,18 +268,28 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
       {/* Timer */}
       <TimerDisplay scoreFormat={scoreFormat} />
 
-      {/* Leaderboard (collapsible) */}
+      {/* Leaderboard */}
       {showLeaderboard && (
-        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="glass rounded-xl p-4 overflow-hidden">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Current Standings</h4>
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="glass rounded-xl p-4 overflow-hidden"
+        >
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Current Standings
+          </h4>
           <div className="space-y-1.5">
             {leaderboard.slice(0, 10).map((p, i) => (
               <div key={p.id} className="flex items-center gap-2 text-xs">
-                <span className={cn("w-5 text-center font-bold", i === 0 ? "text-yellow-400" : "text-muted-foreground")}>{i + 1}</span>
+                <span className={cn('w-5 text-center font-bold', i === 0 ? 'text-yellow-400' : 'text-muted-foreground')}>
+                  {i + 1}
+                </span>
                 <span className="flex-1 text-foreground truncate">{p.name}</span>
                 <span className="text-primary font-semibold">{p.wins}W</span>
                 <span className="text-muted-foreground">{p.losses}L</span>
-                {p.sitOuts > 0 && <span className="text-yellow-500 text-[10px]">{p.sitOuts} sit</span>}
+                {p.sitOuts > 0 && (
+                  <span className="text-yellow-500 text-[10px]">{p.sitOuts} sit</span>
+                )}
               </div>
             ))}
           </div>
@@ -245,7 +304,7 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
             court={court}
             playerMap={playerMap}
             onResult={handleResult}
-            roundComplete={isCompleted}
+            disabled={isCompleted}
             result={roundResults[court.courtNumber]}
           />
         ))}
@@ -256,7 +315,9 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
         <div className="glass rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Users className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bench this round</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Bench this round
+            </span>
           </div>
           <div className="flex flex-wrap gap-2">
             {currentRound.bench.map(id => (
@@ -268,18 +329,23 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
         </div>
       )}
 
-      {/* Next round / finish */}
+      {/* Action button */}
       {!isCompleted && (
         <Button
-          className={cn("w-full gap-2", allCourtsRecorded ? "bg-primary text-primary-foreground hover:bg-primary/90" : "opacity-50")}
-          onClick={handleNextRound}
+          className={cn(
+            'w-full gap-2',
+            allCourtsRecorded
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+              : 'opacity-50'
+          )}
+          onClick={handleCompleteRound}
           disabled={!allCourtsRecorded || submitting}
         >
           {submitting
             ? <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Processing…</>
             : isLastRound
               ? <><Trophy className="w-4 h-4" /> Finish Session</>
-              : <><ChevronRight className="w-4 h-4" /> Next Round ({currentRoundNum + 1} of {maxRounds})</>
+              : <><ChevronRight className="w-4 h-4" /> Complete Round & See Rotations</>
           }
         </Button>
       )}
