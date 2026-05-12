@@ -77,7 +77,7 @@ export default function Tournaments() {
     <div className="space-y-6">
       <PageHeader title="Tournaments" description={`${tournaments.length} tournaments`}>
         <Button variant="outline" className="gap-2 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10" onClick={handleQuickKotc}>
-          <Crown className="w-4 h-4" /> King of the Court + Spond
+          <Crown className="w-4 h-4" /> King of the Court
         </Button>
         <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setCreateOpen(true)}>
           <Plus className="w-4 h-4" /> Create Tournament
