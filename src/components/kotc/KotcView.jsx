@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Users } from 'lucide-react';
+import { Plus, Users, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -8,10 +8,12 @@ import { toast } from 'sonner';
 import GlassCard from '@/components/shared/GlassCard';
 import KotcSetup from './KotcSetup';
 import KotcRoundView from './KotcRoundView';
+import SpondImportModal from '@/components/spond/SpondImportModal';
 
 export default function KotcView({ tournament, players, allPlayers, queryClient }) {
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
+  const [spondOpen, setSpondOpen] = useState(false);
 
   const isStarted = tournament.status === 'In Progress' || tournament.status === 'Completed';
   const availablePlayers = allPlayers.filter(p => !tournament.player_ids?.includes(p.id));
@@ -33,9 +35,14 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
         <GlassCard>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Players ({players.length})</h3>
-            <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}>
-              <Plus className="w-3 h-3 mr-1" /> Add Players
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setSpondOpen(true)}>
+                <Download className="w-3 h-3 mr-1" /> Import Spond
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}>
+                <Plus className="w-3 h-3 mr-1" /> Add Players
+              </Button>
+            </div>
           </div>
           {players.length === 0 ? (
             <div className="text-center py-6 space-y-3">
@@ -66,6 +73,17 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
       ) : (
         <KotcSetup tournament={tournament} players={players} onStarted={() => {}} queryClient={queryClient} />
       )}
+
+      {/* Spond Import Modal */}
+      <SpondImportModal
+        open={spondOpen}
+        onOpenChange={setSpondOpen}
+        tournament={tournament}
+        onImported={() => {
+          queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+          queryClient.invalidateQueries({ queryKey: ['players'] });
+        }}
+      />
 
       {/* Add Players Dialog */}
       <Dialog open={addPlayersOpen} onOpenChange={setAddPlayersOpen}>

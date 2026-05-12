@@ -18,6 +18,7 @@ import MatchScorer from '@/components/matches/MatchScorer';
 import BracketView from '@/components/tournaments/BracketView';
 import InterClubUploadModal from '@/components/tournaments/InterClubUploadModal';
 import KotcView from '@/components/kotc/KotcView';
+import SpondImportModal from '@/components/spond/SpondImportModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { generateDraw, buildEntries } from '@/lib/drawEngine';
@@ -37,6 +38,7 @@ export default function TournamentDetail() {
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
   const [pairsUploadOpen, setPairsUploadOpen] = useState(false);
+  const [spondOpen, setSpondOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -234,9 +236,14 @@ export default function TournamentDetail() {
                 <Upload className="w-3 h-3 mr-1" /> Upload Pairs
               </Button>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}>
-                <Plus className="w-3 h-3 mr-1" /> Add Players
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => setSpondOpen(true)}>
+                  <Shuffle className="w-3 h-3 mr-1" /> Import Spond
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}>
+                  <Plus className="w-3 h-3 mr-1" /> Add Players
+                </Button>
+              </>
             )}
 
             {entryCount >= 2 && matches.length === 0 && (
@@ -550,6 +557,17 @@ export default function TournamentDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Spond Import Modal */}
+      <SpondImportModal
+        open={spondOpen}
+        onOpenChange={setSpondOpen}
+        tournament={tournament}
+        onImported={() => {
+          queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+          queryClient.invalidateQueries({ queryKey: ['players'] });
+        }}
+      />
 
       {/* Pairs Upload Modal */}
       <InterClubUploadModal
