@@ -131,7 +131,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
                   <SelectContent>
                     <SelectItem value="timed_10">10-min timed rounds</SelectItem>
                     <SelectItem value="first_7">First to 7</SelectItem>
-                    <SelectItem value="first_11">First to 11</SelectItem>
+                    <SelectItem value="first_11">First to 11 (win by 1)</SelectItem>
                     <SelectItem value="first_15">First to 15</SelectItem>
                   </SelectContent>
                 </Select>

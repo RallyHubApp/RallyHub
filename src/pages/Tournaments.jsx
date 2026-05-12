@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trophy, Calendar, MapPin, Users, Search } from 'lucide-react';
+import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +26,20 @@ export default function Tournaments() {
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isAdmin, setIsAdmin] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
+  }, []);
+
+  const handleDelete = async (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm('Delete this tournament?')) return;
+    await base44.entities.Tournament.delete(id);
+    queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+  };
 
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ['tournaments'],
@@ -70,6 +83,15 @@ export default function Tournaments() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((t, i) => (
             <motion.div key={t.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+              <div className="relative">
+              {isAdmin && (
+                <button
+                  onClick={e => handleDelete(e, t.id)}
+                  className="absolute top-3 right-3 z-10 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
               <Link to={`/tournaments/${t.id}`} className="glass rounded-xl p-5 block hover:scale-[1.02] transition-all duration-200 group h-full">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -97,6 +119,7 @@ export default function Tournaments() {
                   </div>
                 </div>
               </Link>
+              </div>
             </motion.div>
           ))}
         </div>

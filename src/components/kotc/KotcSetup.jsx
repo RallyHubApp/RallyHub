@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 const SCORE_FORMATS = [
   { value: 'timed_10', label: '10-min rounds', icon: Clock, desc: 'Timed game — most points wins' },
   { value: 'first_7', label: 'First to 7', icon: Hash, desc: 'Win by 1' },
-  { value: 'first_11', label: 'First to 11', icon: Hash, desc: 'Win by 2' },
+  { value: 'first_11', label: 'First to 11', icon: Hash, desc: 'Win by 1' },
   { value: 'first_15', label: 'First to 15', icon: Hash, desc: 'Win by 2' },
 ];
 

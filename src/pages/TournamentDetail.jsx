@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Play, Users, Calendar, MapPin, Plus, Shuffle,
-  Trophy, Upload, GitBranch, Swords, BarChart2, List, Flag
+  Trophy, Upload, GitBranch, Swords, BarChart2, List, Flag,
+  Pencil, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,10 +33,19 @@ const statusColors = {
 export default function TournamentDetail() {
   const tournamentId = window.location.pathname.split('/tournaments/')[1];
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
   const [pairsUploadOpen, setPairsUploadOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
+  }, []);
 
   const { data: tournament, isLoading } = useQuery({
     queryKey: ['tournament', tournamentId],
@@ -145,6 +155,30 @@ export default function TournamentDetail() {
     queryClient.invalidateQueries({ queryKey: ['matches'] });
   };
 
+  const handleEdit = () => {
+    setEditForm({
+      name: tournament.name,
+      location: tournament.location || '',
+      start_date: tournament.start_date || '',
+      end_date: tournament.end_date || '',
+      description: tournament.description || '',
+    });
+    setEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    await base44.entities.Tournament.update(tournament.id, editForm);
+    toast.success('Tournament updated');
+    setEditOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+  };
+
+  const handleDelete = async () => {
+    await base44.entities.Tournament.delete(tournament.id);
+    toast.success('Tournament deleted');
+    navigate('/tournaments');
+  };
+
   const updateStatus = async (status) => {
     await base44.entities.Tournament.update(tournament.id, { status });
     queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
@@ -185,6 +219,16 @@ export default function TournamentDetail() {
 
           {/* Action buttons */}
           <div className="flex gap-2 flex-wrap shrink-0">
+            {isAdmin && (
+              <>
+                <Button variant="outline" size="sm" onClick={handleEdit}>
+                  <Pencil className="w-3 h-3 mr-1" /> Edit
+                </Button>
+                <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteConfirmOpen(true)}>
+                  <Trash2 className="w-3 h-3 mr-1" /> Delete
+                </Button>
+              </>
+            )}
             {isFixedPartners ? (
               <Button variant="outline" size="sm" onClick={() => setPairsUploadOpen(true)}>
                 <Upload className="w-3 h-3 mr-1" /> Upload Pairs
@@ -513,6 +557,65 @@ export default function TournamentDetail() {
         onOpenChange={setPairsUploadOpen}
         onPairsReady={handlePairsReady}
       />
+
+      {/* Edit Tournament Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Edit Tournament</DialogTitle>
+            <DialogDescription className="text-muted-foreground">Update tournament details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {[
+              { label: 'Name', key: 'name', type: 'text' },
+              { label: 'Location', key: 'location', type: 'text' },
+              { label: 'Start Date', key: 'start_date', type: 'date' },
+              { label: 'End Date', key: 'end_date', type: 'date' },
+            ].map(({ label, key, type }) => (
+              <div key={key}>
+                <label className="text-xs text-muted-foreground block mb-1">{label}</label>
+                <input
+                  type={type}
+                  value={editForm[key] || ''}
+                  onChange={e => setEditForm(f => ({ ...f, [key]: e.target.value }))}
+                  className="w-full h-9 rounded-md border border-input bg-secondary px-3 py-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
+            ))}
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Description</label>
+              <textarea
+                value={editForm.description || ''}
+                onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
+                rows={3}
+                className="w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveEdit} className="bg-primary text-primary-foreground">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-sm bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Delete Tournament?</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              This will permanently delete <strong className="text-foreground">{tournament?.name}</strong> and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+            <Button onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <Trash2 className="w-3 h-3 mr-1" /> Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
