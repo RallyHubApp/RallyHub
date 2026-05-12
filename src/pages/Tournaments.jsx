@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2 } from 'lucide-react';
+import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,8 @@ import { format } from 'date-fns';
 import PageHeader from '@/components/shared/PageHeader';
 import EmptyState from '@/components/shared/EmptyState';
 import CreateTournamentModal from '@/components/tournaments/CreateTournamentModal';
-import { Link } from 'react-router-dom';
+import SpondImportModal from '@/components/spond/SpondImportModal';
+import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const statusColors = {
@@ -24,14 +25,34 @@ const statusColors = {
 
 export default function Tournaments() {
   const [createOpen, setCreateOpen] = useState(false);
+  const [kotcSpondOpen, setKotcSpondOpen] = useState(false);
+  const [newKotcTournament, setNewKotcTournament] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isAdmin, setIsAdmin] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
   }, []);
+
+  const handleQuickKotc = async () => {
+    const t = await base44.entities.Tournament.create({
+      name: `King of the Court — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
+      format: 'King of the Court',
+      partnership_type: 'Singles',
+      status: 'Draft',
+      kotc_num_courts: 4,
+      kotc_num_rounds: 9,
+      kotc_score_format: 'first_11',
+      player_ids: [],
+      partner_pairs: [],
+    });
+    queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+    setNewKotcTournament(t);
+    setKotcSpondOpen(true);
+  };
 
   const handleDelete = async (e, id) => {
     e.preventDefault();
@@ -55,6 +76,9 @@ export default function Tournaments() {
   return (
     <div className="space-y-6">
       <PageHeader title="Tournaments" description={`${tournaments.length} tournaments`}>
+        <Button variant="outline" className="gap-2 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10" onClick={handleQuickKotc}>
+          <Crown className="w-4 h-4" /> King of the Court + Spond
+        </Button>
         <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setCreateOpen(true)}>
           <Plus className="w-4 h-4" /> Create Tournament
         </Button>
@@ -126,6 +150,21 @@ export default function Tournaments() {
       )}
 
       <CreateTournamentModal open={createOpen} onOpenChange={setCreateOpen} onCreated={() => queryClient.invalidateQueries({ queryKey: ['tournaments'] })} />
+
+      {newKotcTournament && (
+        <SpondImportModal
+          open={kotcSpondOpen}
+          onOpenChange={(open) => {
+            setKotcSpondOpen(open);
+            if (!open) navigate(`/tournaments/${newKotcTournament.id}`);
+          }}
+          tournament={newKotcTournament}
+          onImported={() => {
+            setKotcSpondOpen(false);
+            navigate(`/tournaments/${newKotcTournament.id}`);
+          }}
+        />
+      )}
     </div>
   );
 }

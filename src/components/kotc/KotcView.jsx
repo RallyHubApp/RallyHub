@@ -29,7 +29,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   };
 
   return (
-    <div className="space-y-6">
+    <div id="kotc-start-section" className="space-y-6">
       {/* Player management */}
       {!isStarted && (
         <GlassCard>

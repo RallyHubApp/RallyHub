@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import KotcRotationSummary from './KotcRotationSummary';
 
 // ─── CourtCard ────────────────────────────────────────────────────────────────
-function CourtCard({ court, playerMap, onResult, disabled, result }) {
+function CourtCard({ court, playerMap, onResult, onClearResult, disabled, result }) {
   const teamANames = court.teamA.map(id => playerMap[id] || id).join(' & ');
   const teamBNames = court.teamB.map(id => playerMap[id] || id).join(' & ');
   const isKing = court.courtNumber === 1;
@@ -31,10 +31,13 @@ function CourtCard({ court, playerMap, onResult, disabled, result }) {
           <span className="text-sm font-bold text-foreground">Court {court.courtNumber}</span>
           {isKing && <Badge className="text-[10px] bg-yellow-500/20 text-yellow-400">King Court</Badge>}
         </div>
-        {result && (
-          <Badge className="text-[10px] bg-primary/20 text-primary">
-            {result === 'A' ? teamANames : teamBNames} won
-          </Badge>
+        {result && !disabled && (
+          <button
+            onClick={() => onClearResult(court.courtNumber)}
+            className="text-[10px] text-muted-foreground hover:text-destructive transition-colors underline"
+          >
+            Edit result
+          </button>
         )}
       </div>
 
@@ -124,6 +127,8 @@ function TimerDisplay({ scoreFormat }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function KotcRoundView({ tournament, players, queryClient }) {
   const [pendingResults, setPendingResults] = useState({});
+  // clearedCourts tracks courts whose saved result was explicitly cleared so they can be re-entered
+  const [clearedCourts, setClearedCourts] = useState(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   // Rotation summary state: null | { movements, nextRound, nextState, isLast }
@@ -150,13 +155,28 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
 
   const playerMap = Object.fromEntries(players.map(p => [p.id, p.full_name || p.id]));
   const numCourts = currentRound.courts.length;
-  const roundResults = { ...(state.results?.[currentRoundNum] || {}), ...pendingResults };
+  const savedResults = state.results?.[currentRoundNum] || {};
+  // Build effective results: saved + pending, minus cleared
+  const roundResults = Object.fromEntries(
+    Object.entries({ ...savedResults, ...pendingResults })
+      .filter(([k]) => !clearedCourts.has(Number(k)))
+  );
   const allCourtsRecorded = currentRound.courts.every(c => roundResults[c.courtNumber]);
   const isLastRound = currentRoundNum >= maxRounds;
   const isCompleted = tournament.status === 'Completed';
 
   const handleResult = (courtNumber, winner) => {
     setPendingResults(prev => ({ ...prev, [courtNumber]: winner }));
+    setClearedCourts(prev => { const s = new Set(prev); s.delete(courtNumber); return s; });
+  };
+
+  const handleClearResult = (courtNumber) => {
+    setPendingResults(prev => {
+      const next = { ...prev };
+      delete next[courtNumber];
+      return next;
+    });
+    setClearedCourts(prev => new Set([...prev, courtNumber]));
   };
 
   // Called when organiser presses "Next Round" — compute rotation and show summary
@@ -197,6 +217,7 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
     );
     setRotationSummary(null);
     setPendingResults({});
+    setClearedCourts(new Set());
   };
 
   const handleSave = async (finalState, nextRound, _history, isLast) => {
@@ -304,6 +325,7 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
             court={court}
             playerMap={playerMap}
             onResult={handleResult}
+            onClearResult={handleClearResult}
             disabled={isCompleted}
             result={roundResults[court.courtNumber]}
           />

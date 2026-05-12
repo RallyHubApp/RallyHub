@@ -246,7 +246,7 @@ export default function TournamentDetail() {
               </>
             )}
 
-            {entryCount >= 2 && matches.length === 0 && (
+            {!isKotc && entryCount >= 2 && matches.length === 0 && (
               <Button
                 size="sm"
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
@@ -257,6 +257,18 @@ export default function TournamentDetail() {
                   ? <><div className="w-3 h-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-1" /> Generating…</>
                   : <><GitBranch className="w-3 h-3 mr-1" /> Generate Draw</>
                 }
+              </Button>
+            )}
+            {isKotc && tournament.status !== 'In Progress' && tournament.status !== 'Completed' && (
+              <Button
+                size="sm"
+                className="bg-yellow-500/90 text-black hover:bg-yellow-400 gap-1"
+                onClick={() => {
+                  // Scroll to KotcSetup start button — trigger it programmatically via a ref or just scroll
+                  document.getElementById('kotc-start-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <Play className="w-3 h-3" /> Start King of the Court
               </Button>
             )}
 
