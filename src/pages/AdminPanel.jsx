@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/shared/PageHeader';
@@ -29,9 +29,17 @@ export default function AdminPanel() {
   const [inviteRole, setInviteRole] = useState('user');
   const [inviting, setInviting] = useState(false);
 
+  const [userSearch, setUserSearch] = useState('');
+  const [updatingRole, setUpdatingRole] = useState(null);
+
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
     queryFn: () => base44.entities.Player.list('-created_date', 200)
+  });
+
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['all-users'],
+    queryFn: () => base44.entities.User.list('-created_date', 200)
   });
 
   const { data: matches = [] } = useQuery({
@@ -122,6 +130,20 @@ export default function AdminPanel() {
     setInviting(false);
   };
 
+  const setUserRole = async (userId, newRole) => {
+    setUpdatingRole(userId);
+    await base44.entities.User.update(userId, { role: newRole });
+    queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    toast.success(`Role updated to ${newRole}`);
+    setUpdatingRole(null);
+  };
+
+  const filteredUsers = allUsers.filter(u => {
+    if (!userSearch) return true;
+    const q = userSearch.toLowerCase();
+    return u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+  });
+
   const linkedCount = players.filter(p => p.user_id).length;
   const unlinkedCount = players.length - linkedCount;
 
@@ -149,13 +171,77 @@ export default function AdminPanel() {
         </GlassCard>
       </div>
 
-      <Tabs defaultValue="players">
-        <TabsList className="bg-secondary">
+      <Tabs defaultValue="users">
+        <TabsList className="bg-secondary flex-wrap h-auto gap-1">
+          <TabsTrigger value="users" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Users & Roles</TabsTrigger>
           <TabsTrigger value="players" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Players</TabsTrigger>
           <TabsTrigger value="matches" className="text-xs gap-1.5"><Swords className="w-3.5 h-3.5" /> Matches</TabsTrigger>
           <TabsTrigger value="linking" className="text-xs gap-1.5"><Link2 className="w-3.5 h-3.5" /> Account Links</TabsTrigger>
           <TabsTrigger value="invitations" className="text-xs gap-1.5"><Mail className="w-3.5 h-3.5" /> Invite Users</TabsTrigger>
         </TabsList>
+
+        {/* ── USERS & ROLES TAB ── */}
+        <TabsContent value="users" className="mt-4">
+          <div className="space-y-3">
+            <div className="glass rounded-lg p-3 flex items-start gap-2">
+              <Shield className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                Manage roles for all registered users. Promote users to <strong className="text-foreground">Admin</strong> to give them full access to the admin panel and all management features.
+              </p>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or email…"
+                value={userSearch}
+                onChange={e => setUserSearch(e.target.value)}
+                className="pl-9 bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              {filteredUsers.map((u, i) => (
+                <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+                  className="glass rounded-lg p-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                      {(u.full_name || u.email || 'U')[0].toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{u.full_name || '(no name)'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge className={u.role === 'admin' ? 'bg-destructive/20 text-destructive text-[10px]' : 'bg-secondary text-muted-foreground text-[10px]'}>
+                      {u.role === 'admin' ? <><ShieldCheck className="w-2.5 h-2.5 mr-0.5" />Admin</> : 'User'}
+                    </Badge>
+                    {u.id !== user?.id && (
+                      u.role === 'admin' ? (
+                        <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                          disabled={updatingRole === u.id}
+                          onClick={() => setUserRole(u.id, 'user')}>
+                          <ShieldOff className="w-3 h-3 mr-1" />
+                          {updatingRole === u.id ? '…' : 'Remove Admin'}
+                        </Button>
+                      ) : (
+                        <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                          disabled={updatingRole === u.id}
+                          onClick={() => setUserRole(u.id, 'admin')}>
+                          <ShieldCheck className="w-3 h-3 mr-1" />
+                          {updatingRole === u.id ? '…' : 'Make Admin'}
+                        </Button>
+                      )
+                    )}
+                    {u.id === user?.id && <span className="text-[10px] text-muted-foreground">(you)</span>}
+                  </div>
+                </motion.div>
+              ))}
+              {filteredUsers.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-6">No users found</p>
+              )}
+            </div>
+          </div>
+        </TabsContent>
 
         {/* ── PLAYERS TAB ── */}
         <TabsContent value="players" className="mt-4">
