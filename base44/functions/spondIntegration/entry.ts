@@ -68,21 +68,15 @@ Deno.serve(async (req) => {
   // ── Action: get_events ──
   if (action === 'get_events') {
     if (!groupId) return Response.json({ error: 'groupId required' }, { status: 400 });
-    // Fetch from 60 days ago to 180 days ahead — catches recurring events that started in the past
-    const minEnd = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+    // Use minStartTimestamp from today, maxEndTimestamp 180 days out
+    // Also fetch with no timestamp filter to catch recurring events — Spond returns each occurrence separately
+    const minStart = new Date().toISOString();
     const maxEnd = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
     const events = await spondRequest(
-      `/sponds?groupId=${groupId}&minEndTimestamp=${minEnd}&maxEndTimestamp=${maxEnd}&includeComments=false&includeHidden=false&addProfileInfo=true`,
+      `/sponds?groupId=${groupId}&minStartTimestamp=${minStart}&maxEndTimestamp=${maxEnd}&includeComments=false&includeHidden=false&addProfileInfo=true`,
       spondToken
     );
-    const now = new Date();
     const simplified = (Array.isArray(events) ? events : [])
-      // Show upcoming events OR past events that have attendees (recurring events with RSVPs)
-      .filter(e => {
-        const hasAttendees = (e.responses?.acceptedIds || []).length > 0;
-        const isUpcoming = new Date(e.endTimestamp) >= now;
-        return isUpcoming || hasAttendees;
-      })
       .sort((a, b) => new Date(a.startTimestamp) - new Date(b.startTimestamp))
       .map(e => ({
         id: e.id,
@@ -109,26 +103,31 @@ Deno.serve(async (req) => {
       spondRequest(`/groups/${groupId}`, spondToken),
     ]);
 
-    // Handle both response formats: acceptedIds array OR members array with response field
-    const acceptedIds = new Set();
-    if (event.responses?.acceptedIds?.length) {
-      event.responses.acceptedIds.forEach(id => acceptedIds.add(id));
-    }
-    if (event.responses?.waitinglistIds?.length) {
-      event.responses.waitinglistIds.forEach(id => acceptedIds.add(id));
-    }
-    // Some events use a members array with individual response fields
-    if (event.responses?.members?.length) {
-      event.responses.members
-        .filter(m => m.status === 'accepted' || m.status === 'waitinglist')
-        .forEach(m => acceptedIds.add(m.uid));
-    }
+    console.log('[DEBUG] event.responses keys:', Object.keys(event.responses || {}));
+    console.log('[DEBUG] event.responses sample:', JSON.stringify(event.responses).substring(0, 500));
 
-    // Build member map from group
+    // Handle all known Spond response formats
+    const acceptedIds = new Set();
+    // Format 1: flat acceptedIds array
+    (event.responses?.acceptedIds || []).forEach(id => acceptedIds.add(id));
+    (event.responses?.waitinglistIds || []).forEach(id => acceptedIds.add(id));
+    // Format 2: members array with status per member
+    (event.responses?.members || [])
+      .filter(m => m.status === 'accepted' || m.status === 'waitinglist')
+      .forEach(m => acceptedIds.add(m.uid || m.id));
+    // Format 3: responses array with memberId + status
+    (event.responses?.responses || [])
+      .filter(r => r.status === 'accepted' || r.status === 'attending')
+      .forEach(r => acceptedIds.add(r.memberId || r.uid || r.id));
+
+    // Build member map from group — include subgroup members too
     const memberMap = {};
-    (group.members || []).forEach(m => {
-      memberMap[m.id] = m;
+    (group.members || []).forEach(m => { memberMap[m.id] = m; });
+    (group.subGroups || []).forEach(sg => {
+      (sg.members || []).forEach(m => { if (!memberMap[m.id]) memberMap[m.id] = m; });
     });
+    console.log('[DEBUG] memberMap size:', Object.keys(memberMap).length);
+    console.log('[DEBUG] acceptedIds count:', acceptedIds.size);
 
     const attendees = [];
     for (const memberId of acceptedIds) {
