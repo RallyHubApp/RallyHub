@@ -67,13 +67,19 @@ Deno.serve(async (req) => {
   // ── Action: get_events ──
   if (action === 'get_events') {
     if (!groupId) return Response.json({ error: 'groupId required' }, { status: 400 });
-    const now = new Date().toISOString();
-    const future = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+    const future = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
     const events = await spondRequest(
-      `/sponds?groupId=${groupId}&minEndTimestamp=${now}&maxEndTimestamp=${future}&includeComments=false&includeHidden=false&addProfileInfo=true`,
+      `/sponds?groupId=${groupId}&maxEndTimestamp=${future}&includeComments=false&includeHidden=false&addProfileInfo=true`,
       spondToken
     );
+    const now = new Date();
     const simplified = (Array.isArray(events) ? events : [])
+      // Include events that are upcoming OR have attendees (covers recurring events where startTimestamp is the original date)
+      .filter(e => {
+        const hasAttendees = (e.responses?.acceptedIds || []).length > 0;
+        const isUpcoming = new Date(e.endTimestamp) >= now;
+        return isUpcoming || hasAttendees;
+      })
       .sort((a, b) => new Date(a.startTimestamp) - new Date(b.startTimestamp))
       .map(e => ({
         id: e.id,
