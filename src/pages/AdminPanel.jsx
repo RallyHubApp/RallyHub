@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/shared/PageHeader';
@@ -31,6 +31,9 @@ export default function AdminPanel() {
 
   const [userSearch, setUserSearch] = useState('');
   const [updatingRole, setUpdatingRole] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUserName, setEditUserName] = useState('');
+  const [savingUserName, setSavingUserName] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -130,6 +133,15 @@ export default function AdminPanel() {
     setInviting(false);
   };
 
+  const saveUserName = async () => {
+    setSavingUserName(true);
+    await base44.entities.User.update(editingUser.id, { display_name: editUserName.trim() });
+    queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    toast.success('Name updated!');
+    setSavingUserName(false);
+    setEditingUser(null);
+  };
+
   const setUserRole = async (userId, newRole) => {
     setUpdatingRole(userId);
     await base44.entities.User.update(userId, { role: newRole });
@@ -207,11 +219,15 @@ export default function AdminPanel() {
                       {(u.full_name || u.email || 'U')[0].toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{u.full_name || '(no name)'}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{u.display_name || u.full_name || '(no name)'}</p>
                       <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    <Button size="icon" variant="ghost" className="w-7 h-7 text-muted-foreground hover:text-foreground shrink-0"
+                      onClick={() => { setEditingUser(u); setEditUserName(u.display_name || u.full_name || ''); }}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
                     <Badge className={u.role === 'admin' ? 'bg-destructive/20 text-destructive text-[10px]' : 'bg-secondary text-muted-foreground text-[10px]'}>
                       {u.role === 'admin' ? <><ShieldCheck className="w-2.5 h-2.5 mr-0.5" />Admin</> : 'User'}
                     </Badge>
@@ -473,6 +489,34 @@ export default function AdminPanel() {
             <Button onClick={saveEdit} disabled={saving} className="bg-primary text-primary-foreground">
               {saving ? 'Saving…' : 'Save Changes'}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Name Dialog */}
+      <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
+        <DialogContent className="sm:max-w-sm bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Edit Display Name</DialogTitle>
+            <DialogDescription className="text-muted-foreground">{editingUser?.email}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">Display Name</Label>
+              <Input
+                value={editUserName}
+                onChange={e => setEditUserName(e.target.value)}
+                placeholder="Enter a display name…"
+                className="mt-1 bg-secondary border-border"
+                onKeyDown={e => e.key === 'Enter' && saveUserName()}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditingUser(null)}>Cancel</Button>
+              <Button onClick={saveUserName} disabled={savingUserName || !editUserName.trim()} className="bg-primary text-primary-foreground">
+                {savingUserName ? 'Saving…' : 'Save'}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
