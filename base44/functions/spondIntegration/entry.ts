@@ -17,7 +17,7 @@ async function spondRequest(path, token) {
 }
 
 async function spondLogin(username, password) {
-  const res = await fetch(`${SPOND_API_BASE}/login`, {
+  const res = await fetch(`${SPOND_API_BASE}/auth2/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: username, password }),
@@ -27,7 +27,8 @@ async function spondLogin(username, password) {
     throw new Error(`Spond login failed ${res.status}: ${text}`);
   }
   const data = await res.json();
-  return data.loginToken || data.token || data.accessToken;
+  // New endpoint returns { accessToken: { token, expiration }, refreshToken, passwordToken }
+  return data.accessToken?.token || data.loginToken || data.token;
 }
 
 Deno.serve(async (req) => {
