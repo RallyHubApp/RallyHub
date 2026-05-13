@@ -1,5 +1,15 @@
 /**
- * King of the Court — Result-Driven Rotation Engine
+ * King of the Court — Split-and-Cross Partner Rotation Engine
+ *
+ * Core rule (user specification):
+ *   After every round:
+ *   - Winners from adjacent courts SPLIT from their partner and CROSS-PAIR.
+ *     e.g. Court 1 winner A1+A2 beat, Court 2 winner C1+C2:
+ *       Next round Court 1: A1+C1 vs A2+C2  (or A1+C2 vs A2+C1 — whichever is fresher)
+ *   - Losers from adjacent courts do the same, moving DOWN.
+ *   - Top-court winners stay but still cross-pair among themselves.
+ *   - Bottom-court losers stay but still cross-pair among themselves.
+ *   - Maximum partner variety enforced via pairingHistory.
  *
  * State shape (kotcState):
  * {
@@ -13,13 +23,8 @@
  *   results: { [roundNumber]: { [courtNumber]: 'A'|'B' } },
  *   sitOutCounts: { [playerId]: number },
  *   recentBench: [playerId],
- *   pairingHistory: string[],  // serialised as array, used as Set internally
+ *   pairingHistory: string[],
  * }
- *
- * Movement rules:
- *   Winners move UP one court (Court 1 winners stay on Court 1)
- *   Losers  move DOWN one court (Bottom court losers stay on bottom)
- *   All partnerships dissolved — new pairings built from court pools
  */
 
 /** Create the initial state (before round 1) */
@@ -59,20 +64,12 @@ function shuffle(arr) {
 }
 
 /**
- * Pick `numBench` players to sit out.
- * Priority: fewest sit-outs → don't bench consecutively.
+ * Score a pairing option: lower is better.
+ * Counts how many pairs have already played together.
  */
-function pickBench(playerIds, numBench, sitOutCounts, recentBench) {
-  if (numBench <= 0) return [];
-  const sorted = [...playerIds].sort((a, b) => {
-    const diff = (sitOutCounts[a] || 0) - (sitOutCounts[b] || 0);
-    if (diff !== 0) return diff;
-    // tie-break: avoid benching someone who just sat out
-    const aRecent = recentBench.includes(a) ? 1 : 0;
-    const bRecent = recentBench.includes(b) ? 1 : 0;
-    return aRecent - bRecent;
-  });
-  return sorted.slice(0, numBench);
+function pairScore(teamA, teamB, historySet) {
+  return (hasPaired(teamA[0], teamA[1], historySet) ? 1 : 0) +
+         (hasPaired(teamB[0], teamB[1], historySet) ? 1 : 0);
 }
 
 /**
@@ -86,20 +83,60 @@ function bestTeamSplit(ids, historySet) {
     [[a, c], [b, d]],
     [[a, d], [b, c]],
   ];
-  const scored = options.map(([tA, tB]) => ({
-    tA, tB,
-    score: (hasPaired(tA[0], tA[1], historySet) ? 1 : 0) +
-           (hasPaired(tB[0], tB[1], historySet) ? 1 : 0),
-  }));
+  const scored = options.map(([tA, tB]) => ({ tA, tB, score: pairScore(tA, tB, historySet) }));
   scored.sort((a, b) => a.score - b.score);
   return [scored[0].tA, scored[0].tB];
+}
+
+/**
+ * Cross-pair two pairs of players (4 total) using split-and-cross logic.
+ *
+ * Given pair1 = [p1a, p1b] and pair2 = [p2a, p2b] (two winning or two losing pairs
+ * that are merging into one court next round), we must split BOTH pairs and cross.
+ *
+ * Valid cross-pairings:
+ *   Option 1: [p1a, p2a] vs [p1b, p2b]
+ *   Option 2: [p1a, p2b] vs [p1b, p2a]
+ *
+ * We choose whichever minimises repeated pairings.
+ * Note: [p1a, p1b] together again is FORBIDDEN (same-partner constraint).
+ */
+function crossPair(pair1, pair2, historySet) {
+  const [p1a, p1b] = pair1;
+  const [p2a, p2b] = pair2;
+
+  const opt1 = { tA: [p1a, p2a], tB: [p1b, p2b], score: pairScore([p1a, p2a], [p1b, p2b], historySet) };
+  const opt2 = { tA: [p1a, p2b], tB: [p1b, p2a], score: pairScore([p1a, p2b], [p1b, p2a], historySet) };
+
+  // Tiebreak: if equal score, pick randomly for variety
+  if (opt1.score < opt2.score) return [opt1.tA, opt1.tB];
+  if (opt2.score < opt1.score) return [opt2.tA, opt2.tB];
+  // Equal — shuffle to get variety over time
+  const choice = Math.random() < 0.5 ? opt1 : opt2;
+  return [choice.tA, choice.tB];
+}
+
+/**
+ * Pick `numBench` players to sit out.
+ * Priority: fewest sit-outs → don't bench consecutively.
+ */
+function pickBench(playerIds, numBench, sitOutCounts, recentBench) {
+  if (numBench <= 0) return [];
+  const sorted = [...playerIds].sort((a, b) => {
+    const diff = (sitOutCounts[a] || 0) - (sitOutCounts[b] || 0);
+    if (diff !== 0) return diff;
+    const aRecent = recentBench.includes(a) ? 1 : 0;
+    const bRecent = recentBench.includes(b) ? 1 : 0;
+    return aRecent - bRecent;
+  });
+  return sorted.slice(0, numBench);
 }
 
 // ─── Round 1 ─────────────────────────────────────────────────────────────────
 
 /**
  * Generate Round 1.
- * Players seeded by rating — highest rated on highest courts.
+ * Players seeded by rating — highest rated on highest courts (Court 1 = King Court).
  */
 export function generateRound1(state) {
   const { players, numCourts, sitOutCounts, recentBench } = state;
@@ -107,14 +144,12 @@ export function generateRound1(state) {
   const activeSpots = numCourts * 4;
   const numBench = Math.max(0, players.length - activeSpots);
 
-  // Sort by rating desc for initial seeding
   const ordered = [...players].sort((a, b) => (b.rating || 0) - (a.rating || 0));
   const orderedIds = ordered.map(p => p.id);
 
   const benchIds = pickBench(orderedIds, numBench, sitOutCounts, recentBench);
   const activeIds = orderedIds.filter(id => !benchIds.includes(id));
 
-  // Assign to courts: first 4 → Court 1 (King), next 4 → Court 2, etc.
   const courts = [];
   for (let c = 0; c < numCourts; c++) {
     const four = activeIds.slice(c * 4, c * 4 + 4);
@@ -126,13 +161,12 @@ export function generateRound1(state) {
   return { roundNumber: 1, courts, bench: benchIds };
 }
 
-// ─── Next Round ───────────────────────────────────────────────────────────────
+// ─── Next Round — Split-and-Cross Engine ─────────────────────────────────────
 
 /**
- * Generate next round from completed results.
+ * Generate next round using split-and-cross partner rotation.
  *
  * Returns { nextRound, updatedState, movements }
- * movements = [{ player, fromCourt, toCourt, direction }] for UI summary
  */
 export function generateNextRound(state, roundNumber, results) {
   const { players, numCourts, sitOutCounts, recentBench } = state;
@@ -150,98 +184,211 @@ export function generateNextRound(state, roundNumber, results) {
     newHistorySet.add(pairKey(court.teamB[0], court.teamB[1]));
   });
 
-  // 2. Update sit-out counts for benched players
+  // 2. Update sit-out counts
   const newSitOutCounts = { ...sitOutCounts };
   currentRound.bench.forEach(id => {
     newSitOutCounts[id] = (newSitOutCounts[id] || 0) + 1;
   });
 
-  // 3. Apply movement rules — build destination court pools
-  //    Court pools keyed by destination court number
-  const courtPools = {};
-  for (let c = 1; c <= numCourts; c++) courtPools[c] = [];
-
-  const movements = []; // for UI summary
+  // 3. Extract winner-pair and loser-pair per court
+  //    winnerPairs[courtNum] = [id, id]  (the winning team)
+  //    loserPairs[courtNum]  = [id, id]  (the losing team)
+  const winnerPairs = {};
+  const loserPairs = {};
+  const movements = [];
 
   currentRound.courts.forEach(court => {
     const { courtNumber, teamA, teamB } = court;
     const winSide = results[courtNumber];
-    if (!winSide) return; // shouldn't happen but be safe
+    if (!winSide) return;
 
-    const winners = winSide === 'A' ? teamA : teamB;
-    const losers  = winSide === 'A' ? teamB : teamA;
+    const winners = winSide === 'A' ? [...teamA] : [...teamB];
+    const losers  = winSide === 'A' ? [...teamB] : [...teamA];
 
-    // Winners move UP (lower court number), Court 1 winners stay
+    winnerPairs[courtNumber] = winners;
+    loserPairs[courtNumber]  = losers;
+
+    // Record movements (individual players)
     const winnerDest = Math.max(1, courtNumber - 1);
-    // Losers move DOWN (higher court number), bottom court losers stay
     const loserDest  = Math.min(numCourts, courtNumber + 1);
 
     winners.forEach(id => {
-      courtPools[winnerDest].push(id);
       movements.push({
         playerId: id,
         fromCourt: courtNumber,
         toCourt: winnerDest,
         direction: winnerDest < courtNumber ? 'up' : 'stay',
         result: 'win',
+        prevPartner: winners.find(x => x !== id),
       });
     });
-
     losers.forEach(id => {
-      courtPools[loserDest].push(id);
       movements.push({
         playerId: id,
         fromCourt: courtNumber,
         toCourt: loserDest,
         direction: loserDest > courtNumber ? 'down' : 'stay',
         result: 'loss',
+        prevPartner: losers.find(x => x !== id),
       });
     });
   });
 
-  // 4. Return bench players to lowest available courts
-  const returningBench = currentRound.bench.filter(id => {
-    return !Object.values(courtPools).flat().includes(id);
-  });
+  // 4. Build next-round courts using split-and-cross
+  //
+  //   Court 1 next round: cross-pair winners from Court 1 + winners from Court 2
+  //   Court 2 next round: cross-pair winners from Court 3 + winners from Court 4  (if 4-court)
+  //                       OR: cross-pair losers from Court 1 + losers from Court 2
+  //   etc.
+  //
+  //   General rule for N courts:
+  //     Next Court k collects: winner-pair from Court k  +  winner-pair from Court k+1
+  //     (Court k winner pair moves UP to Court k-1, which collects them alongside Court k-1 winners)
+  //
+  //   Specifically:
+  //     Destination court d (1..N) receives:
+  //       - Winners from court d   (stay, direction='stay' for Court 1)
+  //       - Winners from court d+1 (moved up)
+  //     But for bottom court N:
+  //       - Losers from court N (stay)
+  //       - Losers from court N-1 (moved down)
+  //
+  //   For odd-court counts the middle court gets a mix.
+  //
+  //   We pair courts in order: (1,2), (3,4), ... for winner destinations
+  //   and (N-1,N), (N-3,N-2), ... for loser destinations.
+  //   For the middle court in odd-count, winners from middle go up, losers go down,
+  //   and we fill with the remaining pool.
 
-  // 5. Build full available pool and pick new bench
-  const allAvailable = [...Object.values(courtPools).flat(), ...returningBench];
-  // Catch any player not yet in pool (edge case)
-  players.forEach(p => {
-    if (!allAvailable.includes(p.id)) allAvailable.push(p.id);
-  });
+  const destCourts = {};
+  for (let c = 1; c <= numCourts; c++) destCourts[c] = { pair1: null, pair2: null };
+
+  // Winners: group court pairs top-down
+  //   Court 1 destination ← winners of Court 1 + winners of Court 2
+  //   Court 2 destination ← winners of Court 3 + winners of Court 4
+  //   etc.
+  const winnerCourtNums = Object.keys(winnerPairs).map(Number).sort((a, b) => a - b);
+  for (let i = 0; i < winnerCourtNums.length; i += 2) {
+    const destCourt = Math.floor(i / 2) + 1; // destinations: 1, 2, 3...
+    const c1 = winnerCourtNums[i];
+    const c2 = winnerCourtNums[i + 1];
+    if (c2 !== undefined) {
+      destCourts[destCourt].pair1 = winnerPairs[c1];
+      destCourts[destCourt].pair2 = winnerPairs[c2];
+    } else {
+      // Odd court out — put winner pair into this court's pair1, handle below
+      destCourts[destCourt].pair1 = winnerPairs[c1];
+    }
+  }
+
+  // Losers: group court pairs bottom-up
+  //   Bottom court destination ← losers of Court N + losers of Court N-1
+  //   Next-to-bottom destination ← losers of Court N-2 + losers of Court N-3
+  //   etc.
+  const loserCourtNums = Object.keys(loserPairs).map(Number).sort((a, b) => b - a);
+  const winnerDestCount = Math.ceil(winnerCourtNums.length / 2);
+
+  for (let i = 0; i < loserCourtNums.length; i += 2) {
+    const destCourt = numCourts - Math.floor(i / 2); // destinations: N, N-1, N-2...
+    const c1 = loserCourtNums[i];
+    const c2 = loserCourtNums[i + 1];
+    if (c2 !== undefined) {
+      destCourts[destCourt].pair1 = loserPairs[c1];
+      destCourts[destCourt].pair2 = loserPairs[c2];
+    } else {
+      destCourts[destCourt].pair1 = loserPairs[c1];
+    }
+  }
+
+  // 5. Handle the middle court (odd numCourts) or any courts not yet filled
+  //    In this case we have one winner pair and one loser pair on the same court
+  for (let c = 1; c <= numCourts; c++) {
+    const slot = destCourts[c];
+    if (slot.pair1 && !slot.pair2) {
+      // Find an unpaired pair to combine with
+      // Look for courts that have pair2 = null AND pair1 set in the opposite direction
+      // Actually for even courts this shouldn't happen; for odd it's the middle court
+      // Middle court: assign the leftover winner pair + leftover loser pair
+      // (already the case since we filled top-down winners and bottom-up losers)
+      // No action needed — handle in step 6 below
+    }
+  }
+
+  // 6. Build final courts using cross-pair for fully paired courts,
+  //    or bestTeamSplit for courts that only have one pair (middle of odd)
+  //    or any fallback needed.
+  const newCourts = [];
+  const benchedIds = new Set();
+
+  // Collect all active players for overflow handling
+  const allCourtPlayers = new Set();
+  for (let c = 1; c <= numCourts; c++) {
+    const { pair1, pair2 } = destCourts[c];
+    if (pair1) pair1.forEach(id => allCourtPlayers.add(id));
+    if (pair2) pair2.forEach(id => allCourtPlayers.add(id));
+  }
+
+  // Bench returners not yet assigned to a court
+  const returningBench = currentRound.bench.filter(id => !allCourtPlayers.has(id));
+  const allAvailable = [...allCourtPlayers, ...returningBench];
+  players.forEach(p => { if (!allAvailable.includes(p.id)) allAvailable.push(p.id); });
 
   const newBench = pickBench(allAvailable, numBench, newSitOutCounts, currentRound.bench);
-  const activeIds = allAvailable.filter(id => !newBench.includes(id));
+  newBench.forEach(id => benchedIds.add(id));
 
   newBench.forEach(id => {
-    movements.push({
-      playerId: id,
-      fromCourt: null,
-      toCourt: null,
-      direction: 'bench',
-      result: 'bench',
-    });
+    movements.push({ playerId: id, fromCourt: null, toCourt: null, direction: 'bench', result: 'bench' });
   });
 
-  // 6. Assign active players to courts respecting movement pools.
-  //    Each court needs exactly 4. We fill courts top-down from movement pool,
-  //    topping up with bench-returners and overflow from adjacent courts.
-  const finalAssignments = assignToCourts(courtPools, newBench, activeIds, numCourts);
+  // Remove benched players from destCourts
+  for (let c = 1; c <= numCourts; c++) {
+    const slot = destCourts[c];
+    if (slot.pair1) slot.pair1 = slot.pair1.filter(id => !benchedIds.has(id));
+    if (slot.pair2) slot.pair2 = slot.pair2.filter(id => !benchedIds.has(id));
+    // If a pair is now empty, null it
+    if (slot.pair1 && slot.pair1.length === 0) slot.pair1 = null;
+    if (slot.pair2 && slot.pair2.length === 0) slot.pair2 = null;
+  }
 
-  // 7. Build optimal team pairings per court
-  const courts = finalAssignments.map((ids, idx) => {
-    const courtNumber = idx + 1;
-    const [teamA, teamB] = bestTeamSplit(ids, newHistorySet);
-    // Record new pairs in history
-    newHistorySet.add(pairKey(teamA[0], teamA[1]));
-    newHistorySet.add(pairKey(teamB[0], teamB[1]));
-    return { courtNumber, teamA, teamB };
-  });
+  // Build courts
+  const usedInCourt = new Set([...benchedIds]);
+
+  for (let c = 1; c <= numCourts; c++) {
+    const slot = destCourts[c];
+    let pair1 = (slot.pair1 || []).filter(id => !usedInCourt.has(id));
+    let pair2 = (slot.pair2 || []).filter(id => !usedInCourt.has(id));
+
+    // Pad pairs to 2 if needed (e.g. if a benched player was in the pair)
+    const allActive = allAvailable.filter(id => !usedInCourt.has(id) && !benchedIds.has(id));
+    while (pair1.length < 2 && allActive.length > 0) { pair1.push(allActive.shift()); }
+    while (pair2.length < 2 && allActive.length > 0) { pair2.push(allActive.shift()); }
+
+    if (pair1.length === 2 && pair2.length === 2) {
+      // Full cross-pair: enforce split-and-cross
+      const [teamA, teamB] = crossPair(pair1, pair2, newHistorySet);
+      newHistorySet.add(pairKey(teamA[0], teamA[1]));
+      newHistorySet.add(pairKey(teamB[0], teamB[1]));
+      newCourts.push({ courtNumber: c, teamA, teamB });
+      [teamA, teamB].flat().forEach(id => usedInCourt.add(id));
+    } else {
+      // Fallback: gather whatever 4 we can
+      const four = [...new Set([...pair1, ...pair2])].slice(0, 4);
+      if (four.length === 4) {
+        const [teamA, teamB] = bestTeamSplit(four, newHistorySet);
+        newHistorySet.add(pairKey(teamA[0], teamA[1]));
+        newHistorySet.add(pairKey(teamB[0], teamB[1]));
+        newCourts.push({ courtNumber: c, teamA, teamB });
+        four.forEach(id => usedInCourt.add(id));
+      }
+    }
+  }
+
+  // Sort courts by number
+  newCourts.sort((a, b) => a.courtNumber - b.courtNumber);
 
   const nextRound = {
     roundNumber: roundNumber + 1,
-    courts,
+    courts: newCourts,
     bench: newBench,
   };
 
@@ -254,54 +401,6 @@ export function generateNextRound(state, roundNumber, results) {
   };
 
   return { nextRound, updatedState, movements };
-}
-
-/**
- * Assign active players to courts (4 per court), respecting movement pools.
- * Courts with too many players spill overflow to adjacent courts.
- * Courts with too few pull from returning bench players.
- */
-function assignToCourts(courtPools, newBench, activeIds, numCourts) {
-  // Start from movement pools, excluding newly-benched players
-  const pools = {};
-  for (let c = 1; c <= numCourts; c++) {
-    pools[c] = (courtPools[c] || []).filter(id => !newBench.includes(id));
-  }
-
-  // Players not in any pool yet (bench returners not yet assigned)
-  const assigned = new Set(Object.values(pools).flat());
-  const unassigned = activeIds.filter(id => !assigned.has(id));
-
-  // Distribute unassigned to courts with fewest players, starting from lowest courts
-  const courtOrder = Array.from({ length: numCourts }, (_, i) => i + 1).sort(
-    (a, b) => pools[a].length - pools[b].length
-  );
-  let ui = 0;
-  for (const c of courtOrder) {
-    while (pools[c].length < 4 && ui < unassigned.length) {
-      pools[c].push(unassigned[ui++]);
-    }
-  }
-
-  // If still short (shouldn't happen), add remaining unassigned anywhere
-  for (let c = 1; c <= numCourts; c++) {
-    while (pools[c].length < 4 && ui < unassigned.length) {
-      pools[c].push(unassigned[ui++]);
-    }
-  }
-
-  // Handle overflow: courts with >4 players spill to adjacent courts
-  for (let c = 1; c <= numCourts; c++) {
-    while (pools[c].length > 4) {
-      const extra = pools[c].pop();
-      // Try to push to court below (higher number), then above
-      const dest = c < numCourts ? c + 1 : c - 1;
-      if (dest >= 1 && dest <= numCourts) pools[dest].push(extra);
-    }
-  }
-
-  // Return as array indexed by court (0-based → courtNumber = idx+1)
-  return Array.from({ length: numCourts }, (_, i) => pools[i + 1] || []);
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
@@ -330,7 +429,6 @@ export function computeKotcLeaderboard(state) {
       winners.forEach(id => {
         if (scores[id]) {
           scores[id].wins++;
-          // Court 1 wins worth more (King Court bonus)
           scores[id].courtPoints += Math.max(1, state.numCourts + 1 - court.courtNumber);
         }
       });
