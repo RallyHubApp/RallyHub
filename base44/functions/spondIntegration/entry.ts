@@ -73,16 +73,18 @@ Deno.serve(async (req) => {
       `/sponds?groupId=${groupId}&minEndTimestamp=${now}&maxEndTimestamp=${future}&includeComments=false&includeHidden=false&addProfileInfo=true`,
       spondToken
     );
-    const simplified = (Array.isArray(events) ? events : []).map(e => ({
-      id: e.id,
-      heading: e.heading,
-      startTimestamp: e.startTimestamp,
-      endTimestamp: e.endTimestamp,
-      location: e.location?.address || e.location?.feature || '',
-      attendingCount: (e.responses?.acceptedIds || []).length,
-      declinedCount: (e.responses?.declinedIds || []).length,
-      unansweredCount: (e.responses?.unansweredIds || []).length,
-    }));
+    const simplified = (Array.isArray(events) ? events : [])
+      .sort((a, b) => new Date(a.startTimestamp) - new Date(b.startTimestamp))
+      .map(e => ({
+        id: e.id,
+        heading: e.heading,
+        startTimestamp: e.startTimestamp,
+        endTimestamp: e.endTimestamp,
+        location: e.location?.address || e.location?.feature || '',
+        attendingCount: (e.responses?.acceptedIds || []).length,
+        declinedCount: (e.responses?.declinedIds || []).length,
+        unansweredCount: (e.responses?.unansweredIds || []).length,
+      }));
     return Response.json({ events: simplified });
   }
 
