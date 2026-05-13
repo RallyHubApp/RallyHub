@@ -32,6 +32,7 @@ async function spondLogin(username, password) {
 }
 
 Deno.serve(async (req) => {
+  try {
   const base44 = createClientFromRequest(req);
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -67,14 +68,16 @@ Deno.serve(async (req) => {
   // ── Action: get_events ──
   if (action === 'get_events') {
     if (!groupId) return Response.json({ error: 'groupId required' }, { status: 400 });
-    const future = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+    // Fetch from 60 days ago to 180 days ahead — catches recurring events that started in the past
+    const minEnd = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+    const maxEnd = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
     const events = await spondRequest(
-      `/sponds?groupId=${groupId}&maxEndTimestamp=${future}&includeComments=false&includeHidden=false&addProfileInfo=true`,
+      `/sponds?groupId=${groupId}&minEndTimestamp=${minEnd}&maxEndTimestamp=${maxEnd}&includeComments=false&includeHidden=false&addProfileInfo=true`,
       spondToken
     );
     const now = new Date();
     const simplified = (Array.isArray(events) ? events : [])
-      // Include events that are upcoming OR have attendees (covers recurring events where startTimestamp is the original date)
+      // Show upcoming events OR past events that have attendees (recurring events with RSVPs)
       .filter(e => {
         const hasAttendees = (e.responses?.acceptedIds || []).length > 0;
         const isUpcoming = new Date(e.endTimestamp) >= now;
@@ -100,14 +103,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'groupId and eventId required' }, { status: 400 });
     }
 
-    // Fetch the specific event with full member info
-    const event = await spondRequest(`/sponds/${eventId}`, spondToken);
-    const group = await spondRequest(`/groups/${groupId}`, spondToken);
-
-    const acceptedIds = new Set([
-      ...(event.responses?.acceptedIds || []),
-      ...(event.responses?.waitinglistIds || []),
+    // Fetch event and group in parallel
+    const [event, group] = await Promise.all([
+      spondRequest(`/sponds/${eventId}`, spondToken),
+      spondRequest(`/groups/${groupId}`, spondToken),
     ]);
+
+    // Handle both response formats: acceptedIds array OR members array with response field
+    const acceptedIds = new Set();
+    if (event.responses?.acceptedIds?.length) {
+      event.responses.acceptedIds.forEach(id => acceptedIds.add(id));
+    }
+    if (event.responses?.waitinglistIds?.length) {
+      event.responses.waitinglistIds.forEach(id => acceptedIds.add(id));
+    }
+    // Some events use a members array with individual response fields
+    if (event.responses?.members?.length) {
+      event.responses.members
+        .filter(m => m.status === 'accepted' || m.status === 'waitinglist')
+        .forEach(m => acceptedIds.add(m.uid));
+    }
 
     // Build member map from group
     const memberMap = {};
@@ -210,4 +225,8 @@ Deno.serve(async (req) => {
   }
 
   return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
+  } catch (error) {
+    console.error('[ERROR]', error.message);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 });
