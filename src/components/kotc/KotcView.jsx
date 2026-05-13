@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, Download, Link2, UserPlus } from 'lucide-react';
+import { Plus, Users, Download, Link2, UserPlus, FileSpreadsheet } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -9,12 +9,14 @@ import GlassCard from '@/components/shared/GlassCard';
 import KotcSetup from './KotcSetup';
 import KotcRoundView from './KotcRoundView';
 import SpondImportModal from '@/components/spond/SpondImportModal';
+import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
 
 export default function KotcView({ tournament, players, allPlayers, queryClient }) {
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
   const [spondOpen, setSpondOpen] = useState(false);
+  const [xlsxOpen, setXlsxOpen] = useState(false);
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -64,6 +66,9 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
                   <Button variant="outline" size="sm" onClick={() => setSpondOpen(true)}>
                     <Download className="w-3 h-3 mr-1" /> Import Spond
                   </Button>
+                  <Button variant="outline" size="sm" onClick={() => setXlsxOpen(true)}>
+                    <FileSpreadsheet className="w-3 h-3 mr-1" /> Import XLSX
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}>
                     <Plus className="w-3 h-3 mr-1" /> Add Players
                   </Button>
@@ -111,6 +116,18 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
         onOpenChange={setSelfRegisterOpen}
         tournament={tournament}
         onRegistered={() => {
+          queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+          queryClient.invalidateQueries({ queryKey: ['players'] });
+        }}
+      />
+
+      {/* Spond XLSX Import Modal */}
+      <SpondXlsxImportModal
+        open={xlsxOpen}
+        onOpenChange={setXlsxOpen}
+        tournament={tournament}
+        onImported={() => {
+          setXlsxOpen(false);
           queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
           queryClient.invalidateQueries({ queryKey: ['players'] });
         }}

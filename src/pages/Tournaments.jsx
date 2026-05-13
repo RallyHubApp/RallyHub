@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2, Crown } from 'lucide-react';
+import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2, Crown, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import PageHeader from '@/components/shared/PageHeader';
 import EmptyState from '@/components/shared/EmptyState';
 import CreateTournamentModal from '@/components/tournaments/CreateTournamentModal';
 import SpondImportModal from '@/components/spond/SpondImportModal';
+import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,7 @@ const statusColors = {
 export default function Tournaments() {
   const [createOpen, setCreateOpen] = useState(false);
   const [kotcSpondOpen, setKotcSpondOpen] = useState(false);
+  const [kotcXlsxOpen, setKotcXlsxOpen] = useState(false);
   const [newKotcTournament, setNewKotcTournament] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -78,6 +80,18 @@ export default function Tournaments() {
       <PageHeader title="Tournaments" description={`${tournaments.length} tournaments`}>
         <Button variant="outline" className="gap-2 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10" onClick={handleQuickKotc}>
           <Crown className="w-4 h-4" /> King of the Court
+        </Button>
+        <Button variant="outline" className="gap-2 border-primary/40 text-primary hover:bg-primary/10" onClick={async () => {
+          const t = await base44.entities.Tournament.create({
+            name: `King of the Court — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
+            format: 'King of the Court', partnership_type: 'Singles', status: 'Draft',
+            kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11', player_ids: [], partner_pairs: [],
+          });
+          queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+          setNewKotcTournament(t);
+          setKotcXlsxOpen(true);
+        }}>
+          <FileSpreadsheet className="w-4 h-4" /> KOTC from XLSX
         </Button>
         <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setCreateOpen(true)}>
           <Plus className="w-4 h-4" /> Create Tournament
@@ -150,6 +164,15 @@ export default function Tournaments() {
       )}
 
       <CreateTournamentModal open={createOpen} onOpenChange={setCreateOpen} onCreated={() => queryClient.invalidateQueries({ queryKey: ['tournaments'] })} />
+
+      {newKotcTournament && (
+        <SpondXlsxImportModal
+          open={kotcXlsxOpen}
+          onOpenChange={(open) => { setKotcXlsxOpen(open); if (!open) navigate(`/tournaments/${newKotcTournament.id}`); }}
+          tournament={newKotcTournament}
+          onImported={() => { setKotcXlsxOpen(false); navigate(`/tournaments/${newKotcTournament.id}`); }}
+        />
+      )}
 
       {newKotcTournament && (
         <SpondImportModal
