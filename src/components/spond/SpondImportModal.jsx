@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
   LogIn, Users, CalendarDays, ArrowRight, CheckCircle2,
-  UserPlus, RefreshCw, ChevronRight, Loader2, AlertCircle, X
+  UserPlus, RefreshCw, ChevronRight, Loader2, AlertCircle, Eye, EyeOff
 } from 'lucide-react';
 
 const STEPS = ['login', 'select_event', 'preview', 'done'];
@@ -29,6 +29,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   // Login
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [token, setToken] = useState('');
 
   // Groups + events
@@ -46,18 +47,20 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   const handleLogin = async () => {
     setError('');
     setLoading(true);
-    const res = await base44.functions.invoke('spondIntegration', { action: 'login', spondEmail: email, spondPassword: password });
-    setLoading(false);
-    if (res.data?.token) {
-      setToken(res.data.token);
-      // Fetch groups
-      setLoading(true);
-      const gr = await base44.functions.invoke('spondIntegration', { action: 'get_groups', spondToken: res.data.token });
+    try {
+      const res = await base44.functions.invoke('spondIntegration', { action: 'login', spondEmail: email, spondPassword: password });
+      if (res.data?.token) {
+        setToken(res.data.token);
+        const gr = await base44.functions.invoke('spondIntegration', { action: 'get_groups', spondToken: res.data.token });
+        setGroups(gr.data?.groups || []);
+        setStep('select_group');
+      } else {
+        setError(res.data?.error || 'Login failed. Check your credentials.');
+      }
+    } catch (err) {
+      setError(err?.message || 'Login failed. Check your credentials.');
+    } finally {
       setLoading(false);
-      setGroups(gr.data?.groups || []);
-      setStep('select_group');
-    } else {
-      setError(res.data?.error || 'Login failed. Check your credentials.');
     }
   };
 
@@ -65,13 +68,18 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setSelectedGroup(group);
     setLoading(true);
     setError('');
-    const res = await invoke('get_events', { groupId: group.id });
-    setLoading(false);
-    if (res.data?.events) {
-      setEvents(res.data.events);
-      setStep('select_event');
-    } else {
-      setError(res.data?.error || 'Could not load events');
+    try {
+      const res = await invoke('get_events', { groupId: group.id });
+      if (res.data?.events) {
+        setEvents(res.data.events);
+        setStep('select_event');
+      } else {
+        setError(res.data?.error || 'Could not load events');
+      }
+    } catch (err) {
+      setError(err?.message || 'Could not load events');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,32 +87,42 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setSelectedEvent(event);
     setLoading(true);
     setError('');
-    const res = await invoke('get_attendees', { groupId: selectedGroup.id, eventId: event.id });
-    setLoading(false);
-    if (res.data?.attendees) {
-      setAttendees(res.data.attendees);
-      setStep('preview');
-    } else {
-      setError(res.data?.error || 'Could not load attendees');
+    try {
+      const res = await invoke('get_attendees', { groupId: selectedGroup.id, eventId: event.id });
+      if (res.data?.attendees) {
+        setAttendees(res.data.attendees);
+        setStep('preview');
+      } else {
+        setError(res.data?.error || 'Could not load attendees');
+      }
+    } catch (err) {
+      setError(err?.message || 'Could not load attendees');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleImport = async () => {
     setLoading(true);
     setError('');
-    const res = await base44.functions.invoke('spondIntegration', {
-      action: 'import_attendees',
-      spondToken: token,
-      attendees,
-      tournamentId: tournament.id,
-    });
-    setLoading(false);
-    if (res.data?.success) {
-      toast.success(`Imported ${res.data.created} new + ${res.data.matched} matched players!`);
-      onImported(res.data);
-      setStep('done');
-    } else {
-      setError(res.data?.error || 'Import failed');
+    try {
+      const res = await base44.functions.invoke('spondIntegration', {
+        action: 'import_attendees',
+        spondToken: token,
+        attendees,
+        tournamentId: tournament.id,
+      });
+      if (res.data?.success) {
+        toast.success(`Imported ${res.data.created} new + ${res.data.matched} matched players!`);
+        onImported(res.data);
+        setStep('done');
+      } else {
+        setError(res.data?.error || 'Import failed');
+      }
+    } catch (err) {
+      setError(err?.message || 'Import failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -189,14 +207,24 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
               </div>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Spond Password</label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="bg-secondary border-input"
-                  onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                />
+                <div className="relative">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="bg-secondary border-input pr-9"
+                    onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
             <div className="flex justify-end gap-2">
