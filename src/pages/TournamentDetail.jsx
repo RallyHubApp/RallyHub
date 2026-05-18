@@ -243,8 +243,8 @@ export default function TournamentDetail() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const url = `${window.location.origin}/register/${tournament.id}`;
-                    navigator.clipboard.writeText(url).then(() => toast.success('Registration link copied!'));
+                    const url = `${window.location.origin}/t/${tournament.id}`;
+                    navigator.clipboard.writeText(url).then(() => toast.success('Live scoring link copied!'));
                   }}
                 >
                   <Link2 className="w-3 h-3 mr-1" /> Share Link

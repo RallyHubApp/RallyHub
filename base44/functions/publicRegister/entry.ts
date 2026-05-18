@@ -1,10 +1,12 @@
+// publicRegister — handles both public registration AND public tournament management
+// (start round, save results, next round) via service role so no login required
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
 
   const body = await req.json();
-  const { tournamentId, full_name, email, phone, _probe } = body;
+  const { tournamentId, full_name, email, phone, _probe, action, kotc_state, kotc_current_round, status } = body;
 
   if (!tournamentId) {
     return Response.json({ error: 'Missing tournamentId' }, { status: 400 });
@@ -28,7 +30,23 @@ Deno.serve(async (req) => {
 
   // Probe: just return tournament info without registering
   if (_probe) {
-    return Response.json({ success: true, tournament: tournamentInfo });
+    // Also return full KOTC state and players for the public tournament view
+    const playerIds = tournament.player_ids || [];
+    let players = [];
+    if (playerIds.length > 0) {
+      players = await base44.asServiceRole.entities.Player.filter({ id: { $in: playerIds } });
+    }
+    return Response.json({ success: true, tournament, players });
+  }
+
+  // Update KOTC state (save results / advance round)
+  if (action === 'update_kotc') {
+    const updateData = {};
+    if (kotc_state !== undefined) updateData.kotc_state = kotc_state;
+    if (kotc_current_round !== undefined) updateData.kotc_current_round = kotc_current_round;
+    if (status !== undefined) updateData.status = status;
+    await base44.asServiceRole.entities.Tournament.update(tournamentId, updateData);
+    return Response.json({ success: true });
   }
 
   if (!full_name?.trim()) {

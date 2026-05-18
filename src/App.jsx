@@ -18,15 +18,21 @@ import Analytics from '@/pages/Analytics';
 import MyProfile from '@/pages/MyProfile';
 import AdminPanel from '@/pages/AdminPanel';
 import PublicRegister from '@/pages/PublicRegister';
+import PublicTournament from '@/pages/PublicTournament';
 import Landing from '@/pages/Landing';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
   // Allow public registration pages without auth
-  const isPublicRoute = window.location.pathname.startsWith('/register/');
+  const isPublicRoute = window.location.pathname.startsWith('/register/') || window.location.pathname.startsWith('/t/');
   if (isPublicRoute) {
-    return <Routes><Route path="/register/:id" element={<PublicRegister />} /></Routes>;
+    return (
+      <Routes>
+        <Route path="/register/:id" element={<PublicRegister />} />
+        <Route path="/t/:id" element={<PublicTournament />} />
+      </Routes>
+    );
   }
 
   if (isLoadingPublicSettings || isLoadingAuth) {
