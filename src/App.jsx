@@ -28,6 +28,9 @@ const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, isAuthenticated } = useAuth();
   const { granted, grant } = useAccessGate();
 
+  // Check if accessing via app subdomain (bypasses landing page)
+  const isAppSubdomain = window.location.hostname === 'app.rallyhub.ie' || window.location.hostname === 'localhost';
+
   // Public routes that don't require auth or access code
   const isPublicRoute = window.location.pathname.startsWith('/register/') || window.location.pathname.startsWith('/t/') || window.location.pathname === '/first-login';
   if (isPublicRoute) {
@@ -40,9 +43,15 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Landing page - show for unauthenticated users on root path
-  if (window.location.pathname === '/' && !isAuthenticated) {
+  // Landing page - show for unauthenticated users on root path (only on main domain)
+  if (window.location.pathname === '/' && !isAuthenticated && !isAppSubdomain) {
     return <Landing />;
+  }
+
+  // App subdomain - redirect straight to auth if not authenticated
+  if (!isAuthenticated && isAppSubdomain) {
+    window.location.href = '/auth';
+    return null;
   }
 
   if (isLoadingPublicSettings || isLoadingAuth) {
