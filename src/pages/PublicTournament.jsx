@@ -126,7 +126,7 @@ export default function PublicTournament() {
   const [refreshing, setRefreshing] = useState(false);
 
   const callPublicRegister = useCallback(async (payload) => {
-    const res = await fetch(`/api/functions/publicRegister`, {
+    const res = await base44.functions.fetch('/publicRegister', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

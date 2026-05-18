@@ -17,7 +17,7 @@ export default function PublicRegister() {
   const [form, setForm] = useState({ full_name: '', email: '', phone: '' });
 
   const callPublicRegister = async (payload) => {
-    const res = await fetch(`/api/functions/publicRegister`, {
+    const res = await base44.functions.fetch('/publicRegister', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
