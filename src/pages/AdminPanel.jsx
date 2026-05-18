@@ -191,12 +191,22 @@ export default function AdminPanel() {
     if (!setPassUser || !setPassPassword.trim()) return;
     if (setPassPassword.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     setSettingPass(true);
-    const res = await base44.functions.invoke('adminUserTools', { action: 'set_password', userEmail: setPassUser.email, password: setPassPassword });
-    setSettingPass(false);
-    if (res.data?.error) { toast.error(res.data.error); return; }
-    toast.success(`Password set for ${setPassUser.full_name || setPassUser.email}`);
-    setSetPassUser(null);
-    setSetPassPassword('');
+    try {
+      const res = await base44.functions.invoke('adminUserTools', { action: 'set_password', userEmail: setPassUser.email, password: setPassPassword });
+      if (res.data?.error) { 
+        toast.error(res.data.error); 
+        setSettingPass(false);
+        return; 
+      }
+      toast.success(`Password set for ${setPassUser.full_name || setPassUser.email}`);
+      setSetPassUser(null);
+      setSetPassPassword('');
+    } catch (error) {
+      toast.error('Failed to set password. Please try again.');
+      console.error('Error setting password:', error);
+    } finally {
+      setSettingPass(false);
+    }
   };
 
   const filteredUsers = allUsers.filter(u => {
