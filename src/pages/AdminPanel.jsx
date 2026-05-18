@@ -148,7 +148,15 @@ export default function AdminPanel() {
 
   const setUserRole = async (userId, newRole) => {
     setUpdatingRole(userId);
-    await base44.entities.User.update(userId, { role: newRole });
+    const targetUser = allUsers.find(u => u.id === userId);
+    if (!targetUser) { toast.error('User not found'); setUpdatingRole(null); return; }
+    if (newRole === 'admin') {
+      const res = await base44.functions.invoke('adminUserTools', { action: 'promote_to_admin', userEmail: targetUser.email });
+      if (res.data?.error) { toast.error(res.data.error); setUpdatingRole(null); return; }
+    } else {
+      const res = await base44.functions.invoke('adminUserTools', { action: 'demote_to_user', userEmail: targetUser.email });
+      if (res.data?.error) { toast.error(res.data.error); setUpdatingRole(null); return; }
+    }
     queryClient.invalidateQueries({ queryKey: ['all-users'] });
     toast.success(`Role updated to ${newRole}`);
     setUpdatingRole(null);
