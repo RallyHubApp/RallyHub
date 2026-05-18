@@ -68,9 +68,24 @@ const AuthenticatedApp = () => {
     }
   }
 
-  // Check if user needs to enter access code (after auth)
-  if (!granted) {
+  // User is authenticated - check access code but don't show gate UI yet
+  // The granted state will be updated by useAccessGate hook
+  if (!granted && isAuthenticated) {
     return <AccessCodeGate onGranted={grant} />;
+  }
+
+  // If still loading auth or access code validation, show loading
+  if (isAuthenticated && !granted) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+            <span className="text-primary font-bold text-sm">PB</span>
+          </div>
+          <div className="w-8 h-8 border-4 border-secondary border-t-primary rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
   }
 
   // User is authenticated AND has validated access code - show main app
