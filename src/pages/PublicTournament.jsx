@@ -125,14 +125,23 @@ export default function PublicTournament() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  const callPublicRegister = useCallback(async (payload) => {
+    const res = await fetch(`/api/functions/publicRegister`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  }, []);
+
   const fetchTournament = useCallback(async () => {
-    const res = await base44.functions.invoke('publicRegister', { tournamentId, _probe: true });
-    if (res.data?.tournament) {
-      setTournament(res.data.tournament);
-      setPlayers(res.data.players || []);
+    const data = await callPublicRegister({ tournamentId, _probe: true });
+    if (data?.tournament) {
+      setTournament(data.tournament);
+      setPlayers(data.players || []);
     }
     setLoading(false);
-  }, [tournamentId]);
+  }, [tournamentId, callPublicRegister]);
 
   useEffect(() => {
     if (tournamentId) fetchTournament();
@@ -226,7 +235,7 @@ export default function PublicTournament() {
   const saveToServer = async (stateToSave, newRound, isLast) => {
     setSubmitting(true);
     const serialisable = { ...stateToSave, pairingHistory: stateToSave.pairingHistory || [] };
-    await base44.functions.invoke('publicRegister', {
+    await callPublicRegister({
       tournamentId,
       action: 'update_kotc',
       kotc_state: JSON.stringify(serialisable),
@@ -250,7 +259,7 @@ export default function PublicTournament() {
     const newRound1 = generateRound1(freshState, true);
     const newState = { ...freshState, rounds: [newRound1] };
     const serialisable = { ...newState, pairingHistory: newState.pairingHistory || [] };
-    await base44.functions.invoke('publicRegister', {
+    await callPublicRegister({
       tournamentId,
       action: 'update_kotc',
       kotc_state: JSON.stringify(serialisable),

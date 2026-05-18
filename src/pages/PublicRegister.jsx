@@ -16,13 +16,22 @@ export default function PublicRegister() {
   const [playerCount, setPlayerCount] = useState(0);
   const [form, setForm] = useState({ full_name: '', email: '', phone: '' });
 
+  const callPublicRegister = async (payload) => {
+    const res = await fetch(`/api/functions/publicRegister`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  };
+
   useEffect(() => {
     if (!tournamentId) return;
-    base44.functions.invoke('publicRegister', { tournamentId, _probe: true })
-      .then(res => {
-        if (res.data?.tournament) {
-          setTournament(res.data.tournament);
-          setPlayerCount(res.data.tournament.player_count || 0);
+    callPublicRegister({ tournamentId, _probe: true })
+      .then(data => {
+        if (data?.tournament) {
+          setTournament(data.tournament);
+          setPlayerCount(data.tournament.player_count || 0);
         } else {
           setTournament(null);
         }
@@ -36,18 +45,18 @@ export default function PublicRegister() {
   const submit = async () => {
     if (!form.full_name.trim()) { toast.error('Please enter your name'); return; }
     setSubmitting(true);
-    const res = await base44.functions.invoke('publicRegister', {
+    const data = await callPublicRegister({
       tournamentId,
       full_name: form.full_name.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
     });
     setSubmitting(false);
-    if (res.data?.success) {
-      setPlayerCount(res.data.tournament?.player_count || playerCount);
+    if (data?.success) {
+      setPlayerCount(data.tournament?.player_count || playerCount);
       setDone(true);
     } else {
-      toast.error(res.data?.error || 'Registration failed');
+      toast.error(data?.error || 'Registration failed');
     }
   };
 
