@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Users, Clock, ChevronRight, Trophy, RotateCcw, RefreshCw } from 'lucide-react';
+import { Crown, Users, Clock, ChevronRight, Trophy, RotateCcw, RefreshCw, UserMinus, Pencil, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -124,6 +124,8 @@ export default function PublicTournament() {
   const [rotationSummary, setRotationSummary] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [editingPlayers, setEditingPlayers] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
 
   const callPublicRegister = useCallback(async (payload) => {
     const baseUrl = (import.meta.env.VITE_BASE44_APP_BASE_URL || '').replace(/\/$/, '');
@@ -253,6 +255,7 @@ export default function PublicTournament() {
 
   const hasAnyResults = currentRoundNum === 1 && Object.keys(state?.results?.[1] || {}).length === 0 && Object.keys(pendingResults).length === 0;
   const canRefreshPairings = hasAnyResults && currentRoundNum === 1 && !isCompleted;
+  const canEditPlayers = hasAnyResults && currentRoundNum === 1 && !isCompleted;
 
   const handleRefreshPairings = async () => {
     setRefreshing(true);
@@ -270,6 +273,28 @@ export default function PublicTournament() {
     await fetchTournament();
     setRefreshing(false);
     toast.success('Pairings refreshed!');
+  };
+
+  const handleRemovePlayer = async (playerId) => {
+    setRemovingId(playerId);
+    // Remove from tournament player_ids and rebuild round 1
+    const newPlayerIds = (tournament.player_ids || []).filter(id => id !== playerId);
+    const newPlayers = players.filter(p => p.id !== playerId);
+    const enginePlayers = newPlayers.map(p => ({ id: p.id, name: p.full_name, rating: p.skill_rating || 3.0 }));
+    const freshState = createKotcState({ players: enginePlayers, numCourts: state.numCourts });
+    const newRound1 = generateRound1(freshState, true);
+    const newState = { ...freshState, rounds: [newRound1], pairingHistory: [] };
+    await callPublicRegister({
+      tournamentId,
+      action: 'update_kotc',
+      kotc_state: JSON.stringify(newState),
+      kotc_current_round: 1,
+      status: 'In Progress',
+      player_ids: newPlayerIds,
+    });
+    await fetchTournament();
+    setRemovingId(null);
+    toast.success('Player removed and pairings updated');
   };
 
   const handleCompleteRound = () => {
@@ -346,7 +371,12 @@ export default function PublicTournament() {
                 )} />
               ))}
             </div>
-            {canRefreshPairings && (
+            {canEditPlayers && (
+              <Button variant="outline" size="sm" className={cn("text-xs gap-1", editingPlayers && "border-primary text-primary")} onClick={() => setEditingPlayers(e => !e)}>
+                {editingPlayers ? <><X className="w-3.5 h-3.5" /> Done</> : <><Pencil className="w-3.5 h-3.5" /> Edit Players</>}
+              </Button>
+            )}
+            {canRefreshPairings && !editingPlayers && (
               <Button variant="outline" size="sm" className="text-xs gap-1" onClick={handleRefreshPairings} disabled={refreshing}>
                 <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
                 {refreshing ? '…' : 'Reshuffle'}
@@ -357,6 +387,43 @@ export default function PublicTournament() {
             </Button>
           </div>
         </div>
+
+        {/* Edit Players Panel */}
+        {editingPlayers && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+            className="glass rounded-xl p-4 overflow-hidden">
+            <div className="flex items-center gap-2 mb-3">
+              <UserMinus className="w-4 h-4 text-muted-foreground" />
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Remove a Player</h4>
+              <span className="text-[10px] text-muted-foreground ml-auto">Pairings will regenerate</span>
+            </div>
+            <div className="space-y-1 max-h-60 overflow-auto">
+              {players.map(p => (
+                <div key={p.id} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-secondary transition-colors">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                    {(p.full_name || '?')[0]}
+                  </div>
+                  <span className="text-sm text-foreground flex-1 truncate">{p.full_name}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive text-xs gap-1"
+                    disabled={removingId === p.id || players.length <= 4}
+                    onClick={() => handleRemovePlayer(p.id)}
+                  >
+                    {removingId === p.id
+                      ? <div className="w-3 h-3 border-2 border-destructive border-t-transparent rounded-full animate-spin" />
+                      : <UserMinus className="w-3 h-3" />}
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
+            {players.length <= 4 && (
+              <p className="text-[10px] text-muted-foreground text-center mt-2">Need at least 4 players to play</p>
+            )}
+          </motion.div>
+        )}
 
         {/* Timer */}
         <TimerDisplay scoreFormat={scoreFormat} />
