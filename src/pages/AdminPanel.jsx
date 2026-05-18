@@ -26,6 +26,7 @@ export default function AdminPanel() {
   const [assignMatchOpen, setAssignMatchOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState('user');
   const [inviting, setInviting] = useState(false);
 
@@ -131,9 +132,10 @@ export default function AdminPanel() {
   const sendInvite = async () => {
     if (!inviteEmail.trim()) { toast.error('Enter an email'); return; }
     setInviting(true);
-    await base44.users.inviteUser(inviteEmail.trim(), inviteRole);
+    await base44.users.inviteUser(inviteEmail.trim(), inviteRole, { full_name: inviteName.trim() || undefined });
     toast.success(`Invitation sent to ${inviteEmail}`);
     setInviteEmail('');
+    setInviteName('');
     setInviting(false);
   };
 
@@ -435,6 +437,16 @@ export default function AdminPanel() {
                 <UserPlus className="w-4 h-4 text-primary" /> Invite a User
               </h3>
               <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Full Name</label>
+                  <Input
+                    type="text"
+                    placeholder="John Smith"
+                    value={inviteName}
+                    onChange={e => setInviteName(e.target.value)}
+                    className="bg-secondary border-border"
+                  />
+                </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Email Address</label>
                   <Input
