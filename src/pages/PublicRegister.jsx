@@ -18,11 +18,16 @@ export default function PublicRegister() {
 
   useEffect(() => {
     if (!tournamentId) return;
-    base44.entities.Tournament.filter({ id: tournamentId })
-      .then(results => {
-        setTournament(results[0] || null);
-        setPlayerCount(results[0]?.player_ids?.length || 0);
+    base44.functions.invoke('publicRegister', { tournamentId, _probe: true })
+      .then(res => {
+        if (res.data?.tournament) {
+          setTournament(res.data.tournament);
+          setPlayerCount(res.data.tournament.player_count || 0);
+        } else {
+          setTournament(null);
+        }
       })
+      .catch(() => setTournament(null))
       .finally(() => setLoading(false));
   }, [tournamentId]);
 
@@ -31,32 +36,19 @@ export default function PublicRegister() {
   const submit = async () => {
     if (!form.full_name.trim()) { toast.error('Please enter your name'); return; }
     setSubmitting(true);
-
-    let player;
-    if (form.email.trim()) {
-      const existing = await base44.entities.Player.filter({ email: form.email.trim() });
-      player = existing[0];
-    }
-
-    if (!player) {
-      player = await base44.entities.Player.create({
-        full_name: form.full_name.trim(),
-        email: form.email.trim() || undefined,
-        phone: form.phone.trim() || undefined,
-        status: 'Active',
-      });
-    }
-
-    const alreadyIn = tournament.player_ids?.includes(player.id);
-    if (!alreadyIn) {
-      await base44.entities.Tournament.update(tournament.id, {
-        player_ids: [...(tournament.player_ids || []), player.id]
-      });
-      setPlayerCount(c => c + 1);
-    }
-
+    const res = await base44.functions.invoke('publicRegister', {
+      tournamentId,
+      full_name: form.full_name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+    });
     setSubmitting(false);
-    setDone(true);
+    if (res.data?.success) {
+      setPlayerCount(res.data.tournament?.player_count || playerCount);
+      setDone(true);
+    } else {
+      toast.error(res.data?.error || 'Registration failed');
+    }
   };
 
   if (loading) {
@@ -84,10 +76,10 @@ export default function PublicRegister() {
       {/* Brand header */}
       <div className="mb-8 flex items-center gap-2.5">
         <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
-          <span className="text-primary font-black text-base leading-none">DM</span>
+          <span className="text-primary font-black text-base leading-none">RH</span>
         </div>
         <div>
-          <span className="font-black text-lg text-foreground tracking-tight leading-none block">DinkMaster</span>
+          <span className="font-black text-lg text-foreground tracking-tight leading-none block">RallyHub</span>
           <span className="text-[10px] text-primary/70 font-medium tracking-widest uppercase">Pickleball</span>
         </div>
       </div>
