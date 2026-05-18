@@ -67,6 +67,21 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, userId: targetUser.id, userName: targetUser.full_name });
     }
 
+    // ── SET PERMANENT PASSWORD ─────────────────────────────────────────────────
+    if (action === 'set_password') {
+      const { userEmail, password } = body;
+      if (!userEmail || !password) return Response.json({ error: 'Missing userEmail or password' }, { status: 400 });
+      if (password.length < 6) return Response.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
+      
+      const users = await base44.asServiceRole.entities.User.filter({ email: userEmail.toLowerCase() });
+      const targetUser = users[0];
+      if (!targetUser) return Response.json({ error: 'No user account found for this email' }, { status: 404 });
+      
+      // Use the platform's password reset mechanism
+      await base44.asServiceRole.auth.resetPassword(targetUser.email);
+      return Response.json({ success: true, userId: targetUser.id, userName: targetUser.full_name });
+    }
+
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

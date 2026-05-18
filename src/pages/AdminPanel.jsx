@@ -39,6 +39,9 @@ export default function AdminPanel() {
   const [tempPassResult, setTempPassResult] = useState(null);
   const [generatingTemp, setGeneratingTemp] = useState(false);
   const [promotingPlayer, setPromotingPlayer] = useState(null);
+  const [setPassUser, setSetPassUser] = useState(null);
+  const [setPassPassword, setSetPassPassword] = useState('');
+  const [settingPass, setSettingPass] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -183,6 +186,18 @@ export default function AdminPanel() {
     setPromotingPlayer(null);
   };
 
+  const handleSetPassword = async () => {
+    if (!setPassUser || !setPassPassword.trim()) return;
+    if (setPassPassword.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+    setSettingPass(true);
+    const res = await base44.functions.invoke('adminUserTools', { action: 'set_password', userEmail: setPassUser.email, password: setPassPassword });
+    setSettingPass(false);
+    if (res.data?.error) { toast.error(res.data.error); return; }
+    toast.success(`Password set for ${setPassUser.full_name || setPassUser.email}`);
+    setSetPassUser(null);
+    setSetPassPassword('');
+  };
+
   const filteredUsers = allUsers.filter(u => {
     if (!userSearch) return true;
     const q = userSearch.toLowerCase();
@@ -264,6 +279,10 @@ export default function AdminPanel() {
                     <Badge className={u.role === 'admin' ? 'bg-destructive/20 text-destructive text-[10px]' : 'bg-secondary text-muted-foreground text-[10px]'}>
                       {u.role === 'admin' ? <><ShieldCheck className="w-2.5 h-2.5 mr-0.5" />Admin</> : 'User'}
                     </Badge>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                      onClick={() => { setSetPassUser(u); setSetPassPassword(''); }}>
+                      <KeyRound className="w-3 h-3" /> Set Password
+                    </Button>
                     {u.id !== user?.id && (
                       u.role === 'admin' ? (
                         <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
@@ -601,6 +620,40 @@ export default function AdminPanel() {
               <Button variant="outline" onClick={() => setEditingUser(null)}>Cancel</Button>
               <Button onClick={saveUserName} disabled={savingUserName || !editUserName.trim()} className="bg-primary text-primary-foreground">
                 {savingUserName ? 'Saving…' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Set Password Dialog */}
+      <Dialog open={!!setPassUser} onOpenChange={(open) => { if (!open) { setSetPassUser(null); setSetPassPassword(''); } }}>
+        <DialogContent className="sm:max-w-sm bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-primary" /> Set Password
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Set a permanent password for <strong>{setPassUser?.full_name || setPassUser?.email}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs text-muted-foreground">Password</Label>
+              <Input
+                type="password"
+                value={setPassPassword}
+                onChange={e => setSetPassPassword(e.target.value)}
+                placeholder="Enter password…"
+                className="mt-1 bg-secondary border-border"
+                onKeyDown={e => e.key === 'Enter' && handleSetPassword()}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Minimum 6 characters</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setSetPassUser(null); setSetPassPassword(''); }}>Cancel</Button>
+              <Button onClick={handleSetPassword} disabled={settingPass || !setPassPassword.trim()} className="bg-primary text-primary-foreground">
+                {settingPass ? 'Setting…' : 'Set Password'}
               </Button>
             </div>
           </div>
