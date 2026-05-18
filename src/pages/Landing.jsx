@@ -8,8 +8,8 @@ const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c2
 
 export default function Landing() {
   const handleOpenApp = () => {
-    // Redirect to Base44 auth
-    window.location.href = 'https://base44.com/auth';
+    // Redirect to auth page
+    window.location.href = '/auth';
   };
 
   const features = [
