@@ -23,7 +23,7 @@ export default function Landing() {
 
         {/* App name */}
         <h1 className="text-5xl font-black text-foreground tracking-tight mb-2">
-          Dink<span className="text-primary">Master</span>
+          Rally<span className="text-primary">Hub</span>
         </h1>
         <p className="text-muted-foreground text-sm mb-10">
           Pickleball tournament management, simplified.
@@ -38,12 +38,12 @@ export default function Landing() {
             className="w-full bg-primary text-primary-foreground font-semibold h-11 text-base rounded-xl"
             onClick={() => base44.auth.redirectToLogin(window.location.origin + '/')}
           >
-            Continue to DinkMaster
+            Continue to RallyHub
           </Button>
         </div>
 
         <p className="text-xs text-muted-foreground/40 mt-8">
-          © {new Date().getFullYear()} DinkMaster
+          © {new Date().getFullYear()} RallyHub
         </p>
       </motion.div>
     </div>

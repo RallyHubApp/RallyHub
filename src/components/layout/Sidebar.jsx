@@ -46,10 +46,10 @@ export default function Sidebar({ isOpen, onToggle }) {
         <div className="h-16 flex items-center justify-between px-5 border-b border-sidebar-border">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center glow-green-sm border border-primary/30">
-              <span className="text-primary font-black text-base leading-none">DM</span>
+              <span className="text-primary font-black text-base leading-none">RH</span>
             </div>
             <div>
-              <span className="font-black text-base text-foreground tracking-tight leading-none block">DinkMaster</span>
+              <span className="font-black text-base text-foreground tracking-tight leading-none block">RallyHub</span>
               <span className="text-[10px] text-primary/70 font-medium tracking-widest uppercase leading-none">Pickleball</span>
             </div>
           </Link>
@@ -112,7 +112,7 @@ export default function Sidebar({ isOpen, onToggle }) {
 
         <div className="p-4 border-t border-sidebar-border">
           <div className="glass rounded-lg p-3">
-            <p className="text-xs text-muted-foreground truncate">{user?.full_name || user?.email || 'DinkMaster Pro'}</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.full_name || user?.email || 'RallyHub'}</p>
             <p className="text-xs text-primary font-medium mt-0.5">{user?.role === 'admin' ? 'Administrator' : 'Player'}</p>
           </div>
         </div>
