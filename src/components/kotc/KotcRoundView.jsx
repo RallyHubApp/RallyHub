@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Crown, Users, Clock, ChevronRight, Trophy } from 'lucide-react';
-import { generateNextRound, computeKotcLeaderboard } from '@/lib/kingOfCourtEngine';
+import { Crown, Users, Clock, ChevronRight, Trophy, RefreshCw } from 'lucide-react';
+import { generateNextRound, computeKotcLeaderboard, createKotcState, generateRound1 } from '@/lib/kingOfCourtEngine';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import KotcRotationSummary from './KotcRotationSummary';
@@ -130,6 +130,7 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
   // clearedCourts tracks courts whose saved result was explicitly cleared so they can be re-entered
   const [clearedCourts, setClearedCourts] = useState(new Set());
   const [submitting, setSubmitting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   // Rotation summary state: null | { movements, nextRound, nextState, isLast }
   const [rotationSummary, setRotationSummary] = useState(null);
@@ -164,6 +165,21 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
   const allCourtsRecorded = currentRound.courts.every(c => roundResults[c.courtNumber]);
   const isLastRound = currentRoundNum >= maxRounds;
   const isCompleted = tournament.status === 'Completed';
+  const canRefreshPairings = currentRoundNum === 1 && Object.keys(savedResults).length === 0 && Object.keys(pendingResults).length === 0;
+
+  const handleRefreshPairings = async () => {
+    setRefreshing(true);
+    const enginePlayers = players.map(p => ({ id: p.id, name: p.full_name, rating: p.skill_rating || 3.0 }));
+    const freshState = createKotcState({ players: enginePlayers, numCourts: currentRound.courts.length });
+    const newRound1 = generateRound1(freshState);
+    const newState = { ...state, rounds: [newRound1], pairingHistory: [] };
+    await base44.entities.Tournament.update(tournament.id, {
+      kotc_state: JSON.stringify(newState),
+    });
+    toast.success('Round 1 pairings refreshed!');
+    setRefreshing(false);
+    queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+  };
 
   const handleResult = (courtNumber, winner) => {
     setPendingResults(prev => ({ ...prev, [courtNumber]: winner }));
@@ -280,6 +296,12 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
               )} />
             ))}
           </div>
+          {canRefreshPairings && (
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 border-border" onClick={handleRefreshPairings} disabled={refreshing}>
+              <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+              {refreshing ? 'Refreshing…' : 'Refresh Pairings'}
+            </Button>
+          )}
           <Button variant="ghost" size="sm" className="text-xs gap-1.5" onClick={() => setShowLeaderboard(s => !s)}>
             <Trophy className="w-3.5 h-3.5" /> {showLeaderboard ? 'Hide' : 'Standings'}
           </Button>
