@@ -164,12 +164,10 @@ export default function AdminPanel() {
 
   const promotePlayerToAdmin = async (player) => {
     setPromotingPlayer(player.id);
-    // Find linked user by email
     const linkedEmail = player.linked_user_email || player.email;
     if (!linkedEmail) { toast.error('Player has no linked email'); setPromotingPlayer(null); return; }
-    const userMatch = allUsers.find(u => u.email?.toLowerCase() === linkedEmail.toLowerCase());
-    if (!userMatch) { toast.error('No user account found for this player'); setPromotingPlayer(null); return; }
-    await base44.entities.User.update(userMatch.id, { role: 'admin' });
+    const res = await base44.functions.invoke('adminUserTools', { action: 'promote_to_admin', userEmail: linkedEmail });
+    if (res.data?.error) { toast.error(res.data.error); setPromotingPlayer(null); return; }
     queryClient.invalidateQueries({ queryKey: ['all-users'] });
     toast.success(`${player.full_name} promoted to Admin`);
     setPromotingPlayer(null);
@@ -528,6 +526,30 @@ export default function AdminPanel() {
               </Select>
             </div>
           </div>
+          {(editingPlayer?.user_id || editingPlayer?.linked_user_email) && (
+            <div className="mt-2 p-3 rounded-lg bg-secondary flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+                <div>
+                  <p className="text-xs font-medium text-foreground">Admin Access</p>
+                  <p className="text-[10px] text-muted-foreground">Grant this player full admin access</p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="shrink-0 h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                disabled={promotingPlayer === editingPlayer?.id}
+                onClick={async () => {
+                  await promotePlayerToAdmin(editingPlayer);
+                  setEditingPlayer(null);
+                }}
+              >
+                {promotingPlayer === editingPlayer?.id
+                  ? <div className="w-3 h-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                  : <><ShieldCheck className="w-3 h-3 mr-1" /> Grant Admin</>}
+              </Button>
+            </div>
+          )}
           <div className="flex justify-end gap-2 mt-2">
             <Button variant="outline" onClick={() => setEditingPlayer(null)}>Cancel</Button>
             <Button onClick={saveEdit} disabled={saving} className="bg-primary text-primary-foreground">

@@ -45,6 +45,17 @@ Deno.serve(async (req) => {
       return Response.json({ success: true });
     }
 
+    // ── PROMOTE TO ADMIN ───────────────────────────────────────────────────────
+    if (action === 'promote_to_admin') {
+      const { userEmail } = body;
+      if (!userEmail) return Response.json({ error: 'Missing userEmail' }, { status: 400 });
+      const users = await base44.asServiceRole.entities.User.filter({ email: userEmail.toLowerCase() });
+      const targetUser = users[0];
+      if (!targetUser) return Response.json({ error: 'No user account found for this email' }, { status: 404 });
+      await base44.asServiceRole.entities.User.update(targetUser.id, { role: 'admin' });
+      return Response.json({ success: true, userId: targetUser.id, userName: targetUser.full_name });
+    }
+
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
