@@ -2,11 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Users, Clock, ChevronRight, Trophy, RotateCcw } from 'lucide-react';
+import { Crown, Users, Clock, ChevronRight, Trophy, RotateCcw, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { generateNextRound, computeKotcLeaderboard } from '@/lib/kingOfCourtEngine';
+import { generateNextRound, generateRound1, createKotcState, computeKotcLeaderboard } from '@/lib/kingOfCourtEngine';
 import KotcRotationSummary from '@/components/kotc/KotcRotationSummary';
 
 // ─── Timer ────────────────────────────────────────────────────────────────────
@@ -123,6 +123,7 @@ export default function PublicTournament() {
   const [submitting, setSubmitting] = useState(false);
   const [rotationSummary, setRotationSummary] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchTournament = useCallback(async () => {
     const res = await base44.functions.invoke('publicRegister', { tournamentId, _probe: true });
@@ -240,6 +241,27 @@ export default function PublicTournament() {
     setClearedCourts(new Set());
   };
 
+  const hasAnyResults = currentRoundNum === 1 && Object.keys(state?.results?.[1] || {}).length === 0 && Object.keys(pendingResults).length === 0;
+  const canRefreshPairings = hasAnyResults && currentRoundNum === 1 && !isCompleted;
+
+  const handleRefreshPairings = async () => {
+    setRefreshing(true);
+    const freshState = createKotcState({ players: state.players, numCourts: state.numCourts });
+    const newRound1 = generateRound1(freshState, true);
+    const newState = { ...freshState, rounds: [newRound1] };
+    const serialisable = { ...newState, pairingHistory: newState.pairingHistory || [] };
+    await base44.functions.invoke('publicRegister', {
+      tournamentId,
+      action: 'update_kotc',
+      kotc_state: JSON.stringify(serialisable),
+      kotc_current_round: 1,
+      status: 'In Progress',
+    });
+    await fetchTournament();
+    setRefreshing(false);
+    toast.success('Pairings refreshed!');
+  };
+
   const handleCompleteRound = () => {
     if (!allCourtsRecorded) { toast.error('Enter results for all courts first.'); return; }
     const mergedResults = { ...state.results, [currentRoundNum]: roundResults };
@@ -314,6 +336,12 @@ export default function PublicTournament() {
                 )} />
               ))}
             </div>
+            {canRefreshPairings && (
+              <Button variant="outline" size="sm" className="text-xs gap-1" onClick={handleRefreshPairings} disabled={refreshing}>
+                <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
+                {refreshing ? '…' : 'Reshuffle'}
+              </Button>
+            )}
             <Button variant="ghost" size="sm" className="text-xs gap-1" onClick={() => setShowLeaderboard(s => !s)}>
               <Trophy className="w-3.5 h-3.5" /> {showLeaderboard ? 'Hide' : 'Standings'}
             </Button>
