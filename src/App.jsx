@@ -45,6 +45,12 @@ const AuthenticatedApp = () => {
     return <Landing />;
   }
 
+  // Redirect /login to auth
+  if (window.location.pathname === '/login') {
+    window.location.href = '/auth';
+    return null;
+  }
+
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background">
