@@ -25,7 +25,7 @@ import FirstLogin from '@/pages/FirstLogin';
 import AccessCodeGate, { useAccessGate } from '@/components/AccessCodeGate';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, isAuthenticated } = useAuth();
   const { granted, grant } = useAccessGate();
 
   // Public routes that don't require auth or access code
@@ -40,14 +40,9 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Landing page route - always accessible
-  if (window.location.pathname === '/landing') {
+  // Landing page - show for unauthenticated users on root path
+  if (window.location.pathname === '/' && !isAuthenticated) {
     return <Landing />;
-  }
-
-  // Auth page route - accessible without access code
-  if (window.location.pathname === '/auth') {
-    return <AuthPage />;
   }
 
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -104,13 +99,11 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <Routes>
-            {/* Default landing page - public marketing page (no auth required) */}
-            <Route path="/" element={<Landing />} />
             {/* Auth page - login/signup */}
             <Route path="/auth" element={<AuthPage />} />
-            {/* Landing page also available at /landing */}
+            {/* Landing page - public marketing page */}
             <Route path="/landing" element={<Landing />} />
-            {/* Other routes handled by AuthenticatedApp */}
+            {/* All other routes (including /) handled by AuthenticatedApp */}
             <Route path="*" element={<AuthenticatedApp />} />
           </Routes>
         </Router>

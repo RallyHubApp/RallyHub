@@ -25,7 +25,7 @@ export default function AuthPage() {
   const [signupPhone, setSignupPhone] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
 
-  // Check if already authenticated and has access code validated - redirect to main app
+  // Check if already authenticated - redirect appropriately
   useEffect(() => {
     const checkAuth = async () => {
       const isAuthenticated = await base44.auth.isAuthenticated();
@@ -36,11 +36,13 @@ export default function AuthPage() {
           if (response.data.validated) {
             // User has validated access code, redirect to dashboard
             window.location.href = '/';
+            return;
           }
         } catch (error) {
-          // Access code not validated yet - stay on auth page
-          // User will need to go through access code gate
+          // Access code not validated - redirect to access code gate (handled by AuthenticatedApp)
         }
+        // If authenticated but no valid access code, redirect to home which will show access code gate
+        window.location.href = '/';
       }
     };
     checkAuth();
