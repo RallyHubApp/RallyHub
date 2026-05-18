@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -115,12 +114,13 @@ export default function AuthPage() {
         <div className="glass rounded-2xl p-8 glow-green-sm">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center mb-4">
+            <div className="flex items-center justify-center gap-2 mb-4">
               <img 
                 src={LOGO_URL} 
                 alt="RallyHub" 
-                className="h-12 w-12"
+                className="h-10 w-10 rounded-none"
               />
+              <h1 className="text-2xl font-black text-foreground tracking-tight">RallyHub</h1>
             </div>
             <p className="text-muted-foreground">
               Sign in to access your games

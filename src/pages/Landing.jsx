@@ -57,12 +57,13 @@ export default function Landing() {
             transition={{ duration: 0.6 }}
             className="text-center max-w-4xl mx-auto"
           >
-            <div className="flex items-center justify-center mb-6">
+            <div className="flex items-center justify-center gap-3 mb-6">
               <img 
                 src={LOGO_URL} 
                 alt="RallyHub" 
-                className="h-16 w-16 sm:h-20 sm:w-20"
+                className="h-16 w-16 sm:h-20 sm:w-20 rounded-none"
               />
+              <h1 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight">RallyHub</h1>
             </div>
             
             <p className="text-xl sm:text-2xl text-muted-foreground mb-8 leading-relaxed">
@@ -161,7 +162,7 @@ export default function Landing() {
                 <img 
                   src={LOGO_URL} 
                   alt="RallyHub" 
-                  className="h-32 w-32"
+                  className="h-32 w-32 rounded-none"
                 />
               </div>
             </div>

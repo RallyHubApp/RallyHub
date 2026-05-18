@@ -50,7 +50,7 @@ export default function Sidebar({ isOpen, onToggle }) {
             <img 
               src={LOGO_URL} 
               alt="RallyHub" 
-              className="h-9 w-9"
+              className="h-9 w-9 rounded-none"
             />
             <span className="font-black text-base text-foreground tracking-tight">RallyHub</span>
           </Link>
