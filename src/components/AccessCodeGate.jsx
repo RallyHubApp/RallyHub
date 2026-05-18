@@ -1,18 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Lock, Eye, EyeOff } from 'lucide-react';
-
-const ACCESS_CODE = 'CLAREPBRH';
-const STORAGE_KEY = 'rallyhub_access_granted';
+import { Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export function useAccessGate() {
-  const [granted, setGranted] = React.useState(() => {
-    return localStorage.getItem(STORAGE_KEY) === '1';
-  });
+  const [granted, setGranted] = React.useState(false);
+
+  useEffect(() => {
+    // Check if user has already validated access code on server
+    const checkValidation = async () => {
+      try {
+        const isAuthenticated = await base44.auth.isAuthenticated();
+        if (isAuthenticated) {
+          const response = await base44.functions.invoke('validateAccessCode', { action: 'check_validation' });
+          if (response.data.validated) {
+            setGranted(true);
+          }
+        }
+      } catch (error) {
+        // User not authenticated yet or error - show gate
+      }
+    };
+    checkValidation();
+  }, []);
 
   const grant = () => {
-    localStorage.setItem(STORAGE_KEY, '1');
     setGranted(true);
   };
 
@@ -23,14 +36,25 @@ export default function AccessCodeGate({ onGranted }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState(false);
   const [showCode, setShowCode] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (code.trim().toUpperCase() === ACCESS_CODE) {
-      onGranted();
-    } else {
+    setLoading(true);
+    try {
+      const response = await base44.functions.invoke('validateAccessCode', {
+        action: 'validate_and_store',
+        code: code.trim()
+      });
+      
+      if (response.data.success) {
+        onGranted();
+      }
+    } catch (error) {
       setError(true);
       setCode('');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,8 +88,8 @@ export default function AccessCodeGate({ onGranted }) {
             </button>
           </div>
           {error && <p className="text-xs text-destructive text-center">Incorrect access code</p>}
-          <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={!code.trim()}>
-            Enter
+          <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={!code.trim() || loading}>
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enter'}
           </Button>
         </form>
       </div>

@@ -13,6 +13,15 @@
     "display_name": {
       "type": "string",
       "description": "Custom display name set by admin (overrides the auto-generated name from email)"
+    },
+    "access_code_validated": {
+      "type": "boolean",
+      "description": "Whether the user has validated the access code",
+      "default": false
+    },
+    "access_code_validated_date": {
+      "type": "string",
+      "description": "ISO date when access code was validated"
     }
   },
   "required": [

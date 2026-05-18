@@ -9,12 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, KeyRound, Copy, RefreshCw } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, KeyRound, Copy, RefreshCw, Key } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
 import { useAuth } from '@/lib/AuthContext';
+import AccessCodeValidationTab from '@/components/admin/AccessCodeValidationTab';
 
 export default function AdminPanel() {
   const { user } = useAuth();
@@ -238,6 +239,7 @@ export default function AdminPanel() {
           <TabsTrigger value="matches" className="text-xs gap-1.5"><Swords className="w-3.5 h-3.5" /> Matches</TabsTrigger>
           <TabsTrigger value="linking" className="text-xs gap-1.5"><Link2 className="w-3.5 h-3.5" /> Account Links</TabsTrigger>
           <TabsTrigger value="invitations" className="text-xs gap-1.5"><Mail className="w-3.5 h-3.5" /> Invite Users</TabsTrigger>
+          <TabsTrigger value="access" className="text-xs gap-1.5"><Key className="w-3.5 h-3.5" /> Access Codes</TabsTrigger>
         </TabsList>
 
         {/* ── USERS & ROLES TAB ── */}
@@ -521,6 +523,10 @@ export default function AdminPanel() {
           </div>
         </TabsContent>
 
+        {/* ── ACCESS CODES TAB ── */}
+        <TabsContent value="access" className="mt-4">
+          <AccessCodeValidationTab />
+        </TabsContent>
       </Tabs>
 
       {/* Edit Player Dialog */}
