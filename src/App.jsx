@@ -20,6 +20,7 @@ import AdminPanel from '@/pages/AdminPanel';
 import PublicRegister from '@/pages/PublicRegister';
 import PublicTournament from '@/pages/PublicTournament';
 import Landing from '@/pages/Landing';
+import AuthPage from '@/pages/AuthPage';
 import FirstLogin from '@/pages/FirstLogin';
 import AccessCodeGate, { useAccessGate } from '@/components/AccessCodeGate';
 
@@ -28,10 +29,11 @@ const AuthenticatedApp = () => {
   const { granted, grant } = useAccessGate();
 
   // Allow public registration pages without auth
-  const isPublicRoute = window.location.pathname.startsWith('/register/') || window.location.pathname.startsWith('/t/') || window.location.pathname === '/first-login';
+  const isPublicRoute = window.location.pathname.startsWith('/register/') || window.location.pathname.startsWith('/t/') || window.location.pathname === '/first-login' || window.location.pathname === '/auth';
   if (isPublicRoute) {
     return (
       <Routes>
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="/register/:id" element={<PublicRegister />} />
         <Route path="/t/:id" element={<PublicTournament />} />
         <Route path="/first-login" element={<FirstLogin />} />
@@ -56,7 +58,7 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      return <Landing />;
+      return <AuthPage />;
     }
   }
 
