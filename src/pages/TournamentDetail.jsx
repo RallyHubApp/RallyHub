@@ -49,8 +49,15 @@ export default function TournamentDetail() {
   const [linkCopied, setLinkCopied] = useState(false);
 
   const handleShareLink = () => {
-    const publicUrl = `https://${window.location.hostname.replace(/^[^.]+\./, '')}/t/${tournament?.id}`;
-    const url = publicUrl.includes('localhost') ? `${window.location.origin}/t/${tournament?.id}` : publicUrl;
+    const hostname = window.location.hostname;
+    let url;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      url = `${window.location.origin}/t/${tournament?.id}`;
+    } else {
+      // Strip any preview/sandbox prefix: "preview-sandbox--<appid>.base44.app" → "<appid>.base44.app"
+      const cleanHost = hostname.replace(/^[^-]+-[^-]+--/, '');
+      url = `https://${cleanHost}/t/${tournament?.id}`;
+    }
     navigator.clipboard.writeText(url).then(() => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
