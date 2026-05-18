@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { appParams } from '@/lib/app-params';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Users, Clock, ChevronRight, Trophy, RotateCcw, RefreshCw } from 'lucide-react';
@@ -127,7 +126,7 @@ export default function PublicTournament() {
   const [refreshing, setRefreshing] = useState(false);
 
   const callPublicRegister = useCallback(async (payload) => {
-    const baseUrl = (appParams.appBaseUrl || window.location.origin).replace(/\/$/, '');
+    const baseUrl = (import.meta.env.VITE_BASE44_APP_BASE_URL || '').replace(/\/$/, '');
     const res = await fetch(`${baseUrl}/api/functions/publicRegister`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
