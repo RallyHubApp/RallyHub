@@ -118,13 +118,38 @@ export default function MyProfile() {
     if (!form.dupr_id) { toast.error('Enter your DUPR ID first'); return; }
     if (!linkedPlayer) { toast.error('Save your profile first'); return; }
     setSyncingDupr(true);
-    // Save the DUPR ID without overriding the manually entered rating
-    await base44.entities.Player.update(linkedPlayer.id, {
-      dupr_id: form.dupr_id,
-      dupr_last_synced: new Date().toISOString().split('T')[0]
-    });
-    queryClient.invalidateQueries({ queryKey: ['my-player'] });
-    toast.success('DUPR ID saved. Manual rating preserved.');
+    try {
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `Look up the DUPR pickleball rating for player with DUPR ID: ${form.dupr_id}. 
+Go to https://mydupr.com or the DUPR API to find their current rating. 
+Return ONLY the numeric rating value (e.g. 4.123). If you cannot find a rating for this ID, return null.`,
+        add_context_from_internet: true,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            rating: { type: 'number' },
+            found: { type: 'boolean' }
+          }
+        }
+      });
+      const { rating, found } = res;
+      const updateData = {
+        dupr_id: form.dupr_id,
+        dupr_last_synced: new Date().toISOString().split('T')[0]
+      };
+      if (found && rating) {
+        updateData.dupr_rating = rating;
+        await base44.entities.Player.update(linkedPlayer.id, updateData);
+        queryClient.invalidateQueries({ queryKey: ['my-player'] });
+        toast.success(`DUPR rating updated to ${rating.toFixed(3)}`);
+      } else {
+        await base44.entities.Player.update(linkedPlayer.id, updateData);
+        queryClient.invalidateQueries({ queryKey: ['my-player'] });
+        toast.warning('Could not find a rating for this DUPR ID. ID saved.');
+      }
+    } catch (e) {
+      toast.error('Sync failed. Please try again.');
+    }
     setSyncingDupr(false);
   };
 
