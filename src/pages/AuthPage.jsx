@@ -23,12 +23,22 @@ export default function AuthPage() {
   const [signupPhone, setSignupPhone] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
 
-  // Check if already authenticated - redirect to main app
+  // Check if already authenticated and has access code validated - redirect to main app
   useEffect(() => {
     const checkAuth = async () => {
       const isAuthenticated = await base44.auth.isAuthenticated();
       if (isAuthenticated) {
-        window.location.href = '/';
+        // Check if access code is already validated
+        try {
+          const response = await base44.functions.invoke('validateAccessCode', { action: 'check_validation' });
+          if (response.data.validated) {
+            // User has validated access code, redirect to dashboard
+            window.location.href = '/';
+          }
+        } catch (error) {
+          // Access code not validated yet - stay on auth page
+          // User will need to go through access code gate
+        }
       }
     };
     checkAuth();
@@ -44,8 +54,9 @@ export default function AuthPage() {
     setLoading(true);
     try {
       // Use Base44's authentication - this will redirect to platform auth
-      // After successful login, user will be redirected back and then need to enter access code
-      base44.auth.redirectToLogin();
+      // After successful login, user will be redirected back to /auth
+      // Then the app will detect auth and show access code gate
+      base44.auth.redirectToLogin('/auth');
     } catch (error) {
       toast.error('Login failed. Please try again.');
       setLoading(false);

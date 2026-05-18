@@ -28,17 +28,26 @@ const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const { granted, grant } = useAccessGate();
 
-  // Allow public registration pages without auth
-  const isPublicRoute = window.location.pathname.startsWith('/register/') || window.location.pathname.startsWith('/t/') || window.location.pathname === '/first-login' || window.location.pathname === '/auth';
+  // Public routes that don't require auth or access code
+  const isPublicRoute = window.location.pathname.startsWith('/register/') || window.location.pathname.startsWith('/t/') || window.location.pathname === '/first-login';
   if (isPublicRoute) {
     return (
       <Routes>
-        <Route path="/auth" element={<AuthPage />} />
         <Route path="/register/:id" element={<PublicRegister />} />
         <Route path="/t/:id" element={<PublicTournament />} />
         <Route path="/first-login" element={<FirstLogin />} />
       </Routes>
     );
+  }
+
+  // Landing page route - always accessible
+  if (window.location.pathname === '/landing') {
+    return <Landing />;
+  }
+
+  // Auth page route - accessible without access code
+  if (window.location.pathname === '/auth') {
+    return <AuthPage />;
   }
 
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -58,14 +67,18 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      return <AuthPage />;
+      // Redirect to auth page for login
+      window.location.href = '/auth';
+      return null;
     }
   }
 
+  // Check if user needs to enter access code (after auth)
   if (!granted) {
     return <AccessCodeGate onGranted={grant} />;
   }
 
+  // User is authenticated AND has validated access code - show main app
   return (
     <Routes>
       <Route element={<AppLayout />}>
@@ -90,7 +103,12 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <AuthenticatedApp />
+          <Routes>
+            {/* Default landing page - public */}
+            <Route path="/" element={<Landing />} />
+            {/* Auth and other public routes handled by AuthenticatedApp */}
+            <Route path="*" element={<AuthenticatedApp />} />
+          </Routes>
         </Router>
         <Toaster />
       </QueryClientProvider>

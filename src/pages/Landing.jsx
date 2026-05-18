@@ -6,6 +6,7 @@ import { Calendar, Users, MapPin, Trophy, ArrowRight, CheckCircle2 } from 'lucid
 
 export default function Landing() {
   const handleOpenApp = () => {
+    // Navigate to auth page
     window.location.href = '/auth';
   };
 
