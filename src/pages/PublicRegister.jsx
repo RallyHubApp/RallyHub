@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { appParams } from '@/lib/app-params';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CheckCircle2, UserPlus, Trophy, Users, Calendar, MapPin } from 'lucide-react';
@@ -17,7 +18,8 @@ export default function PublicRegister() {
   const [form, setForm] = useState({ full_name: '', email: '', phone: '' });
 
   const callPublicRegister = async (payload) => {
-    const res = await base44.functions.fetch('/publicRegister', {
+    const baseUrl = (appParams.appBaseUrl || window.location.origin).replace(/\/$/, '');
+    const res = await fetch(`${baseUrl}/api/functions/publicRegister`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
