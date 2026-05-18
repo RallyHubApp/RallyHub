@@ -104,9 +104,12 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <Routes>
-            {/* Default landing page - public */}
-            <Route path="/" element={<Landing />} />
+            {/* Default to auth page - public */}
+            <Route path="/" element={<AuthPage />} />
+            {/* Landing page available at /landing */}
+            <Route path="/landing" element={<Landing />} />
             {/* Auth and other public routes handled by AuthenticatedApp */}
+            <Route path="/auth" element={<AuthPage />} />
             <Route path="*" element={<AuthenticatedApp />} />
           </Routes>
         </Router>
