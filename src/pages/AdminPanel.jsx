@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, KeyRound, Copy, RefreshCw, Key } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, KeyRound, Copy, RefreshCw, Key, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/shared/PageHeader';
@@ -43,6 +43,8 @@ export default function AdminPanel() {
   const [setPassUser, setSetPassUser] = useState(null);
   const [setPassPassword, setSetPassPassword] = useState('');
   const [settingPass, setSettingPass] = useState(false);
+  const [resetEmailUser, setResetEmailUser] = useState(null);
+  const [sendingReset, setSendingReset] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -209,6 +211,19 @@ export default function AdminPanel() {
     }
   };
 
+  const sendPasswordReset = async (user) => {
+    setSendingReset(true);
+    try {
+      await base44.auth.adminSendPasswordReset(user.email);
+      toast.success(`Password reset email sent to ${user.email}`);
+    } catch (error) {
+      toast.error('Failed to send reset email. Please try again.');
+      console.error('Error sending reset:', error);
+    } finally {
+      setSendingReset(false);
+    }
+  };
+
   const filteredUsers = allUsers.filter(u => {
     if (!userSearch) return true;
     const q = userSearch.toLowerCase();
@@ -294,6 +309,10 @@ export default function AdminPanel() {
                     <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
                       onClick={() => { setSetPassUser(u); setSetPassPassword(''); }}>
                       <KeyRound className="w-3 h-3" /> Set Password
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                      onClick={() => sendPasswordReset(u)}>
+                      <Send className="w-3 h-3" /> {sendingReset && resetEmailUser?.email === u.email ? 'Sending…' : 'Reset Email'}
                     </Button>
                     {u.id !== user?.id && (
                       u.role === 'admin' ? (
