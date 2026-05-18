@@ -56,22 +56,12 @@ export default function AuthPage() {
     
     setLoading(true);
     try {
-      await base44.auth.login(loginEmail.trim(), loginPassword);
-      
-      // Wait a moment for auth to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const isAuthenticated = await base44.auth.isAuthenticated();
-      if (isAuthenticated) {
-        toast.success('Welcome back to RallyHub!');
-        window.location.href = '/';
-      } else {
-        toast.error('Login failed. Please check your credentials.');
-        setLoading(false);
-      }
+      // Redirect to Base44's authentication page
+      // Base44 will handle the login and redirect back
+      base44.auth.redirectToLogin();
     } catch (error) {
       console.error('Login error:', error);
-      toast.error(error.message || 'Login failed. Please try again.');
+      toast.error('Login failed. Please try again.');
       setLoading(false);
     }
   };
@@ -95,25 +85,12 @@ export default function AuthPage() {
     
     setLoading(true);
     try {
-      // Create user account via Base44 auth
-      await base44.auth.signup(signupEmail.trim(), signupPassword, {
-        full_name: signupName.trim(),
-        phone: signupPhone.trim() || undefined
-      });
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const isAuthenticated = await base44.auth.isAuthenticated();
-      if (isAuthenticated) {
-        toast.success('Welcome to RallyHub! Your account has been created.');
-        window.location.href = '/';
-      } else {
-        toast.error('Signup failed. Please try again.');
-        setLoading(false);
-      }
+      // Redirect to Base44's authentication page for signup
+      // Base44 will handle the registration and redirect back
+      base44.auth.redirectToLogin();
     } catch (error) {
       console.error('Signup error:', error);
-      toast.error(error.message || 'Signup failed. Please try again.');
+      toast.error('Signup failed. Please try again.');
       setLoading(false);
     }
   };
