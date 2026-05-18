@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Lock } from 'lucide-react';
+import { Lock, Eye, EyeOff } from 'lucide-react';
 
 const ACCESS_CODE = 'CLAREPBRH';
 const STORAGE_KEY = 'rallyhub_access_granted';
@@ -22,6 +22,7 @@ export function useAccessGate() {
 export default function AccessCodeGate({ onGranted }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState(false);
+  const [showCode, setShowCode] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -45,14 +46,23 @@ export default function AccessCodeGate({ onGranted }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <Input
-            autoFocus
-            type="text"
-            placeholder="Access code"
-            value={code}
-            onChange={e => { setCode(e.target.value); setError(false); }}
-            className={`bg-secondary border-border text-center font-mono tracking-widest uppercase text-lg ${error ? 'border-destructive' : ''}`}
-          />
+          <div className="relative">
+            <Input
+              autoFocus
+              type={showCode ? 'text' : 'password'}
+              placeholder="Access code"
+              value={code}
+              onChange={e => { setCode(e.target.value); setError(false); }}
+              className={`bg-secondary border-border text-center font-mono tracking-widest uppercase text-lg pr-10 ${error ? 'border-destructive' : ''}`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowCode(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showCode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
           {error && <p className="text-xs text-destructive text-center">Incorrect access code</p>}
           <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={!code.trim()}>
             Enter
