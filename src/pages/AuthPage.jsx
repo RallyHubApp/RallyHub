@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Phone, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+
+const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/41879c2e3_64c120488_logo.png';
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState('login');
@@ -112,14 +115,15 @@ export default function AuthPage() {
         <div className="glass rounded-2xl p-8 glow-green-sm">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-                <span className="text-primary font-bold text-lg">RH</span>
-              </div>
-              <h1 className="text-2xl font-bold text-foreground">RallyHub.ie</h1>
+            <div className="flex items-center justify-center mb-4">
+              <img 
+                src={LOGO_URL} 
+                alt="RallyHub" 
+                className="h-12 w-12"
+              />
             </div>
             <p className="text-muted-foreground">
-              Your pickleball event coordination platform
+              Sign in to access your games
             </p>
           </div>
 

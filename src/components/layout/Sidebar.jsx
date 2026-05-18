@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
 
+const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/41879c2e3_64c120488_logo.png';
+
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/players', label: 'Players', icon: Users },
@@ -45,13 +47,12 @@ export default function Sidebar({ isOpen, onToggle }) {
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-sidebar-border">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center glow-green-sm border border-primary/30">
-              <span className="text-primary font-black text-base leading-none">RH</span>
-            </div>
-            <div>
-              <span className="font-black text-base text-foreground tracking-tight leading-none block">RallyHub</span>
-              <span className="text-[10px] text-primary/70 font-medium tracking-widest uppercase leading-none">Pickleball</span>
-            </div>
+            <img 
+              src={LOGO_URL} 
+              alt="RallyHub" 
+              className="h-9 w-9"
+            />
+            <span className="font-black text-base text-foreground tracking-tight">RallyHub</span>
           </Link>
           <button onClick={onToggle} className="lg:hidden text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />

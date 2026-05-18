@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Calendar, Users, MapPin, Trophy, ArrowRight, CheckCircle2 } from 'lucide-react';
 
+const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/41879c2e3_64c120488_logo.png';
+
 export default function Landing() {
   const handleOpenApp = () => {
     // Navigate to auth page
@@ -14,32 +16,32 @@ export default function Landing() {
     {
       icon: Calendar,
       title: 'Event Management',
-      description: 'Create and manage tournaments, leagues, and pickleball events with ease.'
+      description: 'Create and manage matches, leagues, and tournaments across all racket sports.'
     },
     {
       icon: Users,
-      title: 'Player Coordination',
-      description: 'Track players, skill ratings, and participation across all your events.'
+      title: 'Community Connection',
+      description: 'Find players, connect with the community, and grow your network.'
     },
     {
       icon: MapPin,
-      title: 'Court Scheduling',
-      description: 'Efficiently schedule courts and manage venue logistics for any event size.'
+      title: 'Court & Venue Management',
+      description: 'Efficiently schedule facilities and manage venue logistics for any event.'
     },
     {
       icon: Trophy,
-      title: 'Tournament Formats',
-      description: 'Support for Round Robin, Elimination, King of the Court, and more.'
+      title: 'Multiple Sport Support',
+      description: 'Seamlessly manage Padel, Pickleball, Tennis, Badminton, and more.'
     }
   ];
 
   const benefits = [
-    'Automated match scheduling and rotations',
-    'Real-time score tracking and leaderboards',
-    'Player profiles with DUPR integration',
-    'Inter-club competition management',
-    'Mobile-friendly interface for on-court use',
-    'Admin dashboard for complete control'
+    'Match creation and player coordination',
+    'Real-time scoring and leaderboards',
+    'Multi-sport player profiles',
+    'Event and tournament management',
+    'Mobile-friendly interface for active use',
+    'Community dashboard for complete control'
   ];
 
   return (
@@ -55,16 +57,17 @@ export default function Landing() {
             transition={{ duration: 0.6 }}
             className="text-center max-w-4xl mx-auto"
           >
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-                <span className="text-primary font-bold text-lg">RH</span>
-              </div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-foreground">RallyHub.ie</h1>
+            <div className="flex items-center justify-center mb-6">
+              <img 
+                src={LOGO_URL} 
+                alt="RallyHub" 
+                className="h-16 w-16 sm:h-20 sm:w-20"
+              />
             </div>
             
             <p className="text-xl sm:text-2xl text-muted-foreground mb-8 leading-relaxed">
-              The ultimate platform for pickleball event coordination and tournament management.
-              Organize rallies, track players, and run seamless competitions.
+              The community platform for Padel, Pickleball, Tennis & Badminton.
+              Create matches, join games, and connect with players near you.
             </p>
 
             <Button
@@ -93,10 +96,10 @@ export default function Landing() {
           className="text-center mb-12"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Everything You Need to Run Events
+            Everything You Need to Connect & Organise
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            From local club gatherings to inter-club tournaments, RallyHub streamlines every aspect of event management.
+            Whether you're organising friendly matches or competitive tournaments, RallyHub streamlines every aspect of community sport management.
           </p>
         </motion.div>
 
@@ -135,7 +138,7 @@ export default function Landing() {
                 Why Choose RallyHub?
               </h2>
               <p className="text-muted-foreground mb-6">
-                Built by pickleball enthusiasts for pickleball enthusiasts. We understand the unique challenges of organizing events and have created tools to solve them.
+                Built by racket sports enthusiasts for racket sports communities. We understand the unique challenges of organising matches and events, and have created tools to solve them.
               </p>
               <div className="space-y-3">
                 {benefits.map((benefit, index) => (
@@ -153,11 +156,13 @@ export default function Landing() {
                 ))}
               </div>
             </div>
-            <div className="relative">
+            <div className="relative flex items-center justify-center">
               <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-bold text-4xl">RH</span>
-                </div>
+                <img 
+                  src={LOGO_URL} 
+                  alt="RallyHub" 
+                  className="h-32 w-32"
+                />
               </div>
             </div>
           </div>
@@ -177,7 +182,7 @@ export default function Landing() {
             Ready to Get Started?
           </h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join the growing community of pickleball organizers using RallyHub to run their events.
+            Join the growing community of racket sports players and organisers using RallyHub to connect and manage events.
           </p>
           <Button
             size="lg"
@@ -194,7 +199,7 @@ export default function Landing() {
       <div className="container mx-auto px-4 py-8 border-t border-border">
         <div className="text-center text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} RallyHub.ie. All rights reserved.</p>
-          <p className="mt-2">Built for the pickleball community</p>
+          <p className="mt-2">Built for the racket sports community</p>
         </div>
       </div>
     </div>
