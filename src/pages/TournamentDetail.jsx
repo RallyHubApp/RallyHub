@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Play, Users, Calendar, MapPin, Plus, Shuffle,
   Trophy, Upload, GitBranch, Swords, BarChart2, List, Flag,
-  Pencil, Trash2, Link2, UserPlus
+  Pencil, Trash2, Link2, UserPlus, Check
 } from 'lucide-react';
 import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,16 @@ export default function TournamentDetail() {
   const [editForm, setEditForm] = useState({});
   const [isAdmin, setIsAdmin] = useState(false);
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const handleShareLink = () => {
+    const publicUrl = `https://${window.location.hostname.replace(/^[^.]+\./, '')}/t/${tournament?.id}`;
+    const url = publicUrl.includes('localhost') ? `${window.location.origin}/t/${tournament?.id}` : publicUrl;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }).catch(() => prompt('Copy this link:', url));
+  };
 
   useEffect(() => {
     base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
@@ -239,15 +249,9 @@ export default function TournamentDetail() {
                   <Trash2 className="w-3 h-3 mr-1" /> Delete
                 </Button>
                 {/* Share registration link */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const url = `${window.location.origin}/t/${tournament.id}`;
-                    navigator.clipboard.writeText(url).then(() => toast.success('Live scoring link copied!'));
-                  }}
-                >
-                  <Link2 className="w-3 h-3 mr-1" /> Share Link
+                <Button variant="outline" size="sm" onClick={handleShareLink}
+                  className={linkCopied ? 'text-primary border-primary/40' : ''}>
+                  {linkCopied ? <><Check className="w-3 h-3 mr-1" /> Copied!</> : <><Link2 className="w-3 h-3 mr-1" /> Share Link</>}
                 </Button>
               </>
             )}

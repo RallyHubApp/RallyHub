@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, Download, Link2, UserPlus, FileSpreadsheet } from 'lucide-react';
+import { Plus, Users, Download, Link2, UserPlus, FileSpreadsheet, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -19,6 +19,17 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   const [xlsxOpen, setXlsxOpen] = useState(false);
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const handleShareLink = () => {
+    // Build a clean public URL without any sandbox/preview prefixes
+    const publicUrl = `https://${window.location.hostname.replace(/^[^.]+\./, '')}/t/${tournament.id}`;
+    const url = publicUrl.includes('localhost') ? `${window.location.origin}/t/${tournament.id}` : publicUrl;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }).catch(() => prompt('Copy this link:', url));
+  };
 
   useEffect(() => {
     base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
@@ -47,21 +58,9 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
             <div className="flex gap-2 flex-wrap">
               {isAdmin ? (
                 <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const url = `${window.location.origin}/t/${tournament.id}`;
-                      if (navigator.clipboard?.writeText) {
-                        navigator.clipboard.writeText(url).then(() => toast.success('Registration link copied!')).catch(() => {
-                          prompt('Copy this registration link:', url);
-                        });
-                      } else {
-                        prompt('Copy this registration link:', url);
-                      }
-                    }}
-                  >
-                    <Link2 className="w-3 h-3 mr-1" /> Share Link
+                  <Button variant="outline" size="sm" onClick={handleShareLink}
+                    className={linkCopied ? 'text-primary border-primary/40' : ''}>
+                    {linkCopied ? <><Check className="w-3 h-3 mr-1" /> Copied!</> : <><Link2 className="w-3 h-3 mr-1" /> Share Link</>}
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => setSpondOpen(true)}>
                     <Download className="w-3 h-3 mr-1" /> Import Spond
