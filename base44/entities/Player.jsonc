@@ -126,23 +126,38 @@
     "full_name"
   ],
   "rls": {
-    "create": null,
-    "read": null,
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.user_id": "{{user.id}}"
+            },
+            {
+              "data.linked_user_email": "{{user.email}}"
+            }
+          ]
+        }
+      ]
+    },
+    "read": true,
     "update": {
       "$or": [
         {
-          "created_by": "{{user.email}}"
+          "user_condition": {
+            "role": "admin"
+          }
         },
         {
           "data.user_id": "{{user.id}}"
         },
         {
           "data.linked_user_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
         }
       ]
     },
