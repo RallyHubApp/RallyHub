@@ -21,9 +21,11 @@ import PublicRegister from '@/pages/PublicRegister';
 import PublicTournament from '@/pages/PublicTournament';
 import Landing from '@/pages/Landing';
 import FirstLogin from '@/pages/FirstLogin';
+import AccessCodeGate, { useAccessGate } from '@/components/AccessCodeGate';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { granted, grant } = useAccessGate();
 
   // Allow public registration pages without auth
   const isPublicRoute = window.location.pathname.startsWith('/register/') || window.location.pathname.startsWith('/t/') || window.location.pathname === '/first-login';
@@ -56,6 +58,10 @@ const AuthenticatedApp = () => {
     } else if (authError.type === 'auth_required') {
       return <Landing />;
     }
+  }
+
+  if (!granted) {
+    return <AccessCodeGate onGranted={grant} />;
   }
 
   return (

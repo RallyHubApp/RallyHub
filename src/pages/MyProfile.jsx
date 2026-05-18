@@ -116,48 +116,15 @@ export default function MyProfile() {
 
   const syncDupr = async () => {
     if (!form.dupr_id) { toast.error('Enter your DUPR ID first'); return; }
+    if (!linkedPlayer) { toast.error('Save your profile first'); return; }
     setSyncingDupr(true);
-    // DUPR API is not publicly available without OAuth — we simulate a sync
-    // In production this would call the DUPR API with their credentials
-    try {
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `I need to look up DUPR rating for player with DUPR ID: ${form.dupr_id}. 
-        DUPR (Dynamic Universal Pickleball Rating) is a pickleball rating system. 
-        Note: The DUPR API requires authentication. If you cannot retrieve real data, 
-        return a placeholder indicating the API is not connected yet.
-        Return JSON with: { rating: number|null, name: string|null, error: string|null }`,
-        add_context_from_internet: true,
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            rating: { type: 'number' },
-            name: { type: 'string' },
-            error: { type: 'string' }
-          }
-        }
-      });
-
-      if (result.rating) {
-        await base44.entities.Player.update(linkedPlayer.id, {
-          dupr_rating: result.rating,
-          skill_rating: result.rating,
-          dupr_last_synced: new Date().toISOString().split('T')[0]
-        });
-        queryClient.invalidateQueries({ queryKey: ['my-player'] });
-        toast.success(`DUPR rating synced: ${result.rating}`);
-      } else {
-        toast.info('DUPR API not connected. Rating saved from manual entry.');
-        if (linkedPlayer && form.dupr_id) {
-          await base44.entities.Player.update(linkedPlayer.id, {
-            dupr_id: form.dupr_id,
-            dupr_last_synced: new Date().toISOString().split('T')[0]
-          });
-          queryClient.invalidateQueries({ queryKey: ['my-player'] });
-        }
-      }
-    } catch {
-      toast.error('Could not sync DUPR rating');
-    }
+    // Save the DUPR ID without overriding the manually entered rating
+    await base44.entities.Player.update(linkedPlayer.id, {
+      dupr_id: form.dupr_id,
+      dupr_last_synced: new Date().toISOString().split('T')[0]
+    });
+    queryClient.invalidateQueries({ queryKey: ['my-player'] });
+    toast.success('DUPR ID saved. Manual rating preserved.');
     setSyncingDupr(false);
   };
 
