@@ -1,0 +1,18 @@
+{
+  "name": "RallyHub",
+  "short_name": "RallyHub",
+  "description": "The ultimate professional-grade platform for tournament organiser, clubs and players. Join and organise Padel, Pickleball, Tennis & Badminton games.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#22c55e",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "https://base44.com/logo_v2.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
