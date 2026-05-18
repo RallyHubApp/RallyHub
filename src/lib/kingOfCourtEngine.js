@@ -109,13 +109,21 @@ function pickBench(playerIds, numBench, sitOutCounts, recentBench) {
 
 // ─── Round 1 ──────────────────────────────────────────────────────────────────
 
-export function generateRound1(state) {
+export function generateRound1(state, shuffle = false) {
   const { players, numCourts, sitOutCounts, recentBench } = state;
   const historySet = new Set(state.pairingHistory);
   const numBench = Math.max(0, players.length - numCourts * 4);
 
-  const ordered = [...players].sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  const orderedIds = ordered.map(p => p.id);
+  let orderedIds;
+  if (shuffle) {
+    // Fully random order for refreshed pairings
+    const shuffled = [...players].sort(() => Math.random() - 0.5);
+    orderedIds = shuffled.map(p => p.id);
+  } else {
+    const ordered = [...players].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    orderedIds = ordered.map(p => p.id);
+  }
+
   const benchIds = pickBench(orderedIds, numBench, sitOutCounts, recentBench);
   const activeIds = orderedIds.filter(id => !benchIds.includes(id));
 

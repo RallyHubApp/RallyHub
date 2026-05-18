@@ -171,7 +171,7 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
     setRefreshing(true);
     const enginePlayers = players.map(p => ({ id: p.id, name: p.full_name, rating: p.skill_rating || 3.0 }));
     const freshState = createKotcState({ players: enginePlayers, numCourts: currentRound.courts.length });
-    const newRound1 = generateRound1(freshState);
+    const newRound1 = generateRound1(freshState, true);
     const newState = { ...state, rounds: [newRound1], pairingHistory: [] };
     await base44.entities.Tournament.update(tournament.id, {
       kotc_state: JSON.stringify(newState),
