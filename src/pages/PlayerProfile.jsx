@@ -54,13 +54,13 @@ export default function PlayerProfile() {
     try { state = JSON.parse(t.kotc_state); } catch { return; }
     const results = state.results || {};
     state.rounds?.forEach(round => {
-      const roundResults = results[round.roundNumber];
+      const roundResults = results[String(round.roundNumber)];
       if (!roundResults) return;
       round.courts?.forEach(court => {
         const inTeamA = court.teamA?.includes(playerId);
         const inTeamB = court.teamB?.includes(playerId);
         if (!inTeamA && !inTeamB) return;
-        const result = roundResults[court.courtNumber];
+        const result = roundResults[String(court.courtNumber)];
         if (!result) return;
         const won = (inTeamA && result === 'A') || (inTeamB && result === 'B');
         const myTeam = inTeamA ? court.teamA : court.teamB;
