@@ -2,7 +2,7 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, TrendingUp, Target, Calendar, Mail, Phone, MapPin, Shield } from 'lucide-react';
+import { ArrowLeft, Trophy, TrendingUp, Target, Calendar, Mail, Phone, MapPin, Shield, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
@@ -28,6 +28,12 @@ export default function PlayerProfile() {
     enabled: !!playerId
   });
 
+  const { data: allTournaments = [] } = useQuery({
+    queryKey: ['all-tournaments-profile'],
+    queryFn: () => base44.entities.Tournament.list('-updated_date', 50),
+    enabled: !!playerId
+  });
+
   if (isLoading || !player) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -39,6 +45,42 @@ export default function PlayerProfile() {
   const playerMatches = matches.filter(m =>
     m.team1_player_ids?.includes(playerId) || m.team2_player_ids?.includes(playerId)
   );
+
+  // Extract KOTC round results for this player
+  const kotcResults = [];
+  allTournaments.forEach(t => {
+    if (t.format !== 'King of the Court' || !t.kotc_state) return;
+    let state;
+    try { state = JSON.parse(t.kotc_state); } catch { return; }
+    const results = state.results || {};
+    state.rounds?.forEach(round => {
+      const roundResults = results[round.roundNumber];
+      if (!roundResults) return;
+      round.courts?.forEach(court => {
+        const inTeamA = court.teamA?.includes(playerId);
+        const inTeamB = court.teamB?.includes(playerId);
+        if (!inTeamA && !inTeamB) return;
+        const result = roundResults[court.courtNumber];
+        if (!result) return;
+        const won = (inTeamA && result === 'A') || (inTeamB && result === 'B');
+        const myTeam = inTeamA ? court.teamA : court.teamB;
+        const oppTeam = inTeamA ? court.teamB : court.teamA;
+        const playerMap = {};
+        state.players?.forEach(p => { playerMap[p.id] = p.name; });
+        kotcResults.push({
+          key: `${t.id}-r${round.roundNumber}-c${court.courtNumber}`,
+          tournamentName: t.name,
+          date: t.start_date || t.updated_date,
+          round: round.roundNumber,
+          court: court.courtNumber,
+          myTeamNames: myTeam.map(id => playerMap[id] || id).join(' & '),
+          oppTeamNames: oppTeam.map(id => playerMap[id] || id).join(' & '),
+          won,
+        });
+      });
+    });
+  });
+  kotcResults.sort((a, b) => b.round - a.round);
 
   const winRate = player.matches_played > 0
     ? Math.round((player.wins / player.matches_played) * 100)
@@ -194,10 +236,11 @@ export default function PlayerProfile() {
       {/* Recent Matches */}
       <GlassCard delay={0.4}>
         <h3 className="text-sm font-semibold text-foreground mb-4">Recent Matches</h3>
-        {playerMatches.length === 0 ? (
+        {playerMatches.length === 0 && kotcResults.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-4">No match history yet</p>
         ) : (
           <div className="space-y-2">
+            {/* Standard matches */}
             {playerMatches.slice(0, 10).map(m => {
               const isTeam1 = m.team1_player_ids?.includes(playerId);
               const won = (isTeam1 && m.winner_team === 'team1') || (!isTeam1 && m.winner_team === 'team2');
@@ -219,6 +262,33 @@ export default function PlayerProfile() {
                 </div>
               );
             })}
+
+            {/* KOTC rounds */}
+            {kotcResults.length > 0 && (
+              <>
+                <div className="flex items-center gap-2 pt-2">
+                  <Crown className="w-3.5 h-3.5 text-yellow-400" />
+                  <p className="text-xs font-semibold text-yellow-400 uppercase tracking-wider">King of the Court</p>
+                </div>
+                {kotcResults.map(r => (
+                  <div key={r.key} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-foreground truncate">
+                        {r.myTeamNames} <span className="text-muted-foreground">vs</span> {r.oppTeamNames}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                        <Crown className="w-2.5 h-2.5 text-yellow-400" />
+                        {r.tournamentName} · Round {r.round}, Court {r.court}
+                        {r.date && <span>· {new Date(r.date).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+                      </p>
+                    </div>
+                    <Badge className={r.won ? "bg-primary/20 text-primary ml-2 shrink-0" : "bg-destructive/20 text-destructive ml-2 shrink-0"}>
+                      {r.won ? 'W' : 'L'}
+                    </Badge>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         )}
       </GlassCard>
