@@ -143,10 +143,11 @@ export default function MatchCenter() {
     queryFn: () => base44.entities.Match.list('-created_date', 100)
   });
 
-  const { data: kotcTournaments = [] } = useQuery({
-    queryKey: ['kotc-tournaments'],
-    queryFn: () => base44.entities.Tournament.filter({ format: 'King of the Court' }, '-updated_date', 20)
+  const { data: allTournaments = [] } = useQuery({
+    queryKey: ['all-tournaments'],
+    queryFn: () => base44.entities.Tournament.list('-updated_date', 50)
   });
+  const kotcTournaments = allTournaments.filter(t => t.format === 'King of the Court');
 
   const { data: allPlayers = [] } = useQuery({
     queryKey: ['players'],
