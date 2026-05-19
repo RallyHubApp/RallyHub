@@ -47,6 +47,7 @@ export default function TournamentDetail() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [completing, setCompleting] = useState(false);
 
   const handleShareLink = () => {
     const url = `${window.location.origin}/t/${tournament?.id}`;
@@ -193,9 +194,27 @@ export default function TournamentDetail() {
   };
 
   const updateStatus = async (status) => {
-    await base44.entities.Tournament.update(tournament.id, { status });
-    queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
-    toast.success(`Status: ${status}`);
+    if (status === 'Completed') {
+      setCompleting(true);
+      try {
+        const res = await base44.functions.invoke('completeTournament', { tournamentId: tournament.id });
+        if (res.data?.error) {
+          toast.error(res.data.error);
+          return;
+        }
+        toast.success(`Tournament completed! ${res.data.updated} player${res.data.updated !== 1 ? 's' : ''} updated.`);
+        queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+        queryClient.invalidateQueries({ queryKey: ['players'] });
+        queryClient.invalidateQueries({ queryKey: ['matches'] });
+        queryClient.invalidateQueries({ queryKey: ['tournament-matches', tournamentId] });
+      } finally {
+        setCompleting(false);
+      }
+    } else {
+      await base44.entities.Tournament.update(tournament.id, { status });
+      queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+      toast.success(`Status: ${status}`);
+    }
   };
 
   return (
@@ -301,8 +320,11 @@ export default function TournamentDetail() {
               </Button>
             )}
             {tournament.status === 'In Progress' && (
-              <Button size="sm" variant="outline" onClick={() => updateStatus('Completed')}>
-                <Trophy className="w-3 h-3 mr-1" /> Complete
+              <Button size="sm" variant="outline" onClick={() => updateStatus('Completed')} disabled={completing}>
+                {completing
+                  ? <><div className="w-3 h-3 border-2 border-foreground border-t-transparent rounded-full animate-spin mr-1" /> Completing…</>
+                  : <><Trophy className="w-3 h-3 mr-1" /> Complete</>
+                }
               </Button>
             )}
           </div>
