@@ -11,29 +11,55 @@ Deno.serve(async (req) => {
     const { tournamentId } = await req.json();
     if (!tournamentId) return Response.json({ error: 'Missing tournamentId' }, { status: 400 });
 
-    // Fetch all completed matches for this tournament
-    const matches = await base44.asServiceRole.entities.Match.filter({
-      tournament_id: tournamentId,
-      status: 'Completed'
-    });
+    const tournaments = await base44.asServiceRole.entities.Tournament.filter({ id: tournamentId });
+    const tournament = tournaments[0];
+    if (!tournament) return Response.json({ error: 'Tournament not found' }, { status: 404 });
 
-    if (matches.length === 0) {
-      return Response.json({ success: true, message: 'No completed matches to process', updated: 0 });
-    }
-
-    // Tally wins/losses per player
     const playerStats = {}; // playerId -> { wins, losses }
 
     const addStat = (playerId, isWin) => {
+      if (!playerId) return;
       if (!playerStats[playerId]) playerStats[playerId] = { wins: 0, losses: 0 };
       if (isWin) playerStats[playerId].wins++;
       else playerStats[playerId].losses++;
     };
 
+    // ── KOTC: parse results from kotc_state ──────────────────────────────────
+    if (tournament.format === 'King of the Court' && tournament.kotc_state) {
+      const state = typeof tournament.kotc_state === 'string'
+        ? JSON.parse(tournament.kotc_state)
+        : tournament.kotc_state;
+
+      const results = state.results || {};
+      const rounds = state.rounds || [];
+
+      for (const round of rounds) {
+        const roundNum = String(round.roundNumber);
+        const roundResults = results[roundNum];
+        if (!roundResults) continue; // round not yet played
+
+        for (const court of round.courts) {
+          const courtNum = String(court.courtNumber);
+          const winner = roundResults[courtNum]; // "A" or "B"
+          if (!winner) continue;
+
+          const winners = winner === 'A' ? court.teamA : court.teamB;
+          const losers = winner === 'A' ? court.teamB : court.teamA;
+          winners.forEach(id => addStat(id, true));
+          losers.forEach(id => addStat(id, false));
+        }
+      }
+    }
+
+    // ── Standard formats: parse from Match entities ──────────────────────────
+    const matches = await base44.asServiceRole.entities.Match.filter({
+      tournament_id: tournamentId,
+      status: 'Completed'
+    });
+
     for (const match of matches) {
       const team1Ids = match.team1_player_ids || [];
       const team2Ids = match.team2_player_ids || [];
-
       if (match.winner_team === 'team1') {
         team1Ids.forEach(id => addStat(id, true));
         team2Ids.forEach(id => addStat(id, false));
@@ -43,27 +69,28 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch all affected players and update their stats
     const playerIds = Object.keys(playerStats);
     if (playerIds.length === 0) {
-      return Response.json({ success: true, message: 'No player IDs found in matches', updated: 0 });
+      // Still mark completed
+      await base44.asServiceRole.entities.Tournament.update(tournamentId, { status: 'Completed' });
+      return Response.json({ success: true, message: 'No player stats to update', updated: 0 });
     }
 
-    // Fetch players in batches
+    // Fetch all players and update stats
     const allPlayers = await base44.asServiceRole.entities.Player.list('-created_date', 500);
     const relevantPlayers = allPlayers.filter(p => playerIds.includes(p.id));
 
-    // Update each player's stats
+    const today = new Date().toISOString().split('T')[0];
+
     const updatePromises = relevantPlayers.map(player => {
       const delta = playerStats[player.id];
       const newWins = (player.wins || 0) + delta.wins;
       const newLosses = (player.losses || 0) + delta.losses;
       const newMatchesPlayed = (player.matches_played || 0) + delta.wins + delta.losses;
 
-      // Append rating history entry if skill_rating exists
       const ratingHistory = player.rating_history || [];
       const newRatingEntry = player.skill_rating
-        ? [...ratingHistory, { date: new Date().toISOString().split('T')[0], rating: player.skill_rating }]
+        ? [...ratingHistory, { date: today, rating: player.skill_rating }]
         : ratingHistory;
 
       return base44.asServiceRole.entities.Player.update(player.id, {
@@ -82,7 +109,8 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       updated: relevantPlayers.length,
-      matchesProcessed: matches.length
+      matchesProcessed: matches.length + (tournament.format === 'King of the Court' ? Object.keys((typeof tournament.kotc_state === 'string' ? JSON.parse(tournament.kotc_state) : tournament.kotc_state).results || {}).length * 4 : 0),
+      playerStats
     });
 
   } catch (error) {
