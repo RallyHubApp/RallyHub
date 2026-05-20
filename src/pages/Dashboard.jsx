@@ -38,12 +38,12 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <PageHeader title="Dashboard" description="Pickleball tournament command center">
-        <Link to="/players">
+        <Link to="/app/players">
           <Button variant="outline" className="gap-2">
             <Upload className="w-4 h-4" /> Import Players
           </Button>
         </Link>
-        <Link to="/tournaments">
+        <Link to="/app/tournaments">
           <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
             <Plus className="w-4 h-4" /> New Tournament
           </Button>
@@ -63,14 +63,14 @@ export default function Dashboard() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Top Ranked</h3>
-            <Link to="/leaderboard" className="text-xs text-primary hover:underline flex items-center gap-1">
+            <Link to="/app/leaderboard" className="text-xs text-primary hover:underline flex items-center gap-1">
               View all <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="space-y-3">
             {topPlayers.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No players yet</p>}
             {topPlayers.map((player, i) => (
-              <Link key={player.id} to={`/players/${player.id}`} className="flex items-center gap-3 group">
+              <Link key={player.id} to={`/app/players/${player.id}`} className="flex items-center gap-3 group">
                 <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}</span>
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                   <span className="text-xs font-bold text-primary">{(player.full_name || 'P')[0]}</span>
@@ -89,7 +89,7 @@ export default function Dashboard() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Recent Results</h3>
-            <Link to="/matches" className="text-xs text-primary hover:underline flex items-center gap-1">
+            <Link to="/app/matches" className="text-xs text-primary hover:underline flex items-center gap-1">
               View all <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -120,14 +120,14 @@ export default function Dashboard() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Active Tournaments</h3>
-            <Link to="/tournaments" className="text-xs text-primary hover:underline flex items-center gap-1">
+            <Link to="/app/tournaments" className="text-xs text-primary hover:underline flex items-center gap-1">
               View all <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="space-y-3">
             {activeTournaments.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No active tournaments</p>}
             {activeTournaments.map(t => (
-              <Link key={t.id} to={`/tournaments/${t.id}`} className="glass rounded-lg p-3 block hover:scale-[1.01] transition-transform">
+              <Link key={t.id} to={`/app/tournaments/${t.id}`} className="glass rounded-lg p-3 block hover:scale-[1.01] transition-transform">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-medium text-foreground">{t.name}</p>

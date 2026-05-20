@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -33,20 +33,11 @@ const LoadingScreen = () => (
   </div>
 );
 
-const AuthenticatedApp = () => {
+// Handles /app/* — only entered when user explicitly navigates to the app
+const AppEntry = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, user } = useAuth();
 
-  // Public routes — no auth required
-  const isPublicRoute = window.location.pathname.startsWith('/register/') || window.location.pathname.startsWith('/t/');
-  if (isPublicRoute) {
-    return (
-      <Routes>
-        <Route path="/register/:id" element={<PublicRegister />} />
-        <Route path="/t/:id" element={<PublicTournament />} />
-      </Routes>
-    );
-  }
-
+  // Still checking auth state
   if (isLoadingPublicSettings || isLoadingAuth) {
     return <LoadingScreen />;
   }
@@ -54,46 +45,56 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      window.location.href = '/auth';
-      return null;
     }
+    // auth_required or unknown → send to login
+    base44AuthRedirect();
+    return <LoadingScreen />;
   }
 
-  // Not signed in → redirect to auth
+  // Not signed in → go to auth
   if (!isAuthenticated) {
-    window.location.href = '/auth';
-    return null;
+    window.location.href = '/auth?next=/app';
+    return <LoadingScreen />;
   }
 
-  // Signed in but pending or rejected → holding screen
-  // Admins always get through regardless of approval_status
-  if (user?.role !== 'admin') {
-    const status = user?.approval_status;
-    if (!status || status === 'pending' || status === 'rejected') {
-      return <PendingApprovalScreen status={status || 'pending'} />;
-    }
+  // Admin always gets through
+  if (user?.role === 'admin') {
+    return <AuthenticatedRoutes />;
   }
 
-  // Signed in and approved (or admin) → full app
-  return (
-    <Routes>
-      <Route element={<AppLayout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/players" element={<Players />} />
-        <Route path="/players/:id" element={<PlayerProfile />} />
-        <Route path="/tournaments" element={<Tournaments />} />
-        <Route path="/tournaments/:id" element={<TournamentDetail />} />
-        <Route path="/matches" element={<MatchCenter />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/my-profile" element={<MyProfile />} />
-        <Route path="/admin" element={<AdminPanel />} />
-      </Route>
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
-  );
+  // Approved users get the app
+  if (user?.approval_status === 'approved') {
+    return <AuthenticatedRoutes />;
+  }
+
+  // Pending or rejected → holding screen
+  return <PendingApprovalScreen status={user?.approval_status || 'pending'} />;
 };
+
+function base44AuthRedirect() {
+  // Only redirect once — prevent loops
+  if (!window.location.pathname.startsWith('/auth')) {
+    window.location.href = '/auth?next=/app';
+  }
+}
+
+const AuthenticatedRoutes = () => (
+  <Routes>
+    <Route element={<AppLayout />}>
+      <Route index element={<Dashboard />} />
+      <Route path="players" element={<Players />} />
+      <Route path="players/:id" element={<PlayerProfile />} />
+      <Route path="tournaments" element={<Tournaments />} />
+      <Route path="tournaments/:id" element={<TournamentDetail />} />
+      <Route path="matches" element={<MatchCenter />} />
+      <Route path="leaderboard" element={<Leaderboard />} />
+      <Route path="analytics" element={<Analytics />} />
+      <Route path="my-profile" element={<MyProfile />} />
+      <Route path="admin" element={<AdminPanel />} />
+    </Route>
+    <Route path="*" element={<Navigate to="/app" replace />} />
+  </Routes>
+);
 
 function App() {
   return (
@@ -101,13 +102,44 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <Routes>
-            <Route path="*" element={<AuthenticatedApp />} />
+            {/* Public landing — no auth check, always accessible */}
+            <Route path="/" element={<Landing />} />
+
+            {/* Public utility routes — no auth required */}
+            <Route path="/register/:id" element={<PublicRegister />} />
+            <Route path="/t/:id" element={<PublicTournament />} />
+
+            {/* App entry point — auth checked here */}
+            <Route path="/app/*" element={<AppEntry />} />
+
+            {/* Legacy internal routes redirect into /app/* */}
+            <Route path="/players" element={<Navigate to="/app/players" replace />} />
+            <Route path="/players/:id" element={<LegacyRedirect prefix="/app/players/" paramKey="id" />} />
+            <Route path="/tournaments" element={<Navigate to="/app/tournaments" replace />} />
+            <Route path="/tournaments/:id" element={<LegacyRedirect prefix="/app/tournaments/" paramKey="id" />} />
+            <Route path="/matches" element={<Navigate to="/app/matches" replace />} />
+            <Route path="/leaderboard" element={<Navigate to="/app/leaderboard" replace />} />
+            <Route path="/analytics" element={<Navigate to="/app/analytics" replace />} />
+            <Route path="/my-profile" element={<Navigate to="/app/my-profile" replace />} />
+            <Route path="/admin" element={<Navigate to="/app/admin" replace />} />
+            <Route path="/dashboard" element={<Navigate to="/app" replace />} />
+
+            <Route path="*" element={<PageNotFound />} />
           </Routes>
         </Router>
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
   )
+}
+
+// Helper to redirect parameterised legacy routes like /players/:id → /app/players/:id
+function LegacyRedirect({ prefix, paramKey }) {
+  const params = new URLSearchParams(window.location.search);
+  // Extract param from pathname
+  const parts = window.location.pathname.split('/');
+  const id = parts[parts.length - 1];
+  return <Navigate to={`${prefix}${id}`} replace />;
 }
 
 export default App

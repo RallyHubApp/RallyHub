@@ -130,7 +130,7 @@ export default function Tournaments() {
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               )}
-              <Link to={`/tournaments/${t.id}`} className="glass rounded-xl p-5 block hover:scale-[1.02] transition-all duration-200 group h-full">
+              <Link to={`/app/tournaments/${t.id}`} className="glass rounded-xl p-5 block hover:scale-[1.02] transition-all duration-200 group h-full">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Trophy className="w-5 h-5 text-primary" />
@@ -168,9 +168,9 @@ export default function Tournaments() {
       {newKotcTournament && (
         <SpondXlsxImportModal
           open={kotcXlsxOpen}
-          onOpenChange={(open) => { setKotcXlsxOpen(open); if (!open) navigate(`/tournaments/${newKotcTournament.id}`); }}
+          onOpenChange={(open) => { setKotcXlsxOpen(open); if (!open) navigate(`/app/tournaments/${newKotcTournament.id}`); }}
           tournament={newKotcTournament}
-          onImported={() => { setKotcXlsxOpen(false); navigate(`/tournaments/${newKotcTournament.id}`); }}
+          onImported={() => { setKotcXlsxOpen(false); navigate(`/app/tournaments/${newKotcTournament.id}`); }}
         />
       )}
 
@@ -179,12 +179,12 @@ export default function Tournaments() {
           open={kotcSpondOpen}
           onOpenChange={(open) => {
             setKotcSpondOpen(open);
-            if (!open) navigate(`/tournaments/${newKotcTournament.id}`);
+            if (!open) navigate(`/app/tournaments/${newKotcTournament.id}`);
           }}
           tournament={newKotcTournament}
           onImported={() => {
             setKotcSpondOpen(false);
-            navigate(`/tournaments/${newKotcTournament.id}`);
+            navigate(`/app/tournaments/${newKotcTournament.id}`);
           }}
         />
       )}

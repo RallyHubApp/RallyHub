@@ -24,7 +24,7 @@ export default function PlayerCard({ player, index = 0 }) {
       transition={{ delay: index * 0.05, duration: 0.3 }}
     >
       <Link
-        to={`/players/${player.id}`}
+        to={`/app/players/${player.id}`}
         className="glass rounded-xl p-4 flex items-center gap-4 hover:scale-[1.01] transition-all duration-200 group block"
       >
         {/* Avatar */}

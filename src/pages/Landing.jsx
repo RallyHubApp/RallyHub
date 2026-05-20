@@ -1,5 +1,4 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Calendar, Users, MapPin, Trophy, ArrowRight, CheckCircle2 } from 'lucide-react';
@@ -8,8 +7,7 @@ const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c2
 
 export default function Landing() {
   const handleOpenApp = () => {
-    // Redirect to RallyHub login page
-    window.location.href = '/login';
+    window.location.href = '/app';
   };
 
   const features = [

@@ -47,7 +47,7 @@ export default function AppLayout() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-card border-border w-48">
                 <DropdownMenuItem asChild>
-                  <Link to="/my-profile" className="flex items-center gap-2 cursor-pointer">
+                  <Link to="/app/my-profile" className="flex items-center gap-2 cursor-pointer">
                     <UserCircle className="w-3.5 h-3.5" /> My Profile
                   </Link>
                 </DropdownMenuItem>

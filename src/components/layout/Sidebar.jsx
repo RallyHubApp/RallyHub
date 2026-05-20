@@ -11,12 +11,12 @@ import { useAuth } from '@/lib/AuthContext';
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/players', label: 'Players', icon: Users },
-  { path: '/tournaments', label: 'Tournaments', icon: Trophy },
-  { path: '/matches', label: 'Match Center', icon: Swords },
-  { path: '/leaderboard', label: 'Leaderboard', icon: Crown },
-  { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { path: '/app', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/app/players', label: 'Players', icon: Users },
+  { path: '/app/tournaments', label: 'Tournaments', icon: Trophy },
+  { path: '/app/matches', label: 'Match Center', icon: Swords },
+  { path: '/app/leaderboard', label: 'Leaderboard', icon: Crown },
+  { path: '/app/analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
 export default function Sidebar({ isOpen, onToggle }) {
@@ -46,7 +46,7 @@ export default function Sidebar({ isOpen, onToggle }) {
       )}>
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-sidebar-border">
-          <Link to="/" className="flex items-center gap-2.5">
+          <Link to="/app" className="flex items-center gap-2.5">
             <img 
               src={LOGO_URL} 
               alt="RallyHub" 
@@ -62,7 +62,9 @@ export default function Sidebar({ isOpen, onToggle }) {
         {/* Nav */}
         <nav className="flex-1 py-4 px-3 space-y-1">
           {navItems.map(item => {
-            const isActive = location.pathname === item.path;
+            const isActive = item.path === '/app'
+              ? location.pathname === '/app' || location.pathname === '/app/'
+              : location.pathname.startsWith(item.path);
             return (
               <Link
                 key={item.path}
@@ -88,10 +90,10 @@ export default function Sidebar({ isOpen, onToggle }) {
         {/* Bottom links */}
         <div className="px-3 pb-2 space-y-1">
           {[
-            { path: '/my-profile', label: 'My Profile', icon: UserCircle },
-            ...(user?.role === 'admin' ? [{ path: '/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
+            { path: '/app/my-profile', label: 'My Profile', icon: UserCircle },
+            ...(user?.role === 'admin' ? [{ path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
           ].map(item => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname.startsWith(item.path);
             return (
               <Link
                 key={item.path}
