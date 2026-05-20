@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
+import { base44 } from '@/api/base44Client';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
@@ -46,14 +47,14 @@ const AppEntry = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     }
-    // auth_required or unknown → send to login
-    base44AuthRedirect();
+    // auth_required or unknown → send to Base44 login
+    base44.auth.redirectToLogin('/app');
     return <LoadingScreen />;
   }
 
-  // Not signed in → go to auth
+  // Not signed in → redirect to Base44 login
   if (!isAuthenticated) {
-    window.location.href = '/auth?next=/app';
+    base44.auth.redirectToLogin('/app');
     return <LoadingScreen />;
   }
 
@@ -71,12 +72,6 @@ const AppEntry = () => {
   return <PendingApprovalScreen status={user?.approval_status || 'pending'} />;
 };
 
-function base44AuthRedirect() {
-  // Only redirect once — prevent loops
-  if (!window.location.pathname.startsWith('/auth')) {
-    window.location.href = '/auth?next=/app';
-  }
-}
 
 const AuthenticatedRoutes = () => (
   <Routes>
