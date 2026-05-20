@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+import { useRef } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { base44 } from '@/api/base44Client';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -37,6 +38,7 @@ const LoadingScreen = () => (
 // Handles /app/* — only entered when user explicitly navigates to the app
 const AppEntry = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, user } = useAuth();
+  const notifiedRef = useRef(false);
 
   // Still checking auth state
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -66,6 +68,12 @@ const AppEntry = () => {
   // Approved users get the app
   if (user?.approval_status === 'approved') {
     return <AuthenticatedRoutes />;
+  }
+
+  // New/pending user — notify admins once per session
+  if (!notifiedRef.current && user && !user.approval_status) {
+    notifiedRef.current = true;
+    base44.functions.invoke('notifyAdminsOnSignup', { user }).catch(() => {});
   }
 
   // Pending or rejected → holding screen
