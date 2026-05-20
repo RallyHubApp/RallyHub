@@ -190,7 +190,7 @@ export default function TournamentDetail() {
   const handleDelete = async () => {
     await base44.entities.Tournament.delete(tournament.id);
     toast.success('Tournament deleted');
-    navigate('/tournaments');
+    navigate('/app/tournaments');
   };
 
   const updateStatus = async (status) => {
@@ -219,7 +219,7 @@ export default function TournamentDetail() {
 
   return (
     <div className="space-y-6">
-      <Link to="/tournaments" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+      <Link to="/app/tournaments" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="w-4 h-4" /> Back to Tournaments
       </Link>
 
@@ -520,7 +520,7 @@ export default function TournamentDetail() {
                 ) : (
                   <div className="space-y-1">
                     {registeredPlayers.map((p, i) => (
-                      <Link key={p.id} to={`/players/${p.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary transition-colors group">
+                      <Link key={p.id} to={`/app/players/${p.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary transition-colors group">
                         <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}</span>
                         <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                           {(p.full_name || 'P')[0]}
