@@ -70,8 +70,8 @@ const AppEntry = () => {
     return <AuthenticatedRoutes />;
   }
 
-  // New/pending user — notify admins once per session
-  if (!notifiedRef.current && user && !user.approval_status) {
+  // New/pending user — notify admins once per session (no status or explicitly pending)
+  if (!notifiedRef.current && user && user.approval_status !== 'rejected') {
     notifiedRef.current = true;
     base44.functions.invoke('notifyAdminsOnSignup', { user }).catch(() => {});
   }
