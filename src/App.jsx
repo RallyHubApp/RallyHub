@@ -20,16 +20,23 @@ import AdminPanel from '@/pages/AdminPanel';
 import PublicRegister from '@/pages/PublicRegister';
 import PublicTournament from '@/pages/PublicTournament';
 import Landing from '@/pages/Landing';
-import AccessCodeGate, { useAccessGate } from '@/components/AccessCodeGate';
+import PendingApprovalScreen from '@/components/PendingApprovalScreen';
+
+const LoadingScreen = () => (
+  <div className="fixed inset-0 flex items-center justify-center bg-background">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+        <span className="text-primary font-bold text-sm">RH</span>
+      </div>
+      <div className="w-8 h-8 border-4 border-secondary border-t-primary rounded-full animate-spin"></div>
+    </div>
+  </div>
+);
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, isAuthenticated } = useAuth();
-  const { granted, grant } = useAccessGate();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, user } = useAuth();
 
-  // Check if accessing via app subdomain (bypasses landing page)
-  const isAppSubdomain = window.location.hostname === 'app.rallyhub.ie' || window.location.hostname === 'localhost';
-
-  // Public routes that don't require auth or access code
+  // Public routes — no auth required
   const isPublicRoute = window.location.pathname.startsWith('/register/') || window.location.pathname.startsWith('/t/');
   if (isPublicRoute) {
     return (
@@ -40,61 +47,35 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Landing page - show for unauthenticated users on root path (only on main domain)
-  if (window.location.pathname === '/' && !isAuthenticated && !isAppSubdomain) {
-    return <Landing />;
-  }
-
-  // Redirect /login to auth
-  if (window.location.pathname === '/login') {
-    window.location.href = '/auth';
-    return null;
-  }
-
   if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-            <span className="text-primary font-bold text-sm">PB</span>
-          </div>
-          <div className="w-8 h-8 border-4 border-secondary border-t-primary rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to auth page for login
       window.location.href = '/auth';
       return null;
     }
   }
 
-  // User is authenticated - check access code but don't show gate UI yet
-  // The granted state will be updated by useAccessGate hook
-  if (!granted && isAuthenticated) {
-    return <AccessCodeGate onGranted={grant} />;
+  // Not signed in → redirect to auth
+  if (!isAuthenticated) {
+    window.location.href = '/auth';
+    return null;
   }
 
-  // If still loading auth or access code validation, show loading
-  if (isAuthenticated && !granted) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-            <span className="text-primary font-bold text-sm">PB</span>
-          </div>
-          <div className="w-8 h-8 border-4 border-secondary border-t-primary rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
+  // Signed in but pending or rejected → holding screen
+  // Admins always get through regardless of approval_status
+  if (user?.role !== 'admin') {
+    const status = user?.approval_status;
+    if (!status || status === 'pending' || status === 'rejected') {
+      return <PendingApprovalScreen status={status || 'pending'} />;
+    }
   }
 
-  // User is authenticated AND has validated access code - show main app
+  // Signed in and approved (or admin) → full app
   return (
     <Routes>
       <Route element={<AppLayout />}>
@@ -120,9 +101,6 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <Routes>
-            {/* Landing page - public marketing page */}
-            <Route path="/landing" element={<Landing />} />
-            {/* All other routes (including /) handled by AuthenticatedApp */}
             <Route path="*" element={<AuthenticatedApp />} />
           </Routes>
         </Router>

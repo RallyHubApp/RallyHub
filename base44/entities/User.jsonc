@@ -4,27 +4,21 @@
   "properties": {
     "role": {
       "type": "string",
-      "description": "The role of the user in the app",
       "enum": [
         "admin",
         "user"
-      ]
+      ],
+      "default": "user"
     },
-    "display_name": {
+    "approval_status": {
       "type": "string",
-      "description": "Custom display name set by admin (overrides the auto-generated name from email)"
-    },
-    "access_code_validated": {
-      "type": "boolean",
-      "description": "Whether the user has validated the access code",
-      "default": false
-    },
-    "access_code_validated_date": {
-      "type": "string",
-      "description": "ISO date when access code was validated"
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Admin approval status for app access"
     }
-  },
-  "required": [
-    "role"
-  ]
+  }
 }

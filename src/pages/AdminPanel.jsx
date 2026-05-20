@@ -9,13 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, KeyRound, Copy, RefreshCw, Key, Send } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, KeyRound, Copy, RefreshCw, Send, Clock, XCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
 import { useAuth } from '@/lib/AuthContext';
-import AccessCodeValidationTab from '@/components/admin/AccessCodeValidationTab';
 
 export default function AdminPanel() {
   const { user } = useAuth();
@@ -33,6 +32,7 @@ export default function AdminPanel() {
 
   const [userSearch, setUserSearch] = useState('');
   const [updatingRole, setUpdatingRole] = useState(null);
+  const [updatingApproval, setUpdatingApproval] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [editUserName, setEditUserName] = useState('');
   const [savingUserName, setSavingUserName] = useState(false);
@@ -224,6 +224,14 @@ export default function AdminPanel() {
     }
   };
 
+  const setApprovalStatus = async (userId, status) => {
+    setUpdatingApproval(userId);
+    await base44.entities.User.update(userId, { approval_status: status });
+    queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    toast.success(`User ${status}`);
+    setUpdatingApproval(null);
+  };
+
   const filteredUsers = allUsers.filter(u => {
     if (!userSearch) return true;
     const q = userSearch.toLowerCase();
@@ -257,15 +265,91 @@ export default function AdminPanel() {
         </GlassCard>
       </div>
 
-      <Tabs defaultValue="users">
+      <Tabs defaultValue="approvals">
         <TabsList className="bg-secondary flex-wrap h-auto gap-1">
+          <TabsTrigger value="approvals" className="text-xs gap-1.5">
+            <Clock className="w-3.5 h-3.5" /> Approvals
+            {allUsers.filter(u => !u.approval_status || u.approval_status === 'pending').length > 0 && (
+              <span className="ml-1 bg-yellow-500 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">
+                {allUsers.filter(u => !u.approval_status || u.approval_status === 'pending').length}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="users" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Users & Roles</TabsTrigger>
           <TabsTrigger value="players" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Players</TabsTrigger>
           <TabsTrigger value="matches" className="text-xs gap-1.5"><Swords className="w-3.5 h-3.5" /> Matches</TabsTrigger>
           <TabsTrigger value="linking" className="text-xs gap-1.5"><Link2 className="w-3.5 h-3.5" /> Account Links</TabsTrigger>
           <TabsTrigger value="invitations" className="text-xs gap-1.5"><Mail className="w-3.5 h-3.5" /> Invite Users</TabsTrigger>
-          <TabsTrigger value="access" className="text-xs gap-1.5"><Key className="w-3.5 h-3.5" /> Access Codes</TabsTrigger>
         </TabsList>
+
+        {/* ── APPROVALS TAB ── */}
+        <TabsContent value="approvals" className="mt-4">
+          <div className="space-y-3">
+            <div className="glass rounded-lg p-3 flex items-start gap-2">
+              <Clock className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                Users who sign up must be approved before accessing the app. Approve or reject accounts below.
+              </p>
+            </div>
+            {['pending', 'approved', 'rejected'].map(section => {
+              const sectionUsers = allUsers.filter(u => {
+                const s = u.approval_status || 'pending';
+                return s === section && u.role !== 'admin';
+              });
+              if (sectionUsers.length === 0) return null;
+              return (
+                <div key={section} className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                    {section === 'pending' ? '⏳ Pending' : section === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                  </p>
+                  {sectionUsers.map((u, i) => (
+                    <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+                      className="glass rounded-lg p-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                          {(u.full_name || u.email || 'U')[0].toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{u.full_name || '(no name)'}</p>
+                          <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {section !== 'approved' && (
+                          <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
+                            disabled={updatingApproval === u.id}
+                            onClick={() => setApprovalStatus(u.id, 'approved')}>
+                            <CheckCircle className="w-3 h-3" />
+                            {updatingApproval === u.id ? '…' : 'Approve'}
+                          </Button>
+                        )}
+                        {section !== 'rejected' && u.id !== user?.id && (
+                          <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 gap-1"
+                            disabled={updatingApproval === u.id}
+                            onClick={() => setApprovalStatus(u.id, 'rejected')}>
+                            <XCircle className="w-3 h-3" />
+                            {updatingApproval === u.id ? '…' : 'Reject'}
+                          </Button>
+                        )}
+                        {section === 'approved' && u.id !== user?.id && (
+                          <Button size="sm" variant="outline" className="h-7 text-xs text-muted-foreground gap-1"
+                            disabled={updatingApproval === u.id}
+                            onClick={() => setApprovalStatus(u.id, 'pending')}>
+                            <Clock className="w-3 h-3" />
+                            {updatingApproval === u.id ? '…' : 'Revoke'}
+                          </Button>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              );
+            })}
+            {allUsers.filter(u => u.role !== 'admin').length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-6">No users to review</p>
+            )}
+          </div>
+        </TabsContent>
 
         {/* ── USERS & ROLES TAB ── */}
         <TabsContent value="users" className="mt-4">
@@ -552,10 +636,6 @@ export default function AdminPanel() {
           </div>
         </TabsContent>
 
-        {/* ── ACCESS CODES TAB ── */}
-        <TabsContent value="access" className="mt-4">
-          <AccessCodeValidationTab />
-        </TabsContent>
       </Tabs>
 
       {/* Edit Player Dialog */}
