@@ -226,10 +226,20 @@ export default function AdminPanel() {
 
   const setApprovalStatus = async (userId, status) => {
     setUpdatingApproval(userId);
+    const targetUser = allUsers.find(u => u.id === userId);
     await base44.entities.User.update(userId, { approval_status: status });
     queryClient.invalidateQueries({ queryKey: ['all-users'] });
     toast.success(`User ${status}`);
     setUpdatingApproval(null);
+    // Notify the user by email if approved or rejected
+    if ((status === 'approved' || status === 'rejected') && targetUser?.email) {
+      base44.functions.invoke('notifyAdminsOnSignup', {
+        notifyUserApproval: true,
+        userEmail: targetUser.email,
+        userName: targetUser.full_name || targetUser.email,
+        status
+      }).catch(() => {});
+    }
   };
 
   const filteredUsers = allUsers.filter(u => {
