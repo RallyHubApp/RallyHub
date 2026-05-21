@@ -13,7 +13,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { tournamentId, full_name, email, phone, _probe, action, kotc_state, kotc_current_round, status, player_ids } = body;
+    const { tournamentId, full_name, email, phone, _probe, action, kotc_state, kotc_current_round, status, player_ids,
+            kotc_num_courts, kotc_num_rounds, kotc_score_format } = body;
 
     if (!tournamentId) {
       return Response.json({ error: 'Missing tournamentId' }, { status: 400 });
@@ -45,13 +46,16 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, tournament, players });
     }
 
-    // Update KOTC state (save results / advance round)
-    if (action === 'update_kotc') {
+    // Update KOTC state (save results / advance round / start)
+    if (action === 'update_kotc' || action === 'start_kotc') {
       const updateData = {};
       if (kotc_state !== undefined) updateData.kotc_state = kotc_state;
       if (kotc_current_round !== undefined) updateData.kotc_current_round = kotc_current_round;
       if (status !== undefined) updateData.status = status;
       if (player_ids !== undefined) updateData.player_ids = player_ids;
+      if (kotc_num_courts !== undefined) updateData.kotc_num_courts = kotc_num_courts;
+      if (kotc_num_rounds !== undefined) updateData.kotc_num_rounds = kotc_num_rounds;
+      if (kotc_score_format !== undefined) updateData.kotc_score_format = kotc_score_format;
       await base44.asServiceRole.entities.Tournament.update(tournamentId, updateData);
       return Response.json({ success: true });
     }
