@@ -41,7 +41,15 @@ Deno.serve(async (req) => {
       const playerIds = tournament.player_ids || [];
       let players = [];
       if (playerIds.length > 0) {
-        players = await base44.asServiceRole.entities.Player.filter({ id: { $in: playerIds } });
+        // Fetch players individually to avoid $in filter issues with RLS
+        const fetched = await Promise.all(
+          playerIds.map(id =>
+            base44.asServiceRole.entities.Player.filter({ id })
+              .then(r => r[0] || null)
+              .catch(() => null)
+          )
+        );
+        players = fetched.filter(Boolean);
       }
       return Response.json({ success: true, tournament, players });
     }

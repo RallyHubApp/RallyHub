@@ -489,14 +489,58 @@ export default function PublicTournament() {
     );
   }
 
-  const currentRound = state.rounds[currentRoundNum - 1];
+  const currentRound = state.rounds?.[currentRoundNum - 1];
   const playerMap = Object.fromEntries(players.map(p => [p.id, p.full_name || p.id]));
+
+  // If the current round data is missing (e.g. save failed mid-rotation), show a recovery UI
+  if (!currentRound && !isCompleted) {
+    return (
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-lg mx-auto space-y-4">
+          <div className="glass rounded-xl p-4 flex items-center gap-3">
+            <Crown className="w-5 h-5 text-yellow-400" />
+            <span className="text-sm font-bold text-foreground">{tournament.name}</span>
+          </div>
+          <div className="glass rounded-xl p-6 text-center space-y-4">
+            <p className="text-sm text-muted-foreground">Round {currentRoundNum} data is missing — the previous save may have been interrupted.</p>
+            <Button
+              className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+              onClick={async () => {
+                // Rebuild round from last saved state
+                const lastRound = state.rounds[state.rounds.length - 1];
+                const lastResults = state.results?.[lastRound?.roundNumber] || {};
+                if (!lastRound || Object.keys(lastResults).length === 0) {
+                  toast.error('No results found to recover from.');
+                  return;
+                }
+                const { nextRound, updatedState } = generateNextRound(state, lastRound.roundNumber, lastResults);
+                const recoveredState = { ...updatedState, rounds: [...updatedState.rounds, nextRound] };
+                const trimmedHistory = (recoveredState.pairingHistory || []).slice(-50);
+                await callPublicRegister({
+                  tournamentId,
+                  action: 'update_kotc',
+                  kotc_state: JSON.stringify({ ...recoveredState, pairingHistory: trimmedHistory }),
+                  kotc_current_round: lastRound.roundNumber + 1,
+                  status: 'In Progress',
+                });
+                await fetchTournament();
+                toast.success('Round recovered!');
+              }}
+            >
+              <RefreshCw className="w-4 h-4" /> Recover Round {currentRoundNum}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const savedResults = state.results?.[currentRoundNum] || {};
   const roundResults = Object.fromEntries(
     Object.entries({ ...savedResults, ...pendingResults })
       .filter(([k]) => !clearedCourts.has(Number(k)))
   );
-  const allCourtsRecorded = currentRound?.courts.every(c => roundResults[c.courtNumber]);
+  // Guard: if round has no courts, don't allow "complete" to fire
+  const allCourtsRecorded = !!currentRound?.courts?.length && currentRound.courts.every(c => roundResults[c.courtNumber]);
   const isLastRound = currentRoundNum >= maxRounds;
 
   const hasAnyResults = currentRoundNum === 1 && Object.keys(state?.results?.[1] || {}).length === 0 && Object.keys(pendingResults).length === 0;
@@ -515,14 +559,21 @@ export default function PublicTournament() {
 
   const saveToServer = async (stateToSave, newRound, isLast) => {
     setSubmitting(true);
-    const serialisable = { ...stateToSave, pairingHistory: stateToSave.pairingHistory || [] };
-    await callPublicRegister({
+    // Trim pairingHistory to last 50 entries to prevent payload bloat
+    const trimmedHistory = (stateToSave.pairingHistory || []).slice(-50);
+    const serialisable = { ...stateToSave, pairingHistory: trimmedHistory };
+    const res = await callPublicRegister({
       tournamentId,
       action: 'update_kotc',
       kotc_state: JSON.stringify(serialisable),
       kotc_current_round: isLast ? currentRoundNum : currentRoundNum + 1,
       status: isLast ? 'Completed' : 'In Progress',
     });
+    if (res?.error) {
+      toast.error('Failed to save: ' + res.error);
+      setSubmitting(false);
+      return;
+    }
     toast.success(isLast ? 'Session complete! 🏆' : `Round ${currentRoundNum + 1} ready!`);
     setSubmitting(false);
     await fetchTournament();
