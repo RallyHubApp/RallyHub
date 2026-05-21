@@ -22,7 +22,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   const [linkCopied, setLinkCopied] = useState(false);
 
   const handleShareLink = () => {
-    const url = `${window.location.origin}/t/${tournament.id}`;
+    const url = `${window.location.origin}/tournament/${tournament.id}`;
     navigator.clipboard.writeText(url).then(() => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);

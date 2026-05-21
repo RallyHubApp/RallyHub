@@ -110,6 +110,7 @@ function App() {
 
             {/* Public utility routes — no auth required */}
             <Route path="/register/:id" element={<PublicRegister />} />
+            <Route path="/tournament/:id" element={<PublicTournament />} />
             <Route path="/t/:id" element={<PublicTournament />} />
 
             {/* App entry point — auth checked here */}

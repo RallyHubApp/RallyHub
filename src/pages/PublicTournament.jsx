@@ -269,7 +269,7 @@ function KotcPublicSetup({ tournament, players, onStarted, callPublicRegister })
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PublicTournament() {
-  const tournamentId = window.location.pathname.split('/t/')[1];
+  const tournamentId = window.location.pathname.split('/tournament/')[1] || window.location.pathname.split('/t/')[1];
   const [tournament, setTournament] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
