@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Crown, Users, Clock, ChevronRight, Trophy, RotateCcw, RefreshCw, UserMinus, Pencil, X, Play, Hash, Wifi } from 'lucide-react';
+import { Crown, Users, Clock, ChevronRight, Trophy, RotateCcw, RefreshCw, UserMinus, Pencil, X, Play, Hash, Wifi, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -122,15 +122,53 @@ function CourtCard({ court, playerMap, onResult, onClearResult, disabled, result
 }
 
 // ─── Setup Screen ─────────────────────────────────────────────────────────────
-function KotcPublicSetup({ tournament, players, onStarted, callPublicRegister }) {
+function KotcPublicSetup({ tournament, players: initialPlayers, onStarted, callPublicRegister }) {
   const [numCourts, setNumCourts] = useState(tournament.kotc_num_courts || 4);
   const [numRounds, setNumRounds] = useState(tournament.kotc_num_rounds || 9);
   const [scoreFormat, setScoreFormat] = useState(tournament.kotc_score_format || 'first_11');
   const [saving, setSaving] = useState(false);
+  const [localPlayers, setLocalPlayers] = useState(initialPlayers);
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const [addingPlayer, setAddingPlayer] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
 
+  // Keep in sync if parent re-fetches
+  React.useEffect(() => { setLocalPlayers(initialPlayers); }, [initialPlayers]);
+
+  const players = localPlayers;
   const isValid = players.length >= 4;
   const activeSpots = numCourts * 4;
   const numBench = Math.max(0, players.length - activeSpots);
+
+  const handleAddPlayer = async () => {
+    const name = newPlayerName.trim();
+    if (!name) return;
+    setAddingPlayer(true);
+    const res = await callPublicRegister({ tournamentId: tournament.id, full_name: name });
+    if (res.success !== false) {
+      setNewPlayerName('');
+      // Re-probe to get updated player list
+      const data = await callPublicRegister({ tournamentId: tournament.id, _probe: true });
+      if (data?.players) setLocalPlayers(data.players);
+      toast.success(`${name} added!`);
+    } else {
+      toast.error(res.error || 'Failed to add player');
+    }
+    setAddingPlayer(false);
+  };
+
+  const handleRemovePlayer = async (playerId) => {
+    setRemovingId(playerId);
+    const newPlayerIds = (tournament.player_ids || []).filter(id => id !== playerId);
+    await callPublicRegister({
+      tournamentId: tournament.id,
+      action: 'update_kotc',
+      player_ids: newPlayerIds,
+    });
+    setLocalPlayers(prev => prev.filter(p => p.id !== playerId));
+    setRemovingId(null);
+    toast.success('Player removed');
+  };
 
   const handleStart = async () => {
     if (!isValid) { toast.error('Add at least 4 players to start.'); return; }
@@ -232,29 +270,64 @@ function KotcPublicSetup({ tournament, players, onStarted, callPublicRegister })
         </div>
       </div>
 
-      {/* Players list */}
-      {players.length > 0 && (
-        <div className="glass rounded-xl p-4">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Registered Players</h4>
-          <div className="space-y-1 max-h-48 overflow-auto">
+      {/* Players list with add/remove */}
+      <div className="glass rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Players ({players.length})
+          </h4>
+          {players.length < 4 && (
+            <span className="text-[10px] text-yellow-400">Need at least 4 to start</span>
+          )}
+        </div>
+
+        {/* Add player row */}
+        <div className="flex gap-2 mb-3">
+          <Input
+            placeholder="Player name…"
+            value={newPlayerName}
+            onChange={e => setNewPlayerName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAddPlayer()}
+            className="flex-1 h-8 text-xs bg-secondary border-border"
+          />
+          <Button
+            size="sm"
+            className="h-8 text-xs bg-primary text-primary-foreground px-3 gap-1 shrink-0"
+            disabled={!newPlayerName.trim() || addingPlayer}
+            onClick={handleAddPlayer}
+          >
+            {addingPlayer
+              ? <div className="w-3 h-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              : <><UserPlus className="w-3 h-3" /> Add</>}
+          </Button>
+        </div>
+
+        {players.length > 0 ? (
+          <div className="space-y-1 max-h-52 overflow-auto">
             {players.map((p, i) => (
-              <div key={p.id} className="flex items-center gap-2 p-1.5 rounded-lg">
-                <span className="text-xs text-muted-foreground w-5 text-center">{i + 1}</span>
-                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+              <div key={p.id} className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-secondary transition-colors">
+                <span className="text-xs text-muted-foreground w-5 text-center shrink-0">{i + 1}</span>
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
                   {(p.full_name || '?')[0]}
                 </div>
-                <span className="text-xs text-foreground flex-1">{p.full_name}</span>
+                <span className="text-xs text-foreground flex-1 truncate">{p.full_name}</span>
+                <Button
+                  size="sm" variant="ghost"
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                  disabled={removingId === p.id}
+                  onClick={() => handleRemovePlayer(p.id)}
+                >
+                  {removingId === p.id
+                    ? <div className="w-3 h-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+                    : <X className="w-3 h-3" />}
+                </Button>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {players.length < 4 && (
-        <div className="glass rounded-xl p-4 text-center">
-          <p className="text-xs text-muted-foreground">At least 4 players are needed to start.</p>
-        </div>
-      )}
+        ) : (
+          <p className="text-xs text-muted-foreground text-center py-3">No players yet — add some above</p>
+        )}
+      </div>
 
       <Button
         className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2 h-12"
