@@ -8,6 +8,7 @@ import { generateNextRound, computeKotcLeaderboard, createKotcState, generateRou
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import KotcRotationSummary from './KotcRotationSummary';
+import KotcRoundRecovery from './KotcRoundRecovery';
 
 // ─── CourtCard ────────────────────────────────────────────────────────────────
 function CourtCard({ court, playerMap, onResult, onClearResult, disabled, result }) {
@@ -149,32 +150,12 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
 
   const currentRound = state.rounds?.[currentRoundNum - 1];
   if (!currentRound) {
-    // Recovery: rebuild missing round from last completed round's results
-    const handleRecover = async () => {
-      const lastRound = state.rounds[state.rounds.length - 1];
-      const lastResults = state.results?.[lastRound?.roundNumber] || {};
-      if (!lastRound || Object.keys(lastResults).length === 0) {
-        toast.error('No results found to recover from.');
-        return;
-      }
-      const { nextRound, updatedState } = generateNextRound(state, lastRound.roundNumber, lastResults);
-      const recoveredState = { ...updatedState, rounds: [...updatedState.rounds, nextRound], pairingHistory: (updatedState.pairingHistory || []).slice(-50) };
-      await base44.entities.Tournament.update(tournament.id, {
-        kotc_state: JSON.stringify(recoveredState),
-        kotc_current_round: lastRound.roundNumber + 1,
-        status: 'In Progress',
-      });
-      toast.success('Round recovered!');
-      queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
-    };
-    return (
-      <div className="glass rounded-xl p-8 text-center space-y-4">
-        <p className="text-sm text-muted-foreground">Round {currentRoundNum} data is missing — the previous save may have been interrupted.</p>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2" onClick={handleRecover}>
-          <RefreshCw className="w-4 h-4" /> Recover Round {currentRoundNum}
-        </Button>
-      </div>
-    );
+    return <KotcRoundRecovery
+      state={state}
+      currentRoundNum={currentRoundNum}
+      tournament={tournament}
+      queryClient={queryClient}
+    />;
   }
 
   const playerMap = Object.fromEntries(players.map(p => [p.id, p.full_name || p.id]));

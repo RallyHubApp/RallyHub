@@ -506,25 +506,26 @@ export default function PublicTournament() {
             <Button
               className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
               onClick={async () => {
-                // Rebuild round from last saved state
-                const lastRound = state.rounds[state.rounds.length - 1];
-                const lastResults = state.results?.[lastRound?.roundNumber] || {};
-                if (!lastRound || Object.keys(lastResults).length === 0) {
-                  toast.error('No results found to recover from.');
-                  return;
-                }
-                const { nextRound, updatedState } = generateNextRound(state, lastRound.roundNumber, lastResults);
-                const recoveredState = { ...updatedState, rounds: [...updatedState.rounds, nextRound] };
-                const trimmedHistory = (recoveredState.pairingHistory || []).slice(-50);
+                const lastRound = state.rounds?.[state.rounds.length - 1];
+                if (!lastRound) { toast.error('No round data to recover from.'); return; }
+                const lastRoundNumber = lastRound.roundNumber ?? state.rounds.length;
+                const lastResults = state.results?.[lastRoundNumber] || {};
+                // If no results saved, use dummy results to unblock rotation
+                const effectiveResults = Object.keys(lastResults).length > 0
+                  ? lastResults
+                  : Object.fromEntries(lastRound.courts.map(c => [c.courtNumber, 'A']));
+                const stateWithResults = { ...state, results: { ...(state.results || {}), [lastRoundNumber]: effectiveResults } };
+                const { nextRound, updatedState } = generateNextRound(stateWithResults, lastRoundNumber, effectiveResults);
+                const recoveredState = { ...updatedState, rounds: [...updatedState.rounds, nextRound], pairingHistory: (updatedState.pairingHistory || []).slice(-50) };
                 await callPublicRegister({
                   tournamentId,
                   action: 'update_kotc',
-                  kotc_state: JSON.stringify({ ...recoveredState, pairingHistory: trimmedHistory }),
-                  kotc_current_round: lastRound.roundNumber + 1,
+                  kotc_state: JSON.stringify(recoveredState),
+                  kotc_current_round: currentRoundNum,
                   status: 'In Progress',
                 });
                 await fetchTournament();
-                toast.success('Round recovered!');
+                toast.success(`Round ${currentRoundNum} recovered!`);
               }}
             >
               <RefreshCw className="w-4 h-4" /> Recover Round {currentRoundNum}
