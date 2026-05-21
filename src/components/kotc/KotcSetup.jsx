@@ -14,7 +14,7 @@ const SCORE_FORMATS = [
   { value: 'timed_10', label: '10-min rounds', icon: Clock, desc: 'Timed game — most points wins' },
   { value: 'first_7', label: 'First to 7', icon: Hash, desc: 'Win by 1' },
   { value: 'first_11', label: 'First to 11', icon: Hash, desc: 'Win by 1' },
-  { value: 'first_15', label: 'First to 15', icon: Hash, desc: 'Win by 2' },
+  { value: 'first_15', label: 'First to 11', icon: Hash, desc: 'Win by 2' },
 ];
 
 export default function KotcSetup({ tournament, players, onStarted, queryClient }) {
@@ -107,6 +107,9 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
                 <SelectItem value="7">7 rounds</SelectItem>
                 <SelectItem value="8">8 rounds</SelectItem>
                 <SelectItem value="9">9 rounds</SelectItem>
+                <SelectItem value="10">10 rounds</SelectItem>
+                <SelectItem value="11">11 rounds</SelectItem>
+                <SelectItem value="12">12 rounds</SelectItem>
               </SelectContent>
             </Select>
           </div>
