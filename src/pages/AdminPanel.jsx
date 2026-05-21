@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, KeyRound, Copy, RefreshCw, Send, Clock, XCircle, CheckCircle } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, KeyRound, Copy, RefreshCw, Send, Clock, XCircle, CheckCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/shared/PageHeader';
@@ -45,6 +45,8 @@ export default function AdminPanel() {
   const [settingPass, setSettingPass] = useState(false);
   const [resetEmailUser, setResetEmailUser] = useState(null);
   const [sendingReset, setSendingReset] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState(null);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -209,6 +211,15 @@ export default function AdminPanel() {
     } finally {
       setSettingPass(false);
     }
+  };
+
+  const deleteUser = async (u) => {
+    setDeletingUser(u.id);
+    await base44.entities.User.delete(u.id);
+    queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    toast.success(`User ${u.full_name || u.email} deleted`);
+    setDeletingUser(null);
+    setConfirmDeleteUser(null);
   };
 
   const sendPasswordReset = async (user) => {
@@ -426,6 +437,12 @@ export default function AdminPanel() {
                       )
                     )}
                     {u.id === user?.id && <span className="text-[10px] text-muted-foreground">(you)</span>}
+                    {u.id !== user?.id && (
+                      <Button size="icon" variant="ghost" className="w-7 h-7 text-muted-foreground hover:text-destructive shrink-0"
+                        onClick={() => setConfirmDeleteUser(u)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -839,6 +856,30 @@ export default function AdminPanel() {
                 </Button>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog open={!!confirmDeleteUser} onOpenChange={(open) => { if (!open) setConfirmDeleteUser(null); }}>
+        <DialogContent className="sm:max-w-sm bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-destructive" /> Delete User
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Are you sure you want to permanently delete <strong>{confirmDeleteUser?.full_name || confirmDeleteUser?.email}</strong>? This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setConfirmDeleteUser(null)}>Cancel</Button>
+            <Button
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deletingUser === confirmDeleteUser?.id}
+              onClick={() => deleteUser(confirmDeleteUser)}
+            >
+              {deletingUser === confirmDeleteUser?.id ? 'Deleting…' : 'Delete User'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
