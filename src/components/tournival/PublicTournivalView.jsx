@@ -300,9 +300,13 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
     return true;
   });
 
-  // Find champion
+  // Find champion and podium positions
   const finalMatch = state.knockoutState?.bracket?.find(m => m.stage === 'Final' && m.result);
   const champion = finalMatch ? (finalMatch.result.winner === 'A' ? finalMatch.pair1 : finalMatch.pair2) : null;
+  const runnerUp = finalMatch ? (finalMatch.result.winner === 'A' ? finalMatch.pair2 : finalMatch.pair1) : null;
+  const thirdPlaceMatch = state.knockoutState?.bracket?.find(m => m.stage === '3rd' && m.result);
+  const third = thirdPlaceMatch ? (thirdPlaceMatch.result.winner === 'A' ? thirdPlaceMatch.pair1 : thirdPlaceMatch.pair2) : null;
+  const fourth = thirdPlaceMatch ? (thirdPlaceMatch.result.winner === 'A' ? thirdPlaceMatch.pair2 : thirdPlaceMatch.pair1) : null;
 
   return (
     <div className="space-y-4">
@@ -496,10 +500,34 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
           })()}
 
           {champion && (
-            <div className="glass rounded-xl p-6 text-center glow-green">
-              <Trophy className="w-10 h-10 text-primary mx-auto mb-3" />
-              <p className="text-lg font-bold text-foreground">🏆 Champions!</p>
-              <p className="text-primary font-semibold mt-1">{champion.player1.name} & {champion.player2.name}</p>
+            <div className="glass rounded-xl p-6 text-center glow-green space-y-4">
+              <Trophy className="w-10 h-10 text-primary mx-auto" />
+              <div>
+                <p className="text-lg font-bold text-foreground">🏆 Champions!</p>
+                <p className="text-primary font-semibold mt-1">{champion.player1.name} & {champion.player2.name}</p>
+              </div>
+              {(runnerUp || third || fourth) && (
+                <div className="border-t border-border/50 pt-3 space-y-2">
+                  {runnerUp && (
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <span className="text-lg">🥈</span>
+                      <span className="text-foreground font-medium">{runnerUp.player1.name} & {runnerUp.player2.name}</span>
+                    </div>
+                  )}
+                  {third && (
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <span className="text-lg">🥉</span>
+                      <span className="text-foreground font-medium">{third.player1.name} & {third.player2.name}</span>
+                    </div>
+                  )}
+                  {fourth && (
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <span className="text-muted-foreground font-medium">4th</span>
+                      <span className="text-muted-foreground">{fourth.player1.name} & {fourth.player2.name}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
