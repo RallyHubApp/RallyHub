@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2, Crown, FileSpreadsheet } from 'lucide-react';
+import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2, Crown, FileSpreadsheet, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -52,8 +52,21 @@ export default function Tournaments() {
       partner_pairs: [],
     });
     queryClient.invalidateQueries({ queryKey: ['tournaments'] });
-    setNewKotcTournament(t);
-    setKotcSpondOpen(true);
+    navigate(`/app/tournaments/${t.id}`);
+  };
+
+  const handleQuickTournival = async () => {
+    const t = await base44.entities.Tournament.create({
+      name: `Tournival — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
+      format: 'Tournival',
+      partnership_type: 'Singles',
+      status: 'Draft',
+      kotc_num_courts: 4,
+      player_ids: [],
+      partner_pairs: [],
+    });
+    queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+    navigate(`/app/tournaments/${t.id}`);
   };
 
   const handleDelete = async (e, id) => {
@@ -80,6 +93,9 @@ export default function Tournaments() {
       <PageHeader title="Tournaments" description={`${tournaments.length} tournaments`}>
         <Button variant="outline" className="gap-2 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10" onClick={handleQuickKotc}>
           <Crown className="w-4 h-4" /> King of the Court
+        </Button>
+        <Button variant="outline" className="gap-2 border-accent/40 text-accent hover:bg-accent/10" onClick={handleQuickTournival}>
+          <Zap className="w-4 h-4" /> Tournival
         </Button>
         <Button variant="outline" className="gap-2 border-primary/40 text-primary hover:bg-primary/10" onClick={async () => {
           const t = await base44.entities.Tournament.create({
