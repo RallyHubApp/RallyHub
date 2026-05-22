@@ -177,6 +177,12 @@ export default function PublicTournivalView({ tournament, players, liveIndicator
   const [activeTab, setActiveTab] = useState(state?.knockoutState ? 'knockout' : state ? 'scores' : 'scores');
   const [submitting, setSubmitting] = useState(false);
 
+  // Auto-refresh every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => { onRefresh(); }, 60000);
+    return () => clearInterval(interval);
+  }, [onRefresh]);
+
   const playerMap = Object.fromEntries(players.map(p => [p.id, p.full_name || p.id]));
   const currentRound = state?.currentRound || 1;
   const totalRounds = state?.rounds?.length || 1;
