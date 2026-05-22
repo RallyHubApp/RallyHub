@@ -42,11 +42,19 @@ function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, o
   };
 
   const [linkCopied, setLinkCopied] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const handleCopyLink = () => {
     const url = `${window.location.origin}/register/${tournament.id}`;
     navigator.clipboard.writeText(url).then(() => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
+    });
+  };
+  const handleCopyShare = () => {
+    const url = `${window.location.origin}/tournament/${tournament.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
     });
   };
 
@@ -59,9 +67,14 @@ function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, o
             <Users className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-semibold text-foreground">Players ({players.length})</span>
           </div>
-          <Button variant="outline" size="sm" className={cn('text-xs gap-1', linkCopied && 'text-primary border-primary/40')} onClick={handleCopyLink}>
-            {linkCopied ? <><Check className="w-3 h-3" /> Copied!</> : <><Link2 className="w-3 h-3" /> Reg Link</>}
-          </Button>
+          <div className="flex gap-1.5">
+            <Button variant="outline" size="sm" className={cn('text-xs gap-1', linkCopied && 'text-primary border-primary/40')} onClick={handleCopyLink}>
+              {linkCopied ? <><Check className="w-3 h-3" /> Copied!</> : <><Link2 className="w-3 h-3" /> Reg Link</>}
+            </Button>
+            <Button variant="outline" size="sm" className={cn('text-xs gap-1', shareCopied && 'text-accent border-accent/40')} onClick={handleCopyShare}>
+              {shareCopied ? <><Check className="w-3 h-3" /> Copied!</> : <><Link2 className="w-3 h-3" /> Live View</>}
+            </Button>
+          </div>
         </div>
 
         {isAdmin && (

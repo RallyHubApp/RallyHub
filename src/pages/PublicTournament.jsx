@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Crown, Users, Clock, ChevronRight, Trophy, RotateCcw, RefreshCw, UserMinus, Pencil, X, Play, Hash, Wifi, UserPlus } from 'lucide-react';
+import PublicTournivalView from '@/components/tournival/PublicTournivalView';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -427,6 +428,23 @@ export default function PublicTournament() {
   }
 
   const isKotc = tournament.format === 'King of the Court';
+  const isTournival = tournament.format === 'Tournival';
+
+  if (isTournival) {
+    return (
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-lg mx-auto">
+          <PublicTournivalView
+            tournament={tournament}
+            players={players}
+            liveIndicator={liveIndicator}
+            callPublicRegister={callPublicRegister}
+            onRefresh={() => fetchTournament()}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (!isKotc) {
     return (
