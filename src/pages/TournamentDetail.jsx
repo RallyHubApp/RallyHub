@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Play, Users, Calendar, MapPin, Plus, Shuffle,
+  ArrowLeft, Play, Users, Calendar, MapPin, Plus,
   Trophy, Upload, GitBranch, Swords, BarChart2, List, Flag,
   Pencil, Trash2, Link2, UserPlus, Check
 } from 'lucide-react';
@@ -20,7 +20,7 @@ import BracketView from '@/components/tournaments/BracketView';
 import InterClubUploadModal from '@/components/tournaments/InterClubUploadModal';
 import KotcView from '@/components/kotc/KotcView';
 import TournivalView from '@/components/tournival/TournivalView';
-import SpondImportModal from '@/components/spond/SpondImportModal';
+import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { generateDraw, buildEntries } from '@/lib/drawEngine';
@@ -40,7 +40,7 @@ export default function TournamentDetail() {
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
   const [pairsUploadOpen, setPairsUploadOpen] = useState(false);
-  const [spondOpen, setSpondOpen] = useState(false);
+  const [xlsxOpen, setXlsxOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -48,6 +48,7 @@ export default function TournamentDetail() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [regLinkCopied, setRegLinkCopied] = useState(false);
   const [completing, setCompleting] = useState(false);
 
   const handleShareLink = () => {
@@ -55,6 +56,14 @@ export default function TournamentDetail() {
     navigator.clipboard.writeText(url).then(() => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
+    }).catch(() => prompt('Copy this link:', url));
+  };
+
+  const handleRegLink = () => {
+    const url = `${window.location.origin}/register/${tournament?.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setRegLinkCopied(true);
+      setTimeout(() => setRegLinkCopied(false), 2000);
     }).catch(() => prompt('Copy this link:', url));
   };
 
@@ -268,11 +277,24 @@ export default function TournamentDetail() {
                 <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteConfirmOpen(true)}>
                   <Trash2 className="w-3 h-3 mr-1" /> Delete
                 </Button>
-                {/* Share registration link */}
-                <Button variant="outline" size="sm" onClick={handleShareLink}
-                  className={linkCopied ? 'text-primary border-primary/40' : ''}>
-                  {linkCopied ? <><Check className="w-3 h-3 mr-1" /> Copied!</> : <><Link2 className="w-3 h-3 mr-1" /> Share Link</>}
-                </Button>
+                {/* Share links */}
+                {isTournival ? (
+                  <>
+                    <Button variant="outline" size="sm" onClick={handleRegLink}
+                      className={regLinkCopied ? 'text-primary border-primary/40' : ''}>
+                      {regLinkCopied ? <><Check className="w-3 h-3 mr-1" /> Copied!</> : <><Link2 className="w-3 h-3 mr-1" /> Reg Link</>}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleShareLink}
+                      className={linkCopied ? 'text-accent border-accent/40' : ''}>
+                      {linkCopied ? <><Check className="w-3 h-3 mr-1" /> Copied!</> : <><Link2 className="w-3 h-3 mr-1" /> Live View</>}
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={handleShareLink}
+                    className={linkCopied ? 'text-primary border-primary/40' : ''}>
+                    {linkCopied ? <><Check className="w-3 h-3 mr-1" /> Copied!</> : <><Link2 className="w-3 h-3 mr-1" /> Share Link</>}
+                  </Button>
+                )}
               </>
             )}
             {isFixedPartners ? (
@@ -281,8 +303,8 @@ export default function TournamentDetail() {
               </Button>
             ) : (
               <>
-                <Button variant="outline" size="sm" onClick={() => setSpondOpen(true)}>
-                  <Shuffle className="w-3 h-3 mr-1" /> Import Spond
+                <Button variant="outline" size="sm" onClick={() => setXlsxOpen(true)}>
+                  <Upload className="w-3 h-3 mr-1" /> Import XLSX
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}>
                   <Plus className="w-3 h-3 mr-1" /> Add Players
@@ -628,12 +650,13 @@ export default function TournamentDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Spond Import Modal */}
-      <SpondImportModal
-        open={spondOpen}
-        onOpenChange={setSpondOpen}
+      {/* XLSX Import Modal */}
+      <SpondXlsxImportModal
+        open={xlsxOpen}
+        onOpenChange={setXlsxOpen}
         tournament={tournament}
         onImported={() => {
+          setXlsxOpen(false);
           queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
           queryClient.invalidateQueries({ queryKey: ['players'] });
         }}
