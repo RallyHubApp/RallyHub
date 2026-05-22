@@ -19,6 +19,7 @@ import MatchScorer from '@/components/matches/MatchScorer';
 import BracketView from '@/components/tournaments/BracketView';
 import InterClubUploadModal from '@/components/tournaments/InterClubUploadModal';
 import KotcView from '@/components/kotc/KotcView';
+import TournivalView from '@/components/tournival/TournivalView';
 import SpondImportModal from '@/components/spond/SpondImportModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -93,6 +94,7 @@ export default function TournamentDetail() {
   }
 
   const isKotc = tournament.format === 'King of the Court';
+  const isTournival = tournament.format === 'Tournival';
   const isFixedPartners = tournament.partnership_type === 'Fixed Partners';
   const isInterClub = tournament.inter_club;
   const registeredPlayers = allPlayers.filter(p => tournament.player_ids?.includes(p.id));
@@ -379,6 +381,17 @@ export default function TournamentDetail() {
           players={registeredPlayers}
           allPlayers={allPlayers}
           queryClient={queryClient}
+        />
+      )}
+
+      {/* ── Tournival — dedicated view ── */}
+      {isTournival && (
+        <TournivalView
+          tournament={tournament}
+          players={registeredPlayers}
+          allPlayers={allPlayers}
+          queryClient={queryClient}
+          isAdmin={isAdmin}
         />
       )}
 

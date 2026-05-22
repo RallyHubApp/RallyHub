@@ -16,6 +16,7 @@
         "Consolation (FRLC)",
         "Ladder League",
         "King of the Court",
+        "Tournival",
         "Mixed Doubles"
       ]
     },
@@ -106,7 +107,7 @@
     },
     "kotc_num_courts": {
       "type": "number",
-      "description": "King of the Court: number of courts",
+      "description": "King of the Court / Tournival: number of courts",
       "default": 4
     },
     "kotc_num_rounds": {
@@ -116,37 +117,19 @@
     },
     "kotc_score_format": {
       "type": "string",
-      "description": "King of the Court: scoring format (timed_10, first_7, first_11, first_15)"
+      "description": "King of the Court: scoring format"
     },
     "kotc_state": {
       "type": "string",
-      "description": "King of the Court: JSON-serialised rotation engine state"
+      "description": "King of the Court / Tournival: JSON-serialised engine state"
     },
     "kotc_current_round": {
       "type": "number",
-      "description": "King of the Court: current round number"
+      "description": "King of the Court / Tournival: current round number"
     }
   },
   "required": [
     "name",
     "format"
-  ],
-  "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": true,
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
-  }
+  ]
 }

@@ -19,6 +19,7 @@ const FORMATS = [
   { value: 'Compass Draw', label: 'Compass Draw', desc: 'Winners go North, losers go West/South. Guarantees 3–4 matches per player.' },
   { value: 'Ladder League', label: 'Ladder League', desc: 'Ongoing league ladder — challenge up or down.' },
   { value: 'King of the Court', label: 'King of the Court', desc: 'Winners stay on court, challengers rotate in.' },
+  { value: 'Tournival', label: 'Tournival', desc: 'Mixed-doubles round robin (4 group rounds) followed by seeded knockout cup matches.' },
   { value: 'Mixed Doubles', label: 'Mixed Doubles', desc: 'Fixed male/female pairs.' },
 ];
 
