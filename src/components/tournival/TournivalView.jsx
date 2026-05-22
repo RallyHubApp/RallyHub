@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Zap, Users, UserPlus, X, List, BarChart2, Trophy, Swords, ClipboardList, Link2, Check } from 'lucide-react';
+import { Zap, Users, UserPlus, X, List, BarChart2, Trophy, Swords, ClipboardList, Link2, Check, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import {
@@ -18,6 +18,7 @@ import TournivalFixtures from './TournivalFixtures';
 import TournivalScoring from './TournivalScoring';
 import TournivalLeaderboard from './TournivalLeaderboard';
 import TournivalKnockout from './TournivalKnockout';
+import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 
 const TABS = [
   { id: 'setup', label: 'Setup', icon: Zap },
@@ -28,7 +29,7 @@ const TABS = [
 ];
 
 // ── Player Entry Panel ────────────────────────────────────────────────────────
-function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, onRemovePlayer, addingPlayer }) {
+function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, onRemovePlayer, onImportXlsx }) {
   const [name, setName] = useState('');
   const [adding, setAdding] = useState(false);
 
@@ -78,6 +79,14 @@ function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, o
         </div>
 
         {isAdmin && (
+          <div className="flex gap-2 mb-2">
+            <Button variant="outline" size="sm" className="text-xs gap-1 h-8" onClick={onImportXlsx}>
+              <FileSpreadsheet className="w-3 h-3" /> Import XLSX
+            </Button>
+          </div>
+        )}
+
+        {isAdmin && (
           <div className="flex gap-2 mb-3">
             <Input
               placeholder="Player name…"
@@ -125,6 +134,7 @@ function PlayerPanel({ players, tournament, isAdmin, queryClient, onAddPlayer, o
 // ── Main Orchestrator ─────────────────────────────────────────────────────────
 export default function TournivalView({ tournament, players, allPlayers, queryClient, isAdmin }) {
   const [activeTab, setActiveTab] = useState('setup');
+  const [xlsxOpen, setXlsxOpen] = useState(false);
 
   // Parse state from tournament
   const state = useMemo(() => {
@@ -353,8 +363,20 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
           queryClient={queryClient}
           onAddPlayer={handleAddPlayer}
           onRemovePlayer={handleRemovePlayer}
+          onImportXlsx={() => setXlsxOpen(true)}
         />
       )}
+
+      <SpondXlsxImportModal
+        open={xlsxOpen}
+        onOpenChange={setXlsxOpen}
+        tournament={tournament}
+        onImported={() => {
+          setXlsxOpen(false);
+          queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+          queryClient.invalidateQueries({ queryKey: ['players'] });
+        }}
+      />
 
       {activeTab === 'setup' && (
         <TournivalSetup
