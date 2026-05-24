@@ -23,6 +23,7 @@ import PublicRegister from '@/pages/PublicRegister';
 import PublicTournament from '@/pages/PublicTournament';
 import Landing from '@/pages/Landing';
 import PendingApprovalScreen from '@/components/PendingApprovalScreen';
+import AndroidInstallPrompt from '@/components/AndroidInstallPrompt';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -132,6 +133,7 @@ function App() {
           </Routes>
         </Router>
         <Toaster />
+        <AndroidInstallPrompt />
       </QueryClientProvider>
     </AuthProvider>
   )
