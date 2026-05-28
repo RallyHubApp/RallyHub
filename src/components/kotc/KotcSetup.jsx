@@ -18,12 +18,13 @@ const SCORE_FORMATS = [
 ];
 
 export default function KotcSetup({ tournament, players, onStarted, queryClient }) {
-  const [numCourts, setNumCourts] = useState(tournament.kotc_num_courts || 4);
+  const [numCourts, setNumCourts] = useState(String(tournament.kotc_num_courts || 4));
   const [numRounds, setNumRounds] = useState(tournament.kotc_num_rounds || 9);
   const [scoreFormat, setScoreFormat] = useState(tournament.kotc_score_format || 'first_11');
   const [saving, setSaving] = useState(false);
 
-  const activeSpots = numCourts * 4;
+  const numCourtsNum = Math.max(1, Math.min(8, parseInt(numCourts) || 1));
+  const activeSpots = numCourtsNum * 4;
   const numBench = Math.max(0, players.length - activeSpots);
   const isValid = players.length >= 4;
 
@@ -33,7 +34,7 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
 
     // Build initial engine state
     const enginePlayers = players.map(p => ({ id: p.id, name: p.full_name, rating: p.skill_rating || 3.0 }));
-    let state = createKotcState({ players: enginePlayers, numCourts: Number(numCourts) });
+    let state = createKotcState({ players: enginePlayers, numCourts: numCourtsNum });
     const round1 = generateRound1(state);
     state = { ...state, rounds: [round1] };
 
@@ -42,7 +43,7 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
 
     await base44.entities.Tournament.update(tournament.id, {
       status: 'In Progress',
-      kotc_num_courts: Number(numCourts),
+      kotc_num_courts: numCourtsNum,
       kotc_num_rounds: Number(numRounds),
       kotc_score_format: scoreFormat,
       kotc_state: JSON.stringify(serialisable),
@@ -74,7 +75,7 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
             <p className="text-[10px] text-muted-foreground">Players</p>
           </div>
           <div className="glass rounded-lg p-3">
-            <p className="text-xl font-bold text-primary">{numCourts * 4}</p>
+            <p className="text-xl font-bold text-primary">{numCourtsNum * 4}</p>
             <p className="text-[10px] text-muted-foreground">Active/Round</p>
           </div>
           <div className="glass rounded-lg p-3">
@@ -94,7 +95,8 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
             <Input
               type="number" min={1} max={8}
               value={numCourts}
-              onChange={e => setNumCourts(Math.max(1, Math.min(8, Number(e.target.value))))}
+              onChange={e => setNumCourts(e.target.value)}
+              onBlur={e => setNumCourts(String(Math.max(1, Math.min(8, parseInt(e.target.value) || 1))))}
               className="mt-1 bg-secondary border-border"
             />
             <p className="text-[10px] text-muted-foreground mt-1">Court 1 = King Court</p>

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Crown, Users, Clock, ChevronRight, Trophy, RefreshCw } from 'lucide-react';
+import { Crown, Users, Clock, ChevronRight, Trophy, RefreshCw, StopCircle } from 'lucide-react';
 import { generateNextRound, computeKotcLeaderboard, createKotcState, generateRound1 } from '@/lib/kingOfCourtEngine';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -135,6 +135,7 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   // Rotation summary state: null | { movements, nextRound, nextState, isLast }
   const [rotationSummary, setRotationSummary] = useState(null);
+  const [confirmEndEarly, setConfirmEndEarly] = useState(false);
 
   const rawState = tournament.kotc_state ? JSON.parse(tournament.kotc_state) : null;
   const state = rawState ? { ...rawState, pairingHistory: rawState.pairingHistory || [] } : null;
@@ -251,7 +252,7 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
       status: isLast ? 'Completed' : 'In Progress',
     });
 
-    toast.success(isLast ? 'Session complete! 🏆' : `Round ${currentRoundNum + 1} ready!`);
+    toast.success(isLast ? 'Session complete! 🏆' : confirmEndEarly ? 'Session ended early! 🏆' : `Round ${currentRoundNum + 1} ready!`);
     setSubmitting(false);
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
   };
@@ -380,23 +381,70 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
 
       {/* Action button */}
       {!isCompleted && (
-        <Button
-          className={cn(
-            'w-full gap-2',
-            allCourtsRecorded
-              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-              : 'opacity-50'
+        <div className="space-y-2">
+          <Button
+            className={cn(
+              'w-full gap-2',
+              allCourtsRecorded
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'opacity-50'
+            )}
+            onClick={handleCompleteRound}
+            disabled={!allCourtsRecorded || submitting}
+          >
+            {submitting && !confirmEndEarly
+              ? <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Processing…</>
+              : isLastRound
+                ? <><Trophy className="w-4 h-4" /> Finish Session</>
+                : <><ChevronRight className="w-4 h-4" /> Complete Round & See Rotations</>
+            }
+          </Button>
+
+          {!isLastRound && !confirmEndEarly && (
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 text-xs"
+              onClick={() => setConfirmEndEarly(true)}
+              disabled={submitting}
+            >
+              <StopCircle className="w-3.5 h-3.5" /> End Session Early (Time's Up)
+            </Button>
           )}
-          onClick={handleCompleteRound}
-          disabled={!allCourtsRecorded || submitting}
-        >
-          {submitting
-            ? <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Processing…</>
-            : isLastRound
-              ? <><Trophy className="w-4 h-4" /> Finish Session</>
-              : <><ChevronRight className="w-4 h-4" /> Complete Round & See Rotations</>
-          }
-        </Button>
+
+          {confirmEndEarly && (
+            <div className="glass rounded-xl p-4 border border-destructive/30 space-y-3">
+              <p className="text-sm font-semibold text-foreground">End session after Round {currentRoundNum}?</p>
+              <p className="text-xs text-muted-foreground">Results so far will be saved and final standings calculated from completed rounds.</p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setConfirmEndEarly(false)}
+                  disabled={submitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1"
+                  disabled={submitting}
+                  onClick={async () => {
+                    const mergedResults = { ...state.results, [currentRoundNum]: roundResults };
+                    const finalState = { ...state, results: mergedResults };
+                    await handleSave(finalState, null, null, true);
+                    setConfirmEndEarly(false);
+                  }}
+                >
+                  {submitting
+                    ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving…</>
+                    : <><StopCircle className="w-3.5 h-3.5" /> End Now</>
+                  }
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {isCompleted && (
