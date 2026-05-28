@@ -3,22 +3,28 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
-    const { email, tempPassword, newPassword, action } = body;
+    const { email, tempPassword, action } = body;
 
     if (!email || !tempPassword) {
       return Response.json({ error: 'Email and temp password are required' }, { status: 400 });
     }
+    if (user.role !== 'admin' && user.email?.toLowerCase() !== email.toLowerCase()) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
-    // Find player by email using service role
-    const players = await base44.asServiceRole.entities.Player.list();
-    const player = players.find(p => p.email?.toLowerCase() === email.toLowerCase());
+    const players = await base44.asServiceRole.entities.Player.filter({ email: email.toLowerCase() });
+    const player = players[0];
 
     if (!player) {
       return Response.json({ error: 'No account found for this email' }, { status: 404 });
     }
 
-    // Extract temp password from notes field
     const match = (player.notes || '').match(/\[TEMP:(.*?)\]/);
     if (!match) {
       return Response.json({ error: 'No temporary password set for this account. Please contact your admin.' }, { status: 400 });
@@ -29,18 +35,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid temporary password' }, { status: 401 });
     }
 
-    // ── VERIFY ONLY (check temp password is valid) ─────────────────────────────
     if (action === 'verify') {
       return Response.json({ valid: true, playerName: player.full_name, email: player.email });
     }
 
-    // ── VALIDATED — clear temp token, send password reset email ──────────────
     if (action === 'change_password') {
-      // Clear the temp password now that it's been validated
       const cleanedNotes = (player.notes || '').replace(/\[TEMP:.*?\]/g, '').trim();
       await base44.asServiceRole.entities.Player.update(player.id, { notes: cleanedNotes || null });
-
-      // Trigger password reset email via platform
       await base44.auth.resetPasswordRequest(email);
 
       return Response.json({ success: true, email: player.email });

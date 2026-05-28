@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const ACCESS_CODE = 'CLAREPBRH';
+const ACCESS_CODE = Deno.env.get('RALLYHUB_ACCESS_CODE');
 
 Deno.serve(async (req) => {
   try {
@@ -20,8 +20,11 @@ Deno.serve(async (req) => {
       if (!code) {
         return Response.json({ error: 'Access code required' }, { status: 400 });
       }
+      if (!ACCESS_CODE) {
+        return Response.json({ error: 'Access code is not configured' }, { status: 500 });
+      }
 
-      if (code.trim().toUpperCase() !== ACCESS_CODE) {
+      if (code.trim().toUpperCase() !== ACCESS_CODE.trim().toUpperCase()) {
         return Response.json({ error: 'Invalid access code' }, { status: 401 });
       }
 

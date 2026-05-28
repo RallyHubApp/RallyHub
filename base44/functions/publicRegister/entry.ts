@@ -47,8 +47,17 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, tournament, players });
     }
 
-    // Update KOTC state (save results / advance round / start)
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Update tournament state (admin-only)
     if (action === 'update_kotc' || action === 'start_kotc') {
+      if (user.role !== 'admin') {
+        return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      }
+
       const updateData = {};
       if (kotc_state !== undefined) updateData.kotc_state = kotc_state;
       if (kotc_current_round !== undefined) updateData.kotc_current_round = kotc_current_round;

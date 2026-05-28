@@ -4,9 +4,16 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // Mode: notifyAllPending — called by admin to blast notifications for all pending users
     if (payload.notifyAllPending) {
+      if (user.role !== 'admin') {
+        return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      }
       const allUsers = await base44.asServiceRole.entities.User.list();
       const pendingUsers = allUsers.filter(u => u.role !== 'admin' && (!u.approval_status || u.approval_status === 'pending'));
       const admins = allUsers.filter(u => u.role === 'admin' && u.email);
@@ -42,6 +49,9 @@ RallyHub`.trim()
 
     // Mode: notifyUserApproval — called when admin approves/rejects a user
     if (payload.notifyUserApproval) {
+      if (user.role !== 'admin') {
+        return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      }
       const { userEmail, userName, status } = payload;
       if (!userEmail) return Response.json({ error: 'No userEmail provided' }, { status: 400 });
 
@@ -72,9 +82,8 @@ RallyHub`.trim()
       return Response.json({ success: true });
     }
 
-    // Normal mode: single user hit the pending screen
-    const newUser = payload.user || payload.data;
-    if (!newUser) return Response.json({ error: 'No user data in payload' }, { status: 400 });
+    // Normal mode: current signed-in user hit the pending screen
+    const newUser = user;
     if (newUser.role === 'admin') return Response.json({ skipped: true, reason: 'admin user' });
 
     const allUsers = await base44.asServiceRole.entities.User.list();
