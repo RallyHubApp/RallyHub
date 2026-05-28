@@ -63,7 +63,7 @@ export default function Landing() {
                 alt="RallyHub" 
                 className="h-16 w-16 sm:h-20 sm:w-20 rounded-none"
               />
-              <h1 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight">RallyHub</h1>
+              <h1 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight">Welcome | RallyHub</h1>
             </div>
             
             <p className="text-xl sm:text-2xl text-muted-foreground mb-8 leading-relaxed">
