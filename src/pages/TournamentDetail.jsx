@@ -24,6 +24,7 @@ import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { generateDraw, buildEntries } from '@/lib/drawEngine';
+import { appParams } from '@/lib/app-params';
 
 const statusColors = {
   'Draft': 'bg-secondary text-secondary-foreground',
@@ -52,7 +53,8 @@ export default function TournamentDetail() {
   const [completing, setCompleting] = useState(false);
 
   const handleShareLink = () => {
-    const url = `${window.location.origin}/tournament/${tournament?.id}`;
+    const publicBaseUrl = (appParams.appBaseUrl || window.location.origin).replace(/\/$/, '');
+    const url = `${publicBaseUrl}/tournament/${tournament?.id}`;
     navigator.clipboard.writeText(url).then(() => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);

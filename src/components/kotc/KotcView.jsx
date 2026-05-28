@@ -11,6 +11,7 @@ import KotcRoundView from './KotcRoundView';
 import SpondImportModal from '@/components/spond/SpondImportModal';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
+import { appParams } from '@/lib/app-params';
 
 export default function KotcView({ tournament, players, allPlayers, queryClient }) {
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
@@ -22,7 +23,8 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   const [linkCopied, setLinkCopied] = useState(false);
 
   const handleShareLink = () => {
-    const url = `${window.location.origin}/tournament/${tournament.id}`;
+    const publicBaseUrl = (appParams.appBaseUrl || window.location.origin).replace(/\/$/, '');
+    const url = `${publicBaseUrl}/tournament/${tournament.id}`;
     navigator.clipboard.writeText(url).then(() => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
