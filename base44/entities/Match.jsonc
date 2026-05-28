@@ -28,6 +28,11 @@
       "type": "string",
       "description": "Display names for team 2"
     },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional public description of the match"
+    },
     "scores": {
       "type": "array",
       "description": "Array of {team1, team2} game scores",

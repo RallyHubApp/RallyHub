@@ -22,6 +22,8 @@ import AdminPanel from '@/pages/AdminPanel';
 import PublicRegister from '@/pages/PublicRegister';
 import PublicTournament from '@/pages/PublicTournament';
 import Landing from '@/pages/Landing';
+import About from '@/pages/About';
+import Contact from '@/pages/Contact';
 import PendingApprovalScreen from '@/components/PendingApprovalScreen';
 import AndroidInstallPrompt from '@/components/AndroidInstallPrompt';
 
@@ -108,6 +110,8 @@ function App() {
           <Routes>
             {/* Public landing — no auth check, always accessible */}
             <Route path="/" element={<Landing />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
 
             {/* Public utility routes — no auth required */}
             <Route path="/register/:id" element={<PublicRegister />} />

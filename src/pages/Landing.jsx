@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Calendar, Users, MapPin, Trophy, ArrowRight, CheckCircle2 } from 'lucide-react';
@@ -198,6 +199,10 @@ export default function Landing() {
       {/* Footer */}
       <div className="container mx-auto px-4 py-8 border-t border-border">
         <div className="text-center text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-4 mb-3">
+            <Link to="/about" className="hover:text-primary transition-colors">About</Link>
+            <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
+          </div>
           <p>&copy; {new Date().getFullYear()} RallyHub.ie. All rights reserved.</p>
           <p className="mt-2">Built for the racket sports community</p>
         </div>
