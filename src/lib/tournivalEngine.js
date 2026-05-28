@@ -57,14 +57,15 @@ function generateOneRound(playerIds, numCourts, partnerHistory, opponentHistory,
   // How many players can play (numCourts * 4)
   const slots = numCourts * 4;
   if (active.length > slots) {
-    // Rotate bench: try to bench different players each round
-    const shuffled = shuffle(active);
-    bench.push(...shuffled.slice(slots));
-    active.splice(0, active.length, ...shuffled.slice(0, slots));
+    // Use seed order as the source order and rotate bench predictably by round.
+    const offset = ((roundNumber - 1) * slots) % active.length;
+    const rotated = [...active.slice(offset), ...active.slice(0, offset)];
+    bench.push(...rotated.slice(slots));
+    active.splice(0, active.length, ...rotated.slice(0, slots));
   }
 
-  // Pair players into teams trying to minimise partner repeats
-  const players = shuffle(active);
+  // Pair players into teams trying to minimise partner repeats, keeping seed order as the base order
+  const players = [...active];
   const teams = [];
 
   // Greedy pairing: pick first available, find best partner

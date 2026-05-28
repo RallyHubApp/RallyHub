@@ -85,7 +85,7 @@ function FixtureCourtCard({ court, roundNumber, playerMap, editingPlayerId, onRe
   );
 }
 
-export default function TournivalFixtures({ rounds, playerMap, onReshuffle, reshuffling, isAdmin, onReplacePlayer, editingPlayerId }) {
+export default function TournivalFixtures({ rounds, playerMap, onReshuffle, reshuffling, isAdmin, onReplacePlayer, editingPlayerId, seedOrderLocked }) {
   const [showAll, setShowAll] = useState(false);
   const issues = checkFairness(rounds);
   const displayRounds = showAll ? rounds : rounds.slice(0, 1);
@@ -96,10 +96,10 @@ export default function TournivalFixtures({ rounds, playerMap, onReshuffle, resh
       <div className="glass rounded-xl p-4">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fairness Check</p>
-          {isAdmin && (
-            <Button variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={onReshuffle} disabled={reshuffling}>
+          {isAdmin && onReshuffle && (
+            <Button variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={onReshuffle} disabled={reshuffling || seedOrderLocked}>
               <RefreshCw className={cn('w-3 h-3', reshuffling && 'animate-spin')} />
-              Reshuffle
+              {seedOrderLocked ? 'Seed order locked' : 'Regenerate from seeds'}
             </Button>
           )}
         </div>

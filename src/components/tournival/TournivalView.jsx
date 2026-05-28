@@ -142,36 +142,43 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
     try { return JSON.parse(tournament.kotc_state); } catch { return null; }
   }, [tournament.kotc_state]);
 
-  const isStarted = !!state;
-  const groupStageComplete = state && state.currentRound > (state.rounds?.length || 0);
+  const hasFixtures = !!state?.rounds?.length;
+  const isStarted = hasFixtures;
+  const hasScores = !!state && Object.values(state.results || {}).some(round => Object.keys(round || {}).length > 0);
+  const seedOrderLocked = state?.seedOrderLocked === false ? false : (!!state?.seedOrderLocked || hasFixtures || hasScores);
+  const groupStageComplete = hasFixtures && state.currentRound > (state.rounds?.length || 0);
   const hasKnockout = state?.knockoutState;
 
   // Decide default tab
   React.useEffect(() => {
-    if (!state) { setActiveTab('setup'); return; }
+    if (!hasFixtures) { setActiveTab('setup'); return; }
     if (hasKnockout) { setActiveTab('knockout'); return; }
     if (groupStageComplete) { setActiveTab('standings'); return; }
     setActiveTab('scores');
-  }, [!!state, groupStageComplete, hasKnockout]);
+  }, [hasFixtures, groupStageComplete, hasKnockout]);
 
   const playerMap = Object.fromEntries(players.map(p => [p.id, p.full_name || p.id]));
 
   const saveState = async (newState) => {
+    const hasGeneratedFixtures = !!newState.rounds?.length;
     await base44.entities.Tournament.update(tournament.id, {
       kotc_state: JSON.stringify(newState),
-      kotc_current_round: newState.currentRound,
-      status: newState.status || 'In Progress',
+      kotc_current_round: newState.currentRound || tournament.kotc_current_round || 0,
+      status: newState.status || (hasGeneratedFixtures ? 'In Progress' : tournament.status),
     });
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
   };
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleStart = async ({ numCourts, numRounds, matchFormat }) => {
-    const playerIds = players.map(p => p.id);
+  const handleStart = async ({ numCourts, numRounds, matchFormat, seedOrder }) => {
+    const playerIds = seedOrder?.length ? seedOrder : players.map(p => p.id);
     const rounds = generateGroupFixtures(playerIds, numCourts, numRounds);
     const newState = {
       playerIds,
+      seedOrder: playerIds,
+      seedOrderConfirmed: true,
+      seedOrderLocked: true,
       numCourts,
       numRounds,
       matchFormat,
@@ -187,8 +194,9 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
 
   const handleReshuffle = async () => {
     if (!state) return;
-    const rounds = generateGroupFixtures(state.playerIds, state.numCourts, state.numRounds);
-    await saveState({ ...state, rounds, results: {}, currentRound: 1 });
+    const seedOrder = state.seedOrder || state.playerIds;
+    const rounds = generateGroupFixtures(seedOrder, state.numCourts, state.numRounds);
+    await saveState({ ...state, playerIds: seedOrder, rounds, results: {}, currentRound: 1, seedOrderLocked: true });
     toast.success('Fixtures reshuffled!');
   };
 
@@ -383,6 +391,10 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
           players={players}
           tournament={tournament}
           onStart={handleStart}
+          isAdmin={isAdmin}
+          locked={seedOrderLocked}
+          existingState={state}
+          onSaveState={saveState}
         />
       )}
 
@@ -392,6 +404,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
           playerMap={playerMap}
           onReshuffle={handleReshuffle}
           isAdmin={isAdmin}
+          seedOrderLocked={seedOrderLocked}
         />
       )}
 
