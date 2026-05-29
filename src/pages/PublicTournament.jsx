@@ -346,7 +346,10 @@ function KotcPublicSetup({ tournament, players: initialPlayers, onStarted, callP
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PublicTournament() {
-  const tournamentId = window.location.pathname.split('/tournament/')[1] || window.location.pathname.split('/t/')[1];
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const tournamentId = pathParts[0] === 'tournament'
+    ? pathParts[pathParts.length - 1]
+    : window.location.pathname.split('/t/')[1];
   const [tournament, setTournament] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
