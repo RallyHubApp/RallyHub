@@ -347,9 +347,7 @@ function KotcPublicSetup({ tournament, players: initialPlayers, onStarted, callP
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PublicTournament() {
   const pathParts = window.location.pathname.split('/').filter(Boolean);
-  const tournamentId = pathParts[0] === 'tournament'
-    ? pathParts[pathParts.length - 1]
-    : window.location.pathname.split('/t/')[1];
+  const tournamentId = pathParts[pathParts.length - 1];
   const [tournament, setTournament] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -401,6 +399,14 @@ export default function PublicTournament() {
   useEffect(() => {
     if (tournamentId) fetchTournament();
   }, [tournamentId, fetchTournament]);
+
+  useEffect(() => {
+    if (!tournament?.name) return;
+    const title = `${tournament.name} | RallyHub`;
+    document.title = title;
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', title);
+  }, [tournament?.name]);
 
   // Poll every 5 seconds for live updates
   useEffect(() => {

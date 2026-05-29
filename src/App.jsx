@@ -117,6 +117,8 @@ function App() {
             <Route path="/register/:id" element={<PublicRegister />} />
             <Route path="/tournament/:id" element={<PublicTournament />} />
             <Route path="/tournament/:slug/:id" element={<PublicTournament />} />
+            <Route path="/:slug/:id" element={<PublicTournament />} />
+            <Route path="/tournament/:slug/:id" element={<PublicTournament />} />
             <Route path="/t/:id" element={<PublicTournament />} />
 
             {/* App entry point — auth checked here */}

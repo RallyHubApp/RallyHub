@@ -55,7 +55,7 @@ export default function TournamentDetail() {
   const handleShareLink = () => {
     const publicBaseUrl = (appParams.appBaseUrl || window.location.origin).replace(/\/$/, '');
     const tournamentSlug = encodeURIComponent((tournament?.name || 'tournament').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''));
-    const url = `${publicBaseUrl}/tournament/${tournamentSlug}/${tournament?.id}`;
+    const url = `${publicBaseUrl}/${tournamentSlug}/${tournament?.id}`;
     navigator.clipboard.writeText(url).then(() => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
