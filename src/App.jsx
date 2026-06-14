@@ -1,12 +1,12 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { useRef } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { base44 } from '@/api/base44Client';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 import AppLayout from '@/components/layout/AppLayout';
 import Dashboard from '@/pages/Dashboard';
@@ -26,6 +26,10 @@ import About from '@/pages/About';
 import Contact from '@/pages/Contact';
 import PendingApprovalScreen from '@/components/PendingApprovalScreen';
 import AndroidInstallPrompt from '@/components/AndroidInstallPrompt';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -38,48 +42,23 @@ const LoadingScreen = () => (
   </div>
 );
 
-// Handles /app/* — only entered when user explicitly navigates to the app
-const AppEntry = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, user } = useAuth();
+const AppAccessGate = () => {
+  const { isLoadingPublicSettings, user } = useAuth();
   const notifiedRef = useRef(false);
 
-  // Still checking auth state
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  if (isLoadingPublicSettings) {
     return <LoadingScreen />;
   }
 
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    }
-    // auth_required or unknown → send to Base44 login
-    base44.auth.redirectToLogin('/app');
-    return <LoadingScreen />;
-  }
-
-  // Not signed in → redirect to Base44 login
-  if (!isAuthenticated) {
-    base44.auth.redirectToLogin('/app');
-    return <LoadingScreen />;
-  }
-
-  // Admin always gets through
-  if (user?.role === 'admin') {
+  if (user?.role === 'admin' || user?.approval_status === 'approved') {
     return <AuthenticatedRoutes />;
   }
 
-  // Approved users get the app
-  if (user?.approval_status === 'approved') {
-    return <AuthenticatedRoutes />;
-  }
-
-  // New/pending user — notify admins once per session (no status or explicitly pending)
   if (!notifiedRef.current && user && user.approval_status !== 'rejected') {
     notifiedRef.current = true;
     base44.functions.invoke('notifyAdminsOnSignup', { user }).catch(() => {});
   }
 
-  // Pending or rejected → holding screen
   return <PendingApprovalScreen status={user?.approval_status || 'pending'} />;
 };
 
@@ -108,6 +87,12 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <Routes>
+            {/* Auth routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
             {/* Public landing — no auth check, always accessible */}
             <Route path="/" element={<Landing />} />
             <Route path="/about" element={<About />} />
@@ -118,23 +103,22 @@ function App() {
             <Route path="/tournament/:id" element={<PublicTournament />} />
             <Route path="/tournament/:slug/:id" element={<PublicTournament />} />
             <Route path="/:slug/:id" element={<PublicTournament />} />
-            <Route path="/tournament/:slug/:id" element={<PublicTournament />} />
             <Route path="/t/:id" element={<PublicTournament />} />
 
-            {/* App entry point — auth checked here */}
-            <Route path="/app/*" element={<AppEntry />} />
-
-            {/* Legacy internal routes redirect into /app/* */}
-            <Route path="/players" element={<Navigate to="/app/players" replace />} />
-            <Route path="/players/:id" element={<LegacyRedirect prefix="/app/players/" paramKey="id" />} />
-            <Route path="/tournaments" element={<Navigate to="/app/tournaments" replace />} />
-            <Route path="/tournaments/:id" element={<LegacyRedirect prefix="/app/tournaments/" paramKey="id" />} />
-            <Route path="/matches" element={<Navigate to="/app/matches" replace />} />
-            <Route path="/leaderboard" element={<Navigate to="/app/leaderboard" replace />} />
-            <Route path="/analytics" element={<Navigate to="/app/analytics" replace />} />
-            <Route path="/my-profile" element={<Navigate to="/app/my-profile" replace />} />
-            <Route path="/admin" element={<Navigate to="/app/admin" replace />} />
-            <Route path="/dashboard" element={<Navigate to="/app" replace />} />
+            {/* Protected app routes */}
+            <Route element={<ProtectedRoute fallback={<LoadingScreen />} unauthenticatedElement={<Navigate to="/login" replace />} />}>
+              <Route path="/app/*" element={<AppAccessGate />} />
+              <Route path="/players" element={<Navigate to="/app/players" replace />} />
+              <Route path="/players/:id" element={<LegacyRedirect prefix="/app/players/" paramKey="id" />} />
+              <Route path="/tournaments" element={<Navigate to="/app/tournaments" replace />} />
+              <Route path="/tournaments/:id" element={<LegacyRedirect prefix="/app/tournaments/" paramKey="id" />} />
+              <Route path="/matches" element={<Navigate to="/app/matches" replace />} />
+              <Route path="/leaderboard" element={<Navigate to="/app/leaderboard" replace />} />
+              <Route path="/analytics" element={<Navigate to="/app/analytics" replace />} />
+              <Route path="/my-profile" element={<Navigate to="/app/my-profile" replace />} />
+              <Route path="/admin" element={<Navigate to="/app/admin" replace />} />
+              <Route path="/dashboard" element={<Navigate to="/app" replace />} />
+            </Route>
 
             <Route path="*" element={<PageNotFound />} />
           </Routes>
