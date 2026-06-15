@@ -126,6 +126,38 @@
     "kotc_current_round": {
       "type": "number",
       "description": "King of the Court / Tournival: current round number"
+    },
+    "kotc_player_order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Confirmed KOTC ranking order as player IDs"
+    },
+    "kotc_spond_group_id": {
+      "type": "string",
+      "description": "Optional linked Spond group ID for automated imports"
+    },
+    "kotc_spond_event_id": {
+      "type": "string",
+      "description": "Optional linked Spond event ID for automated imports"
+    },
+    "kotc_session_venue": {
+      "type": "string",
+      "enum": [
+        "ennis",
+        "corofin"
+      ],
+      "description": "Configured recurring KOTC session venue for scheduled imports"
+    },
+    "kotc_last_import_message": {
+      "type": "string",
+      "description": "Host-visible message from the latest automated import"
+    },
+    "kotc_last_imported_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the latest automated import"
     }
   },
   "required": [
@@ -134,20 +166,67 @@
   ],
   "rls": {
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "kotc_role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "kotc_role": "admin"
+          }
+        }
+      ]
     },
     "read": true,
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "kotc_role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "kotc_role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "kotc_role": "host"
+          }
+        }
+      ]
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "kotc_role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "kotc_role": "admin"
+          }
+        }
+      ]
     }
   }
 }
