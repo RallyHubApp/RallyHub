@@ -10,6 +10,17 @@
       ],
       "default": "user"
     },
+    "kotc_role": {
+      "type": "string",
+      "enum": [
+        "super_admin",
+        "admin",
+        "host",
+        "player"
+      ],
+      "default": "player",
+      "description": "King of the Court permission role"
+    },
     "approval_status": {
       "type": "string",
       "enum": [
