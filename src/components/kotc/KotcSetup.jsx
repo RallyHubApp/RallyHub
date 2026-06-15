@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Users, Crown, Play, Clock, Hash } from 'lucide-react';
-import { createKotcState, generateRound1 } from '@/lib/kingOfCourtEngine';
+import { createKotcState, generateRound1, autoAllocateCourts } from '@/lib/kingOfCourtEngine';
 import { cn } from '@/lib/utils';
+import RankingList from '@/components/shared/RankingList';
 
 const SCORE_FORMATS = [
   { value: 'timed_10', label: '10-min rounds', icon: Clock, desc: 'Timed game — most points wins' },
@@ -18,23 +19,31 @@ const SCORE_FORMATS = [
 ];
 
 export default function KotcSetup({ tournament, players, onStarted, queryClient }) {
-  const [numCourts, setNumCourts] = useState(String(tournament.kotc_num_courts || 4));
+  const defaultCourts = autoAllocateCourts(players.length);
+  const storedOrder = tournament.kotc_player_order || players.map(p => p.id);
+  const [numCourts, setNumCourts] = useState(String(tournament.kotc_num_courts || defaultCourts));
   const [numRounds, setNumRounds] = useState(tournament.kotc_num_rounds || 9);
   const [scoreFormat, setScoreFormat] = useState(tournament.kotc_score_format || 'first_11');
+  const [playerOrder, setPlayerOrder] = useState(storedOrder);
   const [saving, setSaving] = useState(false);
 
-  const numCourtsNum = Math.max(1, Math.min(8, parseInt(numCourts) || 1));
+  const numCourtsNum = Math.max(1, Math.min(4, parseInt(numCourts) || defaultCourts));
   const activeSpots = numCourtsNum * 4;
   const numBench = Math.max(0, players.length - activeSpots);
   const isValid = players.length >= 4;
+  const orderedPlayers = playerOrder
+    .map(id => players.find(p => p.id === id))
+    .filter(Boolean)
+    .concat(players.filter(p => !playerOrder.includes(p.id)));
 
   const handleStart = async () => {
     if (!isValid) { toast.error('Add at least 4 players to start.'); return; }
     setSaving(true);
 
-    // Build initial engine state
-    const enginePlayers = players.map(p => ({ id: p.id, name: p.full_name, rating: p.skill_rating || 3.0 }));
-    let state = createKotcState({ players: enginePlayers, numCourts: numCourtsNum });
+    // Build initial engine state from confirmed host ranking
+    const confirmedOrder = orderedPlayers.map(p => p.id);
+    const enginePlayers = orderedPlayers.map(p => ({ id: p.id, name: p.full_name, rating: p.skill_rating || 3.0 }));
+    let state = createKotcState({ players: enginePlayers, numCourts: numCourtsNum, playerOrder: confirmedOrder });
     const round1 = generateRound1(state);
     state = { ...state, rounds: [round1] };
 
@@ -46,6 +55,7 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
       kotc_num_courts: numCourtsNum,
       kotc_num_rounds: Number(numRounds),
       kotc_score_format: scoreFormat,
+      kotc_player_order: confirmedOrder,
       kotc_state: JSON.stringify(serialisable),
       kotc_current_round: 1,
     });
@@ -85,6 +95,19 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
         </div>
       </div>
 
+      {players.length > 0 && (
+        <div className="glass rounded-xl p-5 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Player Ranking</h3>
+            <p className="text-xs text-muted-foreground mt-1">Rank players before Round 1. Drag rows or use Up/Down controls.</p>
+          </div>
+          <RankingList
+            items={orderedPlayers.map(p => ({ id: p.id, label: p.full_name, sublabel: `Rating ${(p.skill_rating || 3).toFixed(1)}` }))}
+            onChange={setPlayerOrder}
+          />
+        </div>
+      )}
+
       {/* Config */}
       <div className="glass rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-semibold text-foreground">Session Configuration</h3>
@@ -93,10 +116,10 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
           <div>
             <Label className="text-xs text-muted-foreground">Number of Courts</Label>
             <Input
-              type="number" min={1} max={8}
+              type="number" min={1} max={4}
               value={numCourts}
               onChange={e => setNumCourts(e.target.value)}
-              onBlur={e => setNumCourts(String(Math.max(1, Math.min(8, parseInt(e.target.value) || 1))))}
+              onBlur={e => setNumCourts(String(Math.max(1, Math.min(4, parseInt(e.target.value) || defaultCourts))))}
               className="mt-1 bg-secondary border-border"
             />
             <p className="text-[10px] text-muted-foreground mt-1">Court 1 = King Court</p>

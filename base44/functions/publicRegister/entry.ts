@@ -52,10 +52,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Update tournament state (admin-only)
+    // Update tournament state (KOTC manager roles only)
     if (action === 'update_kotc' || action === 'start_kotc') {
-      if (user.role !== 'admin') {
-        return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
+      if (!['super_admin', 'admin', 'host'].includes(kotcRole)) {
+        return Response.json({ error: 'Forbidden: Host access required' }, { status: 403 });
       }
 
       const updateData = {};

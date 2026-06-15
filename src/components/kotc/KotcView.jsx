@@ -12,6 +12,8 @@ import SpondImportModal from '@/components/spond/SpondImportModal';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
 import { appParams } from '@/lib/app-params';
+import useKotcRole from '@/hooks/useKotcRole';
+import KotcPlayerManagement from './KotcPlayerManagement';
 
 export default function KotcView({ tournament, players, allPlayers, queryClient }) {
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
@@ -19,7 +21,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   const [spondOpen, setSpondOpen] = useState(false);
   const [xlsxOpen, setXlsxOpen] = useState(false);
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { canManagePlayers } = useKotcRole();
   const [linkCopied, setLinkCopied] = useState(false);
 
   const handleShareLink = () => {
@@ -31,10 +33,6 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
       setTimeout(() => setLinkCopied(false), 2000);
     }).catch(() => prompt('Copy this link:', url));
   };
-
-  useEffect(() => {
-    base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
-  }, []);
 
   const isStarted = tournament.status === 'In Progress' || tournament.status === 'Completed';
   const availablePlayers = allPlayers.filter(p => !tournament.player_ids?.includes(p.id));
@@ -57,7 +55,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Players ({players.length})</h3>
             <div className="flex gap-2 flex-wrap">
-              {isAdmin ? (
+              {canManagePlayers ? (
                 <>
                   <Button variant="outline" size="sm" onClick={handleShareLink}
                     className={linkCopied ? 'text-primary border-primary/40' : ''}>
@@ -69,9 +67,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
                   <Button variant="outline" size="sm" onClick={() => setXlsxOpen(true)}>
                     <FileSpreadsheet className="w-3 h-3 mr-1" /> Import XLSX
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}>
-                    <Plus className="w-3 h-3 mr-1" /> Add Players
-                  </Button>
+                  <KotcPlayerManagement tournament={tournament} players={players} allPlayers={allPlayers} queryClient={queryClient} />
                 </>
               ) : (
                 <Button size="sm" className="bg-primary text-primary-foreground gap-1" onClick={() => setSelfRegisterOpen(true)}>
@@ -84,7 +80,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
             <div className="text-center py-6 space-y-3">
               <Users className="w-10 h-10 text-muted-foreground/30 mx-auto" />
               <p className="text-xs text-muted-foreground">No players registered yet</p>
-              <Button size="sm" onClick={() => setAddPlayersOpen(true)} className="bg-primary text-primary-foreground">Add Players</Button>
+              {canManagePlayers && <Button size="sm" onClick={() => setAddPlayersOpen(true)} className="bg-primary text-primary-foreground">Add Players</Button>}
             </div>
           ) : (
             <div className="space-y-1">
@@ -105,7 +101,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
 
       {/* Setup or live view */}
       {isStarted ? (
-        <KotcRoundView tournament={tournament} players={players} queryClient={queryClient} />
+        <KotcRoundView tournament={tournament} players={players} allPlayers={allPlayers} queryClient={queryClient} />
       ) : (
         <KotcSetup tournament={tournament} players={players} onStarted={() => {}} queryClient={queryClient} />
       )}

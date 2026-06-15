@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { base44 } from '@/api/base44Client';
@@ -9,6 +9,10 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import KotcRotationSummary from './KotcRotationSummary';
 import KotcRoundRecovery from './KotcRoundRecovery';
+import RoundTimer from './RoundTimer';
+import PodiumResults from './PodiumResults';
+import KotcLivePlayerControls from './KotcLivePlayerControls';
+import useKotcRole from '@/hooks/useKotcRole';
 
 // ─── CourtCard ────────────────────────────────────────────────────────────────
 function CourtCard({ court, playerMap, onResult, onClearResult, disabled, result }) {
@@ -126,7 +130,7 @@ function TimerDisplay({ scoreFormat }) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function KotcRoundView({ tournament, players, queryClient }) {
+export default function KotcRoundView({ tournament, players, allPlayers = [], queryClient }) {
   const [pendingResults, setPendingResults] = useState({});
   // clearedCourts tracks courts whose saved result was explicitly cleared so they can be re-entered
   const [clearedCourts, setClearedCourts] = useState(new Set());
@@ -136,6 +140,9 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
   // Rotation summary state: null | { movements, nextRound, nextState, isLast }
   const [rotationSummary, setRotationSummary] = useState(null);
   const [confirmEndEarly, setConfirmEndEarly] = useState(false);
+  const [canUndoLiveChange, setCanUndoLiveChange] = useState(false);
+  const undoStateRef = useRef(null);
+  const { canManagePlayers, canRecordResults } = useKotcRole();
 
   const rawState = tournament.kotc_state ? JSON.parse(tournament.kotc_state) : null;
   const state = rawState ? { ...rawState, pairingHistory: rawState.pairingHistory || [] } : null;
@@ -159,8 +166,9 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
     />;
   }
 
-  const playerMap = Object.fromEntries(players.map(p => [p.id, p.full_name || p.id]));
+  const playerMap = Object.fromEntries([...(players || []), ...(allPlayers || [])].map(p => [p.id, p.full_name || p.id]));
   const numCourts = currentRound.courts.length;
+  const activePlayerIds = (state.players || []).filter(p => !(state.inactivePlayerIds || []).includes(p.id)).map(p => p.id);
   const savedResults = state.results?.[currentRoundNum] || {};
   // Build effective results: saved + pending, minus cleared
   const roundResults = Object.fromEntries(
@@ -198,6 +206,94 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
       return next;
     });
     setClearedCourts(prev => new Set([...prev, courtNumber]));
+  };
+
+  const persistLiveState = async (nextState, nextPlayerIds, message) => {
+    undoStateRef.current = { state, playerIds: tournament.player_ids || [] };
+    setCanUndoLiveChange(true);
+    await base44.entities.Tournament.update(tournament.id, {
+      kotc_state: JSON.stringify({ ...nextState, pairingHistory: (nextState.pairingHistory || []).slice(-50) }),
+      player_ids: nextPlayerIds,
+    });
+    toast.success(message);
+    queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+    queryClient.invalidateQueries({ queryKey: ['players'] });
+  };
+
+  const replaceIdFromCurrentRound = (rounds, oldId, newId) => rounds.map(round => (
+    round.roundNumber < currentRoundNum ? round : {
+      ...round,
+      courts: round.courts.map(court => ({
+        ...court,
+        teamA: court.teamA.map(id => id === oldId ? newId : id),
+        teamB: court.teamB.map(id => id === oldId ? newId : id),
+      })),
+      bench: (round.bench || []).map(id => id === oldId ? newId : id),
+    }
+  ));
+
+  const handleLiveReplace = async (oldId, newId) => {
+    const newPlayer = allPlayers.find(p => p.id === newId);
+    const nextState = {
+      ...state,
+      players: (state.players || []).map(p => p.id === oldId ? { id: newId, name: newPlayer?.full_name || newId, rating: newPlayer?.skill_rating || 3.0 } : p),
+      rounds: replaceIdFromCurrentRound(state.rounds || [], oldId, newId),
+      playerOrder: (state.playerOrder || []).map(id => id === oldId ? newId : id),
+      inactivePlayerIds: (state.inactivePlayerIds || []).filter(id => id !== newId),
+    };
+    const nextPlayerIds = (tournament.player_ids || []).map(id => id === oldId ? newId : id);
+    await persistLiveState(nextState, nextPlayerIds, 'Player replaced without redrawing courts');
+  };
+
+  const handleLiveRemove = async (playerId) => {
+    const benchReplacement = currentRound.bench?.find(id => id !== playerId);
+    const nextRounds = (state.rounds || []).map(round => {
+      if (round.roundNumber < currentRoundNum) return round;
+      return {
+        ...round,
+        courts: round.courts.map(court => ({
+          ...court,
+          teamA: court.teamA.map(id => id === playerId ? benchReplacement : id).filter(Boolean),
+          teamB: court.teamB.map(id => id === playerId ? benchReplacement : id).filter(Boolean),
+        })),
+        bench: (round.bench || []).filter(id => id !== playerId && id !== benchReplacement),
+      };
+    });
+    const nextState = {
+      ...state,
+      inactivePlayerIds: [...new Set([...(state.inactivePlayerIds || []), playerId])],
+      rounds: nextRounds,
+    };
+    await persistLiveState(nextState, tournament.player_ids || [], 'Player removed without redrawing history');
+  };
+
+  const handleAddLatePlayer = async (playerId) => {
+    const player = allPlayers.find(p => p.id === playerId);
+    const nextRounds = (state.rounds || []).map(round => round.roundNumber === currentRoundNum
+      ? { ...round, bench: [...new Set([...(round.bench || []), playerId])] }
+      : round
+    );
+    const nextState = {
+      ...state,
+      players: [...(state.players || []), { id: playerId, name: player?.full_name || playerId, rating: player?.skill_rating || 3.0 }],
+      rounds: nextRounds,
+      sitOutCounts: { ...(state.sitOutCounts || {}), [playerId]: Math.min(...Object.values(state.sitOutCounts || { base: 0 })) },
+      playerOrder: [...(state.playerOrder || []), playerId],
+    };
+    await persistLiveState(nextState, [...new Set([...(tournament.player_ids || []), playerId])], 'Late player added to the bench');
+  };
+
+  const handleUndoLiveChange = async () => {
+    if (!undoStateRef.current) return;
+    await base44.entities.Tournament.update(tournament.id, {
+      kotc_state: JSON.stringify(undoStateRef.current.state),
+      player_ids: undoStateRef.current.playerIds,
+    });
+    undoStateRef.current = null;
+    setCanUndoLiveChange(false);
+    toast.success('Last live change undone');
+    queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+    queryClient.invalidateQueries({ queryKey: ['players'] });
   };
 
   // Called when organiser presses "Next Round" — compute rotation and show summary
@@ -314,8 +410,21 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
         </div>
       </div>
 
+      {canManagePlayers && (
+        <KotcLivePlayerControls
+          players={players}
+          allPlayers={allPlayers}
+          activePlayerIds={activePlayerIds}
+          canUndo={canUndoLiveChange}
+          onReplace={handleLiveReplace}
+          onRemove={handleLiveRemove}
+          onAddLate={handleAddLatePlayer}
+          onUndo={handleUndoLiveChange}
+        />
+      )}
+
       {/* Timer */}
-      <TimerDisplay scoreFormat={scoreFormat} />
+      <RoundTimer disabled={!canRecordResults || isCompleted} />
 
       {/* Leaderboard */}
       {showLeaderboard && (
@@ -354,7 +463,7 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
             playerMap={playerMap}
             onResult={handleResult}
             onClearResult={handleClearResult}
-            disabled={isCompleted}
+            disabled={isCompleted || !canRecordResults}
             result={roundResults[court.courtNumber]}
           />
         ))}
@@ -390,7 +499,7 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
                 : 'opacity-50'
             )}
             onClick={handleCompleteRound}
-            disabled={!allCourtsRecorded || submitting}
+            disabled={!allCourtsRecorded || submitting || !canRecordResults}
           >
             {submitting && !confirmEndEarly
               ? <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Processing…</>
@@ -448,13 +557,7 @@ export default function KotcRoundView({ tournament, players, queryClient }) {
       )}
 
       {isCompleted && (
-        <div className="glass rounded-xl p-6 text-center space-y-2 glow-green">
-          <Trophy className="w-10 h-10 text-primary mx-auto" />
-          <p className="text-lg font-bold text-foreground">Session Complete!</p>
-          <p className="text-sm text-muted-foreground">
-            🏆 {leaderboard[0]?.name} — {leaderboard[0]?.wins} wins
-          </p>
-        </div>
+        <PodiumResults leaderboard={leaderboard} tournamentName={tournament.name} />
       )}
     </div>
   );

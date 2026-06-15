@@ -15,9 +15,11 @@ import { cn } from '@/lib/utils';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
 import { useAuth } from '@/lib/AuthContext';
+import useKotcRole from '@/hooks/useKotcRole';
 
 export default function AdminPanel() {
   const { user } = useAuth();
+  const { canAccessAdmin } = useKotcRole();
   const queryClient = useQueryClient();
   const [playerSearch, setPlayerSearch] = useState('');
   const [editingPlayer, setEditingPlayer] = useState(null);
@@ -63,8 +65,8 @@ export default function AdminPanel() {
     queryFn: () => base44.entities.Match.list('-created_date', 200)
   });
 
-  // Guard: admin only
-  if (user?.role !== 'admin') {
+  // Guard: KOTC admin roles only
+  if (!canAccessAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-center">
         <div className="space-y-3">
@@ -233,6 +235,14 @@ export default function AdminPanel() {
     } finally {
       setSendingReset(false);
     }
+  };
+
+  const setKotcRole = async (userId, kotcRole) => {
+    setUpdatingRole(userId);
+    await base44.entities.User.update(userId, { kotc_role: kotcRole });
+    queryClient.invalidateQueries({ queryKey: ['all-users'] });
+    toast.success('KOTC role updated');
+    setUpdatingRole(null);
   };
 
   const setApprovalStatus = async (userId, status) => {
@@ -408,9 +418,15 @@ export default function AdminPanel() {
                       onClick={() => { setEditingUser(u); setEditUserName(u.display_name || u.full_name || ''); }}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
-                    <Badge className={u.role === 'admin' ? 'bg-destructive/20 text-destructive text-[10px]' : 'bg-secondary text-muted-foreground text-[10px]'}>
-                      {u.role === 'admin' ? <><ShieldCheck className="w-2.5 h-2.5 mr-0.5" />Admin</> : 'User'}
-                    </Badge>
+                    <Select value={u.kotc_role || (u.role === 'admin' ? 'super_admin' : 'player')} onValueChange={value => setKotcRole(u.id, value)} disabled={updatingRole === u.id || u.id === user?.id}>
+                      <SelectTrigger className="h-8 w-32 bg-secondary border-border text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="super_admin">Super Admin</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="host">Host</SelectItem>
+                        <SelectItem value="player">Player</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
                       onClick={() => { setSetPassUser(u); setSetPassPassword(''); }}>
                       <KeyRound className="w-3 h-3" /> Set Password

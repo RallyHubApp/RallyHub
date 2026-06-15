@@ -7,6 +7,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
+import useKotcRole from '@/hooks/useKotcRole';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 
@@ -22,6 +23,7 @@ const navItems = [
 export default function Sidebar({ isOpen, onToggle }) {
   const location = useLocation();
   const { user } = useAuth();
+  const { canAccessAdmin, role } = useKotcRole();
 
   return (
     <>
@@ -91,7 +93,7 @@ export default function Sidebar({ isOpen, onToggle }) {
         <div className="px-3 pb-2 space-y-1">
           {[
             { path: '/app/my-profile', label: 'My Profile', icon: UserCircle },
-            ...(user?.role === 'admin' ? [{ path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
+            ...(canAccessAdmin ? [{ path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
           ].map(item => {
             const isActive = location.pathname.startsWith(item.path);
             return (
@@ -116,7 +118,7 @@ export default function Sidebar({ isOpen, onToggle }) {
         <div className="p-4 border-t border-sidebar-border">
           <div className="glass rounded-lg p-3">
             <p className="text-xs text-muted-foreground truncate">{user?.full_name || user?.email || 'RallyHub'}</p>
-            <p className="text-xs text-primary font-medium mt-0.5">{user?.role === 'admin' ? 'Administrator' : 'Player'}</p>
+            <p className="text-xs text-primary font-medium mt-0.5">{role === 'super_admin' ? 'Super Admin' : role === 'admin' ? 'Admin' : role === 'host' ? 'Host' : 'Player'}</p>
           </div>
         </div>
       </aside>
