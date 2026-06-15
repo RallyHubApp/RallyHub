@@ -100,11 +100,14 @@ function pickBench(playerIds, numBench, sitOutCounts = {}, benchQueue = [], prio
   }).slice(0, numBench);
 }
 
-export function generateRound1(state, shuffle = false) {
+export function generateRound1(state, shuffle = false, forcedBenchIds = []) {
   const historySet = new Set(state.pairingHistory || []);
   const activeIds = shuffle ? orderedActiveIds(state).sort(() => Math.random() - 0.5) : orderedActiveIds(state);
   const numBench = Math.max(0, activeIds.length - state.numCourts * 4);
-  const benchIds = pickBench(activeIds, numBench, state.sitOutCounts, state.benchQueue || state.recentBench || []);
+  const validForcedBench = forcedBenchIds.filter(id => activeIds.includes(id)).slice(0, numBench);
+  const remainingIds = activeIds.filter(id => !validForcedBench.includes(id));
+  const autoBench = pickBench(remainingIds, numBench - validForcedBench.length, state.sitOutCounts, state.benchQueue || state.recentBench || []);
+  const benchIds = [...validForcedBench, ...autoBench];
   const benchSet = new Set(benchIds);
   const courtIds = activeIds.filter(id => !benchSet.has(id));
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,9 +10,10 @@ import { Users, Crown, Play, Clock, Hash } from 'lucide-react';
 import { createKotcState, generateRound1, autoAllocateCourts } from '@/lib/kingOfCourtEngine';
 import { cn } from '@/lib/utils';
 import RankingList from '@/components/shared/RankingList';
+import RoundOneBenchSelector from './RoundOneBenchSelector';
 
 const SCORE_FORMATS = [
-  { value: 'timed_10', label: '10-min rounds', icon: Clock, desc: 'Timed game — most points wins' },
+  { value: 'timed_8', label: '8-min rounds', icon: Clock, desc: '8 min play + 2 min rest' },
   { value: 'first_7', label: 'First to 7', icon: Hash, desc: 'Win by 1' },
   { value: 'first_11', label: 'First to 11', icon: Hash, desc: 'Win by 1' },
   { value: 'first_15', label: 'First to 11', icon: Hash, desc: 'Win by 2' },
@@ -25,6 +26,7 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
   const [numRounds, setNumRounds] = useState(tournament.kotc_num_rounds || 9);
   const [scoreFormat, setScoreFormat] = useState(tournament.kotc_score_format || 'first_11');
   const [playerOrder, setPlayerOrder] = useState(storedOrder);
+  const [round1BenchIds, setRound1BenchIds] = useState([]);
   const [saving, setSaving] = useState(false);
 
   const numCourtsNum = Math.max(1, Math.min(4, parseInt(numCourts) || defaultCourts));
@@ -36,6 +38,10 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
     .filter(Boolean)
     .concat(players.filter(p => !playerOrder.includes(p.id)));
 
+  useEffect(() => {
+    setRound1BenchIds(ids => ids.filter(id => players.some(player => player.id === id)).slice(0, numBench));
+  }, [numBench, players]);
+
   const handleStart = async () => {
     if (!isValid) { toast.error('Add at least 4 players to start.'); return; }
     setSaving(true);
@@ -44,8 +50,8 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
     const confirmedOrder = orderedPlayers.map(p => p.id);
     const enginePlayers = orderedPlayers.map(p => ({ id: p.id, name: p.full_name, rating: p.skill_rating || 3.0 }));
     let state = createKotcState({ players: enginePlayers, numCourts: numCourtsNum, playerOrder: confirmedOrder });
-    const round1 = generateRound1(state);
-    state = { ...state, rounds: [round1] };
+    const round1 = generateRound1(state, false, round1BenchIds);
+    state = { ...state, rounds: [round1], benchQueue: round1BenchIds, recentBench: round1BenchIds };
 
     // Serialise — Sets aren't JSON-friendly
     const serialisable = { ...state, pairingHistory: [] };
@@ -108,6 +114,14 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
         </div>
       )}
 
+      <RoundOneBenchSelector
+        players={orderedPlayers}
+        benchIds={round1BenchIds}
+        maxBench={numBench}
+        onBenchChange={setRound1BenchIds}
+        onOrderChange={setPlayerOrder}
+      />
+
       {/* Config */}
       <div className="glass rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-semibold text-foreground">Session Configuration</h3>
@@ -167,10 +181,16 @@ export default function KotcSetup({ tournament, players, onStarted, queryClient 
         </div>
       )}
 
+      {isValid && numBench > 0 && round1BenchIds.length !== numBench && (
+        <div className="glass rounded-xl p-4 text-center border border-yellow-500/20">
+          <p className="text-xs text-yellow-400">Choose {numBench} player{numBench === 1 ? '' : 's'} to bench in Round 1 before starting.</p>
+        </div>
+      )}
+
       <Button
         className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
         onClick={handleStart}
-        disabled={!isValid || saving}
+        disabled={!isValid || saving || round1BenchIds.length !== numBench}
       >
         {saving
           ? <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Starting…</>

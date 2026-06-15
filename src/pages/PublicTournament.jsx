@@ -12,9 +12,10 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { generateNextRound, generateRound1, createKotcState, computeKotcLeaderboard } from '@/lib/kingOfCourtEngine';
 import KotcRotationSummary from '@/components/kotc/KotcRotationSummary';
+import RoundTimer from '@/components/kotc/RoundTimer';
 
 const SCORE_FORMATS = [
-  { value: 'timed_10', label: '10-min rounds', icon: Clock, desc: 'Timed — most points wins' },
+  { value: 'timed_8', label: '8-min rounds', icon: Clock, desc: '8 min play + 2 min rest' },
   { value: 'first_7', label: 'First to 7', icon: Hash, desc: 'Win by 1' },
   { value: 'first_11', label: 'First to 11', icon: Hash, desc: 'Win by 1' },
   { value: 'first_15', label: 'First to 11', icon: Hash, desc: 'Win by 2' },
@@ -784,7 +785,7 @@ export default function PublicTournament() {
         )}
 
         {/* Timer */}
-        <TimerDisplay scoreFormat={scoreFormat} />
+        <RoundTimer disabled={isCompleted} />
 
         {/* Leaderboard */}
         {showLeaderboard && (
