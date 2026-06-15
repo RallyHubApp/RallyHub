@@ -11,7 +11,6 @@ import KotcRoundView from './KotcRoundView';
 import SpondImportModal from '@/components/spond/SpondImportModal';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
-import { appParams } from '@/lib/app-params';
 import useKotcRole from '@/hooks/useKotcRole';
 import KotcPlayerManagement from './KotcPlayerManagement';
 
@@ -25,7 +24,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   const [linkCopied, setLinkCopied] = useState(false);
 
   const handleShareLink = () => {
-    const publicBaseUrl = (appParams.appBaseUrl || window.location.origin).replace(/\/$/, '');
+    const publicBaseUrl = 'https://rallyhub.ie';
     const tournamentSlug = encodeURIComponent((tournament?.name || 'tournament').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''));
     const url = `${publicBaseUrl}/${tournamentSlug}/${tournament.id}`;
     navigator.clipboard.writeText(url).then(() => {

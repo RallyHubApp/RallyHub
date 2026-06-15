@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Crown, Users, Clock, ChevronRight, Trophy, RotateCcw, RefreshCw, UserMinus, Pencil, X, Play, Hash, Wifi, UserPlus } from 'lucide-react';
 import PublicTournivalView from '@/components/tournival/PublicTournivalView';
+import PublicEventLanding from '@/components/public/PublicEventLanding';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -402,11 +403,33 @@ export default function PublicTournament() {
 
   useEffect(() => {
     if (!tournament?.name) return;
-    const title = `${tournament.name} | RallyHub`;
+
+    const setMeta = (key, value, attr = 'name') => {
+      let element = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute(attr, key);
+        document.head.appendChild(element);
+      }
+      element.setAttribute('content', value);
+    };
+
+    const eventDate = tournament.start_date
+      ? new Date(tournament.start_date).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      : 'date to be confirmed';
+    const description = tournament.description || `${tournament.name} is a RallyHub King of the Court event${tournament.location ? ` at ${tournament.location}` : ''} on ${eventDate}. View registration, players and live results.`;
+    const title = `${tournament.name} | RallyHub.ie`;
+
     document.title = title;
-    document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
-    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', title);
-  }, [tournament?.name]);
+    setMeta('description', description);
+    setMeta('og:title', title, 'property');
+    setMeta('og:description', description, 'property');
+    setMeta('og:url', window.location.href, 'property');
+    setMeta('og:type', 'event', 'property');
+    setMeta('twitter:title', title);
+    setMeta('twitter:description', description);
+    setMeta('twitter:card', 'summary');
+  }, [tournament]);
 
   // Poll every 5 seconds for live updates
   useEffect(() => {
@@ -470,34 +493,16 @@ export default function PublicTournament() {
   const isStarted = tournament.status === 'In Progress' || tournament.status === 'Completed';
   const isCompleted = tournament.status === 'Completed';
 
-  // ── Not started → show setup ──
+  // ── Not started → dedicated public event page ──
   if (!isStarted) {
     return (
-      <div className="min-h-screen bg-background p-4">
-        <div className="max-w-lg mx-auto space-y-4">
-          <div className="glass rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center">
-                <Crown className="w-5 h-5 text-yellow-400" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-foreground">{tournament.name}</p>
-                <p className="text-xs text-muted-foreground">King of the Court</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <Wifi className={cn("w-3 h-3", liveIndicator ? "text-primary" : "text-muted-foreground")} />
-              Live
-            </div>
-          </div>
-          <KotcPublicSetup
-            tournament={tournament}
-            players={players}
-            onStarted={() => fetchTournament()}
-            callPublicRegister={callPublicRegister}
-          />
-        </div>
-      </div>
+      <PublicEventLanding
+        tournament={tournament}
+        players={players}
+        callPublicRegister={callPublicRegister}
+        onRefresh={() => fetchTournament()}
+        liveIndicator={liveIndicator}
+      />
     );
   }
 
