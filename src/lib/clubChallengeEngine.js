@@ -166,57 +166,118 @@ function selectFactors(players, factors, count) {
   return best;
 }
 
-function factorToTwoRounds(factor, courts, previousBench) {
-  const chunks = [];
-  for (let i = 0; i < factor.length; i += courts) chunks.push(factor.slice(i, i + courts));
-  if (chunks.length !== 2) throw new Error('Phase 1 currently expects exactly two half-roster rounds per factor.');
+function partitionFactor(factor, courts, previousBench = new Set()) {
+  const indices = factor.map((_, i) => i);
+  let best = null;
 
-  const all = factor.flat();
-  const benchFor = teams => {
-    const active = new Set(teams.flat());
-    return all.filter(id => !active.has(id));
-  };
-  if (previousBench?.size) {
-    const rest0 = benchFor(chunks[0]).filter(id => previousBench.has(id)).length;
-    const rest1 = benchFor(chunks[1]).filter(id => previousBench.has(id)).length;
-    if (rest1 < rest0) chunks.reverse();
+  // Pick any court-count of teams for the first half. The complement plays the
+  // second half. This lets us actively avoid back-to-back rests at factor joins.
+  for (const firstIdx of combinations(indices, courts)) {
+    const firstSet = new Set(firstIdx);
+    const firstTeams = firstIdx.map(i => factor[i]);
+    const secondTeams = indices.filter(i => !firstSet.has(i)).map(i => factor[i]);
+    const firstActive = new Set(firstTeams.flat());
+    const secondActive = new Set(secondTeams.flat());
+    const firstBench = [...secondActive];
+    const secondBench = [...firstActive];
+    const consecutiveRest = firstBench.filter(id => previousBench.has(id)).length;
+    const score = consecutiveRest * 80;
+    if (!best || score < best.score) {
+      best = {
+        score,
+        consecutiveRest,
+        rounds: [
+          { teams: firstTeams, bench: firstBench },
+          { teams: secondTeams, bench: secondBench },
+        ],
+      };
+    }
   }
-  return chunks.map(teams => ({ teams, bench: benchFor(teams) }));
+  return best;
 }
 
-function buildClubRounds(players, courts, rounds) {
+function buildClubAFactorRounds(players, courts, rounds) {
   const factors = generatePerfectMatchings(players.map(p => p.id));
   const factorCount = rounds / 2;
   const selection = selectFactors(players, factors, factorCount);
-  const out = [];
+  const output = [];
+  const selectedFactors = selection.set.map(i => factors[i]);
   let previousBench = new Set();
-  for (const idx of selection.set) {
-    for (const half of factorToTwoRounds(factors[idx], courts, previousBench)) {
-      out.push(half);
-      previousBench = new Set(half.bench);
-    }
+
+  for (const factor of selectedFactors) {
+    const partition = partitionFactor(factor, courts, previousBench);
+    output.push(...partition.rounds);
+    previousBench = new Set(partition.rounds[1].bench);
   }
-  return { rounds: out, selection };
+  return { rounds: output, factors: selectedFactors, selection };
 }
 
 function strength(team, byId) {
   return team.reduce((sum, id) => sum + Number(byId[id].rank), 0);
 }
 
-function matchTeams(aTeams, bTeams, aById, bById, opponentHistory, previousCourt) {
+function scoreAndChooseTeamPermutation({ aTeams, bTeams, aById, bById, opponentHistory, previousCourt }) {
   let best = null;
   for (const candidate of permutations(bTeams)) {
     let score = 0;
+    let repeatedOpponentEncounters = 0;
+    let strengthGapTotal = 0;
     for (let i = 0; i < aTeams.length; i++) {
       const aTeam = aTeams[i];
       const bTeam = candidate[i];
-      score += Math.abs(strength(aTeam, aById) - strength(bTeam, bById)) * 20;
-      for (const a of aTeam) for (const b of bTeam) score += (opponentHistory[pairKey(a, b)] || 0) * 60;
+      const gap = Math.abs(strength(aTeam, aById) - strength(bTeam, bById));
+      strengthGapTotal += gap;
+      score += gap * 50;
+      for (const a of aTeam) {
+        for (const b of bTeam) {
+          const repeats = opponentHistory[pairKey(a, b)] || 0;
+          repeatedOpponentEncounters += repeats;
+          score += repeats * 60;
+        }
+      }
       for (const id of [...aTeam, ...bTeam]) if (previousCourt[id] === i + 1) score += 5;
     }
-    if (!best || score < best.score) best = { teams: candidate, score };
+    if (!best || score < best.score) best = { teams: candidate, score, repeatedOpponentEncounters, strengthGapTotal };
   }
-  return best.teams;
+  return best;
+}
+
+function cloneCounts(obj) {
+  return { ...obj };
+}
+
+function simulateTwoRounds({ aRounds, bRounds, aById, bById, opponentHistory, previousCourt }) {
+  const localOpp = cloneCounts(opponentHistory);
+  const localCourt = { ...previousCourt };
+  const matched = [];
+  let score = 0;
+
+  for (let i = 0; i < 2; i++) {
+    const choice = scoreAndChooseTeamPermutation({
+      aTeams: aRounds[i].teams,
+      bTeams: bRounds[i].teams,
+      aById,
+      bById,
+      opponentHistory: localOpp,
+      previousCourt: localCourt,
+    });
+    score += choice.score;
+    const courts = aRounds[i].teams.map((aTeam, courtIndex) => {
+      const bTeam = choice.teams[courtIndex];
+      for (const a of aTeam) for (const b of bTeam) localOpp[pairKey(a, b)] = (localOpp[pairKey(a, b)] || 0) + 1;
+      for (const id of [...aTeam, ...bTeam]) localCourt[id] = courtIndex + 1;
+      return {
+        courtNumber: courtIndex + 1,
+        clubA: aTeam,
+        clubB: bTeam,
+        clubAStrength: strength(aTeam, aById),
+        clubBStrength: strength(bTeam, bById),
+      };
+    });
+    matched.push({ courts, benchClubB: bRounds[i].bench });
+  }
+
+  return { score, matched, opponentHistory: localOpp, previousCourt: localCourt };
 }
 
 export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, courts, rounds }) {
@@ -231,38 +292,64 @@ export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, cour
   if (aPlayers.length / 2 !== c * 2) throw new Error('Phase 1 deterministic generator currently supports roster size = courts × 4 per club (e.g. 16 players and 4 courts).');
   if (r / 2 > aPlayers.length - 1) throw new Error('Too many rounds for unique-partner scheduling.');
 
-  const aBuilt = buildClubRounds(aPlayers, c, r);
-  const bBuilt = buildClubRounds(bPlayers, c, r);
-  // Reverse Club B's selected factor order to reduce recurring cross-club patterns.
-  const bRebuilt = buildClubRounds(bPlayers.slice().reverse(), c, r);
-  const bRounds = bRebuilt.rounds;
+  const aBuilt = buildClubAFactorRounds(aPlayers, c, r);
+  const bFactorsAll = generatePerfectMatchings(bPlayers.map(p => p.id));
+  const bSelection = selectFactors(bPlayers, bFactorsAll, r / 2);
+  const remainingBFactors = bSelection.set.map(i => bFactorsAll[i]);
 
   const aById = Object.fromEntries(aPlayers.map(p => [p.id, p]));
   const bById = Object.fromEntries(bPlayers.map(p => [p.id, p]));
-  const opponentHistory = {};
-  const previousCourt = {};
+  let opponentHistory = {};
+  let previousCourt = {};
+  let previousBBench = new Set();
   const output = [];
 
-  for (let i = 0; i < r; i++) {
-    const matchedB = matchTeams(aBuilt.rounds[i].teams, bRounds[i].teams, aById, bById, opponentHistory, previousCourt);
-    const courtRows = aBuilt.rounds[i].teams.map((aTeam, courtIndex) => {
-      const bTeam = matchedB[courtIndex];
-      for (const a of aTeam) for (const b of bTeam) opponentHistory[pairKey(a, b)] = (opponentHistory[pairKey(a, b)] || 0) + 1;
-      for (const id of [...aTeam, ...bTeam]) previousCourt[id] = courtIndex + 1;
-      return {
-        courtNumber: courtIndex + 1,
-        clubA: aTeam,
-        clubB: bTeam,
-        clubAStrength: strength(aTeam, aById),
-        clubBStrength: strength(bTeam, bById),
-      };
-    });
-    output.push({
-      roundNumber: i + 1,
-      courts: courtRows,
-      benchClubA: aBuilt.rounds[i].bench,
-      benchClubB: bRounds[i].bench,
-    });
+  // Process two rounds at a time. For each Club A factor, choose which remaining
+  // Club B factor and which 4-pair half should go first. This preserves unique
+  // partners while giving the cross-club matcher freedom to reduce repeat
+  // opponents, strength mismatch and consecutive rests.
+  for (let block = 0; block < r / 2; block++) {
+    const aRounds = [aBuilt.rounds[block * 2], aBuilt.rounds[block * 2 + 1]];
+    let bestBlock = null;
+
+    for (let factorIndex = 0; factorIndex < remainingBFactors.length; factorIndex++) {
+      const factor = remainingBFactors[factorIndex];
+      const indices = factor.map((_, i) => i);
+
+      for (const firstIdx of combinations(indices, c)) {
+        const firstSet = new Set(firstIdx);
+        const firstTeams = firstIdx.map(i => factor[i]);
+        const secondTeams = indices.filter(i => !firstSet.has(i)).map(i => factor[i]);
+        const firstActive = new Set(firstTeams.flat());
+        const secondActive = new Set(secondTeams.flat());
+        const bRounds = [
+          { teams: firstTeams, bench: [...secondActive] },
+          { teams: secondTeams, bench: [...firstActive] },
+        ];
+        const consecutiveRest = bRounds[0].bench.filter(id => previousBBench.has(id)).length;
+        const simulation = simulateTwoRounds({ aRounds, bRounds, aById, bById, opponentHistory, previousCourt });
+        const totalScore = simulation.score + consecutiveRest * 80;
+
+        if (!bestBlock || totalScore < bestBlock.totalScore) {
+          bestBlock = { factorIndex, bRounds, simulation, totalScore, consecutiveRest };
+        }
+      }
+    }
+
+    const chosenFactor = remainingBFactors.splice(bestBlock.factorIndex, 1)[0];
+    void chosenFactor;
+    opponentHistory = bestBlock.simulation.opponentHistory;
+    previousCourt = bestBlock.simulation.previousCourt;
+    previousBBench = new Set(bestBlock.bRounds[1].bench);
+
+    for (let half = 0; half < 2; half++) {
+      output.push({
+        roundNumber: output.length + 1,
+        courts: bestBlock.simulation.matched[half].courts,
+        benchClubA: aRounds[half].bench,
+        benchClubB: bestBlock.bRounds[half].bench,
+      });
+    }
   }
 
   return {
@@ -274,7 +361,7 @@ export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, cour
       rounds: r,
       totalMatches: c * r,
       partnerFactorScoreClubA: aBuilt.selection.score,
-      partnerFactorScoreClubB: bBuilt.selection.score,
+      partnerFactorScoreClubB: bSelection.score,
     },
   };
 }
