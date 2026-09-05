@@ -496,13 +496,20 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const simulateCurrentRound = () => simulateMatches(currentMatches, `Round ${currentRound}`);
   const resetDummyRecords = async () => {
     const normal = matches.filter(m => !m.is_showcase);
+    const showcase = matches.filter(m => m.is_showcase);
+    for (const m of showcase) await base44.entities.ClubChallengeMatch.delete(m.id);
     for (let i = 0; i < normal.length; i += 8) {
       await Promise.all(normal.slice(i, i + 8).map(m => base44.entities.ClubChallengeMatch.update(m.id, {
         status: 'scheduled', score_a: null, score_b: null, winner: 'none', revision: 0,
         scored_by_user_id: null, scored_at: null, last_corrected_by_user_id: null, last_corrected_at: null, correction_count: 0,
       })));
     }
-    await base44.entities.ClubChallengeEvent.update(event.id, { status: 'draw_approved', current_round: 0, finalised_at: null });
+    await base44.entities.ClubChallengeEvent.update(event.id, {
+      status: 'draw_approved', current_round: 0, finalised_at: null,
+      showcase_resolution_method: 'none', showcase_resolved_winner: 'none',
+      showcase_club_a_male_id: null, showcase_club_a_female_id: null,
+      showcase_club_b_male_id: null, showcase_club_b_female_id: null,
+    });
     await base44.entities.Tournament.update(tournament.id, { status: 'Draft', finalised_at: null });
     return normal.map(m => ({ ...m, status: 'scheduled', score_a: null, score_b: null, winner: 'none', revision: 0 }));
   };
