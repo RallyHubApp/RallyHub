@@ -499,27 +499,34 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const setPotStatus = async status => {
-    if (!event || !isAdmin) return;
-    await base44.entities.ClubChallengeEvent.update(event.id, { pot_status: status });
-    await refetchEvent();
-    toast.success(status === 'open' ? 'Player of Tournament voting is open.' : status === 'closed' ? 'Voting closed. Totals remain hidden until reveal.' : 'Player of Tournament result revealed.');
+    if (!event || !canManageEvent || !['open','closed'].includes(status)) return;
+    try {
+      const action = status === 'open' ? 'open' : 'close';
+      const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      await refetchEvent();
+      toast.success(status === 'open' ? 'Player of Tournament voting is open.' : 'Voting closed. Totals remain hidden until reveal.');
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not update voting status'); }
   };
   const castPotVote = async () => {
     if (!event || event.pot_status !== 'open' || !potVoterId || !potNomineeId) return;
     if (potVoterId === potNomineeId) { toast.error('Players cannot vote for themselves.'); return; }
-    const voter = participants.find(p => p.id === potVoterId);
-    const nominee = participants.find(p => p.id === potNomineeId);
-    if (!voter || !nominee || ['withdrawn','injured'].includes(nominee.status)) { toast.error('That voter or nominee is not eligible.'); return; }
-    if (potVotes.some(v => v.valid !== false && v.voter_participant_id === potVoterId)) { toast.error('This player has already voted.'); return; }
-    await base44.entities.ClubChallengeVote.create({ tenant_id: event.tenant_id, challenge_event_id: event.id, voter_identity_key: voter.unique_identity_key || `participant:${voter.id}`, voter_participant_id: voter.id, nominee_participant_id: nominee.id, access_route: 'logged_in', cast_at: new Date().toISOString(), valid: true });
-    setPotNomineeId(''); await refetchPotVotes(); toast.success('Vote recorded. Live totals remain hidden.');
+    try {
+      const res = await base44.functions.invoke('castClubChallengePotVote', { eventId:event.id, voterParticipantId:potVoterId, nomineeParticipantId:potNomineeId });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      setPotNomineeId('');
+      if (isAdmin) await refetchPotVotes();
+      toast.success('Vote recorded. Live totals remain hidden.');
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not record vote'); }
   };
   const revealPot = async () => {
-    const counts = potVotes.filter(v => v.valid !== false).reduce((a,v) => ({ ...a, [v.nominee_participant_id]: (a[v.nominee_participant_id] || 0) + 1 }), {});
-    const max = Math.max(0, ...Object.values(counts));
-    const winners = Object.keys(counts).filter(id => counts[id] === max && max > 0);
-    await base44.entities.ClubChallengeEvent.update(event.id, { pot_status: 'revealed', pot_winner_participant_ids: winners, pot_revealed_at: new Date().toISOString() });
-    await refetchEvent(); toast.success(winners.length > 1 ? 'Joint Player of Tournament result revealed.' : 'Player of Tournament result revealed.');
+    if (!event || !canManageEvent) return;
+    try {
+      const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'reveal' });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      await refetchEvent();
+      toast.success(Number(res.data?.winnerCount || 0) > 1 ? 'Joint Player of Tournament result revealed.' : 'Player of Tournament result revealed.');
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reveal voting result'); }
   };
   const printEventPack = async () => {
     if (!event || !['draw_approved','in_progress','paused','completed'].includes(event.status) || !normalMatches.length) { toast.error('Approve the draw before producing the Event Pack.'); return; }
