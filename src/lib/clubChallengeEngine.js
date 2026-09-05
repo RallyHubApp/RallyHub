@@ -148,7 +148,7 @@ function teamStrength(team, byId) {
   return team.reduce((sum, id) => sum + (finite(byId[id]?.rank) ? Number(byId[id].rank) : 0), 0);
 }
 
-function candidateInternalScore({ teams, allIds, games, previousBench, byId, rosterSize }) {
+function candidateInternalScore({ teams, allIds, games, previousBench, byId, rosterSize, targetGames }) {
   const active = new Set(teams.flat());
   const projected = allIds.map(id => (games[id] || 0) + (active.has(id) ? 1 : 0));
   const min = Math.min(...projected), max = Math.max(...projected);
@@ -162,10 +162,12 @@ function candidateInternalScore({ teams, allIds, games, previousBench, byId, ros
     partnerGapPenalty += gap;
     if (gap >= Math.ceil(rosterSize / 2)) partnerGapPenalty += gap * 8;
   }
-  return (max - min) * 100000 + variance * 10000 + consecutiveRest * 800 + partnerGapPenalty * 8 + stableIdScore(teams.flat()) * 0.000001;
+  const targetCeiling = Number.isFinite(targetGames) ? Math.ceil(targetGames) : Infinity;
+  const overTarget = projected.reduce((sum, n) => sum + Math.max(0, n - targetCeiling), 0);
+  return overTarget * 1_000_000_000 + (max - min) * 100000 + variance * 10000 + consecutiveRest * 800 + partnerGapPenalty * 8 + stableIdScore(teams.flat()) * 0.000001;
 }
 
-function generateRoundCandidates({ players, courts, games, previousBench, usedFactors, maxCandidates = 14 }) {
+function generateRoundCandidates({ players, courts, games, previousBench, usedFactors, targetGames, maxCandidates = 24 }) {
   const ids = players.map(p => p.id);
   const byId = Object.fromEntries(players.map(p => [p.id, p]));
   const factors = generatePerfectMatchings(ids);
@@ -179,7 +181,7 @@ function generateRoundCandidates({ players, courts, games, previousBench, usedFa
       const teams = teamIndices.map(i => factor[i]);
       const active = new Set(teams.flat());
       const bench = ids.filter(id => !active.has(id));
-      const internalScore = candidateInternalScore({ teams, allIds: ids, games, previousBench, byId, rosterSize: ids.length });
+      const internalScore = candidateInternalScore({ teams, allIds: ids, games, previousBench, byId, rosterSize: ids.length, targetGames });
       candidates.push({ factorIndex, teams, bench, internalScore });
     }
   }
@@ -231,6 +233,8 @@ export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, cour
   const bById = Object.fromEntries(bPlayers.map(p => [p.id, p]));
   const aGames = Object.fromEntries(aPlayers.map(p => [p.id, 0]));
   const bGames = Object.fromEntries(bPlayers.map(p => [p.id, 0]));
+  const targetGamesA = (c * 2 * r) / aPlayers.length;
+  const targetGamesB = (c * 2 * r) / bPlayers.length;
   const aPreviousBench = new Set(), bPreviousBench = new Set();
   const aUsedFactors = new Set(), bUsedFactors = new Set();
   const opponentCounts = {};
@@ -238,8 +242,8 @@ export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, cour
   const output = [];
 
   for (let roundIndex = 0; roundIndex < r; roundIndex++) {
-    const aCandidates = generateRoundCandidates({ players: aPlayers, courts: c, games: aGames, previousBench: aPreviousBench, usedFactors: aUsedFactors });
-    const bCandidates = generateRoundCandidates({ players: bPlayers, courts: c, games: bGames, previousBench: bPreviousBench, usedFactors: bUsedFactors });
+    const aCandidates = generateRoundCandidates({ players: aPlayers, courts: c, games: aGames, previousBench: aPreviousBench, usedFactors: aUsedFactors, targetGames: targetGamesA });
+    const bCandidates = generateRoundCandidates({ players: bPlayers, courts: c, games: bGames, previousBench: bPreviousBench, usedFactors: bUsedFactors, targetGames: targetGamesB });
     let best = null;
     for (const aCandidate of aCandidates) {
       for (const bCandidate of bCandidates) {
