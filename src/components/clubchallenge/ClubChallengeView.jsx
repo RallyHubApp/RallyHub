@@ -621,29 +621,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const finaliseEvent = async (winner, method, note = '') => {
     if (!event || !['club_a','club_b','draw'].includes(winner)) return;
     if (event.pot_enabled && event.pot_status === 'open') { toast.error('Player of the Tournament voting is still open.'); return; }
-    if (!isAdmin) {
-      try {
-        const res = await base44.functions.invoke('finaliseClubChallenge', { eventId:event.id, method });
-        if (res.data?.error) { toast.error(res.data.error); return; }
-        toast.success(res.data?.winner === 'draw' ? 'Club Challenge finalised as an overall draw' : `${res.data?.winner === 'club_b' ? event.club_b_name : event.club_a_name} confirmed as Club Challenge winner`);
-        await sync(); setTab('results'); return;
-      } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not finalise Club Challenge'); return; }
+    try {
+      const res = await base44.functions.invoke('finaliseClubChallenge', { eventId:event.id, method });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      toast.success(res.data?.winner === 'draw' ? 'Club Challenge finalised as an overall draw' : `${res.data?.winner === 'club_b' ? event.club_b_name : event.club_a_name} confirmed as Club Challenge winner`);
+      await sync(); setTab('results');
+    } catch (e) {
+      toast.error(e?.response?.data?.error || e?.message || 'Could not finalise Club Challenge');
     }
-    const now = new Date().toISOString();
-    await base44.entities.ClubChallengeEvent.update(event.id, {
-      status: 'completed', finalised_at: now,
-      showcase_resolution_method: method,
-      showcase_resolved_winner: winner,
-    });
-    await base44.entities.Tournament.update(tournament.id, { status: 'Completed', finalised_at: now });
-    await base44.entities.ClubChallengeAudit.create({
-      tenant_id: event.tenant_id, challenge_event_id: event.id,
-      action: 'event_finalised', user_id: currentUser?.id || '', occurred_at: now,
-      new_value_json: JSON.stringify({ winner, method, normal_score_a: score.clubA, normal_score_b: score.clubB, overall_score_a: overallScore.clubA, overall_score_b: overallScore.clubB }),
-      note,
-    });
-    toast.success(winner === 'draw' ? 'Club Challenge finalised as an overall draw' : `${winner === 'club_a' ? event.club_a_name : event.club_b_name} confirmed as Club Challenge winner`);
-    await sync(); setTab('results');
   };
 
   const resolveTieByMetrics = async () => {
@@ -665,32 +650,20 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (Number(event.showcase_points || 0) <= 0) { toast.error('Showcase Final points must be greater than zero.'); return; }
     const ids = [showcaseSelection.aMale, showcaseSelection.aFemale, showcaseSelection.bMale, showcaseSelection.bFemale];
     if (ids.some(id => !id)) { toast.error('Nominate one male and one female player from each club.'); return; }
-    const byId = Object.fromEntries(participants.map(p => [p.id, p]));
-    if (showcaseMatch && ['completed','draw'].includes(showcaseMatch.status)) { toast.error('The Showcase Final has already been scored.'); return; }
-    if (showcaseMatch) await base44.entities.ClubChallengeMatch.delete(showcaseMatch.id);
-    const maxNormalRound = normalMatches.length ? Math.max(...normalMatches.map(m => m.round_number)) : 0;
-    const created = await base44.entities.ClubChallengeMatch.create({
-      tenant_id: event.tenant_id, challenge_event_id: event.id, tournament_id: tournament.id,
-      draw_version: event.draw_version || 0, round_number: maxNormalRound + 1, court_number: 1, match_number: normalMatches.length + 1,
-      club_a_participant_ids: [showcaseSelection.aMale, showcaseSelection.aFemale],
-      club_b_participant_ids: [showcaseSelection.bMale, showcaseSelection.bFemale],
-      club_a_names: [byId[showcaseSelection.aMale]?.display_name, byId[showcaseSelection.aFemale]?.display_name].filter(Boolean),
-      club_b_names: [byId[showcaseSelection.bMale]?.display_name, byId[showcaseSelection.bFemale]?.display_name].filter(Boolean),
-      status: 'scheduled', winner: 'none', revision: 0, correction_count: 0, is_showcase: true,
-    });
-    const now = new Date().toISOString();
-    await base44.entities.ClubChallengeEvent.update(event.id, {
-      showcase_club_a_male_id: showcaseSelection.aMale, showcase_club_a_female_id: showcaseSelection.aFemale,
-      showcase_club_b_male_id: showcaseSelection.bMale, showcase_club_b_female_id: showcaseSelection.bFemale,
-      showcase_resolution_method: 'showcase_final', showcase_resolved_winner: 'none',
-    });
-    await base44.entities.ClubChallengeAudit.create({
-      tenant_id: event.tenant_id, challenge_event_id: event.id, match_id: created.id,
-      action: 'showcase_final_created', user_id: currentUser?.id || '', occurred_at: now,
-      new_value_json: JSON.stringify({ club_a: created.club_a_names, club_b: created.club_b_names, points: event.showcase_points }),
-    });
-    toast.success('Showcase Final created');
-    await sync(); setTab('results');
+    try {
+      const res = await base44.functions.invoke('createClubChallengeShowcase', {
+        eventId: event.id,
+        clubAMaleId: showcaseSelection.aMale,
+        clubAFemaleId: showcaseSelection.aFemale,
+        clubBMaleId: showcaseSelection.bMale,
+        clubBFemaleId: showcaseSelection.bFemale,
+      });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      toast.success('Showcase Final created');
+      await sync(); setTab('results');
+    } catch (e) {
+      toast.error(e?.response?.data?.error || e?.message || 'Could not create Showcase Final');
+    }
   };
 
   const finaliseShowcase = async () => {
