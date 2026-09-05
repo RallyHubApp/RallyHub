@@ -761,6 +761,20 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     : event.status === 'draw_generated' || event.status === 'draw_approved' ? 2
     : event.status === 'in_progress' || event.status === 'paused' ? 3
     : event.status === 'completed' || event.status === 'archived' ? 5 : 0;
+  const currentDisplayMatches = normalMatches.filter(m => m.round_number === currentRound).sort((a,b) => a.court_number - b.court_number);
+  const nextDisplayMatches = normalMatches.filter(m => m.round_number === currentRound + 1).sort((a,b) => a.court_number - b.court_number);
+  const potCounts = potVotes.filter(v => v.valid !== false).reduce((a,v) => ({ ...a, [v.nominee_participant_id]: (a[v.nominee_participant_id] || 0) + 1 }), {});
+  const potWinnerNames = (event?.pot_winner_participant_ids || []).map(id => participants.find(p => p.id === id)?.display_name).filter(Boolean);
+
+  if (displayMode && event) return (
+    <div className="min-h-[75vh] bg-background p-4 sm:p-8 space-y-6">
+      <div className="flex justify-between items-start gap-4"><div><p className="text-sm uppercase tracking-[.2em] text-primary font-bold">Club Challenge · Hall Display</p><h1 className="text-3xl sm:text-5xl font-bold mt-2">{event.club_a_name} <span className="text-primary">{score.clubA} – {score.clubB}</span> {event.club_b_name}</h1></div><Button variant="outline" onClick={() => setDisplayMode(false)}>Exit Display</Button></div>
+      <div className="rounded-2xl border border-border bg-card p-6 text-center"><p className="text-lg uppercase tracking-widest text-muted-foreground">{roundLabel(currentRound)} · {timerState?.phase || 'idle'}</p><p className="text-7xl sm:text-9xl font-bold tabular-nums mt-2">{fmtTimer(timerRemaining)}</p></div>
+      <div><h2 className="text-xl font-bold mb-3">On Court Now</h2><div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">{currentDisplayMatches.map(m => <div key={m.id} className="rounded-xl border border-border bg-card p-4"><p className="text-primary font-bold">Court {m.court_number}</p><p className="text-lg font-semibold mt-2">{(m.club_a_names||[]).join(' & ')}</p><p className="text-sm text-muted-foreground my-1">vs</p><p className="text-lg font-semibold">{(m.club_b_names||[]).join(' & ')}</p>{['completed','draw'].includes(m.status) && <p className="text-2xl font-bold mt-3">{m.score_a}–{m.score_b}</p>}</div>)}</div></div>
+      <div><h2 className="text-xl font-bold mb-3">Up Next</h2><div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">{nextDisplayMatches.map(m => <div key={m.id} className="rounded-xl bg-secondary/50 p-4"><p className="font-bold">Court {m.court_number}</p><p className="text-sm mt-1">{(m.club_a_names||[]).join(' & ')} vs {(m.club_b_names||[]).join(' & ')}</p></div>)}</div></div>
+      <p className="text-xs text-muted-foreground text-center">Read-only display · no email, phone or private participant information</p>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
@@ -769,7 +783,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><ShieldCheck className="w-5 h-5 text-primary" /></div>
           <div><p className="font-semibold text-foreground">Club Challenge v1.0</p><p className="text-xs text-muted-foreground">{event ? `Status: ${event.status.replaceAll('_', ' ')}` : 'Configure the inter-club event'}</p></div>
         </div>
-        {event && <div className="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} logo={event.club_a_logo_url} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} logo={event.club_b_logo_url} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>}
+        {event && <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center"><div className="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} logo={event.club_a_logo_url} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} logo={event.club_b_logo_url} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>{['in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={() => setDisplayMode(true)}>Hall Display</Button>}{['draw_approved','in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={printEventPack}>Print Event Pack</Button>}</div>}
       </div>
 
       <div className="rounded-xl border border-border bg-card/50 p-2 sm:p-3">
