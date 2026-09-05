@@ -269,6 +269,21 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await Promise.all([refetchEvent(), refetchParticipants(), refetchMatches(), event?.pot_enabled ? refetchPotVotes() : Promise.resolve()]);
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
   };
+  const queueOfflineScore = item => setPendingScores(q => [...q.filter(x => x.matchId !== item.matchId), item]);
+  const retryPendingScores = async () => {
+    if (!networkOnline || !pendingScores.length) return;
+    const remaining = [], conflicts = [];
+    for (const item of pendingScores) {
+      try {
+        const res = await base44.functions.invoke('saveClubChallengeScore', { matchId:item.matchId, expectedRevision:item.expectedRevision, scoreA:item.scoreA, scoreB:item.scoreB });
+        if (res.data?.conflict || res.data?.error) { remaining.push(item); conflicts.push({ ...item, reason:res.data?.error || 'Revision conflict' }); }
+      } catch (e) { remaining.push(item); conflicts.push({ ...item, reason:e?.response?.data?.error || e?.message || 'Retry failed' }); }
+    }
+    setPendingScores(remaining); await refetchMatches();
+    if (!remaining.length) toast.success('All offline results synchronised successfully.'); else toast.error(`${remaining.length} offline result${remaining.length===1?'':'s'} need manual review; nothing was overwritten.`);
+    if (conflicts.length) conflicts.forEach(c => addSimLog(`Offline conflict ${c.matchLabel}: ${c.reason}`, 'info'));
+  };
+  React.useEffect(() => { if (networkOnline && pendingScores.length) toast.info(`${pendingScores.length} unsynchronised result${pendingScores.length===1?'':'s'} ready to retry.`); }, [networkOnline]);
 
   const saveSetup = async () => {
     if (!isAdmin) return;
