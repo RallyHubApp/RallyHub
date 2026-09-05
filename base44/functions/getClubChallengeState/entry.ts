@@ -14,10 +14,31 @@ Deno.serve(async (req) => {
     if (!event) return Response.json({ error: 'Club Challenge event not found' }, { status: 404 });
 
     let accessRole = user.role === 'admin' ? 'admin' : '';
+    let permissions = { canManage:false, canScore:false, canCorrectScore:false, canFinalise:false, displayOnly:false };
+    if (accessRole === 'admin') permissions = { canManage:true, canScore:true, canCorrectScore:true, canFinalise:true, displayOnly:false };
     if (!accessRole) {
       const tournamentAccess = await base44.asServiceRole.entities.TournamentUserAccess.filter({ tournament_id: tournamentId, user_id: user.id, status: 'active' });
       const ccAccess = await base44.asServiceRole.entities.ClubChallengeScorer.filter({ challenge_event_id: event.id, user_id: user.id, active: true });
-      accessRole = tournamentAccess?.[0]?.role || ccAccess?.[0]?.role || '';
+      const tournamentGrant = tournamentAccess.find((a:any) => ['event_manager','event_host','scorer'].includes(a.role));
+      const ccGrant = ccAccess.find((a:any) => ['owner','organiser','scorer','display'].includes(a.role));
+      accessRole = tournamentGrant?.role || ccGrant?.role || '';
+      if (tournamentGrant) {
+        permissions = {
+          canManage:['event_manager','event_host'].includes(tournamentGrant.role),
+          canScore:['event_manager','event_host','scorer'].includes(tournamentGrant.role),
+          canCorrectScore:['event_manager','event_host'].includes(tournamentGrant.role),
+          canFinalise:['event_manager','event_host'].includes(tournamentGrant.role),
+          displayOnly:false,
+        };
+      } else if (ccGrant) {
+        permissions = {
+          canManage:['owner','organiser'].includes(ccGrant.role),
+          canScore:!!ccGrant.can_score && ['owner','organiser','scorer'].includes(ccGrant.role),
+          canCorrectScore:!!ccGrant.can_correct_score,
+          canFinalise:!!ccGrant.can_finalise || ['owner','organiser'].includes(ccGrant.role),
+          displayOnly:ccGrant.role === 'display',
+        };
+      }
     }
     if (!accessRole) return Response.json({ error: 'No Club Challenge access for this event' }, { status: 403 });
 
@@ -34,7 +55,7 @@ Deno.serve(async (req) => {
       withdrawn_at:p.withdrawn_at, withdrawal_reason:p.withdrawal_reason,
     }));
 
-    return Response.json({ success:true, accessRole, event, participants:safeParticipants, matches, scorers:scorerRows });
+    return Response.json({ success:true, accessRole, permissions, event, participants:safeParticipants, matches, scorers:scorerRows });
   } catch (error) {
     return Response.json({ error: error?.message || 'Unexpected Club Challenge state error' }, { status: 500 });
   }
