@@ -238,6 +238,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     });
   }, [event?.id, event?.showcase_club_a_male_id, event?.showcase_club_a_female_id, event?.showcase_club_b_male_id, event?.showcase_club_b_female_id]);
 
+  React.useEffect(() => {
+    if (!event) return;
+    try { setRoundLabels(event.round_labels_json ? JSON.parse(event.round_labels_json) : {}); }
+    catch { setRoundLabels({}); }
+  }, [event?.id, event?.round_labels_json]);
+
   const accessRole = isAdmin ? 'admin' : secureState?.accessRole || '';
   const canManageEvent = isAdmin || ['event_manager','event_host','owner','organiser'].includes(accessRole);
   const canScoreEvent = isAdmin || ['event_manager','event_host','scorer','owner','organiser'].includes(accessRole);
@@ -473,6 +479,32 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     return true;
   };
   const roundLabel = round => roundLabels[round] || `Round ${round}`;
+  const saveRoundLabel = async round => {
+    if (!event || !canManageEvent) return;
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'set_round_label', round, label:roundLabels[round] || '' });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      await refetchEvent();
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not save round label'); }
+  };
+  const archiveEvent = async () => {
+    if (!event || !canManageEvent) return;
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'archive' });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      toast.success('Club Challenge archived.');
+      await sync();
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not archive Club Challenge'); }
+  };
+  const reopenEvent = async () => {
+    if (!event || !canManageEvent) return;
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'reopen' });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      toast.success('Club Challenge reopened to its completed result.');
+      await sync();
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reopen Club Challenge'); }
+  };
   const announcePhase = (phase, round = currentRound) => {
     const label = roundLabel(round);
     const text = phase === 'play' ? `${label}. Play. ${Number(event?.play_minutes || 10)} minutes.` : phase === 'changeover' ? `${label} complete. Changeover. ${Number(event?.changeover_minutes || 2)} minutes.` : `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`;
