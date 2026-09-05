@@ -57,7 +57,11 @@ export default function AdminPanel() {
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['all-users'],
-    queryFn: () => base44.entities.User.list('-created_date', 200)
+    queryFn: async () => {
+      const res = await base44.functions.invoke('adminUserAccess', { action: 'list' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.users || [];
+    }
   });
 
   const { data: matches = [] } = useQuery({
@@ -248,7 +252,12 @@ export default function AdminPanel() {
   const setApprovalStatus = async (userId, status) => {
     setUpdatingApproval(userId);
     const targetUser = allUsers.find(u => u.id === userId);
-    await base44.entities.User.update(userId, { approval_status: status });
+    const approvalRes = await base44.functions.invoke('adminUserAccess', { action: 'set_approval', userId, status });
+    if (approvalRes.data?.error) {
+      toast.error(approvalRes.data.error);
+      setUpdatingApproval(null);
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: ['all-users'] });
     toast.success(`User ${status}`);
     setUpdatingApproval(null);
