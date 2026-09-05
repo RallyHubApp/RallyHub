@@ -50,7 +50,8 @@ export default function AdminPanel() {
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list('-created_date', 200)
+    queryFn: () => base44.entities.Player.list('-created_date', 200),
+    enabled: canAccessAdmin
   });
 
   const { data: allUsers = [] } = useQuery({
@@ -59,12 +60,14 @@ export default function AdminPanel() {
       const res = await base44.functions.invoke('adminUserTools', { action: 'list_users' });
       if (res.data?.error) throw new Error(res.data.error);
       return res.data?.users || [];
-    }
+    },
+    enabled: canAccessAdmin
   });
 
   const { data: matches = [] } = useQuery({
     queryKey: ['matches'],
-    queryFn: () => base44.entities.Match.list('-created_date', 200)
+    queryFn: () => base44.entities.Match.list('-created_date', 200),
+    enabled: canAccessAdmin
   });
 
   // Guard: KOTC admin roles only
