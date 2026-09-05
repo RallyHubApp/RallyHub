@@ -147,6 +147,25 @@ export function checkFairness(rounds) {
   return issues;
 }
 
+// ── Score validation ──────────────────────────────────────────────────────────
+export function validateTournivalScore(scoreA, scoreB, matchFormat = 'first_11_by1') {
+  const a = Number(scoreA), b = Number(scoreB);
+  if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) return { valid: false, error: 'Scores must be non-negative whole numbers.' };
+  if (a === b) return { valid: false, error: 'Scores cannot be equal — there must be a winner.' };
+  const winner = Math.max(a, b), loser = Math.min(a, b);
+  if (String(matchFormat).startsWith('timed_')) return { valid: true };
+  if (matchFormat === 'first_11_by1') {
+    if (winner !== 11 || loser > 10) return { valid: false, error: 'First-to-11 (win by 1) must finish at 11 with the losing score 10 or lower.' };
+    return { valid: true };
+  }
+  if (matchFormat === 'first_11_by2') {
+    if (winner < 11 || winner - loser < 2) return { valid: false, error: 'Winner must reach at least 11 and win by 2.' };
+    if (winner > 11 && winner - loser !== 2) return { valid: false, error: 'After 10–10, play continues until one pair leads by 2.' };
+    return { valid: true };
+  }
+  return { valid: false, error: 'Unknown Tournival match format.' };
+}
+
 // ── Leaderboard ────────────────────────────────────────────────────────────────
 export function computeLeaderboard(playerIds, rounds, results, playerMap) {
   const stats = {};
