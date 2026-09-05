@@ -17,7 +17,8 @@
         "Ladder League",
         "King of the Court",
         "Tournival",
-        "Mixed Doubles"
+        "Mixed Doubles",
+        "Club Challenge"
       ]
     },
     "partnership_type": {
@@ -37,7 +38,8 @@
       "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "description": "Legacy display field; not authoritative for ownership"
     },
     "partner_pairs": {
       "type": "array",
@@ -148,7 +150,7 @@
         "ennis",
         "corofin"
       ],
-      "description": "Configured recurring KOTC session venue for scheduled imports"
+      "description": "Legacy KOTC session venue identifier"
     },
     "kotc_last_import_message": {
       "type": "string",
@@ -158,6 +160,35 @@
       "type": "string",
       "format": "date-time",
       "description": "Timestamp of the latest automated import"
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Owning Tenant ID"
+    },
+    "host_club_id": {
+      "type": "string",
+      "description": "Owning/host Club ID; may be blank for tenant-run events"
+    },
+    "venue_id": {
+      "type": "string",
+      "description": "Primary Venue ID, if applicable"
+    },
+    "roster_status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "submitted",
+        "locked"
+      ],
+      "default": "open"
+    },
+    "roster_locked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finalised_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
