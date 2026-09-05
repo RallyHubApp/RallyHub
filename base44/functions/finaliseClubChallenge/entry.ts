@@ -21,6 +21,8 @@ Deno.serve(async (req) => {
       allowed = ta.some(a => ['event_manager','event_host'].includes(a.role)) || ca.some(a => a.can_finalise || ['owner','organiser'].includes(a.role));
     }
     if (!allowed) return Response.json({ error:'Finalisation permission required' }, { status:403 });
+    if (['completed','archived'].includes(event.status)) return Response.json({ error:'Club Challenge is already finalised.' }, { status:409 });
+    if (!['in_progress','paused'].includes(event.status)) return Response.json({ error:'Club Challenge must be in progress before it can be finalised.' }, { status:409 });
     if (event.pot_enabled && event.pot_status === 'open') return Response.json({ error:'Player of Tournament voting is still open.' }, { status:409 });
 
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200);
