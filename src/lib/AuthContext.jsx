@@ -93,7 +93,17 @@ export const AuthProvider = ({ children }) => {
     try {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
-      const currentUser = await base44.auth.me();
+      let currentUser = await base44.auth.me();
+      // Resolve a server-verified Tenant/Club security context. The backend checks
+      // ClubUserAccess/TenantUserAccess before writing any active scope fields.
+      try {
+        const contextRes = await base44.functions.invoke('securityContext', { action: 'resolve_default' });
+        if (contextRes.data?.success && contextRes.data?.context) {
+          currentUser = await base44.auth.me();
+        }
+      } catch (contextError) {
+        console.warn('Security context resolution failed:', contextError);
+      }
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
