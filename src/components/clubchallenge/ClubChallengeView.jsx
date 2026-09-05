@@ -558,6 +558,17 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       toast.success('Vote recorded. Live totals remain hidden.');
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not record vote'); }
   };
+  const preparePublicLinks = async () => {
+    if (!event || !hasManagePermission) return;
+    try {
+      const res = await base44.functions.invoke('manageClubChallengePublicLinks', { eventId:event.id });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      const origin = window.location.origin;
+      setPublicLinks({ ...res.data, displayUrl:`${origin}/club-challenge/display/${res.data.displayToken}`, votingUrl:`${origin}/club-challenge/vote/${res.data.votingToken}` });
+      toast.success('Public Hall Display and POT voting links are ready.');
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not prepare public links'); }
+  };
+
   const revealPot = async () => {
     if (!event || !canManageEvent) return;
     try {
