@@ -34,6 +34,18 @@
     },
     "current_match_id": {
       "type": "string"
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Owning Tenant ID"
+    },
+    "club_id": {
+      "type": "string",
+      "description": "Owning Club ID"
+    },
+    "venue_id": {
+      "type": "string",
+      "description": "Owning Venue ID"
     }
   },
   "required": [
