@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Check, Clock, GripVertical, ListChecks, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users } from 'lucide-react';
+import { Check, CheckCircle2, Clock, GripVertical, ListChecks, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   analyseClubChallengeFairness,
@@ -24,9 +24,10 @@ import {
 
 const TABS = [
   ['setup', 'Setup'],
-  ['teams', 'Teams & Ranking'],
-  ['draw', 'Draw & Fairness'],
-  ['live', 'Live Scoring'],
+  ['teams', 'Teams'],
+  ['draw', 'Draw'],
+  ['live', 'Live Event'],
+  ['results', 'Results'],
 ];
 
 const DEFAULT_SETUP = {
@@ -324,6 +325,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase);
+  const stageIndex = !event ? 0
+    : event.status === 'draft' ? (participants.length ? 1 : 0)
+    : event.status === 'draw_generated' || event.status === 'draw_approved' ? 2
+    : event.status === 'in_progress' || event.status === 'paused' ? 3
+    : event.status === 'completed' || event.status === 'archived' ? 4 : 0;
 
   return (
     <div className="space-y-4">
@@ -335,8 +341,21 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         {event && <div className="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>}
       </div>
 
-      <div className="flex overflow-x-auto gap-1 -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 snap-x scrollbar-none">
-        {TABS.map(([id, label]) => <button key={id} onClick={() => setTab(id)} className={cn('px-3 py-2.5 rounded-lg text-xs font-medium whitespace-nowrap min-h-10 snap-start', tab === id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary')}>{label}</button>)}
+      <div className="rounded-xl border border-border bg-card/50 p-2 sm:p-3">
+        <div className="flex overflow-x-auto gap-1 sm:gap-2 -mx-1 px-1 pb-1 snap-x scrollbar-none">
+          {TABS.map(([id, label], index) => {
+            const complete = index < stageIndex;
+            const current = index === stageIndex;
+            return (
+              <button key={id} onClick={() => setTab(id)} className={cn('group flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium whitespace-nowrap min-h-10 snap-start transition-colors', tab === id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary')}>
+                <span className={cn('w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border shrink-0', complete ? 'bg-primary text-primary-foreground border-primary' : current ? 'border-primary text-primary bg-primary/5' : 'border-border bg-secondary/40')}>
+                  {complete ? <CheckCircle2 className="w-3.5 h-3.5" /> : index + 1}
+                </span>
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {tab === 'setup' && (
@@ -367,7 +386,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.potEnabled} onChange={e => setSetup(s => ({ ...s, potEnabled: e.target.checked }))} /> Player of Tournament voting</label>
             </div>
           </div>
-          <Button onClick={saveSetup} disabled={!isAdmin || saving} className="w-full h-11">{saving ? 'Saving…' : event ? 'Save Setup Changes' : 'Create Club Challenge'}</Button>
+          <Button onClick={saveSetup} disabled={!isAdmin || saving} className="w-full h-11">{saving ? 'Saving…' : event ? 'Save & Continue to Teams' : 'Create & Continue to Teams'}</Button>
         </div>
       )}
 
@@ -400,12 +419,27 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
       {tab === 'live' && (
         <div className="space-y-4">
-          {!event || !['in_progress','paused','completed'].includes(event.status) ? <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">Approve the draw and Start Club Challenge first.</div> : <>
-            <div className="glass rounded-xl p-4 sm:p-5"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div className="min-w-0"><p className="text-sm text-muted-foreground">Round {currentRound} of {Math.max(...rounds)}</p><p className="text-xl sm:text-2xl font-bold break-words">{event.club_a_name} {score.clubA} <span className="text-muted-foreground font-normal">–</span> {score.clubB} {event.club_b_name}</p></div><div className="flex gap-2 text-xs"><Badge variant="outline">{score.matchesWonA}W</Badge><Badge variant="outline">{score.draws}D</Badge><Badge variant="outline">{score.matchesWonB}W</Badge></div></div>{event.include_break && currentRound === event.break_after_round && <div className="mt-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-xs text-yellow-400"><Clock className="inline w-4 h-4 mr-1" />Scheduled {event.break_minutes}-minute break after this round.</div>}</div>
+          {!event || !['in_progress','paused','completed'].includes(event.status) ? <div className="rounded-xl border border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">Approve the draw and Start Club Challenge first.</div> : <>
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-5"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary">Live Event</p><p className="text-sm text-muted-foreground mt-1">Round {currentRound} of {Math.max(...rounds)}</p><p className="text-xl sm:text-2xl font-bold break-words mt-1">{event.club_a_name} {score.clubA} <span className="text-muted-foreground font-normal">–</span> {score.clubB} {event.club_b_name}</p></div><div className="flex gap-2 text-xs"><Badge variant="outline">{score.matchesWonA}W</Badge><Badge variant="outline">{score.draws}D</Badge><Badge variant="outline">{score.matchesWonB}W</Badge></div></div>{event.include_break && currentRound === event.break_after_round && <div className="mt-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-xs text-yellow-400"><Clock className="inline w-4 h-4 mr-1" />Scheduled {event.break_minutes}-minute break after this round.</div>}</div>
             <div className="grid md:grid-cols-2 gap-3">{currentMatches.sort((a,b)=>a.court_number-b.court_number).map(m => <ScoreCard key={`${m.id}-${m.revision}`} match={m} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={refetchMatches} />)}</div>
             {event.status !== 'completed' && <Button className="w-full h-11" onClick={advanceRound}>{currentRound < Math.max(...rounds) ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Finalise Club Challenge</>}</Button>}
-            {event.status === 'completed' && <div className="glass rounded-xl p-8 text-center"><Trophy className="w-10 h-10 text-primary mx-auto mb-2" /><p className="text-xl font-bold">Club Challenge complete</p><p className="text-sm text-muted-foreground mt-1">Final normal-match score: {event.club_a_name} {score.clubA}–{score.clubB} {event.club_b_name}</p></div>}
           </>}
+        </div>
+      )}
+
+      {tab === 'results' && (
+        <div className="rounded-xl border border-border bg-card p-5 sm:p-8">
+          {event?.status === 'completed' ? (
+            <div className="text-center max-w-xl mx-auto">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto"><Trophy className="w-6 h-6 text-primary" /></div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary mt-4">Final Result</p>
+              <p className="text-2xl sm:text-3xl font-bold mt-2 break-words">{event.club_a_name} {score.clubA}–{score.clubB} {event.club_b_name}</p>
+              <div className="flex justify-center gap-2 mt-4"><Badge variant="outline">{score.matchesWonA} wins</Badge><Badge variant="outline">{score.draws} draws</Badge><Badge variant="outline">{score.matchesWonB} wins</Badge></div>
+              <p className="text-xs text-muted-foreground mt-5">Showcase Final and Player of Tournament results will appear here when those Gate 3 workflows are enabled.</p>
+            </div>
+          ) : (
+            <div className="text-center"><Trophy className="w-8 h-8 text-muted-foreground/40 mx-auto" /><p className="text-sm font-semibold mt-3">Results will appear when the event is complete</p><p className="text-xs text-muted-foreground mt-1">Run the event through Live Event, then finalise it.</p></div>
+          )}
         </div>
       )}
     </div>
