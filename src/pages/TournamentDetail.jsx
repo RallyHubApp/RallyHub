@@ -248,12 +248,12 @@ export default function TournamentDetail() {
               <Badge className={cn('text-xs', statusColors[tournament.status] || statusColors['Draft'])}>
                 {tournament.status}
               </Badge>
-              {isInterClub && <Badge className="text-xs bg-accent/20 text-accent"><Flag className="w-3 h-3 mr-1" />Inter-Club</Badge>}
-              {isFixedPartners && <Badge className="text-xs bg-purple-500/20 text-purple-400"><Users className="w-3 h-3 mr-1" />Fixed Partners</Badge>}
+              {isInterClub && !isClubChallenge && <Badge className="text-xs bg-accent/20 text-accent"><Flag className="w-3 h-3 mr-1" />Inter-Club</Badge>}
+              {isFixedPartners && !isClubChallenge && <Badge className="text-xs bg-purple-500/20 text-purple-400"><Users className="w-3 h-3 mr-1" />Fixed Partners</Badge>}
             </div>
             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1"><Trophy className="w-3 h-3" /> {tournament.format}</span>
-              {tournament.partnership_type && tournament.partnership_type !== 'Singles' && (
+              {!isClubChallenge && tournament.partnership_type && tournament.partnership_type !== 'Singles' && (
                 <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {tournament.partnership_type}</span>
               )}
               {tournament.start_date && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {format(new Date(tournament.start_date), 'MMM d, yyyy')}</span>}
@@ -282,8 +282,8 @@ export default function TournamentDetail() {
                 <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteConfirmOpen(true)}>
                   <Trash2 className="w-3 h-3 mr-1" /> Delete
                 </Button>
-                {/* Share links */}
-                {isTournival ? (
+                {/* Share links — Club Challenge public/display links arrive in its dedicated workflow */}
+                {!isClubChallenge && (isTournival ? (
                   <>
                     <Button variant="outline" size="sm" onClick={handleRegLink}
                       className={regLinkCopied ? 'text-primary border-primary/40' : ''}>
@@ -299,7 +299,7 @@ export default function TournamentDetail() {
                     className={linkCopied ? 'text-primary border-primary/40' : ''}>
                     {linkCopied ? <><Check className="w-3 h-3 mr-1" /> Copied!</> : <><Link2 className="w-3 h-3 mr-1" /> Share Link</>}
                   </Button>
-                )}
+                ))}
               </>
             )}
             {!isClubChallenge && (isFixedPartners ? (
@@ -343,12 +343,12 @@ export default function TournamentDetail() {
               </Button>
             )}
 
-            {tournament.status === 'Draft' && (
+            {!isClubChallenge && tournament.status === 'Draft' && (
               <Button size="sm" variant="outline" onClick={() => updateStatus('Registration Open')}>
                 <Play className="w-3 h-3 mr-1" /> Open Registration
               </Button>
             )}
-            {tournament.status === 'In Progress' && (
+            {!isClubChallenge && tournament.status === 'In Progress' && (
               <Button size="sm" variant="outline" onClick={() => updateStatus('Completed')} disabled={completing}>
                 {completing
                   ? <><div className="w-3 h-3 border-2 border-foreground border-t-transparent rounded-full animate-spin mr-1" /> Completing…</>
@@ -360,7 +360,7 @@ export default function TournamentDetail() {
         </div>
 
         {/* Progress bar */}
-        {matches.length > 0 && (
+        {!isClubChallenge && matches.length > 0 && (
           <div className="mt-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
               <span>{completedMatches.length} of {matches.length} matches completed</span>
@@ -379,7 +379,7 @@ export default function TournamentDetail() {
       </motion.div>
 
       {/* Inter-club summary */}
-      {isInterClub && Object.keys(clubResults).length > 0 && (
+      {isInterClub && !isClubChallenge && Object.keys(clubResults).length > 0 && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-4">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
             <Flag className="w-3 h-3" /> Club Standings
