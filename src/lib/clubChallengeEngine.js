@@ -217,12 +217,38 @@ function applyRoundState({ candidate, games, previousBench, usedFactors }) {
   usedFactors.add(candidate.factorIndex);
 }
 
-function cyclicActiveSet(ids, activeCount, roundIndex, phase = 0) {
-  const start = (phase + roundIndex * activeCount) % ids.length;
-  const active = [];
-  for (let i = 0; i < activeCount; i++) active.push(ids[(start + i) % ids.length]);
-  const activeSet = new Set(active);
-  return { active, bench: ids.filter(id => !activeSet.has(id)) };
+function buildBalancedActiveSchedule(ids, activeCount, rounds, phase = 0) {
+  const n = ids.length;
+  let best = null;
+  for (let step = 1; step < n; step++) {
+    const schedule = [];
+    const counts = Object.fromEntries(ids.map(id => [id, 0]));
+    const restedLast = Object.fromEntries(ids.map(id => [id, false]));
+    let consecutiveRests = 0;
+    const uniqueSets = new Set();
+    for (let roundIndex = 0; roundIndex < rounds; roundIndex++) {
+      const start = (phase + roundIndex * step) % n;
+      const active = [];
+      for (let i = 0; i < activeCount; i++) active.push(ids[(start + i) % n]);
+      const activeSet = new Set(active);
+      const bench = ids.filter(id => !activeSet.has(id));
+      for (const id of active) counts[id]++;
+      for (const id of ids) {
+        const resting = !activeSet.has(id);
+        if (resting && restedLast[id]) consecutiveRests++;
+        restedLast[id] = resting;
+      }
+      uniqueSets.add([...active].sort().join('|'));
+      schedule.push({ active, bench });
+    }
+    const values = Object.values(counts);
+    const min = Math.min(...values), max = Math.max(...values);
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0);
+    const score = (max - min) * 1_000_000_000 + variance * 10_000_000 + consecutiveRests * 1_000 - uniqueSets.size;
+    if (!best || score < best.score) best = { schedule, score, step, consecutiveRests, min, max };
+  }
+  return best;
 }
 
 function enumeratePerfectPairings(ids) {
@@ -292,12 +318,13 @@ export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, cour
   const aPartnerCounts = {}, bPartnerCounts = {}, opponentCounts = {}, previousCourt = {};
   const output = [];
   const activePerClub = c * 2;
-  // Fixed phase keeps equality mathematics intact while preventing identical club rotations.
   const bPhase = Math.max(1, Math.floor(bIds.length / 3));
+  const aActiveSchedule = buildBalancedActiveSchedule(aIds, activePerClub, r, 0).schedule;
+  const bActiveSchedule = buildBalancedActiveSchedule(bIds, activePerClub, r, bPhase).schedule;
 
   for (let roundIndex = 0; roundIndex < r; roundIndex++) {
-    const aActive = cyclicActiveSet(aIds, activePerClub, roundIndex, 0);
-    const bActive = cyclicActiveSet(bIds, activePerClub, roundIndex, bPhase);
+    const aActive = aActiveSchedule[roundIndex];
+    const bActive = bActiveSchedule[roundIndex];
     const aTeams = chooseTeamsForActive({ activeIds: aActive.active, byId: aById, partnerCounts: aPartnerCounts, rosterSize: aIds.length });
     const bTeams = chooseTeamsForActive({ activeIds: bActive.active, byId: bById, partnerCounts: bPartnerCounts, rosterSize: bIds.length });
     const cross = bestCrossClubMatch({ aTeams, bTeams, aById, bById, opponentCounts, previousCourt });
