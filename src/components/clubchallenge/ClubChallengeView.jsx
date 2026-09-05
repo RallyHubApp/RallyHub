@@ -151,6 +151,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [replacement, setReplacement] = useState({ outgoingId: '', incomingName: '', incomingGender: '', reason: '', status: 'withdrawn' });
   const [lateArrival, setLateArrival] = useState({ participantId: '', round: 1 });
   const [eventDayAdjust, setEventDayAdjust] = useState({ courts: 0, availableMinutes: 0 });
+  const [eventDayProposal, setEventDayProposal] = useState(null);
+  const [networkOnline, setNetworkOnline] = useState(() => navigator.onLine);
+  const [pendingScores, setPendingScores] = useState(() => { try { return JSON.parse(localStorage.getItem(`cc-pending-${tournament.id}`) || '[]'); } catch { return []; } });
   const [timerNow, setTimerNow] = useState(Date.now());
   const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('cc-voice-mode') || 'irish_female');
   const [voices, setVoices] = useState([]);
@@ -256,6 +259,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, []);
   React.useEffect(() => { localStorage.setItem('cc-voice-mode', voiceMode); }, [voiceMode]);
   React.useEffect(() => { localStorage.setItem('cc-voice-muted', String(voiceMuted)); }, [voiceMuted]);
+  React.useEffect(() => {
+    const online = () => setNetworkOnline(true), offline = () => setNetworkOnline(false);
+    window.addEventListener('online', online); window.addEventListener('offline', offline);
+    return () => { window.removeEventListener('online', online); window.removeEventListener('offline', offline); };
+  }, []);
+  React.useEffect(() => { localStorage.setItem(`cc-pending-${tournament.id}`, JSON.stringify(pendingScores)); }, [pendingScores, tournament.id]);
 
   const sync = async () => {
     await Promise.all([refetchEvent(), refetchParticipants(), refetchMatches(), event?.pot_enabled ? refetchPotVotes() : Promise.resolve()]);
