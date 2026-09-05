@@ -164,6 +164,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const { data: event, refetch: refetchEvent } = useQuery({
     queryKey: ['club-challenge-event', tournament.id],
     queryFn: async () => (await base44.entities.ClubChallengeEvent.filter({ tournament_id: tournament.id }))[0] || null,
+    refetchInterval: 5000,
   });
   const { data: participants = [], refetch: refetchParticipants } = useQuery({
     queryKey: ['club-challenge-participants', event?.id],
@@ -368,32 +369,24 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await sync(); setTab('live');
   };
 
-  const saveTimerState = async next => {
+  const timerAction = async (action, phase) => {
     if (!event) return;
-    await base44.entities.ClubChallengeEvent.update(event.id, {
-      timer_state_json: JSON.stringify(next),
-      timer_revision: Number(event.timer_revision || 0) + 1,
-    });
-    await refetchEvent();
+    try {
+      const res = await base44.functions.invoke('updateClubChallengeTimer', { eventId: event.id, action, phase, expectedRevision: Number(event.timer_revision || 0) });
+      if (res.data?.conflict) { toast.error('Timer changed on another device. RallyHub has refreshed the authoritative timer.'); await refetchEvent(); return; }
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      await refetchEvent();
+    } catch (e) {
+      if (e?.response?.status === 409) toast.error('Timer changed on another device. Refreshing authoritative timer.');
+      else toast.error(e?.response?.data?.error || e?.message || 'Could not update timer');
+      await refetchEvent();
+    }
   };
 
-  const startPhase = async phase => {
-    const seconds = phase === 'play' ? Number(event.play_minutes || 10) * 60 : phase === 'changeover' ? Number(event.changeover_minutes || 2) * 60 : Number(event.break_minutes || 20) * 60;
-    await saveTimerState({ phase, running: true, remaining_seconds: seconds, started_at: new Date().toISOString(), round: currentRound });
-  };
-  const pauseTimer = async () => {
-    if (!timerState?.running) return;
-    await saveTimerState({ ...timerState, running: false, remaining_seconds: timerRemaining, started_at: null });
-    await base44.entities.ClubChallengeEvent.update(event.id, { status: 'paused' });
-    await refetchEvent();
-  };
-  const resumeTimer = async () => {
-    if (!timerState || timerState.running) return;
-    await saveTimerState({ ...timerState, running: true, started_at: new Date().toISOString() });
-    if (event.status === 'paused') await base44.entities.ClubChallengeEvent.update(event.id, { status: 'in_progress' });
-    await refetchEvent();
-  };
-  const resetTimer = async () => saveTimerState({ phase: 'idle', running: false, remaining_seconds: 0, started_at: null, round: currentRound });
+  const startPhase = phase => timerAction('start', phase);
+  const pauseTimer = () => timerAction('pause');
+  const resumeTimer = () => timerAction('resume');
+  const resetTimer = () => timerAction('reset');
   const fmtTimer = s => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
 
   const applyReplacement = async () => {
@@ -782,7 +775,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><p className="text-sm font-semibold">Authoritative Event Timer</p><p className="text-xs text-muted-foreground">Persisted against the event; reopening or waking the browser recalculates from the saved timestamp.</p></div><Badge variant="outline">Rev {event.timer_revision || 0}</Badge></div>
               <div className="text-center py-2"><p className="text-xs uppercase tracking-wider text-muted-foreground">{timerState?.phase || 'idle'}</p><p className="text-4xl font-bold tabular-nums mt-1">{fmtTimer(timerRemaining)}</p></div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"><Button variant="outline" onClick={() => startPhase('play')}>Start Play</Button><Button variant="outline" onClick={() => startPhase('changeover')}>Changeover</Button><Button variant="outline" disabled={!event.include_break} onClick={() => startPhase('break')}>Break</Button><Button variant="outline" disabled={!timerState?.running} onClick={pauseTimer}>Pause</Button><Button variant="outline" disabled={!timerState || timerState.running || timerRemaining <= 0} onClick={resumeTimer}>Resume</Button><Button variant="outline" onClick={() => saveTimerState({ ...(timerState || {}), remaining_seconds: timerRemaining + 60, running: false, started_at: null, phase: timerState?.phase || 'play', round: currentRound })}>+1 min</Button><Button variant="outline" onClick={resetTimer}>Reset</Button></div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"><Button variant="outline" onClick={() => startPhase('play')}>Start Play</Button><Button variant="outline" onClick={() => startPhase('changeover')}>Changeover</Button><Button variant="outline" disabled={!event.include_break} onClick={() => startPhase('break')}>Break</Button><Button variant="outline" disabled={!timerState?.running} onClick={pauseTimer}>Pause</Button><Button variant="outline" disabled={!timerState || timerState.running || timerRemaining <= 0} onClick={resumeTimer}>Resume</Button><Button variant="outline" onClick={() => timerAction('add_minute')}>+1 min</Button><Button variant="outline" onClick={resetTimer}>Reset</Button></div>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-3">
               <div><p className="text-sm font-semibold">Withdrawal / Injury / Replacement</p><p className="text-xs text-muted-foreground">Completed history is never changed. Replacement inherits the outgoing player's side and event rank; only future unplayed fixtures from the current round are updated.</p></div>
