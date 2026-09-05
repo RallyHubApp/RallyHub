@@ -94,7 +94,7 @@ function RankingList({ side, title, participants, locked, onReorder }) {
   );
 }
 
-function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true, onQueue }) {
+function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true, onQueue, canScore = true }) {
   const [a, setA] = useState(match.score_a ?? '');
   const [b, setB] = useState(match.score_b ?? '');
   const [saving, setSaving] = useState(false);
@@ -132,7 +132,7 @@ function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true,
         <span>—</span>
         <Input inputMode="numeric" type="number" min="0" value={b} onChange={e => setB(e.target.value)} className="text-center bg-secondary h-11 text-base" />
       </div>
-      <Button className="w-full h-11" onClick={save} disabled={a === '' || b === '' || saving}>{saving ? 'Saving…' : !networkOnline ? 'Retain Offline Result' : saved ? 'Correct Result' : 'Save Result'}</Button>
+      <Button className="w-full h-11" onClick={save} disabled={!canScore || a === '' || b === '' || saving}>{!canScore ? 'Read-only' : saving ? 'Saving…' : !networkOnline ? 'Retain Offline Result' : saved ? 'Correct Result' : 'Save Result'}</Button>
       {saved && <p className="text-[10px] text-muted-foreground text-center">Revision {match.revision || 0} · {match.winner === 'draw' ? 'Draw' : match.winner === 'club_a' ? `${clubAName} win` : `${clubBName} win`}</p>}
     </div>
   );
@@ -172,7 +172,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       if (!clubId) return null;
       return (await base44.entities.Club.filter({ id: clubId }))[0] || null;
     },
-    enabled: !!(tournament.host_club_id || currentUser?.active_club_id),
+    enabled: isAdmin && !!(tournament.host_club_id || currentUser?.active_club_id),
   });
   const { data: secureState, refetch: refetchSecureState } = useQuery({
     queryKey: ['club-challenge-secure-state', tournament.id, currentUser?.id],
@@ -205,7 +205,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const { data: potVotes = [], refetch: refetchPotVotes } = useQuery({
     queryKey: ['club-challenge-votes', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeVote.filter({ challenge_event_id: event.id }, '-cast_at', 200) : [],
-    enabled: !!event?.id && !!event?.pot_enabled,
+    enabled: isAdmin && !!event?.id && !!event?.pot_enabled,
   });
 
   React.useEffect(() => {
@@ -238,6 +238,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     });
   }, [event?.id, event?.showcase_club_a_male_id, event?.showcase_club_a_female_id, event?.showcase_club_b_male_id, event?.showcase_club_b_female_id]);
 
+  const accessRole = isAdmin ? 'admin' : secureState?.accessRole || '';
+  const canManageEvent = isAdmin || ['event_manager','event_host','owner','organiser'].includes(accessRole);
+  const canScoreEvent = isAdmin || ['event_manager','event_host','scorer','owner','organiser'].includes(accessRole);
   const aPlayers = participants.filter(p => p.side === 'club_a');
   const bPlayers = participants.filter(p => p.side === 'club_b');
   const normalMatches = matches.filter(m => !m.is_showcase);
