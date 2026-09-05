@@ -18,6 +18,27 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
+
+    // Secure user approval/listing for the Admin Panel. Built-in User listing is not
+    // reliably available from the browser, so these operations run admin-only here.
+    if (body.action === 'list_users') {
+      const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
+      return Response.json({ users });
+    }
+    if (body.action === 'set_approval') {
+      const { userId, status } = body;
+      if (!userId || !['pending', 'approved', 'rejected'].includes(status)) {
+        return Response.json({ error: 'Valid userId and status required' }, { status: 400 });
+      }
+      const users = await base44.asServiceRole.entities.User.filter({ id: userId });
+      const target = users?.[0];
+      if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
+      if (target.role === 'admin' && status !== 'approved') {
+        return Response.json({ error: 'Platform admins cannot be rejected/revoked here' }, { status: 400 });
+      }
+      await base44.asServiceRole.entities.User.update(userId, { approval_status: status });
+      return Response.json({ success: true, userId, status });
+    }
     const { action, playerId } = body;
 
     // ── SET TEMP PASSWORD ──────────────────────────────────────────────────────
