@@ -914,8 +914,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             </div>
           </div>
 
-          <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-xs text-muted-foreground">
-            <strong className="text-yellow-400">Timer note:</strong> the authoritative PLAY / CHANGEOVER / BREAK / PAUSE clock has not yet been built into the Gate 3 live screen, so this simulator does not pretend to certify timer behaviour. Once that clock is implemented, I will add compressed-time testing (for example 10 minutes in 10 seconds) so the full event-day timing sequence can be tested quickly as well.
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-muted-foreground">
+            <strong className="text-primary">Timer/audio test:</strong> the compressed sequence exercises PLAY → CHANGEOVER → PLAY → PAUSE → RESUME → BREAK → PLAY with the selected free device voice. The authoritative live timer itself remains server-timestamped and revision-protected; this fast test is deliberately separate so it cannot alter a real event clock.
           </div>
         </div>
       )}
