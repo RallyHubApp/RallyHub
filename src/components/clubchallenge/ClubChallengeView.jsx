@@ -174,21 +174,34 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     },
     enabled: !!(tournament.host_club_id || currentUser?.active_club_id),
   });
-  const { data: event, refetch: refetchEvent } = useQuery({
-    queryKey: ['club-challenge-event', tournament.id],
-    queryFn: async () => (await base44.entities.ClubChallengeEvent.filter({ tournament_id: tournament.id }))[0] || null,
+  const { data: secureState, refetch: refetchSecureState } = useQuery({
+    queryKey: ['club-challenge-secure-state', tournament.id, currentUser?.id],
+    queryFn: async () => (await base44.functions.invoke('getClubChallengeState', { tournamentId: tournament.id })).data,
+    enabled: !!currentUser && !isAdmin,
     refetchInterval: 5000,
   });
-  const { data: participants = [], refetch: refetchParticipants } = useQuery({
+  const { data: adminEvent, refetch: refetchAdminEvent } = useQuery({
+    queryKey: ['club-challenge-event', tournament.id],
+    queryFn: async () => (await base44.entities.ClubChallengeEvent.filter({ tournament_id: tournament.id }))[0] || null,
+    enabled: isAdmin,
+    refetchInterval: 5000,
+  });
+  const event = isAdmin ? adminEvent : secureState?.event || null;
+  const { data: adminParticipants = [], refetch: refetchAdminParticipants } = useQuery({
     queryKey: ['club-challenge-participants', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeParticipant.filter({ challenge_event_id: event.id }, 'event_rank', 100) : [],
-    enabled: !!event?.id,
+    enabled: isAdmin && !!event?.id,
   });
-  const { data: matches = [], refetch: refetchMatches } = useQuery({
+  const participants = isAdmin ? adminParticipants : secureState?.participants || [];
+  const { data: adminMatches = [], refetch: refetchAdminMatches } = useQuery({
     queryKey: ['club-challenge-matches', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeMatch.filter({ challenge_event_id: event.id }, 'round_number', 200) : [],
-    enabled: !!event?.id,
+    enabled: isAdmin && !!event?.id,
   });
+  const matches = isAdmin ? adminMatches : secureState?.matches || [];
+  const refetchEvent = isAdmin ? refetchAdminEvent : refetchSecureState;
+  const refetchParticipants = isAdmin ? refetchAdminParticipants : refetchSecureState;
+  const refetchMatches = isAdmin ? refetchAdminMatches : refetchSecureState;
   const { data: potVotes = [], refetch: refetchPotVotes } = useQuery({
     queryKey: ['club-challenge-votes', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeVote.filter({ challenge_event_id: event.id }, '-cast_at', 200) : [],
