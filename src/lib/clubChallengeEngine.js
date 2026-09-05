@@ -411,14 +411,18 @@ export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, cour
   const output = [];
   const activePerClub = c * 2;
   const bPhase = Math.max(1, Math.floor(bIds.length / 3));
-  const aActiveSchedule = buildBalancedActiveSchedule(aIds, activePerClub, r, 0).schedule;
-  const bActiveSchedule = buildBalancedActiveSchedule(bIds, activePerClub, r, bPhase).schedule;
+  const useBeam = aPlayers.length <= 16 && aPlayers.length % 2 === 0 && r <= aPlayers.length - 1;
+  const aSmall = useBeam ? buildSmallClubSchedule(aPlayers, c, r) : null;
+  const targetRankSums = aSmall ? aSmall.schedule.map(s => s.active.reduce((sum, id) => sum + Number(aById[id]?.rank || 0), 0)) : null;
+  const bSmall = useBeam ? buildSmallClubSchedule(bPlayers, c, r, targetRankSums) : null;
+  const aActiveSchedule = aSmall ? aSmall.schedule : buildBalancedActiveSchedule(aIds, activePerClub, r, 0).schedule;
+  const bActiveSchedule = bSmall ? bSmall.schedule : buildBalancedActiveSchedule(bIds, activePerClub, r, bPhase).schedule;
 
   for (let roundIndex = 0; roundIndex < r; roundIndex++) {
     const aActive = aActiveSchedule[roundIndex];
     const bActive = bActiveSchedule[roundIndex];
-    const aTeams = chooseTeamsForActive({ activeIds: aActive.active, byId: aById, partnerCounts: aPartnerCounts, rosterSize: aIds.length });
-    const bTeams = chooseTeamsForActive({ activeIds: bActive.active, byId: bById, partnerCounts: bPartnerCounts, rosterSize: bIds.length });
+    const aTeams = aActive.teams || chooseTeamsForActive({ activeIds: aActive.active, byId: aById, partnerCounts: aPartnerCounts, rosterSize: aIds.length });
+    const bTeams = bActive.teams || chooseTeamsForActive({ activeIds: bActive.active, byId: bById, partnerCounts: bPartnerCounts, rosterSize: bIds.length });
     const cross = bestCrossClubMatch({ aTeams, bTeams, aById, bById, opponentCounts, previousCourt });
     const assigned = assignMatchupsToCourts({ aTeams, bTeams: cross.bTeams, previousCourt, courtUsage });
 
