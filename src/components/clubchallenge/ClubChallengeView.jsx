@@ -27,6 +27,7 @@ const TABS = [
   ['teams', 'Teams'],
   ['draw', 'Draw'],
   ['live', 'Live Event'],
+  ['simulator', 'Simulator'],
   ['results', 'Results'],
 ];
 
@@ -140,6 +141,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [setup, setSetup] = useState(DEFAULT_SETUP);
   const [manual, setManual] = useState({ club_a: '', club_b: '' });
   const [saving, setSaving] = useState(false);
+  const [simulating, setSimulating] = useState(false);
+  const [simLog, setSimLog] = useState([]);
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: event, refetch: refetchEvent } = useQuery({
@@ -325,6 +328,108 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase);
+  const isGate3TestEvent = participants.length >= 8 && participants.every(p => String(p.unique_identity_key || '').startsWith('gate3-'));
+  const addSimLog = (message, status = 'info') => setSimLog(log => [{ at: new Date().toLocaleTimeString('en-IE'), message, status }, ...log].slice(0, 12));
+  const scoreForSimulation = (match, index = 0) => {
+    if (event?.normal_match_type === 'points') {
+      const target = Number(event.normal_target_points || 11);
+      const winBy = Number(event.normal_win_by || 1);
+      const loser = Math.max(0, target - Math.max(2, winBy));
+      return index % 2 === 0 ? [target, loser] : [loser, target];
+    }
+    if (index % 7 === 0) return [8, 8];
+    return index % 2 === 0 ? [11, 7] : [7, 11];
+  };
+  const saveSimulatedMatch = async (match, index) => {
+    const [scoreA, scoreB] = scoreForSimulation(match, index);
+    const res = await base44.functions.invoke('saveClubChallengeScore', {
+      matchId: match.id,
+      expectedRevision: Number(match.revision || 0),
+      scoreA, scoreB,
+    });
+    if (res.data?.error || res.data?.conflict) throw new Error(res.data?.error || 'Unexpected revision conflict during simulation');
+  };
+  const simulateMatches = async (targetMatches, label) => {
+    if (!isAdmin || !isGate3TestEvent) { toast.error('Simulator is restricted to the Gate 3 dummy roster.'); return; }
+    const unresolved = targetMatches.filter(m => !['completed', 'draw'].includes(m.status));
+    if (!unresolved.length) { toast.info('Those matches are already complete.'); return; }
+    setSimulating(true);
+    try {
+      for (let i = 0; i < unresolved.length; i += 6) {
+        const batch = unresolved.slice(i, i + 6);
+        await Promise.all(batch.map((m, j) => saveSimulatedMatch(m, i + j)));
+      }
+      addSimLog(`${label}: ${unresolved.length} results simulated`, 'pass');
+      toast.success(`${unresolved.length} simulated results saved`);
+      await sync();
+    } catch (e) {
+      addSimLog(`${label}: FAILED — ${e?.message || e}`, 'fail');
+      toast.error(e?.message || 'Simulation failed');
+    } finally { setSimulating(false); }
+  };
+  const simulateCurrentRound = () => simulateMatches(currentMatches, `Round ${currentRound}`);
+  const simulateAllRemaining = async () => {
+    const normal = matches.filter(m => !m.is_showcase);
+    await simulateMatches(normal, 'All normal matches');
+    const maxRound = Math.max(...normal.map(m => m.round_number));
+    if (Number.isFinite(maxRound)) {
+      await base44.entities.ClubChallengeEvent.update(event.id, { status: 'in_progress', current_round: maxRound });
+      await refetchEvent();
+    }
+  };
+  const runConflictProbe = async () => {
+    if (!isAdmin || !isGate3TestEvent) { toast.error('Conflict probe is restricted to the Gate 3 dummy roster.'); return; }
+    const match = matches.find(m => !m.is_showcase && !['completed','draw'].includes(m.status));
+    if (!match) { toast.info('Reset the simulation first so an unplayed match is available.'); return; }
+    setSimulating(true);
+    try {
+      const revision = Number(match.revision || 0);
+      const [a, b] = scoreForSimulation(match, 2);
+      const first = await base44.functions.invoke('saveClubChallengeScore', { matchId: match.id, expectedRevision: revision, scoreA: a, scoreB: b });
+      if (first.data?.error || first.data?.conflict) throw new Error(first.data?.error || 'First edit unexpectedly conflicted');
+      const second = await base44.functions.invoke('saveClubChallengeScore', { matchId: match.id, expectedRevision: revision, scoreA: b, scoreB: a });
+      if (!second.data?.conflict) throw new Error('Stale edit was not rejected');
+      addSimLog(`Concurrency probe PASS on R${match.round_number} Court ${match.court_number}`, 'pass');
+      toast.success('Concurrency protection PASS');
+      await refetchMatches();
+    } catch (e) {
+      addSimLog(`Concurrency probe FAILED — ${e?.message || e}`, 'fail');
+      toast.error(e?.message || 'Concurrency probe failed');
+    } finally { setSimulating(false); }
+  };
+  const resetSimulation = async () => {
+    if (!isAdmin || !isGate3TestEvent) { toast.error('Reset is restricted to the Gate 3 dummy roster.'); return; }
+    if (!window.confirm('Reset all dummy Club Challenge match results back to the approved draw?')) return;
+    setSimulating(true);
+    try {
+      const normal = matches.filter(m => !m.is_showcase);
+      for (let i = 0; i < normal.length; i += 8) {
+        await Promise.all(normal.slice(i, i + 8).map(m => base44.entities.ClubChallengeMatch.update(m.id, {
+          status: 'scheduled', score_a: null, score_b: null, winner: 'none', revision: 0,
+          scored_by_user_id: null, scored_at: null, last_corrected_by_user_id: null, last_corrected_at: null, correction_count: 0,
+        })));
+      }
+      await base44.entities.ClubChallengeEvent.update(event.id, { status: 'draw_approved', current_round: 0, finalised_at: null });
+      await base44.entities.Tournament.update(tournament.id, { status: 'Draft' });
+      setSimLog([]);
+      addSimLog('Dummy event reset to approved draw', 'pass');
+      toast.success('Simulation reset');
+      await sync();
+    } catch (e) { toast.error(e?.message || 'Could not reset simulation'); }
+    finally { setSimulating(false); }
+  };
+  const structuralChecks = useMemo(() => {
+    const normal = matches.filter(m => !m.is_showcase);
+    const roundCount = new Set(normal.map(m => m.round_number)).size;
+    return [
+      ['Dummy roster', participants.length === 32],
+      ['16 + 16 clubs', aPlayers.length === 16 && bPlayers.length === 16],
+      ['12 rounds', roundCount === 12],
+      ['48 matches', normal.length === 48],
+      ['Fairness hard checks', !!fairness && fairness.equalGames && !fairness.duplicatePlayerRoundIssues && !fairness.sameClubIntegrityIssues],
+      ['6 games each', !!fairness && fairness.minGames === 6 && fairness.maxGames === 6],
+    ];
+  }, [matches, participants.length, aPlayers.length, bPlayers.length, fairness]);
   const stageIndex = !event ? 0
     : event.status === 'draft' ? (participants.length ? 1 : 0)
     : event.status === 'draw_generated' || event.status === 'draw_approved' ? 2
