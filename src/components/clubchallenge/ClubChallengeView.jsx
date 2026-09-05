@@ -681,7 +681,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const finaliseEvent = async (winner, method, note = '') => {
-    if (!event || !['club_a','club_b','draw'].includes(winner)) return;
+    if (!event || !canFinaliseEvent || !['club_a','club_b','draw'].includes(winner)) return;
     if (event.pot_enabled && event.pot_status === 'open') { toast.error('Player of the Tournament voting is still open.'); return; }
     try {
       const res = await base44.functions.invoke('finaliseClubChallenge', { eventId:event.id, method });
@@ -707,6 +707,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const createShowcaseFinal = async () => {
+    if (!canManageEvent) return;
     if (!event?.showcase_enabled) { toast.error('Showcase Final is not enabled in Setup.'); return; }
     if (score.clubA !== score.clubB) { toast.error('The Showcase tiebreak is only needed when normal Club Challenge points are level.'); return; }
     if (Number(event.showcase_points || 0) <= 0) { toast.error('Showcase Final points must be greater than zero.'); return; }
@@ -906,10 +907,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const potCounts = potVotes.filter(v => v.valid !== false).reduce((a,v) => ({ ...a, [v.nominee_participant_id]: (a[v.nominee_participant_id] || 0) + 1 }), {});
   const potWinnerNames = (event?.pot_winner_participant_ids || []).map(id => participants.find(p => p.id === id)?.display_name).filter(Boolean);
 
-  if (displayMode && event) return (
+  if ((displayMode || displayOnly) && event) return (
     <div className="min-h-[75vh] bg-background p-4 sm:p-8 space-y-6">
       {!networkOnline && <div className="rounded-lg bg-yellow-500 text-black px-4 py-3 font-semibold text-center">Connection lost — showing the last known state. RallyHub will resynchronise automatically when this device reconnects.</div>}
-      <div className="flex justify-between items-start gap-4"><div><p className="text-sm uppercase tracking-[.2em] text-primary font-bold">Club Challenge · Hall Display</p><h1 className="text-3xl sm:text-5xl font-bold mt-2">{event.club_a_name} <span className="text-primary">{score.clubA} – {score.clubB}</span> {event.club_b_name}</h1></div><Button variant="outline" onClick={() => setDisplayMode(false)}>Exit Display</Button></div>
+      <div className="flex justify-between items-start gap-4"><div><p className="text-sm uppercase tracking-[.2em] text-primary font-bold">Club Challenge · Hall Display</p><h1 className="text-3xl sm:text-5xl font-bold mt-2">{event.club_a_name} <span className="text-primary">{score.clubA} – {score.clubB}</span> {event.club_b_name}</h1></div>{!displayOnly && <Button variant="outline" onClick={() => setDisplayMode(false)}>Exit Display</Button>}</div>
       <div className="rounded-2xl border border-border bg-card p-6 text-center"><p className="text-lg uppercase tracking-widest text-muted-foreground">{roundLabel(currentRound)} · {timerState?.phase || 'idle'}</p><p className="text-7xl sm:text-9xl font-bold tabular-nums mt-2">{fmtTimer(timerRemaining)}</p></div>
       <div><h2 className="text-xl font-bold mb-3">On Court Now</h2><div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">{currentDisplayMatches.map(m => <div key={m.id} className="rounded-xl border border-border bg-card p-4"><p className="text-primary font-bold">Court {m.court_number}</p><p className="text-lg font-semibold mt-2">{(m.club_a_names||[]).map(n => privacyName(n, !!event.junior_display_mode)).join(' & ')}</p><p className="text-sm text-muted-foreground my-1">vs</p><p className="text-lg font-semibold">{(m.club_b_names||[]).map(n => privacyName(n, !!event.junior_display_mode)).join(' & ')}</p>{['completed','draw'].includes(m.status) && <p className="text-2xl font-bold mt-3">{m.score_a}–{m.score_b}</p>}</div>)}</div></div>
       <div><h2 className="text-xl font-bold mb-3">Up Next</h2><div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">{nextDisplayMatches.map(m => <div key={m.id} className="rounded-xl bg-secondary/50 p-4"><p className="font-bold">Court {m.court_number}</p><p className="text-sm mt-1">{(m.club_a_names||[]).map(n => privacyName(n, !!event.junior_display_mode)).join(' & ')} vs {(m.club_b_names||[]).map(n => privacyName(n, !!event.junior_display_mode)).join(' & ')}</p></div>)}</div></div>
