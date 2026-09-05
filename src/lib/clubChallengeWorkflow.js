@@ -32,6 +32,7 @@ export function createChallengeEventDraft({ tournament, hostClub, opponent, setu
     timed_draws_allowed: setup.matchFormat?.drawsAllowed !== false,
     win_points: Number(setup.winPoints ?? 2), draw_points: Number(setup.drawPoints ?? 1), loss_points: Number(setup.lossPoints ?? 0),
     composition_mode: setup.compositionMode || 'open',
+    junior_display_mode: !!setup.juniorDisplayMode,
     allow_overall_draw: setup.allowOverallDraw !== false,
     showcase_enabled: !!setup.showcaseEnabled,
     showcase_points: Number(setup.showcasePoints || 0),
