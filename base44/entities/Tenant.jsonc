@@ -1,0 +1,58 @@
+{
+  "name": "Tenant",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Commercial/security boundary name"
+    },
+    "slug": {
+      "type": "string",
+      "description": "Stable human-readable identifier; never used as the security key"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "suspended",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "timezone": {
+      "type": "string",
+      "default": "Europe/Dublin"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "slug",
+    "status",
+    "timezone"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

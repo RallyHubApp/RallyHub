@@ -59,7 +59,7 @@
     },
     "club": {
       "type": "string",
-      "description": "Club affiliation"
+      "description": "Legacy display club affiliation; not authoritative for security"
     },
     "preferred_position": {
       "type": "string",
@@ -120,6 +120,46 @@
         "Suspended"
       ],
       "default": "Active"
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Authoritative owning Tenant ID"
+    },
+    "club_id": {
+      "type": "string",
+      "description": "Authoritative owning Club ID"
+    },
+    "relationship_type": {
+      "type": "string",
+      "enum": [
+        "member",
+        "guest",
+        "waiting_list",
+        "inactive",
+        "former_member"
+      ],
+      "default": "member"
+    },
+    "relationship_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "pending",
+        "suspended",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "guest_max_visits": {
+      "type": "number"
+    },
+    "guest_visits_used": {
+      "type": "number",
+      "default": 0
+    },
+    "guest_valid_until": {
+      "type": "string",
+      "format": "date"
     }
   },
   "required": [

@@ -1,0 +1,85 @@
+{
+  "name": "TournamentClub",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Owning tournament tenant"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "participant_tenant_id": {
+      "type": "string"
+    },
+    "club_name_snapshot": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "rallyhub_club",
+        "external_club"
+      ]
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "host",
+        "co_host",
+        "participant"
+      ]
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B"
+      ]
+    },
+    "roster_status": {
+      "type": "string",
+      "enum": [
+        "invited",
+        "accepted",
+        "submitted",
+        "locked",
+        "withdrawn"
+      ],
+      "default": "invited"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "tournament_id",
+    "club_name_snapshot",
+    "source_type",
+    "role",
+    "roster_status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

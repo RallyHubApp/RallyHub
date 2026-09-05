@@ -1,0 +1,81 @@
+{
+  "name": "TournamentParticipant",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "tournament_club_id": {
+      "type": "string"
+    },
+    "source_player_id": {
+      "type": "string"
+    },
+    "source_club_id": {
+      "type": "string"
+    },
+    "external_reference": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "club_name_snapshot": {
+      "type": "string"
+    },
+    "rank_snapshot": {
+      "type": "number"
+    },
+    "rating_snapshot": {
+      "type": "number"
+    },
+    "gender_snapshot": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "withdrawn",
+        "replaced"
+      ],
+      "default": "active"
+    },
+    "replaced_by_participant_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "tournament_id",
+    "tournament_club_id",
+    "display_name",
+    "club_name_snapshot",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

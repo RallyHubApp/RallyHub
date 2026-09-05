@@ -1,0 +1,99 @@
+{
+  "name": "ClubUserAccess",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "permission_bundle": {
+      "type": "string",
+      "enum": [
+        "club_admin",
+        "member"
+      ],
+      "default": "member"
+    },
+    "relationship_type": {
+      "type": "string",
+      "enum": [
+        "member",
+        "guest",
+        "waiting_list",
+        "inactive",
+        "former_member"
+      ],
+      "default": "member"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "rejected",
+        "suspended",
+        "revoked"
+      ],
+      "default": "pending"
+    },
+    "approved_by_user_id": {
+      "type": "string"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "starts_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ends_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "user_id",
+    "permission_bundle",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

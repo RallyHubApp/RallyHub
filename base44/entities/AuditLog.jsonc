@@ -1,0 +1,66 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string"
+    },
+    "entity_type": {
+      "type": "string"
+    },
+    "entity_id": {
+      "type": "string"
+    },
+    "scope_type": {
+      "type": "string"
+    },
+    "scope_id": {
+      "type": "string"
+    },
+    "before_state": {
+      "type": "string",
+      "description": "JSON snapshot before change"
+    },
+    "after_state": {
+      "type": "string",
+      "description": "JSON snapshot after change"
+    },
+    "reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "user_id",
+    "action",
+    "entity_type",
+    "entity_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": false,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
