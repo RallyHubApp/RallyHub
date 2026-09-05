@@ -683,7 +683,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (unresolved.length) { toast.error(`${unresolved.length} result${unresolved.length === 1 ? '' : 's'} still missing in Round ${currentRound}.`); return; }
     const maxRound = Math.max(...rounds);
     if (currentRound < maxRound) {
-      await base44.entities.ClubChallengeEvent.update(event.id, { current_round: currentRound + 1 });
+      if (isAdmin) await base44.entities.ClubChallengeEvent.update(event.id, { current_round: currentRound + 1 });
+      else {
+        const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1 });
+        if (res.data?.error) { toast.error(res.data.error); return; }
+      }
       toast.success(`Round ${currentRound + 1} ready`);
       await refetchEvent();
     } else {
@@ -989,7 +993,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <div className="rounded-xl border border-border bg-card p-4 space-y-3"><div><p className="text-sm font-semibold">Court / Time Change Proposal</p><p className="text-xs text-muted-foreground">For a lost/added court or late running event. This calculates consequences first; it does not silently rewrite completed fixtures.</p></div><div className="grid sm:grid-cols-[120px_140px_auto] gap-2"><Input type="number" min="1" value={eventDayAdjust.courts} onChange={e=>setEventDayAdjust(x=>({...x,courts:e.target.value}))} placeholder={`${event.courts} courts`} className="bg-secondary" /><Input type="number" min="1" value={eventDayAdjust.availableMinutes} onChange={e=>setEventDayAdjust(x=>({...x,availableMinutes:e.target.value}))} placeholder="Minutes left" className="bg-secondary" /><Button variant="outline" onClick={proposeEventDayAdjustment}>Calculate Proposal</Button></div>{eventDayProposal && <div className="rounded-lg bg-secondary/50 p-3 text-xs space-y-2"><p><strong>Review:</strong> {eventDayProposal.unresolved - eventDayProposal.dropIds.length} matches retained · {eventDayProposal.changes.length} positions change · {eventDayProposal.dropIds.length} Not Played.</p><p className="text-muted-foreground">Completed results are locked. Event Pack becomes OUT OF DATE.</p><div className="flex gap-2"><Button size="sm" disabled={!isAdmin} onClick={confirmEventDayAdjustment}>Confirm Changes</Button><Button size="sm" variant="outline" onClick={()=>setEventDayProposal(null)}>Cancel</Button></div></div>}</div>
             </div>
             <div className="grid md:grid-cols-2 gap-3">{currentMatches.sort((a,b)=>a.court_number-b.court_number).map(m => <ScoreCard key={`${m.id}-${m.revision}`} match={m} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={refetchMatches} networkOnline={networkOnline} onQueue={queueOfflineScore} canScore={canScoreEvent} />)}</div>
-            {event.status !== 'completed' && <Button className="w-full h-11" onClick={advanceRound}>{currentRound < Math.max(...rounds) ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Finalise Club Challenge</>}</Button>}
+            {event.status !== 'completed' && <Button className="w-full h-11" disabled={!canManageEvent} onClick={advanceRound}>{currentRound < Math.max(...rounds) ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Finalise Club Challenge</>}</Button>}
           </>}
         </div>
       )}
