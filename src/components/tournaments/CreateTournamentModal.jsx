@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +39,23 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
     kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11',
   });
   const [saving, setSaving] = useState(false);
+  const [venues, setVenues] = useState([]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const user = await base44.auth.me().catch(() => null);
+        if (!user?.active_tenant_id) return;
+        const filters = { tenant_id: user.active_tenant_id, status: 'active' };
+        if (user.active_club_id) filters.club_id = user.active_club_id;
+        const rows = await base44.entities.Venue.filter(filters, 'name', 100);
+        if (!cancelled) setVenues(rows || []);
+      } catch { if (!cancelled) setVenues([]); }
+    })();
+    return () => { cancelled = true; };
+  }, [open]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,8 +63,20 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
     setSaving(true);
     const currentUser = await base44.auth.me().catch(() => null);
     const isClubChallenge = form.format === 'Club Challenge';
+    const typedLocation = form.location.trim();
+    let matchedVenue = venues.find(v => v.name?.trim().toLowerCase() === typedLocation.toLowerCase()) || null;
+    if (typedLocation && !matchedVenue && currentUser?.active_tenant_id && currentUser?.active_club_id) {
+      try {
+        matchedVenue = await base44.entities.Venue.create({ tenant_id: currentUser.active_tenant_id, club_id: currentUser.active_club_id, name: typedLocation, status: 'active' });
+        setVenues(v => [...v, matchedVenue].sort((a,b) => (a.name || '').localeCompare(b.name || '')));
+      } catch (e) {
+        console.warn('Venue could not be saved for reuse', e);
+      }
+    }
     await base44.entities.Tournament.create({
       ...form,
+      location: typedLocation,
+      venue_id: matchedVenue?.id || undefined,
       inter_club: isClubChallenge ? true : form.inter_club,
       partnership_type: isClubChallenge ? 'Random Partners' : form.partnership_type,
       tenant_id: currentUser?.active_tenant_id || undefined,
@@ -189,7 +218,11 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
           </div>
           <div>
             <Label className="text-foreground text-sm">Location / Venue</Label>
-            <Input value={form.location} onChange={e => update('location', e.target.value)} placeholder="Club name or address" className="bg-secondary border-border mt-1" />
+            <Input list="rallyhub-venue-options" value={form.location} onChange={e => update('location', e.target.value)} placeholder="Choose a saved venue or type a new one" className="bg-secondary border-border mt-1" />
+            <datalist id="rallyhub-venue-options">
+              {venues.map(v => <option key={v.id} value={v.name}>{v.address || ''}</option>)}
+            </datalist>
+            <p className="text-[10px] text-muted-foreground mt-1">Saved club venues appear in the dropdown. A new venue you type is saved for reuse when the tournament is created.</p>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
