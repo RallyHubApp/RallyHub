@@ -1,0 +1,50 @@
+{
+  "name": "ClubChallengeStateAccessLog",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "challenge_event_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "accessed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "challenge_event_id",
+    "user_id",
+    "accessed_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

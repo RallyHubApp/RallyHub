@@ -1,0 +1,72 @@
+{
+  "name": "ClubChallengeRoleGrant",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "challenge_event_id": {
+      "type": "string"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "event_manager",
+        "event_host",
+        "scorer",
+        "display"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "revoked"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "challenge_event_id",
+    "tournament_id",
+    "user_id",
+    "role",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
