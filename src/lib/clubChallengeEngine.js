@@ -265,6 +265,23 @@ function enumeratePerfectPairings(ids) {
   return out;
 }
 
+function assignMatchupsToCourts({ aTeams, bTeams, previousCourt, courtUsage }) {
+  const matchups = aTeams.map((aTeam, i) => ({ aTeam, bTeam: bTeams[i] }));
+  let best = null;
+  for (const ordered of permutations(matchups)) {
+    let score = 0;
+    for (let i = 0; i < ordered.length; i++) {
+      const courtNumber = i + 1;
+      for (const id of [...ordered[i].aTeam, ...ordered[i].bTeam]) {
+        if (previousCourt[id] === courtNumber) score += 100;
+        score += ((courtUsage[id] || {})[courtNumber] || 0) * 12;
+      }
+    }
+    if (!best || score < best.score) best = { ordered, score };
+  }
+  return best.ordered;
+}
+
 function chooseTeamsForActive({ activeIds, byId, partnerCounts, rosterSize }) {
   const allPairings = enumeratePerfectPairings(activeIds);
   if (!allPairings.length) {
@@ -315,7 +332,7 @@ export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, cour
   const aIds = aPlayers.map(p => p.id), bIds = bPlayers.map(p => p.id);
   const aById = Object.fromEntries(aPlayers.map(p => [p.id, p]));
   const bById = Object.fromEntries(bPlayers.map(p => [p.id, p]));
-  const aPartnerCounts = {}, bPartnerCounts = {}, opponentCounts = {}, previousCourt = {};
+  const aPartnerCounts = {}, bPartnerCounts = {}, opponentCounts = {}, previousCourt = {}, courtUsage = {};
   const output = [];
   const activePerClub = c * 2;
   const bPhase = Math.max(1, Math.floor(bIds.length / 3));
@@ -328,13 +345,17 @@ export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, cour
     const aTeams = chooseTeamsForActive({ activeIds: aActive.active, byId: aById, partnerCounts: aPartnerCounts, rosterSize: aIds.length });
     const bTeams = chooseTeamsForActive({ activeIds: bActive.active, byId: bById, partnerCounts: bPartnerCounts, rosterSize: bIds.length });
     const cross = bestCrossClubMatch({ aTeams, bTeams, aById, bById, opponentCounts, previousCourt });
+    const assigned = assignMatchupsToCourts({ aTeams, bTeams: cross.bTeams, previousCourt, courtUsage });
 
-    const courtsOut = aTeams.map((aTeam, courtIndex) => {
-      const bTeam = cross.bTeams[courtIndex];
+    const courtsOut = assigned.map(({ aTeam, bTeam }, courtIndex) => {
       aPartnerCounts[pairKey(aTeam[0], aTeam[1])] = (aPartnerCounts[pairKey(aTeam[0], aTeam[1])] || 0) + 1;
       bPartnerCounts[pairKey(bTeam[0], bTeam[1])] = (bPartnerCounts[pairKey(bTeam[0], bTeam[1])] || 0) + 1;
       for (const a of aTeam) for (const b of bTeam) opponentCounts[pairKey(a, b)] = (opponentCounts[pairKey(a, b)] || 0) + 1;
-      for (const id of [...aTeam, ...bTeam]) previousCourt[id] = courtIndex + 1;
+      for (const id of [...aTeam, ...bTeam]) {
+        previousCourt[id] = courtIndex + 1;
+        courtUsage[id] ??= {};
+        courtUsage[id][courtIndex + 1] = (courtUsage[id][courtIndex + 1] || 0) + 1;
+      }
       return {
         courtNumber: courtIndex + 1,
         clubA: aTeam,
