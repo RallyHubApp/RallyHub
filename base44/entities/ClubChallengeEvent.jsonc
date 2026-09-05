@@ -174,6 +174,16 @@
       ],
       "default": "disabled"
     },
+    "pot_winner_participant_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "pot_revealed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "draw_version": {
       "type": "number",
       "default": 0
@@ -206,6 +216,10 @@
     "event_pack_stale": {
       "type": "boolean",
       "default": true
+    },
+    "event_pack_generated_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "finalised_at": {
       "type": "string",
