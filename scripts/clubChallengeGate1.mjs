@@ -133,10 +133,12 @@ assert.equal(afterShowcase.clubA, 55);
 assert.equal(afterShowcase.clubB, 53);
 assert.equal(afterShowcase.leader, 'clubA');
 
-// Final winner/tie hierarchy.
-assert.equal(resolveClubChallengeWinner({ clubA: 40, clubB: 40, matchesWonA: 19, matchesWonB: 18, gamePointDifference: -2 }, { allowDraw: false }), 'clubA');
-assert.equal(resolveClubChallengeWinner({ clubA: 40, clubB: 40, matchesWonA: 18, matchesWonB: 18, gamePointDifference: -2 }, { allowDraw: false }), 'clubB');
-assert.equal(resolveClubChallengeWinner({ clubA: 40, clubB: 40, matchesWonA: 18, matchesWonB: 18, gamePointDifference: 0 }, { allowDraw: false }), 'tiebreak_required');
+// Final winner/tie hierarchy. With 2/1/0 scoring, equal Club Challenge points generally also
+// means equal match wins, so cumulative game-point differential is the meaningful first metric.
+assert.equal(resolveClubChallengeWinner({ clubA: 40, clubB: 40, matchesWonA: 19, matchesWonB: 19, gamePointDifference: 12, gamePointsA: 410, gamePointsB: 398 }, { allowDraw: false }), 'clubA');
+assert.equal(resolveClubChallengeWinner({ clubA: 40, clubB: 40, matchesWonA: 19, matchesWonB: 19, gamePointDifference: -2, gamePointsA: 396, gamePointsB: 398 }, { allowDraw: false }), 'clubB');
+assert.equal(resolveClubChallengeWinner({ clubA: 40, clubB: 40, matchesWonA: 19, matchesWonB: 19, gamePointDifference: 0, gamePointsA: 400, gamePointsB: 400 }, { allowDraw: false }), 'tiebreak_required');
+assert.equal(resolveClubChallengeWinner({ clubA: 40, clubB: 40, matchesWonA: 20, matchesWonB: 18, gamePointDifference: 0, gamePointsA: 400, gamePointsB: 400 }, { allowDraw: false, tiebreakOrder: ['matchesWon'] }), 'clubA');
 
 // Optimistic concurrency helper: same revision succeeds, stale revision conflicts.
 assert.deepEqual(checkResultRevision({ expectedRevision: 3, currentRevision: 3 }), { canWrite: true, conflict: false, nextRevision: 4 });
