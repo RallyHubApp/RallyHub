@@ -73,7 +73,80 @@ Deno.serve(async (req) => {
     };
     await base44.asServiceRole.entities.User.update(user.id, context);
 
-    return Response.json({ success: true, context });
+    // Temporary one-user isolation probe for the controlled TBC Test PB test account.
+    // This deliberately uses the caller-scoped entity client (NOT service role), so
+    // SecurityTestProbe RLS is exercised exactly as it would be from Marie's session.
+    let isolation_test = null;
+    if (user.email?.toLowerCase() === 'marievcmoore@gmail.com' && selectedClubAccess.tenant_id === '6a9bd98d3a71d8edbb25e28d') {
+      const TBC_TENANT = '6a9bd98d3a71d8edbb25e28d';
+      const TBC_CLUB = '6a9bd993c94bd0932833673d';
+      const CLARE_TENANT = '6a9b7790bc4a8d299938bda9';
+      const CLARE_CLUB = '6a9b779684daba85b3ffdeb5';
+      const CLARE_PROBE_ID = '6a9bec87a9a4541d00de2e45';
+      const TBC_PROBE_ID = '6a9bec87a9a4541d00de2e46';
+
+      const result = {
+        tbc_read: false,
+        clare_read_blocked: false,
+        clare_direct_id_blocked: false,
+        clare_create_spoof_blocked: false,
+        clare_update_spoof_blocked: false,
+        errors: [],
+      };
+
+      try {
+        const visible = await base44.entities.SecurityTestProbe.list('-created_date', 50);
+        const ids = visible.map(x => x.id);
+        result.tbc_read = ids.includes(TBC_PROBE_ID);
+        result.clare_read_blocked = !ids.includes(CLARE_PROBE_ID);
+      } catch (e) {
+        result.errors.push(`list:${e?.message || e}`);
+      }
+
+      try {
+        const clare = await base44.entities.SecurityTestProbe.filter({ id: CLARE_PROBE_ID });
+        result.clare_direct_id_blocked = !clare?.length;
+      } catch (_) {
+        result.clare_direct_id_blocked = true;
+      }
+
+      try {
+        await base44.entities.SecurityTestProbe.create({
+          tenant_id: CLARE_TENANT,
+          club_id: CLARE_CLUB,
+          label: 'ILLEGAL TBC TO CLARE CREATE',
+          secret_marker: 'SHOULD_NEVER_BE_CREATED',
+        });
+        result.clare_create_spoof_blocked = false;
+      } catch (_) {
+        result.clare_create_spoof_blocked = true;
+      }
+
+      try {
+        await base44.entities.SecurityTestProbe.update(CLARE_PROBE_ID, { label: 'ILLEGAL CROSS TENANT UPDATE' });
+        result.clare_update_spoof_blocked = false;
+      } catch (_) {
+        result.clare_update_spoof_blocked = true;
+      }
+
+      result.passed = result.tbc_read && result.clare_read_blocked && result.clare_direct_id_blocked && result.clare_create_spoof_blocked && result.clare_update_spoof_blocked;
+      isolation_test = result;
+
+      await base44.asServiceRole.entities.AuditLog.create({
+        tenant_id: TBC_TENANT,
+        club_id: TBC_CLUB,
+        user_id: user.id,
+        action: result.passed ? 'tenant_isolation_probe_passed' : 'tenant_isolation_probe_failed',
+        entity_type: 'SecurityTestProbe',
+        entity_id: TBC_PROBE_ID,
+        scope_type: 'Club',
+        scope_id: TBC_CLUB,
+        after_state: JSON.stringify(result),
+        reason: 'Temporary live non-admin TBC-vs-Clare RLS isolation probe',
+      });
+    }
+
+    return Response.json({ success: true, context, isolation_test });
   } catch (error) {
     return Response.json({ error: error?.message || 'Unexpected error' }, { status: 500 });
   }
