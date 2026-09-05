@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Check, CheckCircle2, Clock, GripVertical, ImagePlus, ListChecks, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import {
   analyseClubChallengeFairness,
@@ -39,11 +40,12 @@ const DEFAULT_SETUP = {
   courts: 4, availableMinutes: 180, playMinutes: 10, changeoverMinutes: 2,
   includeBreak: true, breakMinutes: 20, breakAfterRound: 6,
   matchType: 'timed', target: 11, winBy: 1, drawsAllowed: true,
-  compositionMode: 'open', showcaseEnabled: true, showcasePoints: 5, potEnabled: true,
+  compositionMode: 'open', showcaseEnabled: true, showcasePoints: 5, potEnabled: true, juniorDisplayMode: false,
 };
 
 function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
 function genderKey(value) { const v = String(value || '').trim().toLowerCase(); return v.startsWith('f') ? 'female' : v.startsWith('m') ? 'male' : ''; }
+function privacyName(name, junior) { if (!junior) return name || ''; const parts = String(name || '').trim().split(/\s+/).filter(Boolean); return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : (parts[0] || ''); }
 
 function ClubBadge({ name, logo, primary, secondary }) {
   return (
@@ -163,6 +165,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [displayMode, setDisplayMode] = useState(false);
   const [potVoterId, setPotVoterId] = useState('');
   const [potNomineeId, setPotNomineeId] = useState('');
+  const [publicLinks, setPublicLinks] = useState(null);
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: hostClub } = useQuery({
@@ -219,7 +222,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       breakMinutes: event.break_minutes ?? s.breakMinutes, breakAfterRound: event.break_after_round ?? s.breakAfterRound,
       matchType: event.normal_match_type || s.matchType, target: event.normal_target_points || s.target, winBy: event.normal_win_by || s.winBy,
       drawsAllowed: event.timed_draws_allowed !== false, compositionMode: event.composition_mode || s.compositionMode,
-      showcaseEnabled: !!event.showcase_enabled, showcasePoints: event.showcase_points ?? s.showcasePoints, potEnabled: !!event.pot_enabled,
+      showcaseEnabled: !!event.showcase_enabled, showcasePoints: event.showcase_points ?? s.showcasePoints, potEnabled: !!event.pot_enabled, juniorDisplayMode: !!event.junior_display_mode,
     }));
   }, [event?.id]);
 
@@ -325,7 +328,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         courts: number(setup.courts, 4), availableMinutes: number(setup.availableMinutes, 180), playMinutes: number(setup.playMinutes, 10), changeoverMinutes: number(setup.changeoverMinutes, 2),
         includeBreak: setup.includeBreak, breakMinutes: number(setup.breakMinutes, 20), breakAfterRound: number(setup.breakAfterRound, 6),
         matchFormat: setup.matchType === 'timed' ? { type: 'timed', drawsAllowed: setup.drawsAllowed } : { type: 'points', target: number(setup.target, 11), winBy: number(setup.winBy, 1) },
-        compositionMode: setup.compositionMode, showcaseEnabled: setup.showcaseEnabled, showcasePoints: number(setup.showcasePoints, 5), potEnabled: setup.potEnabled,
+        compositionMode: setup.compositionMode, showcaseEnabled: setup.showcaseEnabled, showcasePoints: number(setup.showcasePoints, 5), potEnabled: setup.potEnabled, juniorDisplayMode: setup.juniorDisplayMode,
       }
     });
     try {
