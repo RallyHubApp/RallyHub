@@ -379,7 +379,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const approveDraw = async () => {
     if (!event || !fairness || !matches.length) return;
     if (fairness.duplicatePlayerRoundIssues || fairness.sameClubIntegrityIssues || !fairness.equalGames) { toast.error('Hard fairness checks must pass before approval.'); return; }
-    await base44.entities.ClubChallengeEvent.update(event.id, { status: 'draw_approved', draw_version: Number(event.draw_version || 0) + 1, draw_approved_at: new Date().toISOString(), draw_approved_by: currentUser?.id || '', event_pack_stale: true });
+    await base44.entities.ClubChallengeEvent.update(event.id, { status: 'draw_approved', draw_version: Number(event.draw_version || 0) + 1, draw_approved_at: new Date().toISOString(), draw_approved_by: currentUser?.id || '', event_pack_stale: false, event_pack_version: Number(event.draw_version || 0) + 1 });
     toast.success('Draw approved and locked');
     await sync();
   };
@@ -783,7 +783,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><ShieldCheck className="w-5 h-5 text-primary" /></div>
           <div><p className="font-semibold text-foreground">Club Challenge v1.0</p><p className="text-xs text-muted-foreground">{event ? `Status: ${event.status.replaceAll('_', ' ')}` : 'Configure the inter-club event'}</p></div>
         </div>
-        {event && <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center"><div className="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} logo={event.club_a_logo_url} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} logo={event.club_b_logo_url} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>{['in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={() => setDisplayMode(true)}>Hall Display</Button>}{['draw_approved','in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={printEventPack}>Print Event Pack</Button>}</div>}
+        {event && <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center"><div className="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} logo={event.club_a_logo_url} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} logo={event.club_b_logo_url} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>{['in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={() => setDisplayMode(true)}>Hall Display</Button>}{['draw_approved','in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={printEventPack}>{event.event_pack_stale ? 'Print Event Pack · OUT OF DATE' : `Print Event Pack v${event.event_pack_version || event.draw_version || 1}`}</Button>}</div>}
       </div>
 
       <div className="rounded-xl border border-border bg-card/50 p-2 sm:p-3">
