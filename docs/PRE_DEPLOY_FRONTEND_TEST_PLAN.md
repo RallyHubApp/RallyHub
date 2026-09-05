@@ -18,7 +18,7 @@ Purpose: maximise confidence before the next live deployment while preserving th
 - CCUI-001 Setup → Teams → Draw → Approve → Start navigation guards — PASS (static navigation/guard simulator + source inspection + lint/build pass; redraw protection confirmed by completed-match-history block)
 - CCUI-002 16+16 roster loading/ranking/locking and redraw constraints — PASS (static roster/ranking/lock simulator + Gate 1 canonical engine suite + lint/build pass; drag disabled after approval/live states, rank changes invalidate fairness/draw approval, completed history blocks full redraw)
 - CCUI-003 Draw/fairness display and approved Event Pack state — PASS (static simulator + Gate 1 canonical engine suite + lint/build pass; approval versions/stamps draw, Event Pack fresh only on approval, stale pack blocked after material changes)
-- CCUI-004 Live scoring on simultaneous courts and stale revision conflict
+- CCUI-004 Live scoring on simultaneous courts and stale revision conflict — PASS (static concurrency contract + Gate 3 foundation + final 32-player rehearsal + lint/build pass; match-level optimistic revisions isolate different courts and reject stale same-match edits with 409/current-state response)
 - CCUI-005 Authoritative timer controls, pause/resume/+1/changeover/break and speech fallback
 - CCUI-006 Round completion/missing-result block and round advance permissions
 - CCUI-007 Replacement/withdrawal/continue-short/late-arrival workflows
