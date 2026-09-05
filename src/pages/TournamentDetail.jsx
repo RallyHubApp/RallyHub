@@ -234,17 +234,17 @@ export default function TournamentDetail() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 min-w-0">
       <Link to="/app/tournaments" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="w-4 h-4" /> Back to Tournaments
       </Link>
 
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-6 glow-blue">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-4 sm:p-6 glow-blue min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <h1 className="text-2xl font-bold text-foreground">{tournament.name}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground break-words min-w-0">{tournament.name}</h1>
               <Badge className={cn('text-xs', statusColors[tournament.status] || statusColors['Draft'])}>
                 {tournament.status}
               </Badge>
@@ -266,7 +266,7 @@ export default function TournamentDetail() {
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-2 flex-wrap shrink-0">
+          <div className="grid grid-cols-2 sm:flex gap-2 flex-wrap w-full sm:w-auto shrink-0 [&>*]:w-full sm:[&>*]:w-auto">
             {/* Self-register button — visible to everyone when registration is open */}
             {(tournament.status === 'Registration Open' || tournament.status === 'Draft') && !isAdmin && (
               <Button size="sm" className="bg-primary text-primary-foreground gap-1" onClick={() => setSelfRegisterOpen(true)}>
@@ -302,7 +302,7 @@ export default function TournamentDetail() {
                 )}
               </>
             )}
-            {isFixedPartners ? (
+            {!isClubChallenge && (isFixedPartners ? (
               <Button variant="outline" size="sm" onClick={() => setPairsUploadOpen(true)}>
                 <Upload className="w-3 h-3 mr-1" /> Upload Pairs
               </Button>
@@ -315,7 +315,7 @@ export default function TournamentDetail() {
                   <Plus className="w-3 h-3 mr-1" /> Add Players
                 </Button>
               </>
-            )}
+            ))}
 
             {!isKotc && !isClubChallenge && entryCount >= 2 && matches.length === 0 && (
               <Button
