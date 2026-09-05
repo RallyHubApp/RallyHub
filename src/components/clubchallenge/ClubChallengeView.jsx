@@ -608,6 +608,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const finaliseEvent = async (winner, method, note = '') => {
     if (!event || !['club_a','club_b','draw'].includes(winner)) return;
     if (event.pot_enabled && event.pot_status === 'open') { toast.error('Player of the Tournament voting is still open.'); return; }
+    if (!isAdmin) {
+      try {
+        const res = await base44.functions.invoke('finaliseClubChallenge', { eventId:event.id, method });
+        if (res.data?.error) { toast.error(res.data.error); return; }
+        toast.success(res.data?.winner === 'draw' ? 'Club Challenge finalised as an overall draw' : `${res.data?.winner === 'club_b' ? event.club_b_name : event.club_a_name} confirmed as Club Challenge winner`);
+        await sync(); setTab('results'); return;
+      } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not finalise Club Challenge'); return; }
+    }
     const now = new Date().toISOString();
     await base44.entities.ClubChallengeEvent.update(event.id, {
       status: 'completed', finalised_at: now,
