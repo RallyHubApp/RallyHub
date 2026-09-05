@@ -87,6 +87,25 @@
 
   body {
     @apply bg-background text-foreground font-sans;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
+/* Mobile usability: avoid iOS form zoom and keep primary touch targets comfortable. */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .glass, .glass-strong {
+    backdrop-filter: blur(14px);
   }
 }
 
