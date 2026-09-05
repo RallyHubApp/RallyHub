@@ -1,0 +1,94 @@
+{
+  "name": "ClubChallengeParticipant",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "challenge_event_id": {
+      "type": "string"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "club_a",
+        "club_b"
+      ]
+    },
+    "source_player_id": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "gender": {
+      "type": "string"
+    },
+    "age_category": {
+      "type": "string"
+    },
+    "event_rank": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "late",
+        "withdrawn",
+        "injured",
+        "replaced"
+      ],
+      "default": "active"
+    },
+    "available_from_round": {
+      "type": "number",
+      "default": 1
+    },
+    "replaced_by_participant_id": {
+      "type": "string"
+    },
+    "unique_identity_key": {
+      "type": "string"
+    },
+    "guest_access_token": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "challenge_event_id",
+    "tournament_id",
+    "side",
+    "display_name",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
