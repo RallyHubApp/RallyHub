@@ -248,6 +248,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const locked = ['draw_approved', 'in_progress', 'paused', 'completed', 'archived'].includes(event?.status);
   const fairness = useMemo(() => { try { return event?.fairness_json ? JSON.parse(event.fairness_json) : null; } catch { return null; } }, [event?.fairness_json]);
   const score = useMemo(() => scoreFromMatchRecords(normalMatches, { winPoints: event?.win_points ?? 2, drawPoints: event?.draw_points ?? 1, lossPoints: event?.loss_points ?? 0 }), [normalMatches, event?.win_points, event?.draw_points, event?.loss_points]);
+  const resolvedNormalCount = useMemo(() => normalMatches.filter(m => ['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status)).length, [normalMatches]);
+  const unresolvedNormalCount = normalMatches.length - resolvedNormalCount;
   const overallScore = useMemo(() => {
     if (!showcaseMatch || !['completed','draw'].includes(showcaseMatch.status) || !['club_a','club_b'].includes(showcaseMatch.winner)) return score;
     return applyShowcasePoints(score, { winner: showcaseMatch.winner === 'club_a' ? 'clubA' : 'clubB', points: Number(event?.showcase_points || 0) });
@@ -689,7 +691,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       toast.success(`Round ${currentRound + 1} ready`);
       await refetchEvent();
     } else {
-      if (score.completedMatches !== normalMatches.length) { toast.error('All normal match results must be resolved before the event can finish.'); return; }
+      if (resolvedNormalCount !== normalMatches.length) { toast.error('All normal match results must be resolved before the event can finish.'); return; }
       if (score.clubA === score.clubB) {
         toast.info('Normal Club Challenge points are tied. Choose Showcase Final, metrics, or overall draw in Results.');
         setTab('results');
@@ -1044,7 +1046,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <p className="text-sm font-semibold">Current simulated state</p>
               <div className="grid grid-cols-2 gap-3 mt-4 text-center">
                 <div className="rounded-lg bg-secondary p-3"><p className="text-xl font-bold">{score.completedMatches}</p><p className="text-[10px] text-muted-foreground">Results saved</p></div>
-                <div className="rounded-lg bg-secondary p-3"><p className="text-xl font-bold">{matches.filter(m => !m.is_showcase).length - score.completedMatches}</p><p className="text-[10px] text-muted-foreground">Still unresolved</p></div>
+                <div className="rounded-lg bg-secondary p-3"><p className="text-xl font-bold">{unresolvedNormalCount}</p><p className="text-[10px] text-muted-foreground">Still unresolved</p></div>
                 <div className="rounded-lg bg-secondary p-3"><p className="text-xl font-bold">{score.clubA}–{score.clubB}</p><p className="text-[10px] text-muted-foreground">Club points</p></div>
                 <div className="rounded-lg bg-secondary p-3"><p className="text-xl font-bold">{score.draws}</p><p className="text-[10px] text-muted-foreground">Drawn matches</p></div>
               </div>
@@ -1078,7 +1080,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 {event?.status !== 'completed' && <p className="text-xs text-yellow-400 mt-4">Provisional — results are saved, but the event has not yet been finalised.</p>}
               </div>
 
-              {score.completedMatches === normalMatches.length && event?.status !== 'completed' && score.clubA !== score.clubB && (
+              {resolvedNormalCount === normalMatches.length && event?.status !== 'completed' && score.clubA !== score.clubB && (
                 <div className="rounded-xl border border-border bg-card p-5">
                   <p className="text-sm font-semibold">Clear Winner Ready</p>
                   <p className="text-xs text-muted-foreground mt-1">All normal matches are complete and the Club Challenge points are not tied.</p>
@@ -1086,7 +1088,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 </div>
               )}
 
-              {score.completedMatches === normalMatches.length && event?.status !== 'completed' && score.clubA === score.clubB && (
+              {resolvedNormalCount === normalMatches.length && event?.status !== 'completed' && score.clubA === score.clubB && (
                 <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-5 space-y-4">
                   <div>
                     <p className="text-sm font-semibold text-yellow-400">Normal Club Challenge points are tied: {score.clubA}–{score.clubB}</p>
@@ -1101,7 +1103,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 </div>
               )}
 
-              {score.completedMatches === normalMatches.length && score.clubA === score.clubB && event?.showcase_enabled && event?.status !== 'completed' && (
+              {resolvedNormalCount === normalMatches.length && score.clubA === score.clubB && event?.showcase_enabled && event?.status !== 'completed' && (
                 <div id="showcase-final-panel" className="rounded-xl border border-border bg-card p-5 space-y-4">
                   <div><p className="text-sm font-semibold">Showcase / Tiebreak Final</p><p className="text-xs text-muted-foreground mt-1">Nominate one male and one female player from each club. Winner receives {event.showcase_points} Club Challenge points.</p></div>
                   {!showcaseMatch ? (
