@@ -156,6 +156,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [roundLabels, setRoundLabels] = useState({});
   const [lastAnnouncement, setLastAnnouncement] = useState('');
   const [compressedTimer, setCompressedTimer] = useState({ running: false, step: -1, text: 'Not run' });
+  const [displayMode, setDisplayMode] = useState(false);
+  const [potVoterId, setPotVoterId] = useState('');
+  const [potNomineeId, setPotNomineeId] = useState('');
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: hostClub } = useQuery({
@@ -181,6 +184,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-matches', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeMatch.filter({ challenge_event_id: event.id }, 'round_number', 200) : [],
     enabled: !!event?.id,
+  });
+  const { data: potVotes = [], refetch: refetchPotVotes } = useQuery({
+    queryKey: ['club-challenge-votes', event?.id],
+    queryFn: () => event ? base44.entities.ClubChallengeVote.filter({ challenge_event_id: event.id }, '-cast_at', 200) : [],
+    enabled: !!event?.id && !!event?.pot_enabled,
   });
 
   React.useEffect(() => {
@@ -248,7 +256,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   React.useEffect(() => { localStorage.setItem('cc-voice-muted', String(voiceMuted)); }, [voiceMuted]);
 
   const sync = async () => {
-    await Promise.all([refetchEvent(), refetchParticipants(), refetchMatches()]);
+    await Promise.all([refetchEvent(), refetchParticipants(), refetchMatches(), event?.pot_enabled ? refetchPotVotes() : Promise.resolve()]);
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
   };
 
@@ -447,6 +455,36 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     addSimLog('Compressed timer/audio: PLAY → CHANGEOVER → PLAY → PAUSE → RESUME → BREAK → PLAY completed', 'pass');
   };
 
+  const setPotStatus = async status => {
+    if (!event || !isAdmin) return;
+    await base44.entities.ClubChallengeEvent.update(event.id, { pot_status: status });
+    await refetchEvent();
+    toast.success(status === 'open' ? 'Player of Tournament voting is open.' : status === 'closed' ? 'Voting closed. Totals remain hidden until reveal.' : 'Player of Tournament result revealed.');
+  };
+  const castPotVote = async () => {
+    if (!event || event.pot_status !== 'open' || !potVoterId || !potNomineeId) return;
+    if (potVoterId === potNomineeId) { toast.error('Players cannot vote for themselves.'); return; }
+    const voter = participants.find(p => p.id === potVoterId);
+    const nominee = participants.find(p => p.id === potNomineeId);
+    if (!voter || !nominee || ['withdrawn','injured'].includes(nominee.status)) { toast.error('That voter or nominee is not eligible.'); return; }
+    if (potVotes.some(v => v.valid !== false && v.voter_participant_id === potVoterId)) { toast.error('This player has already voted.'); return; }
+    await base44.entities.ClubChallengeVote.create({ tenant_id: event.tenant_id, challenge_event_id: event.id, voter_identity_key: voter.unique_identity_key || `participant:${voter.id}`, voter_participant_id: voter.id, nominee_participant_id: nominee.id, access_route: 'logged_in', cast_at: new Date().toISOString(), valid: true });
+    setPotNomineeId(''); await refetchPotVotes(); toast.success('Vote recorded. Live totals remain hidden.');
+  };
+  const revealPot = async () => {
+    const counts = potVotes.filter(v => v.valid !== false).reduce((a,v) => ({ ...a, [v.nominee_participant_id]: (a[v.nominee_participant_id] || 0) + 1 }), {});
+    const max = Math.max(0, ...Object.values(counts));
+    const winners = Object.keys(counts).filter(id => counts[id] === max && max > 0);
+    await base44.entities.ClubChallengeEvent.update(event.id, { pot_status: 'revealed', pot_winner_participant_ids: winners, pot_revealed_at: new Date().toISOString() });
+    await refetchEvent(); toast.success(winners.length > 1 ? 'Joint Player of Tournament result revealed.' : 'Player of Tournament result revealed.');
+  };
+  const printEventPack = async () => {
+    if (!event || event.status === 'draft' || !normalMatches.length) { toast.error('Generate and approve the draw before producing the Event Pack.'); return; }
+    const version = Number(event.event_pack_version || 0) + 1;
+    await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_version: version, event_pack_stale: false, event_pack_generated_at: new Date().toISOString() });
+    await refetchEvent();
+    window.setTimeout(() => window.print(), 100);
+  };
   const applyReplacement = async () => {
     if (!event || !replacement.outgoingId || !replacement.incomingName.trim()) { toast.error('Choose the outgoing player and enter the replacement name.'); return; }
     const outgoing = participants.find(p => p.id === replacement.outgoingId);
