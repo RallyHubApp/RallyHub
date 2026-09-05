@@ -9,6 +9,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
     const { eventId, method = 'none' } = body;
+    if (!['none','metrics','overall_draw','showcase_final'].includes(method)) return Response.json({ error:'Invalid finalisation method.' }, { status:400 });
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
     if (!event) return Response.json({ error:'Club Challenge event not found' }, { status:404 });
