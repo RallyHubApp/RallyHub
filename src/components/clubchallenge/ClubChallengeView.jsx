@@ -148,6 +148,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [logoUploading, setLogoUploading] = useState('');
   const [simLog, setSimLog] = useState([]);
   const [showcaseSelection, setShowcaseSelection] = useState({ aMale: '', aFemale: '', bMale: '', bFemale: '' });
+  const [replacement, setReplacement] = useState({ outgoingId: '', incomingName: '', reason: '', status: 'withdrawn' });
+  const [timerNow, setTimerNow] = useState(Date.now());
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: hostClub } = useQuery({
@@ -217,6 +219,17 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, [score, showcaseMatch, event?.showcase_points]);
   const rounds = [...new Set(normalMatches.map(m => m.round_number))].sort((a, b) => a - b);
   const currentRound = event?.current_round || 1;
+  const timerState = useMemo(() => { try { return event?.timer_state_json ? JSON.parse(event.timer_state_json) : null; } catch { return null; } }, [event?.timer_state_json]);
+  const timerRemaining = useMemo(() => {
+    if (!timerState) return 0;
+    const base = Number(timerState.remaining_seconds || 0);
+    if (!timerState.running || !timerState.started_at) return Math.max(0, base);
+    return Math.max(0, base - Math.floor((timerNow - new Date(timerState.started_at).getTime()) / 1000));
+  }, [timerState, timerNow]);
+  React.useEffect(() => {
+    const id = window.setInterval(() => setTimerNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const sync = async () => {
     await Promise.all([refetchEvent(), refetchParticipants(), refetchMatches()]);
@@ -353,6 +366,71 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await base44.entities.Tournament.update(tournament.id, { status: 'In Progress' });
     toast.success('Club Challenge started');
     await sync(); setTab('live');
+  };
+
+  const saveTimerState = async next => {
+    if (!event) return;
+    await base44.entities.ClubChallengeEvent.update(event.id, {
+      timer_state_json: JSON.stringify(next),
+      timer_revision: Number(event.timer_revision || 0) + 1,
+    });
+    await refetchEvent();
+  };
+
+  const startPhase = async phase => {
+    const seconds = phase === 'play' ? Number(event.play_minutes || 10) * 60 : phase === 'changeover' ? Number(event.changeover_minutes || 2) * 60 : Number(event.break_minutes || 20) * 60;
+    await saveTimerState({ phase, running: true, remaining_seconds: seconds, started_at: new Date().toISOString(), round: currentRound });
+  };
+  const pauseTimer = async () => {
+    if (!timerState?.running) return;
+    await saveTimerState({ ...timerState, running: false, remaining_seconds: timerRemaining, started_at: null });
+    await base44.entities.ClubChallengeEvent.update(event.id, { status: 'paused' });
+    await refetchEvent();
+  };
+  const resumeTimer = async () => {
+    if (!timerState || timerState.running) return;
+    await saveTimerState({ ...timerState, running: true, started_at: new Date().toISOString() });
+    if (event.status === 'paused') await base44.entities.ClubChallengeEvent.update(event.id, { status: 'in_progress' });
+    await refetchEvent();
+  };
+  const resetTimer = async () => saveTimerState({ phase: 'idle', running: false, remaining_seconds: 0, started_at: null, round: currentRound });
+  const fmtTimer = s => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
+
+  const applyReplacement = async () => {
+    if (!event || !replacement.outgoingId || !replacement.incomingName.trim()) { toast.error('Choose the outgoing player and enter the replacement name.'); return; }
+    const outgoing = participants.find(p => p.id === replacement.outgoingId);
+    if (!outgoing) return;
+    const effectiveRound = Math.max(1, currentRound);
+    const now = new Date().toISOString();
+    const incoming = await base44.entities.ClubChallengeParticipant.create({
+      tenant_id: event.tenant_id, challenge_event_id: event.id, tournament_id: tournament.id,
+      side: outgoing.side, display_name: replacement.incomingName.trim(), gender: outgoing.gender,
+      event_rank: outgoing.event_rank, status: 'active', available_from_round: effectiveRound,
+      replacement_for_participant_id: outgoing.id, replacement_effective_round: effectiveRound,
+      unique_identity_key: `replacement-${outgoing.side}-${Date.now()}`,
+    });
+    await base44.entities.ClubChallengeParticipant.update(outgoing.id, {
+      status: replacement.status, replaced_by_participant_id: incoming.id,
+      withdrawn_at: now, withdrawal_reason: replacement.reason || replacement.status,
+    });
+    const affected = normalMatches.filter(m => m.round_number >= effectiveRound && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status) && ((m.club_a_participant_ids || []).includes(outgoing.id) || (m.club_b_participant_ids || []).includes(outgoing.id)));
+    for (const m of affected) {
+      const side = outgoing.side === 'club_a' ? 'club_a' : 'club_b';
+      const idsKey = `${side}_participant_ids`, namesKey = `${side}_names`;
+      const ids = [...(m[idsKey] || [])], names = [...(m[namesKey] || [])];
+      const idx = ids.indexOf(outgoing.id);
+      if (idx >= 0) { ids[idx] = incoming.id; names[idx] = incoming.display_name; }
+      await base44.entities.ClubChallengeMatch.update(m.id, { [idsKey]: ids, [namesKey]: names, revision: Number(m.revision || 0) + 1 });
+    }
+    await base44.entities.ClubChallengeAudit.create({
+      tenant_id: event.tenant_id, challenge_event_id: event.id, action: 'participant_replaced', user_id: currentUser?.id || '', occurred_at: now,
+      old_value_json: JSON.stringify({ participant_id: outgoing.id, name: outgoing.display_name, status: outgoing.status }),
+      new_value_json: JSON.stringify({ participant_id: incoming.id, name: incoming.display_name, effective_round: effectiveRound, fixtures_changed: affected.length }),
+      note: replacement.reason || `${replacement.status} replacement`,
+    });
+    setReplacement({ outgoingId: '', incomingName: '', reason: '', status: 'withdrawn' });
+    toast.success(`${outgoing.display_name} replaced from Round ${effectiveRound}; ${affected.length} future fixture${affected.length === 1 ? '' : 's'} updated.`);
+    await sync();
   };
 
   const finaliseEvent = async (winner, method, note = '') => {
@@ -701,6 +779,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         <div className="space-y-4">
           {!event || !['in_progress','paused','completed'].includes(event.status) ? <div className="rounded-xl border border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">Approve the draw and Start Club Challenge first.</div> : <>
             <div className="rounded-xl border border-border bg-card p-4 sm:p-5"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary">Live Event</p><p className="text-sm text-muted-foreground mt-1">Round {currentRound} of {Math.max(...rounds)}</p><p className="text-xl sm:text-2xl font-bold break-words mt-1">{event.club_a_name} {score.clubA} <span className="text-muted-foreground font-normal">–</span> {score.clubB} {event.club_b_name}</p></div><div className="flex gap-2 text-xs"><Badge variant="outline">{score.matchesWonA}W</Badge><Badge variant="outline">{score.draws}D</Badge><Badge variant="outline">{score.matchesWonB}W</Badge></div></div>{event.include_break && currentRound === event.break_after_round && <div className="mt-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-xs text-yellow-400"><Clock className="inline w-4 h-4 mr-1" />Scheduled {event.break_minutes}-minute break after this round.</div>}</div>
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><p className="text-sm font-semibold">Authoritative Event Timer</p><p className="text-xs text-muted-foreground">Persisted against the event; reopening or waking the browser recalculates from the saved timestamp.</p></div><Badge variant="outline">Rev {event.timer_revision || 0}</Badge></div>
+              <div className="text-center py-2"><p className="text-xs uppercase tracking-wider text-muted-foreground">{timerState?.phase || 'idle'}</p><p className="text-4xl font-bold tabular-nums mt-1">{fmtTimer(timerRemaining)}</p></div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2"><Button variant="outline" onClick={() => startPhase('play')}>Start Play</Button><Button variant="outline" onClick={() => startPhase('changeover')}>Changeover</Button><Button variant="outline" disabled={!event.include_break} onClick={() => startPhase('break')}>Break</Button><Button variant="outline" disabled={!timerState?.running} onClick={pauseTimer}>Pause</Button><Button variant="outline" disabled={!timerState || timerState.running || timerRemaining <= 0} onClick={resumeTimer}>Resume</Button><Button variant="outline" onClick={() => saveTimerState({ ...(timerState || {}), remaining_seconds: timerRemaining + 60, running: false, started_at: null, phase: timerState?.phase || 'play', round: currentRound })}>+1 min</Button><Button variant="outline" onClick={resetTimer}>Reset</Button></div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-3">
+              <div><p className="text-sm font-semibold">Withdrawal / Injury / Replacement</p><p className="text-xs text-muted-foreground">Completed history is never changed. Replacement inherits the outgoing player's side and event rank; only future unplayed fixtures from the current round are updated.</p></div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-2"><Select value={replacement.outgoingId} onValueChange={v => setReplacement(r => ({ ...r, outgoingId: v }))}><SelectTrigger className="bg-secondary"><SelectValue placeholder="Outgoing player" /></SelectTrigger><SelectContent>{participants.filter(p => p.status === 'active').map(p => <SelectItem key={p.id} value={p.id}>{p.display_name} · {p.side === 'club_a' ? event.club_a_name : event.club_b_name}</SelectItem>)}</SelectContent></Select><Input value={replacement.incomingName} onChange={e => setReplacement(r => ({ ...r, incomingName: e.target.value }))} placeholder="Replacement player name" className="bg-secondary" /><Select value={replacement.status} onValueChange={v => setReplacement(r => ({ ...r, status: v }))}><SelectTrigger className="bg-secondary"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="withdrawn">Withdrawn</SelectItem><SelectItem value="injured">Injured</SelectItem><SelectItem value="replaced">Replaced</SelectItem></SelectContent></Select><Input value={replacement.reason} onChange={e => setReplacement(r => ({ ...r, reason: e.target.value }))} placeholder="Reason / note" className="bg-secondary" /></div>
+              <Button className="w-full sm:w-auto" disabled={!isAdmin || !replacement.outgoingId || !replacement.incomingName.trim()} onClick={applyReplacement}>Apply Replacement from Round {currentRound}</Button>
+            </div>
             <div className="grid md:grid-cols-2 gap-3">{currentMatches.sort((a,b)=>a.court_number-b.court_number).map(m => <ScoreCard key={`${m.id}-${m.revision}`} match={m} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={refetchMatches} />)}</div>
             {event.status !== 'completed' && <Button className="w-full h-11" onClick={advanceRound}>{currentRound < Math.max(...rounds) ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Finalise Club Challenge</>}</Button>}
           </>}
