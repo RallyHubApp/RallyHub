@@ -13,11 +13,11 @@ Deno.serve(async (req) => {
 
     let allowed = user.role === 'admin';
     if (!allowed) {
-      const access = await base44.asServiceRole.entities.TournamentUserAccess.filter({ tournament_id: event.tournament_id, user_id: user.id, status: 'active' });
-      allowed = access.some(a => ['event_manager', 'event_host'].includes(a.role));
+      const tournamentAccess = await base44.asServiceRole.entities.TournamentUserAccess.filter({ tournament_id: event.tournament_id, user_id: user.id, status: 'active' });
+      const ccAccess = await base44.asServiceRole.entities.ClubChallengeScorer.filter({ challenge_event_id: event.id, user_id: user.id, active: true });
+      allowed = tournamentAccess.some(a => ['event_manager', 'event_host'].includes(a.role)) || ccAccess.some(a => ['owner','organiser'].includes(a.role));
     }
     if (!allowed) return Response.json({ error: 'Event manager permission required' }, { status: 403 });
-    if (user.role !== 'admin' && user.active_tenant_id !== event.tenant_id) return Response.json({ error: 'Wrong tenant context' }, { status: 403 });
 
     const revision = Number(event.timer_revision || 0);
     if (expectedRevision !== undefined && Number(expectedRevision) !== revision) {
