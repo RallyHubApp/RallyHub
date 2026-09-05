@@ -546,12 +546,24 @@ export function applyShowcasePoints(baseScore, { winner, points }) {
   return { ...score, showcaseWinner: winner, showcasePoints: p, leader: score.clubA === score.clubB ? 'draw' : score.clubA > score.clubB ? 'clubA' : 'clubB' };
 }
 
-export function resolveClubChallengeWinner(score, { allowDraw = true } = {}) {
+export function resolveClubChallengeWinner(score, { allowDraw = true, tiebreakOrder = ['gamePointDifference', 'gamePointsScored'] } = {}) {
   if (score.clubA !== score.clubB) return score.clubA > score.clubB ? 'clubA' : 'clubB';
   if (allowDraw) return 'draw';
-  if ((score.matchesWonA || 0) !== (score.matchesWonB || 0)) return score.matchesWonA > score.matchesWonB ? 'clubA' : 'clubB';
-  const diff = Number(score.gamePointDifference || 0);
-  if (diff !== 0) return diff > 0 ? 'clubA' : 'clubB';
+
+  for (const metric of tiebreakOrder || []) {
+    if (metric === 'gamePointDifference') {
+      const diff = Number(score.gamePointDifference || 0);
+      if (diff !== 0) return diff > 0 ? 'clubA' : 'clubB';
+    }
+    if (metric === 'gamePointsScored') {
+      const a = Number(score.gamePointsA || 0), b = Number(score.gamePointsB || 0);
+      if (a !== b) return a > b ? 'clubA' : 'clubB';
+    }
+    if (metric === 'matchesWon') {
+      const a = Number(score.matchesWonA || 0), b = Number(score.matchesWonB || 0);
+      if (a !== b) return a > b ? 'clubA' : 'clubB';
+    }
+  }
   return 'tiebreak_required';
 }
 
