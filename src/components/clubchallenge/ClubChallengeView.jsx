@@ -777,9 +777,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 print:space-y-0">
       {event && ['draw_approved','in_progress','paused','completed'].includes(event.status) && <div className="hidden print:block bg-white text-black p-6"><div className="flex justify-between border-b pb-3"><div><h1 className="text-2xl font-bold">Club Challenge Event Pack</h1><p>{event.club_a_name} vs {event.club_b_name}</p></div><div className="text-right text-xs"><p>Rules v{event.rules_version}</p><p>Draw v{event.draw_version} · Pack v{event.event_pack_version || event.draw_version}</p><p>{event.event_pack_stale ? 'OUT OF DATE' : 'APPROVED DRAW'}</p></div></div><div className="grid grid-cols-2 gap-6 mt-4"><div><h2 className="font-bold">{event.club_a_name}</h2>{aPlayers.slice().sort((a,b)=>a.event_rank-b.event_rank).map(p=><p key={p.id} className="text-xs">#{p.event_rank} {p.display_name}</p>)}</div><div><h2 className="font-bold">{event.club_b_name}</h2>{bPlayers.slice().sort((a,b)=>a.event_rank-b.event_rank).map(p=><p key={p.id} className="text-xs">#{p.event_rank} {p.display_name}</p>)}</div></div><h2 className="font-bold mt-5 mb-2">Approved Fixtures</h2><table className="w-full text-[10px] border-collapse"><thead><tr><th className="border p-1">Rnd</th><th className="border p-1">Court</th><th className="border p-1">{event.club_a_name}</th><th className="border p-1">Score</th><th className="border p-1">{event.club_b_name}</th></tr></thead><tbody>{normalMatches.slice().sort((a,b)=>(a.round_number-b.round_number)||(a.court_number-b.court_number)).map(m=><tr key={m.id}><td className="border p-1 text-center">{m.round_number}</td><td className="border p-1 text-center">{m.court_number}</td><td className="border p-1">{(m.club_a_names||[]).join(' & ')}</td><td className="border p-1 text-center">____ – ____</td><td className="border p-1">{(m.club_b_names||[]).join(' & ')}</td></tr>)}</tbody></table><div className="mt-4 text-xs"><p>Play: {event.play_minutes} min · Changeover: {event.changeover_minutes} min{event.include_break ? ` · Break: ${event.break_minutes} min after Round ${event.break_after_round}` : ''}</p><p className="mt-2">Manual final total: {event.club_a_name} ______  {event.club_b_name} ______</p>{event.showcase_enabled && <p className="mt-2">Showcase Final: ________________________________  Score: ______ – ______</p>}</div></div>
-      <div className="glass rounded-xl p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 min-w-0">
+      <div className="print:hidden glass rounded-xl p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 min-w-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><ShieldCheck className="w-5 h-5 text-primary" /></div>
           <div><p className="font-semibold text-foreground">Club Challenge v1.0</p><p className="text-xs text-muted-foreground">{event ? `Status: ${event.status.replaceAll('_', ' ')}` : 'Configure the inter-club event'}</p></div>
@@ -787,7 +787,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         {event && <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center"><div className="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} logo={event.club_a_logo_url} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} logo={event.club_b_logo_url} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>{['in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={() => setDisplayMode(true)}>Hall Display</Button>}{['draw_approved','in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={printEventPack}>{event.event_pack_stale ? 'Print Event Pack · OUT OF DATE' : `Print Event Pack v${event.event_pack_version || event.draw_version || 1}`}</Button>}</div>}
       </div>
 
-      <div className="rounded-xl border border-border bg-card/50 p-2 sm:p-3">
+      <div className="print:hidden rounded-xl border border-border bg-card/50 p-2 sm:p-3">
         <div className="flex overflow-x-auto gap-1 sm:gap-2 -mx-1 px-1 pb-1 snap-x scrollbar-none">
           {TABS.map(([id, label], index) => {
             const complete = index < stageIndex;
@@ -809,6 +809,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         </div>
       </div>
 
+      <div className="print:hidden contents">
       {tab === 'setup' && (
         <div className="space-y-4">
           <div className="grid lg:grid-cols-2 gap-4">
@@ -1061,6 +1062,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }
