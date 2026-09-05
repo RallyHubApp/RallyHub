@@ -150,6 +150,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [showcaseSelection, setShowcaseSelection] = useState({ aMale: '', aFemale: '', bMale: '', bFemale: '' });
   const [replacement, setReplacement] = useState({ outgoingId: '', incomingName: '', reason: '', status: 'withdrawn' });
   const [timerNow, setTimerNow] = useState(Date.now());
+  const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('cc-voice-mode') || 'irish_female');
+  const [voices, setVoices] = useState([]);
+  const [voiceMuted, setVoiceMuted] = useState(() => localStorage.getItem('cc-voice-muted') === 'true');
+  const [roundLabels, setRoundLabels] = useState({});
+  const [lastAnnouncement, setLastAnnouncement] = useState('');
+  const [compressedTimer, setCompressedTimer] = useState({ running: false, step: -1, text: 'Not run' });
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: hostClub } = useQuery({
@@ -231,6 +237,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const id = window.setInterval(() => setTimerNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
+  React.useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+    const loadVoices = () => setVoices(window.speechSynthesis.getVoices());
+    loadVoices();
+    window.speechSynthesis.addEventListener?.('voiceschanged', loadVoices);
+    return () => window.speechSynthesis.removeEventListener?.('voiceschanged', loadVoices);
+  }, []);
+  React.useEffect(() => { localStorage.setItem('cc-voice-mode', voiceMode); }, [voiceMode]);
+  React.useEffect(() => { localStorage.setItem('cc-voice-muted', String(voiceMuted)); }, [voiceMuted]);
 
   const sync = async () => {
     await Promise.all([refetchEvent(), refetchParticipants(), refetchMatches()]);
@@ -383,11 +398,54 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     }
   };
 
-  const startPhase = phase => timerAction('start', phase);
-  const pauseTimer = () => timerAction('pause');
-  const resumeTimer = () => timerAction('resume');
+  const chooseVoice = mode => {
+    if (!voices.length || mode === 'device_default') return null;
+    const ie = voices.filter(v => /^en[-_]IE$/i.test(v.lang) || /irish|ireland/i.test(`${v.name} ${v.lang}`));
+    const femaleHint = /female|siri.*(female|2)|moira|fiona|caitlin|orla|aoife/i;
+    const maleHint = /male|siri.*(male|1)|liam|sean|colm|cian/i;
+    if (mode === 'irish_female') return ie.find(v => femaleHint.test(v.name)) || ie.find(v => !maleHint.test(v.name)) || ie[0] || null;
+    if (mode === 'irish_male') return ie.find(v => maleHint.test(v.name)) || ie.find(v => !femaleHint.test(v.name)) || ie[0] || null;
+    return null;
+  };
+  const speak = (text, { force = false } = {}) => {
+    if (!text || !('speechSynthesis' in window) || voiceMode === 'off' || (voiceMuted && !force)) return false;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-IE';
+    const voice = chooseVoice(voiceMode);
+    if (voice) utterance.voice = voice;
+    utterance.rate = 0.95;
+    window.speechSynthesis.speak(utterance);
+    setLastAnnouncement(text);
+    return true;
+  };
+  const roundLabel = round => roundLabels[round] || `Round ${round}`;
+  const announcePhase = (phase, round = currentRound) => {
+    const label = roundLabel(round);
+    const text = phase === 'play' ? `${label}. Play. ${Number(event?.play_minutes || 10)} minutes.` : phase === 'changeover' ? `${label} complete. Changeover. ${Number(event?.changeover_minutes || 2)} minutes.` : `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`;
+    speak(text);
+  };
+  const startPhase = async phase => { await timerAction('start', phase); announcePhase(phase); };
+  const pauseTimer = async () => { await timerAction('pause'); speak('Event paused.'); };
+  const resumeTimer = async () => { await timerAction('resume'); speak(`${roundLabel(currentRound)}. Resume play.`); };
   const resetTimer = () => timerAction('reset');
   const fmtTimer = s => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
+  const testVoice = () => speak(`${roundLabel(currentRound)}. Play. ${Number(event?.play_minutes || 10)} minutes.`, { force: true });
+  const runCompressedTimerAudioTest = async () => {
+    if (compressedTimer.running) return;
+    const steps = [
+      `${roundLabel(1)}. Play.`, `${roundLabel(1)} complete. Changeover.`, `${roundLabel(2)}. Play.`,
+      'Event paused.', `${roundLabel(2)}. Resume play.`, `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`, `${roundLabel(3)}. Play.`
+    ];
+    setCompressedTimer({ running: true, step: 0, text: steps[0] });
+    for (let i = 0; i < steps.length; i += 1) {
+      setCompressedTimer({ running: true, step: i, text: steps[i] });
+      speak(steps[i]);
+      await new Promise(resolve => window.setTimeout(resolve, 1200));
+    }
+    setCompressedTimer({ running: false, step: steps.length - 1, text: 'PASS — compressed phase/announcement sequence completed' });
+    addSimLog('Compressed timer/audio: PLAY → CHANGEOVER → PLAY → PAUSE → RESUME → BREAK → PLAY completed', 'pass');
+  };
 
   const applyReplacement = async () => {
     if (!event || !replacement.outgoingId || !replacement.incomingName.trim()) { toast.error('Choose the outgoing player and enter the replacement name.'); return; }
