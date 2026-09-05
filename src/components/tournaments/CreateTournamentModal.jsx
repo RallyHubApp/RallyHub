@@ -20,6 +20,7 @@ const FORMATS = [
   { value: 'Ladder League', label: 'Ladder League', desc: 'Ongoing league ladder — challenge up or down.' },
   { value: 'King of the Court', label: 'King of the Court', desc: 'Winners stay on court, challengers rotate in.' },
   { value: 'Tournival', label: 'Tournival', desc: 'Mixed-doubles round robin (4 group rounds) followed by seeded knockout cup matches.' },
+  { value: 'Club Challenge', label: 'Club Challenge', desc: 'Inter-club team event with rotating partners, fairness controls, live club scoring and display workflow.' },
   { value: 'Mixed Doubles', label: 'Mixed Doubles', desc: 'Fixed male/female pairs.' },
 ];
 
@@ -43,8 +44,14 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
     e.preventDefault();
     if (!form.name || !form.format) { toast.error('Name and format are required'); return; }
     setSaving(true);
+    const currentUser = await base44.auth.me().catch(() => null);
+    const isClubChallenge = form.format === 'Club Challenge';
     await base44.entities.Tournament.create({
       ...form,
+      inter_club: isClubChallenge ? true : form.inter_club,
+      partnership_type: isClubChallenge ? 'Random Partners' : form.partnership_type,
+      tenant_id: currentUser?.active_tenant_id || undefined,
+      host_club_id: currentUser?.active_club_id || undefined,
       max_players: form.max_players ? Number(form.max_players) : undefined,
       skill_range_min: form.skill_range_min ? Number(form.skill_range_min) : undefined,
       skill_range_max: form.skill_range_max ? Number(form.skill_range_max) : undefined,
