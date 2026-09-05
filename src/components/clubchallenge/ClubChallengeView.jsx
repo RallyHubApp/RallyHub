@@ -12,6 +12,7 @@ import { Check, CheckCircle2, Clock, GripVertical, ImagePlus, ListChecks, Play, 
 import { cn } from '@/lib/utils';
 import {
   analyseClubChallengeFairness,
+  applyShowcasePoints,
   calculateClubChallengeFormat,
   calculateClubChallengeScore,
   generateClubChallengeFixtures,
@@ -146,6 +147,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [simulating, setSimulating] = useState(false);
   const [logoUploading, setLogoUploading] = useState('');
   const [simLog, setSimLog] = useState([]);
+  const [showcaseSelection, setShowcaseSelection] = useState({ aMale: '', aFemale: '', bMale: '', bFemale: '' });
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: hostClub } = useQuery({
@@ -192,12 +194,28 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setSetup(s => ({ ...s, clubAName: hostClub.name || s.clubAName, clubALogo: hostClub.logo_url || s.clubALogo }));
   }, [event, hostClub?.id]);
 
+  React.useEffect(() => {
+    if (!event) return;
+    setShowcaseSelection({
+      aMale: event.showcase_club_a_male_id || '',
+      aFemale: event.showcase_club_a_female_id || '',
+      bMale: event.showcase_club_b_male_id || '',
+      bFemale: event.showcase_club_b_female_id || '',
+    });
+  }, [event?.id, event?.showcase_club_a_male_id, event?.showcase_club_a_female_id, event?.showcase_club_b_male_id, event?.showcase_club_b_female_id]);
+
   const aPlayers = participants.filter(p => p.side === 'club_a');
   const bPlayers = participants.filter(p => p.side === 'club_b');
+  const normalMatches = matches.filter(m => !m.is_showcase);
+  const showcaseMatch = matches.find(m => m.is_showcase) || null;
   const locked = ['draw_approved', 'in_progress', 'paused', 'completed', 'archived'].includes(event?.status);
   const fairness = useMemo(() => { try { return event?.fairness_json ? JSON.parse(event.fairness_json) : null; } catch { return null; } }, [event?.fairness_json]);
-  const score = useMemo(() => scoreFromMatchRecords(matches, { winPoints: event?.win_points ?? 2, drawPoints: event?.draw_points ?? 1, lossPoints: event?.loss_points ?? 0 }), [matches, event?.win_points, event?.draw_points, event?.loss_points]);
-  const rounds = [...new Set(matches.map(m => m.round_number))].sort((a, b) => a - b);
+  const score = useMemo(() => scoreFromMatchRecords(normalMatches, { winPoints: event?.win_points ?? 2, drawPoints: event?.draw_points ?? 1, lossPoints: event?.loss_points ?? 0 }), [normalMatches, event?.win_points, event?.draw_points, event?.loss_points]);
+  const overallScore = useMemo(() => {
+    if (!showcaseMatch || !['completed','draw'].includes(showcaseMatch.status) || !['club_a','club_b'].includes(showcaseMatch.winner)) return score;
+    return applyShowcasePoints(score, { winner: showcaseMatch.winner === 'club_a' ? 'clubA' : 'clubB', points: Number(event?.showcase_points || 0) });
+  }, [score, showcaseMatch, event?.showcase_points]);
+  const rounds = [...new Set(normalMatches.map(m => m.round_number))].sort((a, b) => a - b);
   const currentRound = event?.current_round || 1;
 
   const sync = async () => {
