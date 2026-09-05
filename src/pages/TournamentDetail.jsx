@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Play, Users, Calendar, MapPin, Plus,
-  Trophy, Upload, GitBranch, Swords, BarChart2, List, Flag,
+  Trophy, Upload, GitBranch, Swords, BarChart2, Flag,
   Pencil, Trash2, Link2, UserPlus, Check
 } from 'lucide-react';
 import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
