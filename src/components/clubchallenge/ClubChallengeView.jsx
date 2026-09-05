@@ -13,7 +13,9 @@ import { cn } from '@/lib/utils';
 import {
   analyseClubChallengeFairness,
   calculateClubChallengeFormat,
+  calculateClubChallengeScore,
   generateClubChallengeFixtures,
+  resolveClubChallengeWinner,
 } from '@/lib/clubChallengeEngine.js';
 import {
   createChallengeEventDraft,
@@ -357,18 +359,22 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase);
   const isGate3TestEvent = participants.length >= 8 && participants.every(p => String(p.unique_identity_key || '').startsWith('gate3-'));
   const addSimLog = (message, status = 'info') => setSimLog(log => [{ at: new Date().toLocaleTimeString('en-IE'), message, status }, ...log].slice(0, 12));
-  const scoreForSimulation = (match, index = 0) => {
-    if (event?.normal_match_type === 'points') {
-      const target = Number(event.normal_target_points || 11);
-      const winBy = Number(event.normal_win_by || 1);
-      const loser = Math.max(0, target - Math.max(2, winBy));
-      return index % 2 === 0 ? [target, loser] : [loser, target];
-    }
-    if (index % 7 === 0) return [8, 8];
-    return index % 2 === 0 ? [11, 7] : [7, 11];
+  const scoreForSimulation = (match, index = 0, mode = 'mixed') => {
+    const pointsFormat = event?.normal_match_type === 'points';
+    const target = Number(event?.normal_target_points || 11);
+    const winBy = Number(event?.normal_win_by || 1);
+    const aStrong = pointsFormat ? [target, Math.max(0, target - (winBy === 2 ? 4 : 3))] : [11, 8];
+    const bNarrow = pointsFormat ? [Math.max(0, target - (winBy === 2 ? 2 : 1)), target] : [10, 11];
+    const bStrong = pointsFormat ? [Math.max(0, target - (winBy === 2 ? 4 : 3)), target] : [8, 11];
+
+    if (mode === 'clear_winner') return index < 28 ? aStrong : bStrong;
+    if (mode === 'tie_metrics') return index < 24 ? aStrong : bNarrow;
+    if (mode === 'tie_showcase') return index < 24 ? aStrong : bStrong;
+    if (!pointsFormat && index % 7 === 0) return [8, 8];
+    return index % 2 === 0 ? aStrong : bStrong;
   };
-  const saveSimulatedMatch = async (match, index) => {
-    const [scoreA, scoreB] = scoreForSimulation(match, index);
+  const saveSimulatedMatch = async (match, index, mode = 'mixed') => {
+    const [scoreA, scoreB] = scoreForSimulation(match, index, mode);
     const res = await base44.functions.invoke('saveClubChallengeScore', {
       matchId: match.id,
       expectedRevision: Number(match.revision || 0),
@@ -376,7 +382,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     });
     if (res.data?.error || res.data?.conflict) throw new Error(res.data?.error || 'Unexpected revision conflict during simulation');
   };
-  const simulateMatches = async (targetMatches, label) => {
+  const simulateMatches = async (targetMatches, label, mode = 'mixed') => {
     if (!isAdmin || !isGate3TestEvent) { toast.error('Simulator is restricted to the Gate 3 dummy roster.'); return; }
     const unresolved = targetMatches.filter(m => !['completed', 'draw'].includes(m.status));
     if (!unresolved.length) { toast.info('Those matches are already complete.'); return; }
@@ -384,7 +390,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try {
       for (let i = 0; i < unresolved.length; i += 6) {
         const batch = unresolved.slice(i, i + 6);
-        await Promise.all(batch.map((m, j) => saveSimulatedMatch(m, i + j)));
+        await Promise.all(batch.map((m, j) => saveSimulatedMatch(m, i + j, mode)));
       }
       addSimLog(`${label}: ${unresolved.length} results simulated`, 'pass');
       toast.success(`${unresolved.length} simulated results saved`);
@@ -397,15 +403,41 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } finally { setSimulating(false); }
   };
   const simulateCurrentRound = () => simulateMatches(currentMatches, `Round ${currentRound}`);
-  const simulateAllRemaining = async () => {
+  const resetDummyRecords = async () => {
     const normal = matches.filter(m => !m.is_showcase);
-    const success = await simulateMatches(normal, 'All normal matches');
-    if (!success) return;
-    const maxRound = Math.max(...normal.map(m => m.round_number));
-    if (Number.isFinite(maxRound)) {
+    for (let i = 0; i < normal.length; i += 8) {
+      await Promise.all(normal.slice(i, i + 8).map(m => base44.entities.ClubChallengeMatch.update(m.id, {
+        status: 'scheduled', score_a: null, score_b: null, winner: 'none', revision: 0,
+        scored_by_user_id: null, scored_at: null, last_corrected_by_user_id: null, last_corrected_at: null, correction_count: 0,
+      })));
+    }
+    await base44.entities.ClubChallengeEvent.update(event.id, { status: 'draw_approved', current_round: 0, finalised_at: null });
+    await base44.entities.Tournament.update(tournament.id, { status: 'Draft', finalised_at: null });
+    return normal.map(m => ({ ...m, status: 'scheduled', score_a: null, score_b: null, winner: 'none', revision: 0 }));
+  };
+  const runEndScenario = async (mode, label) => {
+    if (!isAdmin || !isGate3TestEvent) { toast.error('Simulator is restricted to the Gate 3 dummy roster.'); return; }
+    setSimulating(true);
+    try {
+      const resetMatches = await resetDummyRecords();
+      setSimulating(false);
+      const success = await simulateMatches(resetMatches, label, mode);
+      if (!success) return;
+      const maxRound = Math.max(...resetMatches.map(m => m.round_number));
       await base44.entities.ClubChallengeEvent.update(event.id, { status: 'in_progress', current_round: maxRound });
-      await refetchEvent();
+      await sync();
+      const planned = resetMatches.map((m, i) => {
+        const [scoreA, scoreB] = scoreForSimulation(m, i, mode);
+        return { scoreA, scoreB, status: scoreA === scoreB ? 'draw' : 'completed' };
+      });
+      const plannedScore = calculateClubChallengeScore(planned, { winPoints: event?.win_points ?? 2, drawPoints: event?.draw_points ?? 1, lossPoints: event?.loss_points ?? 0 });
+      const metricWinner = resolveClubChallengeWinner(plannedScore, { allowDraw: false });
+      addSimLog(`${label} PASS — ${plannedScore.clubA}-${plannedScore.clubB}; differential ${plannedScore.gamePointDifference >= 0 ? '+' : ''}${plannedScore.gamePointDifference}; no-final decision ${metricWinner}`, 'pass');
       setTab('results');
+    } catch (e) {
+      setSimulating(false);
+      addSimLog(`${label}: FAILED — ${e?.message || e}`, 'fail');
+      toast.error(e?.message || 'Scenario simulation failed');
     }
   };
   const runConflictProbe = async () => {
@@ -439,15 +471,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!window.confirm('Reset all dummy Club Challenge match results back to the approved draw?')) return;
     setSimulating(true);
     try {
-      const normal = matches.filter(m => !m.is_showcase);
-      for (let i = 0; i < normal.length; i += 8) {
-        await Promise.all(normal.slice(i, i + 8).map(m => base44.entities.ClubChallengeMatch.update(m.id, {
-          status: 'scheduled', score_a: null, score_b: null, winner: 'none', revision: 0,
-          scored_by_user_id: null, scored_at: null, last_corrected_by_user_id: null, last_corrected_at: null, correction_count: 0,
-        })));
-      }
-      await base44.entities.ClubChallengeEvent.update(event.id, { status: 'draw_approved', current_round: 0, finalised_at: null });
-      await base44.entities.Tournament.update(tournament.id, { status: 'Draft' });
+      await resetDummyRecords();
       setSimLog([]);
       addSimLog('Dummy event reset to approved draw', 'pass');
       toast.success('Simulation reset');
@@ -610,14 +634,18 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <p className="text-sm font-semibold">Simulation controls</p>
               <p className="text-xs text-muted-foreground mt-1">These controls are deliberately restricted to events containing the Gate 3 dummy roster, so live club data cannot be bulk-scored by mistake.</p>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <Button className="min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={() => runEndScenario('clear_winner', 'Clear winner after 48')}>Simulate 48 — Clear Winner</Button>
+              <Button className="min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={() => runEndScenario('tie_metrics', 'Tie — decide by metrics')}>Simulate Tie — Use Metrics</Button>
+              <Button className="min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={() => runEndScenario('tie_showcase', 'Tie — Showcase required')}>Simulate Tie — Showcase Final</Button>
               <Button variant="outline" className="min-h-11" disabled={!isGate3TestEvent || simulating || !currentMatches.length} onClick={simulateCurrentRound}>Simulate Round {currentRound}</Button>
-              <Button className="min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={simulateAllRemaining}>Simulate All 48</Button>
               <Button variant="outline" className="min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={runConflictProbe}>Test Stale-Edit Conflict</Button>
               <Button variant="outline" className="min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={resetSimulation}><RefreshCw className={cn('w-4 h-4 mr-2', simulating && 'animate-spin')} />Reset Dummy Event</Button>
             </div>
-            <div className="rounded-lg bg-secondary/50 p-4 text-xs text-muted-foreground">
-              <p><strong className="text-foreground">What “Simulate All 48” checks:</strong> the actual score-save backend, valid wins and timed draws, per-match revisions, club score aggregation, and persistence across all normal fixtures. It then jumps the live screen to Round 12 so you can immediately inspect the end-of-event behaviour.</p>
+            <div className="rounded-lg bg-secondary/50 p-4 text-xs text-muted-foreground space-y-1">
+              <p><strong className="text-foreground">Clear Winner:</strong> proves a normal 48-match result produces the correct winner and runner-up.</p>
+              <p><strong className="text-foreground">Tie — Use Metrics:</strong> forces equal Club Challenge points but a known cumulative point differential, so the no-final tiebreak calculation can be verified.</p>
+              <p><strong className="text-foreground">Tie — Showcase Final:</strong> forces equal Club Challenge points and equal cumulative scoring, so RallyHub must require the Showcase/tiebreak final (or allow an overall draw if configured).</p>
             </div>
           </div>
 
@@ -654,6 +682,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary mt-4">{event?.status === 'completed' ? 'Final Result' : 'Current Result'}</p>
                 <p className="text-2xl sm:text-3xl font-bold mt-2 break-words">{event?.club_a_name} {score.clubA}–{score.clubB} {event?.club_b_name}</p>
                 <div className="flex flex-wrap justify-center gap-2 mt-4"><Badge variant="outline">{score.completedMatches} results</Badge><Badge variant="outline">{score.matchesWonA} {event?.club_a_name} wins</Badge><Badge variant="outline">{score.draws} draws</Badge><Badge variant="outline">{score.matchesWonB} {event?.club_b_name} wins</Badge></div>
+                <div className="grid grid-cols-3 gap-2 mt-4 max-w-lg mx-auto text-center"><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointsA}</p><p className="text-[10px] text-muted-foreground">{event?.club_a_name} game points</p></div><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointDifference >= 0 ? '+' : ''}{score.gamePointDifference}</p><p className="text-[10px] text-muted-foreground">A point differential</p></div><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointsB}</p><p className="text-[10px] text-muted-foreground">{event?.club_b_name} game points</p></div></div>
+                {score.clubA === score.clubB && score.completedMatches === matches.filter(m => !m.is_showcase).length && (() => { const metricWinner = resolveClubChallengeWinner(score, { allowDraw: false }); return <div className="mt-4 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3 text-xs"><p className="font-semibold text-yellow-400">Normal Club Challenge points are tied.</p><p className="text-muted-foreground mt-1">{metricWinner === 'clubA' ? `${event?.club_a_name} wins the no-final tiebreak on cumulative point differential / points scored.` : metricWinner === 'clubB' ? `${event?.club_b_name} wins the no-final tiebreak on cumulative point differential / points scored.` : 'The metrics are also tied — play the Showcase/tiebreak final or record an overall draw if the event rules allow it.'}</p></div>; })()}
                 {event?.status !== 'completed' && <p className="text-xs text-yellow-400 mt-4">Provisional — normal match results are saved, but the event has not yet been finalised.</p>}
               </div>
               <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
