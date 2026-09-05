@@ -282,6 +282,81 @@ function assignMatchupsToCourts({ aTeams, bTeams, previousCourt, courtUsage }) {
   return best.ordered;
 }
 
+function buildSmallClubSchedule(players, courts, rounds, targetRankSums = null) {
+  const ids = players.map(p => p.id);
+  const byId = Object.fromEntries(players.map(p => [p.id, p]));
+  const factors = generatePerfectMatchings(ids);
+  const teamChoices = factors.map(factor => combinations(factor.map((_, i) => i), courts));
+  const exactTarget = (courts * 2 * rounds) / ids.length;
+  const floorTarget = Math.floor(exactTarget);
+  const ceilTarget = Math.ceil(exactTarget);
+  const beamWidth = 70;
+  let beam = [{
+    score: 0,
+    games: Object.fromEntries(ids.map(id => [id, 0])),
+    previousBench: new Set(),
+    usedFactors: new Set(),
+    coActive: {},
+    schedule: [],
+  }];
+
+  for (let roundIndex = 0; roundIndex < rounds; roundIndex++) {
+    const remainingAfter = rounds - roundIndex - 1;
+    const next = [];
+    for (const state of beam) {
+      for (let factorIndex = 0; factorIndex < factors.length; factorIndex++) {
+        if (state.usedFactors.has(factorIndex)) continue;
+        const factor = factors[factorIndex];
+        for (const choice of teamChoices[factorIndex]) {
+          const teams = choice.map(i => factor[i]);
+          const active = teams.flat();
+          const activeSet = new Set(active);
+          const bench = ids.filter(id => !activeSet.has(id));
+          const games = { ...state.games };
+          let feasible = true;
+          for (const id of active) games[id]++;
+          for (const id of ids) {
+            if (games[id] > ceilTarget || games[id] + remainingAfter < floorTarget) { feasible = false; break; }
+          }
+          if (!feasible) continue;
+
+          const values = Object.values(games);
+          const mean = values.reduce((s, n) => s + n, 0) / values.length;
+          const variance = values.reduce((s, n) => s + (n - mean) ** 2, 0);
+          const consecutiveRests = bench.filter(id => state.previousBench.has(id)).length;
+          let partnerGap = 0;
+          for (const [a, b] of teams) partnerGap += Math.abs(Number(byId[a]?.rank || 0) - Number(byId[b]?.rank || 0));
+          let coActivePenalty = 0;
+          for (let i = 0; i < active.length; i++) for (let j = i + 1; j < active.length; j++) coActivePenalty += state.coActive[pairKey(active[i], active[j])] || 0;
+          const activeRankSum = active.reduce((s, id) => s + Number(byId[id]?.rank || 0), 0);
+          const targetRankPenalty = targetRankSums ? Math.abs(activeRankSum - targetRankSums[roundIndex]) : 0;
+          const increment = consecutiveRests * 250000 + variance * 15000 + coActivePenalty * 180 + partnerGap * 5 + targetRankPenalty * 150;
+          const coActive = { ...state.coActive };
+          for (let i = 0; i < active.length; i++) for (let j = i + 1; j < active.length; j++) {
+            const key = pairKey(active[i], active[j]);
+            coActive[key] = (coActive[key] || 0) + 1;
+          }
+          const usedFactors = new Set(state.usedFactors); usedFactors.add(factorIndex);
+          next.push({
+            score: state.score + increment,
+            games,
+            previousBench: new Set(bench),
+            usedFactors,
+            coActive,
+            schedule: [...state.schedule, { teams, active, bench }],
+          });
+        }
+      }
+    }
+    next.sort((a, b) => a.score - b.score);
+    beam = next.slice(0, beamWidth);
+    if (!beam.length) return null;
+  }
+
+  const exact = beam.find(state => Object.values(state.games).every(n => nearlyInteger(exactTarget) ? n === exactTarget : n >= floorTarget && n <= ceilTarget));
+  return exact || beam[0];
+}
+
 function chooseTeamsForActive({ activeIds, byId, partnerCounts, rosterSize }) {
   const allPairings = enumeratePerfectPairings(activeIds);
   if (!allPairings.length) {
