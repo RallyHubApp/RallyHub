@@ -40,11 +40,14 @@ export default function Tournaments() {
   }, []);
 
   const handleQuickKotc = async () => {
+    const user = await base44.auth.me().catch(() => null);
     const t = await base44.entities.Tournament.create({
       name: `King of the Court — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
       format: 'King of the Court',
       partnership_type: 'Singles',
       status: 'Draft',
+      tenant_id: user?.active_tenant_id || undefined,
+      host_club_id: user?.active_club_id || undefined,
       kotc_num_courts: 4,
       kotc_num_rounds: 9,
       kotc_score_format: 'first_11',
@@ -56,11 +59,14 @@ export default function Tournaments() {
   };
 
   const handleQuickTournival = async () => {
+    const user = await base44.auth.me().catch(() => null);
     const t = await base44.entities.Tournament.create({
       name: `Tournival — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
       format: 'Tournival',
       partnership_type: 'Singles',
       status: 'Draft',
+      tenant_id: user?.active_tenant_id || undefined,
+      host_club_id: user?.active_club_id || undefined,
       kotc_num_courts: 4,
       player_ids: [],
       partner_pairs: [],
@@ -121,9 +127,11 @@ export default function Tournaments() {
             <p className="text-xs text-muted-foreground mt-0.5">Choose the format you want to run. Advanced options remain available in New Tournament.</p>
           </div>
           <Button variant="ghost" size="sm" className="justify-start sm:justify-center text-muted-foreground" onClick={async () => {
+            const user = await base44.auth.me().catch(() => null);
             const t = await base44.entities.Tournament.create({
               name: `King of the Court — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
               format: 'King of the Court', partnership_type: 'Singles', status: 'Draft',
+              tenant_id: user?.active_tenant_id || undefined, host_club_id: user?.active_club_id || undefined,
               kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11', player_ids: [], partner_pairs: [],
             });
             queryClient.invalidateQueries({ queryKey: ['tournaments'] });
