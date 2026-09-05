@@ -60,7 +60,7 @@ Purpose: maximise confidence before the next live deployment while preserving th
 
 ### Phase F — Pre-deploy release gate
 - REL-001 Gate 1 engine suite — PASS (canonical 16+16 / 4 courts / 12 rounds / 48 matches / 6 games each; partner repeats 0; max opponent repeat 2; consecutive rests 0; avg strength gap 2.33; generalised 12+12, 13+13, 20+20 and 24+24 configurations across 3–6 courts pass; variable timing, timed draws, 11/15 win-by-1/2 validation, Showcase scoring, tiebreak and revision-conflict helpers pass)
-- REL-002 Gate 3 foundation suite
+- REL-002 Gate 3 foundation suite — PASS (48 match records; separate-match scoring, timed draw handling, stale-edit conflict protection, correction audit, score aggregation, future-only replacement, and finalisation blockers all pass)
 - REL-003 Gate 3 final 32-player rehearsal
 - REL-004 Production build
 - REL-005 No unresolved P0/P1 defects
