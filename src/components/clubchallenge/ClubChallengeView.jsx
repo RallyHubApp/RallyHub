@@ -1025,7 +1025,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <div className="rounded-xl border border-border bg-card p-4 space-y-3"><div><p className="text-sm font-semibold">Court / Time Change Proposal</p><p className="text-xs text-muted-foreground">For a lost/added court or late running event. This calculates consequences first; it does not silently rewrite completed fixtures.</p></div><div className="grid sm:grid-cols-[120px_140px_auto] gap-2"><Input type="number" min="1" value={eventDayAdjust.courts} onChange={e=>setEventDayAdjust(x=>({...x,courts:e.target.value}))} placeholder={`${event.courts} courts`} className="bg-secondary" /><Input type="number" min="1" value={eventDayAdjust.availableMinutes} onChange={e=>setEventDayAdjust(x=>({...x,availableMinutes:e.target.value}))} placeholder="Minutes left" className="bg-secondary" /><Button variant="outline" disabled={!canManageEvent} onClick={proposeEventDayAdjustment}>Calculate Proposal</Button></div>{eventDayProposal && <div className="rounded-lg bg-secondary/50 p-3 text-xs space-y-2"><p><strong>Review:</strong> {eventDayProposal.unresolved - eventDayProposal.dropIds.length} matches retained · {eventDayProposal.changes.length} positions change · {eventDayProposal.dropIds.length} Not Played.</p><p className="text-muted-foreground">Completed results are locked. Event Pack becomes OUT OF DATE.</p><div className="flex gap-2"><Button size="sm" disabled={!canManageEvent} onClick={confirmEventDayAdjustment}>Confirm Changes</Button><Button size="sm" variant="outline" onClick={()=>setEventDayProposal(null)}>Cancel</Button></div></div>}</div>
             </div>
             <div className="grid md:grid-cols-2 gap-3">{currentMatches.sort((a,b)=>a.court_number-b.court_number).map(m => <ScoreCard key={`${m.id}-${m.revision}`} match={m} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={refetchMatches} networkOnline={networkOnline} onQueue={queueOfflineScore} canScore={canScoreEvent} />)}</div>
-            {event.status !== 'completed' && <Button className="w-full h-11" disabled={!canManageEvent} onClick={advanceRound}>{currentRound < Math.max(...rounds) ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Finalise Club Challenge</>}</Button>}
+            {!['completed','archived'].includes(event.status) && <Button className="w-full h-11" disabled={!canManageEvent} onClick={advanceRound}>{currentRound < Math.max(...rounds) ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Finalise Club Challenge</>}</Button>}
           </>}
         </div>
       )}
@@ -1112,7 +1112,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 {!['completed','archived'].includes(event?.status) && <p className="text-xs text-yellow-400 mt-4">Provisional — results are saved, but the event has not yet been finalised.</p>}
               </div>
 
-              {resolvedNormalCount === normalMatches.length && event?.status !== 'completed' && score.clubA !== score.clubB && (
+              {resolvedNormalCount === normalMatches.length && !['completed','archived'].includes(event?.status) && score.clubA !== score.clubB && (
                 <div className="rounded-xl border border-border bg-card p-5">
                   <p className="text-sm font-semibold">Clear Winner Ready</p>
                   <p className="text-xs text-muted-foreground mt-1">All normal matches are complete and the Club Challenge points are not tied.</p>
@@ -1120,7 +1120,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 </div>
               )}
 
-              {resolvedNormalCount === normalMatches.length && event?.status !== 'completed' && score.clubA === score.clubB && (
+              {resolvedNormalCount === normalMatches.length && !['completed','archived'].includes(event?.status) && score.clubA === score.clubB && (
                 <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-5 space-y-4">
                   <div>
                     <p className="text-sm font-semibold text-yellow-400">Normal Club Challenge points are tied: {score.clubA}–{score.clubB}</p>
@@ -1135,7 +1135,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 </div>
               )}
 
-              {resolvedNormalCount === normalMatches.length && score.clubA === score.clubB && event?.showcase_enabled && event?.status !== 'completed' && (
+              {resolvedNormalCount === normalMatches.length && score.clubA === score.clubB && event?.showcase_enabled && !['completed','archived'].includes(event?.status) && (
                 <div id="showcase-final-panel" className="rounded-xl border border-border bg-card p-5 space-y-4">
                   <div><p className="text-sm font-semibold">Showcase / Tiebreak Final</p><p className="text-xs text-muted-foreground mt-1">Nominate one male and one female player from each club. Winner receives {event.showcase_points} Club Challenge points.</p></div>
                   {!showcaseMatch ? (
