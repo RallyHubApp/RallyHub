@@ -18,7 +18,8 @@ import useKotcRole from '@/hooks/useKotcRole';
 
 export default function AdminPanel() {
   const { user } = useAuth();
-  const { canAccessAdmin } = useKotcRole();
+  useKotcRole();
+  const canAccessAdmin = user?.role === 'admin';
   const queryClient = useQueryClient();
   const [playerSearch, setPlayerSearch] = useState('');
   const [editingPlayer, setEditingPlayer] = useState(null);
