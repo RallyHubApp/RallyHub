@@ -556,6 +556,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       if (idx >= 0) { ids[idx] = incoming.id; names[idx] = incoming.display_name; }
       await base44.entities.ClubChallengeMatch.update(m.id, { [idsKey]: ids, [namesKey]: names, revision: Number(m.revision || 0) + 1 });
     }
+    await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_stale: true });
     await base44.entities.ClubChallengeAudit.create({
       tenant_id: event.tenant_id, challenge_event_id: event.id, action: 'participant_replaced', user_id: currentUser?.id || '', occurred_at: now,
       old_value_json: JSON.stringify({ participant_id: outgoing.id, name: outgoing.display_name, status: outgoing.status }),
@@ -583,6 +584,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const p = participants.find(x => x.id === lateArrival.participantId); if (!p) return;
     const fromRound = Math.max(currentRound || 1, Number(lateArrival.round || 1));
     await base44.entities.ClubChallengeParticipant.update(p.id, { status: 'late', available_from_round: fromRound });
+    await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_stale: true });
     await base44.entities.ClubChallengeAudit.create({ tenant_id: event.tenant_id, challenge_event_id: event.id, action: 'late_arrival_set', user_id: currentUser?.id || '', occurred_at: new Date().toISOString(), new_value_json: JSON.stringify({participant_id:p.id, available_from_round:fromRound}) });
     toast.success(`${p.display_name} marked available from Round ${fromRound}. Draw consequences require organiser review.`); await sync();
   };
