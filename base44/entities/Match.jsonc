@@ -8,14 +8,28 @@
     },
     "team1_player_ids": {
       "type": "array",
-      "description": "Player IDs for team 1",
+      "description": "Legacy Player IDs for team 1",
       "items": {
         "type": "string"
       }
     },
     "team2_player_ids": {
       "type": "array",
-      "description": "Player IDs for team 2",
+      "description": "Legacy Player IDs for team 2",
+      "items": {
+        "type": "string"
+      }
+    },
+    "team1_participant_ids": {
+      "type": "array",
+      "description": "TournamentParticipant IDs for team 1",
+      "items": {
+        "type": "string"
+      }
+    },
+    "team2_participant_ids": {
+      "type": "array",
+      "description": "TournamentParticipant IDs for team 2",
       "items": {
         "type": "string"
       }
@@ -82,6 +96,10 @@
     },
     "duration_minutes": {
       "type": "number"
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Owning Tenant ID"
     }
   },
   "required": [
