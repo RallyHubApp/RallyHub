@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2, Crown, FileSpreadsheet, Zap } from 'lucide-react';
+import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2, Crown, FileSpreadsheet, Zap, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -69,6 +69,24 @@ export default function Tournaments() {
     navigate(`/app/tournaments/${t.id}`);
   };
 
+  const handleQuickClubChallenge = async () => {
+    const user = await base44.auth.me().catch(() => null);
+    const t = await base44.entities.Tournament.create({
+      name: `Club Challenge — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
+      format: 'Club Challenge',
+      partnership_type: 'Random Partners',
+      inter_club: true,
+      status: 'Draft',
+      tenant_id: user?.active_tenant_id || undefined,
+      host_club_id: user?.active_club_id || undefined,
+      kotc_num_courts: 4,
+      player_ids: [],
+      partner_pairs: [],
+    });
+    queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+    navigate(`/app/tournaments/${t.id}`);
+  };
+
   const handleDelete = async (e, id) => {
     e.preventDefault();
     e.stopPropagation();
@@ -96,6 +114,9 @@ export default function Tournaments() {
         </Button>
         <Button variant="outline" className="gap-2 border-accent/40 text-accent hover:bg-accent/10" onClick={handleQuickTournival}>
           <Zap className="w-4 h-4" /> Tournival
+        </Button>
+        <Button variant="outline" className="gap-2 border-primary/40 text-primary hover:bg-primary/10" onClick={handleQuickClubChallenge}>
+          <Flag className="w-4 h-4" /> Club Challenge
         </Button>
         <Button variant="outline" className="gap-2 border-primary/40 text-primary hover:bg-primary/10" onClick={async () => {
           const t = await base44.entities.Tournament.create({
