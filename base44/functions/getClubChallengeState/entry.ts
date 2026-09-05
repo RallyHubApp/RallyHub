@@ -31,12 +31,8 @@ Deno.serve(async (req) => {
       side:p.side, display_name:p.display_name, gender:p.gender, age_category:p.age_category, event_rank:p.event_rank,
       status:p.status, available_from_round:p.available_from_round, replaced_by_participant_id:p.replaced_by_participant_id,
       replacement_for_participant_id:p.replacement_for_participant_id, replacement_effective_round:p.replacement_effective_round,
-      withdrawn_at:p.withdrawn_at, withdrawal_reason:p.withdrawal_reason, unique_identity_key:p.unique_identity_key,
+      withdrawn_at:p.withdrawn_at, withdrawal_reason:p.withdrawal_reason,
     }));
-
-    await base44.asServiceRole.entities.ClubChallengeStateAccessLog.create({
-      tenant_id:event.tenant_id, challenge_event_id:event.id, user_id:user.id, role:accessRole, accessed_at:new Date().toISOString()
-    }).catch(() => null);
 
     return Response.json({ success:true, accessRole, event, participants:safeParticipants, matches, scorers:scorerRows });
   } catch (error) {
