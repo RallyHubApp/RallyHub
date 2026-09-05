@@ -33,13 +33,17 @@ Deno.serve(async (req) => {
     const event = events?.[0];
     if (!event) return Response.json({ error: 'Club Challenge event not found' }, { status: 404 });
 
-    let allowed = user.role === 'admin';
-    if (!allowed) {
-      const access = await base44.asServiceRole.entities.TournamentUserAccess.filter({ tournament_id: match.tournament_id, user_id: user.id, status: 'active' });
-      allowed = access.some(a => ['event_manager', 'event_host', 'scorer'].includes(a.role));
+    let accessRole = user.role === 'admin' ? 'admin' : '';
+    let canCorrect = user.role === 'admin';
+    if (!accessRole) {
+      const tournamentAccess = await base44.asServiceRole.entities.TournamentUserAccess.filter({ tournament_id: match.tournament_id, user_id: user.id, status: 'active' });
+      const ccAccess = await base44.asServiceRole.entities.ClubChallengeScorer.filter({ challenge_event_id: event.id, user_id: user.id, active: true });
+      const tournamentRole = tournamentAccess.find(a => ['event_manager', 'event_host', 'scorer'].includes(a.role))?.role || '';
+      const ccRole = ccAccess.find(a => a.can_score)?.role || '';
+      accessRole = tournamentRole || ccRole;
+      canCorrect = tournamentRole === 'event_manager' || tournamentRole === 'event_host' || ccAccess.some(a => a.can_correct_score);
     }
-    if (!allowed) return Response.json({ error: 'Scoring permission required' }, { status: 403 });
-    if (user.role !== 'admin' && user.active_tenant_id !== match.tenant_id) return Response.json({ error: 'Wrong tenant context' }, { status: 403 });
+    if (!accessRole) return Response.json({ error: 'Scoring permission required' }, { status: 403 });
 
     const currentRevision = Number(match.revision || 0);
     if (Number(expectedRevision) !== currentRevision) {
@@ -60,6 +64,7 @@ Deno.serve(async (req) => {
     const a = Number(scoreA), b = Number(scoreB);
     const winner = a === b ? 'draw' : a > b ? 'club_a' : 'club_b';
     const isCorrection = ['completed', 'draw'].includes(match.status);
+    if (isCorrection && !canCorrect) return Response.json({ error: 'Score correction permission required' }, { status: 403 });
     const now = new Date().toISOString();
     const update = {
       score_a: a,
