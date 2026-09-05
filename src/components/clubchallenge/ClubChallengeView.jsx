@@ -21,7 +21,6 @@ import {
 import {
   createChallengeEventDraft,
   fixtureRecordsFromSchedule,
-  finalisationIssues,
   scoreFromMatchRecords,
 } from '@/lib/clubChallengeWorkflow.js';
 
@@ -44,6 +43,7 @@ const DEFAULT_SETUP = {
 };
 
 function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
+function genderKey(value) { const v = String(value || '').trim().toLowerCase(); return v.startsWith('f') ? 'female' : v.startsWith('m') ? 'male' : ''; }
 
 function ClubBadge({ name, logo, primary, secondary }) {
   return (
@@ -654,7 +654,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 lg:gap-4 text-xs">
               <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.includeBreak} onChange={e => setSetup(s => ({ ...s, includeBreak: e.target.checked }))} /> Scheduled break</label>
               {setup.matchType === 'timed' && <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.drawsAllowed} onChange={e => setSetup(s => ({ ...s, drawsAllowed: e.target.checked }))} /> Timed draws allowed</label>}
-              <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.showcaseEnabled} onChange={e => setSetup(s => ({ ...s, showcaseEnabled: e.target.checked }))} /> Showcase Final ({setup.showcasePoints} pts)</label>
+                      <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.showcaseEnabled} onChange={e => setSetup(s => ({ ...s, showcaseEnabled: e.target.checked }))} /> Showcase / Tiebreak Final</label>
+              {setup.showcaseEnabled && <div className="flex items-center gap-2 min-h-10 rounded-lg bg-secondary/40 px-3"><Label className="text-xs whitespace-nowrap">Final points</Label><Input type="number" min="1" value={setup.showcasePoints} onChange={e => setSetup(s => ({ ...s, showcasePoints: e.target.value }))} className="h-8 w-20 bg-secondary" /></div>}
               <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.potEnabled} onChange={e => setSetup(s => ({ ...s, potEnabled: e.target.checked }))} /> Player of Tournament voting</label>
             </div>
           </div>
