@@ -355,6 +355,78 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await sync(); setTab('live');
   };
 
+  const finaliseEvent = async (winner, method, note = '') => {
+    if (!event || !['club_a','club_b','draw'].includes(winner)) return;
+    if (event.pot_enabled && event.pot_status === 'open') { toast.error('Player of the Tournament voting is still open.'); return; }
+    const now = new Date().toISOString();
+    await base44.entities.ClubChallengeEvent.update(event.id, {
+      status: 'completed', finalised_at: now,
+      showcase_resolution_method: method,
+      showcase_resolved_winner: winner,
+    });
+    await base44.entities.Tournament.update(tournament.id, { status: 'Completed', finalised_at: now });
+    await base44.entities.ClubChallengeAudit.create({
+      tenant_id: event.tenant_id, challenge_event_id: event.id,
+      action: 'event_finalised', user_id: currentUser?.id || '', occurred_at: now,
+      new_value_json: JSON.stringify({ winner, method, normal_score_a: score.clubA, normal_score_b: score.clubB, overall_score_a: overallScore.clubA, overall_score_b: overallScore.clubB }),
+      note,
+    });
+    toast.success(winner === 'draw' ? 'Club Challenge finalised as an overall draw' : `${winner === 'club_a' ? event.club_a_name : event.club_b_name} confirmed as Club Challenge winner`);
+    await sync(); setTab('results');
+  };
+
+  const resolveTieByMetrics = async () => {
+    if (score.clubA !== score.clubB) { toast.info('The normal Club Challenge points are not tied.'); return; }
+    const winner = resolveClubChallengeWinner(score, { allowDraw: false });
+    if (winner === 'tiebreak_required') { toast.error('Cumulative point differential is also tied. Play the Showcase Final or record an overall draw if allowed.'); return; }
+    await finaliseEvent(winner === 'clubA' ? 'club_a' : 'club_b', 'metrics', `Tie resolved by cumulative point differential (${score.gamePointDifference >= 0 ? '+' : ''}${score.gamePointDifference}).`);
+  };
+
+  const recordOverallDraw = async () => {
+    if (!event?.allow_overall_draw) { toast.error('Overall draw is not enabled for this event.'); return; }
+    if (score.clubA !== score.clubB) { toast.error('Overall draw can only be recorded when Club Challenge points are level.'); return; }
+    await finaliseEvent('draw', 'overall_draw', 'Normal points and chosen tiebreak outcome left the Club Challenge level.');
+  };
+
+  const createShowcaseFinal = async () => {
+    if (!event?.showcase_enabled) { toast.error('Showcase Final is not enabled in Setup.'); return; }
+    if (score.clubA !== score.clubB) { toast.error('The Showcase tiebreak is only needed when normal Club Challenge points are level.'); return; }
+    if (Number(event.showcase_points || 0) <= 0) { toast.error('Showcase Final points must be greater than zero.'); return; }
+    const ids = [showcaseSelection.aMale, showcaseSelection.aFemale, showcaseSelection.bMale, showcaseSelection.bFemale];
+    if (ids.some(id => !id)) { toast.error('Nominate one male and one female player from each club.'); return; }
+    const byId = Object.fromEntries(participants.map(p => [p.id, p]));
+    if (showcaseMatch && ['completed','draw'].includes(showcaseMatch.status)) { toast.error('The Showcase Final has already been scored.'); return; }
+    if (showcaseMatch) await base44.entities.ClubChallengeMatch.delete(showcaseMatch.id);
+    const maxNormalRound = normalMatches.length ? Math.max(...normalMatches.map(m => m.round_number)) : 0;
+    const created = await base44.entities.ClubChallengeMatch.create({
+      tenant_id: event.tenant_id, challenge_event_id: event.id, tournament_id: tournament.id,
+      draw_version: event.draw_version || 0, round_number: maxNormalRound + 1, court_number: 1, match_number: normalMatches.length + 1,
+      club_a_participant_ids: [showcaseSelection.aMale, showcaseSelection.aFemale],
+      club_b_participant_ids: [showcaseSelection.bMale, showcaseSelection.bFemale],
+      club_a_names: [byId[showcaseSelection.aMale]?.display_name, byId[showcaseSelection.aFemale]?.display_name].filter(Boolean),
+      club_b_names: [byId[showcaseSelection.bMale]?.display_name, byId[showcaseSelection.bFemale]?.display_name].filter(Boolean),
+      status: 'scheduled', winner: 'none', revision: 0, correction_count: 0, is_showcase: true,
+    });
+    const now = new Date().toISOString();
+    await base44.entities.ClubChallengeEvent.update(event.id, {
+      showcase_club_a_male_id: showcaseSelection.aMale, showcase_club_a_female_id: showcaseSelection.aFemale,
+      showcase_club_b_male_id: showcaseSelection.bMale, showcase_club_b_female_id: showcaseSelection.bFemale,
+      showcase_resolution_method: 'showcase_final', showcase_resolved_winner: 'none',
+    });
+    await base44.entities.ClubChallengeAudit.create({
+      tenant_id: event.tenant_id, challenge_event_id: event.id, match_id: created.id,
+      action: 'showcase_final_created', user_id: currentUser?.id || '', occurred_at: now,
+      new_value_json: JSON.stringify({ club_a: created.club_a_names, club_b: created.club_b_names, points: event.showcase_points }),
+    });
+    toast.success('Showcase Final created');
+    await sync(); setTab('results');
+  };
+
+  const finaliseShowcase = async () => {
+    if (!showcaseMatch || !['completed'].includes(showcaseMatch.status) || !['club_a','club_b'].includes(showcaseMatch.winner)) { toast.error('Save the Showcase Final result first.'); return; }
+    await finaliseEvent(showcaseMatch.winner, 'showcase_final', `Showcase Final worth ${event.showcase_points} Club Challenge points decided the tied event.`);
+  };
+
   const advanceRound = async () => {
     const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase);
     const unresolved = currentMatches.filter(m => !['completed', 'draw', 'retired', 'forfeit', 'abandoned', 'not_played'].includes(m.status));
@@ -365,12 +437,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       toast.success(`Round ${currentRound + 1} ready`);
       await refetchEvent();
     } else {
-      const issues = finalisationIssues({ matches, showcaseEnabled: event.showcase_enabled, showcaseComplete: !event.showcase_enabled, potEnabled: event.pot_enabled, potStatus: event.pot_status });
-      if (issues.length) { toast.error(issues.join(' ')); return; }
-      await base44.entities.ClubChallengeEvent.update(event.id, { status: 'completed', finalised_at: new Date().toISOString() });
-      await base44.entities.Tournament.update(tournament.id, { status: 'Completed', finalised_at: new Date().toISOString() });
-      toast.success('Club Challenge completed');
-      await sync();
+      if (score.completedMatches !== normalMatches.length) { toast.error('All normal match results must be resolved before the event can finish.'); return; }
+      if (score.clubA === score.clubB) {
+        toast.info('Normal Club Challenge points are tied. Choose Showcase Final, metrics, or overall draw in Results.');
+        setTab('results');
+        return;
+      }
+      await finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Club Challenge matches.');
     }
   };
 
