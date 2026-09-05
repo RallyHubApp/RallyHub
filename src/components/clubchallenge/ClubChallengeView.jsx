@@ -434,16 +434,18 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const timerAction = async (action, phase) => {
-    if (!event) return;
+    if (!event) return false;
     try {
       const res = await base44.functions.invoke('updateClubChallengeTimer', { eventId: event.id, action, phase, expectedRevision: Number(event.timer_revision || 0) });
-      if (res.data?.conflict) { toast.error('Timer changed on another device. RallyHub has refreshed the authoritative timer.'); await refetchEvent(); return; }
-      if (res.data?.error) { toast.error(res.data.error); return; }
+      if (res.data?.conflict) { toast.error('Timer changed on another device. RallyHub has refreshed the authoritative timer.'); await refetchEvent(); return false; }
+      if (res.data?.error) { toast.error(res.data.error); return false; }
       await refetchEvent();
+      return true;
     } catch (e) {
       if (e?.response?.status === 409) toast.error('Timer changed on another device. Refreshing authoritative timer.');
       else toast.error(e?.response?.data?.error || e?.message || 'Could not update timer');
       await refetchEvent();
+      return false;
     }
   };
 
