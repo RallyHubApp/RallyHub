@@ -159,10 +159,15 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
 
   const saveState = async (newState) => {
     const hasGeneratedFixtures = !!newState.rounds?.length;
+    const tournamentStatus = newState.status === 'Completed'
+      ? 'Completed'
+      : hasGeneratedFixtures
+        ? 'In Progress'
+        : tournament.status;
     await base44.entities.Tournament.update(tournament.id, {
       kotc_state: JSON.stringify(newState),
-      kotc_current_round: newState.currentRound || tournament.kotc_current_round || 0,
-      status: newState.status || (hasGeneratedFixtures ? 'In Progress' : tournament.status),
+      kotc_current_round: newState.currentRound ?? tournament.kotc_current_round ?? 0,
+      status: tournamentStatus,
     });
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
   };
@@ -298,7 +303,11 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
       }
     }
 
-    await saveState({ ...state, knockoutState: newKnockoutState });
+    const finalResult = newKnockoutState.bracket.find(m => m.stage === 'Final')?.result;
+    const thirdPlace = newKnockoutState.bracket.find(m => m.stage === '3rd');
+    const knockoutComplete = !!finalResult && (!thirdPlace || !!thirdPlace.result);
+    await saveState({ ...state, knockoutState: newKnockoutState, status: knockoutComplete ? 'Completed' : state.status });
+    if (knockoutComplete) toast.success('Tournival complete! Final standings are now locked in.');
   };
 
   const STAGE_LABELS = { QF: 'Semi-Finals', SF: 'Finals', Final: 'Champion' };
@@ -415,6 +424,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
           onSaveResult={handleSaveResult}
           onCompleteRound={handleCompleteRound}
           isAdmin={isAdmin}
+          matchFormat={state.matchFormat}
         />
       )}
 
