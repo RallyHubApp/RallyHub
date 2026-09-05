@@ -59,7 +59,7 @@ Purpose: maximise confidence before the next live deployment while preserving th
 - RES-004 Timer sleep/reopen resynchronisation — PASS-WITH-FIX/LIMITATION (15-assertion static sleep/reopen contract + final 32-player rehearsal + lint/build pass; authoritative timer state persists `started_at`, `remaining_seconds` and revision server-side, internal/public displays reconstruct elapsed time from persisted state, and both now force an immediate clock/state refresh on visibility return or window focus instead of waiting up to 5s for the next poll. Fixed missing foreground-resync handlers. Remaining limitation: elapsed display still depends on the device clock relative to the server timestamp, so real mobile sleep/background behaviour and any material device-clock skew require Gate 4 physical verification.)
 
 ### Phase F — Pre-deploy release gate
-- REL-001 Gate 1 engine suite
+- REL-001 Gate 1 engine suite — PASS (canonical 16+16 / 4 courts / 12 rounds / 48 matches / 6 games each; partner repeats 0; max opponent repeat 2; consecutive rests 0; avg strength gap 2.33; generalised 12+12, 13+13, 20+20 and 24+24 configurations across 3–6 courts pass; variable timing, timed draws, 11/15 win-by-1/2 validation, Showcase scoring, tiebreak and revision-conflict helpers pass)
 - REL-002 Gate 3 foundation suite
 - REL-003 Gate 3 final 32-player rehearsal
 - REL-004 Production build
