@@ -591,64 +591,43 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     window.setTimeout(() => window.print(), 100);
   };
   const applyReplacement = async () => {
-    if (!event || !replacement.outgoingId || !replacement.incomingName.trim()) { toast.error('Choose the outgoing player and enter the replacement name.'); return; }
-    const outgoing = participants.find(p => p.id === replacement.outgoingId);
-    if (!outgoing) return;
-    const identityName = replacement.incomingName.trim().toLowerCase().replace(/\s+/g, ' ');
-    if (participants.some(p => p.id !== outgoing.id && p.status === 'active' && p.display_name.trim().toLowerCase().replace(/\s+/g, ' ') === identityName)) { toast.error('That replacement name is already an active participant in this Club Challenge.'); return; }
-    const effectiveRound = Math.max(1, currentRound);
-    const now = new Date().toISOString();
-    const incoming = await base44.entities.ClubChallengeParticipant.create({
-      tenant_id: event.tenant_id, challenge_event_id: event.id, tournament_id: tournament.id,
-      side: outgoing.side, display_name: replacement.incomingName.trim(), gender: replacement.incomingGender || outgoing.gender,
-      event_rank: outgoing.event_rank, status: 'active', available_from_round: effectiveRound,
-      replacement_for_participant_id: outgoing.id, replacement_effective_round: effectiveRound,
-      unique_identity_key: `replacement-${outgoing.side}-${replacement.incomingName.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-')}`, 
-    });
-    await base44.entities.ClubChallengeParticipant.update(outgoing.id, {
-      status: replacement.status, replaced_by_participant_id: incoming.id,
-      withdrawn_at: now, withdrawal_reason: replacement.reason || replacement.status,
-    });
-    const affected = normalMatches.filter(m => m.round_number >= effectiveRound && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status) && ((m.club_a_participant_ids || []).includes(outgoing.id) || (m.club_b_participant_ids || []).includes(outgoing.id)));
-    for (const m of affected) {
-      const side = outgoing.side === 'club_a' ? 'club_a' : 'club_b';
-      const idsKey = `${side}_participant_ids`, namesKey = `${side}_names`;
-      const ids = [...(m[idsKey] || [])], names = [...(m[namesKey] || [])];
-      const idx = ids.indexOf(outgoing.id);
-      if (idx >= 0) { ids[idx] = incoming.id; names[idx] = incoming.display_name; }
-      await base44.entities.ClubChallengeMatch.update(m.id, { [idsKey]: ids, [namesKey]: names, revision: Number(m.revision || 0) + 1 });
-    }
-    await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_stale: true });
-    await base44.entities.ClubChallengeAudit.create({
-      tenant_id: event.tenant_id, challenge_event_id: event.id, action: 'participant_replaced', user_id: currentUser?.id || '', occurred_at: now,
-      old_value_json: JSON.stringify({ participant_id: outgoing.id, name: outgoing.display_name, status: outgoing.status }),
-      new_value_json: JSON.stringify({ participant_id: incoming.id, name: incoming.display_name, effective_round: effectiveRound, fixtures_changed: affected.length }),
-      note: replacement.reason || `${replacement.status} replacement`,
-    });
-    setReplacement({ outgoingId: '', incomingName: '', incomingGender: '', reason: '', status: 'withdrawn' });
-    toast.success(`${outgoing.display_name} replaced from Round ${effectiveRound}; ${affected.length} future fixture${affected.length === 1 ? '' : 's'} updated.`);
-    await sync();
+    if (!event || !canManageEvent || !replacement.outgoingId || !replacement.incomingName.trim()) { toast.error('Choose the outgoing player and enter the replacement name.'); return; }
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+        eventId:event.id, action:'replace', outgoingParticipantId:replacement.outgoingId,
+        incomingName:replacement.incomingName.trim(), incomingGender:replacement.incomingGender,
+        reason:replacement.reason, withdrawalStatus:replacement.status,
+      });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      setReplacement({ outgoingId:'', incomingName:'', incomingGender:'', reason:'', status:'withdrawn' });
+      toast.success(`${res.data.outgoingName} replaced from Round ${res.data.effectiveRound}; ${res.data.affected} future fixture${res.data.affected === 1 ? '' : 's'} updated.`);
+      await sync();
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not apply replacement'); }
   };
 
   const withdrawWithoutReplacement = async () => {
-    if (!event || !replacement.outgoingId) { toast.error('Choose the player who is withdrawing.'); return; }
-    const outgoing = participants.find(p => p.id === replacement.outgoingId); if (!outgoing) return;
-    const effectiveRound = Math.max(1, currentRound), now = new Date().toISOString();
-    const affected = normalMatches.filter(m => m.round_number >= effectiveRound && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status) && ((m.club_a_participant_ids||[]).includes(outgoing.id) || (m.club_b_participant_ids||[]).includes(outgoing.id)));
-    for (const m of affected) await base44.entities.ClubChallengeMatch.update(m.id, { status: 'not_played', winner: 'none', revision: Number(m.revision || 0) + 1 });
-    await base44.entities.ClubChallengeParticipant.update(outgoing.id, { status: replacement.status === 'replaced' ? 'withdrawn' : replacement.status, withdrawn_at: now, withdrawal_reason: replacement.reason || 'Continued short without replacement' });
-    await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_stale: true });
-    await base44.entities.ClubChallengeAudit.create({ tenant_id: event.tenant_id, challenge_event_id: event.id, action: 'participant_withdrawn_no_replacement', user_id: currentUser?.id || '', occurred_at: now, old_value_json: JSON.stringify({participant_id: outgoing.id, name: outgoing.display_name}), new_value_json: JSON.stringify({effective_round: effectiveRound, matches_not_played: affected.length}), note: replacement.reason || 'Organiser chose to continue short.' });
-    setReplacement({ outgoingId: '', incomingName: '', incomingGender: '', reason: '', status: 'withdrawn' }); toast.success(`${outgoing.display_name} withdrawn; ${affected.length} future match${affected.length === 1 ? '' : 'es'} marked Not Played.`); await sync();
+    if (!event || !canManageEvent || !replacement.outgoingId) { toast.error('Choose the player who is withdrawing.'); return; }
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+        eventId:event.id, action:'continue_short', outgoingParticipantId:replacement.outgoingId,
+        reason:replacement.reason, withdrawalStatus:replacement.status,
+      });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      setReplacement({ outgoingId:'', incomingName:'', incomingGender:'', reason:'', status:'withdrawn' });
+      toast.success(`${res.data.outgoingName} withdrawn; ${res.data.affected} future match${res.data.affected === 1 ? '' : 'es'} marked Not Played.`);
+      await sync();
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not continue short'); }
   };
   const applyLateArrival = async () => {
-    if (!event || !lateArrival.participantId) return;
-    const p = participants.find(x => x.id === lateArrival.participantId); if (!p) return;
-    const fromRound = Math.max(currentRound || 1, Number(lateArrival.round || 1));
-    await base44.entities.ClubChallengeParticipant.update(p.id, { status: 'late', available_from_round: fromRound });
-    await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_stale: true });
-    await base44.entities.ClubChallengeAudit.create({ tenant_id: event.tenant_id, challenge_event_id: event.id, action: 'late_arrival_set', user_id: currentUser?.id || '', occurred_at: new Date().toISOString(), new_value_json: JSON.stringify({participant_id:p.id, available_from_round:fromRound}) });
-    toast.success(`${p.display_name} marked available from Round ${fromRound}. Draw consequences require organiser review.`); await sync();
+    if (!event || !canManageEvent || !lateArrival.participantId) return;
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+        eventId:event.id, action:'late_arrival', participantId:lateArrival.participantId, fromRound:Number(lateArrival.round || currentRound || 1),
+      });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      toast.success(`${res.data.participantName} marked available from Round ${res.data.fromRound}. Draw consequences require organiser review.`);
+      await sync();
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not set late arrival'); }
   };
   const proposeEventDayAdjustment = () => {
     const courts = Number(eventDayAdjust.courts || event?.courts || 0), minutes = Number(eventDayAdjust.availableMinutes || event?.available_minutes || 0);
