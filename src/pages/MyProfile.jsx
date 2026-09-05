@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
-import { User, Calendar, Trophy, TrendingUp, TrendingDown, Upload, RefreshCw, Link2, CheckCircle2, Loader2 } from 'lucide-react';
+import { User, Calendar, Trophy, RefreshCw, Link2, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';

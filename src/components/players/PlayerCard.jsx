@@ -1,9 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Badge } from '@/components/ui/badge';
-import { Trophy, TrendingUp, TrendingDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function PlayerCard({ player, index = 0 }) {
   const winRate = player.matches_played > 0

@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Camera, Loader2, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ProfileAvatarUpload({ currentUrl, initials, onUploaded }) {

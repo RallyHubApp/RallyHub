@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, Download, Link2, UserPlus, FileSpreadsheet, Check } from 'lucide-react';
+import { Users, Download, Link2, UserPlus, FileSpreadsheet, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';

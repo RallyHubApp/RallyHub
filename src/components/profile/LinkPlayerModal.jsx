@@ -5,9 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Link2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, Link2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 export default function LinkPlayerModal({ open, onOpenChange, user, onLinked }) {
   const [search, setSearch] = useState('');

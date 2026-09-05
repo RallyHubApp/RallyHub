@@ -2,7 +2,7 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, XCircle, Calendar, Mail } from 'lucide-react';
+import { CheckCircle2, XCircle, Calendar } from 'lucide-react';
 import GlassCard from '@/components/shared/GlassCard';
 
 export default function AccessCodeValidationTab() {

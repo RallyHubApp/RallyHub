@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Crown, Users, Clock, ChevronRight, Trophy, RotateCcw, RefreshCw, UserMinus, Pencil, X, Play, Hash, Wifi, UserPlus } from 'lucide-react';
+import { Crown, Users, Clock, ChevronRight, Trophy, RefreshCw, UserMinus, Pencil, X, Play, Hash, Wifi, UserPlus } from 'lucide-react';
 import PublicTournivalView from '@/components/tournival/PublicTournivalView';
 import PublicEventLanding from '@/components/public/PublicEventLanding';
 import { toast } from 'sonner';

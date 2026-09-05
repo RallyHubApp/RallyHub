@@ -1,12 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Zap, Users, UserPlus, X, List, BarChart2, Trophy, Swords, ClipboardList, Link2, Check, FileSpreadsheet } from 'lucide-react';
+import { Zap, Users, UserPlus, X, List, BarChart2, Trophy, ClipboardList, Link2, Check, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 import {
   generateGroupFixtures,
   computeLeaderboard,

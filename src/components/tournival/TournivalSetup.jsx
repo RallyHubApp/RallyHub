@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, Hash, Play, Zap, Timer, Eye } from 'lucide-react';
+import { Hash, Play, Zap, Timer, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { estimateDuration, generateGroupFixtures } from '@/lib/tournivalEngine';
 import TournivalSeedOrder from './TournivalSeedOrder';
