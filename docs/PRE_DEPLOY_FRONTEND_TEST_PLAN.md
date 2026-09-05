@@ -62,7 +62,7 @@ Purpose: maximise confidence before the next live deployment while preserving th
 - REL-001 Gate 1 engine suite — PASS (canonical 16+16 / 4 courts / 12 rounds / 48 matches / 6 games each; partner repeats 0; max opponent repeat 2; consecutive rests 0; avg strength gap 2.33; generalised 12+12, 13+13, 20+20 and 24+24 configurations across 3–6 courts pass; variable timing, timed draws, 11/15 win-by-1/2 validation, Showcase scoring, tiebreak and revision-conflict helpers pass)
 - REL-002 Gate 3 foundation suite — PASS (48 match records; separate-match scoring, timed draw handling, stale-edit conflict protection, correction audit, score aggregation, future-only replacement, and finalisation blockers all pass)
 - REL-003 Gate 3 final 32-player rehearsal — PASS (32 players / 48 matches; fairness, concurrent scorers, stale/offline conflict handling, replacement, 4→3 court disruption, metrics, Showcase, finalisation blockers and role-security contract all pass)
-- REL-004 Production build
+- REL-004 Production build — PASS (`npm run build` / Vite production build exits 0 after all SEC/RES fixes; only non-blocking Browserslist caniuse-lite age warning remains)
 - REL-005 No unresolved P0/P1 defects
 - REL-006 Create final pre-deploy checkpoint
 - REL-007 Deploy once for Gate 4 physical/browser/device rehearsal
