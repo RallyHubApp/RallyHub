@@ -1,0 +1,78 @@
+{
+  "name": "ClubChallengeScorer",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "challenge_event_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "owner",
+        "organiser",
+        "scorer",
+        "display"
+      ],
+      "default": "scorer"
+    },
+    "can_score": {
+      "type": "boolean",
+      "default": true
+    },
+    "can_correct_score": {
+      "type": "boolean",
+      "default": false
+    },
+    "can_manage_draw": {
+      "type": "boolean",
+      "default": false
+    },
+    "can_manage_players": {
+      "type": "boolean",
+      "default": false
+    },
+    "can_finalise": {
+      "type": "boolean",
+      "default": false
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "tenant_id",
+    "challenge_event_id",
+    "user_id",
+    "role",
+    "active"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

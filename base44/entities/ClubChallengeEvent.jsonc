@@ -1,0 +1,209 @@
+{
+  "name": "ClubChallengeEvent",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "host_club_id": {
+      "type": "string"
+    },
+    "rules_version": {
+      "type": "string",
+      "default": "1.0"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "draw_generated",
+        "draw_approved",
+        "in_progress",
+        "paused",
+        "completed",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "club_a_name": {
+      "type": "string"
+    },
+    "club_a_logo_url": {
+      "type": "string"
+    },
+    "club_a_primary_colour": {
+      "type": "string"
+    },
+    "club_a_secondary_colour": {
+      "type": "string"
+    },
+    "club_b_name": {
+      "type": "string"
+    },
+    "club_b_logo_url": {
+      "type": "string"
+    },
+    "club_b_primary_colour": {
+      "type": "string"
+    },
+    "club_b_secondary_colour": {
+      "type": "string"
+    },
+    "courts": {
+      "type": "number"
+    },
+    "available_minutes": {
+      "type": "number"
+    },
+    "play_minutes": {
+      "type": "number"
+    },
+    "changeover_minutes": {
+      "type": "number"
+    },
+    "include_break": {
+      "type": "boolean",
+      "default": false
+    },
+    "break_minutes": {
+      "type": "number"
+    },
+    "break_after_round": {
+      "type": "number"
+    },
+    "normal_match_type": {
+      "type": "string",
+      "enum": [
+        "timed",
+        "points"
+      ],
+      "default": "timed"
+    },
+    "normal_target_points": {
+      "type": "number"
+    },
+    "normal_win_by": {
+      "type": "number"
+    },
+    "timed_draws_allowed": {
+      "type": "boolean",
+      "default": true
+    },
+    "win_points": {
+      "type": "number",
+      "default": 2
+    },
+    "draw_points": {
+      "type": "number",
+      "default": 1
+    },
+    "loss_points": {
+      "type": "number",
+      "default": 0
+    },
+    "composition_mode": {
+      "type": "string",
+      "enum": [
+        "open",
+        "mixed_preferred",
+        "mixed_required",
+        "mens",
+        "womens",
+        "category"
+      ],
+      "default": "open"
+    },
+    "allow_overall_draw": {
+      "type": "boolean",
+      "default": true
+    },
+    "showcase_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "showcase_points": {
+      "type": "number",
+      "default": 0
+    },
+    "pot_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "pot_status": {
+      "type": "string",
+      "enum": [
+        "disabled",
+        "closed",
+        "open",
+        "revealed"
+      ],
+      "default": "disabled"
+    },
+    "draw_version": {
+      "type": "number",
+      "default": 0
+    },
+    "draw_approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "draw_approved_by": {
+      "type": "string"
+    },
+    "fairness_json": {
+      "type": "string"
+    },
+    "current_round": {
+      "type": "number",
+      "default": 0
+    },
+    "timer_state_json": {
+      "type": "string"
+    },
+    "event_pack_version": {
+      "type": "number",
+      "default": 0
+    },
+    "event_pack_stale": {
+      "type": "boolean",
+      "default": true
+    },
+    "finalised_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "tournament_id",
+    "rules_version",
+    "status",
+    "club_a_name",
+    "club_b_name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

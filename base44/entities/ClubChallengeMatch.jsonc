@@ -1,0 +1,135 @@
+{
+  "name": "ClubChallengeMatch",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "challenge_event_id": {
+      "type": "string"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "draw_version": {
+      "type": "number"
+    },
+    "round_number": {
+      "type": "number"
+    },
+    "court_number": {
+      "type": "number"
+    },
+    "club_a_participant_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "club_b_participant_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "club_a_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "club_b_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "in_progress",
+        "completed",
+        "draw",
+        "retired",
+        "forfeit",
+        "abandoned",
+        "not_played"
+      ],
+      "default": "scheduled"
+    },
+    "score_a": {
+      "type": "number"
+    },
+    "score_b": {
+      "type": "number"
+    },
+    "winner": {
+      "type": "string",
+      "enum": [
+        "club_a",
+        "club_b",
+        "draw",
+        "none"
+      ]
+    },
+    "revision": {
+      "type": "number",
+      "default": 0
+    },
+    "scored_by_user_id": {
+      "type": "string"
+    },
+    "scored_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_corrected_by_user_id": {
+      "type": "string"
+    },
+    "last_corrected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correction_count": {
+      "type": "number",
+      "default": 0
+    },
+    "is_showcase": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "tenant_id",
+    "challenge_event_id",
+    "tournament_id",
+    "draw_version",
+    "round_number",
+    "court_number",
+    "status",
+    "revision"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

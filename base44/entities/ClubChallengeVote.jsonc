@@ -1,0 +1,68 @@
+{
+  "name": "ClubChallengeVote",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "challenge_event_id": {
+      "type": "string"
+    },
+    "voter_identity_key": {
+      "type": "string"
+    },
+    "voter_participant_id": {
+      "type": "string"
+    },
+    "nominee_participant_id": {
+      "type": "string"
+    },
+    "access_route": {
+      "type": "string",
+      "enum": [
+        "logged_in",
+        "guest",
+        "qr"
+      ]
+    },
+    "cast_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "tenant_id",
+    "challenge_event_id",
+    "voter_identity_key",
+    "voter_participant_id",
+    "nominee_participant_id",
+    "access_route",
+    "cast_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
