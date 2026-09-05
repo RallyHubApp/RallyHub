@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       if (remainingNow <= 0) return Response.json({ error: 'Timer has finished.' }, { status: 400 });
       next = { ...current, running: true, remaining_seconds: remainingNow, started_at: now.toISOString() };
     } else if (action === 'add_minute') {
-      next = { ...current, running: false, remaining_seconds: remainingNow + 60, started_at: null, phase: current.phase || 'play', round: Number(event.current_round || 1) };
+      next = { ...current, running: !!current.running, remaining_seconds: remainingNow + 60, started_at: current.running ? now.toISOString() : null, phase: current.phase || 'play', round: Number(event.current_round || 1) };
     } else if (action === 'reset') {
       next = { phase: 'idle', running: false, remaining_seconds: 0, started_at: null, round: Number(event.current_round || 1) };
     } else {
