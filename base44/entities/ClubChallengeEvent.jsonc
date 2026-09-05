@@ -116,6 +116,10 @@
       ],
       "default": "open"
     },
+    "junior_display_mode": {
+      "type": "boolean",
+      "default": false
+    },
     "allow_overall_draw": {
       "type": "boolean",
       "default": true
