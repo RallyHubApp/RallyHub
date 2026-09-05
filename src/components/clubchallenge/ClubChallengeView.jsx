@@ -556,11 +556,23 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
   const proposeEventDayAdjustment = () => {
     const courts = Number(eventDayAdjust.courts || event?.courts || 0), minutes = Number(eventDayAdjust.availableMinutes || event?.available_minutes || 0);
-    if (!courts || !minutes) { toast.error('Enter available courts and remaining event minutes.'); return; }
-    const remainingRounds = Math.max(0, Math.max(...rounds) - currentRound + 1), block = Number(event.play_minutes||10) + Number(event.changeover_minutes||2);
-    const capacityRounds = Math.max(0, Math.floor(minutes / Math.max(1, block))), recommendedRounds = Math.min(remainingRounds, capacityRounds);
-    const msg = `${courts} court${courts===1?'':'s'}, ${minutes} min remaining: approximately ${recommendedRounds} of ${remainingRounds} remaining rounds fit at the current ${block}-minute block. Completed matches stay locked.`;
-    addSimLog(`Event-day proposal: ${msg}`, recommendedRounds >= remainingRounds ? 'pass' : 'info'); toast.info(msg);
+    if (!courts || !minutes || !rounds.length) { toast.error('Enter available courts and remaining event minutes.'); return; }
+    const unresolved = normalMatches.filter(m => m.round_number >= currentRound && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status)).sort((a,b)=>(a.round_number-b.round_number)||(a.court_number-b.court_number));
+    const block = Number(event.play_minutes||10) + Number(event.changeover_minutes||2), slots = Math.max(0, Math.floor(minutes / Math.max(1, block)) * courts);
+    const keep = unresolved.slice(0, slots), drop = unresolved.slice(slots);
+    const changes = keep.map((m,i) => ({ id:m.id, oldRound:m.round_number, oldCourt:m.court_number, newRound:currentRound + Math.floor(i/courts), newCourt:(i%courts)+1 })).filter(x=>x.oldRound!==x.newRound || x.oldCourt!==x.newCourt);
+    const proposal = { courts, minutes, block, unresolved: unresolved.length, keepIds: keep.map(m=>m.id), dropIds: drop.map(m=>m.id), changes };
+    setEventDayProposal(proposal);
+    toast.info(`${keep.length} future matches fit; ${drop.length} would be marked Not Played. Review before confirming.`);
+  };
+  const confirmEventDayAdjustment = async () => {
+    if (!eventDayProposal || !isAdmin) return;
+    const now = new Date().toISOString();
+    for (const c of eventDayProposal.changes) { const m = normalMatches.find(x=>x.id===c.id); if (m && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status)) await base44.entities.ClubChallengeMatch.update(m.id,{round_number:c.newRound,court_number:c.newCourt,revision:Number(m.revision||0)+1}); }
+    for (const id of eventDayProposal.dropIds) { const m=normalMatches.find(x=>x.id===id); if (m && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status)) await base44.entities.ClubChallengeMatch.update(id,{status:'not_played',winner:'none',revision:Number(m.revision||0)+1}); }
+    await base44.entities.ClubChallengeEvent.update(event.id,{courts:eventDayProposal.courts,available_minutes:eventDayProposal.minutes,event_pack_stale:true});
+    await base44.entities.ClubChallengeAudit.create({tenant_id:event.tenant_id,challenge_event_id:event.id,action:'event_day_schedule_adjusted',user_id:currentUser?.id||'',occurred_at:now,old_value_json:JSON.stringify({courts:event.courts,available_minutes:event.available_minutes}),new_value_json:JSON.stringify(eventDayProposal),note:'Organiser confirmed court/time disruption proposal; completed fixtures preserved.'});
+    toast.success(`Schedule adjusted: ${eventDayProposal.changes.length} future fixture positions changed; ${eventDayProposal.dropIds.length} marked Not Played.`); setEventDayProposal(null); await sync();
   };
 
   const finaliseEvent = async (winner, method, note = '') => {
