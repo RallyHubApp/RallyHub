@@ -442,6 +442,7 @@ export default function TournivalView({ tournament, players, allPlayers, queryCl
           knockoutState={state.knockoutState}
           isAdmin={isAdmin}
           onSaveResult={handleKnockoutResult}
+          matchFormat={state.matchFormat}
         />
       )}
     </div>
