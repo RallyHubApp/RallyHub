@@ -30,6 +30,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import IsolationTest from '@/pages/IsolationTest';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -76,6 +77,7 @@ const AuthenticatedRoutes = () => (
       <Route path="analytics" element={<Analytics />} />
       <Route path="my-profile" element={<MyProfile />} />
       <Route path="admin" element={<AdminPanel />} />
+      <Route path="isolation-test" element={<IsolationTest />} />
     </Route>
     <Route path="*" element={<Navigate to="/app" replace />} />
   </Routes>
