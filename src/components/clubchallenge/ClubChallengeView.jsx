@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Check, CheckCircle2, Clock, GripVertical, ListChecks, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users } from 'lucide-react';
+import { Check, CheckCircle2, Clock, GripVertical, ImagePlus, ListChecks, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   analyseClubChallengeFairness,
@@ -32,8 +32,8 @@ const TABS = [
 ];
 
 const DEFAULT_SETUP = {
-  clubAName: 'Clare Pickleball Club', clubAPrimary: '#2563eb', clubASecondary: '#facc15',
-  clubBName: 'Galway Pickleball', clubBPrimary: '#7f1d1d', clubBSecondary: '#f8fafc',
+  clubAName: 'Clare Pickleball Club', clubALogo: '', clubAPrimary: '#2563eb', clubASecondary: '#facc15',
+  clubBName: 'Galway Pickleball', clubBLogo: '', clubBPrimary: '#7f1d1d', clubBSecondary: '#f8fafc',
   courts: 4, availableMinutes: 180, playMinutes: 10, changeoverMinutes: 2,
   includeBreak: true, breakMinutes: 20, breakAfterRound: 6,
   matchType: 'timed', target: 11, winBy: 1, drawsAllowed: true,
@@ -42,10 +42,10 @@ const DEFAULT_SETUP = {
 
 function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
 
-function ClubBadge({ name, primary, secondary }) {
+function ClubBadge({ name, logo, primary, secondary }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border border-border px-2.5 sm:px-3 py-2 bg-secondary/40 min-w-0 flex-1 sm:flex-none">
-      <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: primary || '#334155', color: secondary || '#fff' }}>{(name || '?').slice(0, 2).toUpperCase()}</span>
+      {logo ? <img src={logo} alt={`${name || 'Club'} logo`} className="w-7 h-7 rounded-full object-contain bg-white p-0.5 shrink-0" /> : <span className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: primary || '#334155', color: secondary || '#fff' }}>{(name || '?').slice(0, 2).toUpperCase()}</span>}
       <span className="text-xs font-semibold text-foreground truncate min-w-0">{name}</span>
     </div>
   );
@@ -142,9 +142,19 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [manual, setManual] = useState({ club_a: '', club_b: '' });
   const [saving, setSaving] = useState(false);
   const [simulating, setSimulating] = useState(false);
+  const [logoUploading, setLogoUploading] = useState('');
   const [simLog, setSimLog] = useState([]);
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
+  const { data: hostClub } = useQuery({
+    queryKey: ['cc-host-club', tournament.host_club_id || currentUser?.active_club_id],
+    queryFn: async () => {
+      const clubId = tournament.host_club_id || currentUser?.active_club_id;
+      if (!clubId) return null;
+      return (await base44.entities.Club.filter({ id: clubId }))[0] || null;
+    },
+    enabled: !!(tournament.host_club_id || currentUser?.active_club_id),
+  });
   const { data: event, refetch: refetchEvent } = useQuery({
     queryKey: ['club-challenge-event', tournament.id],
     queryFn: async () => (await base44.entities.ClubChallengeEvent.filter({ tournament_id: tournament.id }))[0] || null,
@@ -164,8 +174,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!event) return;
     setSetup(s => ({
       ...s,
-      clubAName: event.club_a_name || s.clubAName, clubAPrimary: event.club_a_primary_colour || s.clubAPrimary, clubASecondary: event.club_a_secondary_colour || s.clubASecondary,
-      clubBName: event.club_b_name || s.clubBName, clubBPrimary: event.club_b_primary_colour || s.clubBPrimary, clubBSecondary: event.club_b_secondary_colour || s.clubBSecondary,
+      clubAName: event.club_a_name || s.clubAName, clubALogo: event.club_a_logo_url || s.clubALogo, clubAPrimary: event.club_a_primary_colour || s.clubAPrimary, clubASecondary: event.club_a_secondary_colour || s.clubASecondary,
+      clubBName: event.club_b_name || s.clubBName, clubBLogo: event.club_b_logo_url || s.clubBLogo, clubBPrimary: event.club_b_primary_colour || s.clubBPrimary, clubBSecondary: event.club_b_secondary_colour || s.clubBSecondary,
       courts: event.courts ?? s.courts, availableMinutes: event.available_minutes ?? s.availableMinutes, playMinutes: event.play_minutes ?? s.playMinutes,
       changeoverMinutes: event.changeover_minutes ?? s.changeoverMinutes, includeBreak: event.include_break ?? s.includeBreak,
       breakMinutes: event.break_minutes ?? s.breakMinutes, breakAfterRound: event.break_after_round ?? s.breakAfterRound,
@@ -174,6 +184,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       showcaseEnabled: !!event.showcase_enabled, showcasePoints: event.showcase_points ?? s.showcasePoints, potEnabled: !!event.pot_enabled,
     }));
   }, [event?.id]);
+
+  React.useEffect(() => {
+    if (event || !hostClub) return;
+    setSetup(s => ({ ...s, clubAName: hostClub.name || s.clubAName, clubALogo: hostClub.logo_url || s.clubALogo }));
+  }, [event, hostClub?.id]);
 
   const aPlayers = participants.filter(p => p.side === 'club_a');
   const bPlayers = participants.filter(p => p.side === 'club_b');
@@ -196,8 +211,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setSaving(true);
     const data = createChallengeEventDraft({
       tournament: { ...tournament, tenant_id: tenantId, host_club_id: hostClubId },
-      hostClub: { id: hostClubId, name: setup.clubAName, primary_colour: setup.clubAPrimary, secondary_colour: setup.clubASecondary },
-      opponent: { name: setup.clubBName, primary_colour: setup.clubBPrimary, secondary_colour: setup.clubBSecondary },
+      hostClub: { id: hostClubId, name: setup.clubAName, logo_url: setup.clubALogo, primary_colour: setup.clubAPrimary, secondary_colour: setup.clubASecondary },
+      opponent: { name: setup.clubBName, logo_url: setup.clubBLogo, primary_colour: setup.clubBPrimary, secondary_colour: setup.clubBSecondary },
       setup: {
         courts: number(setup.courts, 4), availableMinutes: number(setup.availableMinutes, 180), playMinutes: number(setup.playMinutes, 10), changeoverMinutes: number(setup.changeoverMinutes, 2),
         includeBreak: setup.includeBreak, breakMinutes: number(setup.breakMinutes, 20), breakAfterRound: number(setup.breakAfterRound, 6),
@@ -216,6 +231,18 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       setTab('teams');
     } catch (e) { toast.error(e?.message || 'Could not save setup'); }
     setSaving(false);
+  };
+
+  const uploadClubLogo = async (side, file) => {
+    if (!file) return;
+    setLogoUploading(side);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      if (!file_url) throw new Error('No file URL returned');
+      setSetup(s => ({ ...s, [side === 'A' ? 'clubALogo' : 'clubBLogo']: file_url }));
+      toast.success(`${side === 'A' ? setup.clubAName : setup.clubBName} logo uploaded`);
+    } catch (e) { toast.error(e?.message || 'Could not upload logo'); }
+    finally { setLogoUploading(''); }
   };
 
   const clearParticipants = async () => {
@@ -362,19 +389,23 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       addSimLog(`${label}: ${unresolved.length} results simulated`, 'pass');
       toast.success(`${unresolved.length} simulated results saved`);
       await sync();
+      return true;
     } catch (e) {
       addSimLog(`${label}: FAILED — ${e?.message || e}`, 'fail');
       toast.error(e?.message || 'Simulation failed');
+      return false;
     } finally { setSimulating(false); }
   };
   const simulateCurrentRound = () => simulateMatches(currentMatches, `Round ${currentRound}`);
   const simulateAllRemaining = async () => {
     const normal = matches.filter(m => !m.is_showcase);
-    await simulateMatches(normal, 'All normal matches');
+    const success = await simulateMatches(normal, 'All normal matches');
+    if (!success) return;
     const maxRound = Math.max(...normal.map(m => m.round_number));
     if (Number.isFinite(maxRound)) {
       await base44.entities.ClubChallengeEvent.update(event.id, { status: 'in_progress', current_round: maxRound });
       await refetchEvent();
+      setTab('results');
     }
   };
   const runConflictProbe = async () => {
@@ -449,7 +480,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><ShieldCheck className="w-5 h-5 text-primary" /></div>
           <div><p className="font-semibold text-foreground">Club Challenge v1.0</p><p className="text-xs text-muted-foreground">{event ? `Status: ${event.status.replaceAll('_', ' ')}` : 'Configure the inter-club event'}</p></div>
         </div>
-        {event && <div className="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>}
+        {event && <div className="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} logo={event.club_a_logo_url} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} logo={event.club_b_logo_url} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>}
       </div>
 
       <div className="rounded-xl border border-border bg-card/50 p-2 sm:p-3">
@@ -458,7 +489,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             const complete = index < stageIndex;
             const current = index === stageIndex;
             return (
-              <button key={id} onClick={() => setTab(id)} className={cn('group flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium whitespace-nowrap min-h-10 snap-start transition-colors', tab === id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary')}>
+              <button key={id} onClick={() => {
+                if (id === 'teams' && !event) { toast.info('Save Setup first, then Teams will open.'); return; }
+                if (id === 'draw' && !matches.length) { toast.info('Generate the draw from Teams first.'); return; }
+                if (id === 'live' && !['in_progress','paused','completed'].includes(event?.status)) { toast.info('Approve the draw and start the Club Challenge first.'); return; }
+                setTab(id);
+              }} className={cn('group flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium whitespace-nowrap min-h-10 snap-start transition-colors cursor-pointer', tab === id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary')}>
                 <span className={cn('w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border shrink-0', complete ? 'bg-primary text-primary-foreground border-primary' : current ? 'border-primary text-primary bg-primary/5' : 'border-border bg-secondary/40')}>
                   {complete ? <CheckCircle2 className="w-3.5 h-3.5" /> : index + 1}
                 </span>
