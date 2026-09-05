@@ -16,7 +16,7 @@ Purpose: maximise confidence before the next live deployment while preserving th
 
 ### Phase B — Club Challenge front-end workflow
 - CCUI-001 Setup → Teams → Draw → Approve → Start navigation guards — PASS (static navigation/guard simulator + source inspection + lint/build pass; redraw protection confirmed by completed-match-history block)
-- CCUI-002 16+16 roster loading/ranking/locking and redraw constraints
+- CCUI-002 16+16 roster loading/ranking/locking and redraw constraints — PASS (static roster/ranking/lock simulator + Gate 1 canonical engine suite + lint/build pass; drag disabled after approval/live states, rank changes invalidate fairness/draw approval, completed history blocks full redraw)
 - CCUI-003 Draw/fairness display and approved Event Pack state
 - CCUI-004 Live scoring on simultaneous courts and stale revision conflict
 - CCUI-005 Authoritative timer controls, pause/resume/+1/changeover/break and speech fallback
