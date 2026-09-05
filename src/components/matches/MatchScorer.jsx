@@ -92,7 +92,7 @@ export default function MatchScorer({ match, onUpdate }) {
 
       {/* Game scores */}
       {localScores.length > 1 && (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {localScores.map((g, i) => (
             <div key={i} className="text-xs text-muted-foreground bg-secondary rounded px-2 py-1">
               G{i + 1}: {g.team1}-{g.team2}
