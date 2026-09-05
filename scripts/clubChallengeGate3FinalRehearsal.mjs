@@ -23,7 +23,7 @@ const galway = makeClub('G','Galway');
 const tournament = { id:'T-E2E', tenant_id:'TENANT-CLARE', host_club_id:'CLARE' };
 const draft = createChallengeEventDraft({ tournament, hostClub:{id:'CLARE',name:'Clare'}, opponent:{name:'Galway'}, setup:{ courts:4, availableMinutes:180, playMinutes:10, changeoverMinutes:2, includeBreak:true, breakMinutes:20, breakAfterRound:6, matchFormat:{type:'timed',drawsAllowed:true}, winPoints:2, drawPoints:1, lossPoints:0, compositionMode:'open', showcaseEnabled:true, showcasePoints:5, potEnabled:true } });
 const schedule = generateClubChallengeFixtures({ clubAPlayers:clare, clubBPlayers:galway, courts:4, rounds:12 });
-const fairness = analyseClubChallengeFairness(schedule, clare, galway);
+const fairness = analyseClubChallengeFairness({ schedule, clubAPlayers:clare, clubBPlayers:galway });
 assert.equal(schedule.length,48); assert.equal(fairness.equalGames,true); assert.equal(fairness.duplicatePlayerRoundIssues,0); assert.equal(fairness.sameClubIntegrityIssues,0); assert.equal(fairness.minGames,6); assert.equal(fairness.maxGames,6);
 const approved = buildApprovedDraw({ schedule, clubAPlayers:clare, clubBPlayers:galway, previousVersion:0, approvedBy:'organiser' });
 const event = { id:'CCE-E2E', ...draft, ...approved, pot_status:'closed', current_round:1 };
