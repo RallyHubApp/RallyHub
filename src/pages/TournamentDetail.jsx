@@ -171,7 +171,10 @@ export default function TournamentDetail() {
       return;
     }
     setGenerating(true);
-    const newMatches = generateDraw(tournament.format, tournament.id, entries);
+    const newMatches = generateDraw(tournament.format, tournament.id, entries).map(match => ({
+      ...match,
+      tenant_id: tournament.tenant_id || undefined,
+    }));
     await base44.entities.Match.bulkCreate(newMatches);
     await base44.entities.Tournament.update(tournament.id, { status: 'In Progress' });
     toast.success(`${newMatches.length} matches generated (${tournament.format})!`);
