@@ -64,7 +64,7 @@ Purpose: maximise confidence before the next live deployment while preserving th
 - REL-003 Gate 3 final 32-player rehearsal — PASS (32 players / 48 matches; fairness, concurrent scorers, stale/offline conflict handling, replacement, 4→3 court disruption, metrics, Showcase, finalisation blockers and role-security contract all pass)
 - REL-004 Production build — PASS (`npm run build` / Vite production build exits 0 after all SEC/RES fixes; only non-blocking Browserslist caniuse-lite age warning remains)
 - REL-005 No unresolved P0/P1 defects — PASS (release-blocker scan found no recorded unresolved P0/P1 defects; apparent P1/FAIL/BLOCKED matches are test variable names, placeholders, simulator failure-message strings or checklist terminology rather than open defects. ESLint, production build, Gate 1, Gate 3 foundation and Gate 3 final rehearsal all pass. Remaining PASS-WITH-LIMITATION items are explicitly Gate 4 browser/device/network verification, not known P0/P1 defects.)
-- REL-006 Create final pre-deploy checkpoint
+- REL-006 Create final pre-deploy checkpoint — PASS (checkpoint `6a9c9c28ab1dd2c543e9b063`, commit `429db84f2e1ff4487f7a34521bacdde1d0b7f670`; captures the fully tested pre-deploy bundle after REL-001 through REL-005)
 - REL-007 Deploy once for Gate 4 physical/browser/device rehearsal
 
 ## Result states
