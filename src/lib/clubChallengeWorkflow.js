@@ -1,4 +1,4 @@
-import { analyseClubChallengeFairness, calculateClubChallengeScore, validateClubChallengeScore, checkResultRevision } from './clubChallengeEngine';
+import { analyseClubChallengeFairness, calculateClubChallengeScore, validateClubChallengeScore, checkResultRevision } from './clubChallengeEngine.js';
 
 export const CLUB_CHALLENGE_RULES_VERSION = '1.0';
 
