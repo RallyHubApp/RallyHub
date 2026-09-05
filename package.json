@@ -9,6 +9,7 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
+    "test:club-challenge-gate1": "node scripts/clubChallengeGate1.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
