@@ -104,6 +104,24 @@ export const AuthProvider = ({ children }) => {
       } catch (contextError) {
         console.warn('Security context resolution failed:', contextError);
       }
+
+      // TEMPORARY tenant-isolation test hook. It only runs for the dedicated
+      // TBC Test PB tenant and only once per browser session. Remove after sign-off.
+      try {
+        const TBC_TEST_TENANT_ID = '6a9bd98d3a71d8edbb25e28d';
+        const isolationTestDone = sessionStorage.getItem('rallyhub_tbc_isolation_test_done');
+        if (currentUser?.active_tenant_id === TBC_TEST_TENANT_ID && !isolationTestDone) {
+          sessionStorage.setItem('rallyhub_tbc_isolation_test_done', '1');
+          await base44.functions.invoke('isolationSelfTest', {
+            forbiddenTenantId: '6a9b7790bc4a8d299938bda9',
+            forbiddenClubId: '6a9b779684daba85b3ffdeb5',
+            forbiddenPlayerId: '6a9bf538dc339b887eccfa65'
+          });
+        }
+      } catch (isolationTestError) {
+        console.warn('TBC isolation self-test failed to execute:', isolationTestError);
+      }
+
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
