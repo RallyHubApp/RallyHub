@@ -18,8 +18,10 @@ function fmt(seconds){ const s=Math.max(0,Number(seconds||0)); return `${String(
 export default function PublicClubChallengeDisplay(){
   const { token } = useParams();
   const [data,setData]=React.useState(null), [error,setError]=React.useState(''), [disconnected,setDisconnected]=React.useState(false), [now,setNow]=React.useState(Date.now());
-  const load=React.useCallback(async()=>{ try { const r=await base44.functions.invoke('getPublicClubChallengeDisplay',{token}); if(r.data?.error) throw new Error(r.data.error); setData(r.data); setError(''); setDisconnected(false); } catch(e){ if(data) setDisconnected(true); else setError(e?.response?.data?.error||e?.message||'Display unavailable'); } },[token,data]);
-  React.useEffect(()=>{ load(); const poll=setInterval(load,5000); const tick=setInterval(()=>setNow(Date.now()),1000); const off=()=>setDisconnected(true), on=()=>{setDisconnected(false);load();}; window.addEventListener('offline',off); window.addEventListener('online',on); return()=>{clearInterval(poll);clearInterval(tick);window.removeEventListener('offline',off);window.removeEventListener('online',on);}; },[token]);
+  const dataRef=React.useRef(null);
+  React.useEffect(()=>{ dataRef.current=data; },[data]);
+  const load=React.useCallback(async()=>{ try { const r=await base44.functions.invoke('getPublicClubChallengeDisplay',{token}); if(r.data?.error) throw new Error(r.data.error); setData(r.data); dataRef.current=r.data; setError(''); setDisconnected(false); } catch(e){ if(dataRef.current) setDisconnected(true); else setError(e?.response?.data?.error||e?.message||'Display unavailable'); } },[token]);
+  React.useEffect(()=>{ load(); const poll=setInterval(load,5000); const tick=setInterval(()=>setNow(Date.now()),1000); const off=()=>setDisconnected(true), on=()=>{setDisconnected(false);load();}; window.addEventListener('offline',off); window.addEventListener('online',on); return()=>{clearInterval(poll);clearInterval(tick);window.removeEventListener('offline',off);window.removeEventListener('online',on);}; },[load]);
   if(error&&!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center p-6 text-center"><div><WifiOff className="mx-auto mb-3"/><p className="font-semibold">{error}</p></div></div>;
   if(!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center"><RefreshCw className="animate-spin"/></div>;
   const {event,matches}=data, s=score(matches,event), round=Number(event.current_round||1);
