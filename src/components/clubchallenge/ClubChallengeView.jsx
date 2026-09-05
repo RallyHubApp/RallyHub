@@ -387,8 +387,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const [a, b] = scoreForSimulation(match, 2);
       const first = await base44.functions.invoke('saveClubChallengeScore', { matchId: match.id, expectedRevision: revision, scoreA: a, scoreB: b });
       if (first.data?.error || first.data?.conflict) throw new Error(first.data?.error || 'First edit unexpectedly conflicted');
-      const second = await base44.functions.invoke('saveClubChallengeScore', { matchId: match.id, expectedRevision: revision, scoreA: b, scoreB: a });
-      if (!second.data?.conflict) throw new Error('Stale edit was not rejected');
+      let conflictDetected = false;
+      try {
+        const second = await base44.functions.invoke('saveClubChallengeScore', { matchId: match.id, expectedRevision: revision, scoreA: b, scoreB: a });
+        conflictDetected = !!second.data?.conflict;
+      } catch (e) {
+        conflictDetected = e?.response?.status === 409 || e?.status === 409 || !!e?.response?.data?.conflict;
+      }
+      if (!conflictDetected) throw new Error('Stale edit was not rejected');
       addSimLog(`Concurrency probe PASS on R${match.round_number} Court ${match.court_number}`, 'pass');
       toast.success('Concurrency protection PASS');
       await refetchMatches();
@@ -434,7 +440,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     : event.status === 'draft' ? (participants.length ? 1 : 0)
     : event.status === 'draw_generated' || event.status === 'draw_approved' ? 2
     : event.status === 'in_progress' || event.status === 'paused' ? 3
-    : event.status === 'completed' || event.status === 'archived' ? 4 : 0;
+    : event.status === 'completed' || event.status === 'archived' ? 5 : 0;
 
   return (
     <div className="space-y-4">
@@ -529,6 +535,67 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             <div className="grid md:grid-cols-2 gap-3">{currentMatches.sort((a,b)=>a.court_number-b.court_number).map(m => <ScoreCard key={`${m.id}-${m.revision}`} match={m} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={refetchMatches} />)}</div>
             {event.status !== 'completed' && <Button className="w-full h-11" onClick={advanceRound}>{currentRound < Math.max(...rounds) ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Finalise Club Challenge</>}</Button>}
           </>}
+        </div>
+      )}
+
+      {tab === 'simulator' && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-card p-5">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">Gate 3 Test Simulator</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-2xl">Runs the real RallyHub Club Challenge scoring path against the dummy 16+16 roster so you can test 48 matches in seconds instead of entering every result by hand.</p>
+              </div>
+              <Badge className={isGate3TestEvent ? 'bg-primary/10 text-primary' : 'bg-yellow-500/10 text-yellow-400'}>{isGate3TestEvent ? 'Dummy event detected' : 'Dummy roster required'}</Badge>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {structuralChecks.map(([label, pass]) => (
+              <div key={label} className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
+                <div className={cn('w-8 h-8 rounded-full flex items-center justify-center shrink-0', pass ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')}>{pass ? <CheckCircle2 className="w-4 h-4" /> : <span className="text-xs font-bold">!</span>}</div>
+                <div><p className="text-xs font-semibold">{label}</p><p className="text-[10px] text-muted-foreground">{pass ? 'PASS' : 'Not ready'}</p></div>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <div>
+              <p className="text-sm font-semibold">Simulation controls</p>
+              <p className="text-xs text-muted-foreground mt-1">These controls are deliberately restricted to events containing the Gate 3 dummy roster, so live club data cannot be bulk-scored by mistake.</p>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <Button variant="outline" className="min-h-11" disabled={!isGate3TestEvent || simulating || !currentMatches.length} onClick={simulateCurrentRound}>Simulate Round {currentRound}</Button>
+              <Button className="min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={simulateAllRemaining}>Simulate All 48</Button>
+              <Button variant="outline" className="min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={runConflictProbe}>Test Stale-Edit Conflict</Button>
+              <Button variant="outline" className="min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={resetSimulation}><RefreshCw className={cn('w-4 h-4 mr-2', simulating && 'animate-spin')} />Reset Dummy Event</Button>
+            </div>
+            <div className="rounded-lg bg-secondary/50 p-4 text-xs text-muted-foreground">
+              <p><strong className="text-foreground">What “Simulate All 48” checks:</strong> the actual score-save backend, valid wins and timed draws, per-match revisions, club score aggregation, and persistence across all normal fixtures. It then jumps the live screen to Round 12 so you can immediately inspect the end-of-event behaviour.</p>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-border bg-card p-5">
+              <p className="text-sm font-semibold">Current simulated state</p>
+              <div className="grid grid-cols-2 gap-3 mt-4 text-center">
+                <div className="rounded-lg bg-secondary p-3"><p className="text-xl font-bold">{score.completedMatches}</p><p className="text-[10px] text-muted-foreground">Results saved</p></div>
+                <div className="rounded-lg bg-secondary p-3"><p className="text-xl font-bold">{matches.filter(m => !m.is_showcase).length - score.completedMatches}</p><p className="text-[10px] text-muted-foreground">Still unresolved</p></div>
+                <div className="rounded-lg bg-secondary p-3"><p className="text-xl font-bold">{score.clubA}–{score.clubB}</p><p className="text-[10px] text-muted-foreground">Club points</p></div>
+                <div className="rounded-lg bg-secondary p-3"><p className="text-xl font-bold">{score.draws}</p><p className="text-[10px] text-muted-foreground">Drawn matches</p></div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <p className="text-sm font-semibold">Simulator log</p>
+              <div className="mt-3 space-y-2 min-h-24">
+                {simLog.length === 0 ? <p className="text-xs text-muted-foreground">No simulator actions run yet.</p> : simLog.map((item, i) => <div key={`${item.at}-${i}`} className="flex gap-2 text-xs"><span className="text-muted-foreground shrink-0">{item.at}</span><span className={item.status === 'pass' ? 'text-primary' : item.status === 'fail' ? 'text-destructive' : 'text-foreground'}>{item.message}</span></div>)}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-xs text-muted-foreground">
+            <strong className="text-yellow-400">Timer note:</strong> the authoritative PLAY / CHANGEOVER / BREAK / PAUSE clock has not yet been built into the Gate 3 live screen, so this simulator does not pretend to certify timer behaviour. Once that clock is implemented, I will add compressed-time testing (for example 10 minutes in 10 seconds) so the full event-day timing sequence can be tested quickly as well.
+          </div>
         </div>
       )}
 
