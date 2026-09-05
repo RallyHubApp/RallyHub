@@ -77,6 +77,9 @@ const canonicalFairness = assertScheduleIntegrity({ count: 16, courts: 4, rounds
 assert.equal(canonicalFairness.equalGames, true);
 assert.equal(canonicalFairness.repeatedPartnerPairs, 0);
 assert.ok(canonicalFairness.maxOpponentRepeat <= 4, `Canonical max opponent repeat too high: ${canonicalFairness.maxOpponentRepeat}`);
+assert.equal(canonicalFairness.consecutiveRestOccurrences, 0);
+const canonicalMaxSameCourt = Math.max(...Object.values(canonicalFairness.courtCounts).flatMap(counts => Object.values(counts)));
+assert.ok(canonicalMaxSameCourt <= 3, `Canonical court rotation too concentrated: ${canonicalMaxSameCourt} games on one court`);
 
 // Generalised v1.0 scheduler: not hard-coded to 16+16/4 courts.
 const f12 = assertScheduleIntegrity({ count: 12, courts: 3, rounds: 12, expectedMin: 6, expectedMax: 6, label: 'T12' });
