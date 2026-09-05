@@ -245,8 +245,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, [event?.id, event?.round_labels_json]);
 
   const accessRole = isAdmin ? 'admin' : secureState?.accessRole || '';
-  const canManageEvent = isAdmin || ['event_manager','event_host','owner','organiser'].includes(accessRole);
-  const canScoreEvent = isAdmin || ['event_manager','event_host','scorer','owner','organiser'].includes(accessRole);
+  const hasManagePermission = isAdmin || ['event_manager','event_host','owner','organiser'].includes(accessRole);
+  const eventReadOnly = ['completed','archived'].includes(event?.status);
+  const canManageEvent = hasManagePermission && !eventReadOnly;
+  const canScoreEvent = (isAdmin || ['event_manager','event_host','scorer','owner','organiser'].includes(accessRole)) && !eventReadOnly;
   const aPlayers = participants.filter(p => p.side === 'club_a');
   const bPlayers = participants.filter(p => p.side === 'club_b');
   const normalMatches = matches.filter(m => !m.is_showcase);
@@ -488,7 +490,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not save round label'); }
   };
   const archiveEvent = async () => {
-    if (!event || !canManageEvent) return;
+    if (!event || !hasManagePermission) return;
     try {
       const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'archive' });
       if (res.data?.error) { toast.error(res.data.error); return; }
@@ -497,7 +499,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not archive Club Challenge'); }
   };
   const reopenEvent = async () => {
-    if (!event || !canManageEvent) return;
+    if (!event || !hasManagePermission) return;
     try {
       const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'reopen' });
       if (res.data?.error) { toast.error(res.data.error); return; }
@@ -1105,7 +1107,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto"><Trophy className="w-6 h-6 text-primary" /></div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary mt-4">{['completed','archived'].includes(event?.status) ? 'Final Result' : 'Current Result'}</p>
                 <p className="text-2xl sm:text-3xl font-bold mt-2 break-words">{event?.club_a_name} {overallScore.clubA}–{overallScore.clubB} {event?.club_b_name}</p>
-                {['completed','archived'].includes(event?.status) && <div className="mt-3"><Badge className="bg-primary/10 text-primary">{event.showcase_resolved_winner === 'draw' ? 'Overall Draw' : `Winner: ${event.showcase_resolved_winner === 'club_b' ? event.club_b_name : event.club_a_name}`}</Badge>{event.showcase_resolved_winner !== 'draw' && <p className="text-xs text-muted-foreground mt-2">Runner-up: {event.showcase_resolved_winner === 'club_b' ? event.club_a_name : event.club_b_name}</p>}{canManageEvent && <div className="mt-4">{event.status === 'completed' ? <Button variant="outline" onClick={archiveEvent}>Archive Club Challenge</Button> : <Button variant="outline" onClick={reopenEvent}>Reopen Archived Club Challenge</Button>}</div>}</div>}
+                {['completed','archived'].includes(event?.status) && <div className="mt-3"><Badge className="bg-primary/10 text-primary">{event.showcase_resolved_winner === 'draw' ? 'Overall Draw' : `Winner: ${event.showcase_resolved_winner === 'club_b' ? event.club_b_name : event.club_a_name}`}</Badge>{event.showcase_resolved_winner !== 'draw' && <p className="text-xs text-muted-foreground mt-2">Runner-up: {event.showcase_resolved_winner === 'club_b' ? event.club_a_name : event.club_b_name}</p>}{hasManagePermission && <div className="mt-4">{event.status === 'completed' ? <Button variant="outline" onClick={archiveEvent}>Archive Club Challenge</Button> : <Button variant="outline" onClick={reopenEvent}>Reopen Archived Club Challenge</Button>}</div>}</div>}
                 <div className="flex flex-wrap justify-center gap-2 mt-4"><Badge variant="outline">{score.completedMatches} normal results</Badge><Badge variant="outline">{score.matchesWonA} {event?.club_a_name} wins</Badge><Badge variant="outline">{score.draws} draws</Badge><Badge variant="outline">{score.matchesWonB} {event?.club_b_name} wins</Badge></div>
                 <div className="grid grid-cols-3 gap-2 mt-4 max-w-lg mx-auto text-center"><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointsA}</p><p className="text-[10px] text-muted-foreground">{event?.club_a_name} game points</p></div><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointDifference >= 0 ? '+' : ''}{score.gamePointDifference}</p><p className="text-[10px] text-muted-foreground">A point differential</p></div><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointsB}</p><p className="text-[10px] text-muted-foreground">{event?.club_b_name} game points</p></div></div>
                 {showcaseMatch && ['completed'].includes(showcaseMatch.status) && <p className="text-xs text-primary mt-4">Showcase Final: {showcaseMatch.winner === 'club_a' ? event?.club_a_name : event?.club_b_name} +{event?.showcase_points} points</p>}
