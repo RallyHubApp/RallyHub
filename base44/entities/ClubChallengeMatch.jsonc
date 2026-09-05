@@ -20,6 +20,9 @@
     "court_number": {
       "type": "number"
     },
+    "match_number": {
+      "type": "number"
+    },
     "club_a_participant_ids": {
       "type": "array",
       "items": {
