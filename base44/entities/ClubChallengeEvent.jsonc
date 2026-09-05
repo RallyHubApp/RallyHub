@@ -209,6 +209,9 @@
       "type": "number",
       "default": 0
     },
+    "round_labels_json": {
+      "type": "string"
+    },
     "event_pack_version": {
       "type": "number",
       "default": 0
