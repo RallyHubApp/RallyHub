@@ -1142,7 +1142,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 <div className="rounded-xl border border-border bg-card p-5">
                   <p className="text-sm font-semibold">Clear Winner Ready</p>
                   <p className="text-xs text-muted-foreground mt-1">All normal matches are complete and the Club Challenge points are not tied.</p>
-                  <Button className="mt-4 w-full sm:w-auto" onClick={() => finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Club Challenge matches.')}>Confirm Winner & Finalise</Button>
+                  <Button className="mt-4 w-full sm:w-auto" disabled={!canFinaliseEvent} onClick={() => finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Club Challenge matches.')}>{canFinaliseEvent ? 'Confirm Winner & Finalise' : 'Finalisation requires organiser permission'}</Button>
                 </div>
               )}
 
@@ -1153,15 +1153,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                     <p className="text-xs text-muted-foreground mt-1">Choose how to decide the event. Cumulative point differential is the default no-final metric.</p>
                   </div>
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    <Button variant="outline" onClick={resolveTieByMetrics}>Use Tiebreak Metrics</Button>
-                    {event?.showcase_enabled && <Button onClick={() => document.getElementById('showcase-final-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Play Showcase Final</Button>}
-                    {event?.allow_overall_draw && <Button variant="outline" onClick={recordOverallDraw}>Record Overall Draw</Button>}
+                    <Button variant="outline" disabled={!canFinaliseEvent} onClick={resolveTieByMetrics}>Use Tiebreak Metrics</Button>
+                    {event?.showcase_enabled && <Button disabled={!canManageEvent} onClick={() => document.getElementById('showcase-final-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Play Showcase Final</Button>}
+                    {event?.allow_overall_draw && <Button variant="outline" disabled={!canFinaliseEvent} onClick={recordOverallDraw}>Record Overall Draw</Button>}
                   </div>
                   <p className="text-[10px] text-muted-foreground">Current point differential: {event?.club_a_name} {score.gamePointDifference >= 0 ? '+' : ''}{score.gamePointDifference}; {event?.club_b_name} {score.gamePointDifference <= 0 ? '+' : ''}{-score.gamePointDifference}.</p>
                 </div>
               )}
 
-              {resolvedNormalCount === normalMatches.length && score.clubA === score.clubB && event?.showcase_enabled && !['completed','archived'].includes(event?.status) && (
+              {canManageEvent && resolvedNormalCount === normalMatches.length && score.clubA === score.clubB && event?.showcase_enabled && !['completed','archived'].includes(event?.status) && (
                 <div id="showcase-final-panel" className="rounded-xl border border-border bg-card p-5 space-y-4">
                   <div><p className="text-sm font-semibold">Showcase / Tiebreak Final</p><p className="text-xs text-muted-foreground mt-1">Nominate one male and one female player from each club. Winner receives {event.showcase_points} Club Challenge points.</p></div>
                   {!showcaseMatch ? (
@@ -1177,7 +1177,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                   ) : (
                     <div className="space-y-3">
                       <ScoreCard key={`${showcaseMatch.id}-${showcaseMatch.revision}`} match={showcaseMatch} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={sync} networkOnline={networkOnline} onQueue={queueOfflineScore} canScore={canScoreEvent} />
-                      {['completed'].includes(showcaseMatch.status) && <Button className="w-full" onClick={finaliseShowcase}>Apply {event.showcase_points} Points & Finalise Club Challenge</Button>}
+                      {['completed'].includes(showcaseMatch.status) && <Button className="w-full" disabled={!canFinaliseEvent} onClick={finaliseShowcase}>Apply {event.showcase_points} Points & Finalise Club Challenge</Button>}
                     </div>
                   )}
                 </div>
