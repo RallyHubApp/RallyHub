@@ -14,11 +14,9 @@ import { toast } from 'sonner';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
 import { useAuth } from '@/lib/AuthContext';
-import useKotcRole from '@/hooks/useKotcRole';
 
 export default function AdminPanel() {
   const { user } = useAuth();
-  useKotcRole();
   const canAccessAdmin = user?.role === 'admin';
   const queryClient = useQueryClient();
   const [playerSearch, setPlayerSearch] = useState('');
