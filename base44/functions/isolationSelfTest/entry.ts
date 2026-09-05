@@ -37,6 +37,22 @@ Deno.serve(async (req) => {
     }
 
     results.all_pass = Object.values(results.tests).every((t:any)=>t.pass === true);
+
+    // Persist the authenticated result for admin review without exposing any extra data
+    // to the browser. Audit logging uses service role only for the write itself.
+    await base44.asServiceRole.entities.AuditLog.create({
+      tenant_id: user.active_tenant_id || 'unknown',
+      club_id: user.active_club_id || undefined,
+      user_id: user.id,
+      action: results.all_pass ? 'tenant_isolation_test_passed' : 'tenant_isolation_test_failed',
+      entity_type: 'SecurityTestProbe',
+      entity_id: user.id,
+      scope_type: 'TenantIsolationTest',
+      scope_id: user.active_tenant_id || 'unknown',
+      after_state: JSON.stringify(results),
+      reason: 'Authenticated tenant-isolation self-test executed under the current non-admin user context'
+    });
+
     return Response.json(results);
   } catch (error) {
     return Response.json({ error: error?.message || String(error) }, { status: 500 });
