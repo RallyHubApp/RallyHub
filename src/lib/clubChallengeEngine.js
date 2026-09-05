@@ -217,45 +217,95 @@ function applyRoundState({ candidate, games, previousBench, usedFactors }) {
   usedFactors.add(candidate.factorIndex);
 }
 
+function cyclicActiveSet(ids, activeCount, roundIndex, phase = 0) {
+  const start = (phase + roundIndex * activeCount) % ids.length;
+  const active = [];
+  for (let i = 0; i < activeCount; i++) active.push(ids[(start + i) % ids.length]);
+  const activeSet = new Set(active);
+  return { active, bench: ids.filter(id => !activeSet.has(id)) };
+}
+
+function enumeratePerfectPairings(ids) {
+  if (ids.length === 0) return [[]];
+  if (ids.length % 2) return [];
+  if (ids.length > 12) return [];
+  const first = ids[0];
+  const out = [];
+  for (let i = 1; i < ids.length; i++) {
+    const partner = ids[i];
+    const rest = ids.slice(1, i).concat(ids.slice(i + 1));
+    for (const tail of enumeratePerfectPairings(rest)) out.push([[first, partner], ...tail]);
+  }
+  return out;
+}
+
+function chooseTeamsForActive({ activeIds, byId, partnerCounts, rosterSize }) {
+  const allPairings = enumeratePerfectPairings(activeIds);
+  if (!allPairings.length) {
+    // Large events fall back to a deterministic greedy matcher to avoid factorial growth.
+    const pool = [...activeIds];
+    const teams = [];
+    while (pool.length) {
+      const a = pool.shift();
+      let bestIndex = 0, bestScore = Infinity;
+      for (let i = 0; i < pool.length; i++) {
+        const b = pool[i];
+        const repeats = partnerCounts[pairKey(a, b)] || 0;
+        const gap = Math.abs(Number(byId[a]?.rank || 0) - Number(byId[b]?.rank || 0));
+        const score = repeats * 1_000_000 + gap * gap + (gap >= Math.ceil(rosterSize / 2) ? gap * 100 : 0);
+        if (score < bestScore) { bestScore = score; bestIndex = i; }
+      }
+      teams.push([a, pool.splice(bestIndex, 1)[0]]);
+    }
+    return teams;
+  }
+
+  let best = null;
+  for (const pairing of allPairings) {
+    let repeatPenalty = 0, gapPenalty = 0;
+    for (const [a, b] of pairing) {
+      const repeats = partnerCounts[pairKey(a, b)] || 0;
+      const gap = Math.abs(Number(byId[a]?.rank || 0) - Number(byId[b]?.rank || 0));
+      repeatPenalty += repeats * repeats + repeats;
+      gapPenalty += gap * gap + (gap >= Math.ceil(rosterSize / 2) ? gap * 20 : 0);
+    }
+    const score = repeatPenalty * 1_000_000 + gapPenalty;
+    if (!best || score < best.score) best = { pairing, score };
+  }
+  return best.pairing;
+}
+
 export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, courts, rounds }) {
   const aPlayers = clubAPlayers.map(p => normaliseClubChallengePlayer(p, 'Club A'));
   const bPlayers = clubBPlayers.map(p => normaliseClubChallengePlayer(p, 'Club B'));
   const c = Number(courts), r = Number(rounds);
   if (aPlayers.length !== bPlayers.length) throw new Error('Fixture generation currently requires equal club rosters; unequal-roster setup must be resolved before draw approval.');
-  if (aPlayers.length % 2 || bPlayers.length % 2) throw new Error('Fixture generation currently requires an even roster size per club.');
   if (!Number.isInteger(c) || c < 1 || !Number.isInteger(r) || r < 1) throw new Error('Courts and rounds must be positive integers.');
   if (c * 2 > aPlayers.length || c * 2 > bPlayers.length) throw new Error('Not enough players for the selected number of courts.');
   if (aPlayers.some(p => !p.id) || bPlayers.some(p => !p.id)) throw new Error('Every participant requires an event participant ID.');
   const allIds = [...aPlayers, ...bPlayers].map(p => p.id);
   if (new Set(allIds).size !== allIds.length) throw new Error('The same participant cannot occupy two Club Challenge slots.');
 
+  const aIds = aPlayers.map(p => p.id), bIds = bPlayers.map(p => p.id);
   const aById = Object.fromEntries(aPlayers.map(p => [p.id, p]));
   const bById = Object.fromEntries(bPlayers.map(p => [p.id, p]));
-  const aGames = Object.fromEntries(aPlayers.map(p => [p.id, 0]));
-  const bGames = Object.fromEntries(bPlayers.map(p => [p.id, 0]));
-  const targetGamesA = (c * 2 * r) / aPlayers.length;
-  const targetGamesB = (c * 2 * r) / bPlayers.length;
-  const aPreviousBench = new Set(), bPreviousBench = new Set();
-  const aUsedFactors = new Set(), bUsedFactors = new Set();
-  const opponentCounts = {};
-  const previousCourt = {};
+  const aPartnerCounts = {}, bPartnerCounts = {}, opponentCounts = {}, previousCourt = {};
   const output = [];
+  const activePerClub = c * 2;
+  // Fixed phase keeps equality mathematics intact while preventing identical club rotations.
+  const bPhase = Math.max(1, Math.floor(bIds.length / 3));
 
   for (let roundIndex = 0; roundIndex < r; roundIndex++) {
-    const aCandidates = generateRoundCandidates({ players: aPlayers, courts: c, games: aGames, previousBench: aPreviousBench, usedFactors: aUsedFactors, targetGames: targetGamesA });
-    const bCandidates = generateRoundCandidates({ players: bPlayers, courts: c, games: bGames, previousBench: bPreviousBench, usedFactors: bUsedFactors, targetGames: targetGamesB });
-    let best = null;
-    for (const aCandidate of aCandidates) {
-      for (const bCandidate of bCandidates) {
-        const cross = bestCrossClubMatch({ aTeams: aCandidate.teams, bTeams: bCandidate.teams, aById, bById, opponentCounts, previousCourt });
-        const total = aCandidate.internalScore + bCandidate.internalScore + cross.score;
-        if (!best || total < best.total) best = { aCandidate, bCandidate, cross, total };
-      }
-    }
-    if (!best) throw new Error(`Unable to generate Club Challenge round ${roundIndex + 1}.`);
+    const aActive = cyclicActiveSet(aIds, activePerClub, roundIndex, 0);
+    const bActive = cyclicActiveSet(bIds, activePerClub, roundIndex, bPhase);
+    const aTeams = chooseTeamsForActive({ activeIds: aActive.active, byId: aById, partnerCounts: aPartnerCounts, rosterSize: aIds.length });
+    const bTeams = chooseTeamsForActive({ activeIds: bActive.active, byId: bById, partnerCounts: bPartnerCounts, rosterSize: bIds.length });
+    const cross = bestCrossClubMatch({ aTeams, bTeams, aById, bById, opponentCounts, previousCourt });
 
-    const courtsOut = best.aCandidate.teams.map((aTeam, courtIndex) => {
-      const bTeam = best.cross.bTeams[courtIndex];
+    const courtsOut = aTeams.map((aTeam, courtIndex) => {
+      const bTeam = cross.bTeams[courtIndex];
+      aPartnerCounts[pairKey(aTeam[0], aTeam[1])] = (aPartnerCounts[pairKey(aTeam[0], aTeam[1])] || 0) + 1;
+      bPartnerCounts[pairKey(bTeam[0], bTeam[1])] = (bPartnerCounts[pairKey(bTeam[0], bTeam[1])] || 0) + 1;
       for (const a of aTeam) for (const b of bTeam) opponentCounts[pairKey(a, b)] = (opponentCounts[pairKey(a, b)] || 0) + 1;
       for (const id of [...aTeam, ...bTeam]) previousCourt[id] = courtIndex + 1;
       return {
@@ -267,9 +317,7 @@ export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, cour
       };
     });
 
-    applyRoundState({ candidate: best.aCandidate, games: aGames, previousBench: aPreviousBench, usedFactors: aUsedFactors });
-    applyRoundState({ candidate: best.bCandidate, games: bGames, previousBench: bPreviousBench, usedFactors: bUsedFactors });
-    output.push({ roundNumber: roundIndex + 1, courts: courtsOut, benchClubA: best.aCandidate.bench, benchClubB: best.bCandidate.bench });
+    output.push({ roundNumber: roundIndex + 1, courts: courtsOut, benchClubA: aActive.bench, benchClubB: bActive.bench });
   }
 
   return {
