@@ -148,7 +148,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [logoUploading, setLogoUploading] = useState('');
   const [simLog, setSimLog] = useState([]);
   const [showcaseSelection, setShowcaseSelection] = useState({ aMale: '', aFemale: '', bMale: '', bFemale: '' });
-  const [replacement, setReplacement] = useState({ outgoingId: '', incomingName: '', reason: '', status: 'withdrawn' });
+  const [replacement, setReplacement] = useState({ outgoingId: '', incomingName: '', incomingGender: '', reason: '', status: 'withdrawn' });
+  const [lateArrival, setLateArrival] = useState({ participantId: '', round: 1 });
+  const [eventDayAdjust, setEventDayAdjust] = useState({ courts: 0, availableMinutes: 0 });
   const [timerNow, setTimerNow] = useState(Date.now());
   const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('cc-voice-mode') || 'irish_female');
   const [voices, setVoices] = useState([]);
@@ -493,10 +495,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const now = new Date().toISOString();
     const incoming = await base44.entities.ClubChallengeParticipant.create({
       tenant_id: event.tenant_id, challenge_event_id: event.id, tournament_id: tournament.id,
-      side: outgoing.side, display_name: replacement.incomingName.trim(), gender: outgoing.gender,
+      side: outgoing.side, display_name: replacement.incomingName.trim(), gender: replacement.incomingGender || outgoing.gender,
       event_rank: outgoing.event_rank, status: 'active', available_from_round: effectiveRound,
       replacement_for_participant_id: outgoing.id, replacement_effective_round: effectiveRound,
-      unique_identity_key: `replacement-${outgoing.side}-${Date.now()}`,
+      unique_identity_key: `replacement-${outgoing.side}-${replacement.incomingName.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-')}`, 
     });
     await base44.entities.ClubChallengeParticipant.update(outgoing.id, {
       status: replacement.status, replaced_by_participant_id: incoming.id,
@@ -517,7 +519,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       new_value_json: JSON.stringify({ participant_id: incoming.id, name: incoming.display_name, effective_round: effectiveRound, fixtures_changed: affected.length }),
       note: replacement.reason || `${replacement.status} replacement`,
     });
-    setReplacement({ outgoingId: '', incomingName: '', reason: '', status: 'withdrawn' });
+    setReplacement({ outgoingId: '', incomingName: '', incomingGender: '', reason: '', status: 'withdrawn' });
     toast.success(`${outgoing.display_name} replaced from Round ${effectiveRound}; ${affected.length} future fixture${affected.length === 1 ? '' : 's'} updated.`);
     await sync();
   };
