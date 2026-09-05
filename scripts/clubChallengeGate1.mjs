@@ -84,7 +84,13 @@ const f20_4 = assertScheduleIntegrity({ count: 20, courts: 4, rounds: 10, expect
 const f20_5 = assertScheduleIntegrity({ count: 20, courts: 5, rounds: 12, expectedMin: 6, expectedMax: 6, label: 'T20C5' });
 const f24_4 = assertScheduleIntegrity({ count: 24, courts: 4, rounds: 12, expectedMin: 4, expectedMax: 4, label: 'T24C4' });
 const f24_6 = assertScheduleIntegrity({ count: 24, courts: 6, rounds: 12, expectedMin: 6, expectedMax: 6, label: 'T24C6' });
-for (const f of [f12, f20_4, f20_5, f24_4, f24_6]) assert.equal(f.repeatedPartnerPairs, 0);
+const f13 = assertScheduleIntegrity({ count: 13, courts: 3, rounds: 13, expectedMin: 6, expectedMax: 6, label: 'T13ODD' });
+// 12+12/3 courts has half the roster resting each round. Because consecutive rests
+// outrank partner repetition in the frozen fairness hierarchy, the theoretical
+// zero-consecutive-rest pattern necessarily limits each player to five possible
+// partners across six games; one repeat per player is therefore accepted here.
+assert.ok(f12.repeatedPartnerPairs <= 12);
+for (const f of [f20_4, f20_5, f24_4, f24_6, f13]) assert.equal(f.repeatedPartnerPairs, 0);
 
 // Unequal roster handling is explicit at setup and draw generation.
 const unequalSetup = validateClubChallengeSetup({ clubAPlayers: makeClub('UA', 'A', 16), clubBPlayers: makeClub('UB', 'B', 15), courts: 4, availableMinutes: 180, playMinutes: 10, changeoverMinutes: 2 });
@@ -137,5 +143,5 @@ console.log('\nCLUB CHALLENGE v1.0 — GATE 1 ENGINE TESTS PASS');
 console.log('------------------------------------------------');
 console.log(`Canonical: 16+16 | 4 courts | 12 rounds | 48 matches | games ${canonicalFairness.minGames}-${canonicalFairness.maxGames}`);
 console.log(`Canonical fairness: partner repeats ${canonicalFairness.repeatedPartnerPairs}; opponent pairs repeated ${canonicalFairness.repeatedOpponentPairs}; max opponent repeat ${canonicalFairness.maxOpponentRepeat}; consecutive rests ${canonicalFairness.consecutiveRestOccurrences}; avg strength gap ${canonicalFairness.averageStrengthGap.toFixed(2)}`);
-console.log('Generalised fixtures: 12+12/3c, 20+20/4c, 20+20/5c, 24+24/4c, 24+24/6c PASS');
+console.log('Generalised fixtures: 12+12/3c, 13+13/3c, 20+20/4c, 20+20/5c, 24+24/4c, 24+24/6c PASS');
 console.log('Variable timing, timed draws, 11/15 win-by-1/2 validation, showcase scoring, tiebreak and revision-conflict helpers PASS');
