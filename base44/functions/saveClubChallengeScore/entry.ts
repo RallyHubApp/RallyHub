@@ -53,6 +53,9 @@ Deno.serve(async (req) => {
 
     const validationError = validateScore(scoreA, scoreB, event);
     if (validationError) return Response.json({ error: validationError }, { status: 400 });
+    if (match.is_showcase && Number(scoreA) === Number(scoreB)) {
+      return Response.json({ error: 'Showcase Final requires a winner.' }, { status: 400 });
+    }
 
     const a = Number(scoreA), b = Number(scoreB);
     const winner = a === b ? 'draw' : a > b ? 'club_a' : 'club_b';
