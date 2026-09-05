@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2, Crown, FileSpreadsheet, Zap, Flag } from 'lucide-react';
+import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2, Crown, FileSpreadsheet, Zap, Flag, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -108,32 +108,48 @@ export default function Tournaments() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tournaments" description={`${tournaments.length} tournaments`}>
-        <Button variant="outline" className="gap-2 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10" onClick={handleQuickKotc}>
-          <Crown className="w-4 h-4" /> King of the Court
-        </Button>
-        <Button variant="outline" className="gap-2 border-accent/40 text-accent hover:bg-accent/10" onClick={handleQuickTournival}>
-          <Zap className="w-4 h-4" /> Tournival
-        </Button>
-        <Button variant="outline" className="gap-2 border-primary/40 text-primary hover:bg-primary/10" onClick={handleQuickClubChallenge}>
-          <Flag className="w-4 h-4" /> Club Challenge
-        </Button>
-        <Button variant="outline" className="gap-2 border-primary/40 text-primary hover:bg-primary/10" onClick={async () => {
-          const t = await base44.entities.Tournament.create({
-            name: `King of the Court — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
-            format: 'King of the Court', partnership_type: 'Singles', status: 'Draft',
-            kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11', player_ids: [], partner_pairs: [],
-          });
-          queryClient.invalidateQueries({ queryKey: ['tournaments'] });
-          setNewKotcTournament(t);
-          setKotcXlsxOpen(true);
-        }}>
-          <FileSpreadsheet className="w-4 h-4" /> KOTC from XLSX
-        </Button>
+      <PageHeader title="Tournament Control Centre" description={`${tournaments.length} event${tournaments.length === 1 ? '' : 's'} · create, run and review competitions`}>
         <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setCreateOpen(true)}>
-          <Plus className="w-4 h-4" /> Create Tournament
+          <Plus className="w-4 h-4" /> New Tournament
         </Button>
       </PageHeader>
+
+      <div className="glass rounded-2xl p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Start a competition</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Choose the format you want to run. Advanced options remain available in New Tournament.</p>
+          </div>
+          <Button variant="ghost" size="sm" className="justify-start sm:justify-center text-muted-foreground" onClick={async () => {
+            const t = await base44.entities.Tournament.create({
+              name: `King of the Court — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
+              format: 'King of the Court', partnership_type: 'Singles', status: 'Draft',
+              kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11', player_ids: [], partner_pairs: [],
+            });
+            queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+            setNewKotcTournament(t);
+            setKotcXlsxOpen(true);
+          }}>
+            <FileSpreadsheet className="w-4 h-4 mr-2" /> Import KOTC roster
+          </Button>
+        </div>
+        <div className="grid md:grid-cols-3 gap-3">
+          {[
+            { title: 'Club Challenge', desc: 'Two-club event with fairness, live scoring and event-day controls.', icon: Flag, action: handleQuickClubChallenge, accent: 'text-primary bg-primary/10' },
+            { title: 'King of the Court', desc: 'Fast-moving court rotation for club sessions and social competition.', icon: Crown, action: handleQuickKotc, accent: 'text-yellow-400 bg-yellow-500/10' },
+            { title: 'Tournival', desc: 'Group play followed by a seeded knockout competition.', icon: Zap, action: handleQuickTournival, accent: 'text-accent bg-accent/10' },
+          ].map(item => (
+            <button key={item.title} onClick={item.action} className="group text-left rounded-xl border border-border bg-secondary/30 p-4 hover:bg-secondary/60 hover:border-muted-foreground/40 transition-all min-h-[132px]">
+              <div className="flex items-start justify-between gap-3">
+                <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', item.accent)}><item.icon className="w-5 h-5" /></div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <p className="text-sm font-semibold text-foreground mt-3">{item.title}</p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -167,16 +183,15 @@ export default function Tournaments() {
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               )}
-              <Link to={`/app/tournaments/${t.id}`} className="glass rounded-xl p-5 block hover:scale-[1.02] transition-all duration-200 group h-full">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Trophy className="w-5 h-5 text-primary" />
+              <Link to={`/app/tournaments/${t.id}`} className="rounded-xl border border-border bg-card/60 p-4 sm:p-5 block hover:border-primary/30 hover:bg-card transition-all duration-200 group h-full">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="min-w-0">
+                    <Badge variant="outline" className="text-[10px] mb-2">{t.format}</Badge>
+                    <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors break-words pr-6">{t.name}</h3>
                   </div>
-                  <Badge className={cn("text-[10px]", statusColors[t.status] || statusColors['Draft'])}>{t.status}</Badge>
+                  <Badge className={cn("text-[10px] shrink-0", statusColors[t.status] || statusColors['Draft'])}>{t.status}</Badge>
                 </div>
-                <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{t.name}</h3>
-                <p className="text-xs text-muted-foreground mt-1">{t.format}</p>
-                <div className="mt-4 space-y-1.5">
+                <div className="mt-3 space-y-1.5">
                   {t.start_date && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Calendar className="w-3 h-3" />
@@ -192,6 +207,10 @@ export default function Tournaments() {
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Users className="w-3 h-3" /> {t.player_ids?.length || 0}{t.max_players ? `/${t.max_players}` : ''} players
                   </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Open control centre</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                 </div>
               </Link>
               </div>
