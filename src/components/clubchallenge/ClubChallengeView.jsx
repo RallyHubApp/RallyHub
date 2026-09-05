@@ -42,9 +42,9 @@ function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n
 
 function ClubBadge({ name, primary, secondary }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 bg-secondary/40">
+    <div className="flex items-center gap-2 rounded-lg border border-border px-2.5 sm:px-3 py-2 bg-secondary/40 min-w-0 flex-1 sm:flex-none">
       <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: primary || '#334155', color: secondary || '#fff' }}>{(name || '?').slice(0, 2).toUpperCase()}</span>
-      <span className="text-xs font-semibold text-foreground">{name}</span>
+      <span className="text-xs font-semibold text-foreground truncate min-w-0">{name}</span>
     </div>
   );
 }
@@ -71,8 +71,8 @@ function RankingList({ side, title, participants, locked, onReorder }) {
               {ordered.map((p, i) => (
                 <Draggable key={p.id} draggableId={p.id} index={i} isDragDisabled={locked}>
                   {(dragProvided, snapshot) => (
-                    <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn('flex items-center gap-2 rounded-lg border border-border bg-secondary/60 p-2', snapshot.isDragging && 'border-primary bg-primary/10')}>
-                      <div {...dragProvided.dragHandleProps} className={locked ? 'opacity-30' : 'text-muted-foreground'}><GripVertical className="w-4 h-4" /></div>
+                    <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn('flex items-center gap-2 rounded-lg border border-border bg-secondary/60 p-2 min-h-11', snapshot.isDragging && 'border-primary bg-primary/10')}>
+                      <div {...dragProvided.dragHandleProps} className={cn('w-9 h-9 -ml-1 flex items-center justify-center rounded-md touch-none shrink-0', locked ? 'opacity-30' : 'text-muted-foreground active:bg-primary/10')}><GripVertical className="w-5 h-5" /></div>
                       <span className="w-7 text-center text-xs font-bold text-primary">#{i + 1}</span>
                       <span className="text-xs text-foreground flex-1 truncate">{p.display_name}</span>
                       {p.gender && <span className="text-[10px] text-muted-foreground">{p.gender}</span>}
@@ -118,17 +118,17 @@ function ScoreCard({ match, clubAName, clubBName, onSaved }) {
   return (
     <div className="glass rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between"><span className="text-xs font-bold">Court {match.court_number}</span><Badge variant="outline">R{match.round_number}</Badge></div>
-      <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-stretch sm:items-center">
         <div className="rounded-lg bg-secondary p-3"><p className="text-[10px] text-muted-foreground">{clubAName}</p><p className="text-xs font-semibold">{(match.club_a_names || []).join(' & ')}</p></div>
-        <span className="text-xs text-muted-foreground">vs</span>
+        <span className="text-xs text-muted-foreground text-center self-center">vs</span>
         <div className="rounded-lg bg-secondary p-3"><p className="text-[10px] text-muted-foreground">{clubBName}</p><p className="text-xs font-semibold">{(match.club_b_names || []).join(' & ')}</p></div>
       </div>
       <div className="flex gap-2 items-center">
-        <Input type="number" min="0" value={a} onChange={e => setA(e.target.value)} className="text-center bg-secondary" />
+        <Input inputMode="numeric" type="number" min="0" value={a} onChange={e => setA(e.target.value)} className="text-center bg-secondary h-11 text-base" />
         <span>—</span>
-        <Input type="number" min="0" value={b} onChange={e => setB(e.target.value)} className="text-center bg-secondary" />
+        <Input inputMode="numeric" type="number" min="0" value={b} onChange={e => setB(e.target.value)} className="text-center bg-secondary h-11 text-base" />
       </div>
-      <Button className="w-full" onClick={save} disabled={a === '' || b === '' || saving}>{saving ? 'Saving…' : saved ? 'Correct Result' : 'Save Result'}</Button>
+      <Button className="w-full h-11" onClick={save} disabled={a === '' || b === '' || saving}>{saving ? 'Saving…' : saved ? 'Correct Result' : 'Save Result'}</Button>
       {saved && <p className="text-[10px] text-muted-foreground text-center">Revision {match.revision || 0} · {match.winner === 'draw' ? 'Draw' : match.winner === 'club_a' ? `${clubAName} win` : `${clubBName} win`}</p>}
     </div>
   );
@@ -327,30 +327,30 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   return (
     <div className="space-y-4">
-      <div className="glass rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <div className="glass rounded-xl p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 min-w-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><ShieldCheck className="w-5 h-5 text-primary" /></div>
           <div><p className="font-semibold text-foreground">Club Challenge v1.0</p><p className="text-xs text-muted-foreground">{event ? `Status: ${event.status.replaceAll('_', ' ')}` : 'Configure the inter-club event'}</p></div>
         </div>
-        {event && <div className="flex items-center gap-2"><ClubBadge name={event.club_a_name} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground">vs</span><ClubBadge name={event.club_b_name} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>}
+        {event && <div className="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>}
       </div>
 
-      <div className="flex overflow-x-auto gap-1">
-        {TABS.map(([id, label]) => <button key={id} onClick={() => setTab(id)} className={cn('px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap', tab === id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary')}>{label}</button>)}
+      <div className="flex overflow-x-auto gap-1 -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 snap-x scrollbar-none">
+        {TABS.map(([id, label]) => <button key={id} onClick={() => setTab(id)} className={cn('px-3 py-2.5 rounded-lg text-xs font-medium whitespace-nowrap min-h-10 snap-start', tab === id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary')}>{label}</button>)}
       </div>
 
       {tab === 'setup' && (
         <div className="space-y-4">
           <div className="grid lg:grid-cols-2 gap-4">
             {[['A', 'Host Club', 'clubAName', 'clubAPrimary', 'clubASecondary'], ['B', 'Opponent Club', 'clubBName', 'clubBPrimary', 'clubBSecondary']].map(([side, label, nameKey, primaryKey, secondaryKey]) => (
-              <div key={side} className="glass rounded-xl p-5 space-y-3">
+              <div key={side} className="glass rounded-xl p-4 sm:p-5 space-y-3">
                 <p className="text-sm font-semibold">{label}</p>
                 <div><Label className="text-xs">Club name</Label><Input value={setup[nameKey]} onChange={e => setSetup(s => ({ ...s, [nameKey]: e.target.value }))} className="mt-1 bg-secondary" /></div>
                 <div className="grid grid-cols-2 gap-3"><div><Label className="text-xs">Primary</Label><Input type="color" value={setup[primaryKey]} onChange={e => setSetup(s => ({ ...s, [primaryKey]: e.target.value }))} className="mt-1 h-10 bg-secondary" /></div><div><Label className="text-xs">Accent</Label><Input type="color" value={setup[secondaryKey]} onChange={e => setSetup(s => ({ ...s, [secondaryKey]: e.target.value }))} className="mt-1 h-10 bg-secondary" /></div></div>
               </div>
             ))}
           </div>
-          <div className="glass rounded-xl p-5 space-y-4">
+          <div className="glass rounded-xl p-4 sm:p-5 space-y-4">
             <p className="text-sm font-semibold">Event Configuration</p>
             <div className="grid sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {[['Courts','courts'],['Available min','availableMinutes'],['Play min','playMinutes'],['Changeover min','changeoverMinutes'],['Break min','breakMinutes'],['Break after round','breakAfterRound']].map(([label,key]) => <div key={key}><Label className="text-xs">{label}</Label><Input type="number" value={setup[key]} onChange={e => setSetup(s => ({ ...s, [key]: e.target.value }))} className="mt-1 bg-secondary" /></div>)}
@@ -360,11 +360,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               {setup.matchType === 'points' && <><div><Label className="text-xs">Target</Label><Select value={String(setup.target)} onValueChange={v => setSetup(s => ({ ...s, target: number(v) }))}><SelectTrigger className="mt-1 bg-secondary"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="11">11</SelectItem><SelectItem value="15">15</SelectItem></SelectContent></Select></div><div><Label className="text-xs">Win by</Label><Select value={String(setup.winBy)} onValueChange={v => setSetup(s => ({ ...s, winBy: number(v) }))}><SelectTrigger className="mt-1 bg-secondary"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">1</SelectItem><SelectItem value="2">2</SelectItem></SelectContent></Select></div></>}
               <div><Label className="text-xs">Composition</Label><Select value={setup.compositionMode} onValueChange={v => setSetup(s => ({ ...s, compositionMode: v }))}><SelectTrigger className="mt-1 bg-secondary"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="open">Open</SelectItem><SelectItem value="mixed_preferred">Mixed preferred</SelectItem><SelectItem value="mixed_required">Mixed required</SelectItem><SelectItem value="mens">Men's</SelectItem><SelectItem value="womens">Women's</SelectItem></SelectContent></Select></div>
             </div>
-            <div className="flex flex-wrap gap-4 text-xs">
-              <label className="flex items-center gap-2"><input type="checkbox" checked={setup.includeBreak} onChange={e => setSetup(s => ({ ...s, includeBreak: e.target.checked }))} /> Scheduled break</label>
-              {setup.matchType === 'timed' && <label className="flex items-center gap-2"><input type="checkbox" checked={setup.drawsAllowed} onChange={e => setSetup(s => ({ ...s, drawsAllowed: e.target.checked }))} /> Timed draws allowed</label>}
-              <label className="flex items-center gap-2"><input type="checkbox" checked={setup.showcaseEnabled} onChange={e => setSetup(s => ({ ...s, showcaseEnabled: e.target.checked }))} /> Showcase Final ({setup.showcasePoints} pts)</label>
-              <label className="flex items-center gap-2"><input type="checkbox" checked={setup.potEnabled} onChange={e => setSetup(s => ({ ...s, potEnabled: e.target.checked }))} /> Player of Tournament voting</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 lg:gap-4 text-xs">
+              <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.includeBreak} onChange={e => setSetup(s => ({ ...s, includeBreak: e.target.checked }))} /> Scheduled break</label>
+              {setup.matchType === 'timed' && <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.drawsAllowed} onChange={e => setSetup(s => ({ ...s, drawsAllowed: e.target.checked }))} /> Timed draws allowed</label>}
+              <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.showcaseEnabled} onChange={e => setSetup(s => ({ ...s, showcaseEnabled: e.target.checked }))} /> Showcase Final ({setup.showcasePoints} pts)</label>
+              <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.potEnabled} onChange={e => setSetup(s => ({ ...s, potEnabled: e.target.checked }))} /> Player of Tournament voting</label>
             </div>
           </div>
           <Button onClick={saveSetup} disabled={!isAdmin || saving} className="w-full h-11">{saving ? 'Saving…' : event ? 'Save Setup Changes' : 'Create Club Challenge'}</Button>
@@ -374,12 +374,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       {tab === 'teams' && (
         <div className="space-y-4">
           {!event ? <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">Save Setup first.</div> : <>
-            <div className="glass rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="glass rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div><p className="text-sm font-semibold">Participants</p><p className="text-xs text-muted-foreground">Event ranks are independent of permanent RallyHub skill ratings.</p></div>
-              <Button variant="outline" onClick={loadTestRoster} disabled={locked || saving}><Users className="w-4 h-4 mr-2" />Load 16+16 Gate 3 Test Roster</Button>
+              <Button variant="outline" className="w-full sm:w-auto min-h-11" onClick={loadTestRoster} disabled={locked || saving}><Users className="w-4 h-4 mr-2" />Load 16+16 Gate 3 Test Roster</Button>
             </div>
             <div className="grid lg:grid-cols-2 gap-4">
-              {['club_a','club_b'].map(side => <div key={side} className="glass rounded-xl p-4"><div className="flex gap-2"><Input placeholder={`Add ${side === 'club_a' ? setup.clubAName : setup.clubBName} player`} value={manual[side]} onChange={e => setManual(m => ({ ...m, [side]: e.target.value }))} className="bg-secondary" /><Button onClick={() => addManual(side)} disabled={locked || !manual[side].trim()}><Plus className="w-4 h-4" /></Button></div></div>)}
+              {['club_a','club_b'].map(side => <div key={side} className="glass rounded-xl p-4"><div className="grid grid-cols-[1fr_auto] gap-2"><Input placeholder={`Add ${side === 'club_a' ? setup.clubAName : setup.clubBName} player`} value={manual[side]} onChange={e => setManual(m => ({ ...m, [side]: e.target.value }))} className="bg-secondary" /><Button className="w-11 h-11 p-0" onClick={() => addManual(side)} disabled={locked || !manual[side].trim()}><Plus className="w-4 h-4" /></Button></div></div>)}
             </div>
             <div className="grid lg:grid-cols-2 gap-4"><RankingList side="club_a" title={setup.clubAName} participants={aPlayers} locked={locked} onReorder={reorder} /><RankingList side="club_b" title={setup.clubBName} participants={bPlayers} locked={locked} onReorder={reorder} /></div>
             {formatInfo && <div className="glass rounded-xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-center"><div><p className="text-xl font-bold">{formatInfo.recommendedRounds}</p><p className="text-[10px] text-muted-foreground">Rounds</p></div><div><p className="text-xl font-bold">{formatInfo.totalMatches}</p><p className="text-[10px] text-muted-foreground">Matches</p></div><div><p className="text-xl font-bold">{formatInfo.gamesRangeClubA.join('–')}</p><p className="text-[10px] text-muted-foreground">Games/player</p></div><div><p className="text-xl font-bold">{formatInfo.structuredMinutes}</p><p className="text-[10px] text-muted-foreground">Structured min</p></div><div><p className="text-xl font-bold">{formatInfo.remainingMinutes}</p><p className="text-[10px] text-muted-foreground">Contingency min</p></div></div>}
@@ -393,7 +393,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           {!matches.length ? <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">Generate a draw from Teams & Ranking first.</div> : <>
             {fairness && <div className="glass rounded-xl p-5"><div className="flex items-center justify-between mb-4"><div><p className="text-sm font-semibold">Fairness Report</p><p className="text-xs text-muted-foreground">Gate 2 priorities applied</p></div><Badge className={fairness.equalGames && !fairness.duplicatePlayerRoundIssues ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}>{fairness.equalGames && !fairness.duplicatePlayerRoundIssues ? 'Hard checks PASS' : 'Review required'}</Badge></div><div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-center">{[['Matches',fairness.totalMatches],['Games min',fairness.minGames],['Games max',fairness.maxGames],['Partner repeats',fairness.repeatedPartnerPairs],['Max opp repeat',fairness.maxOpponentRepeat],['Consecutive rests',fairness.consecutiveRestOccurrences],['Avg strength gap',Number(fairness.averageStrengthGap).toFixed(2)],['Max gap',fairness.maxStrengthGap]].map(([l,v]) => <div key={l} className="rounded-lg bg-secondary p-3"><p className="text-lg font-bold">{v}</p><p className="text-[10px] text-muted-foreground">{l}</p></div>)}</div></div>}
             <div className="space-y-3 max-h-[48rem] overflow-auto">{rounds.map(r => <div key={r} className="glass rounded-xl p-4"><div className="flex items-center justify-between mb-3"><p className="text-sm font-bold">Round {r}</p><span className="text-[10px] text-muted-foreground">{matches.filter(m => m.round_number === r).length} courts</span></div><div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">{matches.filter(m => m.round_number === r).sort((a,b)=>a.court_number-b.court_number).map(m => <div key={m.id} className="rounded-lg bg-secondary p-3"><p className="text-[10px] font-bold text-primary mb-2">Court {m.court_number}</p><p className="text-xs">{(m.club_a_names || []).join(' & ')}</p><p className="text-[10px] text-muted-foreground my-1">vs</p><p className="text-xs">{(m.club_b_names || []).join(' & ')}</p></div>)}</div></div>)}</div>
-            <div className="flex gap-2">{event?.status === 'draw_generated' && <><Button variant="outline" className="flex-1" onClick={generateDraw} disabled={saving}><RefreshCw className="w-4 h-4 mr-2" />Full Redraw</Button><Button className="flex-1" onClick={approveDraw}><Check className="w-4 h-4 mr-2" />Approve Draw</Button></>}{event?.status === 'draw_approved' && <Button className="w-full" onClick={startEvent}><Play className="w-4 h-4 mr-2" />Start Club Challenge</Button>}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{event?.status === 'draw_generated' && <><Button variant="outline" className="w-full min-h-11" onClick={generateDraw} disabled={saving}><RefreshCw className="w-4 h-4 mr-2" />Full Redraw</Button><Button className="w-full min-h-11" onClick={approveDraw}><Check className="w-4 h-4 mr-2" />Approve Draw</Button></>}{event?.status === 'draw_approved' && <Button className="w-full" onClick={startEvent}><Play className="w-4 h-4 mr-2" />Start Club Challenge</Button>}</div>
           </>}
         </div>
       )}
@@ -401,7 +401,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       {tab === 'live' && (
         <div className="space-y-4">
           {!event || !['in_progress','paused','completed'].includes(event.status) ? <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">Approve the draw and Start Club Challenge first.</div> : <>
-            <div className="glass rounded-xl p-5"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><p className="text-sm text-muted-foreground">Round {currentRound} of {Math.max(...rounds)}</p><p className="text-2xl font-bold">{event.club_a_name} {score.clubA} <span className="text-muted-foreground font-normal">–</span> {score.clubB} {event.club_b_name}</p></div><div className="flex gap-2 text-xs"><Badge variant="outline">{score.matchesWonA}W</Badge><Badge variant="outline">{score.draws}D</Badge><Badge variant="outline">{score.matchesWonB}W</Badge></div></div>{event.include_break && currentRound === event.break_after_round && <div className="mt-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-xs text-yellow-400"><Clock className="inline w-4 h-4 mr-1" />Scheduled {event.break_minutes}-minute break after this round.</div>}</div>
+            <div className="glass rounded-xl p-4 sm:p-5"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div className="min-w-0"><p className="text-sm text-muted-foreground">Round {currentRound} of {Math.max(...rounds)}</p><p className="text-xl sm:text-2xl font-bold break-words">{event.club_a_name} {score.clubA} <span className="text-muted-foreground font-normal">–</span> {score.clubB} {event.club_b_name}</p></div><div className="flex gap-2 text-xs"><Badge variant="outline">{score.matchesWonA}W</Badge><Badge variant="outline">{score.draws}D</Badge><Badge variant="outline">{score.matchesWonB}W</Badge></div></div>{event.include_break && currentRound === event.break_after_round && <div className="mt-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-xs text-yellow-400"><Clock className="inline w-4 h-4 mr-1" />Scheduled {event.break_minutes}-minute break after this round.</div>}</div>
             <div className="grid md:grid-cols-2 gap-3">{currentMatches.sort((a,b)=>a.court_number-b.court_number).map(m => <ScoreCard key={`${m.id}-${m.revision}`} match={m} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={refetchMatches} />)}</div>
             {event.status !== 'completed' && <Button className="w-full h-11" onClick={advanceRound}>{currentRound < Math.max(...rounds) ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Finalise Club Challenge</>}</Button>}
             {event.status === 'completed' && <div className="glass rounded-xl p-8 text-center"><Trophy className="w-10 h-10 text-primary mx-auto mb-2" /><p className="text-xl font-bold">Club Challenge complete</p><p className="text-sm text-muted-foreground mt-1">Final normal-match score: {event.club_a_name} {score.clubA}–{score.clubB} {event.club_b_name}</p></div>}
