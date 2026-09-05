@@ -284,6 +284,20 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     return () => window.clearInterval(id);
   }, []);
   React.useEffect(() => {
+    const resyncVisibleTimer = () => {
+      if (document.visibilityState !== 'visible') return;
+      setTimerNow(Date.now());
+      refetchEvent?.();
+      refetchMatches?.();
+    };
+    document.addEventListener('visibilitychange', resyncVisibleTimer);
+    window.addEventListener('focus', resyncVisibleTimer);
+    return () => {
+      document.removeEventListener('visibilitychange', resyncVisibleTimer);
+      window.removeEventListener('focus', resyncVisibleTimer);
+    };
+  }, [refetchEvent, refetchMatches]);
+  React.useEffect(() => {
     if (!('speechSynthesis' in window)) return;
     const loadVoices = () => setVoices(window.speechSynthesis.getVoices());
     loadVoices();
