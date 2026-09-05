@@ -436,7 +436,7 @@ export default function TournamentDetail() {
 
       {/* Tabs — standard formats only */}
       {!isKotc && !isTournival && !isClubChallenge && <Tabs defaultValue={matches.length > 0 ? 'draw' : 'players'}>
-        <TabsList className="bg-secondary">
+        <TabsList className="bg-secondary w-full justify-start overflow-x-auto h-auto scrollbar-none">
           <TabsTrigger value="draw" className="gap-1.5 text-xs">
             <GitBranch className="w-3.5 h-3.5" /> Draw
           </TabsTrigger>
