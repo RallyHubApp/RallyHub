@@ -600,13 +600,22 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     toast.info(`${keep.length} future matches fit; ${drop.length} would be marked Not Played. Review before confirming.`);
   };
   const confirmEventDayAdjustment = async () => {
-    if (!eventDayProposal || !isAdmin) return;
-    const now = new Date().toISOString();
-    for (const c of eventDayProposal.changes) { const m = normalMatches.find(x=>x.id===c.id); if (m && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status)) await base44.entities.ClubChallengeMatch.update(m.id,{round_number:c.newRound,court_number:c.newCourt,revision:Number(m.revision||0)+1}); }
-    for (const id of eventDayProposal.dropIds) { const m=normalMatches.find(x=>x.id===id); if (m && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status)) await base44.entities.ClubChallengeMatch.update(id,{status:'not_played',winner:'none',revision:Number(m.revision||0)+1}); }
-    await base44.entities.ClubChallengeEvent.update(event.id,{courts:eventDayProposal.courts,available_minutes:eventDayProposal.minutes,event_pack_stale:true});
-    await base44.entities.ClubChallengeAudit.create({tenant_id:event.tenant_id,challenge_event_id:event.id,action:'event_day_schedule_adjusted',user_id:currentUser?.id||'',occurred_at:now,old_value_json:JSON.stringify({courts:event.courts,available_minutes:event.available_minutes}),new_value_json:JSON.stringify(eventDayProposal),note:'Organiser confirmed court/time disruption proposal; completed fixtures preserved.'});
-    toast.success(`Schedule adjusted: ${eventDayProposal.changes.length} future fixture positions changed; ${eventDayProposal.dropIds.length} marked Not Played.`); setEventDayProposal(null); await sync();
+    if (!eventDayProposal || !canManageEvent) return;
+    try {
+      const res = await base44.functions.invoke('updateClubChallengeSchedule', {
+        eventId: event.id,
+        courts: eventDayProposal.courts,
+        availableMinutes: eventDayProposal.minutes,
+        changes: eventDayProposal.changes,
+        dropIds: eventDayProposal.dropIds,
+      });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      toast.success(`Schedule adjusted: ${eventDayProposal.changes.length} future fixture positions changed; ${eventDayProposal.dropIds.length} marked Not Played.`);
+      setEventDayProposal(null);
+      await sync();
+    } catch (e) {
+      toast.error(e?.response?.data?.error || e?.message || 'Could not confirm schedule adjustment');
+    }
   };
 
   const finaliseEvent = async (winner, method, note = '') => {
