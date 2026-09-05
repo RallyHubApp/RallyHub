@@ -15,7 +15,7 @@ Purpose: maximise confidence before the next live deployment while preserving th
 - WF-007 Responsive/small-screen risk review: navigation, dialogs, score inputs, action buttons, overflow — PASS-WITH-FIX (static responsive simulator + lint/build pass; fixed standard tournament tab overflow on narrow screens and multi-game score-chip wrapping)
 
 ### Phase B — Club Challenge front-end workflow
-- CCUI-001 Setup → Teams → Draw → Approve → Start navigation guards
+- CCUI-001 Setup → Teams → Draw → Approve → Start navigation guards — PASS (static navigation/guard simulator + source inspection + lint/build pass; redraw protection confirmed by completed-match-history block)
 - CCUI-002 16+16 roster loading/ranking/locking and redraw constraints
 - CCUI-003 Draw/fairness display and approved Event Pack state
 - CCUI-004 Live scoring on simultaneous courts and stale revision conflict
