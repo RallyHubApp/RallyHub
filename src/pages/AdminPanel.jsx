@@ -58,7 +58,7 @@ export default function AdminPanel() {
   const { data: allUsers = [] } = useQuery({
     queryKey: ['all-users'],
     queryFn: async () => {
-      const res = await base44.functions.invoke('adminUserAccess', { action: 'list' });
+      const res = await base44.functions.invoke('adminUserTools', { action: 'list_users' });
       if (res.data?.error) throw new Error(res.data.error);
       return res.data?.users || [];
     }
@@ -252,7 +252,7 @@ export default function AdminPanel() {
   const setApprovalStatus = async (userId, status) => {
     setUpdatingApproval(userId);
     const targetUser = allUsers.find(u => u.id === userId);
-    const approvalRes = await base44.functions.invoke('adminUserAccess', { action: 'set_approval', userId, status });
+    const approvalRes = await base44.functions.invoke('adminUserTools', { action: 'set_approval', userId, status });
     if (approvalRes.data?.error) {
       toast.error(approvalRes.data.error);
       setUpdatingApproval(null);
