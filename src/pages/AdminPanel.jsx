@@ -70,7 +70,7 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
-  // Guard: KOTC admin roles only
+  // Guard: platform/site admins only. KOTC event roles must not grant site-admin access.
   if (!canAccessAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-center">
