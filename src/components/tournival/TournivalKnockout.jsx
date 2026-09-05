@@ -5,23 +5,26 @@ import { Input } from '@/components/ui/input';
 import { Trophy, Check, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { validateTournivalScore } from '@/lib/tournivalEngine';
 
 const STAGE_ORDER = ['QF', 'SF', 'Final', '3rd'];
 const STAGE_LABELS = { QF: 'Quarter-Finals', SF: 'Semi-Finals', Final: 'Final', '3rd': '3rd/4th Playoff' };
 
-function KnockoutMatch({ match, isAdmin, onSaveResult }) {
+function KnockoutMatch({ match, isAdmin, onSaveResult, matchFormat }) {
   const [scoreA, setScoreA] = useState(match.result?.scoreA ?? '');
   const [scoreB, setScoreB] = useState(match.result?.scoreB ?? '');
   const [editing, setEditing] = useState(!match.result);
 
   const pair1Name = match.pair1 ? `${match.pair1.player1.name} & ${match.pair1.player2.name}` : 'TBD';
   const pair2Name = match.pair2 ? `${match.pair2.player1.name} & ${match.pair2.player2.name}` : 'TBD';
-  const canSave = scoreA !== '' && scoreB !== '' && Number(scoreA) !== Number(scoreB);
+  const validation = scoreA === '' || scoreB === '' ? { valid: false, error: '' } : validateTournivalScore(scoreA, scoreB, matchFormat);
+  const canSave = validation.valid;
 
   const handleSave = () => {
+    const check = validateTournivalScore(scoreA, scoreB, matchFormat);
+    if (!check.valid) return;
     const sA = Number(scoreA);
     const sB = Number(scoreB);
-    if (sA === sB) return;
     onSaveResult(match.id, { winner: sA > sB ? 'A' : 'B', scoreA: sA, scoreB: sB });
     setEditing(false);
   };
@@ -66,6 +69,7 @@ function KnockoutMatch({ match, isAdmin, onSaveResult }) {
             <Input type="number" min={0} max={99} value={scoreB} onChange={e => setScoreB(e.target.value)}
               placeholder="P2" className="h-8 text-sm text-center bg-secondary border-border" />
           </div>
+          {scoreA !== '' && scoreB !== '' && !validation.valid && <p className="text-[10px] text-destructive">{validation.error}</p>}
           <Button size="sm" className="w-full h-8 text-xs bg-primary text-primary-foreground" onClick={handleSave} disabled={!canSave}>
             <Check className="w-3 h-3 mr-1" /> Save Result
           </Button>
@@ -89,7 +93,7 @@ function KnockoutMatch({ match, isAdmin, onSaveResult }) {
   );
 }
 
-export default function TournivalKnockout({ knockoutState, isAdmin, onSaveResult, onAdvanceStage }) {
+export default function TournivalKnockout({ knockoutState, isAdmin, onSaveResult, matchFormat }) {
   if (!knockoutState) return null;
 
   const { pairs, bracket, currentStage } = knockoutState;
@@ -149,6 +153,7 @@ export default function TournivalKnockout({ knockoutState, isAdmin, onSaveResult
                   match={match}
                   isAdmin={isAdmin}
                   onSaveResult={onSaveResult}
+                  matchFormat={matchFormat}
                 />
               ))}
             </div>
