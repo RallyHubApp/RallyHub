@@ -479,9 +479,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await refetchEvent(); toast.success(winners.length > 1 ? 'Joint Player of Tournament result revealed.' : 'Player of Tournament result revealed.');
   };
   const printEventPack = async () => {
-    if (!event || event.status === 'draft' || !normalMatches.length) { toast.error('Generate and approve the draw before producing the Event Pack.'); return; }
-    const version = Number(event.event_pack_version || 0) + 1;
-    await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_version: version, event_pack_stale: false, event_pack_generated_at: new Date().toISOString() });
+    if (!event || !['draw_approved','in_progress','paused','completed'].includes(event.status) || !normalMatches.length) { toast.error('Approve the draw before producing the Event Pack.'); return; }
+    if (event.event_pack_stale) { toast.error('This pack is OUT OF DATE because fixtures changed. Re-approve the draw before printing a new authoritative pack.'); return; }
+    await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_generated_at: new Date().toISOString() });
     await refetchEvent();
     window.setTimeout(() => window.print(), 100);
   };
