@@ -87,15 +87,15 @@
     },
     "wins": {
       "type": "number",
-      "default": 0
+      "default": 0.0
     },
     "losses": {
       "type": "number",
-      "default": 0
+      "default": 0.0
     },
     "matches_played": {
       "type": "number",
-      "default": 0
+      "default": 0.0
     },
     "rating_history": {
       "type": "array",
@@ -155,7 +155,7 @@
     },
     "guest_visits_used": {
       "type": "number",
-      "default": 0
+      "default": 0.0
     },
     "guest_valid_until": {
       "type": "string",
@@ -176,16 +176,39 @@
         {
           "$and": [
             {
-              "data.user_id": "{{user.id}}"
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
             },
             {
-              "data.linked_user_email": "{{user.email}}"
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "active_club_role": "club_admin"
+              }
             }
           ]
         }
       ]
     },
-    "read": true,
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            }
+          ]
+        }
+      ]
+    },
     "update": {
       "$or": [
         {
@@ -194,10 +217,32 @@
           }
         },
         {
-          "data.user_id": "{{user.id}}"
+          "$and": [
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "active_club_role": "club_admin"
+              }
+            }
+          ]
         },
         {
-          "data.linked_user_email": "{{user.email}}"
+          "$and": [
+            {
+              "data.user_id": "{{user.id}}"
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            }
+          ]
         }
       ]
     },
