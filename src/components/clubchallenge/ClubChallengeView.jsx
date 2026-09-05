@@ -693,11 +693,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (unresolved.length) { toast.error(`${unresolved.length} result${unresolved.length === 1 ? '' : 's'} still missing in Round ${currentRound}.`); return; }
     const maxRound = Math.max(...rounds);
     if (currentRound < maxRound) {
-      if (isAdmin) await base44.entities.ClubChallengeEvent.update(event.id, { current_round: currentRound + 1 });
-      else {
-        const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1 });
-        if (res.data?.error) { toast.error(res.data.error); return; }
-      }
+      const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1 });
+      if (res.data?.error) { toast.error(res.data.error); return; }
       toast.success(`Round ${currentRound + 1} ready`);
       await refetchEvent();
     } else {
