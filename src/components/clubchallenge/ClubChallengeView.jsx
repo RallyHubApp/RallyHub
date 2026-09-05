@@ -476,9 +476,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const text = phase === 'play' ? `${label}. Play. ${Number(event?.play_minutes || 10)} minutes.` : phase === 'changeover' ? `${label} complete. Changeover. ${Number(event?.changeover_minutes || 2)} minutes.` : `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`;
     speak(text);
   };
-  const startPhase = async phase => { await timerAction('start', phase); announcePhase(phase); };
-  const pauseTimer = async () => { await timerAction('pause'); speak('Event paused.'); };
-  const resumeTimer = async () => { await timerAction('resume'); speak(`${roundLabel(currentRound)}. Resume play.`); };
+  const startPhase = async phase => { if (await timerAction('start', phase)) announcePhase(phase); };
+  const pauseTimer = async () => { if (await timerAction('pause')) speak('Event paused.'); };
+  const resumeTimer = async () => { if (await timerAction('resume')) speak(`${roundLabel(currentRound)}. Resume play.`); };
   const resetTimer = () => timerAction('reset');
   const fmtTimer = s => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
   const testVoice = () => speak(`${roundLabel(currentRound)}. Play. ${Number(event?.play_minutes || 10)} minutes.`, { force: true });
