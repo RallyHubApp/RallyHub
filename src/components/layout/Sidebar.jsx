@@ -23,7 +23,8 @@ const navItems = [
 export default function Sidebar({ isOpen, onToggle }) {
   const location = useLocation();
   const { user } = useAuth();
-  const { canAccessAdmin, role } = useKotcRole();
+  const { role } = useKotcRole();
+  const canAccessAdmin = user?.role === 'admin';
 
   return (
     <>
