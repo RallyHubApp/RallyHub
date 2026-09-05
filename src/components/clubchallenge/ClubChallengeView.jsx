@@ -512,6 +512,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <div key={side} className="glass rounded-xl p-4 sm:p-5 space-y-3">
                 <p className="text-sm font-semibold">{label}</p>
                 <div><Label className="text-xs">Club name</Label><Input value={setup[nameKey]} onChange={e => setSetup(s => ({ ...s, [nameKey]: e.target.value }))} className="mt-1 bg-secondary" /></div>
+                <div>
+                  <Label className="text-xs">Club logo</Label>
+                  <div className="mt-1 flex items-center gap-3 rounded-lg border border-border bg-secondary/40 p-3">
+                    {(side === 'A' ? setup.clubALogo : setup.clubBLogo) ? <img src={side === 'A' ? setup.clubALogo : setup.clubBLogo} alt={`${setup[nameKey]} logo`} className="w-12 h-12 rounded-lg object-contain bg-white p-1" /> : <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center"><ImagePlus className="w-5 h-5 text-muted-foreground" /></div>}
+                    <div className="flex-1 min-w-0">
+                      <Input type="file" accept="image/*" disabled={logoUploading === side} onChange={e => uploadClubLogo(side, e.target.files?.[0])} className="bg-secondary text-xs" />
+                      <p className="text-[10px] text-muted-foreground mt-1">{side === 'A' ? 'Uses the saved host-club logo automatically when available; you can replace it for this event.' : 'Upload the visiting club logo for this event.'}</p>
+                    </div>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3"><div><Label className="text-xs">Primary</Label><Input type="color" value={setup[primaryKey]} onChange={e => setSetup(s => ({ ...s, [primaryKey]: e.target.value }))} className="mt-1 h-10 bg-secondary" /></div><div><Label className="text-xs">Accent</Label><Input type="color" value={setup[secondaryKey]} onChange={e => setSetup(s => ({ ...s, [secondaryKey]: e.target.value }))} className="mt-1 h-10 bg-secondary" /></div></div>
               </div>
             ))}
@@ -636,17 +646,34 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       )}
 
       {tab === 'results' && (
-        <div className="rounded-xl border border-border bg-card p-5 sm:p-8">
-          {event?.status === 'completed' ? (
-            <div className="text-center max-w-xl mx-auto">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto"><Trophy className="w-6 h-6 text-primary" /></div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary mt-4">Final Result</p>
-              <p className="text-2xl sm:text-3xl font-bold mt-2 break-words">{event.club_a_name} {score.clubA}–{score.clubB} {event.club_b_name}</p>
-              <div className="flex justify-center gap-2 mt-4"><Badge variant="outline">{score.matchesWonA} wins</Badge><Badge variant="outline">{score.draws} draws</Badge><Badge variant="outline">{score.matchesWonB} wins</Badge></div>
-              <p className="text-xs text-muted-foreground mt-5">Showcase Final and Player of Tournament results will appear here when those Gate 3 workflows are enabled.</p>
-            </div>
+        <div className="space-y-4">
+          {score.completedMatches > 0 ? (
+            <>
+              <div className="rounded-xl border border-border bg-card p-5 sm:p-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto"><Trophy className="w-6 h-6 text-primary" /></div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary mt-4">{event?.status === 'completed' ? 'Final Result' : 'Current Result'}</p>
+                <p className="text-2xl sm:text-3xl font-bold mt-2 break-words">{event?.club_a_name} {score.clubA}–{score.clubB} {event?.club_b_name}</p>
+                <div className="flex flex-wrap justify-center gap-2 mt-4"><Badge variant="outline">{score.completedMatches} results</Badge><Badge variant="outline">{score.matchesWonA} {event?.club_a_name} wins</Badge><Badge variant="outline">{score.draws} draws</Badge><Badge variant="outline">{score.matchesWonB} {event?.club_b_name} wins</Badge></div>
+                {event?.status !== 'completed' && <p className="text-xs text-yellow-400 mt-4">Provisional — normal match results are saved, but the event has not yet been finalised.</p>}
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+                <p className="text-sm font-semibold mb-3">Match Results</p>
+                <div className="space-y-2 max-h-[42rem] overflow-auto">
+                  {matches.filter(m => !m.is_showcase && ['completed','draw','retired','forfeit','abandoned'].includes(m.status)).sort((a,b) => (a.round_number-b.round_number) || (a.court_number-b.court_number)).map(m => (
+                    <div key={m.id} className="grid grid-cols-[auto_1fr_auto_1fr_auto] items-center gap-2 rounded-lg bg-secondary/50 p-3 text-xs">
+                      <span className="font-bold text-primary">R{m.round_number} C{m.court_number}</span>
+                      <span className="truncate text-right">{(m.club_a_names || []).join(' & ')}</span>
+                      <span className="font-bold text-sm">{m.score_a ?? '–'}–{m.score_b ?? '–'}</span>
+                      <span className="truncate">{(m.club_b_names || []).join(' & ')}</span>
+                      <Badge variant="outline" className="text-[10px]">{m.status === 'draw' ? 'Draw' : m.winner === 'club_a' ? event?.club_a_name : m.winner === 'club_b' ? event?.club_b_name : m.status}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">Showcase Final and Player of Tournament results will be added here as those Gate 3 workflows are completed.</p>
+            </>
           ) : (
-            <div className="text-center"><Trophy className="w-8 h-8 text-muted-foreground/40 mx-auto" /><p className="text-sm font-semibold mt-3">Results will appear when the event is complete</p><p className="text-xs text-muted-foreground mt-1">Run the event through Live Event, then finalise it.</p></div>
+            <div className="rounded-xl border border-border bg-card p-5 sm:p-8 text-center"><Trophy className="w-8 h-8 text-muted-foreground/40 mx-auto" /><p className="text-sm font-semibold mt-3">No results recorded yet</p><p className="text-xs text-muted-foreground mt-1">Results will appear here as soon as matches are saved; finalisation is not required just to view them.</p></div>
           )}
         </div>
       )}
