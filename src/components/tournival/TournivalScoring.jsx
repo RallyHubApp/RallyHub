@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy, ChevronRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { validateTournivalScore } from '@/lib/tournivalEngine';
 
-function ScoreEntry({ court, roundNumber, playerMap, result, onSave, isTimed, disabled }) {
+function ScoreEntry({ court, playerMap, result, onSave, matchFormat, disabled }) {
   const [scoreA, setScoreA] = useState(result?.scoreA ?? '');
   const [scoreB, setScoreB] = useState(result?.scoreB ?? '');
   const [editing, setEditing] = useState(!result);
@@ -14,12 +15,14 @@ function ScoreEntry({ court, roundNumber, playerMap, result, onSave, isTimed, di
   const teamANames = court.teamA.map(id => playerMap[id] || id).join(' & ');
   const teamBNames = court.teamB.map(id => playerMap[id] || id).join(' & ');
 
-  const canSave = scoreA !== '' && scoreB !== '' && Number(scoreA) !== Number(scoreB);
+  const validation = scoreA === '' || scoreB === '' ? { valid: false, error: '' } : validateTournivalScore(scoreA, scoreB, matchFormat);
+  const canSave = validation.valid;
 
   const handleSave = () => {
+    const check = validateTournivalScore(scoreA, scoreB, matchFormat);
+    if (!check.valid) return;
     const sA = Number(scoreA);
     const sB = Number(scoreB);
-    if (sA === sB) return;
     const winner = sA > sB ? 'A' : 'B';
     onSave(court.courtNumber, { winner, scoreA: sA, scoreB: sB });
     setEditing(false);
@@ -79,8 +82,8 @@ function ScoreEntry({ court, roundNumber, playerMap, result, onSave, isTimed, di
               className="h-8 text-sm text-center bg-secondary border-border"
             />
           </div>
-          {scoreA !== '' && scoreB !== '' && Number(scoreA) === Number(scoreB) && (
-            <p className="text-[10px] text-destructive">Scores cannot be equal — there must be a winner.</p>
+          {scoreA !== '' && scoreB !== '' && !validation.valid && (
+            <p className="text-[10px] text-destructive">{validation.error}</p>
           )}
           <Button size="sm" className="w-full h-8 text-xs bg-primary text-primary-foreground" onClick={handleSave} disabled={!canSave}>
             <Check className="w-3 h-3 mr-1" /> Save Result
@@ -99,7 +102,7 @@ function ScoreEntry({ court, roundNumber, playerMap, result, onSave, isTimed, di
   );
 }
 
-export default function TournivalScoring({ rounds, results, playerMap, currentRound, onSaveResult, onCompleteRound, isAdmin }) {
+export default function TournivalScoring({ rounds, results, playerMap, currentRound, onSaveResult, onCompleteRound, isAdmin, matchFormat }) {
   const round = rounds[currentRound - 1];
   const roundResults = results[currentRound] || {};
   const allRecorded = round?.courts.every(c => roundResults[c.courtNumber]);
@@ -139,10 +142,10 @@ export default function TournivalScoring({ rounds, results, playerMap, currentRo
           <ScoreEntry
             key={court.courtNumber}
             court={court}
-            roundNumber={currentRound}
             playerMap={playerMap}
             result={roundResults[court.courtNumber]}
             onSave={onSaveResult}
+            matchFormat={matchFormat}
             disabled={!isAdmin}
           />
         ))}
