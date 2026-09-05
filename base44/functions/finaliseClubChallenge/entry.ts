@@ -1,5 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 
+function validTournamentEventGrant(a:any, tenantId:string) {
+  if (!a || a.status !== 'active' || String(a.tenant_id || '') !== String(tenantId || '')) return false;
+  const now = Date.now();
+  if (a.starts_at && Date.parse(a.starts_at) > now) return false;
+  if (a.ends_at && Date.parse(a.ends_at) < now) return false;
+  return true;
+}
+
+function validClubChallengeGrant(a:any, tenantId:string) {
+  return !!a && a.active === true && String(a.tenant_id || '') === String(tenantId || '');
+}
+
 const resolved = new Set(['completed','draw','retired','forfeit','abandoned','not_played']);
 
 Deno.serve(async (req) => {
@@ -16,8 +28,8 @@ Deno.serve(async (req) => {
 
     let allowed = user.role === 'admin';
     if (!allowed) {
-      const ta = await base44.asServiceRole.entities.TournamentUserAccess.filter({ tournament_id:event.tournament_id, user_id:user.id, status:'active' });
-      const ca = await base44.asServiceRole.entities.ClubChallengeScorer.filter({ challenge_event_id:event.id, user_id:user.id, active:true });
+      const ta = (await base44.asServiceRole.entities.TournamentUserAccess.filter({ tournament_id:event.tournament_id, user_id:user.id, status:'active' })).filter((a:any) => validTournamentEventGrant(a, event.tenant_id));
+      const ca = (await base44.asServiceRole.entities.ClubChallengeScorer.filter({ challenge_event_id:event.id, user_id:user.id, active:true })).filter((a:any) => validClubChallengeGrant(a, event.tenant_id));
       allowed = ta.some(a => ['event_manager','event_host'].includes(a.role)) || ca.some(a => a.can_finalise || ['owner','organiser'].includes(a.role));
     }
     if (!allowed) return Response.json({ error:'Finalisation permission required' }, { status:403 });
