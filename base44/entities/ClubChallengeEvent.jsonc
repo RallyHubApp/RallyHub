@@ -195,6 +195,10 @@
     "timer_state_json": {
       "type": "string"
     },
+    "timer_revision": {
+      "type": "number",
+      "default": 0
+    },
     "event_pack_version": {
       "type": "number",
       "default": 0
