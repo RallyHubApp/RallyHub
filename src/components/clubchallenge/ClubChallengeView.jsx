@@ -94,19 +94,17 @@ function RankingList({ side, title, participants, locked, onReorder }) {
   );
 }
 
-function ScoreCard({ match, clubAName, clubBName, onSaved }) {
+function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true, onQueue }) {
   const [a, setA] = useState(match.score_a ?? '');
   const [b, setB] = useState(match.score_b ?? '');
   const [saving, setSaving] = useState(false);
   const saved = ['completed', 'draw'].includes(match.status);
   const save = async () => {
+    const payload = { matchId: match.id, expectedRevision: match.revision || 0, scoreA: number(a), scoreB: number(b) };
+    if (!networkOnline) { onQueue?.({ ...payload, queuedAt: new Date().toISOString(), clubAName, clubBName, matchLabel: `R${match.round_number} C${match.court_number}` }); toast.warning('Offline: result retained on this device as UNSYNCHRONISED.'); return; }
     setSaving(true);
     try {
-      const res = await base44.functions.invoke('saveClubChallengeScore', {
-        matchId: match.id,
-        expectedRevision: match.revision || 0,
-        scoreA: number(a), scoreB: number(b),
-      });
+      const res = await base44.functions.invoke('saveClubChallengeScore', payload);
       if (res.data?.conflict) {
         toast.error('Score conflict: this result changed on another device. Refresh and review it.');
       } else if (res.data?.error) {
@@ -116,7 +114,8 @@ function ScoreCard({ match, clubAName, clubBName, onSaved }) {
         onSaved?.();
       }
     } catch (e) {
-      toast.error(e?.response?.data?.error || e?.message || 'Could not save score');
+      if (!navigator.onLine || /network|fetch|offline/i.test(e?.message || '')) { onQueue?.({ ...payload, queuedAt: new Date().toISOString(), clubAName, clubBName, matchLabel: `R${match.round_number} C${match.court_number}` }); toast.warning('Connection lost: result retained locally as UNSYNCHRONISED.'); }
+      else toast.error(e?.response?.data?.error || e?.message || 'Could not save score');
       onSaved?.();
     } finally { setSaving(false); }
   };
@@ -133,7 +132,7 @@ function ScoreCard({ match, clubAName, clubBName, onSaved }) {
         <span>—</span>
         <Input inputMode="numeric" type="number" min="0" value={b} onChange={e => setB(e.target.value)} className="text-center bg-secondary h-11 text-base" />
       </div>
-      <Button className="w-full h-11" onClick={save} disabled={a === '' || b === '' || saving}>{saving ? 'Saving…' : saved ? 'Correct Result' : 'Save Result'}</Button>
+      <Button className="w-full h-11" onClick={save} disabled={a === '' || b === '' || saving}>{saving ? 'Saving…' : !networkOnline ? 'Retain Offline Result' : saved ? 'Correct Result' : 'Save Result'}</Button>
       {saved && <p className="text-[10px] text-muted-foreground text-center">Revision {match.revision || 0} · {match.winner === 'draw' ? 'Draw' : match.winner === 'club_a' ? `${clubAName} win` : `${clubBName} win`}</p>}
     </div>
   );
