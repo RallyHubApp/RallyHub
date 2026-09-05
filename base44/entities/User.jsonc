@@ -19,7 +19,7 @@
         "player"
       ],
       "default": "player",
-      "description": "King of the Court permission role"
+      "description": "Legacy King of the Court permission role"
     },
     "approval_status": {
       "type": "string",
@@ -29,7 +29,37 @@
         "rejected"
       ],
       "default": "pending",
-      "description": "Admin approval status for app access"
+      "description": "Platform account approval status"
+    },
+    "active_tenant_id": {
+      "type": "string",
+      "description": "Server-controlled active RallyHub Tenant security context"
+    },
+    "active_club_id": {
+      "type": "string",
+      "description": "Server-controlled active RallyHub Club security context"
+    },
+    "active_tenant_role": {
+      "type": "string",
+      "enum": [
+        "owner",
+        "admin"
+      ],
+      "description": "Server-controlled active Tenant role"
+    },
+    "active_club_role": {
+      "type": "string",
+      "enum": [
+        "club_admin",
+        "member"
+      ],
+      "description": "Server-controlled active Club permission bundle"
+    },
+    "security_context_updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last server-verified security context change"
     }
-  }
+  },
+  "required": []
 }
