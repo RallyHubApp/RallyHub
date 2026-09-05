@@ -779,16 +779,63 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <div className="rounded-xl border border-border bg-card p-5 sm:p-8 text-center">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto"><Trophy className="w-6 h-6 text-primary" /></div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary mt-4">{event?.status === 'completed' ? 'Final Result' : 'Current Result'}</p>
-                <p className="text-2xl sm:text-3xl font-bold mt-2 break-words">{event?.club_a_name} {score.clubA}–{score.clubB} {event?.club_b_name}</p>
-                <div className="flex flex-wrap justify-center gap-2 mt-4"><Badge variant="outline">{score.completedMatches} results</Badge><Badge variant="outline">{score.matchesWonA} {event?.club_a_name} wins</Badge><Badge variant="outline">{score.draws} draws</Badge><Badge variant="outline">{score.matchesWonB} {event?.club_b_name} wins</Badge></div>
+                <p className="text-2xl sm:text-3xl font-bold mt-2 break-words">{event?.club_a_name} {overallScore.clubA}–{overallScore.clubB} {event?.club_b_name}</p>
+                {event?.status === 'completed' && <div className="mt-3"><Badge className="bg-primary/10 text-primary">{event.showcase_resolved_winner === 'draw' ? 'Overall Draw' : `Winner: ${event.showcase_resolved_winner === 'club_b' ? event.club_b_name : event.club_a_name}`}</Badge>{event.showcase_resolved_winner !== 'draw' && <p className="text-xs text-muted-foreground mt-2">Runner-up: {event.showcase_resolved_winner === 'club_b' ? event.club_a_name : event.club_b_name}</p>}</div>}
+                <div className="flex flex-wrap justify-center gap-2 mt-4"><Badge variant="outline">{score.completedMatches} normal results</Badge><Badge variant="outline">{score.matchesWonA} {event?.club_a_name} wins</Badge><Badge variant="outline">{score.draws} draws</Badge><Badge variant="outline">{score.matchesWonB} {event?.club_b_name} wins</Badge></div>
                 <div className="grid grid-cols-3 gap-2 mt-4 max-w-lg mx-auto text-center"><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointsA}</p><p className="text-[10px] text-muted-foreground">{event?.club_a_name} game points</p></div><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointDifference >= 0 ? '+' : ''}{score.gamePointDifference}</p><p className="text-[10px] text-muted-foreground">A point differential</p></div><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointsB}</p><p className="text-[10px] text-muted-foreground">{event?.club_b_name} game points</p></div></div>
-                {score.clubA === score.clubB && score.completedMatches === matches.filter(m => !m.is_showcase).length && (() => { const metricWinner = resolveClubChallengeWinner(score, { allowDraw: false }); return <div className="mt-4 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3 text-xs"><p className="font-semibold text-yellow-400">Normal Club Challenge points are tied.</p><p className="text-muted-foreground mt-1">{metricWinner === 'clubA' ? `${event?.club_a_name} wins the no-final tiebreak on cumulative point differential / points scored.` : metricWinner === 'clubB' ? `${event?.club_b_name} wins the no-final tiebreak on cumulative point differential / points scored.` : 'The metrics are also tied — play the Showcase/tiebreak final or record an overall draw if the event rules allow it.'}</p></div>; })()}
-                {event?.status !== 'completed' && <p className="text-xs text-yellow-400 mt-4">Provisional — normal match results are saved, but the event has not yet been finalised.</p>}
+                {showcaseMatch && ['completed'].includes(showcaseMatch.status) && <p className="text-xs text-primary mt-4">Showcase Final: {showcaseMatch.winner === 'club_a' ? event?.club_a_name : event?.club_b_name} +{event?.showcase_points} points</p>}
+                {event?.status !== 'completed' && <p className="text-xs text-yellow-400 mt-4">Provisional — results are saved, but the event has not yet been finalised.</p>}
               </div>
+
+              {score.completedMatches === normalMatches.length && event?.status !== 'completed' && score.clubA !== score.clubB && (
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <p className="text-sm font-semibold">Clear Winner Ready</p>
+                  <p className="text-xs text-muted-foreground mt-1">All normal matches are complete and the Club Challenge points are not tied.</p>
+                  <Button className="mt-4 w-full sm:w-auto" onClick={() => finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Club Challenge matches.')}>Confirm Winner & Finalise</Button>
+                </div>
+              )}
+
+              {score.completedMatches === normalMatches.length && event?.status !== 'completed' && score.clubA === score.clubB && (
+                <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-5 space-y-4">
+                  <div>
+                    <p className="text-sm font-semibold text-yellow-400">Normal Club Challenge points are tied: {score.clubA}–{score.clubB}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Choose how to decide the event. Cumulative point differential is the default no-final metric.</p>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    <Button variant="outline" onClick={resolveTieByMetrics}>Use Tiebreak Metrics</Button>
+                    {event?.showcase_enabled && <Button onClick={() => document.getElementById('showcase-final-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Play Showcase Final</Button>}
+                    {event?.allow_overall_draw && <Button variant="outline" onClick={recordOverallDraw}>Record Overall Draw</Button>}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Current point differential: {event?.club_a_name} {score.gamePointDifference >= 0 ? '+' : ''}{score.gamePointDifference}; {event?.club_b_name} {score.gamePointDifference <= 0 ? '+' : ''}{-score.gamePointDifference}.</p>
+                </div>
+              )}
+
+              {score.completedMatches === normalMatches.length && score.clubA === score.clubB && event?.showcase_enabled && event?.status !== 'completed' && (
+                <div id="showcase-final-panel" className="rounded-xl border border-border bg-card p-5 space-y-4">
+                  <div><p className="text-sm font-semibold">Showcase / Tiebreak Final</p><p className="text-xs text-muted-foreground mt-1">Nominate one male and one female player from each club. Winner receives {event.showcase_points} Club Challenge points.</p></div>
+                  {!showcaseMatch ? (
+                    <>
+                      <div className="grid lg:grid-cols-2 gap-4">
+                        {[
+                          ['club_a', event.club_a_name, aPlayers, 'aMale', 'aFemale'],
+                          ['club_b', event.club_b_name, bPlayers, 'bMale', 'bFemale'],
+                        ].map(([side, clubName, list, maleKey, femaleKey]) => <div key={side} className="rounded-lg bg-secondary/40 p-4 space-y-3"><p className="text-xs font-semibold">{clubName}</p><div><Label className="text-xs">Male nominee</Label><Select value={showcaseSelection[maleKey]} onValueChange={v => setShowcaseSelection(s => ({ ...s, [maleKey]: v }))}><SelectTrigger className="mt-1 bg-secondary"><SelectValue placeholder="Select male player" /></SelectTrigger><SelectContent>{list.filter(p => genderKey(p.gender) === 'male' && !['withdrawn','injured','replaced'].includes(p.status)).map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select></div><div><Label className="text-xs">Female nominee</Label><Select value={showcaseSelection[femaleKey]} onValueChange={v => setShowcaseSelection(s => ({ ...s, [femaleKey]: v }))}><SelectTrigger className="mt-1 bg-secondary"><SelectValue placeholder="Select female player" /></SelectTrigger><SelectContent>{list.filter(p => genderKey(p.gender) === 'female' && !['withdrawn','injured','replaced'].includes(p.status)).map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select></div></div>)}
+                      </div>
+                      <Button className="w-full" onClick={createShowcaseFinal}>Create Showcase Final</Button>
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      <ScoreCard key={`${showcaseMatch.id}-${showcaseMatch.revision}`} match={showcaseMatch} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={sync} />
+                      {['completed'].includes(showcaseMatch.status) && <Button className="w-full" onClick={finaliseShowcase}>Apply {event.showcase_points} Points & Finalise Club Challenge</Button>}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
                 <p className="text-sm font-semibold mb-3">Match Results</p>
                 <div className="space-y-2 max-h-[42rem] overflow-auto">
-                  {matches.filter(m => !m.is_showcase && ['completed','draw','retired','forfeit','abandoned'].includes(m.status)).sort((a,b) => (a.round_number-b.round_number) || (a.court_number-b.court_number)).map(m => (
+                  {normalMatches.filter(m => ['completed','draw','retired','forfeit','abandoned'].includes(m.status)).sort((a,b) => (a.round_number-b.round_number) || (a.court_number-b.court_number)).map(m => (
                     <div key={m.id} className="grid grid-cols-[auto_1fr_auto_1fr_auto] items-center gap-2 rounded-lg bg-secondary/50 p-3 text-xs">
                       <span className="font-bold text-primary">R{m.round_number} C{m.court_number}</span>
                       <span className="truncate text-right">{(m.club_a_names || []).join(' & ')}</span>
@@ -799,7 +846,6 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                   ))}
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground text-center">Showcase Final and Player of Tournament results will be added here as those Gate 3 workflows are completed.</p>
             </>
           ) : (
             <div className="rounded-xl border border-border bg-card p-5 sm:p-8 text-center"><Trophy className="w-8 h-8 text-muted-foreground/40 mx-auto" /><p className="text-sm font-semibold mt-3">No results recorded yet</p><p className="text-xs text-muted-foreground mt-1">Results will appear here as soon as matches are saved; finalisation is not required just to view them.</p></div>
