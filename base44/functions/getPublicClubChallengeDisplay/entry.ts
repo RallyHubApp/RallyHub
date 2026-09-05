@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     if (!link) return Response.json({ error:'Display link is invalid or inactive.' }, { status:404 });
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:link.challenge_event_id });
     const event = events?.[0];
-    if (!event || event.status === 'draft') return Response.json({ error:'Club Challenge display is not available.' }, { status:404 });
+    if (!event || !['draw_approved','in_progress','paused','completed','archived'].includes(event.status)) return Response.json({ error:'Club Challenge display is not available.' }, { status:404 });
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200);
     const pmap = new Map(participants.map((p:any) => [p.id, maskName(p.display_name, !!event.junior_display_mode)]));
