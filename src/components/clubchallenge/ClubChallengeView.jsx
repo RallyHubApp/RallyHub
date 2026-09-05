@@ -248,10 +248,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, [event?.id, event?.round_labels_json]);
 
   const accessRole = isAdmin ? 'admin' : secureState?.accessRole || '';
-  const hasManagePermission = isAdmin || ['event_manager','event_host','owner','organiser'].includes(accessRole);
+  const permissions = isAdmin
+    ? { canManage:true, canScore:true, canCorrectScore:true, canFinalise:true, displayOnly:false }
+    : (secureState?.permissions || { canManage:false, canScore:false, canCorrectScore:false, canFinalise:false, displayOnly:false });
+  const hasManagePermission = !!permissions.canManage;
   const eventReadOnly = ['completed','archived'].includes(event?.status);
-  const canManageEvent = hasManagePermission && !eventReadOnly;
-  const canScoreEvent = (isAdmin || ['event_manager','event_host','scorer','owner','organiser'].includes(accessRole)) && !eventReadOnly;
+  const canManageEvent = !!permissions.canManage && !eventReadOnly;
+  const canScoreEvent = !!permissions.canScore && !eventReadOnly;
+  const canFinaliseEvent = !!permissions.canFinalise && !eventReadOnly;
+  const displayOnly = !!permissions.displayOnly;
   const aPlayers = participants.filter(p => p.side === 'club_a');
   const bPlayers = participants.filter(p => p.side === 'club_b');
   const normalMatches = matches.filter(m => !m.is_showcase);
