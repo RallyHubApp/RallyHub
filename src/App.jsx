@@ -31,6 +31,8 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import IsolationTest from '@/pages/IsolationTest';
+import PublicClubChallengeDisplay from '@/pages/PublicClubChallengeDisplay';
+import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -106,6 +108,8 @@ function App() {
             <Route path="/tournament/:slug/:id" element={<PublicTournament />} />
             <Route path="/:slug/:id" element={<PublicTournament />} />
             <Route path="/t/:id" element={<PublicTournament />} />
+            <Route path="/club-challenge/display/:token" element={<PublicClubChallengeDisplay />} />
+            <Route path="/club-challenge/vote/:token" element={<PublicClubChallengeVote />} />
 
             {/* Protected app routes */}
             <Route element={<ProtectedRoute fallback={<LoadingScreen />} unauthenticatedElement={<Navigate to="/login" replace />} />}>
