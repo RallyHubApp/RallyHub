@@ -38,7 +38,7 @@
             },
             {
               "user_condition": {
-                "approval_status": "approved"
+                "data.approval_status": "approved"
               }
             }
           ]
@@ -62,7 +62,7 @@
             },
             {
               "user_condition": {
-                "approval_status": "approved"
+                "data.approval_status": "approved"
               }
             }
           ]
@@ -86,7 +86,7 @@
             },
             {
               "user_condition": {
-                "approval_status": "approved"
+                "data.approval_status": "approved"
               }
             }
           ]
