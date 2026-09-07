@@ -31,6 +31,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import IsolationTest from '@/pages/IsolationTest';
 import PublicClubChallengeDisplay from '@/pages/PublicClubChallengeDisplay';
 import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
+import KotcHostSession from '@/pages/KotcHostSession';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -104,6 +105,7 @@ function App() {
 
             {/* Protected app routes */}
             <Route element={<ProtectedRoute fallback={<LoadingScreen />} unauthenticatedElement={<Navigate to="/login" replace />} />}>
+              <Route path="/kotc-host/:sessionId" element={<KotcHostSession />} />
               <Route path="/app/*" element={<AppAccessGate />} />
               <Route path="/players" element={<Navigate to="/app/players" replace />} />
               <Route path="/players/:id" element={<LegacyRedirect prefix="/app/players/" paramKey="id" />} />
