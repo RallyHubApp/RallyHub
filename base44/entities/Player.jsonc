@@ -176,6 +176,11 @@
         {
           "$and": [
             {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
               "data.tenant_id": "{{user.data.active_tenant_id}}"
             },
             {
@@ -183,12 +188,12 @@
             },
             {
               "user_condition": {
-                "data.active_club_role": "club_admin"
+                "data.approval_status": "approved"
               }
             },
             {
               "user_condition": {
-                "data.approval_status": "approved"
+                "data.active_club_role": "club_admin"
               }
             }
           ]
@@ -204,6 +209,11 @@
         },
         {
           "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
             {
               "data.tenant_id": "{{user.data.active_tenant_id}}"
             },
@@ -229,6 +239,11 @@
         {
           "$and": [
             {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
               "data.tenant_id": "{{user.data.active_tenant_id}}"
             },
             {
@@ -236,18 +251,23 @@
             },
             {
               "user_condition": {
-                "data.active_club_role": "club_admin"
+                "data.approval_status": "approved"
               }
             },
             {
               "user_condition": {
-                "data.approval_status": "approved"
+                "data.active_club_role": "club_admin"
               }
             }
           ]
         },
         {
           "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
             {
               "data.user_id": "{{user.id}}"
             },

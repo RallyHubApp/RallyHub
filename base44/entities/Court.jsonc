@@ -67,6 +67,11 @@
         {
           "$and": [
             {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
               "data.tenant_id": "{{user.data.active_tenant_id}}"
             },
             {
