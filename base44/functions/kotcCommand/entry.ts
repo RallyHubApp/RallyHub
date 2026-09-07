@@ -132,6 +132,22 @@ Deno.serve(async (req) => {
       }
       result = { success:true, match:updated, correction:isCorrection };
       await createSnapshot(base44, session, commandId, 'score_saved', user.id);
+    } else if (commandType === 'takeover_host') {
+      if (!String(body.reason || '').trim()) return Response.json({ error:'Host takeover reason is required.' }, { status:400 });
+      const leases = await base44.asServiceRole.entities.KotcHostLease.filter({ session_id:session.id, status:'active' });
+      const activeLease = (leases || []).sort((a:any,b:any) => Number(b.lease_revision || 0) - Number(a.lease_revision || 0))[0] || null;
+      const currentLeaseRevision = Number(activeLease?.lease_revision || 0);
+      if (Number(body.expectedLeaseRevision) !== currentLeaseRevision) return Response.json({ conflict:true, error:'Host lease changed since you opened it.', currentLeaseRevision }, { status:409 });
+      if (activeLease?.holder_user_id === user.id) {
+        result = { success:true, alreadyHolder:true, lease:activeLease };
+      } else {
+        if (activeLease) await base44.asServiceRole.entities.KotcHostLease.update(activeLease.id, { status:'superseded', released_at:now, superseded_by_user_id:user.id, takeover_reason:String(body.reason).trim() });
+        const lease = await base44.asServiceRole.entities.KotcHostLease.create({ tenant_id:session.tenant_id, club_id:session.club_id, session_id:session.id, holder_user_id:user.id, lease_revision:currentLeaseRevision + 1, status:'active', acquired_at:now, last_heartbeat_at:now, takeover_reason:String(body.reason).trim() });
+        session = await base44.asServiceRole.entities.KotcSession.update(session.id, { revision:currentSessionRevision + 1, last_command_id:commandId });
+        await base44.asServiceRole.entities.AuditLog.create({ tenant_id:session.tenant_id, club_id:session.club_id, user_id:user.id, action:'kotc_host_takeover', entity_type:'KotcSession', entity_id:session.id, scope_type:'KotcSession', scope_id:session.id, before_state:JSON.stringify(activeLease ? { holder_user_id:activeLease.holder_user_id, lease_revision:activeLease.lease_revision } : {}), after_state:JSON.stringify({ holder_user_id:user.id, lease_revision:currentLeaseRevision + 1 }), reason:String(body.reason).trim() });
+        result = { success:true, lease, session };
+        await createSnapshot(base44, session, commandId, 'command', user.id);
+      }
     } else if (commandType === 'pause_session' || commandType === 'resume_session' || commandType === 'finish_session_now' || commandType === 'abandon_session' || commandType === 'finish_after_round') {
       const allowedTransitions:any = {
         pause_session:{ from:['in_progress'], to:'paused' },
@@ -142,6 +158,11 @@ Deno.serve(async (req) => {
       if (commandType === 'finish_after_round') {
         session = await base44.asServiceRole.entities.KotcSession.update(session.id, { finish_after_current_round:true, revision:currentSessionRevision + 1, last_command_id:commandId });
       } else {
+        if (commandType === 'finish_session_now') {
+          const matches = await base44.asServiceRole.entities.KotcMatch.filter({ session_id:session.id });
+          const unresolved = (matches || []).filter((m:any) => !RESOLVED.has(m.status));
+          if (unresolved.length) return Response.json({ error:`${unresolved.length} match result(s) unresolved. Resolve them before finishing the session.` }, { status:409 });
+        }
         const transition = allowedTransitions[commandType];
         if (!transition.from.includes(session.status)) return Response.json({ error:`Invalid session transition for ${commandType}` }, { status:409 });
         const update:any = { status:transition.to, revision:currentSessionRevision + 1, last_command_id:commandId };
