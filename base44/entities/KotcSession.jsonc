@@ -8,6 +8,9 @@
     "club_id": {
       "type": "string"
     },
+    "tournament_id": {
+      "type": "string"
+    },
     "template_id": {
       "type": "string"
     },
