@@ -36,15 +36,10 @@ Deno.serve(async (req) => {
       player_count: tournament.player_ids?.length || 0,
     };
 
-    // Probe: just return tournament info without registering
+    // Public probe may expose only the safe tournament summary above.
+    // Never return the raw tournament record or Player records here because this route is unauthenticated.
     if (_probe) {
-      const playerIds = tournament.player_ids || [];
-      let players = [];
-      if (playerIds.length > 0) {
-        players = await base44.asServiceRole.entities.Player.list(undefined, 200);
-        players = players.filter(p => playerIds.includes(p.id));
-      }
-      return Response.json({ success: true, tournament, players });
+      return Response.json({ success: true, tournament: tournamentInfo });
     }
 
     const user = await base44.auth.me();
