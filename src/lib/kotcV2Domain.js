@@ -1,4 +1,4 @@
-export const KOTC_ENGINE_VERSION = '2.0.0-alpha.1';
+export const KOTC_ENGINE_VERSION = '2.0.0-rc.1';
 export const KOTC_RULES_VERSION = '1.2.0';
 
 export const SESSION_STATUSES = Object.freeze([
@@ -82,7 +82,7 @@ export const DEFAULT_FAIRNESS_POLICY = Object.freeze({
 
 export const DEFAULT_LEADERBOARD_POLICY = Object.freeze({
   version: KOTC_RULES_VERSION,
-  rankingFields: ['points', 'wins', 'score_difference', 'points_for', 'court1_wins'],
+  rankingFields: ['points', 'wins', 'score_difference', 'points_for', 'court1_wins', 'final_court_rank', 'court1_rounds', 'seed_rank'],
   doublesAwards: {
     gold: [1, 2],
     silver: [3, 4],
@@ -94,6 +94,8 @@ export const DEFAULT_LEADERBOARD_POLICY = Object.freeze({
     bronze: [3],
   },
   court1ChampionsSeparateRecognition: true,
+  court1ChampionsRule: 'winning_pair_final_completed_court1_match',
+  exactTieFallback: 'seed_rank_then_stable_display_order',
 });
 
 export function canTransitionSession(fromStatus, toStatus) {
