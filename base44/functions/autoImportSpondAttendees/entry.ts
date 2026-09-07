@@ -109,6 +109,9 @@ function findPlayer(attendee, players) {
 }
 
 async function importTournament(base44, tournament, token, players) {
+  if (!tournament.tenant_id || !tournament.host_club_id) {
+    throw new Error(`Tournament ${tournament.id} is missing tenant/club ownership and cannot be auto-imported safely`);
+  }
   const [event, group] = await Promise.all([
     spondRequest(`/sponds/${tournament.kotc_spond_event_id}`, token),
     spondRequest(`/groups/${tournament.kotc_spond_group_id}`, token),
@@ -119,8 +122,12 @@ async function importTournament(base44, tournament, token, players) {
   let created = 0;
   let matched = 0;
 
+  const scopedPlayers = players.filter(player =>
+    player.tenant_id === tournament.tenant_id && player.club_id === tournament.host_club_id
+  );
+
   for (const attendee of attendees) {
-    let player = findPlayer(attendee, players);
+    let player = findPlayer(attendee, scopedPlayers);
 
     if (!player) {
       player = await base44.asServiceRole.entities.Player.create({
@@ -133,8 +140,11 @@ async function importTournament(base44, tournament, token, players) {
         wins: 0,
         losses: 0,
         matches_played: 0,
+        tenant_id: tournament.tenant_id,
+        club_id: tournament.host_club_id,
       });
       players.push(player);
+      scopedPlayers.push(player);
       created += 1;
     } else {
       matched += 1;
@@ -164,6 +174,10 @@ async function importTournament(base44, tournament, token, players) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (user.role !== 'admin') return Response.json({ error: 'Forbidden: internal/admin execution required' }, { status: 403 });
+
     const body = await req.json().catch(() => ({}));
     const dryRun = body.dryRun === true;
 
