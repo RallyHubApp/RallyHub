@@ -82,9 +82,13 @@ RallyHub`.trim()
       return Response.json({ success: true });
     }
 
-    // Normal mode: current signed-in user hit the pending screen
+    // Normal mode: current signed-in user hit the pending screen.
+    // Send this notification at most once per account to prevent repeated credit usage.
     const newUser = user;
     if (newUser.role === 'admin') return Response.json({ skipped: true, reason: 'admin user' });
+    if (newUser.signup_notification_sent_at) {
+      return Response.json({ skipped: true, reason: 'signup notification already sent' });
+    }
 
     const allUsers = await base44.asServiceRole.entities.User.list();
     const admins = allUsers.filter(u => u.role === 'admin' && u.email);
@@ -117,6 +121,9 @@ RallyHub`.trim()
     );
 
     await Promise.all(emailPromises);
+    await base44.asServiceRole.entities.User.update(newUser.id, {
+      signup_notification_sent_at: new Date().toISOString()
+    });
     return Response.json({ success: true, notified: admins.length });
 
   } catch (error) {
