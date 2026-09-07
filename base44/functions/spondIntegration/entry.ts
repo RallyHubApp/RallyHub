@@ -140,19 +140,24 @@ Deno.serve(async (req) => {
     console.log('[DEBUG] event.responses keys:', Object.keys(event.responses || {}));
     console.log('[DEBUG] event.responses sample:', JSON.stringify(event.responses).substring(0, 500));
 
-    // Handle all known Spond response formats
+    // Handle all known Spond response formats. Only confirmed/accepted attendees belong
+    // on the KOTC playing roster. Waiting-list members are intentionally excluded until
+    // Spond promotes them to accepted, otherwise RallyHub could overbook the session.
     const acceptedIds = new Set();
-    // Format 1: flat acceptedIds array
+    const waitingIds = new Set();
+    // Format 1: flat id arrays
     (event.responses?.acceptedIds || []).forEach(id => acceptedIds.add(id));
-    (event.responses?.waitinglistIds || []).forEach(id => acceptedIds.add(id));
+    (event.responses?.waitinglistIds || []).forEach(id => waitingIds.add(id));
     // Format 2: members array with status per member
-    (event.responses?.members || [])
-      .filter(m => m.status === 'accepted' || m.status === 'waitinglist')
-      .forEach(m => acceptedIds.add(m.uid || m.id));
+    (event.responses?.members || []).forEach(m => {
+      if (m.status === 'accepted' || m.status === 'attending') acceptedIds.add(m.uid || m.id);
+      if (m.status === 'waitinglist') waitingIds.add(m.uid || m.id);
+    });
     // Format 3: responses array with memberId + status
-    (event.responses?.responses || [])
-      .filter(r => r.status === 'accepted' || r.status === 'attending')
-      .forEach(r => acceptedIds.add(r.memberId || r.uid || r.id));
+    (event.responses?.responses || []).forEach(r => {
+      if (r.status === 'accepted' || r.status === 'attending') acceptedIds.add(r.memberId || r.uid || r.id);
+      if (r.status === 'waitinglist') waitingIds.add(r.memberId || r.uid || r.id);
+    });
 
     // Build member map from group — include subgroup members too
     const memberMap = {};
@@ -203,12 +208,12 @@ Deno.serve(async (req) => {
       };
     });
 
-    return Response.json({ attendees: matchResults });
+    return Response.json({ attendees: matchResults, waitingListCount: waitingIds.size });
   }
 
   // ── Action: import_attendees ──
   if (action === 'import_attendees') {
-    const { attendees, tournamentId } = body;
+    const { attendees, tournamentId, replaceRoster } = body;
     if (!attendees || !tournamentId) {
       return Response.json({ error: 'attendees and tournamentId required' }, { status: 400 });
     }
@@ -224,7 +229,10 @@ Deno.serve(async (req) => {
     const tournamentClubId = tournament.host_club_id || activeClubId;
     const authorisedPlayers = await base44.asServiceRole.entities.Player.filter({ tenant_id: tournamentTenantId, club_id: tournamentClubId });
     const authorisedPlayerIds = new Set(authorisedPlayers.map(p => p.id));
-    const existingPlayerIds = new Set((tournament.player_ids || []).filter(id => authorisedPlayerIds.has(id)));
+    // For KOTC a Spond "Refresh" should be a true roster sync, not an additive import:
+    // people often decline or move off/on the list shortly before play. Other tournament
+    // flows can still request additive behaviour by omitting replaceRoster.
+    const existingPlayerIds = new Set(replaceRoster === true ? [] : (tournament.player_ids || []).filter(id => authorisedPlayerIds.has(id)));
     const createdPlayers = [];
     const matchedPlayers = [];
 
