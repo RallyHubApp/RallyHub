@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 
-const STRUCTURAL = new Set(['confirm_round','start_round','generate_next_round','adjust_proposed_round','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
+const STRUCTURAL = new Set(['confirm_round','start_round','generate_next_round','adjust_proposed_round','set_participant_status','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
 const RESOLVED = new Set(['completed','retired','abandoned','not_played']);
 
 function nowIso() { return new Date().toISOString(); }
@@ -147,14 +147,22 @@ Deno.serve(async (req) => {
       const playableMatches = matches.filter((m:any)=>m.status==='completed');
       if (!playableMatches.length) return Response.json({ error:'No completed sporting results are available to generate movement.' }, { status:409 });
       const participants = await base44.asServiceRole.entities.KotcSessionParticipant.filter({ session_id:session.id });
-      const eligible = participants.filter((p:any)=>['confirmed','present','leaving_early'].includes(p.status));
+      const nextNumber=Number(currentRound.round_number)+1;
+      const eligible = participants.filter((p:any)=>{
+        if(['injured','left','no_show','withdrawn','replaced'].includes(p.status)) return false;
+        const effective=Number(p.availability_effective_from_round||0);
+        const availableAgain=Number(p.available_again_from_round||0);
+        if(['temporarily_unavailable','voluntary_rest'].includes(p.status)) return availableAgain>0 && nextNumber>=availableAgain;
+        if(p.status==='leaving_early') return !(effective>0 && nextNumber>=effective);
+        return ['registered','confirmed','present'].includes(p.status);
+      });
       const activeCourts = Math.min(Number(session.available_court_limit||session.venue_court_limit||4), Math.floor(eligible.length/4));
       if (activeCourts !== Number(currentRound.active_court_count||playableMatches.length)) return Response.json({ error:'Court-count changes are handled at the safe transition control and are not available in this UI integration step yet.' }, { status:409 });
       const courts = playableMatches.map((m:any)=>({courtRank:Number(m.ladder_court_rank),teamA:[...(m.team_a_participant_ids||[])],teamB:[...(m.team_b_participant_ids||[])]}));
       const results:any = Object.fromEntries(playableMatches.map((m:any)=>[Number(m.ladder_court_rank),m.winner_side]));
       const allCompleted = await base44.asServiceRole.entities.KotcMatch.filter({ session_id:session.id, status:'completed' });
       const partnerCounts:any={}; for(const m of allCompleted){for(const pair of [m.team_a_participant_ids||[],m.team_b_participant_ids||[]])if(pair.length===2){const k=pairKey(pair[0],pair[1]);partnerCounts[k]=(partnerCounts[k]||0)+1;}}
-      const destinations=sportingDestinations(courts,results); const nextNumber=Number(currentRound.round_number)+1; const sportingSlots:any[]=[];
+      const destinations=sportingDestinations(courts,results); const sportingSlots:any[]=[];
       for(const [rankText,d] of Object.entries(destinations) as any){const rank=Number(rankText);const split=crossSplit(d.pairOne,d.pairTwo,partnerCounts,`${session.random_seed}|r${nextNumber}|c${rank}`);for(const [side,ids] of [['A',split.teamA],['B',split.teamB]] as any){for(let i=0;i<2;i++)sportingSlots.push({participant_id:ids[i],ladder_court_rank:rank,team_side:side,slot_number:i+1});}}
       const currentCourtIds=new Set(courts.flatMap((c:any)=>[...c.teamA,...c.teamB])); const currentBenchIds=new Set(eligible.map((p:any)=>p.id).filter((id:string)=>!currentCourtIds.has(id))); const court1Ids=new Set(courts.find((c:any)=>c.courtRank===1)?[...courts.find((c:any)=>c.courtRank===1).teamA,...courts.find((c:any)=>c.courtRank===1).teamB]:[]);
       const projected=eligible.map((p:any)=>({...p,rounds_played:Number(p.rounds_played||0)+(currentCourtIds.has(p.id)?1:0),fairness_benches:Number(p.fairness_benches||0)+(currentBenchIds.has(p.id)?1:0),consecutive_rounds_played:currentCourtIds.has(p.id)?Number(p.consecutive_rounds_played||0)+1:0,consecutive_court1_rounds:currentCourtIds.has(p.id)&&court1Ids.has(p.id)?Number(p.consecutive_court1_rounds||0)+1:0,court1_rounds:Number(p.court1_rounds||0)+(currentCourtIds.has(p.id)&&court1Ids.has(p.id)?1:0),_previousBench:currentBenchIds.has(p.id)}));
@@ -168,7 +176,26 @@ Deno.serve(async (req) => {
       for(const p of projected)await base44.asServiceRole.entities.KotcSessionParticipant.update(p.id,{rounds_played:p.rounds_played,fairness_benches:p.fairness_benches,consecutive_rounds_played:p.consecutive_rounds_played,consecutive_court1_rounds:p.consecutive_court1_rounds,court1_rounds:p.court1_rounds});
       for(const id of selected)await base44.asServiceRole.entities.KotcParticipationEvent.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:id,round_id:newRound.id,round_number:nextNumber,event_type:'fairness_bench',effective_from_round:nextNumber,effective_to_round:nextNumber,fairness_credit:true,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now});
       if(currentRound.status!=='completed')await base44.asServiceRole.entities.KotcRound.update(currentRound.id,{status:'completed',completed_at:now});
+      for(const p of participants){if(['temporarily_unavailable','voluntary_rest'].includes(p.status)&&Number(p.available_again_from_round||0)>0&&nextNumber>=Number(p.available_again_from_round)){await base44.asServiceRole.entities.KotcSessionParticipant.update(p.id,{status:'present',availability_effective_from_round:undefined,available_again_from_round:undefined});await base44.asServiceRole.entities.KotcParticipationEvent.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:p.id,round_id:newRound.id,round_number:nextNumber,event_type:'returned_available',effective_from_round:nextNumber,fairness_credit:false,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now});}}
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,current_round_number:nextNumber,current_round_id:newRound.id}); result={success:true,session,round:newRound,benchParticipantIds:selected}; await createSnapshot(base44,session,commandId,'round_completed',user.id);
+    } else if (commandType === 'set_participant_status') {
+      const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({id:body.participantId,session_id:session.id});
+      const participant=participants?.[0]; if(!participant)return Response.json({error:'Participant not found.'},{status:404});
+      const action=String(body.statusAction||''); const currentRoundNumber=Math.max(1,Number(session.current_round_number||1));
+      const rounds=await base44.asServiceRole.entities.KotcRound.filter({id:session.current_round_id,session_id:session.id}); const round=rounds?.[0]||null;
+      const effectiveRound=round&&['started','completed'].includes(round.status)?currentRoundNumber+1:currentRoundNumber;
+      const update:any={}; let eventType='manual_override'; let reason=String(body.reason||'').trim();
+      if(action==='voluntary_rest'){update.status='voluntary_rest';update.availability_effective_from_round=effectiveRound;update.available_again_from_round=effectiveRound+1;eventType='voluntary_rest';reason=reason||'Host marked one-round voluntary rest';}
+      else if(action==='temporarily_unavailable'){update.status='temporarily_unavailable';update.availability_effective_from_round=effectiveRound;update.available_again_from_round=body.availableAgainFromRound?Number(body.availableAgainFromRound):undefined;eventType='temporary_absence';reason=reason||'Host marked temporarily unavailable';}
+      else if(action==='injured'){update.status='injured';update.availability_effective_from_round=effectiveRound;eventType='injury';reason=reason||'Host marked injured';}
+      else if(action==='leaving_early'){update.status='leaving_early';update.availability_effective_from_round=effectiveRound;update.left_after_round=Math.max(0,effectiveRound-1);eventType='leaving_early';reason=reason||'Host marked leaving early';}
+      else if(action==='back_available'){update.status='present';update.availability_effective_from_round=undefined;update.available_again_from_round=undefined;update.left_after_round=undefined;eventType='returned_available';reason=reason||'Host returned player to available';}
+      else return Response.json({error:'Unknown participant status action.'},{status:400});
+      const updated=await base44.asServiceRole.entities.KotcSessionParticipant.update(participant.id,update);
+      await base44.asServiceRole.entities.KotcParticipationEvent.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:participant.id,round_id:round?.id,round_number:effectiveRound,event_type:eventType,effective_from_round:effectiveRound,effective_to_round:action==='voluntary_rest'?effectiveRound:undefined,fairness_credit:false,reason,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now});
+      await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_participant_status_changed',entity_type:'KotcSessionParticipant',entity_id:participant.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({status:participant.status,availability_effective_from_round:participant.availability_effective_from_round,available_again_from_round:participant.available_again_from_round}),after_state:JSON.stringify(update),reason});
+      session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
+      result={success:true,session,participant:updated,effectiveRound}; await createSnapshot(base44,session,commandId,'command',user.id);
     } else if (commandType === 'adjust_proposed_round') {
       const rounds = await base44.asServiceRole.entities.KotcRound.filter({ id:body.roundId, session_id:session.id });
       const round = rounds?.[0];
