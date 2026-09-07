@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
-function validAccess(a:any, tenantId:string, sessionId:string){if(!a||a.status!=='active')return false;if(String(a.tenant_id||'')!==String(tenantId||''))return false;if(String(a.session_id||'')!==String(sessionId||''))return false;const now=Date.now();if(a.starts_at&&Date.parse(a.starts_at)>now)return false;if(a.ends_at&&Date.parse(a.ends_at)<now)return false;return true;}
+function validAccess(a:any, tenantId:string, sessionId:string){if(!a||a.status!=='active')return false;if(String(a.tenant_id||'')!==String(tenantId||''))return false;if(String(a.session_id||'')!==String(sessionId||''))return false;if(!['session_host','assistant_host','viewer'].includes(a.role))return false;const now=Date.now();if(a.starts_at&&Date.parse(a.starts_at)>now)return false;if(a.ends_at&&Date.parse(a.ends_at)<now)return false;return true;}
 
 Deno.serve(async(req)=>{try{
  const base44=createClientFromRequest(req); const user=await base44.auth.me(); if(!user)return Response.json({error:'Unauthorized'},{status:401}); const body=await req.json().catch(()=>({}));
