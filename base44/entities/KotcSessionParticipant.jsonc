@@ -27,6 +27,16 @@
       ],
       "default": "member"
     },
+    "registration_source": {
+      "type": "string"
+    },
+    "registered_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "registration_order": {
+      "type": "number"
+    },
     "status": {
       "type": "string",
       "enum": [
