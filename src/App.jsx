@@ -1,9 +1,10 @@
 import { Toaster } from "@/components/ui/toaster"
-import { QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { base44 } from '@/api/base44Client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 import AppLayout from '@/components/layout/AppLayout';
@@ -46,8 +47,27 @@ const LoadingScreen = () => (
 
 const AppAccessGate = () => {
   const { isLoadingPublicSettings, user } = useAuth();
-  if (isLoadingPublicSettings) {
+  const { data: hostGrants = [], isLoading: isLoadingHostGrants } = useQuery({
+    queryKey: ['my-kotc-session-access', user?.id],
+    queryFn: () => base44.entities.KotcSessionAccess.filter({ user_id: user.id, status: 'active' }),
+    enabled: !!user?.id && user?.role !== 'admin',
+    staleTime: 15000,
+  });
+  if (isLoadingPublicSettings || (!!user?.id && user?.role !== 'admin' && isLoadingHostGrants)) {
     return <LoadingScreen />;
+  }
+
+  // A temporary Session Host grant intentionally puts the account into a restricted
+  // event-only experience for the duration of that grant. Direct attempts to browse
+  // /app pages are redirected back to the authorised KOTC session.
+  if (user?.role !== 'admin') {
+    const now = Date.now();
+    const activeHost = (hostGrants || []).find(grant =>
+      ['session_host', 'assistant_host'].includes(grant.role) &&
+      (!grant.starts_at || Date.parse(grant.starts_at) <= now) &&
+      (!grant.ends_at || Date.parse(grant.ends_at) >= now)
+    );
+    if (activeHost?.session_id) return <Navigate to={`/kotc-host/${activeHost.session_id}`} replace />;
   }
 
   if (user?.role === 'admin' || user?.approval_status === 'approved') {
