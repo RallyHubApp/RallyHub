@@ -6,8 +6,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import GlassCard from '@/components/shared/GlassCard';
-import KotcSetup from './KotcSetup';
-import KotcRoundView from './KotcRoundView';
+import KotcV2SessionView from './KotcV2SessionView';
 import SpondImportModal from '@/components/spond/SpondImportModal';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
@@ -98,12 +97,8 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
         </GlassCard>
       )}
 
-      {/* Setup or live view */}
-      {isStarted ? (
-        <KotcRoundView tournament={tournament} players={players} allPlayers={allPlayers} queryClient={queryClient} />
-      ) : (
-        <KotcSetup tournament={tournament} players={players} onStarted={() => {}} queryClient={queryClient} />
-      )}
+      {/* KOTC V2 setup + live host view. Sporting state is server-authoritative. */}
+      <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} />
 
       {/* Self-register modal */}
       <PlayerRegisterModal
