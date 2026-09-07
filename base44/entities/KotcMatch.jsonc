@@ -86,6 +86,13 @@
       "type": "string",
       "format": "date-time"
     },
+    "autosaved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scored_by_user_id": {
+      "type": "string"
+    },
     "revision": {
       "type": "number",
       "default": 0
