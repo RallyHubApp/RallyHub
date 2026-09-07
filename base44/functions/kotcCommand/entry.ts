@@ -222,6 +222,7 @@ Deno.serve(async (req) => {
       if (target === 'started') roundUpdate.started_at = now;
       const updatedRound = await base44.asServiceRole.entities.KotcRound.update(round.id, roundUpdate);
       const sessionUpdate:any = { revision:currentSessionRevision + 1, last_command_id:commandId, current_round_number:round.round_number, current_round_id:round.id };
+      if (target === 'started' && session.status === 'ready') sessionUpdate.status = 'in_progress';
       if (target === 'started' && !session.actual_first_round_start) sessionUpdate.actual_first_round_start = now;
       session = await base44.asServiceRole.entities.KotcSession.update(session.id, sessionUpdate);
       result = { success:true, session, round:updatedRound };
