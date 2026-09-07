@@ -139,6 +139,13 @@
     "current_round_id": {
       "type": "string"
     },
+    "last_command_id": {
+      "type": "string"
+    },
+    "finish_after_current_round": {
+      "type": "boolean",
+      "default": false
+    },
     "finalised_at": {
       "type": "string",
       "format": "date-time"
