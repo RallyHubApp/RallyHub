@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
-import { runKotcV2ProductionSimulation } from '../../../src/lib/kotcV2Simulator.js';
+import { runKotcV2ProductionSimulation } from './lib/kotcV2Simulator.js';
 
 function integerList(value:any, min:number, max:number) {
   if (value == null) return null;
