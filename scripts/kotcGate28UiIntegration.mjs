@@ -14,7 +14,7 @@ ok(!v2.includes('kingOfCourtEngine'),'V2 React must not import legacy sporting e
 ok(v2.includes("functions.invoke('createKotcV2Session'"),'session creation is server-side');
 ok(v2.includes("functions.invoke('getKotcV2State'"),'state read is server-authoritative');
 ok(v2.includes("functions.invoke('kotcCommand'"),'mutations use command endpoint');
-ok(v2.includes("commandType:'complete_match'"),'score completion wired');
+ok(v2.includes("'correct_match':'complete_match'"),'score completion wired');
 ok(v2.includes("doCommand('confirm_round'"),'round confirmation wired');
 ok(v2.includes("doCommand('start_round'"),'round start wired');
 ok(v2.includes("doCommand('generate_next_round'"),'next-round generation wired');
