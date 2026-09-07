@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { action, spondEmail, spondPassword, spondToken, groupId, eventId } = body;
+  const { action, spondEmail, spondPassword, spondToken, groupId, eventId, targetDate } = body;
 
   const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
   const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole);
@@ -79,17 +79,38 @@ Deno.serve(async (req) => {
   // ── Action: get_events ──
   if (action === 'get_events') {
     if (!groupId) return Response.json({ error: 'groupId required' }, { status: 400 });
-    // Use minStartTimestamp from today, maxEndTimestamp 180 days out
-    // Also fetch with no timestamp filter to catch recurring events — Spond returns each occurrence separately
-    const minDate = new Date();
-    minDate.setHours(0, 0, 0, 0);
-    const minStart = minDate.toISOString();
-    const maxEnd = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-    const events = await spondRequest(
-      `/sponds?groupId=${groupId}&minStartTimestamp=${minStart}&maxEndTimestamp=${maxEnd}&includeComments=false&includeHidden=false&addProfileInfo=true`,
-      spondToken
-    );
+
+    // KOTC is normally attached to a dated RallyHub tournament. When that date is
+    // available, ask Spond only for that occurrence window instead of dumping months
+    // of a recurring series into the picker. If no date is supplied, show only the
+    // near-term window. Spond's consumer API uses `scheduled=true` to include recurring
+    // occurrences whose invitations are queued but not yet sent.
+    let minStart;
+    let maxStart;
+    if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+      const day = new Date(`${targetDate}T00:00:00.000Z`);
+      minStart = day.toISOString();
+      maxStart = new Date(day.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString();
+    } else {
+      const day = new Date();
+      day.setUTCHours(0, 0, 0, 0);
+      minStart = day.toISOString();
+      maxStart = new Date(day.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    const params = new URLSearchParams({
+      groupId,
+      minStartTimestamp: minStart,
+      maxStartTimestamp: maxStart,
+      max: '100',
+      scheduled: 'true',
+      includeComments: 'false',
+      includeHidden: 'false',
+      addProfileInfo: 'true',
+    });
+    const events = await spondRequest(`/sponds?${params.toString()}`, spondToken);
     const simplified = (Array.isArray(events) ? events : [])
+      .filter(e => e?.startTimestamp && new Date(e.startTimestamp) >= new Date(minStart) && new Date(e.startTimestamp) <= new Date(maxStart))
       .sort((a, b) => new Date(a.startTimestamp) - new Date(b.startTimestamp))
       .map(e => ({
         id: e.id,
