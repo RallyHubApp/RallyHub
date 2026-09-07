@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, KeyRound, Copy, RefreshCw, Send, Clock, XCircle, CheckCircle, Trash2 } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, KeyRound, Send, Clock, XCircle, CheckCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
@@ -36,9 +36,6 @@ export default function AdminPanel() {
   const [editingUser, setEditingUser] = useState(null);
   const [editUserName, setEditUserName] = useState('');
   const [savingUserName, setSavingUserName] = useState(false);
-  const [tempPassPlayer, setTempPassPlayer] = useState(null);
-  const [tempPassResult, setTempPassResult] = useState(null);
-  const [generatingTemp, setGeneratingTemp] = useState(false);
   const [promotingPlayer, setPromotingPlayer] = useState(null);
   const [setPassUser, setSetPassUser] = useState(null);
   const [setPassPassword, setSetPassPassword] = useState('');
@@ -177,14 +174,6 @@ export default function AdminPanel() {
     queryClient.invalidateQueries({ queryKey: ['all-users'] });
     toast.success(`Role updated to ${newRole}`);
     setUpdatingRole(null);
-  };
-
-  const generateTempPassword = async (player) => {
-    setGeneratingTemp(true);
-    const res = await base44.functions.invoke('adminUserTools', { action: 'set_temp_password', playerId: player.id });
-    setGeneratingTemp(false);
-    if (res.data?.error) { toast.error(res.data.error); return; }
-    setTempPassResult(res.data);
   };
 
   const promotePlayerToAdmin = async (player) => {
@@ -523,13 +512,6 @@ export default function AdminPanel() {
                     }
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    {/* Temp Password */}
-                    {p.email && (
-                      <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground hover:text-yellow-400" title="Generate temp password"
-                        onClick={() => { setTempPassPlayer(p); setTempPassResult(null); }}>
-                        <KeyRound className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
                     {/* Promote to Admin */}
                     {(p.user_id || p.linked_user_email) && (
                       <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground hover:text-primary" title="Promote to Admin"
@@ -824,64 +806,6 @@ export default function AdminPanel() {
                 {settingPass ? 'Setting…' : 'Set Password'}
               </Button>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Temp Password Dialog */}
-      <Dialog open={!!tempPassPlayer} onOpenChange={(open) => { if (!open) { setTempPassPlayer(null); setTempPassResult(null); } }}>
-        <DialogContent className="sm:max-w-sm bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-yellow-400" /> Temp Password
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Generate a one-time temp password for <strong>{tempPassPlayer?.full_name}</strong>. Share it with them to use at <strong>/first-login</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {!tempPassResult ? (
-              <div className="space-y-3">
-                <div className="glass rounded-lg p-3 text-xs text-muted-foreground space-y-1">
-                  <p>1. Generate a temp password below</p>
-                  <p>2. Share it + the player's email with them</p>
-                  <p>3. They visit <span className="font-mono text-primary">/first-login</span> to set their real password</p>
-                </div>
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary">
-                  <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  <span className="text-xs text-foreground truncate">{tempPassPlayer?.email}</span>
-                </div>
-                <Button onClick={() => generateTempPassword(tempPassPlayer)} disabled={generatingTemp}
-                  className="w-full bg-primary text-primary-foreground">
-                  {generatingTemp
-                    ? <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Generating…</>
-                    : <><KeyRound className="w-4 h-4" /> Generate Temp Password</>}
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-2">
-                  <p className="text-xs text-muted-foreground">Temp password for <strong className="text-foreground">{tempPassResult.playerName}</strong>:</p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 text-lg font-mono font-bold text-primary tracking-widest">{tempPassResult.tempPassword}</code>
-                    <Button size="icon" variant="ghost" className="w-8 h-8 shrink-0"
-                      onClick={() => { navigator.clipboard.writeText(tempPassResult.tempPassword); toast.success('Copied!'); }}>
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>Share with player:</p>
-                  <p>• Email: <span className="text-foreground font-mono">{tempPassResult.playerEmail}</span></p>
-                  <p>• Temp password: <span className="text-foreground font-mono">{tempPassResult.tempPassword}</span></p>
-                  <p>• URL: <span className="text-primary font-mono">{window.location.origin}/first-login</span></p>
-                </div>
-                <Button variant="outline" size="sm" className="w-full text-xs gap-1"
-                  onClick={() => { setTempPassResult(null); }}>
-                  <RefreshCw className="w-3 h-3" /> Generate Another
-                </Button>
-              </div>
-            )}
           </div>
         </DialogContent>
       </Dialog>
