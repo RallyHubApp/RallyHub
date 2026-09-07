@@ -1,0 +1,69 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { Crown, Play, Pause, RotateCcw, Trophy, Users, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { activeCourtCount } from '@/lib/kotcV2Domain';
+
+function commandId(prefix='kotc'){return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;}
+function errMsg(error){return error?.response?.data?.error||error?.data?.error||error?.message||'Unexpected KOTC error';}
+
+function ScoreCard({ match, names, session, onSaved, disabled }){
+  const [a,setA]=useState(match.team_a_score ?? '');
+  const [b,setB]=useState(match.team_b_score ?? '');
+  const [serving,setServing]=useState(match.serving_side_at_horn || 'A');
+  const [saving,setSaving]=useState(false);
+  useEffect(()=>{setA(match.team_a_score ?? '');setB(match.team_b_score ?? '');setServing(match.serving_side_at_horn||'A');},[match.id,match.revision]);
+  const teamA=(match.team_a_participant_ids||[]).map(id=>names[id]||id).join(' & ');
+  const teamB=(match.team_b_participant_ids||[]).map(id=>names[id]||id).join(' & ');
+  const resolved=['completed','retired','abandoned','not_played'].includes(match.status);
+  const submit=async()=>{try{setSaving(true);const body={sessionId:session.id,commandId:commandId('score'),commandType:resolved?'correct_match':'complete_match',matchId:match.id,expectedMatchRevision:Number(match.revision||0),teamAScore:Number(a),teamBScore:Number(b),servingSideAtHorn:Number(a)===Number(b)?serving:undefined,reason:resolved?'Host score correction':''};await base44.functions.invoke('kotcCommand',body);toast.success(resolved?'Score corrected':'Result saved');await onSaved();}catch(e){toast.error(errMsg(e));}finally{setSaving(false);}};
+  return <div className="glass rounded-xl p-4 space-y-3">
+    <div className="flex items-center justify-between"><div className="flex items-center gap-2">{Number(match.ladder_court_rank)===1&&<Crown className="w-4 h-4 text-yellow-400"/>}<span className="font-semibold text-sm">Court {match.ladder_court_rank}</span></div><Badge variant="outline">{match.status}</Badge></div>
+    <div className="grid grid-cols-[1fr_72px] gap-3 items-center"><div><p className="text-[10px] uppercase text-muted-foreground">Team A</p><p className="text-sm font-medium">{teamA}</p></div><Input type="number" min="0" value={a} disabled={disabled} onChange={e=>setA(e.target.value)} /></div>
+    <div className="grid grid-cols-[1fr_72px] gap-3 items-center"><div><p className="text-[10px] uppercase text-muted-foreground">Team B</p><p className="text-sm font-medium">{teamB}</p></div><Input type="number" min="0" value={b} disabled={disabled} onChange={e=>setB(e.target.value)} /></div>
+    {session.scoring_mode==='timed' && a!=='' && b!=='' && Number(a)===Number(b) && <div><Label className="text-xs">Serving team at horn</Label><Select value={serving} onValueChange={setServing}><SelectTrigger className="mt-1"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="A">Team A</SelectItem><SelectItem value="B">Team B</SelectItem></SelectContent></Select></div>}
+    <Button className="w-full" onClick={submit} disabled={disabled||saving||a===''||b===''}>{saving?'Saving…':resolved?'Correct Result':'Complete Match'}</Button>
+  </div>;
+}
+
+export default function KotcV2SessionView({ tournament, players, queryClient }){
+  const [creating,setCreating]=useState(false); const [commanding,setCommanding]=useState(false);
+  const [venueCourts,setVenueCourts]=useState('3'); const [plannedRounds,setPlannedRounds]=useState('9'); const [duration,setDuration]=useState('90'); const [playMinutes,setPlayMinutes]=useState('8'); const [changeover,setChangeover]=useState('2'); const [scoringMode,setScoringMode]=useState('timed'); const [scoreTarget,setScoreTarget]=useState('11'); const [benchIds,setBenchIds]=useState([]);
+  const {data:state,isLoading,refetch}=useQuery({queryKey:['kotc-v2-state',tournament.id],queryFn:async()=> (await base44.functions.invoke('getKotcV2State',{tournamentId:tournament.id})).data,refetchInterval:3000});
+  const session=state?.session||null; const participants=state?.participants||[]; const rounds=state?.rounds||[]; const matches=state?.matches||[]; const participantNames=useMemo(()=>Object.fromEntries(participants.map(p=>[p.id,p.display_name||p.id])),[participants]);
+  const playerOrder=players.map(p=>p.id); const courts=activeCourtCount(players.length,Math.max(1,Number(venueCourts)||1)); const requiredBench=Math.max(0,players.length-courts*4);
+  useEffect(()=>{setBenchIds(prev=>prev.filter(id=>playerOrder.includes(id)).slice(0,requiredBench));},[requiredBench,players.length]);
+  const toggleBench=id=>setBenchIds(prev=>prev.includes(id)?prev.filter(x=>x!==id):(prev.length<requiredBench?[...prev,id]:prev));
+  const currentRound=rounds.filter(r=>Number(r.round_number)===Number(session?.current_round_number)).sort((a,b)=>Number(b.proposal_revision||0)-Number(a.proposal_revision||0))[0]||null;
+  const currentMatches=matches.filter(m=>m.round_id===currentRound?.id).sort((a,b)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank));
+  const allResolved=currentMatches.length>0&&currentMatches.every(m=>['completed','retired','abandoned','not_played'].includes(m.status));
+  const doCommand=async(commandType,extra={})=>{try{setCommanding(true);await base44.functions.invoke('kotcCommand',{sessionId:session.id,commandId:commandId(commandType),commandType,expectedSessionRevision:Number(session.revision||0),...extra});await refetch();queryClient?.invalidateQueries({queryKey:['tournament',tournament.id]});}catch(e){toast.error(errMsg(e));}finally{setCommanding(false);}};
+  const createSession=async()=>{if(players.length<4)return toast.error('Add at least 4 players.');if(benchIds.length!==requiredBench)return toast.error(`Choose exactly ${requiredBench} Round 1 bench player${requiredBench===1?'':'s'}.`);try{setCreating(true);await base44.functions.invoke('createKotcV2Session',{tournamentId:tournament.id,playerOrder,round1BenchIds:benchIds,venueCourtLimit:Number(venueCourts),plannedRounds:Number(plannedRounds),plannedDurationMinutes:Number(duration),playMinutes:Number(playMinutes),changeoverMinutes:Number(changeover),scoringMode,scoreTarget:Number(scoreTarget)});toast.success('KOTC V2 session created');await refetch();queryClient?.invalidateQueries({queryKey:['tournament',tournament.id]});}catch(e){toast.error(errMsg(e));}finally{setCreating(false);}};
+
+  if(isLoading)return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading KOTC V2…</div>;
+  if(!session)return <div className="space-y-5">
+    <div className="glass rounded-xl p-5"><div className="flex gap-3 items-center mb-4"><Crown className="w-5 h-5 text-yellow-400"/><div><h3 className="font-semibold">King of the Court V2</h3><p className="text-xs text-muted-foreground">Release-candidate engine 2.0.0-rc.1</p></div></div><div className="grid grid-cols-3 gap-3"><div className="glass rounded-lg p-3 text-center"><p className="text-xl font-bold">{players.length}</p><p className="text-[10px] text-muted-foreground">Players</p></div><div className="glass rounded-lg p-3 text-center"><p className="text-xl font-bold">{courts}</p><p className="text-[10px] text-muted-foreground">Active Courts</p></div><div className="glass rounded-lg p-3 text-center"><p className="text-xl font-bold">{requiredBench}</p><p className="text-[10px] text-muted-foreground">Round 1 Bench</p></div></div></div>
+    <div className="glass rounded-xl p-5 grid md:grid-cols-3 gap-4"><div><Label>Venue court limit</Label><Input className="mt-1" type="number" min="1" max="4" value={venueCourts} onChange={e=>setVenueCourts(e.target.value)}/></div><div><Label>Planned rounds</Label><Input className="mt-1" type="number" min="1" max="30" value={plannedRounds} onChange={e=>setPlannedRounds(e.target.value)}/></div><div><Label>Session minutes</Label><Input className="mt-1" type="number" min="15" value={duration} onChange={e=>setDuration(e.target.value)}/></div><div><Label>Play minutes</Label><Input className="mt-1" type="number" min="1" value={playMinutes} onChange={e=>setPlayMinutes(e.target.value)}/></div><div><Label>Changeover minutes</Label><Input className="mt-1" type="number" min="0" value={changeover} onChange={e=>setChangeover(e.target.value)}/></div><div><Label>Scoring</Label><Select value={scoringMode} onValueChange={setScoringMode}><SelectTrigger className="mt-1"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="timed">Timed</SelectItem><SelectItem value="first_to">First to score</SelectItem></SelectContent></Select></div>{scoringMode==='first_to'&&<div><Label>Score target</Label><Input className="mt-1" type="number" min="1" value={scoreTarget} onChange={e=>setScoreTarget(e.target.value)}/></div>}</div>
+    {requiredBench>0&&<div className="glass rounded-xl p-5"><h4 className="font-semibold text-sm mb-1">Round 1 bench</h4><p className="text-xs text-muted-foreground mb-3">Choose exactly {requiredBench}. This is recorded as fairness benching.</p><div className="grid sm:grid-cols-2 gap-2">{players.map(p=><button type="button" key={p.id} onClick={()=>toggleBench(p.id)} className={`text-left rounded-lg border p-3 text-sm ${benchIds.includes(p.id)?'border-primary bg-primary/10':'border-border'}`}>{p.full_name}</button>)}</div></div>}
+    <Button className="w-full" onClick={createSession} disabled={creating||players.length<4||benchIds.length!==requiredBench}><Play className="w-4 h-4 mr-2"/>{creating?'Creating V2 session…':'Create V2 Session'}</Button>
+  </div>;
+
+  if(session.status==='completed'||session.status==='finalised'||session.status==='abandoned')return <div className="glass rounded-xl p-8 text-center"><Trophy className="w-10 h-10 mx-auto text-yellow-400 mb-3"/><h3 className="font-bold text-lg">Session {session.status}</h3><p className="text-sm text-muted-foreground mt-2">{participants.length} participants · {rounds.filter(r=>r.status==='completed').length} completed rounds</p></div>;
+
+  return <div className="space-y-4">
+    <div className="glass rounded-xl p-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center"><Crown className="w-5 h-5 text-yellow-400"/></div><div><p className="font-bold text-sm">Round {session.current_round_number} <span className="font-normal text-muted-foreground">of {session.planned_rounds||'—'}</span></p><p className="text-xs text-muted-foreground">{currentRound?.active_court_count||0} courts · {currentRound?.bench_count||0} bench · revision {session.revision}</p></div></div><div className="flex gap-2"><Badge>{session.status}</Badge><Badge variant="outline">{currentRound?.status||'no round'}</Badge></div></div>
+    {currentRound?.status==='proposed'&&<Button className="w-full" onClick={()=>doCommand('confirm_round',{roundId:currentRound.id,expectedProposalRevision:Number(currentRound.proposal_revision||1)})} disabled={commanding}><CheckCircle2 className="w-4 h-4 mr-2"/>Confirm Round {currentRound.round_number}</Button>}
+    {currentRound?.status==='confirmed'&&<Button className="w-full" onClick={()=>doCommand('start_round',{roundId:currentRound.id,expectedProposalRevision:Number(currentRound.proposal_revision||1)})} disabled={commanding}><Play className="w-4 h-4 mr-2"/>Start Round {currentRound.round_number}</Button>}
+    {(currentRound?.status==='started'||currentRound?.status==='completed')&&<div className="grid lg:grid-cols-2 gap-4">{currentMatches.map(m=><ScoreCard key={m.id} match={m} names={participantNames} session={session} onSaved={refetch} disabled={session.status==='paused'}/>)}</div>}
+    {currentRound?.status==='started'&&allResolved&&Number(currentRound.round_number)<Number(session.planned_rounds||999)&&!session.finish_after_current_round&&<Button className="w-full" onClick={()=>doCommand('generate_next_round')} disabled={commanding}><RotateCcw className="w-4 h-4 mr-2"/>Generate Next Round</Button>}
+    {currentRound?.status==='started'&&allResolved&&(Number(currentRound.round_number)>=Number(session.planned_rounds||999)||session.finish_after_current_round)&&<Button className="w-full" onClick={()=>doCommand('finish_session_now')} disabled={commanding}><Trophy className="w-4 h-4 mr-2"/>Finish Session</Button>}
+    <div className="glass rounded-xl p-4 flex flex-wrap gap-2">{session.status==='in_progress'?<Button variant="outline" onClick={()=>doCommand('pause_session')} disabled={commanding}><Pause className="w-4 h-4 mr-2"/>Pause</Button>:session.status==='paused'?<Button onClick={()=>doCommand('resume_session')} disabled={commanding}><Play className="w-4 h-4 mr-2"/>Resume</Button>:null}<Button variant="outline" onClick={()=>doCommand('finish_after_round')} disabled={commanding||!!session.finish_after_current_round}>Finish After This Round</Button><Button variant="destructive" onClick={()=>doCommand('abandon_session',{reason:'Host ended session'})} disabled={commanding}>Abandon Session</Button></div>
+    {session.status==='paused'&&<div className="glass rounded-xl p-4 flex gap-2 items-center text-sm"><AlertTriangle className="w-4 h-4 text-yellow-400"/>Session is paused. Score controls are locked until resumed.</div>}
+  </div>;
+}
