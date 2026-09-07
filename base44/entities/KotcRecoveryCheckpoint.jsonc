@@ -1,0 +1,82 @@
+{
+  "name": "KotcRecoveryCheckpoint",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "sequence": {
+      "type": "number"
+    },
+    "session_revision": {
+      "type": "number"
+    },
+    "current_round_number": {
+      "type": "number"
+    },
+    "checkpoint_type": {
+      "type": "string",
+      "enum": [
+        "command",
+        "round_confirmed",
+        "round_started",
+        "score_saved",
+        "round_completed",
+        "session_paused",
+        "session_completed",
+        "manual"
+      ],
+      "default": "command"
+    },
+    "snapshot_json": {
+      "type": "string",
+      "description": "Authoritative persisted recovery snapshot JSON"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "command_id": {
+      "type": "string"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "session_id",
+    "sequence",
+    "session_revision",
+    "checkpoint_type",
+    "snapshot_json"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": false,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
