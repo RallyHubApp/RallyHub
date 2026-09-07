@@ -11,6 +11,7 @@ import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
 import useKotcRole from '@/hooks/useKotcRole';
 import KotcPlayerManagement from './KotcPlayerManagement';
+import KotcTestSimulator from './KotcTestSimulator';
 
 export default function KotcView({ tournament, players, allPlayers, queryClient }) {
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
@@ -73,6 +74,8 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
 
       {/* KOTC V2 setup + live host view. Sporting state is server-authoritative. */}
       <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} />
+
+      <KotcTestSimulator />
 
       {/* Self-register modal */}
       <PlayerRegisterModal
