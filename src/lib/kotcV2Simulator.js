@@ -143,15 +143,26 @@ export function simulateSteadyKotcSession({ playerCount, venueCourtLimit, rounds
     assertUniqueCoverage({ courtIds, fairnessBenchIds, eligibleIds: ids(playerCount), scenario, round: roundNumber, checks });
 
     // Strong fairness-cycle invariants.
-    const minBenchBefore = Math.min(...participants.map((participant) => Number(participant.fairness_benches || 0)));
-    const avoidableRepeat = fairnessBenchIds.filter((id) => {
-      const participant = participants.find((p) => p.id === id);
-      return Number(participant?.fairness_benches || 0) > minBenchBefore;
-    });
-    report(checks, scenario, roundNumber, 'No avoidable repeat fairness bench', avoidableRepeat.length === 0, avoidableRepeat.join(', '));
+    const selectedSet = new Set(fairnessBenchIds);
+    const selectedCounts = fairnessBenchIds.map((id) => Number(participants.find((p) => p.id === id)?.fairness_benches || 0));
+    const unselectedCounts = participants.filter((p) => !selectedSet.has(p.id)).map((p) => Number(p.fairness_benches || 0));
+    const highestSelectedCount = selectedCounts.length ? Math.max(...selectedCounts) : 0;
+    const lowestUnselectedCount = unselectedCounts.length ? Math.min(...unselectedCounts) : Number.POSITIVE_INFINITY;
+    report(
+      checks,
+      scenario,
+      roundNumber,
+      'No avoidable repeat fairness bench',
+      highestSelectedCount <= lowestUnselectedCount,
+      `highest selected prior benches ${highestSelectedCount}; lowest unselected ${lowestUnselectedCount}`,
+    );
     const consecutive = fairnessBenchIds.filter((id) => participants.find((p) => p.id === id)?.was_fairness_benched_previous_round);
-    const alternatives = participants.filter((p) => !fairnessBenchIds.includes(p.id) && !p.was_fairness_benched_previous_round && Number(p.fairness_benches || 0) === minBenchBefore);
-    report(checks, scenario, roundNumber, 'No avoidable consecutive fairness bench', consecutive.length === 0 || alternatives.length === 0, consecutive.join(', '));
+    const avoidableConsecutive = consecutive.filter((id) => {
+      const selected = participants.find((p) => p.id === id);
+      const selectedCount = Number(selected?.fairness_benches || 0);
+      return participants.some((p) => !selectedSet.has(p.id) && !p.was_fairness_benched_previous_round && Number(p.fairness_benches || 0) === selectedCount);
+    });
+    report(checks, scenario, roundNumber, 'No avoidable consecutive fairness bench', avoidableConsecutive.length === 0, avoidableConsecutive.join(', '));
 
     participants = benchMetricsAfterRound(participants, currentRound, fairnessBenchIds);
     if (roundNumber === rounds) break;
