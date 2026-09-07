@@ -8,7 +8,7 @@ Deno.serve(async(req)=>{try{
  let sessions:any[]=[]; if(sessionId)sessions=await base44.asServiceRole.entities.KotcSession.filter({id:sessionId}); else sessions=await base44.asServiceRole.entities.KotcSession.filter({tournament_id:tournamentId});
  const session=(sessions||[]).filter((s:any)=>!['cancelled'].includes(s.status)).sort((a:any,b:any)=>Date.parse(b.created_date||0)-Date.parse(a.created_date||0))[0]||null; if(!session)return Response.json({session:null,participants:[],rounds:[],slots:[],matches:[],events:[],courts:[],lease:null});
  let allowed=user.role==='admin'; if(!allowed){const access=await base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'});allowed=(access||[]).some((a:any)=>validAccess(a,session.tenant_id,session.id));} if(!allowed)return Response.json({error:'KOTC session access required'},{status:403});
- const [participants,rounds,slots,matches,events,courts,leases]=await Promise.all([
+ const [participants,rounds,slots,matches,events,courts,leases,phases,fixedPairs]=await Promise.all([
   base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id},'seed_rank',100),
   base44.asServiceRole.entities.KotcRound.filter({session_id:session.id},'round_number',100),
   base44.asServiceRole.entities.KotcRoundSlot.filter({session_id:session.id},'round_number',500),
@@ -16,7 +16,9 @@ Deno.serve(async(req)=>{try{
   base44.asServiceRole.entities.KotcParticipationEvent.filter({session_id:session.id},'round_number',500),
   base44.asServiceRole.entities.KotcSessionCourt.filter({session_id:session.id},'ladder_rank_default',20),
   base44.asServiceRole.entities.KotcHostLease.filter({session_id:session.id,status:'active'}),
+  base44.asServiceRole.entities.KotcPartnershipPhase.filter({session_id:session.id},'phase_order',50),
+  base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id},'phase_order',100),
  ]);
  const lease=(leases||[]).sort((a:any,b:any)=>Number(b.lease_revision||0)-Number(a.lease_revision||0))[0]||null;
- return Response.json({session,participants,rounds,slots,matches,events,courts,lease,currentUserId:user.id,isAdmin:user.role==='admin'});
+ return Response.json({session,participants,rounds,slots,matches,events,courts,lease,partnershipPhases:phases||[],fixedPairs:fixedPairs||[],currentUserId:user.id,isAdmin:user.role==='admin'});
 }catch(error){return Response.json({error:error?.message||'Unexpected KOTC state error'},{status:500});}});
