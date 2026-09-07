@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 
-const STRUCTURAL = new Set(['confirm_round','start_round','generate_next_round','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
+const STRUCTURAL = new Set(['confirm_round','start_round','generate_next_round','adjust_proposed_round','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
 const RESOLVED = new Set(['completed','retired','abandoned','not_played']);
 
 function nowIso() { return new Date().toISOString(); }
@@ -169,6 +169,48 @@ Deno.serve(async (req) => {
       for(const id of selected)await base44.asServiceRole.entities.KotcParticipationEvent.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:id,round_id:newRound.id,round_number:nextNumber,event_type:'fairness_bench',effective_from_round:nextNumber,effective_to_round:nextNumber,fairness_credit:true,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now});
       if(currentRound.status!=='completed')await base44.asServiceRole.entities.KotcRound.update(currentRound.id,{status:'completed',completed_at:now});
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,current_round_number:nextNumber,current_round_id:newRound.id}); result={success:true,session,round:newRound,benchParticipantIds:selected}; await createSnapshot(base44,session,commandId,'round_completed',user.id);
+    } else if (commandType === 'adjust_proposed_round') {
+      const rounds = await base44.asServiceRole.entities.KotcRound.filter({ id:body.roundId, session_id:session.id });
+      const round = rounds?.[0];
+      if (!round) return Response.json({ error:'Round not found.' }, { status:404 });
+      if (round.status !== 'proposed') return Response.json({ error:'Only a proposed round can be manually adjusted.' }, { status:409 });
+      const currentProposalRevision = Number(round.proposal_revision || 1);
+      if (Number(body.expectedProposalRevision) !== currentProposalRevision) return Response.json({ conflict:true, error:'Round proposal changed since you opened it.', currentProposalRevision }, { status:409 });
+      const slots = (await base44.asServiceRole.entities.KotcRoundSlot.filter({ round_id:round.id, session_id:session.id })).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank)||String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number));
+      if (!slots.length) return Response.json({ error:'Round has no slots to adjust.' }, { status:409 });
+      const requested = body.slotParticipantIds || {};
+      const originalIds = slots.map((s:any)=>String(s.participant_id));
+      const nextIds = slots.map((s:any)=>String(requested[s.id] || s.participant_id));
+      if (new Set(nextIds).size !== nextIds.length) return Response.json({ error:'A player cannot appear in more than one slot.' }, { status:400 });
+      const originalSet = new Set(originalIds), nextSet = new Set(nextIds);
+      if (originalSet.size !== nextSet.size || [...originalSet].some((id:string)=>!nextSet.has(id))) return Response.json({ error:'Host adjustment must be a swap/reposition of the same active players. Bench or attendance changes use the player-status controls.' }, { status:400 });
+      const participants = await base44.asServiceRole.entities.KotcSessionParticipant.filter({ session_id:session.id });
+      const eligible = new Set((participants||[]).filter((p:any)=>['confirmed','present','leaving_early'].includes(p.status)).map((p:any)=>String(p.id)));
+      if (nextIds.some((id:string)=>!eligible.has(id))) return Response.json({ error:'Unavailable, injured, left or withdrawn players cannot be placed on court.' }, { status:400 });
+      const before = slots.map((s:any)=>({slotId:s.id,court:Number(s.ladder_court_rank),team:s.team_side,slot:Number(s.slot_number),participantId:String(s.participant_id)}));
+      const changed:any[]=[];
+      for (let i=0;i<slots.length;i++) {
+        const slot=slots[i], participantId=nextIds[i];
+        if (participantId !== String(slot.participant_id)) {
+          const updated=await base44.asServiceRole.entities.KotcRoundSlot.update(slot.id,{participant_id:participantId,assignment_type:'manual_override',assignment_revision:Number(slot.assignment_revision||1)+1});
+          changed.push({slotId:slot.id,fromParticipantId:String(slot.participant_id),toParticipantId:participantId,court:Number(slot.ladder_court_rank),team:slot.team_side,slot:Number(slot.slot_number)});
+          slots[i]=updated;
+        }
+      }
+      if (!changed.length) return Response.json({ success:true, noChange:true, session, round });
+      const matches = await base44.asServiceRole.entities.KotcMatch.filter({ round_id:round.id, session_id:session.id });
+      for (const match of matches) {
+        const rank=Number(match.ladder_court_rank); const courtSlots=slots.filter((s:any)=>Number(s.ladder_court_rank)===rank);
+        const teamA=courtSlots.filter((s:any)=>s.team_side==='A').sort((a:any,b:any)=>Number(a.slot_number)-Number(b.slot_number)).map((s:any)=>String(s.participant_id));
+        const teamB=courtSlots.filter((s:any)=>s.team_side==='B').sort((a:any,b:any)=>Number(a.slot_number)-Number(b.slot_number)).map((s:any)=>String(s.participant_id));
+        if(teamA.length!==2||teamB.length!==2)return Response.json({ error:`Court ${rank} is incomplete after adjustment.` }, { status:409 });
+        await base44.asServiceRole.entities.KotcMatch.update(match.id,{team_a_participant_ids:teamA,team_b_participant_ids:teamB,revision:Number(match.revision||0)+1,command_id:commandId});
+      }
+      const updatedRound=await base44.asServiceRole.entities.KotcRound.update(round.id,{proposal_revision:currentProposalRevision+1,engine_output_hash:String(stableHash(JSON.stringify(slots.map((s:any)=>({court:s.ladder_court_rank,team:s.team_side,slot:s.slot_number,participant:s.participant_id})))))});
+      session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
+      await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_round_host_adjustment',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify(before),after_state:JSON.stringify(changed),reason:String(body.reason||'Host adjusted proposed round').trim()});
+      result={success:true,session,round:updatedRound,changes:changed};
+      await createSnapshot(base44,session,commandId,'command',user.id);
     } else if (commandType === 'takeover_host') {
       if (!String(body.reason || '').trim()) return Response.json({ error:'Host takeover reason is required.' }, { status:400 });
       const leases = await base44.asServiceRole.entities.KotcHostLease.filter({ session_id:session.id, status:'active' });
