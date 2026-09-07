@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Maximize2, Minimize2, Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const PLAY_SECONDS = 8 * 60;
-const REST_SECONDS = 2 * 60;
+const DEFAULT_PLAY_MINUTES = 8;
+const DEFAULT_REST_MINUTES = 2;
 
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
@@ -59,9 +59,11 @@ function speak(text, volume) {
   window.speechSynthesis.speak(utterance);
 }
 
-export default function RoundTimer({ disabled = false }) {
+export default function RoundTimer({ disabled = false, playMinutes = DEFAULT_PLAY_MINUTES, restMinutes = DEFAULT_REST_MINUTES, enabled = true }) {
+  const playSeconds = Math.max(1, Number(playMinutes) || DEFAULT_PLAY_MINUTES) * 60;
+  const restSeconds = Math.max(0, Number(restMinutes) || 0) * 60;
   const [phase, setPhase] = useState('play');
-  const [seconds, setSeconds] = useState(PLAY_SECONDS);
+  const [seconds, setSeconds] = useState(playSeconds);
   const [running, setRunning] = useState(false);
   const [volume, setVolume] = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
@@ -93,7 +95,7 @@ export default function RoundTimer({ disabled = false }) {
   const startPhase = async (nextPhase) => {
     await unlockAudio();
     await requestWakeLock();
-    const duration = nextPhase === 'play' ? PLAY_SECONDS : REST_SECONDS;
+    const duration = nextPhase === 'play' ? playSeconds : restSeconds;
     setPhase(nextPhase);
     setSeconds(duration);
     setRunning(true);
@@ -105,7 +107,7 @@ export default function RoundTimer({ disabled = false }) {
   const reset = () => {
     setRunning(false);
     setPhase('play');
-    setSeconds(PLAY_SECONDS);
+    setSeconds(playSeconds);
     deadlineRef.current = null;
     lastAnnouncedRef.current = new Set();
     window.speechSynthesis?.cancel();
@@ -148,7 +150,7 @@ export default function RoundTimer({ disabled = false }) {
     window.speechSynthesis?.cancel();
   }, []);
 
-  const maxSeconds = phase === 'play' ? PLAY_SECONDS : REST_SECONDS;
+  const maxSeconds = phase === 'play' ? playSeconds : restSeconds;
   const pct = maxSeconds > 0 ? seconds / maxSeconds : 0;
   const isRest = phase === 'rest';
 
@@ -157,10 +159,10 @@ export default function RoundTimer({ disabled = false }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">{isRest ? 'Rest Time' : 'Play Time'}</p>
-          <p className="text-sm text-muted-foreground">8 min play · 2 min rest · sound, speech and vibration cues</p>
+          <p className="text-sm text-muted-foreground">{playMinutes} min play · {restMinutes} min changeover · sound, speech and vibration cues</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={unlockAudio} disabled={disabled} title="Enable sound">
+          <Button variant="outline" size="icon" onClick={unlockAudio} disabled={disabled || !enabled} title="Test / enable speaker sound">
             {audioReady ? <Volume2 className="w-4 h-4 text-primary" /> : <VolumeX className="w-4 h-4" />}
           </Button>
           <Button variant="outline" size="icon" onClick={() => setFullscreen(value => !value)}>
@@ -186,14 +188,14 @@ export default function RoundTimer({ disabled = false }) {
       )}
 
       <div className="flex gap-2">
-        <Button className="flex-1 bg-primary text-primary-foreground gap-2 h-12" onClick={running ? () => setRunning(false) : () => startPhase(phase)} disabled={disabled}>
+        <Button className="flex-1 bg-primary text-primary-foreground gap-2 h-12" onClick={running ? () => setRunning(false) : () => startPhase(phase)} disabled={disabled || !enabled}>
           {running ? <><Pause className="w-4 h-4" /> Pause</> : <><Play className="w-4 h-4" /> Start Timer</>}
         </Button>
         <Button variant="outline" onClick={reset} className="gap-2 h-12"><RotateCcw className="w-4 h-4" /> Reset</Button>
       </div>
 
       {!audioReady && (
-        <p className="text-[11px] text-muted-foreground text-center">Tap Enable Sound or Start Timer once before play so the browser allows announcements.</p>
+        <p className="text-[11px] text-muted-foreground text-center">Tap the speaker button to test sound before play. Bluetooth audio follows your phone's selected audio output.</p>
       )}
     </div>
   );
