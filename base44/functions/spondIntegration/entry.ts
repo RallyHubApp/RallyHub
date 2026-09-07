@@ -40,6 +40,17 @@ Deno.serve(async (req) => {
   const body = await req.json();
   const { action, spondEmail, spondPassword, spondToken, groupId, eventId } = body;
 
+  const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
+  const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole);
+  if (!isSpondManager) {
+    return Response.json({ error: 'Forbidden: Spond host/admin access required' }, { status: 403 });
+  }
+  const activeTenantId = user.active_tenant_id || null;
+  const activeClubId = user.active_club_id || null;
+  if (user.role !== 'admin' && (!activeTenantId || !activeClubId)) {
+    return Response.json({ error: 'Forbidden: active tenant/club context required' }, { status: 403 });
+  }
+
   // ── Action: login ──
   if (action === 'login') {
     if (!spondEmail || !spondPassword) {
@@ -145,8 +156,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Now match against existing players in DB
-    const existingPlayers = await base44.asServiceRole.entities.Player.list();
+    // Match only against players the signed-in host is authorised to see.
+    const existingPlayers = user.role === 'admin'
+      ? await base44.asServiceRole.entities.Player.list()
+      : await base44.asServiceRole.entities.Player.filter({ tenant_id: activeTenantId, club_id: activeClubId });
     const matchResults = attendees.map(attendee => {
       // 1. Match by email
       let matched = existingPlayers.find(
@@ -180,14 +193,24 @@ Deno.serve(async (req) => {
     const tournaments = await base44.asServiceRole.entities.Tournament.filter({ id: tournamentId });
     const tournament = tournaments[0];
     if (!tournament) return Response.json({ error: 'Tournament not found' }, { status: 404 });
+    if (user.role !== 'admin' && (tournament.tenant_id !== activeTenantId || tournament.host_club_id !== activeClubId)) {
+      return Response.json({ error: 'Forbidden: tournament belongs to another tenant/club' }, { status: 403 });
+    }
 
-    const existingPlayerIds = new Set(tournament.player_ids || []);
+    const tournamentTenantId = tournament.tenant_id || activeTenantId;
+    const tournamentClubId = tournament.host_club_id || activeClubId;
+    const authorisedPlayers = await base44.asServiceRole.entities.Player.filter({ tenant_id: tournamentTenantId, club_id: tournamentClubId });
+    const authorisedPlayerIds = new Set(authorisedPlayers.map(p => p.id));
+    const existingPlayerIds = new Set((tournament.player_ids || []).filter(id => authorisedPlayerIds.has(id)));
     const createdPlayers = [];
     const matchedPlayers = [];
 
     for (const attendee of attendees) {
       if (attendee.existingPlayerId) {
-        // Use existing
+        // Never trust a client-supplied Player ID outside this tournament's tenant/club.
+        if (!authorisedPlayerIds.has(attendee.existingPlayerId)) {
+          return Response.json({ error: 'Forbidden: player belongs to another tenant/club' }, { status: 403 });
+        }
         if (!existingPlayerIds.has(attendee.existingPlayerId)) {
           existingPlayerIds.add(attendee.existingPlayerId);
           matchedPlayers.push(attendee.existingPlayerId);
@@ -204,6 +227,8 @@ Deno.serve(async (req) => {
           wins: 0,
           losses: 0,
           matches_played: 0,
+          tenant_id: tournamentTenantId,
+          club_id: tournamentClubId,
         });
         existingPlayerIds.add(newPlayer.id);
         createdPlayers.push(newPlayer.id);
