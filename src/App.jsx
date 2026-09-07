@@ -2,7 +2,6 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { useRef } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { base44 } from '@/api/base44Client';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -47,19 +46,12 @@ const LoadingScreen = () => (
 
 const AppAccessGate = () => {
   const { isLoadingPublicSettings, user } = useAuth();
-  const notifiedRef = useRef(false);
-
   if (isLoadingPublicSettings) {
     return <LoadingScreen />;
   }
 
   if (user?.role === 'admin' || user?.approval_status === 'approved') {
     return <AuthenticatedRoutes />;
-  }
-
-  if (!notifiedRef.current && user && user.approval_status !== 'rejected') {
-    notifiedRef.current = true;
-    base44.functions.invoke('notifyAdminsOnSignup', { user }).catch(() => {});
   }
 
   return <PendingApprovalScreen status={user?.approval_status || 'pending'} />;
