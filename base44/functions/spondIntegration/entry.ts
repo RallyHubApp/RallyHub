@@ -81,7 +81,9 @@ Deno.serve(async (req) => {
     if (!groupId) return Response.json({ error: 'groupId required' }, { status: 400 });
     // Use minStartTimestamp from today, maxEndTimestamp 180 days out
     // Also fetch with no timestamp filter to catch recurring events — Spond returns each occurrence separately
-    const minStart = new Date().toISOString();
+    const minDate = new Date();
+    minDate.setHours(0, 0, 0, 0);
+    const minStart = minDate.toISOString();
     const maxEnd = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
     const events = await spondRequest(
       `/sponds?groupId=${groupId}&minStartTimestamp=${minStart}&maxEndTimestamp=${maxEnd}&includeComments=false&includeHidden=false&addProfileInfo=true`,
