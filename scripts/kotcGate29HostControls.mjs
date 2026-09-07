@@ -27,4 +27,17 @@ ok(command.includes('team_a_participant_ids:teamA'),'match teams rebuilt from ed
 ok(command.includes('team_b_participant_ids:teamB'),'both match sides rebuilt from edited slots');
 ok(command.includes("await createSnapshot(base44,session,commandId,'command'"),'recovery checkpoint follows host edit');
 
+ok(command.includes("commandType === 'set_participant_status'"),'participant status command wired');
+ok(command.includes("action==='voluntary_rest'"),'one-round voluntary rest wired');
+ok(command.includes("action==='temporarily_unavailable'"),'temporary unavailable wired');
+ok(command.includes("action==='injured'"),'injury wired');
+ok(command.includes("action==='leaving_early'"),'leaving early wired');
+ok(command.includes("action==='back_available'"),'return available wired');
+ok(command.includes("fairness_credit:false"),'status exceptions do not earn fairness credit');
+ok(command.includes("available_again_from_round"),'temporary/rest return round persisted');
+ok(v2.includes('Live Player Controls'),'live player controls rendered');
+ok(v2.includes("act('voluntary_rest')"),'sit-out quick action rendered');
+ok(v2.includes("act('injured')"),'injury quick action rendered');
+ok(v2.includes("act('leaving_early')"),'leaving-early quick action rendered');
+ok(v2.includes("act('back_available')"),'back-available quick action rendered');
 console.log(`KOTC Gate 2.9 host controls: PASS\n${checks} host-control checks, 0 failures.`);
