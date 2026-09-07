@@ -35,6 +35,15 @@
         "host_select_at_transition"
       ]
     },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "active",
+        "completed"
+      ],
+      "default": "planned"
+    },
     "created_by_user_id": {
       "type": "string"
     }
