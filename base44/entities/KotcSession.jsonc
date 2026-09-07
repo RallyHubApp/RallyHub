@@ -34,6 +34,9 @@
     "venue_id": {
       "type": "string"
     },
+    "custom_location": {
+      "type": "string"
+    },
     "scheduled_start": {
       "type": "string",
       "format": "date-time"
@@ -66,9 +69,19 @@
       "enum": [
         "rotating_doubles",
         "fixed_doubles",
+        "phased_doubles",
         "singles"
       ],
       "default": "rotating_doubles"
+    },
+    "round1_bench_priority": {
+      "type": "string",
+      "enum": [
+        "latest_registration",
+        "fairness_engine",
+        "manual"
+      ],
+      "default": "manual"
     },
     "scoring_mode": {
       "type": "string",
