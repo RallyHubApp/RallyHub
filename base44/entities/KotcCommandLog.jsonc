@@ -1,0 +1,87 @@
+{
+  "name": "KotcCommandLog",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "command_id": {
+      "type": "string"
+    },
+    "command_type": {
+      "type": "string"
+    },
+    "expected_session_revision": {
+      "type": "number"
+    },
+    "applied_session_revision": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "received",
+        "applied",
+        "rejected",
+        "duplicate",
+        "failed"
+      ],
+      "default": "received"
+    },
+    "payload_json": {
+      "type": "string"
+    },
+    "result_json": {
+      "type": "string"
+    },
+    "error_code": {
+      "type": "string"
+    },
+    "error_message": {
+      "type": "string"
+    },
+    "issued_by_user_id": {
+      "type": "string"
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "applied_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "session_id",
+    "command_id",
+    "command_type",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": false
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "name": "KotcSessionCourt",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "physical_court_id": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "ladder_rank_default": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "unavailable"
+      ],
+      "default": "available"
+    },
+    "effective_from_round": {
+      "type": "number",
+      "default": 1
+    },
+    "effective_to_round": {
+      "type": "number"
+    },
+    "reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "session_id",
+    "display_name",
+    "status",
+    "effective_from_round"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

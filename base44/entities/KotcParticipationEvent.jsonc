@@ -1,0 +1,98 @@
+{
+  "name": "KotcParticipationEvent",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "participant_id": {
+      "type": "string"
+    },
+    "round_id": {
+      "type": "string"
+    },
+    "round_number": {
+      "type": "number"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "played",
+        "fairness_bench",
+        "voluntary_rest",
+        "late_not_arrived",
+        "late_arrival",
+        "temporary_absence",
+        "returned_available",
+        "injury",
+        "leaving_early",
+        "left",
+        "no_show",
+        "withdrawn",
+        "replaced",
+        "manual_override"
+      ]
+    },
+    "effective_from_round": {
+      "type": "number"
+    },
+    "effective_to_round": {
+      "type": "number"
+    },
+    "fairness_credit": {
+      "type": "boolean",
+      "default": false
+    },
+    "reason": {
+      "type": "string"
+    },
+    "related_participant_id": {
+      "type": "string"
+    },
+    "command_id": {
+      "type": "string"
+    },
+    "recorded_by_user_id": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "session_id",
+    "participant_id",
+    "event_type"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "name": "KotcMatch",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "round_id": {
+      "type": "string"
+    },
+    "round_number": {
+      "type": "number"
+    },
+    "ladder_court_rank": {
+      "type": "number"
+    },
+    "physical_court_id": {
+      "type": "string"
+    },
+    "team_a_participant_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "team_b_participant_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "in_progress",
+        "completed",
+        "retired",
+        "abandoned",
+        "not_played"
+      ],
+      "default": "scheduled"
+    },
+    "team_a_score": {
+      "type": "number"
+    },
+    "team_b_score": {
+      "type": "number"
+    },
+    "winner_side": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B"
+      ]
+    },
+    "serving_side_at_horn": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B"
+      ]
+    },
+    "result_method": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "timed_serving_tiebreak",
+        "retired",
+        "abandoned",
+        "not_played",
+        "manual_resolution"
+      ]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "revision": {
+      "type": "number",
+      "default": 0
+    },
+    "correction_count": {
+      "type": "number",
+      "default": 0
+    },
+    "last_corrected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_corrected_by_user_id": {
+      "type": "string"
+    },
+    "last_correction_reason": {
+      "type": "string"
+    },
+    "original_result_json": {
+      "type": "string"
+    },
+    "command_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "session_id",
+    "round_id",
+    "round_number",
+    "ladder_court_rank",
+    "status",
+    "team_a_participant_ids",
+    "team_b_participant_ids"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "name": "KotcSessionParticipant",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "member",
+        "guest",
+        "imported",
+        "replacement"
+      ],
+      "default": "member"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "registered",
+        "confirmed",
+        "present",
+        "late_not_arrived",
+        "temporarily_unavailable",
+        "voluntary_rest",
+        "injured",
+        "leaving_early",
+        "left",
+        "no_show",
+        "withdrawn",
+        "replaced"
+      ],
+      "default": "registered"
+    },
+    "availability_effective_from_round": {
+      "type": "number"
+    },
+    "available_again_from_round": {
+      "type": "number"
+    },
+    "replaced_by_participant_id": {
+      "type": "string"
+    },
+    "replaces_participant_id": {
+      "type": "string"
+    },
+    "rating_snapshot": {
+      "type": "number"
+    },
+    "dupr_rating_snapshot": {
+      "type": "number"
+    },
+    "seed_rank": {
+      "type": "number"
+    },
+    "fixed_pair_id": {
+      "type": "string"
+    },
+    "rounds_played": {
+      "type": "number",
+      "default": 0
+    },
+    "fairness_benches": {
+      "type": "number",
+      "default": 0
+    },
+    "voluntary_rest_rounds": {
+      "type": "number",
+      "default": 0
+    },
+    "consecutive_rounds_played": {
+      "type": "number",
+      "default": 0
+    },
+    "consecutive_court1_rounds": {
+      "type": "number",
+      "default": 0
+    },
+    "court1_rounds": {
+      "type": "number",
+      "default": 0
+    },
+    "recent_fairness_burden": {
+      "type": "number",
+      "default": 0
+    },
+    "final_rank": {
+      "type": "number"
+    },
+    "podium_group": {
+      "type": "string",
+      "enum": [
+        "gold",
+        "silver",
+        "bronze",
+        "none"
+      ],
+      "default": "none"
+    },
+    "court1_champion": {
+      "type": "boolean",
+      "default": false
+    },
+    "joined_at_round": {
+      "type": "number"
+    },
+    "left_after_round": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "session_id",
+    "display_name",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

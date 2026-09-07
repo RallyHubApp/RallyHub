@@ -1,0 +1,107 @@
+{
+  "name": "KotcRoundSlot",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "round_id": {
+      "type": "string"
+    },
+    "round_number": {
+      "type": "number"
+    },
+    "ladder_court_rank": {
+      "type": "number"
+    },
+    "physical_court_id": {
+      "type": "string"
+    },
+    "team_side": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B"
+      ]
+    },
+    "slot_number": {
+      "type": "number",
+      "description": "1 or 2 within team side"
+    },
+    "participant_id": {
+      "type": "string"
+    },
+    "assignment_type": {
+      "type": "string",
+      "enum": [
+        "sporting_movement",
+        "initial_seed",
+        "fairness_return",
+        "voluntary_rest_replacement",
+        "temporary_absence_replacement",
+        "injury_replacement",
+        "leave_replacement",
+        "manual_override"
+      ],
+      "default": "sporting_movement"
+    },
+    "destination_from_prior_round": {
+      "type": "number"
+    },
+    "assignment_revision": {
+      "type": "number",
+      "default": 1
+    },
+    "source_slot_id": {
+      "type": "string"
+    },
+    "replacement_for_participant_id": {
+      "type": "string"
+    },
+    "is_locked": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "session_id",
+    "round_id",
+    "round_number",
+    "ladder_court_rank",
+    "team_side",
+    "slot_number",
+    "participant_id",
+    "assignment_type",
+    "assignment_revision"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
