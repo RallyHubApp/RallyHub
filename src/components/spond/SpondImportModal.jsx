@@ -69,7 +69,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setLoading(true);
     setError('');
     try {
-      const res = await invoke('get_events', { groupId: group.id });
+      const res = await invoke('get_events', { groupId: group.id, targetDate: tournament?.start_date || undefined });
       if (res.data?.events) {
         setEvents(res.data.events);
         setStep('select_event');
@@ -275,9 +275,12 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
         {/* ── SELECT EVENT ── */}
         {step === 'select_event' && (
           <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Select an event from <strong className="text-foreground">{selectedGroup?.name}</strong>:
-            </p>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                Select the matching Spond occurrence from <strong className="text-foreground">{selectedGroup?.name}</strong>:
+              </p>
+              {tournament?.start_date && <p className="text-[11px] text-primary">Showing occurrences for the RallyHub session date: {new Date(`${tournament.start_date}T12:00:00`).toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</p>}
+            </div>
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -306,7 +309,10 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                   </button>
                 ))}
                 {events.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-6">No upcoming events found</p>
+                  <div className="text-center py-6 space-y-1">
+                    <p className="text-xs text-muted-foreground">No Spond occurrence found for this session date.</p>
+                    <p className="text-[10px] text-muted-foreground">Use Refresh once. If it is still empty, check the RallyHub session date or choose the correct Spond group.</p>
+                  </div>
                 )}
               </div>
             )}
