@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Crown, Play, Pause, RotateCcw, Trophy, CheckCircle2, AlertTriangle, GripVertical, Save, Undo2 } from 'lucide-react';
+import { Crown, Play, Pause, RotateCcw, Trophy, CheckCircle2, AlertTriangle, GripVertical, Save, Undo2, UserRound, HeartPulse, LogOut, Clock3 } from 'lucide-react';
 import { activeCourtCount } from '@/lib/kotcV2Domain';
 
 function commandId(prefix='kotc'){return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;}
@@ -29,6 +29,18 @@ function ScoreCard({ match, names, session, onSaved, disabled }){
     <div className="grid grid-cols-[1fr_72px] gap-3 items-center"><div><p className="text-[10px] uppercase text-muted-foreground">Team B</p><p className="text-sm font-medium">{teamB}</p></div><Input type="number" min="0" value={b} disabled={disabled} onChange={e=>setB(e.target.value)} /></div>
     {session.scoring_mode==='timed' && a!=='' && b!=='' && Number(a)===Number(b) && <div><Label className="text-xs">Serving team at horn</Label><Select value={serving} onValueChange={setServing}><SelectTrigger className="mt-1"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="A">Team A</SelectItem><SelectItem value="B">Team B</SelectItem></SelectContent></Select></div>}
     <Button className="w-full" onClick={submit} disabled={disabled||saving||a===''||b===''}>{saving?'Saving…':resolved?'Correct Result':'Complete Match'}</Button>
+  </div>;
+}
+
+function PlayerStatusControls({participants,onAction,saving,currentRound}){
+  const [selected,setSelected]=useState(null);
+  const active=participants.filter(p=>!['withdrawn','replaced','no_show'].includes(p.status));
+  const selectedPlayer=active.find(p=>p.id===selected)||null;
+  const act=async(action)=>{if(!selectedPlayer)return;await onAction(selectedPlayer,action);setSelected(null);};
+  return <div className="glass rounded-xl p-4 space-y-3">
+    <div><h4 className="font-semibold text-sm">Live Player Controls</h4><p className="text-xs text-muted-foreground mt-1">Tap a player for a quick status action. During a started round, changes take effect from the next round so the current result is never rewritten.</p></div>
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">{active.map(p=><button key={p.id} type="button" onClick={()=>setSelected(p.id===selected?null:p.id)} className={`rounded-lg border p-3 text-left ${selected===p.id?'border-primary ring-2 ring-primary/30':'border-border'}`}><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">{p.display_name}</span><Badge variant="outline" className="text-[10px]">{String(p.status||'present').replaceAll('_',' ')}</Badge></div>{p.availability_effective_from_round&&<p className="text-[10px] text-muted-foreground mt-1">effective R{p.availability_effective_from_round}{p.available_again_from_round?` · back R${p.available_again_from_round}`:''}</p>}</button>)}</div>
+    {selectedPlayer&&<div className="rounded-xl border p-3 space-y-2"><p className="text-sm font-semibold">{selectedPlayer.display_name}</p><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={()=>act('voluntary_rest')} disabled={saving}><Clock3 className="w-4 h-4 mr-1"/>Sit Out 1 Round</Button><Button size="sm" variant="outline" onClick={()=>act('temporarily_unavailable')} disabled={saving}><UserRound className="w-4 h-4 mr-1"/>Temporarily Unavailable</Button><Button size="sm" variant="outline" onClick={()=>act('injured')} disabled={saving}><HeartPulse className="w-4 h-4 mr-1"/>Injured</Button><Button size="sm" variant="outline" onClick={()=>act('leaving_early')} disabled={saving}><LogOut className="w-4 h-4 mr-1"/>Leaving Early</Button><Button size="sm" onClick={()=>act('back_available')} disabled={saving}>Back Available</Button></div><p className="text-[10px] text-muted-foreground">Round {currentRound?.round_number||'—'} status: {currentRound?.status||'—'}. Sit Out is one round only and does not earn fairness-bench credit.</p></div>}
   </div>;
 }
 
@@ -64,6 +76,7 @@ export default function KotcV2SessionView({ tournament, players, queryClient }){
   const allResolved=currentMatches.length>0&&currentMatches.every(m=>['completed','retired','abandoned','not_played'].includes(m.status));
   const doCommand=async(commandType,extra={})=>{try{setCommanding(true);await base44.functions.invoke('kotcCommand',{sessionId:session.id,commandId:commandId(commandType),commandType,expectedSessionRevision:Number(session.revision||0),...extra});await refetch();queryClient?.invalidateQueries({queryKey:['tournament',tournament.id]});}catch(e){toast.error(errMsg(e));}finally{setCommanding(false);}};
   const saveRoundAdjustments=async(slotParticipantIds)=>{await doCommand('adjust_proposed_round',{roundId:currentRound.id,expectedProposalRevision:Number(currentRound.proposal_revision||1),slotParticipantIds,reason:'Host adjusted proposed round layout'});toast.success('Host adjustments saved');};
+  const setParticipantStatus=async(participant,statusAction)=>{await doCommand('set_participant_status',{participantId:participant.id,statusAction,reason:`Host set ${participant.display_name}: ${statusAction}`});toast.success(`${participant.display_name} updated`);};
   const createSession=async()=>{if(players.length<4)return toast.error('Add at least 4 players.');if(benchIds.length!==requiredBench)return toast.error(`Choose exactly ${requiredBench} Round 1 bench player${requiredBench===1?'':'s'}.`);try{setCreating(true);await base44.functions.invoke('createKotcV2Session',{tournamentId:tournament.id,playerOrder,round1BenchIds:benchIds,venueCourtLimit:Number(venueCourts),plannedRounds:Number(plannedRounds),plannedDurationMinutes:Number(duration),playMinutes:Number(playMinutes),changeoverMinutes:Number(changeover),scoringMode,scoreTarget:Number(scoreTarget)});toast.success('KOTC V2 session created');await refetch();queryClient?.invalidateQueries({queryKey:['tournament',tournament.id]});}catch(e){toast.error(errMsg(e));}finally{setCreating(false);}};
 
   if(isLoading)return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading KOTC V2…</div>;
@@ -78,6 +91,7 @@ export default function KotcV2SessionView({ tournament, players, queryClient }){
 
   return <div className="space-y-4">
     <div className="glass rounded-xl p-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center"><Crown className="w-5 h-5 text-yellow-400"/></div><div><p className="font-bold text-sm">Round {session.current_round_number} <span className="font-normal text-muted-foreground">of {session.planned_rounds||'—'}</span></p><p className="text-xs text-muted-foreground">{currentRound?.active_court_count||0} courts · {currentRound?.bench_count||0} bench · session rev {session.revision} · proposal rev {currentRound?.proposal_revision||'—'}</p></div></div><div className="flex gap-2"><Badge>{session.status}</Badge><Badge variant="outline">{currentRound?.status||'no round'}</Badge></div></div>
+    <PlayerStatusControls participants={participants} onAction={setParticipantStatus} saving={commanding} currentRound={currentRound}/>
     {currentRound?.status==='proposed'&&<ProposedRoundEditor round={currentRound} slots={currentSlots} names={participantNames} onSave={saveRoundAdjustments} saving={commanding}/>} 
     {currentRound?.status==='proposed'&&<Button className="w-full" onClick={()=>doCommand('confirm_round',{roundId:currentRound.id,expectedProposalRevision:Number(currentRound.proposal_revision||1)})} disabled={commanding}><CheckCircle2 className="w-4 h-4 mr-2"/>Confirm Round {currentRound.round_number}</Button>}
     {currentRound?.status==='confirmed'&&<Button className="w-full" onClick={()=>doCommand('start_round',{roundId:currentRound.id,expectedProposalRevision:Number(currentRound.proposal_revision||1)})} disabled={commanding}><Play className="w-4 h-4 mr-2"/>Start Round {currentRound.round_number}</Button>}
