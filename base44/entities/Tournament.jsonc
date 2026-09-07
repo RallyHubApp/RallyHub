@@ -210,12 +210,12 @@
             },
             {
               "user_condition": {
-                "approval_status": "approved"
+                "data.approval_status": "approved"
               }
             },
             {
               "user_condition": {
-                "kotc_role": "super_admin"
+                "data.kotc_role": "super_admin"
               }
             }
           ]
@@ -227,12 +227,12 @@
             },
             {
               "user_condition": {
-                "approval_status": "approved"
+                "data.approval_status": "approved"
               }
             },
             {
               "user_condition": {
-                "kotc_role": "admin"
+                "data.kotc_role": "admin"
               }
             }
           ]
@@ -253,7 +253,7 @@
             },
             {
               "user_condition": {
-                "approval_status": "approved"
+                "data.approval_status": "approved"
               }
             }
           ]
@@ -274,29 +274,12 @@
             },
             {
               "user_condition": {
-                "approval_status": "approved"
+                "data.approval_status": "approved"
               }
             },
             {
               "user_condition": {
-                "kotc_role": "super_admin"
-              }
-            }
-          ]
-        },
-        {
-          "$and": [
-            {
-              "data.tenant_id": "{{user.data.active_tenant_id}}"
-            },
-            {
-              "user_condition": {
-                "approval_status": "approved"
-              }
-            },
-            {
-              "user_condition": {
-                "kotc_role": "admin"
+                "data.kotc_role": "super_admin"
               }
             }
           ]
@@ -308,12 +291,29 @@
             },
             {
               "user_condition": {
-                "approval_status": "approved"
+                "data.approval_status": "approved"
               }
             },
             {
               "user_condition": {
-                "kotc_role": "host"
+                "data.kotc_role": "admin"
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            },
+            {
+              "user_condition": {
+                "data.kotc_role": "host"
               }
             }
           ]
@@ -334,12 +334,12 @@
             },
             {
               "user_condition": {
-                "approval_status": "approved"
+                "data.approval_status": "approved"
               }
             },
             {
               "user_condition": {
-                "kotc_role": "super_admin"
+                "data.kotc_role": "super_admin"
               }
             }
           ]
@@ -351,12 +351,12 @@
             },
             {
               "user_condition": {
-                "approval_status": "approved"
+                "data.approval_status": "approved"
               }
             },
             {
               "user_condition": {
-                "kotc_role": "admin"
+                "data.kotc_role": "admin"
               }
             }
           ]
