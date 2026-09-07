@@ -8,12 +8,13 @@ Deno.serve(async (req) => {
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    // Email is a credit-consuming operation. Only a platform admin may invoke it.
+    if (user.role !== 'admin') {
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
 
     // Mode: notifyAllPending — called by admin to blast notifications for all pending users
     if (payload.notifyAllPending) {
-      if (user.role !== 'admin') {
-        return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-      }
       const allUsers = await base44.asServiceRole.entities.User.list();
       const pendingUsers = allUsers.filter(u => u.role !== 'admin' && (!u.approval_status || u.approval_status === 'pending'));
       const admins = allUsers.filter(u => u.role === 'admin' && u.email);
@@ -49,9 +50,6 @@ RallyHub`.trim()
 
     // Mode: notifyUserApproval — called when admin approves/rejects a user
     if (payload.notifyUserApproval) {
-      if (user.role !== 'admin') {
-        return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-      }
       const { userEmail, userName, status } = payload;
       if (!userEmail) return Response.json({ error: 'No userEmail provided' }, { status: 400 });
 
@@ -82,49 +80,7 @@ RallyHub`.trim()
       return Response.json({ success: true });
     }
 
-    // Normal mode: current signed-in user hit the pending screen.
-    // Send this notification at most once per account to prevent repeated credit usage.
-    const newUser = user;
-    if (newUser.role === 'admin') return Response.json({ skipped: true, reason: 'admin user' });
-    if (newUser.signup_notification_sent_at) {
-      return Response.json({ skipped: true, reason: 'signup notification already sent' });
-    }
-
-    const allUsers = await base44.asServiceRole.entities.User.list();
-    const admins = allUsers.filter(u => u.role === 'admin' && u.email);
-    if (admins.length === 0) return Response.json({ skipped: true, reason: 'no admins found' });
-
-    const userName = newUser.full_name || newUser.email || 'Unknown User';
-    const userEmail = newUser.email || 'No email';
-    const signupDate = new Date().toLocaleDateString('en-IE', {
-      day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
-
-    const emailPromises = admins.map(admin =>
-      base44.asServiceRole.integrations.Core.SendEmail({
-        to: admin.email,
-        from_name: 'RallyHub',
-        subject: `[RallyHub] New Sign-Up: ${userName} — Approval Required`,
-        body: `Hi ${admin.full_name || 'Admin'},
-
-A new user has signed up for RallyHub and is awaiting your approval.
-
-Name: ${userName}
-Email: ${userEmail}
-Signed up: ${signupDate}
-
-Approve or reject them here:
-https://rallyhub.ie/app/admin
-
-RallyHub`.trim()
-      })
-    );
-
-    await Promise.all(emailPromises);
-    await base44.asServiceRole.entities.User.update(newUser.id, {
-      signup_notification_sent_at: new Date().toISOString()
-    });
-    return Response.json({ success: true, notified: admins.length });
+    return Response.json({ error: 'Unknown notification action' }, { status: 400 });
 
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
