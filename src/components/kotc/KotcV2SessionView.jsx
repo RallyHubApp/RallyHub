@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Crown, Play, Pause, RotateCcw, Trophy, Users, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Crown, Play, Pause, RotateCcw, Trophy, CheckCircle2, AlertTriangle, GripVertical, Save, Undo2 } from 'lucide-react';
 import { activeCourtCount } from '@/lib/kotcV2Domain';
 
 function commandId(prefix='kotc'){return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;}
@@ -32,18 +32,38 @@ function ScoreCard({ match, names, session, onSaved, disabled }){
   </div>;
 }
 
+function ProposedRoundEditor({ round, slots, names, onSave, saving }){
+  const ordered=useMemo(()=>[...slots].sort((a,b)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank)||String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number)),[slots]);
+  const original=useMemo(()=>Object.fromEntries(ordered.map(s=>[s.id,String(s.participant_id)])),[ordered]);
+  const [draft,setDraft]=useState(original);
+  const [selected,setSelected]=useState(null);
+  useEffect(()=>{setDraft(original);setSelected(null);},[round?.id,round?.proposal_revision,JSON.stringify(original)]);
+  const swap=(sourceId,targetId)=>{if(!sourceId||!targetId||sourceId===targetId)return;setDraft(prev=>({...prev,[sourceId]:prev[targetId],[targetId]:prev[sourceId]}));setSelected(null);};
+  const clickSlot=id=>{if(!selected){setSelected(id);return;}swap(selected,id);};
+  const changed=ordered.filter(s=>draft[s.id]!==original[s.id]);
+  const courts=[...new Set(ordered.map(s=>Number(s.ladder_court_rank)))];
+  return <div className="glass rounded-xl p-4 space-y-4">
+    <div className="flex flex-wrap items-start justify-between gap-3"><div><h4 className="font-semibold text-sm">Host Round Editor</h4><p className="text-xs text-muted-foreground mt-1">Press/tap one player then another to swap them, or drag a player onto any slot on any court. The round stays proposed until you save and confirm it.</p></div>{changed.length>0&&<Badge variant="outline">{changed.length} changed slot{changed.length===1?'':'s'}</Badge>}</div>
+    <div className="grid lg:grid-cols-2 gap-4">{courts.map(rank=>{const courtSlots=ordered.filter(s=>Number(s.ladder_court_rank)===rank);return <div key={rank} className="rounded-xl border p-3 space-y-3"><div className="flex items-center gap-2">{rank===1&&<Crown className="w-4 h-4 text-yellow-400"/>}<span className="font-semibold text-sm">Court {rank}</span></div>{['A','B'].map(side=><div key={side}><p className="text-[10px] uppercase text-muted-foreground mb-1">Team {side}</p><div className="grid grid-cols-2 gap-2">{courtSlots.filter(s=>s.team_side===side).sort((a,b)=>Number(a.slot_number)-Number(b.slot_number)).map(slot=>{const pid=draft[slot.id]||slot.participant_id;const isSelected=selected===slot.id;const isChanged=pid!==original[slot.id];return <button key={slot.id} type="button" draggable onDragStart={e=>{e.dataTransfer.setData('text/plain',slot.id);setSelected(slot.id);}} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();swap(e.dataTransfer.getData('text/plain'),slot.id);}} onClick={()=>clickSlot(slot.id)} className={`rounded-lg border p-3 text-left min-h-[58px] flex items-center gap-2 touch-manipulation ${isSelected?'border-primary ring-2 ring-primary/30':isChanged?'border-amber-400 bg-amber-500/10':'border-border'}`}><GripVertical className="w-4 h-4 shrink-0 text-muted-foreground"/><span className="text-sm font-medium leading-tight">{names[pid]||pid}</span></button>;})}</div></div>)}</div>;})}</div>
+    {selected&&<p className="text-xs text-primary">Player selected. Tap another player anywhere on Courts 1–{Math.max(...courts)} to swap positions.</p>}
+    <div className="flex flex-wrap gap-2"><Button onClick={()=>onSave(draft)} disabled={saving||changed.length===0}><Save className="w-4 h-4 mr-2"/>{saving?'Saving…':'Save Host Adjustments'}</Button><Button variant="outline" onClick={()=>{setDraft(original);setSelected(null);}} disabled={saving||changed.length===0}><Undo2 className="w-4 h-4 mr-2"/>Reset</Button></div>
+  </div>;
+}
+
 export default function KotcV2SessionView({ tournament, players, queryClient }){
   const [creating,setCreating]=useState(false); const [commanding,setCommanding]=useState(false);
   const [venueCourts,setVenueCourts]=useState('3'); const [plannedRounds,setPlannedRounds]=useState('9'); const [duration,setDuration]=useState('90'); const [playMinutes,setPlayMinutes]=useState('8'); const [changeover,setChangeover]=useState('2'); const [scoringMode,setScoringMode]=useState('timed'); const [scoreTarget,setScoreTarget]=useState('11'); const [benchIds,setBenchIds]=useState([]);
   const {data:state,isLoading,refetch}=useQuery({queryKey:['kotc-v2-state',tournament.id],queryFn:async()=> (await base44.functions.invoke('getKotcV2State',{tournamentId:tournament.id})).data,refetchInterval:3000});
-  const session=state?.session||null; const participants=state?.participants||[]; const rounds=state?.rounds||[]; const matches=state?.matches||[]; const participantNames=useMemo(()=>Object.fromEntries(participants.map(p=>[p.id,p.display_name||p.id])),[participants]);
+  const session=state?.session||null; const participants=state?.participants||[]; const rounds=state?.rounds||[]; const slots=state?.slots||[]; const matches=state?.matches||[]; const participantNames=useMemo(()=>Object.fromEntries(participants.map(p=>[p.id,p.display_name||p.id])),[participants]);
   const playerOrder=players.map(p=>p.id); const courts=activeCourtCount(players.length,Math.max(1,Number(venueCourts)||1)); const requiredBench=Math.max(0,players.length-courts*4);
   useEffect(()=>{setBenchIds(prev=>prev.filter(id=>playerOrder.includes(id)).slice(0,requiredBench));},[requiredBench,players.length]);
   const toggleBench=id=>setBenchIds(prev=>prev.includes(id)?prev.filter(x=>x!==id):(prev.length<requiredBench?[...prev,id]:prev));
   const currentRound=rounds.filter(r=>Number(r.round_number)===Number(session?.current_round_number)).sort((a,b)=>Number(b.proposal_revision||0)-Number(a.proposal_revision||0))[0]||null;
+  const currentSlots=slots.filter(s=>s.round_id===currentRound?.id);
   const currentMatches=matches.filter(m=>m.round_id===currentRound?.id).sort((a,b)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank));
   const allResolved=currentMatches.length>0&&currentMatches.every(m=>['completed','retired','abandoned','not_played'].includes(m.status));
   const doCommand=async(commandType,extra={})=>{try{setCommanding(true);await base44.functions.invoke('kotcCommand',{sessionId:session.id,commandId:commandId(commandType),commandType,expectedSessionRevision:Number(session.revision||0),...extra});await refetch();queryClient?.invalidateQueries({queryKey:['tournament',tournament.id]});}catch(e){toast.error(errMsg(e));}finally{setCommanding(false);}};
+  const saveRoundAdjustments=async(slotParticipantIds)=>{await doCommand('adjust_proposed_round',{roundId:currentRound.id,expectedProposalRevision:Number(currentRound.proposal_revision||1),slotParticipantIds,reason:'Host adjusted proposed round layout'});toast.success('Host adjustments saved');};
   const createSession=async()=>{if(players.length<4)return toast.error('Add at least 4 players.');if(benchIds.length!==requiredBench)return toast.error(`Choose exactly ${requiredBench} Round 1 bench player${requiredBench===1?'':'s'}.`);try{setCreating(true);await base44.functions.invoke('createKotcV2Session',{tournamentId:tournament.id,playerOrder,round1BenchIds:benchIds,venueCourtLimit:Number(venueCourts),plannedRounds:Number(plannedRounds),plannedDurationMinutes:Number(duration),playMinutes:Number(playMinutes),changeoverMinutes:Number(changeover),scoringMode,scoreTarget:Number(scoreTarget)});toast.success('KOTC V2 session created');await refetch();queryClient?.invalidateQueries({queryKey:['tournament',tournament.id]});}catch(e){toast.error(errMsg(e));}finally{setCreating(false);}};
 
   if(isLoading)return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading KOTC V2…</div>;
@@ -57,7 +77,8 @@ export default function KotcV2SessionView({ tournament, players, queryClient }){
   if(session.status==='completed'||session.status==='finalised'||session.status==='abandoned')return <div className="glass rounded-xl p-8 text-center"><Trophy className="w-10 h-10 mx-auto text-yellow-400 mb-3"/><h3 className="font-bold text-lg">Session {session.status}</h3><p className="text-sm text-muted-foreground mt-2">{participants.length} participants · {rounds.filter(r=>r.status==='completed').length} completed rounds</p></div>;
 
   return <div className="space-y-4">
-    <div className="glass rounded-xl p-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center"><Crown className="w-5 h-5 text-yellow-400"/></div><div><p className="font-bold text-sm">Round {session.current_round_number} <span className="font-normal text-muted-foreground">of {session.planned_rounds||'—'}</span></p><p className="text-xs text-muted-foreground">{currentRound?.active_court_count||0} courts · {currentRound?.bench_count||0} bench · revision {session.revision}</p></div></div><div className="flex gap-2"><Badge>{session.status}</Badge><Badge variant="outline">{currentRound?.status||'no round'}</Badge></div></div>
+    <div className="glass rounded-xl p-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center"><Crown className="w-5 h-5 text-yellow-400"/></div><div><p className="font-bold text-sm">Round {session.current_round_number} <span className="font-normal text-muted-foreground">of {session.planned_rounds||'—'}</span></p><p className="text-xs text-muted-foreground">{currentRound?.active_court_count||0} courts · {currentRound?.bench_count||0} bench · session rev {session.revision} · proposal rev {currentRound?.proposal_revision||'—'}</p></div></div><div className="flex gap-2"><Badge>{session.status}</Badge><Badge variant="outline">{currentRound?.status||'no round'}</Badge></div></div>
+    {currentRound?.status==='proposed'&&<ProposedRoundEditor round={currentRound} slots={currentSlots} names={participantNames} onSave={saveRoundAdjustments} saving={commanding}/>} 
     {currentRound?.status==='proposed'&&<Button className="w-full" onClick={()=>doCommand('confirm_round',{roundId:currentRound.id,expectedProposalRevision:Number(currentRound.proposal_revision||1)})} disabled={commanding}><CheckCircle2 className="w-4 h-4 mr-2"/>Confirm Round {currentRound.round_number}</Button>}
     {currentRound?.status==='confirmed'&&<Button className="w-full" onClick={()=>doCommand('start_round',{roundId:currentRound.id,expectedProposalRevision:Number(currentRound.proposal_revision||1)})} disabled={commanding}><Play className="w-4 h-4 mr-2"/>Start Round {currentRound.round_number}</Button>}
     {(currentRound?.status==='started'||currentRound?.status==='completed')&&<div className="grid lg:grid-cols-2 gap-4">{currentMatches.map(m=><ScoreCard key={m.id} match={m} names={participantNames} session={session} onSaved={refetch} disabled={session.status==='paused'}/>)}</div>}
