@@ -111,7 +111,18 @@
         "role": "admin"
       }
     },
-    "read": true,
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.tenant_id": "{{user.data.active_tenant_id}}"
+        }
+      ]
+    },
     "update": {
       "user_condition": {
         "role": "admin"
