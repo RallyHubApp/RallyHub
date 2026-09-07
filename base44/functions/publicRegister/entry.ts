@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { tournamentId, full_name, email, phone, _probe, action, kotc_state, kotc_current_round, status, player_ids,
+    const { tournamentId, full_name, email, phone, _probe, _managerProbe, action, kotc_state, kotc_current_round, status, player_ids,
             kotc_num_courts, kotc_num_rounds, kotc_score_format } = body;
 
     if (!tournamentId) {
@@ -47,10 +47,28 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
+    const isKotcManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole);
+    const sameTenant = user.role === 'admin' || (!!tournament.tenant_id && tournament.tenant_id === user.active_tenant_id);
+
+    if (_managerProbe) {
+      if (!isKotcManager || !sameTenant) {
+        return Response.json({ error: 'Forbidden: Host access required' }, { status: 403 });
+      }
+      const playerIds = tournament.player_ids || [];
+      let players = [];
+      if (playerIds.length > 0) {
+        const tenantPlayers = await base44.asServiceRole.entities.Player.filter({ tenant_id: tournament.tenant_id });
+        players = tenantPlayers
+          .filter(p => playerIds.includes(p.id))
+          .map(p => ({ id: p.id, full_name: p.full_name, skill_rating: p.skill_rating, avatar_url: p.avatar_url }));
+      }
+      return Response.json({ success: true, tournament, players });
+    }
+
     // Update tournament state (KOTC manager roles only)
     if (action === 'update_kotc' || action === 'start_kotc') {
-      const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
-      if (!['super_admin', 'admin', 'host'].includes(kotcRole)) {
+      if (!isKotcManager || !sameTenant) {
         return Response.json({ error: 'Forbidden: Host access required' }, { status: 403 });
       }
 
