@@ -49,10 +49,11 @@ async function spondRequest(path, token) {
 
 function collectAcceptedIds(event) {
   const ids = new Set();
+  // Confirmed attendees only. Waiting-list members are not part of the playing roster
+  // until Spond promotes them to accepted.
   (event.responses?.acceptedIds || []).forEach(id => ids.add(id));
-  (event.responses?.waitinglistIds || []).forEach(id => ids.add(id));
   (event.responses?.members || [])
-    .filter(member => member.status === 'accepted' || member.status === 'waitinglist')
+    .filter(member => member.status === 'accepted' || member.status === 'attending')
     .forEach(member => ids.add(member.uid || member.id));
   (event.responses?.responses || [])
     .filter(response => response.status === 'accepted' || response.status === 'attending')
@@ -118,7 +119,8 @@ async function importTournament(base44, tournament, token, players) {
   ]);
 
   const attendees = getAttendees(event, group);
-  const playerIds = new Set(tournament.player_ids || []);
+  // A refresh is a sync of the current confirmed Spond attendance, not an additive import.
+  const playerIds = new Set();
   let created = 0;
   let matched = 0;
 
@@ -183,6 +185,7 @@ Deno.serve(async (req) => {
 
     const tournaments = await base44.asServiceRole.entities.Tournament.list();
     const linkedTournaments = tournaments.filter(tournament =>
+      tournament.kotc_auto_import_enabled === true &&
       tournament.kotc_spond_group_id &&
       tournament.kotc_spond_event_id &&
       !['Completed', 'Cancelled'].includes(tournament.status)
