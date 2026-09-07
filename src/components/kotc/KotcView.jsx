@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Users, Download, Link2, UserPlus, FileSpreadsheet, Check } from 'lucide-react';
+import { Users, Download, UserPlus, FileSpreadsheet, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import GlassCard from '@/components/shared/GlassCard';
@@ -19,18 +18,8 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   const [spondOpen, setSpondOpen] = useState(false);
   const [xlsxOpen, setXlsxOpen] = useState(false);
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
+  const [rosterOpen, setRosterOpen] = useState(false);
   const { canManagePlayers } = useKotcRole();
-  const [linkCopied, setLinkCopied] = useState(false);
-
-  const handleShareLink = () => {
-    const publicBaseUrl = 'https://rallyhub.ie';
-    const tournamentSlug = encodeURIComponent((tournament?.name || 'tournament').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''));
-    const url = `${publicBaseUrl}/${tournamentSlug}/${tournament.id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-    }).catch(() => prompt('Copy this link:', url));
-  };
 
   const isStarted = tournament.status === 'In Progress' || tournament.status === 'Completed';
   const availablePlayers = allPlayers.filter(p => !tournament.player_ids?.includes(p.id));
@@ -47,53 +36,38 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
 
   return (
     <div id="kotc-start-section" className="space-y-6">
-      {/* Player management */}
+      {/* Pre-session roster: keep the normal path short. Spond refresh is the primary action;
+          manual/XLSX tools and the player list are available only when explicitly opened. */}
       {!isStarted && (
         <GlassCard>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-foreground">Players ({players.length})</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Session Roster · {players.length} players</h3>
+              <p className="text-xs text-muted-foreground mt-1">Refresh from Spond immediately before setup to capture late changes.</p>
+            </div>
             <div className="flex gap-2 flex-wrap">
-              {canManagePlayers ? (
-                <>
-                  <Button variant="outline" size="sm" onClick={handleShareLink}
-                    className={linkCopied ? 'text-primary border-primary/40' : ''}>
-                    {linkCopied ? <><Check className="w-3 h-3 mr-1" /> Copied!</> : <><Link2 className="w-3 h-3 mr-1" /> Share Link</>}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setSpondOpen(true)}>
-                    <Download className="w-3 h-3 mr-1" /> Import Spond
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setXlsxOpen(true)}>
-                    <FileSpreadsheet className="w-3 h-3 mr-1" /> Import XLSX
-                  </Button>
-                  <KotcPlayerManagement tournament={tournament} players={players} allPlayers={allPlayers} queryClient={queryClient} />
-                </>
-              ) : (
-                <Button size="sm" className="bg-primary text-primary-foreground gap-1" onClick={() => setSelfRegisterOpen(true)}>
-                  <UserPlus className="w-3 h-3" /> Register to Play
-                </Button>
-              )}
+              {canManagePlayers ? <Button size="sm" onClick={() => setSpondOpen(true)}>
+                <Download className="w-3 h-3 mr-1" /> Refresh from Spond
+              </Button> : <Button size="sm" className="bg-primary text-primary-foreground gap-1" onClick={() => setSelfRegisterOpen(true)}>
+                <UserPlus className="w-3 h-3" /> Register to Play
+              </Button>}
+              {canManagePlayers && <Button variant="outline" size="sm" onClick={() => setRosterOpen(v => !v)}>
+                {rosterOpen ? <ChevronUp className="w-3 h-3 mr-1" /> : <ChevronDown className="w-3 h-3 mr-1" />}
+                Roster tools
+              </Button>}
             </div>
           </div>
-          {players.length === 0 ? (
-            <div className="text-center py-6 space-y-3">
-              <Users className="w-10 h-10 text-muted-foreground/30 mx-auto" />
-              <p className="text-xs text-muted-foreground">No players registered yet</p>
-              {canManagePlayers && <Button size="sm" onClick={() => setAddPlayersOpen(true)} className="bg-primary text-primary-foreground">Add Players</Button>}
+
+          {rosterOpen && canManagePlayers && <div className="mt-4 pt-4 border-t border-border space-y-3">
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => setXlsxOpen(true)}><FileSpreadsheet className="w-3 h-3 mr-1" />Import XLSX</Button>
+              <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}><UserPlus className="w-3 h-3 mr-1" />Add Player</Button>
+              <KotcPlayerManagement tournament={tournament} players={players} allPlayers={allPlayers} queryClient={queryClient} />
             </div>
-          ) : (
-            <div className="space-y-1">
-              {players.map((p, i) => (
-                <Link key={p.id} to={`/players/${p.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary transition-colors group">
-                  <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}</span>
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                    {(p.full_name || 'P')[0]}
-                  </div>
-                  <span className="text-xs font-medium text-foreground flex-1 group-hover:text-primary transition-colors">{p.full_name}</span>
-                  <span className="text-xs font-mono text-primary">{(p.skill_rating || 3.0).toFixed(1)}</span>
-                </Link>
-              ))}
-            </div>
-          )}
+            {players.length === 0 ? <div className="text-center py-4"><Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2"/><p className="text-xs text-muted-foreground">No players on this session roster yet.</p></div> : <div className="grid sm:grid-cols-2 gap-1 max-h-64 overflow-auto">
+              {players.map((p, i) => <div key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 bg-secondary/30"><span className="text-[10px] font-bold text-muted-foreground w-5">{i + 1}</span><span className="text-xs font-medium flex-1 truncate">{p.full_name}</span><span className="text-[10px] font-mono text-primary">{(p.skill_rating || 3.0).toFixed(1)}</span></div>)}
+            </div>}
+          </div>}
         </GlassCard>
       )}
 
