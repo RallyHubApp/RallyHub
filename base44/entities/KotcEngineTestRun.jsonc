@@ -1,0 +1,71 @@
+{
+  "name": "KotcEngineTestRun",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "engine_version": {
+      "type": "string"
+    },
+    "rules_version": {
+      "type": "string"
+    },
+    "test_suite": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail"
+      ],
+      "default": "pass"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scenario_count": {
+      "type": "number"
+    },
+    "failure_count": {
+      "type": "number",
+      "default": 0
+    },
+    "details_json": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "engine_version",
+    "rules_version",
+    "test_suite",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": false,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

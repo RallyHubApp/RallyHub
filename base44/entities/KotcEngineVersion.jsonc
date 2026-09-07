@@ -1,0 +1,56 @@
+{
+  "name": "KotcEngineVersion",
+  "type": "object",
+  "properties": {
+    "engine_version": {
+      "type": "string"
+    },
+    "rules_version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "development",
+        "test",
+        "approved",
+        "retired"
+      ],
+      "default": "development"
+    },
+    "released_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "engine_version",
+    "rules_version",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
