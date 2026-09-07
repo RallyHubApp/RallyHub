@@ -52,5 +52,5 @@ Deno.serve(async(req)=>{try{
   }else{
     grant=await base44.asServiceRole.entities.KotcSessionAccess.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,user_id:target.id,role,status:'active',starts_at:now,ends_at:endsAt,granted_by_user_id:caller.id});
   }
-  return Response.json({success:true,grant,user:{id:target.id,email:target.email,full_name:target.full_name||target.email},hostPath:`/app/kotc-host/${session.id}`});
+  return Response.json({success:true,grant,user:{id:target.id,email:target.email,full_name:target.full_name||target.email},hostPath:`/kotc-host/${session.id}`});
 }catch(error){return Response.json({error:error?.message||'Unexpected KOTC host access error'},{status:500});}});
