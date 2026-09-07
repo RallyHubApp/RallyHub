@@ -305,7 +305,7 @@ export default function TournamentDetail() {
                 ))}
               </>
             )}
-            {!isClubChallenge && (isFixedPartners ? (
+            {!isClubChallenge && !isKotc && (isFixedPartners ? (
               <Button variant="outline" size="sm" onClick={() => setPairsUploadOpen(true)}>
                 <Upload className="w-3 h-3 mr-1" /> Upload Pairs
               </Button>
@@ -333,25 +333,12 @@ export default function TournamentDetail() {
                 }
               </Button>
             )}
-            {isKotc && tournament.status !== 'In Progress' && tournament.status !== 'Completed' && (
-              <Button
-                size="sm"
-                className="bg-yellow-500/90 text-black hover:bg-yellow-400 gap-1"
-                onClick={() => {
-                  // Scroll to KotcSetup start button — trigger it programmatically via a ref or just scroll
-                  document.getElementById('kotc-start-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                <Play className="w-3 h-3" /> Start King of the Court
-              </Button>
-            )}
-
-            {!isClubChallenge && tournament.status === 'Draft' && (
+            {!isClubChallenge && !isKotc && tournament.status === 'Draft' && (
               <Button size="sm" variant="outline" onClick={() => updateStatus('Registration Open')}>
                 <Play className="w-3 h-3 mr-1" /> Open Registration
               </Button>
             )}
-            {!isClubChallenge && tournament.status === 'In Progress' && (
+            {!isClubChallenge && !isKotc && tournament.status === 'In Progress' && (
               <Button size="sm" variant="outline" onClick={() => updateStatus('Completed')} disabled={completing}>
                 {completing
                   ? <><div className="w-3 h-3 border-2 border-foreground border-t-transparent rounded-full animate-spin mr-1" /> Completing…</>
