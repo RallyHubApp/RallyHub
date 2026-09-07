@@ -15,6 +15,18 @@ export const KOTC_COMMAND_TYPES = Object.freeze([
   'takeover_host',
 ]);
 
+export const SESSION_REVISION_COMMANDS = Object.freeze(new Set([
+  'confirm_round',
+  'start_round',
+  'generate_next_round',
+  'pause_session',
+  'resume_session',
+  'finish_after_round',
+  'finish_session_now',
+  'abandon_session',
+  'takeover_host',
+]));
+
 const RESOLVED_MATCH_STATUSES = new Set(['completed', 'retired', 'abandoned', 'not_played']);
 
 function wholeNonNegative(value) {
@@ -49,6 +61,16 @@ export function checkCommandEnvelope({ commandId, commandType, expectedSessionRe
     };
   }
 
+  if (!SESSION_REVISION_COMMANDS.has(commandType)) {
+    return {
+      ok: true,
+      duplicate: false,
+      conflict: false,
+      nextRevision: Number(currentSessionRevision),
+      sessionRevisionEnforced: false,
+    };
+  }
+
   const revision = checkRevision({ expectedRevision: expectedSessionRevision, currentRevision: currentSessionRevision, label: 'Session' });
   if (revision.conflict) {
     return {
@@ -57,10 +79,11 @@ export function checkCommandEnvelope({ commandId, commandType, expectedSessionRe
       conflict: true,
       currentRevision: Number(currentSessionRevision),
       expectedRevision: Number(expectedSessionRevision),
+      sessionRevisionEnforced: true,
     };
   }
 
-  return { ok: true, duplicate: false, conflict: false, nextRevision: revision.nextRevision };
+  return { ok: true, duplicate: false, conflict: false, nextRevision: revision.nextRevision, sessionRevisionEnforced: true };
 }
 
 export function validateKotcScore({ teamAScore, teamBScore, session, servingSideAtHorn = null, final = false }) {
