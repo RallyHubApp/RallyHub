@@ -169,5 +169,25 @@ const destinationMap = buildDestinationByParticipant([
 ]);
 assert.deepEqual(destinationMap, { winner: 1, loser: 2 });
 
+// Full player/court matrix: fairness plan must always produce valid complete-doubles arithmetic.
+let matrixScenarios = 0;
+for (let playerCount = 4; playerCount <= 18; playerCount += 1) {
+  for (let venueCourts = 1; venueCourts <= 4; venueCourts += 1) {
+    const matrixParticipants = makeParticipants(playerCount);
+    const matrixPlan = planRoundBench({
+      participants: matrixParticipants,
+      venueCourtLimit: venueCourts,
+      seed: `matrix-${playerCount}-${venueCourts}`,
+    });
+    assert.equal(matrixPlan.courtPlaces, matrixPlan.activeCourts * 4);
+    assert.equal(matrixPlan.courtPlaces + matrixPlan.fairnessBenchIds.length, playerCount);
+    assert.equal(new Set(matrixPlan.fairnessBenchIds).size, matrixPlan.fairnessBenchIds.length);
+    assert.ok(matrixPlan.activeCourts <= venueCourts);
+    assert.ok(matrixPlan.courtPlaces <= playerCount);
+    matrixScenarios += 1;
+  }
+}
+assert.equal(matrixScenarios, 60);
+
 console.log('KOTC Gate 2.3 fairness & bench engine: PASS');
-console.log('Validated fairness cycles, no avoidable repeat benches, return protection, Court 1/winner eligibility, recent-history protection, voluntary rest, and slot-preserving substitutions.');
+console.log(`Validated fairness cycles, no avoidable repeat benches, return protection, Court 1/winner eligibility, recent-history protection, voluntary rest, slot-preserving substitutions, and ${matrixScenarios} player/court matrix scenarios.`);
