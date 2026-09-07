@@ -40,6 +40,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
 
   // Attendees
   const [attendees, setAttendees] = useState([]);
+  const [waitingListCount, setWaitingListCount] = useState(0);
 
   const invoke = (action, extra = {}) =>
     base44.functions.invoke('spondIntegration', { action, spondToken: token, ...extra });
@@ -91,6 +92,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
       const res = await invoke('get_attendees', { groupId: selectedGroup.id, eventId: event.id });
       if (res.data?.attendees) {
         setAttendees(res.data.attendees);
+        setWaitingListCount(Number(res.data.waitingListCount || 0));
         setStep('preview');
       } else {
         setError(res.data?.error || 'Could not load attendees');
@@ -111,6 +113,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
         spondToken: token,
         attendees,
         tournamentId: tournament.id,
+        replaceRoster: tournament?.format === 'King of the Court',
       });
       if (res.data?.success) {
         toast.success(`Imported ${res.data.created} new + ${res.data.matched} matched players!`);
@@ -136,6 +139,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setEvents([]);
     setSelectedEvent(null);
     setAttendees([]);
+    setWaitingListCount(0);
     setError('');
   };
 
@@ -350,6 +354,8 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                   </div>
                 </div>
 
+                {waitingListCount > 0 && <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-2.5 text-xs text-amber-500">{waitingListCount} waiting-list member{waitingListCount === 1 ? '' : 's'} not included in the playing roster.</div>}
+
                 {/* Court recommendation */}
                 <div className="glass rounded-lg p-3 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
@@ -385,7 +391,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                     className="bg-primary text-primary-foreground"
                   >
                     <ArrowRight className="w-4 h-4 mr-1" />
-                    Import {attendees.length} Players
+                    {tournament?.format === 'King of the Court' ? `Refresh roster · ${attendees.length}` : `Import ${attendees.length} Players`}
                   </Button>
                 </div>
               </>
