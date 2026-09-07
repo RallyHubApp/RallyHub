@@ -11,6 +11,12 @@
     "session_id": {
       "type": "string"
     },
+    "phase_id": {
+      "type": "string"
+    },
+    "phase_order": {
+      "type": "number"
+    },
     "pair_name": {
       "type": "string"
     },
@@ -22,6 +28,14 @@
     },
     "seed_rank": {
       "type": "number"
+    },
+    "pair_source": {
+      "type": "string",
+      "enum": [
+        "preselected",
+        "pair_at_transition",
+        "host_selected"
+      ]
     },
     "status": {
       "type": "string",
