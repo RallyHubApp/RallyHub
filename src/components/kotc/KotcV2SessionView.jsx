@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Crown, Play, Pause, RotateCcw, Trophy, CheckCircle2, AlertTriangle, GripVertical, Save, Undo2, UserRound, HeartPulse, LogOut, Clock3, Volume2, ChevronDown, ChevronUp } from 'lucide-react';
 import RoundTimer from './RoundTimer';
+import KotcHostAccessPanel from './KotcHostAccessPanel';
 import { activeCourtCount } from '@/lib/kotcV2Domain';
 
 function commandId(prefix='kotc'){return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;}
@@ -99,10 +100,11 @@ export default function KotcV2SessionView({ tournament, players, queryClient }){
     <Button className="w-full min-h-12" onClick={createSession} disabled={creating||players.length<4||benchIds.length!==requiredBench}><Play className="w-4 h-4 mr-2"/>{creating?'Creating session…':'Create King of the Court Session'}</Button>
   </div>;
 
-  if(session.status==='completed'||session.status==='finalised'||session.status==='abandoned')return <div className="glass rounded-xl p-8 text-center"><Trophy className="w-10 h-10 mx-auto text-yellow-400 mb-3"/><h3 className="font-bold text-lg">Session {session.status}</h3><p className="text-sm text-muted-foreground mt-2">{participants.length} participants · {rounds.filter(r=>r.status==='completed').length} completed rounds</p></div>;
+  if(session.status==='completed'||session.status==='finalised'||session.status==='abandoned')return <div className="space-y-3"><KotcHostAccessPanel session={session} isAdmin={state?.isAdmin===true}/><div className="glass rounded-xl p-8 text-center"><Trophy className="w-10 h-10 mx-auto text-yellow-400 mb-3"/><h3 className="font-bold text-lg">Session {session.status}</h3><p className="text-sm text-muted-foreground mt-2">{participants.length} participants · {rounds.filter(r=>r.status==='completed').length} completed rounds</p></div></div>;
 
   return <div className="space-y-3 sm:space-y-4">
     <div className="glass rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center"><Crown className="w-5 h-5 text-yellow-400"/></div><div><p className="font-bold text-sm">Round {session.current_round_number} <span className="font-normal text-muted-foreground">of {session.planned_rounds||'—'}</span></p><p className="text-xs text-muted-foreground">{currentRound?.active_court_count||0} courts · {currentRound?.bench_count||0} bench</p></div></div><div className="flex gap-2"><Badge>{session.status}</Badge><Badge variant="outline">{currentRound?.status==='started'?'LIVE':currentRound?.status||'no round'}</Badge></div></div>
+    <KotcHostAccessPanel session={session} isAdmin={state?.isAdmin===true}/>
     <PlayerStatusControls participants={participants} onAction={setParticipantStatus} saving={commanding} currentRound={currentRound}/>
     {currentRound?.status==='proposed'&&benchNames.length>0&&<div className="rounded-xl border-2 border-amber-400/60 bg-amber-500/10 p-4"><p className="text-[11px] uppercase tracking-wider text-amber-500 font-bold">Bench This Round</p><p className="text-lg font-bold mt-1">{benchNames.join(' · ')}</p></div>}
     {currentRound?.status==='proposed'&&<ProposedRoundEditor round={currentRound} slots={currentSlots} names={participantNames} onSave={saveRoundAdjustments} saving={commanding}/>} 
