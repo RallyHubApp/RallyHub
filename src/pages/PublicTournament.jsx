@@ -151,7 +151,7 @@ function KotcPublicSetup({ tournament, players: initialPlayers, onStarted, callP
     if (res.success !== false) {
       setNewPlayerName('');
       // Re-probe to get updated player list
-      const data = await callPublicRegister({ tournamentId: tournament.id, _probe: true });
+      const data = await callPublicRegister({ tournamentId: tournament.id, _managerProbe: true });
       if (data?.players) setLocalPlayers(data.players);
       toast.success(`${name} added!`);
     } else {
@@ -377,7 +377,7 @@ export default function PublicTournament() {
   }, []);
 
   const fetchTournament = useCallback(async (silent = false) => {
-    const data = await callPublicRegister({ tournamentId, _probe: true });
+    const data = await callPublicRegister({ tournamentId, _managerProbe: true });
     if (data?.tournament) {
       setTournament(prev => {
         // If round advanced remotely, clear pending state
