@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.User.update(userId, { approval_status: status });
       return Response.json({ success: true, userId, status });
     }
-    const { action, playerId } = body;
+    const { action } = body;
 
     // ── PROMOTE TO ADMIN ───────────────────────────────────────────────────────
     if (action === 'promote_to_admin') {
