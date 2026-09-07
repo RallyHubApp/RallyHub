@@ -20,13 +20,19 @@ const timedSession = { id: 's1', status: 'in_progress', revision: 4, scoring_mod
 const pointsSession = { id: 's2', status: 'in_progress', revision: 1, scoring_mode: 'first_to', score_target: 11, win_by_two: true, score_cap: 15 };
 
 // Idempotency and stale-device protection.
-let envelope = checkCommandEnvelope({ commandId: 'c1', commandType: 'autosave_score', expectedSessionRevision: 4, currentSessionRevision: 4, priorCommands: [] });
+let envelope = checkCommandEnvelope({ commandId: 'c1', commandType: 'pause_session', expectedSessionRevision: 4, currentSessionRevision: 4, priorCommands: [] });
 assert.equal(envelope.ok, true);
 assert.equal(envelope.nextRevision, 5);
-envelope = checkCommandEnvelope({ commandId: 'c1', commandType: 'autosave_score', expectedSessionRevision: 4, currentSessionRevision: 5, priorCommands: [{ command_id: 'c1', result_json: '{"ok":true}' }] });
+assert.equal(envelope.sessionRevisionEnforced, true);
+envelope = checkCommandEnvelope({ commandId: 'c1', commandType: 'pause_session', expectedSessionRevision: 4, currentSessionRevision: 5, priorCommands: [{ command_id: 'c1', result_json: '{"ok":true}' }] });
 assert.equal(envelope.duplicate, true);
-envelope = checkCommandEnvelope({ commandId: 'c2', commandType: 'autosave_score', expectedSessionRevision: 4, currentSessionRevision: 5, priorCommands: [] });
+envelope = checkCommandEnvelope({ commandId: 'c2', commandType: 'pause_session', expectedSessionRevision: 4, currentSessionRevision: 5, priorCommands: [] });
 assert.equal(envelope.conflict, true);
+// Independent court score writes use match revisions and do not conflict merely because session revision changed.
+envelope = checkCommandEnvelope({ commandId: 'score-cmd', commandType: 'autosave_score', expectedSessionRevision: 4, currentSessionRevision: 9, priorCommands: [] });
+assert.equal(envelope.ok, true);
+assert.equal(envelope.sessionRevisionEnforced, false);
+assert.equal(envelope.nextRevision, 9);
 
 // Partial score autosave is independently revision protected.
 const openMatch = { id: 'm1', status: 'scheduled', revision: 0 };
