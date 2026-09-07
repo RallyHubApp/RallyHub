@@ -6,7 +6,7 @@ import {
   validateRecoverySnapshot, prepareHostTakeover, canGenerateNextRound,
 } from '../src/lib/kotcV2Workflow.js';
 import { activeCourtCount } from '../src/lib/kotcV2Domain.js';
-import { chooseFairnessBench, applySlotPreservingSubstitution } from '../src/lib/kotcV2Fairness.js';
+import { selectFairnessBench, applySlotPreservingSubstitutions } from '../src/lib/kotcV2Fairness.js';
 
 let checks=0; const ok=(v,m)=>{checks++;assert.ok(v,m)};
 const session={id:'s',status:'in_progress',revision:4,scoring_mode:'timed',engine_version:'v2',rules_version:'v2'};
@@ -15,10 +15,10 @@ const players=n=>Array.from({length:n},(_,i)=>({id:`p${i+1}`,fairness_benches:0,
 // 1 no-show / late arrival boundaries: allocation changes only at safe next-round generation.
 ok(activeCourtCount(12,3)===3); ok(activeCourtCount(11,3)===2); ok(activeCourtCount(12,3)===3);
 // 2 voluntary rest: not fairness credit; only remaining bench places selected.
-let ps=players(15); let fair=chooseFairnessBench({participants:ps.filter(p=>p.id!=='p15'),benchPlaces:2}); ok(fair.selectedIds.length===2); ok(!fair.selectedIds.includes('p15'));
+let ps=players(15); let fair=selectFairnessBench({participants:ps.filter(p=>p.id!=='p15'),requiredFairnessBenchCount:2}); ok(fair.fairnessBenchIds.length===2); ok(!fair.fairnessBenchIds.includes('p15'));
 // 3 slot preserving substitution: one vacancy, no cascade.
-const slots=[1,2,3,4].map((n,i)=>({slot_number:n,participant_id:`p${i+1}`,ladder_court_rank:1}));
-const sub=applySlotPreservingSubstitution({slots,unavailableParticipantId:'p1',replacementParticipantId:'p15'}); ok(sub.changedSlots===1); ok(sub.slots[0].participant_id==='p15'); ok(sub.slots.slice(1).every((s,i)=>s.participant_id===`p${i+2}`));
+const slots=[1,2,3,4].map((n,i)=>({slot_number:n,participant_id:`p${i+1}`,ladder_court_rank:1,team_side:n<3?'A':'B'}));
+const sub=applySlotPreservingSubstitutions({sportingSlots:slots,outgoing:{p1:'voluntary_rest'},replacementParticipantIds:['p15']}); ok(sub.substitutions.length===1); ok(sub.slots[0].participant_id==='p15'); ok(sub.slots.slice(1).every((s,i)=>s.participant_id===`p${i+2}`));
 // 4 simultaneous departures/court contraction arithmetic.
 for(const [n,c,b] of [[18,4,2],[17,4,1],[16,4,0],[15,3,3],[14,3,2],[13,3,1],[12,3,0],[11,2,3],[10,2,2],[9,2,1],[8,2,0],[7,1,3]]){ok(activeCourtCount(n,4)===c,`${n}`);ok(n-c*4===b)}
 // 5 court loss/recovery effective next round.
