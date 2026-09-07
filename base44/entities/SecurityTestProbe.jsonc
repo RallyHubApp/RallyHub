@@ -35,6 +35,11 @@
             },
             {
               "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "approval_status": "approved"
+              }
             }
           ]
         }
@@ -54,6 +59,11 @@
             },
             {
               "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "approval_status": "approved"
+              }
             }
           ]
         }
@@ -73,6 +83,11 @@
             },
             {
               "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "approval_status": "approved"
+              }
             }
           ]
         }
