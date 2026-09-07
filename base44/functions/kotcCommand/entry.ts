@@ -158,7 +158,8 @@ Deno.serve(async (req) => {
         return ['registered','confirmed','present'].includes(p.status);
       });
       const activeCourts = Math.min(Number(session.available_court_limit||session.venue_court_limit||4), Math.floor(eligible.length/4));
-      if (activeCourts !== Number(currentRound.active_court_count||playableMatches.length)) return Response.json({ error:'Court-count changes are handled at the safe transition control and are not available in this UI integration step yet.' }, { status:409 });
+      if(activeCourts<1)return Response.json({error:'Fewer than four available players remain. Finish or abandon the session rather than generating another round.'},{status:409});
+      const currentActiveCourts=Number(currentRound.active_court_count||playableMatches.length);
       const courts = playableMatches.map((m:any)=>({courtRank:Number(m.ladder_court_rank),teamA:[...(m.team_a_participant_ids||[])],teamB:[...(m.team_b_participant_ids||[])]}));
       const results:any = Object.fromEntries(playableMatches.map((m:any)=>[Number(m.ladder_court_rank),m.winner_side]));
       const allCompleted = await base44.asServiceRole.entities.KotcMatch.filter({ session_id:session.id, status:'completed' });
