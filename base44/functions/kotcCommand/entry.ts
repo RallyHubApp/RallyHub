@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 
-const STRUCTURAL = new Set(['confirm_round','start_round','generate_next_round','adjust_proposed_round','set_participant_status','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
+const STRUCTURAL = new Set(['confirm_round','start_round','generate_next_round','adjust_proposed_round','set_participant_status','update_timer_settings','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
 const RESOLVED = new Set(['completed','retired','abandoned','not_played']);
 
 function nowIso() { return new Date().toISOString(); }
@@ -266,6 +266,15 @@ Deno.serve(async (req) => {
         result = { success:true, lease, session };
         await createSnapshot(base44, session, commandId, 'command', user.id);
       }
+    } else if (commandType === 'update_timer_settings') {
+      const playMinutes = Number(body.playMinutes);
+      const changeoverMinutes = Number(body.changeoverMinutes);
+      if (!Number.isFinite(playMinutes) || playMinutes < 1 || playMinutes > 60) return Response.json({ error:'Play minutes must be between 1 and 60.' }, { status:400 });
+      if (!Number.isFinite(changeoverMinutes) || changeoverMinutes < 0 || changeoverMinutes > 30) return Response.json({ error:'Changeover minutes must be between 0 and 30.' }, { status:400 });
+      session = await base44.asServiceRole.entities.KotcSession.update(session.id, { play_minutes:playMinutes, changeover_minutes:changeoverMinutes, revision:currentSessionRevision + 1, last_command_id:commandId });
+      result = { success:true, session };
+      await base44.asServiceRole.entities.AuditLog.create({ tenant_id:session.tenant_id, club_id:session.club_id, user_id:user.id, action:'kotc_timer_settings_updated', entity_type:'KotcSession', entity_id:session.id, scope_type:'KotcSession', scope_id:session.id, after_state:JSON.stringify({ play_minutes:playMinutes, changeover_minutes:changeoverMinutes }) });
+      await createSnapshot(base44, session, commandId, 'command', user.id);
     } else if (commandType === 'pause_session' || commandType === 'resume_session' || commandType === 'finish_session_now' || commandType === 'abandon_session' || commandType === 'finish_after_round') {
       const allowedTransitions:any = {
         pause_session:{ from:['in_progress'], to:'paused' },
