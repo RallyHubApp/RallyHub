@@ -1,15 +1,6 @@
 {
-  "name": "User",
   "type": "object",
   "properties": {
-    "role": {
-      "type": "string",
-      "enum": [
-        "admin",
-        "user"
-      ],
-      "default": "user"
-    },
     "kotc_role": {
       "type": "string",
       "enum": [
@@ -19,7 +10,14 @@
         "player"
       ],
       "default": "player",
-      "description": "Legacy King of the Court permission role"
+      "description": "Legacy King of the Court permission role",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "approval_status": {
       "type": "string",
@@ -29,15 +27,36 @@
         "rejected"
       ],
       "default": "pending",
-      "description": "Platform account approval status"
+      "description": "Platform account approval status",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "active_tenant_id": {
       "type": "string",
-      "description": "Server-controlled active RallyHub Tenant security context"
+      "description": "Server-controlled active RallyHub Tenant security context",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "active_club_id": {
       "type": "string",
-      "description": "Server-controlled active RallyHub Club security context"
+      "description": "Server-controlled active RallyHub Club security context",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "active_tenant_role": {
       "type": "string",
@@ -45,7 +64,14 @@
         "owner",
         "admin"
       ],
-      "description": "Server-controlled active Tenant role"
+      "description": "Server-controlled active Tenant role",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "active_club_role": {
       "type": "string",
@@ -53,18 +79,40 @@
         "club_admin",
         "member"
       ],
-      "description": "Server-controlled active Club permission bundle"
+      "description": "Server-controlled active Club permission bundle",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "security_context_updated_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Last server-verified security context change"
+      "description": "Last server-verified security context change",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "signup_notification_sent_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Server-controlled timestamp used to prevent repeated signup-notification email credit usage"
+      "description": "Server-controlled timestamp used to prevent repeated signup-notification email credit usage",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     }
   },
-  "required": []
+  "required": [],
+  "name": "User"
 }
