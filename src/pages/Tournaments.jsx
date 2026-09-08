@@ -110,14 +110,28 @@ export default function Tournaments() {
 
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ['tournaments'],
-    queryFn: () => base44.entities.Tournament.list('-created_date', 100)
+    queryFn: () => base44.entities.Tournament.list('-updated_date', 100)
   });
 
-  const filtered = tournaments.filter(t => {
-    const matchSearch = !search || t.name?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'all' || t.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const filtered = tournaments
+    .filter(t => {
+      const matchSearch = !search || t.name?.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === 'all' || t.status === statusFilter;
+      return matchSearch && matchStatus;
+    })
+    .sort((a, b) => new Date(b.updated_date || b.created_date || 0).getTime() - new Date(a.updated_date || a.created_date || 0).getTime());
+
+  const displayStatus = (t) => {
+    if (t.format === 'King of the Court' && t.status === 'Draft' && (t.player_ids?.length || 0) > 0) return 'Setup in progress';
+    return t.status;
+  };
+
+  const cardAction = (t) => {
+    if (t.format !== 'King of the Court') return 'Open control centre';
+    if (t.status === 'In Progress') return 'Continue session';
+    if (t.status === 'Draft' && (t.player_ids?.length || 0) > 0) return 'Continue setup';
+    return 'Open control centre';
+  };
 
   return (
     <div className="space-y-6">
