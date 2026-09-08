@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Users, Download, UserPlus, FileSpreadsheet, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -11,7 +12,6 @@ import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import PlayerRegisterModal from '@/components/registration/PlayerRegisterModal';
 import useKotcRole from '@/hooks/useKotcRole';
 import KotcPlayerManagement from './KotcPlayerManagement';
-import KotcTestSimulator from './KotcTestSimulator';
 
 export default function KotcView({ tournament, players, allPlayers, queryClient }) {
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
@@ -21,8 +21,14 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
   const [rosterOpen, setRosterOpen] = useState(false);
   const { canManagePlayers } = useKotcRole();
+  const { data: kotcState } = useQuery({
+    queryKey: ['kotc-shell-state', tournament.id],
+    queryFn: async () => (await base44.functions.invoke('getKotcV2State', { tournamentId: tournament.id })).data,
+    refetchInterval: 3000,
+  });
+  const hasSession = !!kotcState?.session;
 
-  const isStarted = tournament.status === 'In Progress' || tournament.status === 'Completed';
+  const isStarted = hasSession || tournament.status === 'Completed';
   const availablePlayers = allPlayers.filter(p => !tournament.player_ids?.includes(p.id));
 
   const addPlayers = async () => {
@@ -36,7 +42,21 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   };
 
   return (
-    <div id="kotc-start-section" className="space-y-6">
+    <div id="kotc-start-section" className="space-y-4">
+      <GlassCard>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-primary font-semibold">King of the Court V2</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground mt-1">{tournament.name}</h1>
+            <p className="text-xs text-muted-foreground mt-1">
+              {tournament.start_date ? new Date(`${String(tournament.start_date).slice(0,10)}T12:00:00`).toLocaleDateString('en-IE', { weekday:'short', day:'numeric', month:'short' }) : 'Session'}
+              {tournament.location ? ` · ${tournament.location}` : ''}
+            </p>
+          </div>
+          {hasSession && <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">CURRENT SESSION</span>}
+        </div>
+      </GlassCard>
+
       {/* Pre-session roster: keep the normal path short. Spond refresh is the primary action;
           manual/XLSX tools and the player list are available only when explicitly opened. */}
       {!isStarted && (
@@ -66,7 +86,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
               <KotcPlayerManagement tournament={tournament} players={players} allPlayers={allPlayers} queryClient={queryClient} />
             </div>
             {players.length === 0 ? <div className="text-center py-4"><Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2"/><p className="text-xs text-muted-foreground">No players on this session roster yet.</p></div> : <div className="grid sm:grid-cols-2 gap-1 max-h-64 overflow-auto">
-              {players.map((p, i) => <div key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 bg-secondary/30"><span className="text-[10px] font-bold text-muted-foreground w-5">{i + 1}</span><span className="text-xs font-medium flex-1 truncate">{p.full_name}</span><span className="text-[10px] font-mono text-primary">{(p.skill_rating || 3.0).toFixed(1)}</span></div>)}
+              {players.map((p, i) => <div key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 bg-secondary/30"><span className="text-[10px] font-bold text-muted-foreground w-5">{i + 1}</span><span className="text-xs font-medium flex-1 truncate">{p.full_name}</span>{p.dupr_rating != null && <span className="text-[10px] font-mono text-primary">DUPR {Number(p.dupr_rating).toFixed(2)}</span>}</div>)}
             </div>}
           </div>}
         </GlassCard>
@@ -74,8 +94,6 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
 
       {/* KOTC V2 setup + live host view. Sporting state is server-authoritative. */}
       <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} />
-
-      {canManagePlayers && <div className="mt-8 opacity-70"><KotcTestSimulator /></div>}
 
       {/* Self-register modal */}
       <PlayerRegisterModal
