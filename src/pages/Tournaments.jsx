@@ -224,7 +224,7 @@ export default function Tournaments() {
                   </div>
                 </div>
                 <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Open control centre</span>
+                  <span className="text-muted-foreground">{t.format === 'King of the Court' && t.status === 'In Progress' ? 'Continue session' : 'Open control centre'}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                 </div>
               </Link>
