@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState(() => sessionStorage.getItem('rallyhub_spond_token') || '');
 
   // Groups + events
   const [groups, setGroups] = useState([]);
@@ -45,6 +45,27 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   const invoke = (action, extra = {}) =>
     base44.functions.invoke('spondIntegration', { action, spondToken: token, ...extra });
 
+  useEffect(() => {
+    if (!open || !token || step !== 'login') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const gr = await base44.functions.invoke('spondIntegration', { action: 'get_groups', spondToken: token });
+        if (!cancelled && gr.data?.groups) {
+          setGroups(gr.data.groups);
+          setStep('select_group');
+        }
+      } catch {
+        sessionStorage.removeItem('rallyhub_spond_token');
+        if (!cancelled) setToken('');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open, token, step]);
+
   const handleLogin = async () => {
     setError('');
     setLoading(true);
@@ -52,6 +73,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
       const res = await base44.functions.invoke('spondIntegration', { action: 'login', spondEmail: email, spondPassword: password });
       if (res.data?.token) {
         setToken(res.data.token);
+        sessionStorage.setItem('rallyhub_spond_token', res.data.token);
         const gr = await base44.functions.invoke('spondIntegration', { action: 'get_groups', spondToken: res.data.token });
         setGroups(gr.data?.groups || []);
         setStep('select_group');
@@ -70,7 +92,8 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setLoading(true);
     setError('');
     try {
-      const res = await invoke('get_events', { groupId: group.id, targetDate: tournament?.start_date || undefined });
+      const targetDate = String(tournament?.start_date || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || undefined;
+      const res = await invoke('get_events', { groupId: group.id, targetDate });
       if (res.data?.events) {
         setEvents(res.data.events);
         setStep('select_event');
@@ -133,7 +156,6 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setStep('login');
     setEmail('');
     setPassword('');
-    setToken('');
     setGroups([]);
     setSelectedGroup(null);
     setEvents([]);
