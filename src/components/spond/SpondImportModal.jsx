@@ -44,7 +44,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   const [matchChoices, setMatchChoices] = useState({});
 
   const invoke = (action, extra = {}) =>
-    base44.functions.invoke('spondIntegration', { action, spondToken: token, ...extra });
+    base44.functions.invoke('spondIntegrationWorking', { action, spondToken: token, ...extra });
 
   useEffect(() => {
     if (!open || !token || step !== 'login') return;
@@ -52,7 +52,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     (async () => {
       try {
         setLoading(true);
-        const gr = await base44.functions.invoke('spondIntegration', { action: 'get_groups', spondToken: token });
+        const gr = await base44.functions.invoke('spondIntegrationWorking', { action: 'get_groups', spondToken: token });
         if (!cancelled && gr.data?.groups) {
           const last = localStorage.getItem('rallyhub_spond_group_id') || tournament?.kotc_spond_group_id || '';
           setGroups([...gr.data.groups].sort((a,b)=>Number(b.id===last)-Number(a.id===last)));
@@ -72,11 +72,11 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setError('');
     setLoading(true);
     try {
-      const res = await base44.functions.invoke('spondIntegration', { action: 'login', spondEmail: email, spondPassword: password });
+      const res = await base44.functions.invoke('spondIntegrationWorking', { action: 'login', spondEmail: email, spondPassword: password });
       if (res.data?.token) {
         setToken(res.data.token);
         sessionStorage.setItem('rallyhub_spond_token', res.data.token);
-        const gr = await base44.functions.invoke('spondIntegration', { action: 'get_groups', spondToken: res.data.token });
+        const gr = await base44.functions.invoke('spondIntegrationWorking', { action: 'get_groups', spondToken: res.data.token });
         const last = localStorage.getItem('rallyhub_spond_group_id') || tournament?.kotc_spond_group_id || '';
         setGroups([...(gr.data?.groups || [])].sort((a,b)=>Number(b.id===last)-Number(a.id===last)));
         setStep('select_group');
@@ -142,7 +142,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setError('');
     try {
       const targetDate = String(tournament?.start_date || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || undefined;
-      const res = await base44.functions.invoke('spondIntegration', {
+      const res = await base44.functions.invoke('spondIntegrationWorking', {
         action: 'import_attendees',
         spondToken: token,
         tournamentId: tournament.id,
