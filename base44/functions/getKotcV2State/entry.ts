@@ -7,7 +7,7 @@ Deno.serve(async(req)=>{try{
  const tournamentId=String(body.tournamentId||''); const sessionId=String(body.sessionId||''); if(!tournamentId&&!sessionId)return Response.json({error:'tournamentId or sessionId required'},{status:400});
  let sessions:any[]=[]; if(sessionId)sessions=await base44.asServiceRole.entities.KotcSession.filter({id:sessionId}); else sessions=await base44.asServiceRole.entities.KotcSession.filter({tournament_id:tournamentId});
  const session=(sessions||[]).filter((s:any)=>!['cancelled'].includes(s.status)).sort((a:any,b:any)=>Date.parse(b.created_date||0)-Date.parse(a.created_date||0))[0]||null; if(!session)return Response.json({session:null,participants:[],rounds:[],slots:[],matches:[],events:[],courts:[],lease:null});
- let allowed=user.role==='admin'; if(!allowed){const access=await base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'});allowed=(access||[]).some((a:any)=>validAccess(a,session.tenant_id,session.id));} if(!allowed)return Response.json({error:'KOTC session access required'},{status:403});
+ let allowed=user.role==='admin'; let currentAccessRole=user.role==='admin'?'admin':null; if(!allowed){const access=await base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'});const valid=(access||[]).filter((a:any)=>validAccess(a,session.tenant_id,session.id));allowed=valid.length>0;currentAccessRole=valid[0]?.role||null;} if(!allowed)return Response.json({error:'KOTC session access required'},{status:403});
  const [participants,rounds,slots,matches,events,courts,leases,phases,fixedPairs]=await Promise.all([
   base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id},'seed_rank',100),
   base44.asServiceRole.entities.KotcRound.filter({session_id:session.id},'round_number',100),
@@ -20,5 +20,5 @@ Deno.serve(async(req)=>{try{
   base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id},'phase_order',100),
  ]);
  const lease=(leases||[]).sort((a:any,b:any)=>Number(b.lease_revision||0)-Number(a.lease_revision||0))[0]||null;
- return Response.json({session,participants,rounds,slots,matches,events,courts,lease,partnershipPhases:phases||[],fixedPairs:fixedPairs||[],currentUserId:user.id,isAdmin:user.role==='admin'});
+ return Response.json({session,participants,rounds,slots,matches,events,courts,lease,partnershipPhases:phases||[],fixedPairs:fixedPairs||[],currentUserId:user.id,currentAccessRole,isAdmin:user.role==='admin'});
 }catch(error){return Response.json({error:error?.message||'Unexpected KOTC state error'},{status:500});}});
