@@ -41,6 +41,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   // Attendees
   const [attendees, setAttendees] = useState([]);
   const [waitingListCount, setWaitingListCount] = useState(0);
+  const [matchChoices, setMatchChoices] = useState({});
 
   const invoke = (action, extra = {}) =>
     base44.functions.invoke('spondIntegration', { action, spondToken: token, ...extra });
@@ -112,9 +113,11 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setLoading(true);
     setError('');
     try {
-      const res = await invoke('get_attendees', { groupId: selectedGroup.id, eventId: event.id });
+      const targetDate = String(tournament?.start_date || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || undefined;
+      const res = await invoke('get_attendees', { groupId: selectedGroup.id, eventId: event.id, tournamentId: tournament.id, targetDate });
       if (res.data?.attendees) {
         setAttendees(res.data.attendees);
+        setMatchChoices({});
         setWaitingListCount(Number(res.data.waitingListCount || 0));
         setStep('preview');
       } else {
@@ -131,11 +134,15 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setLoading(true);
     setError('');
     try {
+      const targetDate = String(tournament?.start_date || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || undefined;
       const res = await base44.functions.invoke('spondIntegration', {
         action: 'import_attendees',
         spondToken: token,
-        attendees,
         tournamentId: tournament.id,
+        groupId: selectedGroup.id,
+        eventId: selectedEvent.id,
+        targetDate,
+        matchChoices: Object.entries(matchChoices).map(([spondId, playerId]) => ({ spondId, playerId })),
         replaceRoster: tournament?.format === 'King of the Court',
       });
       if (res.data?.success) {
@@ -162,6 +169,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setSelectedEvent(null);
     setAttendees([]);
     setWaitingListCount(0);
+    setMatchChoices({});
     setError('');
   };
 
@@ -172,6 +180,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
 
   const newCount = attendees.filter(a => a.status === 'new').length;
   const matchedCount = attendees.filter(a => a.status === 'matched').length;
+  const ambiguousCount = attendees.filter(a => a.status === 'ambiguous' && !matchChoices[a.spondId]).length;
   const recommendedCourts = recommendCourts(attendees.length);
 
   return (
