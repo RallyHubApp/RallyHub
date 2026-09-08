@@ -194,10 +194,10 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
             <div className="w-7 h-7 rounded-lg bg-green-500/20 flex items-center justify-center">
               <span className="text-green-400 font-black text-xs">S</span>
             </div>
-            Import from Spond
+            {tournament?.format === 'King of the Court' ? 'Refresh roster from Spond' : 'Import from Spond'}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Pull confirmed attendees from a Spond event directly into this tournament
+            {tournament?.format === 'King of the Court' ? 'Choose the exact Spond event and sync confirmed attendees into this session roster.' : 'Pull confirmed attendees from a Spond event directly into this tournament'}
           </DialogDescription>
         </DialogHeader>
 
@@ -441,10 +441,9 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
               <CheckCircle2 className="w-7 h-7 text-primary" />
             </div>
             <div>
-              <p className="text-base font-semibold text-foreground">Import Complete!</p>
+              <p className="text-base font-semibold text-foreground">{tournament?.format === 'King of the Court' ? 'Roster refreshed' : 'Import complete'}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Players added to <strong className="text-foreground">{tournament.name}</strong>.<br />
-                Head to the setup tab to configure courts and generate the draw.
+                {tournament?.format === 'King of the Court' ? 'Confirmed Spond attendees are now the session roster. Waiting-list players were not added.' : <>Players added to <strong className="text-foreground">{tournament.name}</strong>.</>}
               </p>
             </div>
             <Button onClick={handleClose} className="bg-primary text-primary-foreground">
