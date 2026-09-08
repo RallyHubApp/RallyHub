@@ -99,16 +99,11 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
       const targetDate = String(tournament?.start_date || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || undefined;
       const res = await invoke('get_events', { groupId: group.id, targetDate });
       if (res.data?.events) {
-        // The backend already bounds this to the upcoming 90-day window. Keep a
-        // second client-side sanity guard so a distant recurring-series anchor can
-        // never be rendered even if Spond ignores its own timestamp parameters.
-        const now = Date.now() - 6*60*60*1000;
-        const max = Date.now() + 90*24*60*60*1000;
-        const upcoming = res.data.events.filter(ev => {
-          const t = new Date(ev?.startTimestamp || '').getTime();
-          return Number.isFinite(t) && t >= now && t <= max;
-        });
-        setEvents(upcoming);
+        // The backend is the single authority for the safe upcoming-event window.
+        // Do not re-filter recurring Spond occurrences in the browser: some scheduled
+        // occurrences use timestamp shapes that browsers parse differently and valid
+        // events can disappear from the picker.
+        setEvents(res.data.events);
         setStep('select_event');
       } else {
         setError(res.data?.error || 'Could not load events');
@@ -365,8 +360,8 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                 ))}
                 {events.length === 0 && (
                   <div className="text-center py-6 space-y-1">
-                    <p className="text-xs text-muted-foreground">No Spond occurrence found for this session date.</p>
-                    <p className="text-[10px] text-muted-foreground">Use Refresh once. If it is still empty, check the RallyHub session date or choose the correct Spond group.</p>
+                    <p className="text-xs text-muted-foreground">No upcoming Spond events were returned for this group.</p>
+                    <p className="text-[10px] text-muted-foreground">Use Refresh once. If it is still empty, go Back and confirm you selected the correct Spond group.</p>
                   </div>
                 )}
               </div>
