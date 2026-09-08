@@ -33,7 +33,13 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
   const replacePlayer = async () => {
     let targetId = replaceTo;
     if (!targetId && newName.trim()) {
-      const created = await base44.entities.Player.create({ full_name: newName.trim(), status: 'Active', skill_rating: 3.0 });
+      const norm = newName.trim().toLowerCase().replace(/\s+/g, ' ');
+      const duplicate = allPlayers.find(p => String(p.full_name || '').trim().toLowerCase().replace(/\s+/g, ' ') === norm);
+      if (duplicate) {
+        toast.error(`A player named ${duplicate.full_name} already exists. Choose them from the directory instead of creating a guest.`);
+        return;
+      }
+      const created = await base44.entities.Player.create({ full_name: newName.trim(), status: 'Active', relationship_type: 'guest', relationship_status: 'active', tenant_id: tournament.tenant_id, club_id: tournament.host_club_id });
       targetId = created.id;
     }
     if (!replaceFrom || !targetId) return;
