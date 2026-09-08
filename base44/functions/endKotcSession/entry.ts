@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 function nowIso(){return new Date().toISOString();}
+function standings(matches:any[],participants:any[]){const s:any=Object.fromEntries((participants||[]).map((p:any)=>[p.id,{id:p.id,name:p.display_name,w:0,l:0,pf:0,pa:0,c1:0}]));for(const m of (matches||[]).filter((x:any)=>x.status==='completed')){const a=m.team_a_participant_ids||[],b=m.team_b_participant_ids||[];for(const id of [...a,...b])if(s[id]&&Number(m.ladder_court_rank)===1)s[id].c1++;for(const id of a)if(s[id]){s[id].pf+=Number(m.team_a_score||0);s[id].pa+=Number(m.team_b_score||0);m.winner_side==='A'?s[id].w++:s[id].l++;}for(const id of b)if(s[id]){s[id].pf+=Number(m.team_b_score||0);s[id].pa+=Number(m.team_a_score||0);m.winner_side==='B'?s[id].w++:s[id].l++;}}return Object.values(s).sort((x:any,y:any)=>y.w-x.w||((y.pf-y.pa)-(x.pf-x.pa))||y.c1-x.c1||String(x.name).localeCompare(String(y.name))).map((x:any,i:number)=>({...x,rank:i+1}));}
 function allowedAccess(a:any,tenantId:string,sessionId:string){if(!a||a.status!=='active'||String(a.tenant_id||'')!==String(tenantId||'')||String(a.session_id||'')!==String(sessionId||''))return false;if(a.role!=='session_host')return false;const now=Date.now();if(a.starts_at&&Date.parse(a.starts_at)>now)return false;if(a.ends_at&&Date.parse(a.ends_at)<now)return false;return true;}
 
 Deno.serve(async(req)=>{try{
@@ -29,6 +30,11 @@ Deno.serve(async(req)=>{try{
  for(const r of (rounds||[]).filter((r:any)=>['proposed','confirmed','started'].includes(r.status))){const rm=(matches||[]).filter((m:any)=>String(m.round_id)===String(r.id));const played=rm.some((m:any)=>m.status==='completed');await base44.asServiceRole.entities.KotcRound.update(r.id,{status:played?'completed':'abandoned',completed_at:played?now:undefined,abandonment_reason:played?undefined:(action==='finish'?'Session finished before this round was played':String(body.reason||'Session abandoned by host'))});}
  const update:any={status:action==='finish'?'completed':'abandoned',actual_session_end:now,revision:Number(session.revision||0)+1,last_command_id:String(body.commandId||`end-${Date.now()}`)};if(action==='abandon')update.abandonment_reason=String(body.reason||'Session abandoned by host');
  const updated=await base44.asServiceRole.entities.KotcSession.update(session.id,update);
+ if(action==='finish'){
+   const finalMatches=await base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id});
+   const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id});
+   for(const row of standings(finalMatches||[],participants||[]))await base44.asServiceRole.entities.KotcSessionParticipant.update(row.id,{final_rank:row.rank});
+ }
  if(session.tournament_id)await base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:action==='finish'?'Completed':'Cancelled',finalised_at:action==='finish'?now:undefined});
  await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:action==='finish'?'kotc_session_finished':'kotc_session_abandoned',entity_type:'KotcSession',entity_id:session.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({status:session.status,revision:session.revision}),after_state:JSON.stringify({status:updated.status,revision:updated.revision}),reason:action==='finish'?'Host finished session and preserved completed results':String(body.reason||'Session abandoned by host')});
  return Response.json({success:true,session:updated,completedMatches:(matches||[]).filter((m:any)=>m.status==='completed').length});
