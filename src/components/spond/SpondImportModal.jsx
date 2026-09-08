@@ -197,8 +197,10 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg bg-card border-border">
-        <DialogHeader>
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-lg max-h-[92dvh] overflow-hidden p-0 sm:p-6 bg-card border-border rounded-xl sm:rounded-lg">
+        <div className="sticky top-0 z-20 bg-card border-b border-border px-4 pt-4 pb-3 sm:p-0 sm:pb-4">
+          <div className="flex items-start justify-between gap-3">
+            <DialogHeader className="pr-2">
           <DialogTitle className="text-foreground flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-green-500/20 flex items-center justify-center">
               <span className="text-green-400 font-black text-xs">S</span>
@@ -208,8 +210,12 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
           <DialogDescription className="text-muted-foreground">
             {tournament?.format === 'King of the Court' ? 'Choose the exact Spond event and sync confirmed attendees into this session roster.' : 'Pull confirmed attendees from a Spond event directly into this tournament'}
           </DialogDescription>
-        </DialogHeader>
+            </DialogHeader>
+            <Button type="button" variant="outline" size="sm" onClick={handleClose} className="shrink-0 h-9 px-3">Close</Button>
+          </div>
+        </div>
 
+        <div className="overflow-y-auto overscroll-contain px-4 pb-4 sm:px-0 sm:pb-0 max-h-[calc(92dvh-88px)]">
         {/* Step progress */}
         <div className="flex items-center gap-1 text-xs text-muted-foreground mb-4">
           {['Connect', 'Group', 'Event', 'Preview'].map((label, i) => {
@@ -460,6 +466,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
             </Button>
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );
