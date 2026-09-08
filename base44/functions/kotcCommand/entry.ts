@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 
-const STRUCTURAL = new Set(['confirm_round','start_round','start_proposed_round','undo_start_round','generate_next_round','adjust_proposed_round','set_participant_status','update_timer_settings','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
+const STRUCTURAL = new Set(['confirm_round','start_round','start_proposed_round','undo_start_round','generate_next_round','adjust_proposed_round','set_pair_lock','set_participant_status','update_timer_settings','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
 const RESOLVED = new Set(['completed','retired','abandoned','not_played']);
 
 function nowIso() { return new Date().toISOString(); }
@@ -77,11 +77,15 @@ Deno.serve(async (req) => {
     if (!session) return Response.json({ error:'KOTC session not found' }, { status:404 });
 
     let allowed = user.role === 'admin';
+    let accessRole = user.role === 'admin' ? 'admin' : null;
     if (!allowed) {
       const grants = await base44.asServiceRole.entities.KotcSessionAccess.filter({ session_id:session.id, user_id:user.id, status:'active' });
-      allowed = (grants || []).some((a:any) => allowedAccess(a, session.tenant_id, session.id));
+      const valid = (grants || []).filter((a:any) => allowedAccess(a, session.tenant_id, session.id));
+      allowed = valid.length > 0;
+      accessRole = valid[0]?.role || null;
     }
     if (!allowed) return Response.json({ error:'KOTC session host permission required' }, { status:403 });
+    if (accessRole === 'assistant_host' && !['autosave_score','complete_match','correct_match'].includes(commandType)) return Response.json({ error:'Assistant hosts can enter and correct scores only.' }, { status:403 });
     if (session.status === 'finalised') return Response.json({ error:'Finalised KOTC sessions are read-only.' }, { status:409 });
 
     const duplicates = await base44.asServiceRole.entities.KotcCommandLog.filter({ session_id:session.id, command_id:commandId });
@@ -221,11 +225,11 @@ Deno.serve(async (req) => {
       const originalIds = slots.map((s:any)=>String(s.participant_id));
       const nextIds = slots.map((s:any)=>String(requested[s.id] || s.participant_id));
       if (new Set(nextIds).size !== nextIds.length) return Response.json({ error:'A player cannot appear in more than one slot.' }, { status:400 });
-      const originalSet = new Set(originalIds), nextSet = new Set(nextIds);
-      if (originalSet.size !== nextSet.size || [...originalSet].some((id:string)=>!nextSet.has(id))) return Response.json({ error:'Host adjustment must be a swap/reposition of the same active players. Bench or attendance changes use the player-status controls.' }, { status:400 });
       const participants = await base44.asServiceRole.entities.KotcSessionParticipant.filter({ session_id:session.id });
-      const eligible = new Set((participants||[]).filter((p:any)=>['confirmed','present','leaving_early'].includes(p.status)).map((p:any)=>String(p.id)));
+      const eligibleList=(participants||[]).filter((p:any)=>['registered','confirmed','present','leaving_early'].includes(p.status));
+      const eligible = new Set(eligibleList.map((p:any)=>String(p.id)));
       if (nextIds.some((id:string)=>!eligible.has(id))) return Response.json({ error:'Unavailable, injured, left or withdrawn players cannot be placed on court.' }, { status:400 });
+      if(nextIds.length!==Number(round.active_court_count||0)*4)return Response.json({error:'Round must have exactly four players on every active court.'},{status:400});
       const before = slots.map((s:any)=>({slotId:s.id,court:Number(s.ladder_court_rank),team:s.team_side,slot:Number(s.slot_number),participantId:String(s.participant_id)}));
       const changed:any[]=[];
       for (let i=0;i<slots.length;i++) {
@@ -250,6 +254,22 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_round_host_adjustment',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify(before),after_state:JSON.stringify(changed),reason:String(body.reason||'Host adjusted proposed round').trim()});
       result={success:true,session,round:updatedRound,changes:changed};
       await createSnapshot(base44,session,commandId,'command',user.id);
+    } else if (commandType === 'set_pair_lock') {
+      const p1=String(body.participant1Id||''),p2=String(body.participant2Id||'');
+      if(!p1||!p2||p1===p2)return Response.json({error:'Choose two different players for a pair lock.'},{status:400});
+      const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id});
+      const byId=new Map((participants||[]).map((p:any)=>[String(p.id),p]));
+      if(!byId.has(p1)||!byId.has(p2))return Response.json({error:'Pair-lock players are not in this session.'},{status:400});
+      const existing=await base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'});
+      const hostLocks=(existing||[]).filter((p:any)=>p.pair_source==='host_selected');
+      for(const lock of hostLocks){
+        const overlaps=[String(lock.participant1_id),String(lock.participant2_id)].some(id=>id===p1||id===p2);
+        if(overlaps)await base44.asServiceRole.entities.KotcFixedPair.update(lock.id,{status:'withdrawn'});
+      }
+      let pair=null;
+      if(body.locked!==false){pair=await base44.asServiceRole.entities.KotcFixedPair.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,pair_name:`${byId.get(p1)?.display_name||'Player'} / ${byId.get(p2)?.display_name||'Player'}`,participant1_id:p1,participant2_id:p2,pair_source:'host_selected',status:'active'});}
+      session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
+      result={success:true,session,pair,locked:body.locked!==false}; await createSnapshot(base44,session,commandId,'command',user.id);
     } else if (commandType === 'takeover_host') {
       if (!String(body.reason || '').trim()) return Response.json({ error:'Host takeover reason is required.' }, { status:400 });
       const leases = await base44.asServiceRole.entities.KotcHostLease.filter({ session_id:session.id, status:'active' });
