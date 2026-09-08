@@ -145,9 +145,13 @@ Deno.serve(async (req) => {
 
     if (commandType === 'start_proposed_round') {
       const currentRevision=Number(session.revision||0);
-      if(Number(body.expectedSessionRevision)!==currentRevision)return Response.json({error:'Session changed since you opened it. Refresh and try again.',conflict:true,currentSessionRevision:currentRevision},{status:409});
       const round=(await base44.asServiceRole.entities.KotcRound.filter({id:body.roundId,session_id:session.id}))?.[0];
       if(!round)return Response.json({error:'Round not found.'},{status:404});
+      // START ROUND is deliberately tolerant of a stale session revision. Mobile hosts can
+      // have an 8-second poll land between opening the editor and tapping Start. The round
+      // id + proposal revision below are the authoritative sporting guards, so an unrelated
+      // session revision must not strand a valid proposed round.
+      if(round.status==='started'&&String(session.current_round_id||'')===String(round.id))return Response.json({success:true,alreadyStarted:true,session,round});
       if(round.status!=='proposed')return Response.json({error:`Round cannot start from ${round.status}.`},{status:409});
       if(Number(body.expectedProposalRevision)!==Number(round.proposal_revision||1))return Response.json({error:'Round proposal changed since you opened it. Refresh and try again.',conflict:true,currentProposalRevision:Number(round.proposal_revision||1)},{status:409});
       const slots=(await base44.asServiceRole.entities.KotcRoundSlot.filter({round_id:round.id,session_id:session.id})).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank)||String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number));
