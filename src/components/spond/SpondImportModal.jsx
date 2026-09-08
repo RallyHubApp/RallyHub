@@ -97,34 +97,18 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setError('');
     try {
       const targetDate = String(tournament?.start_date || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || undefined;
-      if (tournament?.format === 'King of the Court' && !targetDate) {
-        setError('This King of the Court session has no RallyHub date. Set the session date before refreshing from Spond so RallyHub cannot select the wrong recurring occurrence.');
-        return;
-      }
       const res = await invoke('get_events', { groupId: group.id, targetDate });
       if (res.data?.events) {
-        // Belt-and-braces date guard: Spond's internal API can surface scheduled
-        // recurring-series records outside the requested range. Never trust that
-        // filter alone. The browser independently enforces the exact RallyHub date
-        // in Europe/Dublin before an occurrence is allowed into the picker.
-        const irelandDate = value => {
-          try {
-            const parts = new Intl.DateTimeFormat('en-CA', { timeZone:'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(value));
-            const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
-            return `${p.year}-${p.month}-${p.day}`;
-          } catch { return ''; }
-        };
-        const exactEvents = targetDate
-          ? res.data.events.filter(ev => ev?.startTimestamp && irelandDate(ev.startTimestamp) === targetDate)
-          : res.data.events;
-        setEvents(exactEvents);
-        if (targetDate && exactEvents.some(ev => irelandDate(ev.startTimestamp) !== targetDate)) {
-          setError('RallyHub rejected an out-of-date Spond occurrence. Please refresh the event list.');
-          return;
-        }
-        if (targetDate && res.data.events.length !== exactEvents.length) {
-          console.warn(`[RallyHub Spond] Rejected ${res.data.events.length - exactEvents.length} occurrence(s) outside ${targetDate}.`);
-        }
+        // The backend already bounds this to the upcoming 90-day window. Keep a
+        // second client-side sanity guard so a distant recurring-series anchor can
+        // never be rendered even if Spond ignores its own timestamp parameters.
+        const now = Date.now() - 6*60*60*1000;
+        const max = Date.now() + 90*24*60*60*1000;
+        const upcoming = res.data.events.filter(ev => {
+          const t = new Date(ev?.startTimestamp || '').getTime();
+          return Number.isFinite(t) && t >= now && t <= max;
+        });
+        setEvents(upcoming);
         setStep('select_event');
       } else {
         setError(res.data?.error || 'Could not load events');
@@ -342,7 +326,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
               <p className="text-xs text-muted-foreground">
                 Select the matching Spond occurrence from <strong className="text-foreground">{selectedGroup?.name}</strong>:
               </p>
-              {tournament?.start_date && <p className="text-[11px] text-primary">Showing only Spond occurrences on the RallyHub session date: {new Date(`${String(tournament.start_date).slice(0,10)}T12:00:00`).toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone:'Europe/Dublin' })}</p>}
+              <p className="text-[11px] text-primary">Showing upcoming Spond events for the next 90 days. Choose the exact date, time and location you want; RallyHub will use that event as the session date.</p>
             </div>
             {loading ? (
               <div className="flex items-center justify-center py-8">
