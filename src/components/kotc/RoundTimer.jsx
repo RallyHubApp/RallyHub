@@ -134,6 +134,15 @@ export default function RoundTimer({
   };
 
   useEffect(() => {
+    if ('speechSynthesis' in window) {
+      // Warm the browser voice engine while the host is on the round screen. Some
+      // mobile browsers otherwise take several seconds before the first phrase.
+      window.speechSynthesis.getVoices?.();
+      window.speechSynthesis.resume?.();
+    }
+  }, []);
+
+  useEffect(() => {
     if (!autoStart || !enabled || disabled || !autoStartKey) return;
     if (autoStartedKeyRef.current === autoStartKey) return;
     autoStartedKeyRef.current = autoStartKey;
@@ -283,7 +292,7 @@ export default function RoundTimer({
 
       <div className="flex gap-2">
         {running&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => setRunning(false)} disabled={disabled || !enabled}><Pause className="w-4 h-4" /> Pause Timer</Button>}
-        {!running&&seconds>0&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {deadlineRef.current=Date.now()+seconds*1000;setRunning(true);}} disabled={disabled || !enabled}><Play className="w-4 h-4" /> {seconds===maxSeconds?'Start Timer':'Resume Timer'}</Button>}
+        {!running&&seconds>0&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {if(seconds===maxSeconds){startPhase('play');}else{deadlineRef.current=Date.now()+seconds*1000;setRunning(true);}}} disabled={disabled || !enabled}><Play className="w-4 h-4" /> {seconds===maxSeconds?'Start Timer':'Resume Timer'}</Button>}
         <Button variant="outline" onClick={reset} className="gap-2 h-11 sm:h-12"><RotateCcw className="w-4 h-4" /> Reset</Button>
       </div>
 

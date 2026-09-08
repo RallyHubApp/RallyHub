@@ -1,0 +1,95 @@
+{
+  "name": "Member",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "primary_email": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "membership_season": {
+      "type": "string"
+    },
+    "membership_status": {
+      "type": "string",
+      "enum": [
+        "paid_active",
+        "pending_payment",
+        "no_response",
+        "not_renewing",
+        "inactive",
+        "former_member"
+      ],
+      "default": "paid_active"
+    },
+    "emergency_contact": {
+      "type": "string"
+    },
+    "emergency_mobile": {
+      "type": "string"
+    },
+    "source_system": {
+      "type": "string",
+      "default": "google_membership_master"
+    },
+    "source_sheet": {
+      "type": "string"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data_quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "full_name",
+    "membership_season",
+    "membership_status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

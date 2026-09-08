@@ -1,0 +1,90 @@
+{
+  "name": "SpondIdentity",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "member_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "spond_member_id": {
+      "type": "string"
+    },
+    "spond_profile_id": {
+      "type": "string"
+    },
+    "spond_group_id": {
+      "type": "string"
+    },
+    "spond_name": {
+      "type": "string"
+    },
+    "spond_email": {
+      "type": "string"
+    },
+    "spond_phone": {
+      "type": "string"
+    },
+    "match_status": {
+      "type": "string",
+      "enum": [
+        "matched",
+        "unmatched",
+        "possible_match",
+        "excluded"
+      ],
+      "default": "unmatched"
+    },
+    "match_method": {
+      "type": "string",
+      "enum": [
+        "spond_id",
+        "email",
+        "phone",
+        "name",
+        "manual"
+      ]
+    },
+    "last_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "match_status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
