@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Plus, RefreshCw, UserMinus, UserRoundPlus } from 'lucide-react';
+import { RefreshCw, UserMinus, UserRoundPlus } from 'lucide-react';
 
 export default function KotcPlayerManagement({ tournament, players, allPlayers, queryClient }) {
   const [mode, setMode] = useState(null);
@@ -20,12 +20,6 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
   };
 
   const close = () => { setMode(null); setSelectedIds([]); setReplaceFrom(''); setReplaceTo(''); setNewName(''); };
-
-  const addPlayers = async () => {
-    await base44.entities.Tournament.update(tournament.id, { player_ids: [...new Set([...(tournament.player_ids || []), ...selectedIds])] });
-    toast.success(`${selectedIds.length} players added`);
-    close(); refresh();
-  };
 
   const removePlayers = async () => {
     await base44.entities.Tournament.update(tournament.id, {
@@ -54,7 +48,6 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={() => setMode('add')}><Plus className="w-3 h-3 mr-1" /> Add Player</Button>
         <Button variant="outline" size="sm" onClick={() => setMode('remove')}><UserMinus className="w-3 h-3 mr-1" /> Remove Player</Button>
         <Button variant="outline" size="sm" onClick={() => setMode('replace')}><RefreshCw className="w-3 h-3 mr-1" /> Replace Player</Button>
       </div>
@@ -62,11 +55,10 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
       <Dialog open={!!mode} onOpenChange={open => !open && close()}>
         <DialogContent className="sm:max-w-md bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground">{mode === 'add' ? 'Add Player' : mode === 'remove' ? 'Remove Player' : 'Replace Player'}</DialogTitle>
+            <DialogTitle className="text-foreground">{mode === 'remove' ? 'Remove Player' : 'Replace Player'}</DialogTitle>
             <DialogDescription className="text-muted-foreground">Manage the roster before Round 1 starts.</DialogDescription>
           </DialogHeader>
 
-          {mode === 'add' && <Picker players={availablePlayers} selectedIds={selectedIds} setSelectedIds={setSelectedIds} />}
           {mode === 'remove' && <Picker players={players} selectedIds={selectedIds} setSelectedIds={setSelectedIds} />}
           {mode === 'replace' && (
             <div className="space-y-3">
@@ -78,14 +70,13 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
                 <option value="">Pick replacement from directory</option>
                 {availablePlayers.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
               </select>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-px bg-border flex-1" />or create new<span className="h-px bg-border flex-1" /></div>
-              <Input placeholder="New player name" value={newName} onChange={e => setNewName(e.target.value)} className="bg-secondary border-border" />
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-px bg-border flex-1" />or add a genuine one-off guest<span className="h-px bg-border flex-1" /></div>
+              <Input placeholder="Guest / One-off Player name" value={newName} onChange={e => setNewName(e.target.value)} className="bg-secondary border-border" />
             </div>
           )}
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={close}>Cancel</Button>
-            {mode === 'add' && <Button onClick={addPlayers} disabled={!selectedIds.length} className="bg-primary text-primary-foreground">Add</Button>}
             {mode === 'remove' && <Button onClick={removePlayers} disabled={!selectedIds.length} className="bg-destructive text-destructive-foreground">Remove</Button>}
             {mode === 'replace' && <Button onClick={replacePlayer} disabled={!replaceFrom || (!replaceTo && !newName.trim())} className="bg-primary text-primary-foreground"><UserRoundPlus className="w-4 h-4 mr-1" /> Replace</Button>}
           </div>
