@@ -54,7 +54,8 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
         setLoading(true);
         const gr = await base44.functions.invoke('spondIntegration', { action: 'get_groups', spondToken: token });
         if (!cancelled && gr.data?.groups) {
-          setGroups(gr.data.groups);
+          const last = localStorage.getItem('rallyhub_spond_group_id') || tournament?.kotc_spond_group_id || '';
+          setGroups([...gr.data.groups].sort((a,b)=>Number(b.id===last)-Number(a.id===last)));
           setStep('select_group');
         }
       } catch {
@@ -76,7 +77,8 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
         setToken(res.data.token);
         sessionStorage.setItem('rallyhub_spond_token', res.data.token);
         const gr = await base44.functions.invoke('spondIntegration', { action: 'get_groups', spondToken: res.data.token });
-        setGroups(gr.data?.groups || []);
+        const last = localStorage.getItem('rallyhub_spond_group_id') || tournament?.kotc_spond_group_id || '';
+        setGroups([...(gr.data?.groups || [])].sort((a,b)=>Number(b.id===last)-Number(a.id===last)));
         setStep('select_group');
       } else {
         setError(res.data?.error || 'Login failed. Check your credentials.');
@@ -90,6 +92,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
 
   const handleSelectGroup = async (group) => {
     setSelectedGroup(group);
+    localStorage.setItem('rallyhub_spond_group_id', group.id);
     setLoading(true);
     setError('');
     try {
