@@ -103,10 +103,12 @@ Deno.serve(async (req) => {
     // or first-pass score completion through large recovery snapshots: those extra
     // entity reads can hit Base44 rate limits during live play.
     if (commandType === 'complete_match') {
+      if (!['in_progress'].includes(session.status)) return Response.json({ error:`Scores can only be completed while the session is live. Current status: ${session.status}.` }, { status:409 });
       const matches = await base44.asServiceRole.entities.KotcMatch.filter({ id:body.matchId, session_id:session.id });
       const match = matches?.[0];
       if (!match) return Response.json({ error:'Match not found' }, { status:404 });
       const expected = Number(body.expectedMatchRevision), current = Number(match.revision || 0);
+      if (RESOLVED.has(match.status) && String(match.command_id||'') === String(commandId)) return Response.json({ success:true, duplicate:true, match });
       if (expected !== current) return Response.json({ conflict:true, error:'Match changed since you opened it.', currentMatchRevision:current }, { status:409 });
       if (RESOLVED.has(match.status)) return Response.json({ error:'Match already resolved; use correction.' }, { status:409 });
       const score:any = validateFinalScore(body, session);
@@ -119,6 +121,26 @@ Deno.serve(async (req) => {
       });
       try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_score_completed',entity_type:'KotcMatch',entity_id:match.id,scope_type:'KotcSession',scope_id:session.id,after_state:JSON.stringify({team_a_score:score.a,team_b_score:score.b,winner_side:score.winner,revision:current+1})});}catch{}
       return Response.json({success:true,match:updated});
+    }
+
+    if (commandType === 'undo_start_round') {
+      const currentRevision=Number(session.revision||0);
+      if(Number(body.expectedSessionRevision)!==currentRevision)return Response.json({error:'Session changed since you opened it. Refresh and try again.',conflict:true,currentSessionRevision:currentRevision},{status:409});
+      const round=(await base44.asServiceRole.entities.KotcRound.filter({id:body.roundId,session_id:session.id}))?.[0];
+      if(!round)return Response.json({error:'Round not found.'},{status:404});
+      if(round.status!=='started')return Response.json({error:'Only the current started round can be returned to setup.'},{status:409});
+      if(Number(round.round_number)!==Number(session.current_round_number))return Response.json({error:'Only the current round can be returned to setup.'},{status:409});
+      const matches=await base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id});
+      const touched=(matches||[]).filter((m:any)=>RESOLVED.has(m.status)||m.team_a_score!=null||m.team_b_score!=null||m.autosaved_at);
+      if(touched.length)return Response.json({error:'A score has already been entered or saved. Use score correction instead of Undo Start.'},{status:409});
+      const updatedRound=await base44.asServiceRole.entities.KotcRound.update(round.id,{status:'proposed',started_at:undefined,confirmed_at:undefined,confirmed_by_user_id:undefined});
+      const isRoundOne=Number(round.round_number)===1;
+      const update:any={revision:currentRevision+1,last_command_id:commandId,status:session.status==='in_progress'&&isRoundOne?'ready':session.status};
+      if(isRoundOne)update.actual_first_round_start=undefined;
+      session=await base44.asServiceRole.entities.KotcSession.update(session.id,update);
+      if(isRoundOne&&session.tournament_id)await base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'Draft',finalised_at:undefined});
+      try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_round_start_undone',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,reason:'Host returned unscored round to setup'});}catch{}
+      return Response.json({success:true,session,round:updatedRound});
     }
 
     if (commandType === 'start_proposed_round') {
@@ -248,6 +270,13 @@ Deno.serve(async (req) => {
         const activeIds=projected.filter((p:any)=>!selectedSet.has(p.id)).map((p:any)=>p.id).sort((a:string,b:string)=>Number(destinationRank[a]||99)-Number(destinationRank[b]||99)||Number(currentCourtRank[a]||99)-Number(currentCourtRank[b]||99)||stableHash(`${session.random_seed}|court-transition|r${nextNumber}|${a}`)-stableHash(`${session.random_seed}|court-transition|r${nextNumber}|${b}`));
         if(activeIds.length!==activeCourts*4)return Response.json({error:'Court transition did not produce exactly four players per active court.'},{status:409});
         for(let rank=1;rank<=activeCourts;rank++){const four=activeIds.slice((rank-1)*4,rank*4);const split=splitFour(four,partnerCounts,`${session.random_seed}|court-transition|r${nextNumber}|c${rank}`,activeLocks);for(const [side,ids] of [['A',split.teamA],['B',split.teamB]] as any)for(let i=0;i<2;i++)finalSlots.push({participant_id:ids[i],ladder_court_rank:rank,team_side:side,slot_number:i+1,assignment_type:'sporting_movement',destination_from_prior_round:destinationRank[ids[i]]});}
+      }
+      const existingNext=(rounds||[]).filter((r:any)=>Number(r.round_number)===nextNumber&&!['superseded','abandoned'].includes(r.status)).sort((a:any,b:any)=>Number(b.proposal_revision||0)-Number(a.proposal_revision||0))[0];
+      if(existingNext){
+        session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,current_round_number:nextNumber,current_round_id:existingNext.id});
+        result={success:true,duplicateGenerationPrevented:true,session,round:existingNext};
+        await base44.asServiceRole.entities.KotcCommandLog.update(commandLog.id,{status:'applied',applied_session_revision:Number(session.revision||currentSessionRevision),result_json:JSON.stringify(result),applied_at:nowIso()});
+        return Response.json(result);
       }
       const newRound=await base44.asServiceRole.entities.KotcRound.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_number:nextNumber,status:'proposed',proposal_revision:1,active_court_count:activeCourts,bench_count:benchPlaces,generated_by_command_id:commandId,engine_input_hash:String(stableHash(JSON.stringify({results,selected,currentActiveCourts,activeCourts}))),engine_output_hash:String(stableHash(JSON.stringify(finalSlots)))});
       for(const s of finalSlots)await base44.asServiceRole.entities.KotcRoundSlot.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_id:newRound.id,round_number:nextNumber,ladder_court_rank:s.ladder_court_rank,team_side:s.team_side,slot_number:s.slot_number,participant_id:s.participant_id,assignment_type:s.assignment_type,assignment_revision:1,replacement_for_participant_id:s.replacement_for_participant_id,destination_from_prior_round:s.destination_from_prior_round});
