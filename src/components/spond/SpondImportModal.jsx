@@ -14,10 +14,7 @@ import {
 const STEPS = ['login', 'select_event', 'preview', 'done'];
 
 function recommendCourts(playerCount) {
-  if (playerCount <= 8) return 2;
-  if (playerCount <= 12) return 3;
-  if (playerCount <= 20) return 4;
-  if (playerCount <= 28) return 5;
+  if (playerCount < 4) return 0;
   return Math.floor(playerCount / 4);
 }
 
@@ -42,6 +39,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   const [attendees, setAttendees] = useState([]);
   const [waitingListCount, setWaitingListCount] = useState(0);
   const [matchChoices, setMatchChoices] = useState({});
+  const [guestChoices, setGuestChoices] = useState({});
 
   const invoke = (action, extra = {}) =>
     base44.functions.invoke('spondIntegrationWorking', { action, spondToken: token, ...extra });
@@ -125,6 +123,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
       if (res.data?.attendees) {
         setAttendees(res.data.attendees);
         setMatchChoices({});
+        setGuestChoices({});
         setWaitingListCount(Number(res.data.waitingListCount || 0));
         setStep('preview');
       } else {
@@ -152,6 +151,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
         selectedStartTimestamp:selectedEvent.startTimestamp,
         selectedHeading:selectedEvent.heading,
         matchChoices: Object.entries(matchChoices).map(([spondId, playerId]) => ({ spondId, playerId })),
+        allowGuestSpondIds: Object.entries(guestChoices).filter(([, allowed]) => allowed).map(([spondId]) => spondId),
         replaceRoster: tournament?.format === 'King of the Court',
       });
       if (res.data?.success) {
@@ -179,6 +179,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setAttendees([]);
     setWaitingListCount(0);
     setMatchChoices({});
+    setGuestChoices({});
     setError('');
   };
 
@@ -190,11 +191,15 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   const newCount = attendees.filter(a => a.status === 'new').length;
   const matchedCount = attendees.filter(a => a.status === 'matched').length;
   const ambiguousCount = attendees.filter(a => a.status === 'ambiguous' && !matchChoices[a.spondId]).length;
+  const unresolvedNewCount = attendees.filter(a => a.status === 'new' && !guestChoices[a.spondId]).length;
   const recommendedCourts = recommendCourts(attendees.length);
+  const activePlayers = recommendedCourts * 4;
+  const benchPlayers = Math.max(0, attendees.length - activePlayers);
+  const importBlocked = loading || attendees.length === 0 || ambiguousCount > 0 || unresolvedNewCount > 0;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[calc(100vw-1rem)] max-w-lg max-h-[92dvh] overflow-hidden p-0 sm:p-6 bg-card border-border rounded-xl sm:rounded-lg">
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-lg h-[92dvh] max-h-[92dvh] overflow-hidden p-0 sm:p-6 bg-card border-border rounded-xl sm:rounded-lg flex flex-col">
         <div className="sticky top-0 z-20 bg-card border-b border-border px-4 pt-4 pb-3 sm:p-0 sm:pb-4">
           <div className="flex items-start justify-between gap-3">
             <DialogHeader className="pr-2">
@@ -212,7 +217,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
           </div>
         </div>
 
-        <div className="overflow-y-auto overscroll-contain px-4 pb-4 sm:px-0 sm:pb-0 max-h-[calc(92dvh-88px)]">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-4 sm:px-0 sm:pb-0">
         {/* Step progress */}
         <div className="flex items-center gap-1 text-xs text-muted-foreground mb-4">
           {['Connect', 'Group', 'Event', 'Preview'].map((label, i) => {
@@ -410,7 +415,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-foreground">Recommended: {recommendedCourts} courts</p>
-                    <p className="text-[10px] text-muted-foreground">{attendees.length} players → {recommendedCourts * 4} active, {Math.max(0, attendees.length - recommendedCourts * 4)} on bench</p>
+                    <p className="text-[10px] text-muted-foreground">{attendees.length} players → {activePlayers} active, {benchPlayers} on bench</p>
                   </div>
                 </div>
 
@@ -426,20 +431,13 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                         </Badge>
                       </div>
                       {a.status==='ambiguous'&&<select className="mt-2 w-full h-9 rounded-md bg-secondary border border-border px-2 text-xs" value={matchChoices[a.spondId]||''} onChange={e=>setMatchChoices(prev=>({...prev,[a.spondId]:e.target.value}))}><option value="">Choose existing player…</option>{(a.candidates||[]).map(c=><option key={c.id} value={c.id}>{c.name}{c.email?` · ${c.email}`:''}</option>)}</select>}
+                      {a.status==='new'&&<label className="mt-2 flex items-center gap-2 rounded-md border border-border bg-secondary/40 px-2.5 py-2 text-xs"><input type="checkbox" checked={Boolean(guestChoices[a.spondId])} onChange={e=>setGuestChoices(prev=>({...prev,[a.spondId]:e.target.checked}))}/><span>Confirm as Guest / One-off Player</span></label>}
                     </div>
                   ))}
                 </div>
 
-                <div className="flex justify-between gap-2">
+                <div className="flex justify-start">
                   <Button variant="outline" size="sm" onClick={() => setStep('select_event')}>Back</Button>
-                  <Button
-                    onClick={handleImport}
-                    disabled={loading || attendees.length === 0 || ambiguousCount > 0}
-                    className="bg-primary text-primary-foreground"
-                  >
-                    <ArrowRight className="w-4 h-4 mr-1" />
-                    {tournament?.format === 'King of the Court' ? `Refresh roster · ${attendees.length}` : `Import ${attendees.length} Players`}
-                  </Button>
                 </div>
               </>
             )}
@@ -464,6 +462,20 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
           </div>
         )}
         </div>
+
+        {step === 'preview' && (
+          <div className="shrink-0 border-t border-border bg-card px-4 py-3 sm:px-0 sm:pt-3 sm:pb-0">
+            {(ambiguousCount > 0 || unresolvedNewCount > 0) && (
+              <p className="mb-2 text-[11px] text-amber-500">
+                Resolve {ambiguousCount + unresolvedNewCount} player {ambiguousCount + unresolvedNewCount === 1 ? 'identity' : 'identities'} before importing.
+              </p>
+            )}
+            <Button onClick={handleImport} disabled={importBlocked} className="w-full min-h-11 bg-primary text-primary-foreground">
+              <ArrowRight className="w-4 h-4 mr-2" />
+              {loading ? 'Importing…' : tournament?.format === 'King of the Court' ? `IMPORT ROSTER · ${attendees.length}` : `IMPORT ${attendees.length} PLAYERS`}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
