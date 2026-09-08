@@ -66,12 +66,7 @@ async function spondLogin(username, password) {
   return token;
 }
 
-function eventStart(event){return event?._resolvedStartTimestamp||event?.meetupTimestamp||event?.startTimestamp||event?.start_time||'';}
-function occurrenceStartInWindow(event,minMs,maxMs){
-  const candidates=[event?.meetupTimestamp,event?.startTimestamp,event?.start_time].filter(Boolean);
-  const valid=candidates.map(value=>({value,t:new Date(value).getTime()})).filter(x=>Number.isFinite(x.t)&&x.t>=minMs&&x.t<=maxMs).sort((a,b)=>a.t-b.t);
-  return valid[0]?.value||'';
-}
+function eventStart(event){return event?.meetupTimestamp||event?.startTimestamp||event?.start_time||'';}
 function irelandDate(value) {
   try {
     const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(value));
@@ -179,19 +174,23 @@ Deno.serve(async (req) => {
       addProfileInfo: 'true',
     });
     const events = await spondRequest(`/sponds?${params.toString()}`, spondToken);
-    const minMs=new Date(minStart).getTime(),maxMs=new Date(maxStart).getTime();
-    const bounded=(Array.isArray(events)?events:[]).map(e=>({...e,_resolvedStartTimestamp:occurrenceStartInWindow(e,minMs,maxMs)})).filter(e=>e._resolvedStartTimestamp);
-    const simplified = bounded
+    const simplified = (Array.isArray(events) ? events : [])
+      .filter(e => {
+        const ts = eventStart(e);
+        if (!ts) return false;
+        const t = new Date(ts).getTime();
+        return Number.isFinite(t) && t >= new Date(minStart).getTime() && t <= new Date(maxStart).getTime();
+      })
       .sort((a, b) => {
-        const ad = irelandDate(a._resolvedStartTimestamp), bd = irelandDate(b._resolvedStartTimestamp);
+        const ad = irelandDate(eventStart(a)), bd = irelandDate(eventStart(b));
         const ap = preferredDate && ad === preferredDate ? 0 : 1;
         const bp = preferredDate && bd === preferredDate ? 0 : 1;
-        return ap - bp || new Date(a._resolvedStartTimestamp).getTime() - new Date(b._resolvedStartTimestamp).getTime();
+        return ap - bp || new Date(eventStart(a)).getTime() - new Date(eventStart(b)).getTime();
       })
       .map(e => ({
         id: e.id,
         heading: e.heading,
-        startTimestamp: e._resolvedStartTimestamp,
+        startTimestamp: eventStart(e),
         sourceStartTimestamp: e.startTimestamp || '',
         meetupTimestamp: e.meetupTimestamp || '',
         endTimestamp: e.endTimestamp,

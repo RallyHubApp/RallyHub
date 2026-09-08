@@ -97,7 +97,16 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
       const targetDate = String(tournament?.start_date || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || undefined;
       const res = await invoke('get_events', { groupId: group.id, targetDate });
       if (res.data?.events) {
-        setEvents(res.data.events);
+        // The backend already bounds this to the upcoming 90-day window. Keep a
+        // second client-side sanity guard so a distant recurring-series anchor can
+        // never be rendered even if Spond ignores its own timestamp parameters.
+        const now = Date.now() - 6*60*60*1000;
+        const max = Date.now() + 90*24*60*60*1000;
+        const upcoming = res.data.events.filter(ev => {
+          const t = new Date(ev?.startTimestamp || '').getTime();
+          return Number.isFinite(t) && t >= now && t <= max;
+        });
+        setEvents(upcoming);
         setStep('select_event');
       } else {
         setError(res.data?.error || 'Could not load events');
