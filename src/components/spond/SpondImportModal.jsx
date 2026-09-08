@@ -317,7 +317,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
               <p className="text-xs text-muted-foreground">
                 Select the matching Spond occurrence from <strong className="text-foreground">{selectedGroup?.name}</strong>:
               </p>
-              {tournament?.start_date && <p className="text-[11px] text-primary">Showing occurrences for the RallyHub session date: {new Date(`${tournament.start_date}T12:00:00`).toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</p>}
+              {tournament?.start_date && <p className="text-[11px] text-primary">Showing only Spond occurrences on the RallyHub session date: {new Date(`${String(tournament.start_date).slice(0,10)}T12:00:00`).toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone:'Europe/Dublin' })}</p>}
             </div>
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -337,7 +337,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{ev.heading}</p>
                       <p className="text-xs text-muted-foreground">
-                        {ev.startTimestamp ? new Date(ev.startTimestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                        {ev.startTimestamp ? new Date(ev.startTimestamp).toLocaleString('en-IE', { timeZone:'Europe/Dublin', weekday:'short', day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : ''}
                         {ev.location ? ` · ${ev.location}` : ''}
                       </p>
                     </div>
@@ -388,7 +388,8 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                   </div>
                 </div>
 
-                {waitingListCount > 0 && <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-2.5 text-xs text-amber-500">{waitingListCount} waiting-list member{waitingListCount === 1 ? '' : 's'} not included in the playing roster.</div>}
+                {waitingListCount > 0 && <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-2.5 text-xs text-amber-500">{waitingListCount} waiting-list member{waitingListCount === 1 ? '' : 's'} excluded from the playing roster.</div>}
+                {ambiguousCount > 0 && <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">{ambiguousCount} attendee{ambiguousCount===1?' needs':'s need'} identity confirmation before the roster can be refreshed.</div>}
 
                 {/* Court recommendation */}
                 <div className="glass rounded-lg p-3 flex items-center gap-3">
@@ -402,17 +403,17 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                 </div>
 
                 {/* Attendee list */}
-                <div className="max-h-48 overflow-auto space-y-1">
+                <div className="max-h-56 overflow-auto space-y-1">
                   {attendees.map((a, i) => (
-                    <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-secondary transition-colors">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
-                        {a.fullName?.[0] || '?'}
+                    <div key={i} className="p-2 rounded-lg hover:bg-secondary transition-colors border border-transparent">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">{a.fullName?.[0] || '?'}</div>
+                        <span className="text-xs text-foreground flex-1 truncate">{a.fullName || 'Unknown'}</span>
+                        <Badge className={cn('text-[10px] shrink-0', a.status === 'matched' ? 'bg-green-500/10 text-green-400 border-green-500/20' : a.status==='ambiguous'?'bg-destructive/10 text-destructive border-destructive/20':'bg-accent/10 text-accent border-accent/20')}>
+                          {a.status === 'matched' ? <><CheckCircle2 className="w-2.5 h-2.5 mr-0.5 inline" />matched</> : a.status==='ambiguous'?'check match':<><UserPlus className="w-2.5 h-2.5 mr-0.5 inline" />new guest</>}
+                        </Badge>
                       </div>
-                      <span className="text-xs text-foreground flex-1 truncate">{a.fullName || 'Unknown'}</span>
-                      {a.email && <span className="text-[10px] text-muted-foreground truncate max-w-[100px] hidden sm:block">{a.email}</span>}
-                      <Badge className={cn('text-[10px] shrink-0', a.status === 'matched' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-accent/10 text-accent border-accent/20')}>
-                        {a.status === 'matched' ? <><CheckCircle2 className="w-2.5 h-2.5 mr-0.5 inline" />matched</> : <><UserPlus className="w-2.5 h-2.5 mr-0.5 inline" />new</>}
-                      </Badge>
+                      {a.status==='ambiguous'&&<select className="mt-2 w-full h-9 rounded-md bg-secondary border border-border px-2 text-xs" value={matchChoices[a.spondId]||''} onChange={e=>setMatchChoices(prev=>({...prev,[a.spondId]:e.target.value}))}><option value="">Choose existing player…</option>{(a.candidates||[]).map(c=><option key={c.id} value={c.id}>{c.name}{c.email?` · ${c.email}`:''}</option>)}</select>}
                     </div>
                   ))}
                 </div>
@@ -421,7 +422,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                   <Button variant="outline" size="sm" onClick={() => setStep('select_event')}>Back</Button>
                   <Button
                     onClick={handleImport}
-                    disabled={loading || attendees.length === 0}
+                    disabled={loading || attendees.length === 0 || ambiguousCount > 0}
                     className="bg-primary text-primary-foreground"
                   >
                     <ArrowRight className="w-4 h-4 mr-1" />
