@@ -109,15 +109,18 @@ export default function RoundTimer({
 
   const startPhase = async (nextPhase, { unlock = true } = {}) => {
     if (unlock) await unlockAudio();
-    await requestWakeLock();
     const duration = nextPhase === 'play' ? playSeconds : restSeconds;
+    const label = nextPhase === 'play' ? 'Start round.' : 'Rest time.';
+
+    // Fire the audible start cue before any best-effort wake-lock work so the
+    // host hears the instruction at the same moment the sporting timer starts.
+    announce(label, 'start');
     setPhase(nextPhase);
     setSeconds(duration);
     setRunning(true);
     deadlineRef.current = Date.now() + duration * 1000;
     lastAnnouncedRef.current = new Set();
-    const label = nextPhase === 'play' ? 'Start round.' : 'Rest time.';
-    announce(label, 'start');
+    requestWakeLock();
   };
 
   const reset = () => {
@@ -280,7 +283,7 @@ export default function RoundTimer({
 
       <div className="flex gap-2">
         {running&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => setRunning(false)} disabled={disabled || !enabled}><Pause className="w-4 h-4" /> Pause Timer</Button>}
-        {!running&&seconds>0&&seconds<maxSeconds&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {deadlineRef.current=Date.now()+seconds*1000;setRunning(true);}} disabled={disabled || !enabled}><Play className="w-4 h-4" /> Resume Timer</Button>}
+        {!running&&seconds>0&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {deadlineRef.current=Date.now()+seconds*1000;setRunning(true);}} disabled={disabled || !enabled}><Play className="w-4 h-4" /> {seconds===maxSeconds?'Start Timer':'Resume Timer'}</Button>}
         <Button variant="outline" onClick={reset} className="gap-2 h-11 sm:h-12"><RotateCcw className="w-4 h-4" /> Reset</Button>
       </div>
 
