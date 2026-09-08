@@ -20,5 +20,10 @@ Deno.serve(async(req)=>{try{
   base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id},'phase_order',100),
  ]);
  const lease=(leases||[]).sort((a:any,b:any)=>Number(b.lease_revision||0)-Number(a.lease_revision||0))[0]||null;
- return Response.json({session,participants,rounds,slots,matches,events,courts,lease,partnershipPhases:phases||[],fixedPairs:fixedPairs||[],currentUserId:user.id,currentAccessRole,isAdmin:user.role==='admin'});
+ let contactDirectory:any={};
+ if(user.role==='admin'||currentAccessRole==='session_host'){
+  const playerIds=(participants||[]).map((p:any)=>p.player_id).filter(Boolean);
+  if(playerIds.length){const playerRecords=await base44.asServiceRole.entities.Player.filter({id:{$in:playerIds}});contactDirectory=Object.fromEntries((playerRecords||[]).map((p:any)=>[p.id,{phone:p.phone||'',emergency_contact:p.emergency_contact||''}]));}
+ }
+ return Response.json({session,participants,rounds,slots,matches,events,courts,lease,partnershipPhases:phases||[],fixedPairs:fixedPairs||[],contactDirectory,currentUserId:user.id,currentAccessRole,isAdmin:user.role==='admin'});
 }catch(error){return Response.json({error:error?.message||'Unexpected KOTC state error'},{status:500});}});
