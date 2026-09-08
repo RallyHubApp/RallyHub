@@ -286,7 +286,7 @@ export default function TournamentDetail() {
                   <Trash2 className="w-3 h-3 mr-1" /> Delete
                 </Button>
                 {/* Share links — Club Challenge public/display links arrive in its dedicated workflow */}
-                {!isClubChallenge && (isTournival ? (
+                {!isClubChallenge && !isKotc && (isTournival ? (
                   <>
                     <Button variant="outline" size="sm" onClick={handleRegLink}
                       className={regLinkCopied ? 'text-primary border-primary/40' : ''}>
