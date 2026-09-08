@@ -39,6 +39,17 @@ async function fetchEventOccurrence(groupId, eventId, token, hintStart='', hintH
   }
 }
 
+async function fetchGroupForAttendees(groupId, token) {
+  try {
+    return await spondRequest(`/groups/${groupId}`, token);
+  } catch (directError) {
+    const groups = await spondRequest('/groups', token);
+    const group = (Array.isArray(groups) ? groups : []).find(g => String(g.id) === String(groupId));
+    if (group) return group;
+    throw new Error(`Spond group details could not be loaded. ${directError?.message || ''}`.trim());
+  }
+}
+
 async function spondLogin(username, password) {
   const res = await fetch(`${SPOND_API_BASE}/auth2/login`, {
     method: 'POST',
