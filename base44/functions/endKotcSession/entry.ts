@@ -5,10 +5,21 @@ function allowedAccess(a:any,tenantId:string,sessionId:string){if(!a||a.status!=
 
 Deno.serve(async(req)=>{try{
  const base44=createClientFromRequest(req);const user=await base44.auth.me();if(!user)return Response.json({error:'Unauthorized'},{status:401});
- const body=await req.json().catch(()=>({}));const sessionId=String(body.sessionId||''),action=String(body.action||'');if(!sessionId||!['finish','abandon'].includes(action))return Response.json({error:'sessionId and valid action are required'},{status:400});
+ const body=await req.json().catch(()=>({}));const sessionId=String(body.sessionId||''),action=String(body.action||'');if(!sessionId||!['finish','abandon','reset_setup'].includes(action))return Response.json({error:'sessionId and valid action are required'},{status:400});
  const session=(await base44.asServiceRole.entities.KotcSession.filter({id:sessionId}))?.[0];if(!session)return Response.json({error:'KOTC session not found'},{status:404});
  let allowed=user.role==='admin';if(!allowed){const grants=await base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'});allowed=(grants||[]).some((a:any)=>allowedAccess(a,session.tenant_id,session.id));}if(!allowed)return Response.json({error:'Primary session host access required'},{status:403});
- if(['completed','finalised','abandoned'].includes(session.status))return Response.json({success:true,alreadyEnded:true,session});
+ if(['completed','finalised','abandoned','cancelled'].includes(session.status))return Response.json({success:true,alreadyEnded:true,session});
+ if(action==='reset_setup'){
+   if(session.status!=='ready'||Number(session.current_round_number||1)!==1||session.actual_first_round_start)return Response.json({error:'Back to Setup is only available before Round 1 starts.'},{status:409});
+   const preRounds=await base44.asServiceRole.entities.KotcRound.filter({session_id:session.id});const round1=(preRounds||[]).find((r:any)=>Number(r.round_number)===1);
+   if(round1&&round1.status!=='proposed')return Response.json({error:'Back to Setup is only available while Round 1 is still proposed.'},{status:409});
+   const preMatches=await base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id});if((preMatches||[]).some((m:any)=>m.team_a_score!=null||m.team_b_score!=null||m.autosaved_at||m.status==='completed'))return Response.json({error:'A score has already been entered. Setup can no longer be reopened.'},{status:409});
+   const now=nowIso();if(round1)await base44.asServiceRole.entities.KotcRound.update(round1.id,{status:'abandoned',abandonment_reason:'Host returned to setup before Round 1 start'});
+   const updated=await base44.asServiceRole.entities.KotcSession.update(session.id,{status:'cancelled',actual_session_end:now,revision:Number(session.revision||0)+1,last_command_id:String(body.commandId||`reset-setup-${Date.now()}`),abandonment_reason:'Returned to setup before Round 1 start'});
+   if(session.tournament_id)await base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'Draft'});
+   await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_returned_to_setup',entity_type:'KotcSession',entity_id:session.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({status:session.status}),after_state:JSON.stringify({status:'cancelled'}),reason:'Host returned to setup before Round 1 start'});
+   return Response.json({success:true,session:updated,returnedToSetup:true});
+ }
  if(!['ready','in_progress','paused'].includes(session.status))return Response.json({error:`Session cannot be ended from ${session.status}`},{status:409});
  const now=nowIso();const matches=await base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id});
  if(action==='finish'){
