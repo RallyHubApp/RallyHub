@@ -237,17 +237,21 @@ Deno.serve(async (req) => {
     const {accepted,waiting}=collectResponseIds(event); const memberMap=buildMemberMap(group);
     const sourceAttendees=[...accepted].map(id=>attendeeFromMember(id,memberMap[id])).filter(Boolean);
     const clientChoices=Object.fromEntries((body.matchChoices||[]).map(x=>[String(x.spondId),String(x.playerId||'')]));
-    const rosterIds=new Set(replaceRoster?[]:(tournament.player_ids||[]).filter(id=>scopedIds.has(id))); let created=0,matched=0; const ambiguous=[];
+    const allowedGuests=new Set((body.allowGuestSpondIds||[]).map(x=>String(x)));
+    const rosterIds=new Set(replaceRoster?[]:(tournament.player_ids||[]).filter(id=>scopedIds.has(id))); let created=0,matched=0; const ambiguous=[]; const unresolved=[];
     for(const attendee of sourceAttendees){
       const match=matchAttendee(attendee,scopedPlayers); let player=null;
       const chosenId=clientChoices[String(attendee.spondId)]||'';
       if(chosenId){if(!scopedIds.has(chosenId))return Response.json({error:'Selected player match is outside this club.'},{status:403});player=scopedPlayers.find(p=>p.id===chosenId)||null;}
       else if(match.status==='matched') player=match.matched;
       else if(match.status==='ambiguous'){ambiguous.push({spondId:attendee.spondId,fullName:attendee.fullName,candidates:match.candidates});continue;}
-      if(!player){player=await base44.asServiceRole.entities.Player.create({full_name:attendee.fullName,email:attendee.email||'',phone:attendee.phoneNumber||'',avatar_url:attendee.avatarUrl||'',status:'Active',relationship_type:'guest',relationship_status:'active',tenant_id:tenantId,club_id:clubId,wins:0,losses:0,matches_played:0});scopedPlayers.push(player);scopedIds.add(player.id);created++;}else matched++;
+      if(!player){
+        if(!allowedGuests.has(String(attendee.spondId))){unresolved.push({spondId:attendee.spondId,fullName:attendee.fullName});continue;}
+        player=await base44.asServiceRole.entities.Player.create({full_name:attendee.fullName,email:attendee.email||'',phone:attendee.phoneNumber||'',avatar_url:attendee.avatarUrl||'',status:'Active',relationship_type:'guest',relationship_status:'active',tenant_id:tenantId,club_id:clubId,wins:0,losses:0,matches_played:0});scopedPlayers.push(player);scopedIds.add(player.id);created++;
+      }else matched++;
       rosterIds.add(player.id);
     }
-    if(ambiguous.length)return Response.json({error:'Resolve ambiguous player matches before refreshing the roster.',ambiguous},{status:409});
+    if(ambiguous.length||unresolved.length)return Response.json({error:'Resolve all unmatched player identities before refreshing the roster.',ambiguous,unresolved},{status:409});
     const now=new Date().toISOString(); const message=`Spond refresh: ${rosterIds.size} confirmed players (${matched} matched, ${created} new guests, ${waiting.size} waiting-list excluded).`;
     await base44.asServiceRole.entities.Tournament.update(tournamentId,{player_ids:[...rosterIds],start_date:selectedDate,kotc_spond_group_id:String(groupId),kotc_spond_event_id:String(eventId),kotc_last_import_message:message,kotc_last_imported_at:now});
     return Response.json({success:true,created,matched,total:rosterIds.size,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:authoritativeStart,location:event.location?.address||event.location?.feature||''},message});
