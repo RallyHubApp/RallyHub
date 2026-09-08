@@ -120,6 +120,19 @@ export default function TournamentDetail() {
   const scheduledMatches = matches.filter(m => m.status === 'Scheduled');
   const completedMatches = matches.filter(m => m.status === 'Completed');
 
+  // King of the Court has its own mobile-first host shell. Do not put the generic
+  // tournament header/actions (Edit/Delete/Share/Import/etc.) above the host workflow.
+  if (isKotc) {
+    return (
+      <div className="space-y-3 sm:space-y-4 min-w-0">
+        <Link to="/app/tournaments" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Back to Tournaments
+        </Link>
+        <KotcView tournament={tournament} players={registeredPlayers} allPlayers={allPlayers} queryClient={queryClient} />
+      </div>
+    );
+  }
+
   // ── Club results for inter-club ──
   const clubResults = {};
   if (isInterClub) {
