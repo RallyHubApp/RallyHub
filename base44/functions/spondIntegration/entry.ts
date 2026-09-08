@@ -87,10 +87,13 @@ Deno.serve(async (req) => {
     // occurrences whose invitations are queued but not yet sent.
     let minStart;
     let maxStart;
-    if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
-      const day = new Date(`${targetDate}T00:00:00.000Z`);
-      minStart = day.toISOString();
-      maxStart = new Date(day.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString();
+    const exactDate = typeof targetDate === 'string' ? (targetDate.match(/\d{4}-\d{2}-\d{2}/)?.[0] || '') : '';
+    if (exactDate) {
+      // Fetch a slightly wider UTC window, then enforce the exact Ireland-local calendar date below.
+      // This avoids recurring-event drift while also handling BST/UTC day-boundary offsets safely.
+      const day = new Date(`${exactDate}T00:00:00.000Z`);
+      minStart = new Date(day.getTime() - 6 * 60 * 60 * 1000).toISOString();
+      maxStart = new Date(day.getTime() + 30 * 60 * 60 * 1000).toISOString();
     } else {
       const day = new Date();
       day.setUTCHours(0, 0, 0, 0);
@@ -109,8 +112,16 @@ Deno.serve(async (req) => {
       addProfileInfo: 'true',
     });
     const events = await spondRequest(`/sponds?${params.toString()}`, spondToken);
+    const irelandDate = (value) => {
+      try {
+        const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(value));
+        const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+        return `${p.year}-${p.month}-${p.day}`;
+      } catch { return ''; }
+    };
     const simplified = (Array.isArray(events) ? events : [])
       .filter(e => e?.startTimestamp && new Date(e.startTimestamp) >= new Date(minStart) && new Date(e.startTimestamp) <= new Date(maxStart))
+      .filter(e => !exactDate || irelandDate(e.startTimestamp) === exactDate)
       .sort((a, b) => new Date(a.startTimestamp) - new Date(b.startTimestamp))
       .map(e => ({
         id: e.id,
