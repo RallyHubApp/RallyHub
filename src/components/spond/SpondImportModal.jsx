@@ -97,11 +97,17 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
       const targetDate = String(tournament?.start_date || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || undefined;
       const res = await invoke('get_events', { groupId: group.id, targetDate });
       if (res.data?.events) {
-        // The backend is the single authority for the safe upcoming-event window.
-        // Do not re-filter recurring Spond occurrences in the browser: some scheduled
-        // occurrences use timestamp shapes that browsers parse differently and valid
-        // events can disappear from the picker.
-        setEvents(res.data.events);
+        // Keep the backend occurrence-resolution logic, but add a final UI safety guard:
+        // never show an event outside the next 90 days. This prevents a recurring-series
+        // parent/anchor date (for example 2027) from resurfacing in the picker even if
+        // Spond returns mixed timestamp fields for the same occurrence.
+        const nowMs = Date.now();
+        const maxMs = nowMs + 90 * 24 * 60 * 60 * 1000;
+        const safeEvents = res.data.events.filter(ev => {
+          const t = new Date(ev.startTimestamp || '').getTime();
+          return Number.isFinite(t) && t >= nowMs - 6 * 60 * 60 * 1000 && t <= maxMs;
+        });
+        setEvents(safeEvents);
         setStep('select_event');
       } else {
         setError(res.data?.error || 'Could not load events');
