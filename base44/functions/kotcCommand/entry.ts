@@ -176,7 +176,8 @@ Deno.serve(async (req) => {
       const destinationRank:any={};for(const c of courts){const side=results[c.courtRank];const winners=side==='A'?c.teamA:c.teamB;const losers=side==='A'?c.teamB:c.teamA;for(const id of winners)destinationRank[id]=Math.max(1,c.courtRank-1);for(const id of losers)destinationRank[id]=Math.min(currentActiveCourts,c.courtRank+1);}for(const p of eligible)if(destinationRank[p.id]==null)destinationRank[p.id]=currentActiveCourts;
       const projected=eligible.map((p:any)=>({...p,rounds_played:Number(p.rounds_played||0)+(currentCourtIds.has(p.id)?1:0),fairness_benches:Number(p.fairness_benches||0)+(currentBenchIds.has(p.id)?1:0),consecutive_rounds_played:currentCourtIds.has(p.id)?Number(p.consecutive_rounds_played||0)+1:0,consecutive_court1_rounds:currentCourtIds.has(p.id)&&court1Ids.has(p.id)?Number(p.consecutive_court1_rounds||0)+1:0,court1_rounds:Number(p.court1_rounds||0)+(currentCourtIds.has(p.id)&&court1Ids.has(p.id)?1:0),_previousBench:currentBenchIds.has(p.id)}));
       const benchPlaces=eligible.length-activeCourts*4;
-      const selected=[...projected].sort((a:any,b:any)=>Number(a.fairness_benches)-Number(b.fairness_benches)||Number(a._previousBench)-Number(b._previousBench)||Number(b.consecutive_rounds_played)-Number(a.consecutive_rounds_played)||Number(b.rounds_played)-Number(a.rounds_played)||Number(b.consecutive_court1_rounds)-Number(a.consecutive_court1_rounds)||Number(a.recent_fairness_burden||0)-Number(b.recent_fairness_burden||0)||Number(destinationRank[b.id]||99)-Number(destinationRank[a.id]||99)||stableHash(`${session.random_seed}|r${nextNumber}|${a.id}`)-stableHash(`${session.random_seed}|r${nextNumber}|${b.id}`)).slice(0,benchPlaces).map((p:any)=>p.id);
+      const lockedIds=new Set(activeLocks.flatMap((l:any)=>[String(l.participant1_id),String(l.participant2_id)]));
+      const selected=[...projected].sort((a:any,b:any)=>Number(lockedIds.has(String(a.id)))-Number(lockedIds.has(String(b.id)))||Number(a.fairness_benches)-Number(b.fairness_benches)||Number(a._previousBench)-Number(b._previousBench)||Number(b.consecutive_rounds_played)-Number(a.consecutive_rounds_played)||Number(b.rounds_played)-Number(a.rounds_played)||Number(b.consecutive_court1_rounds)-Number(a.consecutive_court1_rounds)||Number(a.recent_fairness_burden||0)-Number(b.recent_fairness_burden||0)||Number(destinationRank[b.id]||99)-Number(destinationRank[a.id]||99)||stableHash(`${session.random_seed}|r${nextNumber}|${a.id}`)-stableHash(`${session.random_seed}|r${nextNumber}|${b.id}`)).slice(0,benchPlaces).map((p:any)=>p.id);
       const selectedSet=new Set(selected); let finalSlots:any[]=[];
       if(activeCourts===currentActiveCourts){
         const destinations=sportingDestinations(courts,results); const sportingSlots:any[]=[];
@@ -311,7 +312,13 @@ Deno.serve(async (req) => {
         if (commandType === 'finish_session_now') {
           const matches = await base44.asServiceRole.entities.KotcMatch.filter({ session_id:session.id });
           const unresolved = (matches || []).filter((m:any) => !RESOLVED.has(m.status));
-          if (unresolved.length) return Response.json({ error:`${unresolved.length} match result(s) unresolved. Resolve them before finishing the session.` }, { status:409 });
+          for(const m of unresolved)await base44.asServiceRole.entities.KotcMatch.update(m.id,{status:'not_played',result_method:'not_played',completed_at:now,revision:Number(m.revision||0)+1,command_id:commandId});
+          const rounds=await base44.asServiceRole.entities.KotcRound.filter({session_id:session.id});
+          for(const r of (rounds||[]).filter((r:any)=>['proposed','confirmed','started'].includes(r.status))){
+            const rm=await base44.asServiceRole.entities.KotcMatch.filter({round_id:r.id,session_id:session.id});
+            const played=(rm||[]).some((m:any)=>m.status==='completed');
+            await base44.asServiceRole.entities.KotcRound.update(r.id,{status:played?'completed':'abandoned',completed_at:played?now:undefined,abandonment_reason:played?undefined:'Session finished before this round was played'});
+          }
         }
         const transition = allowedTransitions[commandType];
         if (!transition.from.includes(session.status)) return Response.json({ error:`Invalid session transition for ${commandType}` }, { status:409 });
@@ -319,6 +326,7 @@ Deno.serve(async (req) => {
         if (['completed','abandoned'].includes(transition.to)) update.actual_session_end = now;
         if (transition.to === 'abandoned') update.abandonment_reason = String(body.reason || '').trim();
         session = await base44.asServiceRole.entities.KotcSession.update(session.id, update);
+        if(commandType==='finish_session_now'&&session.tournament_id)await base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'Completed',finalised_at:now});
       }
       result = { success:true, session };
       await createSnapshot(base44, session, commandId, commandType === 'pause_session' ? 'session_paused' : commandType === 'finish_session_now' ? 'session_completed' : 'command', user.id);
