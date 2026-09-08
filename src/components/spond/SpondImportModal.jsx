@@ -97,6 +97,10 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setError('');
     try {
       const targetDate = String(tournament?.start_date || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || undefined;
+      if (tournament?.format === 'King of the Court' && !targetDate) {
+        setError('This King of the Court session has no RallyHub date. Set the session date before refreshing from Spond so RallyHub cannot select the wrong recurring occurrence.');
+        return;
+      }
       const res = await invoke('get_events', { groupId: group.id, targetDate });
       if (res.data?.events) {
         // Belt-and-braces date guard: Spond's internal API can surface scheduled
@@ -114,6 +118,10 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
           ? res.data.events.filter(ev => ev?.startTimestamp && irelandDate(ev.startTimestamp) === targetDate)
           : res.data.events;
         setEvents(exactEvents);
+        if (targetDate && exactEvents.some(ev => irelandDate(ev.startTimestamp) !== targetDate)) {
+          setError('RallyHub rejected an out-of-date Spond occurrence. Please refresh the event list.');
+          return;
+        }
         if (targetDate && res.data.events.length !== exactEvents.length) {
           console.warn(`[RallyHub Spond] Rejected ${res.data.events.length - exactEvents.length} occurrence(s) outside ${targetDate}.`);
         }
