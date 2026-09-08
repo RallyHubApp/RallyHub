@@ -335,6 +335,17 @@ Deno.serve(async (req) => {
       const round = rounds?.[0];
       if (!round) throw new Error('Round not found');
       if (Number(body.expectedProposalRevision) !== Number(round.proposal_revision || 1)) return Response.json({ conflict:true, error:'Round proposal changed since you opened it.', currentProposalRevision:Number(round.proposal_revision || 1) }, { status:409 });
+      if(commandType==='start_proposed_round'&&body.slotParticipantIds){
+        const slots=(await base44.asServiceRole.entities.KotcRoundSlot.filter({round_id:round.id,session_id:session.id})).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank)||String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number));
+        const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id});const eligible=new Set((participants||[]).filter((p:any)=>['registered','confirmed','present','leaving_early'].includes(p.status)).map((p:any)=>String(p.id)));
+        const nextIds=slots.map((s:any)=>String(body.slotParticipantIds[s.id]||s.participant_id));
+        if(nextIds.length!==Number(round.active_court_count||0)*4||new Set(nextIds).size!==nextIds.length)return Response.json({error:'Round not ready: every active court needs four unique players.'},{status:409});
+        if(nextIds.some((id:string)=>!eligible.has(id)))return Response.json({error:'Round not ready: an unavailable player is assigned to court.'},{status:409});
+        const locks=(await base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'})).filter((p:any)=>p.pair_source==='host_selected');
+        const teams:any={};for(let i=0;i<slots.length;i++){const s=slots[i],id=nextIds[i];const key=`${s.ladder_court_rank}-${s.team_side}`;(teams[key]||(teams[key]=[])).push(id);if(id!==String(s.participant_id))await base44.asServiceRole.entities.KotcRoundSlot.update(s.id,{participant_id:id,assignment_type:'manual_override',assignment_revision:Number(s.assignment_revision||1)+1});}
+        for(const l of locks){const a=String(l.participant1_id),b=String(l.participant2_id);const both=nextIds.includes(a)&&nextIds.includes(b);if(both&&!Object.values(teams).some((t:any)=>t.includes(a)&&t.includes(b)))return Response.json({error:`Round not ready: locked pair ${l.pair_name||''} is split.`},{status:409});}
+        const matches=await base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id});for(const m of matches){const rank=Number(m.ladder_court_rank);const court=slots.map((s:any,i:number)=>({...s,participant_id:nextIds[i]})).filter((s:any)=>Number(s.ladder_court_rank)===rank);await base44.asServiceRole.entities.KotcMatch.update(m.id,{team_a_participant_ids:court.filter((s:any)=>s.team_side==='A').sort((a:any,b:any)=>a.slot_number-b.slot_number).map((s:any)=>s.participant_id),team_b_participant_ids:court.filter((s:any)=>s.team_side==='B').sort((a:any,b:any)=>a.slot_number-b.slot_number).map((s:any)=>s.participant_id),revision:Number(m.revision||0)+1,command_id:commandId});}
+      }
       const target = commandType === 'confirm_round' ? 'confirmed' : 'started';
       const valid = commandType === 'confirm_round' ? round.status === 'proposed' : commandType === 'start_proposed_round' ? round.status === 'proposed' : round.status === 'confirmed';
       if (!valid) return Response.json({ error:`Round cannot transition ${round.status} -> ${target}` }, { status:409 });
