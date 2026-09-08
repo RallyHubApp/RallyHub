@@ -184,18 +184,21 @@ export default function RoundTimer({
 
   const toggleFullscreen = async () => {
     try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen?.();
+      if (fullscreen || document.fullscreenElement) {
+        if (document.fullscreenElement) await document.exitFullscreen?.();
         setFullscreen(false);
+        setFloating(true);
       } else if (timerRef.current?.requestFullscreen) {
         await timerRef.current.requestFullscreen();
         setFullscreen(true);
+        setFloating(false);
       } else {
-        setFullscreen(value => !value);
+        setFullscreen(true);
+        setFloating(false);
       }
     } catch {
-      // Some mobile browsers block the Fullscreen API; CSS fallback still provides a full-viewport timer.
-      setFullscreen(value => !value);
+      if (fullscreen) { setFullscreen(false); setFloating(true); }
+      else { setFullscreen(true); setFloating(false); }
     }
   };
 
