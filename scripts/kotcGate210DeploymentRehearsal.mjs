@@ -32,9 +32,9 @@ ok(command.includes('lease_revision:currentLeaseRevision + 1'),'host takeover is
 // Live host / exception rehearsal.
 ok(view.includes('Host Round Editor'),'host can review and adjust proposed rounds');
 ok(!view.includes('Save Host Adjustments'),'redundant explicit host-adjustment save removed from normal flow');
-ok(view.includes("functions.invoke('startKotcRound'"),'one-tap start uses dedicated fast start command');
-ok(startCommand.includes("round.status!=='proposed'"),'dedicated start requires a proposed round');
-ok(startCommand.includes("status:'started'"),'dedicated start commits the round to started');
+ok(view.includes("functions.invoke('kotcCommand'"),'one-tap start uses established KOTC command endpoint');
+ok(command.includes("if (commandType === 'start_proposed_round')"),'start-proposed-round fast path exists before command-log snapshots');
+ok(command.includes("status:'started'"),'fast start path commits the round to started');
 ok(view.includes('Undo Start / Back to Round Setup'),'safe unscored-round recovery is visible');
 ok(command.includes("commandType === 'undo_start_round'"),'undo-start backend command exists');
 ok(command.includes("commandType === 'set_pair_lock'"),'host pair-lock backend command exists');
