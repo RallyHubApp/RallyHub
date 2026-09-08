@@ -121,44 +121,38 @@ Deno.serve(async (req) => {
   if (action === 'get_events') {
     if (!groupId) return Response.json({ error: 'groupId required' }, { status: 400 });
 
-    // KOTC is normally attached to a dated RallyHub tournament. When that date is
-    // available, ask Spond only for that occurrence window instead of dumping months
-    // of a recurring series into the picker. If no date is supplied, show only the
-    // near-term window. Spond's consumer API uses `scheduled=true` to include recurring
-    // occurrences whose invitations are queued but not yet sent.
-    let minStart;
-    let maxStart;
-    const exactDate = typeof targetDate === 'string' ? (targetDate.match(/\d{4}-\d{2}-\d{2}/)?.[0] || '') : '';
-    if (exactDate) {
-      // Fetch a slightly wider UTC window, then enforce the exact Ireland-local calendar date below.
-      // This avoids recurring-event drift while also handling BST/UTC day-boundary offsets safely.
-      const day = new Date(`${exactDate}T00:00:00.000Z`);
-      minStart = new Date(day.getTime() - 6 * 60 * 60 * 1000).toISOString();
-      maxStart = new Date(day.getTime() + 30 * 60 * 60 * 1000).toISOString();
-    } else {
-      const day = new Date();
-      day.setUTCHours(0, 0, 0, 0);
-      minStart = day.toISOString();
-      maxStart = new Date(day.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
-    }
-
-    const today = irelandDate(new Date().toISOString());
-    const includeScheduled = exactDate ? exactDate > today : true;
+    // Host workflow: show a bounded list of upcoming occurrences and let the host
+    // choose the exact Spond event. This supports preparing Thursday's session on
+    // Tuesday while still preventing distant recurring-series anchors (e.g. 2027)
+    // from leaking into the picker.
+    const now = new Date();
+    const minStart = new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString();
+    const maxStart = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString();
+    const preferredDate = typeof targetDate === 'string' ? (targetDate.match(/\d{4}-\d{2}-\d{2}/)?.[0] || '') : '';
     const params = new URLSearchParams({
       groupId,
       minStartTimestamp: minStart,
       maxStartTimestamp: maxStart,
-      max: '100',
-      scheduled: includeScheduled ? 'true' : 'false',
+      max: '200',
+      scheduled: 'true',
       includeComments: 'false',
       includeHidden: 'false',
       addProfileInfo: 'true',
     });
     const events = await spondRequest(`/sponds?${params.toString()}`, spondToken);
     const simplified = (Array.isArray(events) ? events : [])
-      .filter(e => eventStart(e) && new Date(eventStart(e)) >= new Date(minStart) && new Date(eventStart(e)) <= new Date(maxStart))
-      .filter(e => !exactDate || irelandDate(eventStart(e)) === exactDate)
-      .sort((a, b) => new Date(eventStart(a)) - new Date(eventStart(b)))
+      .filter(e => {
+        const ts = eventStart(e);
+        if (!ts) return false;
+        const t = new Date(ts).getTime();
+        return Number.isFinite(t) && t >= new Date(minStart).getTime() && t <= new Date(maxStart).getTime();
+      })
+      .sort((a, b) => {
+        const ad = irelandDate(eventStart(a)), bd = irelandDate(eventStart(b));
+        const ap = preferredDate && ad === preferredDate ? 0 : 1;
+        const bp = preferredDate && bd === preferredDate ? 0 : 1;
+        return ap - bp || new Date(eventStart(a)).getTime() - new Date(eventStart(b)).getTime();
+      })
       .map(e => ({
         id: e.id,
         heading: e.heading,
@@ -171,16 +165,16 @@ Deno.serve(async (req) => {
         declinedCount: (e.responses?.declinedIds || []).length,
         unansweredCount: (e.responses?.unansweredIds || []).length,
       }));
-    return Response.json({ events: simplified, exactDate: exactDate || null, includeScheduled, rawCount: Array.isArray(events) ? events.length : 0 });
+    return Response.json({ events: simplified, preferredDate: preferredDate || null, windowStart:minStart, windowEnd:maxStart, rawCount: Array.isArray(events) ? events.length : 0 });
   }
 
   // ── Action: get_attendees ──
   if (action === 'get_attendees') {
     if (!groupId || !eventId) return Response.json({ error: 'groupId and eventId required' }, { status: 400 });
     const tournamentId=String(body.tournamentId||'');
-    const exactDate=typeof targetDate==='string'?(targetDate.match(/\d{4}-\d{2}-\d{2}/)?.[0]||''):'';
     const [event, group] = await Promise.all([spondRequest(`/sponds/${eventId}`, spondToken),spondRequest(`/groups/${groupId}`, spondToken)]);
-    if(exactDate&&irelandDate(eventStart(event))!==exactDate)return Response.json({error:`Selected Spond event is on ${irelandDate(eventStart(event))||'a different date'}, not ${exactDate}.`},{status:409});
+    const selectedDate=irelandDate(eventStart(event));
+    if(!selectedDate)return Response.json({error:'Selected Spond event has no usable date/time.'},{status:409});
     let tournament=null;if(tournamentId)tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0]||null;
     if(tournament&&user.role!=='admin'&&(tournament.tenant_id!==activeTenantId||tournament.host_club_id!==activeClubId))return Response.json({error:'Forbidden: tournament belongs to another tenant/club'},{status:403});
     const tenantId=tournament?.tenant_id||activeTenantId;const clubId=tournament?.host_club_id||activeClubId;
@@ -197,9 +191,9 @@ Deno.serve(async (req) => {
     const tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0];
     if(!tournament)return Response.json({error:'Tournament not found'},{status:404});
     if(user.role!=='admin'&&(tournament.tenant_id!==activeTenantId||tournament.host_club_id!==activeClubId))return Response.json({error:'Forbidden: tournament belongs to another tenant/club'},{status:403});
-    const exactDate=(String(targetDate||tournament.start_date||'').match(/\d{4}-\d{2}-\d{2}/)?.[0]||'');
     const [event,group]=await Promise.all([spondRequest(`/sponds/${eventId}`,spondToken),spondRequest(`/groups/${groupId}`,spondToken)]);
-    if(exactDate&&irelandDate(eventStart(event))!==exactDate)return Response.json({error:`Refusing roster sync: selected Spond event is on ${irelandDate(eventStart(event))||'a different date'}, not ${exactDate}.`},{status:409});
+    const selectedDate=irelandDate(eventStart(event));
+    if(!selectedDate)return Response.json({error:'Refusing roster sync: selected Spond event has no usable date/time.'},{status:409});
     const tenantId=tournament.tenant_id||activeTenantId; const clubId=tournament.host_club_id||activeClubId;
     if(!tenantId||!clubId)return Response.json({error:'Tournament is missing tenant/club ownership.'},{status:409});
     const scopedPlayers=await base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId}); const scopedIds=new Set(scopedPlayers.map(p=>p.id));
@@ -218,7 +212,7 @@ Deno.serve(async (req) => {
     }
     if(ambiguous.length)return Response.json({error:'Resolve ambiguous player matches before refreshing the roster.',ambiguous},{status:409});
     const now=new Date().toISOString(); const message=`Spond refresh: ${rosterIds.size} confirmed players (${matched} matched, ${created} new guests, ${waiting.size} waiting-list excluded).`;
-    await base44.asServiceRole.entities.Tournament.update(tournamentId,{player_ids:[...rosterIds],kotc_spond_group_id:String(groupId),kotc_spond_event_id:String(eventId),kotc_last_import_message:message,kotc_last_imported_at:now});
+    await base44.asServiceRole.entities.Tournament.update(tournamentId,{player_ids:[...rosterIds],start_date:selectedDate,kotc_spond_group_id:String(groupId),kotc_spond_event_id:String(eventId),kotc_last_import_message:message,kotc_last_imported_at:now});
     return Response.json({success:true,created,matched,total:rosterIds.size,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:eventStart(event),location:event.location?.address||event.location?.feature||''},message});
   }
 
