@@ -5,6 +5,7 @@ import { runKotcV2ProductionSimulation } from '../src/lib/kotcV2Simulator.js';
 
 let checks=0; const ok=(v,m)=>{checks++;assert.ok(v,m)};
 const command=fs.readFileSync('base44/functions/kotcCommand/entry.ts','utf8');
+const startCommand=fs.readFileSync('base44/functions/startKotcRound/entry.ts','utf8');
 const state=fs.readFileSync('base44/functions/getKotcV2State/entry.ts','utf8');
 const view=fs.readFileSync('src/components/kotc/KotcV2SessionView.jsx','utf8');
 
@@ -30,7 +31,9 @@ ok(command.includes('lease_revision:currentLeaseRevision + 1'),'host takeover is
 // Live host / exception rehearsal.
 ok(view.includes('Host Round Editor'),'host can review and adjust proposed rounds');
 ok(!view.includes('Save Host Adjustments'),'redundant explicit host-adjustment save removed from normal flow');
-ok(view.includes("start_proposed_round"),'one-tap start from proposed round is wired');
+ok(view.includes("functions.invoke('startKotcRound'"),'one-tap start uses dedicated fast start command');
+ok(startCommand.includes("round.status!=='proposed'"),'dedicated start requires a proposed round');
+ok(startCommand.includes("status:'started'"),'dedicated start commits the round to started');
 ok(view.includes('Undo Start / Back to Round Setup'),'safe unscored-round recovery is visible');
 ok(command.includes("commandType === 'undo_start_round'"),'undo-start backend command exists');
 ok(command.includes("commandType === 'set_pair_lock'"),'host pair-lock backend command exists');
@@ -71,7 +74,7 @@ ok(champions.participantIds.join('|')==='p1|p2','Court 1 Champions preserve winn
 
 // UI lifecycle rehearsal.
 ok(!view.includes("doCommand('confirm_round'"),'redundant confirm-round UI removed');
-ok(view.includes("start_proposed_round"),'single START ROUND path wired');
+ok(view.includes("functions.invoke('startKotcRound'"),'single START ROUND path wired to dedicated start function');
 ok(view.includes("doCommand('generate_next_round'"),'generate next round wired');
 ok(view.includes("doCommand('pause_session'"),'pause wired');
 ok(view.includes("doCommand('resume_session'"),'resume wired');
