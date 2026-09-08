@@ -151,6 +151,7 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.AuditLog.create({ tenant_id:session.tenant_id, club_id:session.club_id, user_id:user.id, action:'kotc_score_corrected', entity_type:'KotcMatch', entity_id:match.id, scope_type:'KotcSession', scope_id:session.id, before_state:JSON.stringify({ team_a_score:match.team_a_score, team_b_score:match.team_b_score, winner_side:match.winner_side, revision:current }), after_state:JSON.stringify({ team_a_score:score.a, team_b_score:score.b, winner_side:score.winner, revision:current + 1 }), reason:String(body.reason).trim() });
       }
       result = { success:true, match:updated, correction:isCorrection };
+      if(isCorrection&&['completed','finalised'].includes(session.status))await refreshKotcAggregates(base44,session);
       await createSnapshot(base44, session, commandId, 'score_saved', user.id);
     } else if (commandType === 'generate_next_round') {
       const rounds = await base44.asServiceRole.entities.KotcRound.filter({ session_id:session.id });
@@ -336,7 +337,10 @@ Deno.serve(async (req) => {
         if (['completed','abandoned'].includes(transition.to)) update.actual_session_end = now;
         if (transition.to === 'abandoned') update.abandonment_reason = String(body.reason || '').trim();
         session = await base44.asServiceRole.entities.KotcSession.update(session.id, update);
-        if(commandType==='finish_session_now'&&session.tournament_id)await base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'Completed',finalised_at:now});
+        if(commandType==='finish_session_now'){
+          if(session.tournament_id)await base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'Completed',finalised_at:now});
+          await refreshKotcAggregates(base44,session);
+        }
       }
       result = { success:true, session };
       await createSnapshot(base44, session, commandId, commandType === 'pause_session' ? 'session_paused' : commandType === 'finish_session_now' ? 'session_completed' : 'command', user.id);
