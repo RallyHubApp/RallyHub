@@ -40,8 +40,8 @@ function ScoreCard({ match, names, session, onSaved, disabled }){
     {session.scoring_mode==='timed'&&activeEdit&&a!==''&&b!==''&&Number(a)===Number(b)&&<div><Label className="text-xs">Serving team at horn</Label><Select value={serving} onValueChange={setServing}><SelectTrigger className="mt-1"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="A">Team A</SelectItem><SelectItem value="B">Team B</SelectItem></SelectContent></Select></div>}
     {resolved&&!editing&&<div className="rounded-lg bg-green-500/10 border border-green-500/20 p-2 text-center text-xs font-semibold text-green-500">✓ Saved {match.team_a_score}–{match.team_b_score}</div>}
     {saving&&<div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-2 text-center text-xs font-semibold">Saving…</div>}
-    {failed&&<div className="rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-center text-xs font-semibold text-destructive">Save failed — tap to retry</div>}
-    {!resolved&&<Button className="w-full min-h-12" onClick={submit} disabled={disabled||saving||a===''||b===''}>{saving?'Saving…':'Complete Match'}</Button>}
+    {failed&&<div className="rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-center text-xs font-semibold text-destructive">Save failed — your score is still on screen. Tap Retry Save.</div>}
+    {!resolved&&<Button className="w-full min-h-12" onClick={submit} disabled={disabled||saving||a===''||b===''}>{saving?'Saving…':failed?'Retry Save':'Complete Match'}</Button>}
     {resolved&&!editing&&<Button className="w-full min-h-10" variant="ghost" onClick={()=>setEditing(true)} disabled={disabled}><Pencil className="w-4 h-4 mr-2"/>Edit result</Button>}
     {resolved&&editing&&<div className="grid grid-cols-2 gap-2"><Button className="min-h-11" onClick={submit} disabled={disabled||saving||a===''||b===''}>{saving?'Saving…':'Save Correction'}</Button><Button className="min-h-11" variant="outline" onClick={cancel} disabled={saving}><X className="w-4 h-4 mr-1"/>Cancel</Button></div>}
   </div>;
