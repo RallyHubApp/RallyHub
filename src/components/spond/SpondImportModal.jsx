@@ -99,7 +99,24 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
       const targetDate = String(tournament?.start_date || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || undefined;
       const res = await invoke('get_events', { groupId: group.id, targetDate });
       if (res.data?.events) {
-        setEvents(res.data.events);
+        // Belt-and-braces date guard: Spond's internal API can surface scheduled
+        // recurring-series records outside the requested range. Never trust that
+        // filter alone. The browser independently enforces the exact RallyHub date
+        // in Europe/Dublin before an occurrence is allowed into the picker.
+        const irelandDate = value => {
+          try {
+            const parts = new Intl.DateTimeFormat('en-CA', { timeZone:'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(value));
+            const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+            return `${p.year}-${p.month}-${p.day}`;
+          } catch { return ''; }
+        };
+        const exactEvents = targetDate
+          ? res.data.events.filter(ev => ev?.startTimestamp && irelandDate(ev.startTimestamp) === targetDate)
+          : res.data.events;
+        setEvents(exactEvents);
+        if (targetDate && res.data.events.length !== exactEvents.length) {
+          console.warn(`[RallyHub Spond] Rejected ${res.data.events.length - exactEvents.length} occurrence(s) outside ${targetDate}.`);
+        }
         setStep('select_event');
       } else {
         setError(res.data?.error || 'Could not load events');
