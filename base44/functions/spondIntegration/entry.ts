@@ -142,12 +142,14 @@ Deno.serve(async (req) => {
       maxStart = new Date(day.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
     }
 
+    const today = irelandDate(new Date().toISOString());
+    const includeScheduled = exactDate ? exactDate > today : true;
     const params = new URLSearchParams({
       groupId,
       minStartTimestamp: minStart,
       maxStartTimestamp: maxStart,
       max: '100',
-      scheduled: 'true',
+      scheduled: includeScheduled ? 'true' : 'false',
       includeComments: 'false',
       includeHidden: 'false',
       addProfileInfo: 'true',
@@ -169,7 +171,7 @@ Deno.serve(async (req) => {
         declinedCount: (e.responses?.declinedIds || []).length,
         unansweredCount: (e.responses?.unansweredIds || []).length,
       }));
-    return Response.json({ events: simplified });
+    return Response.json({ events: simplified, exactDate: exactDate || null, includeScheduled, rawCount: Array.isArray(events) ? events.length : 0 });
   }
 
   // ── Action: get_attendees ──
