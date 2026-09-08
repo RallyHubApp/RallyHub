@@ -152,7 +152,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
                   {(p.full_name || 'P')[0]}
                 </div>
                 <span className="text-sm text-foreground flex-1">{p.full_name}</span>
-                <span className="text-xs font-mono text-primary">{(p.skill_rating || 3.0).toFixed(1)}</span>
+                {p.dupr_rating != null && <span className="text-xs font-mono text-primary">DUPR {Number(p.dupr_rating).toFixed(2)}</span>}
               </label>
             ))}
           </div>
