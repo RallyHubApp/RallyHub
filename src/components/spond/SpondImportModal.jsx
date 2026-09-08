@@ -37,6 +37,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
 
   // Attendees
   const [attendees, setAttendees] = useState([]);
+  const [playerDirectory, setPlayerDirectory] = useState([]);
   const [waitingListCount, setWaitingListCount] = useState(0);
   const [matchChoices, setMatchChoices] = useState({});
   const [guestChoices, setGuestChoices] = useState({});
@@ -122,6 +123,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
       const res = await invoke('get_attendees', { groupId: selectedGroup.id, eventId: event.id, tournamentId: tournament.id, targetDate, selectedStartTimestamp:event.startTimestamp, selectedHeading:event.heading });
       if (res.data?.attendees) {
         setAttendees(res.data.attendees);
+        setPlayerDirectory(res.data.playerDirectory || []);
         setMatchChoices({});
         setGuestChoices({});
         setWaitingListCount(Number(res.data.waitingListCount || 0));
@@ -177,6 +179,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setEvents([]);
     setSelectedEvent(null);
     setAttendees([]);
+    setPlayerDirectory([]);
     setWaitingListCount(0);
     setMatchChoices({});
     setGuestChoices({});
@@ -191,7 +194,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   const newCount = attendees.filter(a => a.status === 'new').length;
   const matchedCount = attendees.filter(a => a.status === 'matched').length;
   const ambiguousCount = attendees.filter(a => a.status === 'ambiguous' && !matchChoices[a.spondId]).length;
-  const unresolvedNewCount = attendees.filter(a => a.status === 'new' && !guestChoices[a.spondId]).length;
+  const unresolvedNewCount = attendees.filter(a => a.status === 'new' && !guestChoices[a.spondId] && !matchChoices[a.spondId]).length;
   const recommendedCourts = recommendCourts(attendees.length);
   const activePlayers = recommendedCourts * 4;
   const benchPlayers = Math.max(0, attendees.length - activePlayers);
@@ -431,7 +434,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                         </Badge>
                       </div>
                       {a.status==='ambiguous'&&<select className="mt-2 w-full h-9 rounded-md bg-secondary border border-border px-2 text-xs" value={matchChoices[a.spondId]||''} onChange={e=>setMatchChoices(prev=>({...prev,[a.spondId]:e.target.value}))}><option value="">Choose existing player…</option>{(a.candidates||[]).map(c=><option key={c.id} value={c.id}>{c.name}{c.email?` · ${c.email}`:''}</option>)}</select>}
-                      {a.status==='new'&&<label className="mt-2 flex items-center gap-2 rounded-md border border-border bg-secondary/40 px-2.5 py-2 text-xs"><input type="checkbox" checked={Boolean(guestChoices[a.spondId])} onChange={e=>setGuestChoices(prev=>({...prev,[a.spondId]:e.target.checked}))}/><span>Confirm as Guest / One-off Player</span></label>}
+                      {a.status==='new'&&<div className="mt-2 rounded-lg border border-amber-400/30 bg-amber-500/5 p-2.5 space-y-2"><p className="text-[11px] font-semibold text-amber-500">Needs review before import</p><select className="w-full h-9 rounded-md bg-secondary border border-border px-2 text-xs" value={matchChoices[a.spondId]||''} onChange={e=>{const playerId=e.target.value;setMatchChoices(prev=>({...prev,[a.spondId]:playerId}));if(playerId)setGuestChoices(prev=>({...prev,[a.spondId]:false}));}}><option value="">Match to existing RallyHub player…</option>{playerDirectory.map(p=><option key={p.id} value={p.id}>{p.name}{p.email?` · ${p.email}`:''}</option>)}</select><label className="flex items-center gap-2 rounded-md border border-border bg-secondary/40 px-2.5 py-2 text-xs"><input type="checkbox" checked={Boolean(guestChoices[a.spondId])} onChange={e=>{const checked=e.target.checked;setGuestChoices(prev=>({...prev,[a.spondId]:checked}));if(checked)setMatchChoices(prev=>({...prev,[a.spondId]:''}));}}/><span>Guest / One-off Player</span></label></div>}
                     </div>
                   ))}
                 </div>
