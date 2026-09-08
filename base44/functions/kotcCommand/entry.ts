@@ -353,6 +353,7 @@ Deno.serve(async (req) => {
       if (target === 'started' && session.status === 'ready') sessionUpdate.status = 'in_progress';
       if (target === 'started' && !session.actual_first_round_start) sessionUpdate.actual_first_round_start = now;
       session = await base44.asServiceRole.entities.KotcSession.update(session.id, sessionUpdate);
+      if(target==='started'&&session.tournament_id)await base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'In Progress'});
       result = { success:true, session, round:updatedRound };
       await createSnapshot(base44, session, commandId, target === 'confirmed' ? 'round_confirmed' : 'round_started', user.id);
     } else if (commandType === 'undo_start_round') {
