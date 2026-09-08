@@ -126,7 +126,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setError('');
     try {
       const targetDate = String(tournament?.start_date || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || undefined;
-      const res = await invoke('get_attendees', { groupId: selectedGroup.id, eventId: event.id, tournamentId: tournament.id, targetDate });
+      const res = await invoke('get_attendees', { groupId: selectedGroup.id, eventId: event.id, tournamentId: tournament.id, targetDate, selectedStartTimestamp:event.startTimestamp, selectedHeading:event.heading });
       if (res.data?.attendees) {
         setAttendees(res.data.attendees);
         setMatchChoices({});
@@ -154,6 +154,8 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
         groupId: selectedGroup.id,
         eventId: selectedEvent.id,
         targetDate,
+        selectedStartTimestamp:selectedEvent.startTimestamp,
+        selectedHeading:selectedEvent.heading,
         matchChoices: Object.entries(matchChoices).map(([spondId, playerId]) => ({ spondId, playerId })),
         replaceRoster: tournament?.format === 'King of the Court',
       });
