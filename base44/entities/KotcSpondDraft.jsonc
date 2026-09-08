@@ -1,0 +1,177 @@
+{
+  "name": "KotcSpondDraft",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "spond_group_id": {
+      "type": "string"
+    },
+    "spond_group_name": {
+      "type": "string"
+    },
+    "spond_event_id": {
+      "type": "string"
+    },
+    "event_heading": {
+      "type": "string"
+    },
+    "event_start_timestamp": {
+      "type": "string"
+    },
+    "event_location": {
+      "type": "string"
+    },
+    "attendee_count": {
+      "type": "number"
+    },
+    "matched_count": {
+      "type": "number"
+    },
+    "new_count": {
+      "type": "number"
+    },
+    "waiting_list_count": {
+      "type": "number"
+    },
+    "preview_json": {
+      "type": "string"
+    },
+    "saved_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "tournament_id",
+    "spond_group_id",
+    "spond_event_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
