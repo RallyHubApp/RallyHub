@@ -218,7 +218,7 @@ export default function Tournaments() {
                     <Badge variant="outline" className="text-[10px] mb-2">{t.format}</Badge>
                     <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors break-words pr-6">{t.name}</h3>
                   </div>
-                  <Badge className={cn("text-[10px] shrink-0", statusColors[t.status] || statusColors['Draft'])}>{t.status}</Badge>
+                  <Badge className={cn("text-[10px] shrink-0", statusColors[t.status] || statusColors['Draft'])}>{displayStatus(t)}</Badge>
                 </div>
                 <div className="mt-3 space-y-1.5">
                   {t.start_date && (
@@ -238,7 +238,7 @@ export default function Tournaments() {
                   </div>
                 </div>
                 <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">{t.format === 'King of the Court' && t.status === 'In Progress' ? 'Continue session' : 'Open control centre'}</span>
+                  <span className="text-muted-foreground">{cardAction(t)}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                 </div>
               </Link>
