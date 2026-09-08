@@ -66,6 +66,7 @@ export default function RoundTimer({
   enabled = true,
   autoStart = false,
   autoStartKey = null,
+  autoFullscreen = false,
 }) {
   const playSeconds = Math.max(1, Number(playMinutes) || DEFAULT_PLAY_MINUTES) * 60;
   const restSeconds = Math.max(0, Number(restMinutes) || 0) * 60;
@@ -115,9 +116,7 @@ export default function RoundTimer({
     setRunning(true);
     deadlineRef.current = Date.now() + duration * 1000;
     lastAnnouncedRef.current = new Set();
-    const label = nextPhase === 'play'
-      ? `Start round. ${Number(playMinutes) || DEFAULT_PLAY_MINUTES} minutes.`
-      : `Rest time. ${Number(restMinutes) || 0} minutes.`;
+    const label = nextPhase === 'play' ? 'Start round.' : 'Rest time.';
     announce(label, 'start');
   };
 
@@ -136,6 +135,7 @@ export default function RoundTimer({
     if (autoStartedKeyRef.current === autoStartKey) return;
     autoStartedKeyRef.current = autoStartKey;
     startPhase('play', { unlock: false });
+    if (autoFullscreen) setFullscreen(true);
     // autoStartKey is the sporting round identity; one automatic timer start per round.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, autoStartKey, enabled, disabled]);
@@ -160,10 +160,12 @@ export default function RoundTimer({
         speak(String(remaining), volume);
       }
       if (remaining === 0) {
-        const nextPhase = phase === 'play' ? 'rest' : 'play';
         setRunning(false);
-        announce(phase === 'play' ? 'Round over. Rest time.' : 'Start next round.', 'end');
-        setTimeout(() => startPhase(nextPhase, { unlock: false }), 900);
+        if (phase === 'play') {
+          announce('Round finished. Please give your scores.', 'end');
+        } else {
+          announce('Rest finished.', 'end');
+        }
       }
     }, 250);
     return () => clearInterval(tick);
@@ -236,7 +238,7 @@ export default function RoundTimer({
       >
         <div className="min-w-0">
           <p className="text-[10px] sm:text-xs uppercase tracking-[0.25em] text-muted-foreground">{isRest ? 'Rest Time' : 'Play Time'}</p>
-          {!floating && !fullscreen && <p className="text-xs text-muted-foreground">{playMinutes} min play · {restMinutes} min changeover</p>}
+          {!floating && !fullscreen && <p className="text-xs text-muted-foreground">{playMinutes} min round timer</p>}
         </div>
         <div className="flex gap-1.5 shrink-0">
           {floating && !fullscreen && <Move className="w-4 h-4 text-muted-foreground self-center mr-1" />}
@@ -274,9 +276,8 @@ export default function RoundTimer({
       )}
 
       <div className="flex gap-2">
-        <Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={running ? () => setRunning(false) : () => startPhase(phase)} disabled={disabled || !enabled}>
-          {running ? <><Pause className="w-4 h-4" /> Pause</> : <><Play className="w-4 h-4" /> Start Timer</>}
-        </Button>
+        {running&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => setRunning(false)} disabled={disabled || !enabled}><Pause className="w-4 h-4" /> Pause Timer</Button>}
+        {!running&&seconds>0&&seconds<maxSeconds&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {deadlineRef.current=Date.now()+seconds*1000;setRunning(true);}} disabled={disabled || !enabled}><Play className="w-4 h-4" /> Resume Timer</Button>}
         <Button variant="outline" onClick={reset} className="gap-2 h-11 sm:h-12"><RotateCcw className="w-4 h-4" /> Reset</Button>
       </div>
 
