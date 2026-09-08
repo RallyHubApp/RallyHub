@@ -6,6 +6,7 @@ import { runKotcV2ProductionSimulation } from '../src/lib/kotcV2Simulator.js';
 let checks=0; const ok=(v,m)=>{checks++;assert.ok(v,m)};
 const command=fs.readFileSync('base44/functions/kotcCommand/entry.ts','utf8');
 const startCommand=fs.readFileSync('base44/functions/startKotcRound/entry.ts','utf8');
+const endCommand=fs.readFileSync('base44/functions/endKotcSession/entry.ts','utf8');
 const state=fs.readFileSync('base44/functions/getKotcV2State/entry.ts','utf8');
 const view=fs.readFileSync('src/components/kotc/KotcV2SessionView.jsx','utf8');
 
@@ -79,7 +80,8 @@ ok(view.includes("doCommand('generate_next_round'"),'generate next round wired')
 ok(view.includes("doCommand('pause_session'"),'pause wired');
 ok(view.includes("doCommand('resume_session'"),'resume wired');
 ok(view.includes('Finish Session Now'),'finish-now control is available in Session Menu');
-ok(view.includes("doCommand('finish_session_now'"),'finish session wired');
-ok(view.includes("doCommand('abandon_session'"),'abandon session wired');
+ok(view.includes("functions.invoke('endKotcSession'"),'finish/abandon UI uses dedicated session-end function');
+ok(endCommand.includes("action==='finish'"),'dedicated finish path exists');
+ok(endCommand.includes("action==='abandon'"),'dedicated abandon path exists');
 
 console.log(`KOTC Gate 2.10 deployment rehearsal: PASS\n${checks} deployment-readiness checks, 0 failures.\nProduction simulator: ${sim.checkCount} invariant checks across ${sim.steadyScenarioCount} steady scenarios.`);
