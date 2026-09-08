@@ -75,7 +75,7 @@ ok(champions.participantIds.join('|')==='p1|p2','Court 1 Champions preserve winn
 
 // UI lifecycle rehearsal.
 ok(!view.includes("doCommand('confirm_round'"),'redundant confirm-round UI removed');
-ok(view.includes("functions.invoke('startKotcRound'"),'single START ROUND path wired to dedicated start function');
+ok(view.includes("commandType:'start_proposed_round'"),'single START ROUND path wired through KOTC command fast path');
 ok(view.includes("doCommand('generate_next_round'"),'generate next round wired');
 ok(view.includes("doCommand('pause_session'"),'pause wired');
 ok(view.includes("doCommand('resume_session'"),'resume wired');
