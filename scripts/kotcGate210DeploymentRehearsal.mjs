@@ -29,8 +29,13 @@ ok(command.includes('lease_revision:currentLeaseRevision + 1'),'host takeover is
 
 // Live host / exception rehearsal.
 ok(view.includes('Host Round Editor'),'host can review and adjust proposed rounds');
-ok(view.includes('Save Host Adjustments'),'manual changes require explicit save');
-ok(view.includes('Live Player Controls'),'live participant controls are present');
+ok(!view.includes('Save Host Adjustments'),'redundant explicit host-adjustment save removed from normal flow');
+ok(view.includes("start_proposed_round"),'one-tap start from proposed round is wired');
+ok(view.includes('Undo Start / Back to Round Setup'),'safe unscored-round recovery is visible');
+ok(command.includes("commandType === 'undo_start_round'"),'undo-start backend command exists');
+ok(command.includes("commandType === 'set_pair_lock'"),'host pair-lock backend command exists');
+ok(view.includes('Lock pair'),'pair lock/unlock is exposed in the host editor');
+ok(view.includes('PlayerStatusControls'),'live participant controls remain available behind Session Menu');
 ok(command.includes("action==='voluntary_rest'"),'voluntary one-round rest supported');
 ok(command.includes("action==='temporarily_unavailable'"),'temporary absence supported');
 ok(command.includes("action==='injured'"),'injury supported');
@@ -65,12 +70,12 @@ ok(champions.roundNumber===9,'Court 1 Champions come from final completed round'
 ok(champions.participantIds.join('|')==='p1|p2','Court 1 Champions preserve winning pair');
 
 // UI lifecycle rehearsal.
-ok(view.includes("doCommand('confirm_round'"),'confirm round wired');
-ok(view.includes("doCommand('start_round'"),'start round wired');
+ok(!view.includes("doCommand('confirm_round'"),'redundant confirm-round UI removed');
+ok(view.includes("start_proposed_round"),'single START ROUND path wired');
 ok(view.includes("doCommand('generate_next_round'"),'generate next round wired');
 ok(view.includes("doCommand('pause_session'"),'pause wired');
 ok(view.includes("doCommand('resume_session'"),'resume wired');
-ok(view.includes("doCommand('finish_after_round'"),'finish-after-round wired');
+ok(view.includes('Finish Session Now'),'finish-now control is available in Session Menu');
 ok(view.includes("doCommand('finish_session_now'"),'finish session wired');
 ok(view.includes("doCommand('abandon_session'"),'abandon session wired');
 
