@@ -152,13 +152,6 @@ Deno.serve(async (req) => {
       addProfileInfo: 'true',
     });
     const events = await spondRequest(`/sponds?${params.toString()}`, spondToken);
-    const irelandDate = (value) => {
-      try {
-        const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(value));
-        const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
-        return `${p.year}-${p.month}-${p.day}`;
-      } catch { return ''; }
-    };
     const simplified = (Array.isArray(events) ? events : [])
       .filter(e => e?.startTimestamp && new Date(e.startTimestamp) >= new Date(minStart) && new Date(e.startTimestamp) <= new Date(maxStart))
       .filter(e => !exactDate || irelandDate(e.startTimestamp) === exactDate)
