@@ -187,70 +187,34 @@ Deno.serve(async (req) => {
 
   // ── Action: import_attendees ──
   if (action === 'import_attendees') {
-    const { attendees, tournamentId, replaceRoster } = body;
-    if (!attendees || !tournamentId) {
-      return Response.json({ error: 'attendees and tournamentId required' }, { status: 400 });
+    const tournamentId=String(body.tournamentId||''); const replaceRoster=body.replaceRoster===true;
+    if(!tournamentId||!groupId||!eventId)return Response.json({error:'tournamentId, groupId and eventId required'},{status:400});
+    const tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0];
+    if(!tournament)return Response.json({error:'Tournament not found'},{status:404});
+    if(user.role!=='admin'&&(tournament.tenant_id!==activeTenantId||tournament.host_club_id!==activeClubId))return Response.json({error:'Forbidden: tournament belongs to another tenant/club'},{status:403});
+    const exactDate=(String(targetDate||tournament.start_date||'').match(/\d{4}-\d{2}-\d{2}/)?.[0]||'');
+    const [event,group]=await Promise.all([spondRequest(`/sponds/${eventId}`,spondToken),spondRequest(`/groups/${groupId}`,spondToken)]);
+    if(exactDate&&irelandDate(event.startTimestamp)!==exactDate)return Response.json({error:`Refusing roster sync: selected Spond event is on ${irelandDate(event.startTimestamp)||'a different date'}, not ${exactDate}.`},{status:409});
+    const tenantId=tournament.tenant_id||activeTenantId; const clubId=tournament.host_club_id||activeClubId;
+    if(!tenantId||!clubId)return Response.json({error:'Tournament is missing tenant/club ownership.'},{status:409});
+    const scopedPlayers=await base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId}); const scopedIds=new Set(scopedPlayers.map(p=>p.id));
+    const {accepted,waiting}=collectResponseIds(event); const memberMap=buildMemberMap(group);
+    const sourceAttendees=[...accepted].map(id=>attendeeFromMember(id,memberMap[id])).filter(Boolean);
+    const clientChoices=Object.fromEntries((body.matchChoices||[]).map(x=>[String(x.spondId),String(x.playerId||'')]));
+    const rosterIds=new Set(replaceRoster?[]:(tournament.player_ids||[]).filter(id=>scopedIds.has(id))); let created=0,matched=0; const ambiguous=[];
+    for(const attendee of sourceAttendees){
+      const match=matchAttendee(attendee,scopedPlayers); let player=null;
+      const chosenId=clientChoices[String(attendee.spondId)]||'';
+      if(chosenId){if(!scopedIds.has(chosenId))return Response.json({error:'Selected player match is outside this club.'},{status:403});player=scopedPlayers.find(p=>p.id===chosenId)||null;}
+      else if(match.status==='matched') player=match.matched;
+      else if(match.status==='ambiguous'){ambiguous.push({spondId:attendee.spondId,fullName:attendee.fullName,candidates:match.candidates});continue;}
+      if(!player){player=await base44.asServiceRole.entities.Player.create({full_name:attendee.fullName,email:attendee.email||'',phone:attendee.phoneNumber||'',avatar_url:attendee.avatarUrl||'',status:'Active',relationship_type:'guest',relationship_status:'active',tenant_id:tenantId,club_id:clubId,wins:0,losses:0,matches_played:0});scopedPlayers.push(player);scopedIds.add(player.id);created++;}else matched++;
+      rosterIds.add(player.id);
     }
-
-    const tournaments = await base44.asServiceRole.entities.Tournament.filter({ id: tournamentId });
-    const tournament = tournaments[0];
-    if (!tournament) return Response.json({ error: 'Tournament not found' }, { status: 404 });
-    if (user.role !== 'admin' && (tournament.tenant_id !== activeTenantId || tournament.host_club_id !== activeClubId)) {
-      return Response.json({ error: 'Forbidden: tournament belongs to another tenant/club' }, { status: 403 });
-    }
-
-    const tournamentTenantId = tournament.tenant_id || activeTenantId;
-    const tournamentClubId = tournament.host_club_id || activeClubId;
-    const authorisedPlayers = await base44.asServiceRole.entities.Player.filter({ tenant_id: tournamentTenantId, club_id: tournamentClubId });
-    const authorisedPlayerIds = new Set(authorisedPlayers.map(p => p.id));
-    // For KOTC a Spond "Refresh" should be a true roster sync, not an additive import:
-    // people often decline or move off/on the list shortly before play. Other tournament
-    // flows can still request additive behaviour by omitting replaceRoster.
-    const existingPlayerIds = new Set(replaceRoster === true ? [] : (tournament.player_ids || []).filter(id => authorisedPlayerIds.has(id)));
-    const createdPlayers = [];
-    const matchedPlayers = [];
-
-    for (const attendee of attendees) {
-      if (attendee.existingPlayerId) {
-        // Never trust a client-supplied Player ID outside this tournament's tenant/club.
-        if (!authorisedPlayerIds.has(attendee.existingPlayerId)) {
-          return Response.json({ error: 'Forbidden: player belongs to another tenant/club' }, { status: 403 });
-        }
-        if (!existingPlayerIds.has(attendee.existingPlayerId)) {
-          existingPlayerIds.add(attendee.existingPlayerId);
-          matchedPlayers.push(attendee.existingPlayerId);
-        }
-      } else {
-        // Create new player
-        const newPlayer = await base44.asServiceRole.entities.Player.create({
-          full_name: attendee.fullName,
-          email: attendee.email || '',
-          phone: attendee.phoneNumber || '',
-          avatar_url: attendee.avatarUrl || '',
-          status: 'Active',
-          skill_rating: 3.0,
-          wins: 0,
-          losses: 0,
-          matches_played: 0,
-          tenant_id: tournamentTenantId,
-          club_id: tournamentClubId,
-        });
-        existingPlayerIds.add(newPlayer.id);
-        createdPlayers.push(newPlayer.id);
-      }
-    }
-
-    // Update tournament
-    await base44.asServiceRole.entities.Tournament.update(tournamentId, {
-      player_ids: [...existingPlayerIds],
-    });
-
-    return Response.json({
-      success: true,
-      created: createdPlayers.length,
-      matched: matchedPlayers.length,
-      total: existingPlayerIds.size,
-    });
+    if(ambiguous.length)return Response.json({error:'Resolve ambiguous player matches before refreshing the roster.',ambiguous},{status:409});
+    const now=new Date().toISOString(); const message=`Spond refresh: ${rosterIds.size} confirmed players (${matched} matched, ${created} new guests, ${waiting.size} waiting-list excluded).`;
+    await base44.asServiceRole.entities.Tournament.update(tournamentId,{player_ids:[...rosterIds],kotc_spond_group_id:String(groupId),kotc_spond_event_id:String(eventId),kotc_last_import_message:message,kotc_last_imported_at:now});
+    return Response.json({success:true,created,matched,total:rosterIds.size,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:event.startTimestamp,location:event.location?.address||event.location?.feature||''},message});
   }
 
   return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
