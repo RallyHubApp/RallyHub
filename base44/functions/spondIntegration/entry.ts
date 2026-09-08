@@ -66,7 +66,12 @@ async function spondLogin(username, password) {
   return token;
 }
 
-function eventStart(event){return event?.meetupTimestamp||event?.startTimestamp||event?.start_time||'';}
+function eventStart(event){return event?._resolvedStartTimestamp||event?.meetupTimestamp||event?.startTimestamp||event?.start_time||'';}
+function occurrenceStartInWindow(event,minMs,maxMs){
+  const candidates=[event?.meetupTimestamp,event?.startTimestamp,event?.start_time].filter(Boolean);
+  const valid=candidates.map(value=>({value,t:new Date(value).getTime()})).filter(x=>Number.isFinite(x.t)&&x.t>=minMs&&x.t<=maxMs).sort((a,b)=>a.t-b.t);
+  return valid[0]?.value||'';
+}
 function irelandDate(value) {
   try {
     const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(value));
@@ -174,23 +179,19 @@ Deno.serve(async (req) => {
       addProfileInfo: 'true',
     });
     const events = await spondRequest(`/sponds?${params.toString()}`, spondToken);
-    const simplified = (Array.isArray(events) ? events : [])
-      .filter(e => {
-        const ts = eventStart(e);
-        if (!ts) return false;
-        const t = new Date(ts).getTime();
-        return Number.isFinite(t) && t >= new Date(minStart).getTime() && t <= new Date(maxStart).getTime();
-      })
+    const minMs=new Date(minStart).getTime(),maxMs=new Date(maxStart).getTime();
+    const bounded=(Array.isArray(events)?events:[]).map(e=>({...e,_resolvedStartTimestamp:occurrenceStartInWindow(e,minMs,maxMs)})).filter(e=>e._resolvedStartTimestamp);
+    const simplified = bounded
       .sort((a, b) => {
-        const ad = irelandDate(eventStart(a)), bd = irelandDate(eventStart(b));
+        const ad = irelandDate(a._resolvedStartTimestamp), bd = irelandDate(b._resolvedStartTimestamp);
         const ap = preferredDate && ad === preferredDate ? 0 : 1;
         const bp = preferredDate && bd === preferredDate ? 0 : 1;
-        return ap - bp || new Date(eventStart(a)).getTime() - new Date(eventStart(b)).getTime();
+        return ap - bp || new Date(a._resolvedStartTimestamp).getTime() - new Date(b._resolvedStartTimestamp).getTime();
       })
       .map(e => ({
         id: e.id,
         heading: e.heading,
-        startTimestamp: eventStart(e),
+        startTimestamp: e._resolvedStartTimestamp,
         sourceStartTimestamp: e.startTimestamp || '',
         meetupTimestamp: e.meetupTimestamp || '',
         endTimestamp: e.endTimestamp,
@@ -207,7 +208,8 @@ Deno.serve(async (req) => {
     if (!groupId || !eventId) return Response.json({ error: 'groupId and eventId required' }, { status: 400 });
     const tournamentId=String(body.tournamentId||'');
     const [event, group] = await Promise.all([fetchEventOccurrence(groupId,eventId,spondToken,selectedStartTimestamp,selectedHeading),fetchGroupForAttendees(groupId,spondToken)]);
-    const selectedDate=irelandDate(eventStart(event));
+    const authoritativeStart=selectedStartTimestamp||eventStart(event);
+    const selectedDate=irelandDate(authoritativeStart);
     if(!selectedDate)return Response.json({error:'Selected Spond event has no usable date/time.'},{status:409});
     let tournament=null;if(tournamentId)tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0]||null;
     if(tournament&&user.role!=='admin'&&(tournament.tenant_id!==activeTenantId||tournament.host_club_id!==activeClubId))return Response.json({error:'Forbidden: tournament belongs to another tenant/club'},{status:403});
@@ -215,7 +217,7 @@ Deno.serve(async (req) => {
     const existingPlayers=tenantId&&clubId?await base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId}):[];
     const {accepted,waiting}=collectResponseIds(event);const memberMap=buildMemberMap(group);
     const attendees=[...accepted].map(id=>attendeeFromMember(id,memberMap[id])).filter(Boolean).map(attendee=>{const match=matchAttendee(attendee,existingPlayers);return {...attendee,existingPlayerId:match.matched?.id||null,existingPlayerName:match.matched?.full_name||null,duprRating:match.matched?.dupr_rating??null,status:match.status,candidates:match.candidates};});
-    return Response.json({attendees,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:eventStart(event),location:event.location?.address||event.location?.feature||''}});
+    return Response.json({attendees,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:authoritativeStart,location:event.location?.address||event.location?.feature||''}});
   }
 
   // ── Action: import_attendees ──
@@ -226,7 +228,8 @@ Deno.serve(async (req) => {
     if(!tournament)return Response.json({error:'Tournament not found'},{status:404});
     if(user.role!=='admin'&&(tournament.tenant_id!==activeTenantId||tournament.host_club_id!==activeClubId))return Response.json({error:'Forbidden: tournament belongs to another tenant/club'},{status:403});
     const [event,group]=await Promise.all([fetchEventOccurrence(groupId,eventId,spondToken,selectedStartTimestamp,selectedHeading),fetchGroupForAttendees(groupId,spondToken)]);
-    const selectedDate=irelandDate(eventStart(event));
+    const authoritativeStart=selectedStartTimestamp||eventStart(event);
+    const selectedDate=irelandDate(authoritativeStart);
     if(!selectedDate)return Response.json({error:'Refusing roster sync: selected Spond event has no usable date/time.'},{status:409});
     const tenantId=tournament.tenant_id||activeTenantId; const clubId=tournament.host_club_id||activeClubId;
     if(!tenantId||!clubId)return Response.json({error:'Tournament is missing tenant/club ownership.'},{status:409});
@@ -247,7 +250,7 @@ Deno.serve(async (req) => {
     if(ambiguous.length)return Response.json({error:'Resolve ambiguous player matches before refreshing the roster.',ambiguous},{status:409});
     const now=new Date().toISOString(); const message=`Spond refresh: ${rosterIds.size} confirmed players (${matched} matched, ${created} new guests, ${waiting.size} waiting-list excluded).`;
     await base44.asServiceRole.entities.Tournament.update(tournamentId,{player_ids:[...rosterIds],start_date:selectedDate,kotc_spond_group_id:String(groupId),kotc_spond_event_id:String(eventId),kotc_last_import_message:message,kotc_last_imported_at:now});
-    return Response.json({success:true,created,matched,total:rosterIds.size,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:eventStart(event),location:event.location?.address||event.location?.feature||''},message});
+    return Response.json({success:true,created,matched,total:rosterIds.size,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:authoritativeStart,location:event.location?.address||event.location?.feature||''},message});
   }
 
   return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
