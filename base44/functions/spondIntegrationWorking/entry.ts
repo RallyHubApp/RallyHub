@@ -217,7 +217,8 @@ Deno.serve(async (req) => {
     const existingPlayers=tenantId&&clubId?await base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId}):[];
     const {accepted,waiting}=collectResponseIds(event);const memberMap=buildMemberMap(group);
     const attendees=[...accepted].map(id=>attendeeFromMember(id,memberMap[id])).filter(Boolean).map(attendee=>{const match=matchAttendee(attendee,existingPlayers);return {...attendee,existingPlayerId:match.matched?.id||null,existingPlayerName:match.matched?.full_name||null,duprRating:match.matched?.dupr_rating??null,status:match.status,candidates:match.candidates};});
-    return Response.json({attendees,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:authoritativeStart,location:event.location?.address||event.location?.feature||''}});
+    const playerDirectory=existingPlayers.map(p=>({id:p.id,name:p.full_name||'',email:p.email||'',phone:p.phone||''})).sort((a,b)=>a.name.localeCompare(b.name));
+    return Response.json({attendees,playerDirectory,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:authoritativeStart,location:event.location?.address||event.location?.feature||''}});
   }
 
   // ── Action: import_attendees ──
