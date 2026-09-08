@@ -16,6 +16,12 @@ import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
+const todayIreland = () => {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone:'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date());
+  const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}`;
+};
+
 const statusColors = {
   'Draft': 'bg-secondary text-secondary-foreground',
   'Registration Open': 'bg-accent/20 text-accent',
@@ -46,6 +52,7 @@ export default function Tournaments() {
       format: 'King of the Court',
       partnership_type: 'Singles',
       status: 'Draft',
+      start_date: todayIreland(),
       tenant_id: user?.active_tenant_id || undefined,
       host_club_id: user?.active_club_id || undefined,
       kotc_num_courts: 4,
@@ -130,7 +137,7 @@ export default function Tournaments() {
             const user = await base44.auth.me().catch(() => null);
             const t = await base44.entities.Tournament.create({
               name: `King of the Court — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
-              format: 'King of the Court', partnership_type: 'Singles', status: 'Draft',
+              format: 'King of the Court', partnership_type: 'Singles', status: 'Draft', start_date: todayIreland(),
               tenant_id: user?.active_tenant_id || undefined, host_club_id: user?.active_club_id || undefined,
               kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11', player_ids: [], partner_pairs: [],
             });
