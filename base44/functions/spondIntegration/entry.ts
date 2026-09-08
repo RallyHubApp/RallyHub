@@ -171,88 +171,18 @@ Deno.serve(async (req) => {
 
   // ── Action: get_attendees ──
   if (action === 'get_attendees') {
-    if (!groupId || !eventId) {
-      return Response.json({ error: 'groupId and eventId required' }, { status: 400 });
-    }
-
-    // Fetch event and group in parallel
-    const [event, group] = await Promise.all([
-      spondRequest(`/sponds/${eventId}`, spondToken),
-      spondRequest(`/groups/${groupId}`, spondToken),
-    ]);
-
-    console.log('[DEBUG] event.responses keys:', Object.keys(event.responses || {}));
-    console.log('[DEBUG] event.responses sample:', JSON.stringify(event.responses).substring(0, 500));
-
-    // Handle all known Spond response formats. Only confirmed/accepted attendees belong
-    // on the KOTC playing roster. Waiting-list members are intentionally excluded until
-    // Spond promotes them to accepted, otherwise RallyHub could overbook the session.
-    const acceptedIds = new Set();
-    const waitingIds = new Set();
-    // Format 1: flat id arrays
-    (event.responses?.acceptedIds || []).forEach(id => acceptedIds.add(id));
-    (event.responses?.waitinglistIds || []).forEach(id => waitingIds.add(id));
-    // Format 2: members array with status per member
-    (event.responses?.members || []).forEach(m => {
-      if (m.status === 'accepted' || m.status === 'attending') acceptedIds.add(m.uid || m.id);
-      if (m.status === 'waitinglist') waitingIds.add(m.uid || m.id);
-    });
-    // Format 3: responses array with memberId + status
-    (event.responses?.responses || []).forEach(r => {
-      if (r.status === 'accepted' || r.status === 'attending') acceptedIds.add(r.memberId || r.uid || r.id);
-      if (r.status === 'waitinglist') waitingIds.add(r.memberId || r.uid || r.id);
-    });
-
-    // Build member map from group — include subgroup members too
-    const memberMap = {};
-    (group.members || []).forEach(m => { memberMap[m.id] = m; });
-    (group.subGroups || []).forEach(sg => {
-      (sg.members || []).forEach(m => { if (!memberMap[m.id]) memberMap[m.id] = m; });
-    });
-    console.log('[DEBUG] memberMap size:', Object.keys(memberMap).length);
-    console.log('[DEBUG] acceptedIds count:', acceptedIds.size);
-
-    const attendees = [];
-    for (const memberId of acceptedIds) {
-      const member = memberMap[memberId];
-      if (!member) continue;
-      const profile = member.profile || {};
-      attendees.push({
-        spondId: memberId,
-        firstName: profile.firstName || member.firstName || '',
-        lastName: profile.lastName || member.lastName || '',
-        fullName: `${profile.firstName || member.firstName || ''} ${profile.lastName || member.lastName || ''}`.trim(),
-        email: profile.email || member.email || '',
-        phoneNumber: profile.phoneNumber || member.phoneNumber || '',
-        avatarUrl: profile.pictureUrl || null,
-      });
-    }
-
-    // Match only against players the signed-in host is authorised to see.
-    const existingPlayers = user.role === 'admin'
-      ? await base44.asServiceRole.entities.Player.list()
-      : await base44.asServiceRole.entities.Player.filter({ tenant_id: activeTenantId, club_id: activeClubId });
-    const matchResults = attendees.map(attendee => {
-      // 1. Match by email
-      let matched = existingPlayers.find(
-        p => p.email && attendee.email && p.email.toLowerCase() === attendee.email.toLowerCase()
-      );
-      // 2. Match by name similarity
-      if (!matched && attendee.fullName) {
-        matched = existingPlayers.find(
-          p => p.full_name && p.full_name.toLowerCase() === attendee.fullName.toLowerCase()
-        );
-      }
-      return {
-        ...attendee,
-        existingPlayerId: matched?.id || null,
-        existingPlayerName: matched?.full_name || null,
-        skillRating: matched?.skill_rating || null,
-        status: matched ? 'matched' : 'new',
-      };
-    });
-
-    return Response.json({ attendees: matchResults, waitingListCount: waitingIds.size });
+    if (!groupId || !eventId) return Response.json({ error: 'groupId and eventId required' }, { status: 400 });
+    const tournamentId=String(body.tournamentId||'');
+    const exactDate=typeof targetDate==='string'?(targetDate.match(/\d{4}-\d{2}-\d{2}/)?.[0]||''):'';
+    const [event, group] = await Promise.all([spondRequest(`/sponds/${eventId}`, spondToken),spondRequest(`/groups/${groupId}`, spondToken)]);
+    if(exactDate&&irelandDate(event.startTimestamp)!==exactDate)return Response.json({error:`Selected Spond event is on ${irelandDate(event.startTimestamp)||'a different date'}, not ${exactDate}.`},{status:409});
+    let tournament=null;if(tournamentId)tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0]||null;
+    if(tournament&&user.role!=='admin'&&(tournament.tenant_id!==activeTenantId||tournament.host_club_id!==activeClubId))return Response.json({error:'Forbidden: tournament belongs to another tenant/club'},{status:403});
+    const tenantId=tournament?.tenant_id||activeTenantId;const clubId=tournament?.host_club_id||activeClubId;
+    const existingPlayers=tenantId&&clubId?await base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId}):[];
+    const {accepted,waiting}=collectResponseIds(event);const memberMap=buildMemberMap(group);
+    const attendees=[...accepted].map(id=>attendeeFromMember(id,memberMap[id])).filter(Boolean).map(attendee=>{const match=matchAttendee(attendee,existingPlayers);return {...attendee,existingPlayerId:match.matched?.id||null,existingPlayerName:match.matched?.full_name||null,duprRating:match.matched?.dupr_rating??null,status:match.status,candidates:match.candidates};});
+    return Response.json({attendees,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:event.startTimestamp,location:event.location?.address||event.location?.feature||''}});
   }
 
   // ── Action: import_attendees ──
