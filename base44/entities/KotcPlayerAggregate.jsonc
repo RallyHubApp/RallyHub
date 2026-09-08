@@ -1,0 +1,80 @@
+{
+  "name": "KotcPlayerAggregate",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "sessions_played": {
+      "type": "number",
+      "default": 0
+    },
+    "wins": {
+      "type": "number",
+      "default": 0
+    },
+    "losses": {
+      "type": "number",
+      "default": 0
+    },
+    "matches_played": {
+      "type": "number",
+      "default": 0
+    },
+    "points_for": {
+      "type": "number",
+      "default": 0
+    },
+    "points_against": {
+      "type": "number",
+      "default": 0
+    },
+    "court1_rounds": {
+      "type": "number",
+      "default": 0
+    },
+    "best_session_rank": {
+      "type": "number"
+    },
+    "last_session_id": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "player_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
