@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const SPOND_API_BASE = 'https://api.spond.com/core/v1';
+// Runtime refresh marker: preserve the 17:07–17:14 Ireland-time occurrence resolver exactly; this edit is only to force Preview to reload the serverless function.
 
 async function spondRequest(path, token) {
   const res = await fetch(`${SPOND_API_BASE}${path}`, {
