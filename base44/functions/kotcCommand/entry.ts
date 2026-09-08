@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 
-const STRUCTURAL = new Set(['confirm_round','start_round','generate_next_round','adjust_proposed_round','set_participant_status','update_timer_settings','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
+const STRUCTURAL = new Set(['confirm_round','start_round','start_proposed_round','undo_start_round','generate_next_round','adjust_proposed_round','set_participant_status','update_timer_settings','pause_session','resume_session','finish_after_round','finish_session_now','abandon_session','takeover_host']);
 const RESOLVED = new Set(['completed','retired','abandoned','not_played']);
 
 function nowIso() { return new Date().toISOString(); }
@@ -299,17 +299,24 @@ Deno.serve(async (req) => {
       }
       result = { success:true, session };
       await createSnapshot(base44, session, commandId, commandType === 'pause_session' ? 'session_paused' : commandType === 'finish_session_now' ? 'session_completed' : 'command', user.id);
-    } else if (commandType === 'confirm_round' || commandType === 'start_round') {
+    } else if (commandType === 'confirm_round' || commandType === 'start_round' || commandType === 'start_proposed_round') {
       const rounds = await base44.asServiceRole.entities.KotcRound.filter({ id:body.roundId, session_id:session.id });
       const round = rounds?.[0];
       if (!round) throw new Error('Round not found');
       if (Number(body.expectedProposalRevision) !== Number(round.proposal_revision || 1)) return Response.json({ conflict:true, error:'Round proposal changed since you opened it.', currentProposalRevision:Number(round.proposal_revision || 1) }, { status:409 });
       const target = commandType === 'confirm_round' ? 'confirmed' : 'started';
-      const valid = commandType === 'confirm_round' ? round.status === 'proposed' : round.status === 'confirmed';
+      const valid = commandType === 'confirm_round' ? round.status === 'proposed' : commandType === 'start_proposed_round' ? round.status === 'proposed' : round.status === 'confirmed';
       if (!valid) return Response.json({ error:`Round cannot transition ${round.status} -> ${target}` }, { status:409 });
+      if (target === 'started') {
+        const slots = await base44.asServiceRole.entities.KotcRoundSlot.filter({ round_id:round.id, session_id:session.id });
+        const ids=(slots||[]).map((s:any)=>String(s.participant_id));
+        const expected=Number(round.active_court_count||0)*4;
+        if(ids.length!==expected)return Response.json({error:`Round not ready: expected ${expected} court slots but found ${ids.length}.`},{status:409});
+        if(new Set(ids).size!==ids.length)return Response.json({error:'Round not ready: a player appears more than once.'},{status:409});
+      }
       const roundUpdate:any = { status:target };
       if (target === 'confirmed') { roundUpdate.confirmed_at = now; roundUpdate.confirmed_by_user_id = user.id; }
-      if (target === 'started') roundUpdate.started_at = now;
+      if (target === 'started') { roundUpdate.started_at = now; if(commandType==='start_proposed_round'){roundUpdate.confirmed_at=now;roundUpdate.confirmed_by_user_id=user.id;} }
       const updatedRound = await base44.asServiceRole.entities.KotcRound.update(round.id, roundUpdate);
       const sessionUpdate:any = { revision:currentSessionRevision + 1, last_command_id:commandId, current_round_number:round.round_number, current_round_id:round.id };
       if (target === 'started' && session.status === 'ready') sessionUpdate.status = 'in_progress';
@@ -317,6 +324,18 @@ Deno.serve(async (req) => {
       session = await base44.asServiceRole.entities.KotcSession.update(session.id, sessionUpdate);
       result = { success:true, session, round:updatedRound };
       await createSnapshot(base44, session, commandId, target === 'confirmed' ? 'round_confirmed' : 'round_started', user.id);
+    } else if (commandType === 'undo_start_round') {
+      const rounds=await base44.asServiceRole.entities.KotcRound.filter({id:body.roundId,session_id:session.id}); const round=rounds?.[0];
+      if(!round)return Response.json({error:'Round not found.'},{status:404});
+      if(round.status!=='started')return Response.json({error:'Only the current started round can be returned to setup.'},{status:409});
+      if(Number(round.round_number)!==Number(session.current_round_number))return Response.json({error:'Only the current round can be returned to setup.'},{status:409});
+      const matches=await base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id});
+      const touched=(matches||[]).filter((m:any)=>RESOLVED.has(m.status)||m.team_a_score!=null||m.team_b_score!=null||m.autosaved_at);
+      if(touched.length)return Response.json({error:'A score has already been entered or saved. Use score correction instead of Undo Start.'},{status:409});
+      const updatedRound=await base44.asServiceRole.entities.KotcRound.update(round.id,{status:'proposed',started_at:undefined,confirmed_at:undefined,confirmed_by_user_id:undefined});
+      session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,status:session.status==='in_progress'&&Number(round.round_number)===1?'ready':session.status});
+      await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_round_start_undone',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,reason:'Host returned unscored round to setup'});
+      result={success:true,session,round:updatedRound}; await createSnapshot(base44,session,commandId,'command',user.id);
     } else {
       return Response.json({ error:`Command ${commandType} is not wired in Gate 2.4 yet.` }, { status:400 });
     }

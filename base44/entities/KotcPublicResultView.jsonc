@@ -1,0 +1,52 @@
+{
+  "name": "KotcPublicResultView",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "share_id": {
+      "type": "string"
+    },
+    "viewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "user_agent": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "session_id",
+    "share_id",
+    "viewed_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
