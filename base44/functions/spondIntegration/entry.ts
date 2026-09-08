@@ -27,8 +27,48 @@ async function spondLogin(username, password) {
     throw new Error(`Spond login failed ${res.status}: ${text}`);
   }
   const data = await res.json();
-  // New endpoint returns { accessToken: { token, expiration }, refreshToken, passwordToken }
-  return data.accessToken?.token || data.loginToken || data.token;
+  const token = data.accessToken?.token || data.loginToken || data.token;
+  if (!token) throw new Error('Spond login did not return an access token');
+  return token;
+}
+
+function irelandDate(value) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(value));
+    const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+    return `${p.year}-${p.month}-${p.day}`;
+  } catch { return ''; }
+}
+function normaliseName(v=''){return String(v).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();}
+function normaliseEmail(v=''){return String(v).trim().toLowerCase();}
+function normalisePhone(v=''){return String(v).replace(/\D/g,'').replace(/^3530?/,'353');}
+function collectResponseIds(event) {
+  const accepted = new Set(); const waiting = new Set();
+  (event.responses?.acceptedIds || []).forEach(id => accepted.add(id));
+  (event.responses?.waitinglistIds || event.responses?.waitingListIds || []).forEach(id => waiting.add(id));
+  (event.responses?.members || []).forEach(m => {
+    const id=m.uid||m.id||m.memberId; const status=String(m.status||'').toLowerCase();
+    if(['accepted','attending','going'].includes(status)) accepted.add(id);
+    if(['waitinglist','waiting_list','waitlist'].includes(status)) waiting.add(id);
+  });
+  (event.responses?.responses || []).forEach(r => {
+    const id=r.memberId||r.uid||r.id; const status=String(r.status||'').toLowerCase();
+    if(['accepted','attending','going'].includes(status)) accepted.add(id);
+    if(['waitinglist','waiting_list','waitlist'].includes(status)) waiting.add(id);
+  });
+  return {accepted,waiting};
+}
+function buildMemberMap(group){const map={};(group.members||[]).forEach(m=>{map[m.id]=m;});(group.subGroups||[]).forEach(sg=>(sg.members||[]).forEach(m=>{if(!map[m.id])map[m.id]=m;}));return map;}
+function attendeeFromMember(memberId,member){const profile=member?.profile||{};const firstName=profile.firstName||member?.firstName||'';const lastName=profile.lastName||member?.lastName||'';const fullName=`${firstName} ${lastName}`.trim();if(!fullName)return null;return {spondId:memberId,firstName,lastName,fullName,email:profile.email||member.email||'',phoneNumber:profile.phoneNumber||member.phoneNumber||'',avatarUrl:profile.pictureUrl||null};}
+function matchAttendee(attendee,players){
+  const email=normaliseEmail(attendee.email),phone=normalisePhone(attendee.phoneNumber),name=normaliseName(attendee.fullName);
+  const scored=new Map();
+  for(const p of players){let score=0;if(email&&normaliseEmail(p.email)===email)score+=100;if(phone&&phone.length>=7&&normalisePhone(p.phone)===phone)score+=80;if(name&&normaliseName(p.full_name)===name)score+=40;if(score>0)scored.set(p.id,{player:p,score});}
+  const ranked=[...scored.values()].sort((a,b)=>b.score-a.score);
+  if(!ranked.length)return {status:'new',matched:null,candidates:[]};
+  const top=ranked[0]; const tied=ranked.filter(x=>x.score===top.score);
+  if(tied.length>1)return {status:'ambiguous',matched:null,candidates:tied.map(x=>({id:x.player.id,name:x.player.full_name,email:x.player.email||'',phone:x.player.phone||''}))};
+  return {status:'matched',matched:top.player,candidates:[{id:top.player.id,name:top.player.full_name,email:top.player.email||'',phone:top.player.phone||''}]};
 }
 
 Deno.serve(async (req) => {
