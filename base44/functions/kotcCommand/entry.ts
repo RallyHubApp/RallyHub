@@ -99,9 +99,28 @@ Deno.serve(async (req) => {
     if (accessRole === 'assistant_host' && !['autosave_score','complete_match','correct_match'].includes(commandType)) return Response.json({ error:'Assistant hosts can enter and correct scores only.' }, { status:403 });
     if (session.status === 'finalised') return Response.json({ error:'Finalised KOTC sessions are read-only.' }, { status:409 });
 
-    // Fast path for the host's most time-critical action. Do not route START ROUND
-    // through command-log snapshots: large KOTC recovery payloads previously stalled
-    // the tap before the sporting state visibly advanced.
+    // Fast paths for the host's most time-critical actions. Do not route START ROUND
+    // or first-pass score completion through large recovery snapshots: those extra
+    // entity reads can hit Base44 rate limits during live play.
+    if (commandType === 'complete_match') {
+      const matches = await base44.asServiceRole.entities.KotcMatch.filter({ id:body.matchId, session_id:session.id });
+      const match = matches?.[0];
+      if (!match) return Response.json({ error:'Match not found' }, { status:404 });
+      const expected = Number(body.expectedMatchRevision), current = Number(match.revision || 0);
+      if (expected !== current) return Response.json({ conflict:true, error:'Match changed since you opened it.', currentMatchRevision:current }, { status:409 });
+      if (RESOLVED.has(match.status)) return Response.json({ error:'Match already resolved; use correction.' }, { status:409 });
+      const score:any = validateFinalScore(body, session);
+      if (score.error) return Response.json({ error:score.error }, { status:400 });
+      const now = nowIso();
+      const updated = await base44.asServiceRole.entities.KotcMatch.update(match.id, {
+        team_a_score:score.a, team_b_score:score.b, winner_side:score.winner, result_method:score.method,
+        serving_side_at_horn:score.method === 'timed_serving_tiebreak' ? body.servingSideAtHorn : undefined,
+        status:'completed', completed_at:now, revision:current + 1, command_id:commandId, scored_by_user_id:user.id,
+      });
+      try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_score_completed',entity_type:'KotcMatch',entity_id:match.id,scope_type:'KotcSession',scope_id:session.id,after_state:JSON.stringify({team_a_score:score.a,team_b_score:score.b,winner_side:score.winner,revision:current+1})});}catch{}
+      return Response.json({success:true,match:updated});
+    }
+
     if (commandType === 'start_proposed_round') {
       const currentRevision=Number(session.revision||0);
       if(Number(body.expectedSessionRevision)!==currentRevision)return Response.json({error:'Session changed since you opened it. Refresh and try again.',conflict:true,currentSessionRevision:currentRevision},{status:409});
