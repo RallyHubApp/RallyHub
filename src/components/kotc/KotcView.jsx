@@ -61,7 +61,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
 
           {rosterOpen && canManagePlayers && <div className="mt-4 pt-4 border-t border-border space-y-3">
             <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={() => setXlsxOpen(true)}><FileSpreadsheet className="w-3 h-3 mr-1" />Import XLSX</Button>
+              <Button variant="outline" size="sm" onClick={() => setXlsxOpen(true)}><FileSpreadsheet className="w-3 h-3 mr-1" />Import Spond XLSX</Button>
               <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}><UserPlus className="w-3 h-3 mr-1" />Add Player</Button>
               <KotcPlayerManagement tournament={tournament} players={players} allPlayers={allPlayers} queryClient={queryClient} />
             </div>
@@ -75,7 +75,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
       {/* KOTC V2 setup + live host view. Sporting state is server-authoritative. */}
       <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} />
 
-      <KotcTestSimulator />
+      {canManagePlayers && <div className="mt-8 opacity-70"><KotcTestSimulator /></div>}
 
       {/* Self-register modal */}
       <PlayerRegisterModal
