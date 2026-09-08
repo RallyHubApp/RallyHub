@@ -206,7 +206,7 @@ Deno.serve(async (req) => {
   if (action === 'get_attendees') {
     if (!groupId || !eventId) return Response.json({ error: 'groupId and eventId required' }, { status: 400 });
     const tournamentId=String(body.tournamentId||'');
-    const [event, group] = await Promise.all([fetchEventOccurrence(groupId,eventId,spondToken,selectedStartTimestamp,selectedHeading),spondRequest(`/groups/${groupId}`, spondToken)]);
+    const [event, group] = await Promise.all([fetchEventOccurrence(groupId,eventId,spondToken,selectedStartTimestamp,selectedHeading),fetchGroupForAttendees(groupId,spondToken)]);
     const selectedDate=irelandDate(eventStart(event));
     if(!selectedDate)return Response.json({error:'Selected Spond event has no usable date/time.'},{status:409});
     let tournament=null;if(tournamentId)tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0]||null;
@@ -225,7 +225,7 @@ Deno.serve(async (req) => {
     const tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0];
     if(!tournament)return Response.json({error:'Tournament not found'},{status:404});
     if(user.role!=='admin'&&(tournament.tenant_id!==activeTenantId||tournament.host_club_id!==activeClubId))return Response.json({error:'Forbidden: tournament belongs to another tenant/club'},{status:403});
-    const [event,group]=await Promise.all([fetchEventOccurrence(groupId,eventId,spondToken,selectedStartTimestamp,selectedHeading),spondRequest(`/groups/${groupId}`,spondToken)]);
+    const [event,group]=await Promise.all([fetchEventOccurrence(groupId,eventId,spondToken,selectedStartTimestamp,selectedHeading),fetchGroupForAttendees(groupId,spondToken)]);
     const selectedDate=irelandDate(eventStart(event));
     if(!selectedDate)return Response.json({error:'Refusing roster sync: selected Spond event has no usable date/time.'},{status:409});
     const tenantId=tournament.tenant_id||activeTenantId; const clubId=tournament.host_club_id||activeClubId;
