@@ -16,6 +16,29 @@ async function spondRequest(path, token) {
   return res.json();
 }
 
+async function fetchEventOccurrence(groupId, eventId, token, hintStart='', hintHeading='') {
+  try {
+    return await spondRequest(`/sponds/${eventId}`, token);
+  } catch (directError) {
+    const hintTime = hintStart ? new Date(hintStart).getTime() : NaN;
+    const centre = Number.isFinite(hintTime) ? hintTime : Date.now();
+    const minStart = new Date(centre - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const maxStart = new Date(centre + 2 * 24 * 60 * 60 * 1000).toISOString();
+    const params = new URLSearchParams({groupId:String(groupId),minStartTimestamp:minStart,maxStartTimestamp:maxStart,max:'200',scheduled:'true',includeComments:'false',includeHidden:'false',addProfileInfo:'true'});
+    const listed = await spondRequest(`/sponds?${params.toString()}`, token);
+    const events = Array.isArray(listed) ? listed : [];
+    const exactId = events.find(e => String(e.id) === String(eventId));
+    if (exactId) return exactId;
+    const exactHint = events.find(e => {
+      const sameTime = hintStart && eventStart(e) && Math.abs(new Date(eventStart(e)).getTime() - new Date(hintStart).getTime()) < 60000;
+      const sameHeading = hintHeading && String(e.heading||'').trim().toLowerCase() === String(hintHeading).trim().toLowerCase();
+      return sameTime && sameHeading;
+    });
+    if (exactHint) return exactHint;
+    throw new Error(`Spond occurrence could not be opened. ${directError?.message || ''}`.trim());
+  }
+}
+
 async function spondLogin(username, password) {
   const res = await fetch(`${SPOND_API_BASE}/auth2/login`, {
     method: 'POST',
@@ -79,7 +102,7 @@ Deno.serve(async (req) => {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { action, spondEmail, spondPassword, spondToken, groupId, eventId, targetDate } = body;
+  const { action, spondEmail, spondPassword, spondToken, groupId, eventId, targetDate, selectedStartTimestamp, selectedHeading } = body;
 
   const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
   const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole);
@@ -172,7 +195,7 @@ Deno.serve(async (req) => {
   if (action === 'get_attendees') {
     if (!groupId || !eventId) return Response.json({ error: 'groupId and eventId required' }, { status: 400 });
     const tournamentId=String(body.tournamentId||'');
-    const [event, group] = await Promise.all([spondRequest(`/sponds/${eventId}`, spondToken),spondRequest(`/groups/${groupId}`, spondToken)]);
+    const [event, group] = await Promise.all([fetchEventOccurrence(groupId,eventId,spondToken,selectedStartTimestamp,selectedHeading),spondRequest(`/groups/${groupId}`, spondToken)]);
     const selectedDate=irelandDate(eventStart(event));
     if(!selectedDate)return Response.json({error:'Selected Spond event has no usable date/time.'},{status:409});
     let tournament=null;if(tournamentId)tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0]||null;
@@ -191,7 +214,7 @@ Deno.serve(async (req) => {
     const tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0];
     if(!tournament)return Response.json({error:'Tournament not found'},{status:404});
     if(user.role!=='admin'&&(tournament.tenant_id!==activeTenantId||tournament.host_club_id!==activeClubId))return Response.json({error:'Forbidden: tournament belongs to another tenant/club'},{status:403});
-    const [event,group]=await Promise.all([spondRequest(`/sponds/${eventId}`,spondToken),spondRequest(`/groups/${groupId}`,spondToken)]);
+    const [event,group]=await Promise.all([fetchEventOccurrence(groupId,eventId,spondToken,selectedStartTimestamp,selectedHeading),spondRequest(`/groups/${groupId}`,spondToken)]);
     const selectedDate=irelandDate(eventStart(event));
     if(!selectedDate)return Response.json({error:'Refusing roster sync: selected Spond event has no usable date/time.'},{status:409});
     const tenantId=tournament.tenant_id||activeTenantId; const clubId=tournament.host_club_id||activeClubId;
