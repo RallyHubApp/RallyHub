@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Crown, Zap, Flag, Trophy, ArrowLeft, ArrowRight, User, Users, Shuffle } from 'lucide-react';
+import { Crown, Zap, Flag, Trophy, ArrowLeft, ArrowRight, User, Users, Shuffle, Plus } from 'lucide-react';
 
 const FEATURED_FORMATS = [
   { value: 'King of the Court', label: 'King of the Court', desc: 'Fast-moving court rotation for club sessions and social competition.', icon: Crown, accent: 'text-yellow-400 bg-yellow-500/10' },
