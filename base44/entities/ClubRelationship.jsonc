@@ -39,19 +39,6 @@
       "type": "string",
       "format": "date"
     },
-    "how_heard_about_club": {
-      "type": "string",
-      "enum": [
-        "member_referral",
-        "social_media",
-        "website_search",
-        "sports_partnership",
-        "event_or_course",
-        "spond",
-        "other",
-        "unknown"
-      ]
-    },
     "entry_route": {
       "type": "string",
       "enum": [
