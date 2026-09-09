@@ -13,7 +13,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import CreateTournamentModal from '@/components/tournaments/CreateTournamentModal';
 import SpondImportModal from '@/components/spond/SpondImportModal';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const todayIreland = () => {
@@ -40,6 +40,16 @@ export default function Tournaments() {
   const [isAdmin, setIsAdmin] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('create') === '1') {
+      setCreateOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete('create');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
@@ -136,8 +146,8 @@ export default function Tournaments() {
   return (
     <div className="space-y-6">
       <PageHeader title="Tournament Control Centre" description={`${tournaments.length} event${tournaments.length === 1 ? '' : 's'} · create, run and review competitions`}>
-        <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setCreateOpen(true)}>
-          <Plus className="w-4 h-4" /> New Tournament
+        <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
+          <Plus className="w-4 h-4" /> Create Competition
         </Button>
       </PageHeader>
 
@@ -145,7 +155,7 @@ export default function Tournaments() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <p className="text-sm font-semibold text-foreground">Start a competition</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Choose the format you want to run. Advanced options remain available in New Tournament.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Choose a format to go straight to its setup, or use Create Competition for the full format list.</p>
           </div>
           <Button variant="ghost" size="sm" className="justify-start sm:justify-center text-muted-foreground" onClick={async () => {
             const user = await base44.auth.me().catch(() => null);
