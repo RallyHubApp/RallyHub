@@ -28,18 +28,8 @@ Deno.serve(async (req) => {
         batches.push({batch_no:row.batch_no,payload_length:raw.length,invalid_chars:invalid,prefix:raw.slice(0,4),suffix:raw.slice(-4)});
         continue;
       }
-      const decoded = await decodePayload(raw);
-      const items = Array.isArray(decoded) ? decoded : (decoded.records || decoded.people || decoded.members || decoded.items || []);
-      total += Array.isArray(items) ? items.length : 0;
-      const sample = Array.isArray(items) && items.length ? items[0] : decoded;
-      batches.push({
-        batch_no: row.batch_no,
-        top_level_type: Array.isArray(decoded) ? 'array' : typeof decoded,
-        top_level_keys: decoded && !Array.isArray(decoded) && typeof decoded === 'object' ? Object.keys(decoded).sort() : [],
-        item_count: Array.isArray(items) ? items.length : null,
-        item_keys: sample && typeof sample === 'object' ? Object.keys(sample).sort() : [],
-        nested_shapes: sample && typeof sample === 'object' ? Object.fromEntries(Object.entries(sample).filter(([_,v])=>v && typeof v==='object').map(([k,v]:any)=>[k,Array.isArray(v)?`array:${v.length}`:`object:${Object.keys(v).sort().join(',')}`])) : {},
-      });
+      const eq:any[]=[]; for(let i=0;i<raw.length;i++) if(raw[i]==='=') eq.push(i);
+      batches.push({batch_no:row.batch_no,payload_length:raw.length,mod4:raw.length%4,equals_count:eq.length,equals_first:eq.slice(0,10),equals_last:eq.slice(-10),prefix:raw.slice(0,4),suffix:raw.slice(-4)});
     }
     const summary = { success:true, staging_rows:rows.length, inferred_total:total, batches };
     await base44.asServiceRole.entities.AuditLog.create({
