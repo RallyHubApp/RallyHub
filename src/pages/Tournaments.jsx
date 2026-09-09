@@ -258,7 +258,10 @@ export default function Tournaments() {
         </div>
       )}
 
-      <CreateTournamentModal open={createOpen} onOpenChange={setCreateOpen} onCreated={() => queryClient.invalidateQueries({ queryKey: ['tournaments'] })} />
+      <CreateTournamentModal open={createOpen} onOpenChange={setCreateOpen} onCreated={(created) => {
+        queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+        if (created?.id) navigate(`/app/tournaments/${created.id}`);
+      }} />
 
       {newKotcTournament && (
         <SpondXlsxImportModal
