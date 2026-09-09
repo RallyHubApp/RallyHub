@@ -17,6 +17,21 @@
     "membership_season": {
       "type": "string"
     },
+    "purpose_type": {
+      "type": "string",
+      "enum": [
+        "membership",
+        "event",
+        "training",
+        "booking",
+        "other"
+      ],
+      "default": "membership"
+    },
+    "purpose_id": {
+      "type": "string",
+      "description": "Optional linked membership/event/training/booking record"
+    },
     "payment_type": {
       "type": "string"
     },
@@ -51,6 +66,9 @@
     "sumup_payment_link": {
       "type": "string"
     },
+    "external_payment_reference": {
+      "type": "string"
+    },
     "reconciliation_status": {
       "type": "string"
     },
@@ -68,7 +86,6 @@
     "tenant_id",
     "club_id",
     "person_id",
-    "membership_season",
     "payment_status"
   ],
   "rls": {
