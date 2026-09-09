@@ -1,0 +1,50 @@
+{
+  "name": "KotcTimerCommand",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "round_id": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "start",
+        "pause",
+        "resume",
+        "reset"
+      ]
+    },
+    "remaining_seconds": {
+      "type": "number"
+    },
+    "running": {
+      "type": "boolean"
+    },
+    "deadline_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "command_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "session_id",
+    "round_id",
+    "action"
+  ]
+}

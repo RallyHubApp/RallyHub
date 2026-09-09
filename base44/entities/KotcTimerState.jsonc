@@ -1,0 +1,61 @@
+{
+  "name": "KotcTimerState",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "round_id": {
+      "type": "string"
+    },
+    "round_number": {
+      "type": "number"
+    },
+    "duration_seconds": {
+      "type": "number"
+    },
+    "remaining_seconds": {
+      "type": "number"
+    },
+    "running": {
+      "type": "boolean",
+      "default": false
+    },
+    "deadline_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_action": {
+      "type": "string",
+      "enum": [
+        "start",
+        "pause",
+        "resume",
+        "reset",
+        "finish"
+      ]
+    },
+    "revision": {
+      "type": "number",
+      "default": 0
+    },
+    "updated_by_user_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "session_id",
+    "round_id",
+    "duration_seconds",
+    "remaining_seconds",
+    "running"
+  ]
+}
