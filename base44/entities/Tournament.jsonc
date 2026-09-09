@@ -134,7 +134,30 @@
       "items": {
         "type": "string"
       },
-      "description": "Confirmed KOTC ranking order as player IDs"
+      "description": "Confirmed KOTC ranking order as roster keys (member Player IDs or one-off guest IDs)"
+    },
+    "kotc_guest_roster": {
+      "type": "array",
+      "description": "One-off KOTC guests stored only on this event before session creation; never creates a permanent Person/Player/member record",
+      "items": {
+        "type": "object",
+        "properties": {
+          "guest_id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "guest_id",
+          "display_name"
+        ]
+      }
     },
     "kotc_spond_group_id": {
       "type": "string",
