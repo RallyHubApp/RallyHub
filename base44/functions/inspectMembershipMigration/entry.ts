@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-const MIGRATION_ID = 'clare-membership-2026-27-final-v2';
+const MIGRATION_ID = 'clare-membership-2026-27-20260909';
 const CONFIRM = 'INSPECT_CLARE_152_V2';
 
 async function decodePayload(b64:string){
