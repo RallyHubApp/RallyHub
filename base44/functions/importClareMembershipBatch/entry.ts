@@ -10,6 +10,14 @@ const nowIso=()=>new Date().toISOString();
 const norm=(v:any)=>String(v||'').trim().toLowerCase().replace(/\s+/g,' ');
 const key=(n:any,e:any)=>`${norm(n)}|${norm(e)}`;
 const compact=(o:any)=>Object.fromEntries(Object.entries(o).filter(([_,v])=>v!==undefined&&v!==null&&v!==''));
+const CONSENT_DEFAULTS:any={
+ gdpr_membership_communications:{response_text:'I have read and accept the Clare Pickleball Privacy Notice and consent to my information being used for administration of my club membership.',wording_hash:'deb7155855f564d8'},
+ membership_conditions:{response_text:'Yes I confirm I understand and accept the above conditions.',wording_hash:'9818c6ff6325ba92'},
+ health_declaration:{response_text:'I have read and agree to the Health Declaration above.',wording_hash:'c3b1c57b80246a08'},
+ club_rules_code_of_conduct:{response_text:"I confirm that I have read and agree to abide by Clare Pickleball Club's Rules, Code of Conduct and Sportsmanship Guidelines.",wording_hash:'db22ef62e8b14a84'},
+ photography_video:{response_text:'Yes, I consent',wording_hash:'622431950998091b'},
+ declaration_liability_waiver:{response_text:"I confirm that I have read , understood and agree to the Clare Pickleball Club's Declaration & Liability Waiver",wording_hash:'27b7d862c321b583'}
+};
 const chunks=<T>(arr:T[],n=50)=>{const out:T[][]=[];for(let i=0;i<arr.length;i+=n)out.push(arr.slice(i,i+n));return out;};
 async function bulkCreate(base44:any, entity:string, rows:any[], size=50){for(const c of chunks(rows,size)){if(c.length)await base44.asServiceRole.entities[entity].bulkCreate(c);}}
 
@@ -53,7 +61,7 @@ async function processBatch(base44:any,members:any[]){
 
  const existingConsents=await base44.asServiceRole.entities.ConsentRecord.filter({tenant_id:TENANT,club_id:CLUB,source_system:SOURCE});
  const ckeys=new Set((existingConsents||[]).map((c:any)=>`${c.person_id}|${c.consent_type}|${c.source_row}|${c.consent_version}`));
- const newConsents:any[]=[];for(const m of members){const p=byKey.get(key(m.full_name,m.primary_email));for(const c of (m.consents||[])){const ck=`${p.id}|${c.consent_type}|${c.source_row}|${c.consent_version}`;if(ckeys.has(ck))continue;ckeys.add(ck);newConsents.push(compact({tenant_id:TENANT,club_id:CLUB,person_id:p.id,consent_type:c.consent_type,status:c.status,response_text:c.response_text,consent_version:c.consent_version,wording_hash:c.wording_hash,recorded_at:c.recorded_at,source_system:SOURCE,source_row:c.source_row}));}}await bulkCreate(base44,'ConsentRecord',newConsents);
+ const newConsents:any[]=[];for(const m of members){const p=byKey.get(key(m.full_name,m.primary_email));for(const c of (m.consents||[])){const ck=`${p.id}|${c.consent_type}|${c.source_row}|${c.consent_version}`;if(ckeys.has(ck))continue;ckeys.add(ck);const d=CONSENT_DEFAULTS[c.consent_type]||{};newConsents.push(compact({tenant_id:TENANT,club_id:CLUB,person_id:p.id,consent_type:c.consent_type,status:c.status,response_text:c.response_text||d.response_text,consent_version:c.consent_version,wording_hash:c.wording_hash||d.wording_hash,recorded_at:c.recorded_at,source_system:SOURCE,source_row:c.source_row}));}}await bulkCreate(base44,'ConsentRecord',newConsents);
 
  const audits=await base44.asServiceRole.entities.SyncAudit.filter({tenant_id:TENANT,club_id:CLUB,source_system:SOURCE,sync_type:'membership_master_initial_import'});
  const auditIds=new Set((audits||[]).map((x:any)=>String(x.person_id)));
