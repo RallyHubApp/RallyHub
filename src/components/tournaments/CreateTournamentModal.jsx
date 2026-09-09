@@ -171,6 +171,33 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated, i
               </div>
             </div>
           </>
+        ) : step === 'kotc_choice' ? (
+          <>
+            <DialogHeader>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="ghost" size="icon" onClick={() => setStep('format')} className="shrink-0"><ArrowLeft className="w-4 h-4" /></Button>
+                <div>
+                  <DialogTitle className="text-foreground">King of the Court</DialogTitle>
+                  <DialogDescription className="text-muted-foreground">Start a new session or continue one you already set up.</DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Button type="button" className="w-full min-h-12 bg-primary text-primary-foreground" onClick={() => setStep('details')}><Plus className="w-4 h-4 mr-2" />New King of the Court</Button>
+              <div className="rounded-xl border border-border bg-secondary/20 p-3">
+                <p className="text-sm font-semibold text-foreground">Existing King of the Court</p>
+                <p className="text-xs text-muted-foreground mt-1">Continue setup or resume an existing session.</p>
+                <div className="space-y-2 mt-3 max-h-64 overflow-auto">
+                  {existingKotc.length === 0 ? <p className="text-xs text-muted-foreground py-3 text-center">No existing KOTC sessions to continue.</p> : existingKotc.map(t => (
+                    <button key={t.id} type="button" onClick={() => { onCreated?.(t); onOpenChange(false); }} className="w-full rounded-lg border border-border bg-card/50 p-3 text-left hover:border-primary/40 hover:bg-secondary/50 transition-colors">
+                      <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-foreground truncate">{t.name}</span><Badge variant="outline" className="text-[10px] shrink-0">{t.status}</Badge></div>
+                      <p className="text-xs text-muted-foreground mt-1">{t.start_date ? new Date(`${String(t.start_date).slice(0,10)}T12:00:00`).toLocaleDateString('en-IE',{weekday:'short',day:'numeric',month:'short'}) : 'Date not set'}{t.location ? ` · ${t.location}` : ''} · {(t.player_ids || []).length} players</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
         ) : (
           <>
             <DialogHeader>
