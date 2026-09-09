@@ -34,6 +34,7 @@ import PublicClubChallengeDisplay from '@/pages/PublicClubChallengeDisplay';
 import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
 import KotcHostSession from '@/pages/KotcHostSession';
 import PublicKotcResults from '@/pages/PublicKotcResults';
+import PublicKotcScorer from '@/pages/PublicKotcScorer';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -124,6 +125,8 @@ function App() {
             <Route path="/club-challenge/display/:token" element={<PublicClubChallengeDisplay />} />
             <Route path="/club-challenge/vote/:token" element={<PublicClubChallengeVote />} />
             <Route path="/kotc-results/:token" element={<PublicKotcResults />} />
+            <Route path="/kotc-live/:token" element={<PublicKotcResults />} />
+            <Route path="/kotc-score/:token" element={<PublicKotcScorer />} />
 
             {/* Protected app routes */}
             <Route element={<ProtectedRoute fallback={<LoadingScreen />} unauthenticatedElement={<Navigate to="/login" replace />} />}>
