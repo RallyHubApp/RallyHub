@@ -45,4 +45,13 @@ ok(command.indexOf("if (commandType === 'start_proposed_round')") < command.inde
 ok(command.includes('const [slotRows,participants,lockRows]=await Promise.all'), 'independent START ROUND validation reads run in parallel');
 ok(command.includes('const [updatedRound,updatedSession]=await Promise.all'), 'round/session/tournament start writes run in parallel');
 
+// Undo Start must provide continuous feedback and return directly to Round Setup.
+ok(view.includes('const [undoingStart,setUndoingStart]=useState(false)'), 'undo has its own persistent in-flight UI state');
+ok(view.includes("undoingStart?'Returning to Round Setup…':'Undo Start / Back to Round Setup'"), 'undo button clearly confirms the command was accepted');
+ok(view.includes('const undoStartRound=async()=>'), 'undo uses a dedicated host action rather than the generic refetch-first command path');
+ok(view.includes("status:'proposed'"), 'successful undo immediately paints the authoritative proposed round');
+ok(view.includes("toast.success('Back in Round Setup')"), 'host receives explicit undo completion feedback');
+ok(command.includes('const [roundRows,matches]=await Promise.all'), 'undo validation reads run in parallel');
+ok(command.includes('Once validation passes, reverting the round, session and tournament are independent'), 'undo persistence uses the low-latency commit path');
+
 console.log(`KOTC Gate 2.11 lifecycle/timer regression: PASS\n${checks} lifecycle/timer checks, 0 failures.`);
