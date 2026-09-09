@@ -88,7 +88,6 @@ async function qualityReport(base44:any){
  const buckets:any={dob:[],postal_address:[],eircode:[],emergency_contact:[],emergency_mobile:[],membership_id:[],other:[]};
  const seen:any=Object.fromEntries(Object.keys(buckets).map(k=>[k,new Set()]));
  for(const p of persons){for(const raw of (p.data_quality_flags||[])){const f=norm(raw);let b='other';if(f.includes('date_of_birth')||f.includes('missing_dob')||f.includes('invalid_date'))b='dob';else if(f.includes('postal_address')||f.includes('missing_postal_address'))b='postal_address';else if(f.includes('eircode'))b='eircode';else if(f.includes('emergency_contact'))b='emergency_contact';else if(f.includes('emergency_mobile'))b='emergency_mobile';else if(f.includes('membership_id'))b='membership_id';if(!seen[b].has(p.id)){seen[b].add(p.id);buckets[b].push(p.full_name);}}}
- }
  return {success:true,total_persons:persons.length,needs_attention:persons.filter((p:any)=>(p.data_quality_flags||[]).length).length,buckets:Object.fromEntries(Object.entries(buckets).map(([k,v]:any)=>[k,{count:v.length,names:v.sort((a:string,b:string)=>a.localeCompare(b))}]))};
 }
 async function cleanupMigration(base44:any){
