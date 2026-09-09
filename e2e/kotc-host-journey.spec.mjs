@@ -431,9 +431,11 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   report.round3_score_save_ms = await scoreCurrentRound(page, round3CourtCount, 9);
   await expect(page.getByText('START ROUND 4')).toBeVisible({ timeout: 2200 });
 
-  await page.getByTestId('kotc-session-menu').click();
+  const finishButton = page.getByTestId('kotc-finish-session');
+  if (!(await finishButton.isVisible().catch(() => false))) await page.getByTestId('kotc-session-menu').click();
+  await expect(finishButton).toBeVisible();
   started = Date.now();
-  await page.getByTestId('kotc-finish-session').click();
+  await finishButton.click();
   await expect(page.getByTestId('kotc-podium')).toBeVisible({ timeout: 1800 });
   metric(report, 'finish_to_podium_ms', Date.now() - started, 1500);
   await expect(page.getByText('Session complete')).toBeVisible();
