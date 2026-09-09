@@ -39,6 +39,8 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   const [attendees, setAttendees] = useState([]);
   const [playerDirectory, setPlayerDirectory] = useState([]);
   const [waitingListCount, setWaitingListCount] = useState(0);
+  const [sourceMembershipTrusted, setSourceMembershipTrusted] = useState(false);
+  const [sourceGroupName, setSourceGroupName] = useState('');
   const [matchChoices, setMatchChoices] = useState({});
   const [guestChoices, setGuestChoices] = useState({});
 
@@ -127,6 +129,8 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
         setMatchChoices({});
         setGuestChoices({});
         setWaitingListCount(Number(res.data.waitingListCount || 0));
+        setSourceMembershipTrusted(Boolean(res.data.sourceMembershipTrusted));
+        setSourceGroupName(res.data.sourceGroupName || selectedGroup?.name || '');
         setStep('preview');
       } else {
         setError(res.data?.error || 'Could not load attendees');
@@ -181,6 +185,8 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
     setAttendees([]);
     setPlayerDirectory([]);
     setWaitingListCount(0);
+    setSourceMembershipTrusted(false);
+    setSourceGroupName('');
     setMatchChoices({});
     setGuestChoices({});
     setError('');
@@ -194,7 +200,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   const newCount = attendees.filter(a => a.status === 'new').length;
   const matchedCount = attendees.filter(a => a.status === 'matched').length;
   const ambiguousCount = attendees.filter(a => a.status === 'ambiguous' && !matchChoices[a.spondId]).length;
-  const unresolvedNewCount = attendees.filter(a => a.status === 'new' && !guestChoices[a.spondId] && !matchChoices[a.spondId]).length;
+  const unresolvedNewCount = sourceMembershipTrusted ? 0 : attendees.filter(a => a.status === 'new' && !guestChoices[a.spondId] && !matchChoices[a.spondId]).length;
   const recommendedCourts = recommendCourts(attendees.length);
   const activePlayers = recommendedCourts * 4;
   const benchPlayers = Math.max(0, attendees.length - activePlayers);
@@ -408,8 +414,9 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                   </div>
                 </div>
 
+                {sourceMembershipTrusted && <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-2.5 text-xs text-green-400">Trusted member source: {sourceGroupName || 'Clare Pickleball Members'}. Unmatched attendees will be created as Clare Pickleball members, never guests.</div>}
                 {waitingListCount > 0 && <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-2.5 text-xs text-amber-500">{waitingListCount} waiting-list member{waitingListCount === 1 ? '' : 's'} excluded from the playing roster.</div>}
-                {ambiguousCount > 0 && <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">{ambiguousCount} attendee{ambiguousCount===1?' needs':'s need'} identity confirmation before the roster can be refreshed.</div>}
+                {ambiguousCount > 0 && <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">{ambiguousCount} attendee{ambiguousCount===1?' needs':'s need'} identity confirmation before the roster can be refreshed.</div>
 
                 {/* Court recommendation */}
                 <div className="glass rounded-lg p-3 flex items-center gap-3">
@@ -430,11 +437,11 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
                         <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">{a.fullName?.[0] || '?'}</div>
                         <span className="text-xs text-foreground flex-1 truncate">{a.fullName || 'Unknown'}</span>
                         <Badge className={cn('text-[10px] shrink-0', a.status === 'matched' ? 'bg-green-500/10 text-green-400 border-green-500/20' : a.status==='ambiguous'?'bg-destructive/10 text-destructive border-destructive/20':'bg-accent/10 text-accent border-accent/20')}>
-                          {a.status === 'matched' ? <><CheckCircle2 className="w-2.5 h-2.5 mr-0.5 inline" />matched</> : a.status==='ambiguous'?'check match':<><UserPlus className="w-2.5 h-2.5 mr-0.5 inline" />new guest</>}
+                          {a.status === 'matched' ? <><CheckCircle2 className="w-2.5 h-2.5 mr-0.5 inline" />matched</> : a.status==='ambiguous'?'check match':<><UserPlus className="w-2.5 h-2.5 mr-0.5 inline" />{sourceMembershipTrusted?'new member':'new guest'}</>}
                         </Badge>
                       </div>
                       {a.status==='ambiguous'&&<select className="mt-2 w-full h-9 rounded-md bg-secondary border border-border px-2 text-xs" value={matchChoices[a.spondId]||''} onChange={e=>setMatchChoices(prev=>({...prev,[a.spondId]:e.target.value}))}><option value="">Choose existing player…</option>{(a.candidates||[]).map(c=><option key={c.id} value={c.id}>{c.name}{c.email?` · ${c.email}`:''}</option>)}</select>}
-                      {a.status==='new'&&<div className="mt-2 rounded-lg border border-amber-400/30 bg-amber-500/5 p-2.5 space-y-2"><p className="text-[11px] font-semibold text-amber-500">Needs review before import</p><select className="w-full h-9 rounded-md bg-secondary border border-border px-2 text-xs" value={matchChoices[a.spondId]||''} onChange={e=>{const playerId=e.target.value;setMatchChoices(prev=>({...prev,[a.spondId]:playerId}));if(playerId)setGuestChoices(prev=>({...prev,[a.spondId]:false}));}}><option value="">Match to existing RallyHub player…</option>{playerDirectory.map(p=><option key={p.id} value={p.id}>{p.name}{p.email?` · ${p.email}`:''}</option>)}</select><label className="flex items-center gap-2 rounded-md border border-border bg-secondary/40 px-2.5 py-2 text-xs"><input type="checkbox" checked={Boolean(guestChoices[a.spondId])} onChange={e=>{const checked=e.target.checked;setGuestChoices(prev=>({...prev,[a.spondId]:checked}));if(checked)setMatchChoices(prev=>({...prev,[a.spondId]:''}));}}/><span>Guest / One-off Player</span></label></div>}
+                      {a.status==='new'&&!sourceMembershipTrusted&&<div className="mt-2 rounded-lg border border-amber-400/30 bg-amber-500/5 p-2.5 space-y-2"><p className="text-[11px] font-semibold text-amber-500">Needs review before import</p><select className="w-full h-9 rounded-md bg-secondary border border-border px-2 text-xs" value={matchChoices[a.spondId]||''} onChange={e=>{const playerId=e.target.value;setMatchChoices(prev=>({...prev,[a.spondId]:playerId}));if(playerId)setGuestChoices(prev=>({...prev,[a.spondId]:false}));}}><option value="">Match to existing RallyHub player…</option>{playerDirectory.map(p=><option key={p.id} value={p.id}>{p.name}{p.email?` · ${p.email}`:''}</option>)}</select><label className="flex items-center gap-2 rounded-md border border-border bg-secondary/40 px-2.5 py-2 text-xs"><input type="checkbox" checked={Boolean(guestChoices[a.spondId])} onChange={e=>{const checked=e.target.checked;setGuestChoices(prev=>({...prev,[a.spondId]:checked}));if(checked)setMatchChoices(prev=>({...prev,[a.spondId]:''}));}}/><span>Guest / One-off Player</span></label></div>}
                     </div>
                   ))}
                 </div>
