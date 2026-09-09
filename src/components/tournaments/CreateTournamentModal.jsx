@@ -32,7 +32,7 @@ const PARTNERSHIP_TYPES = [
 export default function CreateTournamentModal({ open, onOpenChange, onCreated }) {
   const [form, setForm] = useState({
     name: '', format: 'Single Elimination', partnership_type: 'Singles',
-    inter_club: false, start_date: '', end_date: '',
+    start_date: '', end_date: '',
     location: '', max_players: '', description: '', prize_info: '',
     skill_range_min: '', skill_range_max: '',
     kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11',
@@ -76,7 +76,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
       ...form,
       location: typedLocation,
       venue_id: matchedVenue?.id || undefined,
-      inter_club: isClubChallenge ? true : form.inter_club,
+      inter_club: isClubChallenge,
       partnership_type: isClubChallenge ? 'Random Partners' : form.partnership_type,
       tenant_id: currentUser?.active_tenant_id || undefined,
       host_club_id: currentUser?.active_club_id || undefined,
@@ -93,7 +93,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
     setSaving(false);
     onCreated?.();
     onOpenChange(false);
-    setForm({ name: '', format: 'Single Elimination', partnership_type: 'Singles', inter_club: false, start_date: '', end_date: '', location: '', max_players: '', description: '', prize_info: '', skill_range_min: '', skill_range_max: '', kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11' });
+    setForm({ name: '', format: 'Single Elimination', partnership_type: 'Singles', start_date: '', end_date: '', location: '', max_players: '', description: '', prize_info: '', skill_range_min: '', skill_range_max: '', kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11' });
   };
 
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
@@ -103,10 +103,10 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-card border-border max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-lg bg-card border-border max-h-[94dvh] overflow-y-auto p-4 sm:p-6 rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-foreground">Create Tournament</DialogTitle>
-          <DialogDescription className="text-muted-foreground">Configure draw format and partnership type</DialogDescription>
+          <DialogDescription className="text-muted-foreground">Choose the competition format, then add only the details that format needs.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
@@ -118,7 +118,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
           {/* Draw Format */}
           <div>
             <Label className="text-foreground text-sm">Draw Format *</Label>
-            <div className="grid gap-2 mt-1">
+            <div className="grid gap-2 mt-1 sm:grid-cols-2">
               {FORMATS.map(f => (
                 <label key={f.value} className={cn(
                   'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all',
@@ -141,7 +141,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
                 <Crown className="w-4 h-4 text-yellow-400" />
                 <p className="text-sm font-semibold text-foreground">King of the Court Settings</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-muted-foreground">Courts</Label>
                   <Input type="number" min={1} max={8} value={form.kotc_num_courts}
@@ -175,8 +175,8 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
             </div>
           )}
 
-          {/* Partnership Type */}
-          <div>
+          {/* Partnership Type — only for formats that actually need a generic partnership choice */}
+          {!['King of the Court', 'Club Challenge', 'Tournival', 'Mixed Doubles'].includes(form.format) && <div>
             <Label className="text-foreground text-sm">Partnership Type</Label>
             <div className="grid grid-cols-3 gap-2 mt-1">
               {PARTNERSHIP_TYPES.map(pt => (
@@ -190,22 +190,10 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
                 </label>
               ))}
             </div>
-          </div>
-
-          {/* Inter-club toggle */}
-          <label className={cn(
-            'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all',
-            form.inter_club ? 'border-accent bg-accent/5' : 'border-border'
-          )}>
-            <input type="checkbox" checked={form.inter_club} onChange={e => update('inter_club', e.target.checked)} className="accent-primary" />
-            <div>
-              <p className="text-sm font-medium text-foreground">Inter-Club Challenge</p>
-              <p className="text-xs text-muted-foreground">Track club affiliations and generate club-vs-club results</p>
-            </div>
-          </label>
+          </div>}
 
           {/* Dates + Location */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-foreground text-sm">Start Date</Label>
               <Input type="date" value={form.start_date} onChange={e => update('start_date', e.target.value)} className="bg-secondary border-border mt-1" />
@@ -223,7 +211,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
             </datalist>
             <p className="text-[10px] text-muted-foreground mt-1">Saved club venues appear in the dropdown. A new venue you type is saved for reuse when the tournament is created.</p>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <Label className="text-foreground text-sm">Max Players</Label>
               <Input type="number" value={form.max_players} onChange={e => update('max_players', e.target.value)} className="bg-secondary border-border mt-1" />
@@ -242,7 +230,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
             <Textarea value={form.description} onChange={e => update('description', e.target.value)} className="bg-secondary border-border mt-1" rows={2} />
           </div>
 
-          <div className="flex justify-end gap-2 pt-1">
+          <div className="sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-card/95 backdrop-blur border-t border-border flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
               {saving ? 'Creating…' : 'Create Tournament'}
