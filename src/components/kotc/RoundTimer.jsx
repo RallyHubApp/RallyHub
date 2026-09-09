@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Maximize2, Minimize2, Move, Pause, Play, RotateCcw, Volume2, VolumeX, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { base44 } from '@/api/base44Client';
 
 const DEFAULT_PLAY_MINUTES = 8;
 const DEFAULT_REST_MINUTES = 2;
@@ -67,6 +68,8 @@ export default function RoundTimer({
   autoStart = false,
   autoStartKey = null,
   autoFullscreen = false,
+  sessionId = null,
+  roundId = null,
 }) {
   const playSeconds = Math.max(1, Number(playMinutes) || DEFAULT_PLAY_MINUTES) * 60;
   const restSeconds = Math.max(0, Number(restMinutes) || 0) * 60;
@@ -85,6 +88,12 @@ export default function RoundTimer({
   const wakeLockRef = useRef(null);
   const dragRef = useRef(null);
   const autoStartedKeyRef = useRef(null);
+  const hydratedRef = useRef(false);
+
+  const persistTimer = async (action, remaining = seconds) => {
+    if (!sessionId || !roundId) return;
+    try { await base44.functions.invoke('kotcTimer', { sessionId, roundId, action, remainingSeconds: Math.max(0, Math.ceil(Number(remaining)||0)) }); } catch { /* timer UI remains usable if persistence briefly fails */ }
+  };
 
   const unlockAudio = async () => {
     if (!audioRef.current) audioRef.current = createAudioContext();
@@ -124,6 +133,7 @@ export default function RoundTimer({
   };
 
   const reset = () => {
+    persistTimer('reset', playSeconds);
     setRunning(false);
     setPhase('play');
     setSeconds(playSeconds);
@@ -132,6 +142,14 @@ export default function RoundTimer({
     autoStartedKeyRef.current = null;
     window.speechSynthesis?.cancel();
   };
+
+  useEffect(() => {
+    if (!sessionId || !roundId) { hydratedRef.current = true; return; }
+    let cancelled = false;
+    hydratedRef.current = false;
+    (async()=>{try{const res=await base44.functions.invoke('kotcTimer',{sessionId,roundId,action:'get'});if(cancelled)return;const s=res.data?.state;if(s){const remaining=Math.max(0,Number(s.remainingSeconds||0));setPhase('play');setSeconds(remaining);setRunning(!!s.running&&remaining>0);deadlineRef.current=s.running&&s.deadlineAt?Date.parse(s.deadlineAt):null;if(s.lastAction==='start'||s.lastAction==='resume'||s.lastAction==='pause'||s.lastAction==='reset'||s.lastAction==='finish')autoStartedKeyRef.current=autoStartKey;}}catch{}finally{hydratedRef.current=true;}})();
+    return()=>{cancelled=true;};
+  },[sessionId,roundId]);
 
   useEffect(() => {
     if ('speechSynthesis' in window) {
@@ -143,10 +161,11 @@ export default function RoundTimer({
   }, []);
 
   useEffect(() => {
-    if (!autoStart || !enabled || disabled || !autoStartKey) return;
+    if (!autoStart || !enabled || disabled || !autoStartKey || !hydratedRef.current) return;
     if (autoStartedKeyRef.current === autoStartKey) return;
     autoStartedKeyRef.current = autoStartKey;
     startPhase('play', { unlock: false });
+    persistTimer('start', playSeconds);
     if (autoFullscreen) setFullscreen(true);
     // autoStartKey is the sporting round identity; one automatic timer start per round.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -291,8 +310,8 @@ export default function RoundTimer({
       )}
 
       <div className="flex gap-2">
-        {running&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => setRunning(false)} disabled={disabled || !enabled}><Pause className="w-4 h-4" /> Pause Timer</Button>}
-        {!running&&seconds>0&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {if(seconds===maxSeconds){startPhase('play');}else{deadlineRef.current=Date.now()+seconds*1000;setRunning(true);}}} disabled={disabled || !enabled}><Play className="w-4 h-4" /> {seconds===maxSeconds?'Start Timer':'Resume Timer'}</Button>}
+        {running&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {persistTimer('pause',seconds);setRunning(false);deadlineRef.current=null;}} disabled={disabled || !enabled}><Pause className="w-4 h-4" /> Pause Timer</Button>}
+        {!running&&seconds>0&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {if(seconds===maxSeconds){startPhase('play');persistTimer('start',maxSeconds);}else{deadlineRef.current=Date.now()+seconds*1000;setRunning(true);persistTimer('resume',seconds);}}} disabled={disabled || !enabled}><Play className="w-4 h-4" /> {seconds===maxSeconds?'Start Timer':'Resume Timer'}</Button>}
         <Button variant="outline" onClick={reset} className="gap-2 h-11 sm:h-12"><RotateCcw className="w-4 h-4" /> Reset</Button>
       </div>
 
