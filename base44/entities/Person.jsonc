@@ -48,6 +48,9 @@
       ],
       "default": "club"
     },
+    "full_postal_address": {
+      "type": "string"
+    },
     "address_line1": {
       "type": "string"
     },
@@ -81,6 +84,9 @@
     "emergency_mobile": {
       "type": "string"
     },
+    "emergency_contact_raw": {
+      "type": "string"
+    },
     "secondary_emergency_contact_name": {
       "type": "string"
     },
@@ -98,6 +104,12 @@
     },
     "source_system": {
       "type": "string"
+    },
+    "source_rows": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "last_synced_at": {
       "type": "string",
