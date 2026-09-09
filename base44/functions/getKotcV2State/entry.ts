@@ -22,8 +22,29 @@ Deno.serve(async(req)=>{try{
  const lease=(leases||[]).sort((a:any,b:any)=>Number(b.lease_revision||0)-Number(a.lease_revision||0))[0]||null;
  let contactDirectory:any={};
  if(user.role==='admin'||currentAccessRole==='session_host'){
-  const playerIds=(participants||[]).map((p:any)=>p.player_id).filter(Boolean);
-  if(playerIds.length){const playerRecords=await base44.asServiceRole.entities.Player.filter({id:{$in:playerIds}});contactDirectory=Object.fromEntries((playerRecords||[]).map((p:any)=>[p.id,{phone:p.phone||'',emergency_contact:p.emergency_contact||''}]));}
+  // Emergency/contact data is deliberately scoped to the players in this KOTC session.
+  // Ordinary session hosts never receive a tenant-wide Person directory.
+  const playerIds=[...new Set((participants||[]).map((p:any)=>p.player_id).filter(Boolean))];
+  if(playerIds.length){
+   const playerRecords=await base44.asServiceRole.entities.Player.filter({id:{$in:playerIds}});
+   const personIds=[...new Set((playerRecords||[]).map((p:any)=>p.person_id).filter(Boolean))];
+   const people=personIds.length?await base44.asServiceRole.entities.Person.filter({id:{$in:personIds}}):[];
+   const personById=Object.fromEntries((people||[]).map((p:any)=>[p.id,p]));
+   contactDirectory=Object.fromEntries((playerRecords||[]).map((player:any)=>{
+    const person=personById[player.person_id]||{};
+    const emergencyName=String(person.emergency_contact_name||'').trim();
+    const emergencyRelationship=String(person.emergency_contact_relationship||'').trim();
+    const emergencyMobile=String(person.emergency_mobile||'').trim();
+    const emergencyLabel=[emergencyName,emergencyRelationship].filter(Boolean).join(' — ');
+    return [player.id,{
+      phone:person.mobile||player.phone||'',
+      emergency_name:emergencyName,
+      emergency_relationship:emergencyRelationship,
+      emergency_mobile:emergencyMobile,
+      emergency_contact:emergencyLabel||person.emergency_contact_raw||player.emergency_contact||'',
+    }];
+   }));
+  }
  }
  return Response.json({session,participants,rounds,slots,matches,events,courts,lease,partnershipPhases:phases||[],fixedPairs:fixedPairs||[],contactDirectory,currentUserId:user.id,currentAccessRole,isAdmin:user.role==='admin'});
 }catch(error){return Response.json({error:error?.message||'Unexpected KOTC state error'},{status:500});}});
