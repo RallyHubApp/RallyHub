@@ -36,8 +36,8 @@ Deno.serve(async (req) => {
     const summary = { success:true, staging_rows:rows.length, inferred_total:total, batches };
     await base44.asServiceRole.entities.AuditLog.create({
       tenant_id:'6a9b7790bc4a8d299938bda9', club_id:'6a9b779684daba85b3ffdeb5',
-      action:'membership_migration_staging_inspected', entity_type:'MembershipMigrationStaging',
-      scope_type:'Club', scope_id:'6a9b779684daba85b3ffdeb5', after_state:JSON.stringify(summary),
+      user_id:'system-membership-import', action:'membership_migration_staging_inspected', entity_type:'MembershipMigrationStaging',
+      entity_id:rows?.[0]?.id || MIGRATION_ID, scope_type:'Club', scope_id:'6a9b779684daba85b3ffdeb5', after_state:JSON.stringify(summary),
       reason:'One-time structure-only inspection before 152-member import'
     });
     return Response.json(summary);
