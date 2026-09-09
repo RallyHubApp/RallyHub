@@ -8,8 +8,13 @@
     "person_id": {
       "type": "string"
     },
+    "sport_id": {
+      "type": "string",
+      "description": "Linked Sport entity ID"
+    },
     "sport": {
-      "type": "string"
+      "type": "string",
+      "description": "Legacy/free-text display value; not authoritative"
     },
     "status": {
       "type": "string",
@@ -18,6 +23,15 @@
         "inactive"
       ],
       "default": "active"
+    },
+    "experience_type": {
+      "type": "string",
+      "enum": [
+        "current",
+        "previous",
+        "interested"
+      ],
+      "default": "current"
     },
     "primary_club_id": {
       "type": "string"
@@ -54,7 +68,7 @@
   "required": [
     "tenant_id",
     "person_id",
-    "sport",
+    "sport_id",
     "status"
   ],
   "rls": {
