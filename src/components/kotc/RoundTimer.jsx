@@ -144,7 +144,9 @@ export default function RoundTimer({
     setSeconds(playSeconds);
     deadlineRef.current = null;
     lastAnnouncedRef.current = new Set();
-    autoStartedKeyRef.current = null;
+    // Reset must leave the timer stopped at the full duration. Do not let the
+    // one-shot sporting-round auto-start immediately fire again after reset.
+    autoStartedKeyRef.current = autoStartKey;
     window.speechSynthesis?.cancel();
   };
 
