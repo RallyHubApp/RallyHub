@@ -59,4 +59,9 @@ ok(command.includes('actual_first_round_start=null'), 'Round 1 undo explicitly c
 ok(command.includes("started_at:null,confirmed_at:null,confirmed_by_user_id:null"), 'undo explicitly clears stale round timestamps');
 ok(command.includes('Once validation passes, reverting the round, session and tournament are independent'), 'undo persistence uses the low-latency commit path');
 
+// Retained demonstration sessions must never contaminate real KOTC history/seeding.
+ok(command.includes("s.exclude_from_aggregates!==true"), 'historical aggregate rebuild explicitly excludes marked demo sessions');
+const sessionSchema = fs.readFileSync('base44/entities/KotcSession.jsonc','utf8');
+ok(sessionSchema.includes('"exclude_from_aggregates"'), 'KOTC session schema supports statistically inert demo sessions');
+
 console.log(`KOTC Gate 2.11 lifecycle/timer regression: PASS\n${checks} lifecycle/timer checks, 0 failures.`);
