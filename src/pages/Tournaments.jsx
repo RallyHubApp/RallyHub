@@ -111,7 +111,7 @@ export default function Tournaments() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <p className="text-sm font-semibold text-foreground">Start a competition</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Choose a format to go straight to its setup, or use Create Competition for the full format list.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Choose a featured format, add the event details, then continue into its dedicated setup.</p>
           </div>
           <Button variant="ghost" size="sm" className="justify-start sm:justify-center text-muted-foreground" onClick={async () => {
             const user = await base44.auth.me().catch(() => null);
@@ -130,9 +130,9 @@ export default function Tournaments() {
         </div>
         <div className="grid md:grid-cols-3 gap-3">
           {[
-            { title: 'Club Challenge', desc: 'Two-club event with fairness, live scoring and event-day controls.', icon: Flag, action: handleQuickClubChallenge, accent: 'text-primary bg-primary/10' },
             { title: 'King of the Court', desc: 'Fast-moving court rotation for club sessions and social competition.', icon: Crown, action: handleQuickKotc, accent: 'text-yellow-400 bg-yellow-500/10' },
             { title: 'Tournival', desc: 'Group play followed by a seeded knockout competition.', icon: Zap, action: handleQuickTournival, accent: 'text-accent bg-accent/10' },
+            { title: 'Club Challenge', desc: 'Two-club event with fairness, live scoring and event-day controls.', icon: Flag, action: handleQuickClubChallenge, accent: 'text-primary bg-primary/10' },
           ].map(item => (
             <button key={item.title} onClick={item.action} className="group text-left rounded-xl border border-border bg-secondary/30 p-4 hover:bg-secondary/60 hover:border-muted-foreground/40 transition-all min-h-[132px]">
               <div className="flex items-start justify-between gap-3">
@@ -214,10 +214,15 @@ export default function Tournaments() {
         </div>
       )}
 
-      <CreateTournamentModal open={createOpen} onOpenChange={setCreateOpen} onCreated={(created) => {
-        queryClient.invalidateQueries({ queryKey: ['tournaments'] });
-        if (created?.id) navigate(`/app/tournaments/${created.id}`);
-      }} />
+      <CreateTournamentModal
+        open={createOpen}
+        initialFormat={createFormat}
+        onOpenChange={(open) => { setCreateOpen(open); if (!open) setCreateFormat(''); }}
+        onCreated={(created) => {
+          queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+          if (created?.id) navigate(`/app/tournaments/${created.id}`);
+        }}
+      />
 
       {newKotcTournament && (
         <SpondXlsxImportModal
