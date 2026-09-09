@@ -216,9 +216,11 @@ Deno.serve(async (req) => {
     const tenantId=tournament?.tenant_id||activeTenantId;const clubId=tournament?.host_club_id||activeClubId;
     const existingPlayers=tenantId&&clubId?await base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId}):[];
     const {accepted,waiting}=collectResponseIds(event);const memberMap=buildMemberMap(group);
+    const sourceGroupName=String(group?.name||'').trim();
+    const sourceMembershipTrusted=normaliseName(sourceGroupName)==='clare pickleball members';
     const attendees=[...accepted].map(id=>attendeeFromMember(id,memberMap[id])).filter(Boolean).map(attendee=>{const match=matchAttendee(attendee,existingPlayers);return {...attendee,existingPlayerId:match.matched?.id||null,existingPlayerName:match.matched?.full_name||null,duprRating:match.matched?.dupr_rating??null,status:match.status,candidates:match.candidates};});
     const playerDirectory=existingPlayers.map(p=>({id:p.id,name:p.full_name||'',email:p.email||'',phone:p.phone||''})).sort((a,b)=>a.name.localeCompare(b.name));
-    return Response.json({attendees,playerDirectory,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:authoritativeStart,location:event.location?.address||event.location?.feature||''}});
+    return Response.json({attendees,playerDirectory,waitingListCount:waiting.size,sourceMembershipTrusted,sourceGroupName,event:{id:event.id,heading:event.heading,startTimestamp:authoritativeStart,location:event.location?.address||event.location?.feature||''}});
   }
 
   // ── Action: import_attendees ──
@@ -236,6 +238,8 @@ Deno.serve(async (req) => {
     if(!tenantId||!clubId)return Response.json({error:'Tournament is missing tenant/club ownership.'},{status:409});
     const scopedPlayers=await base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId}); const scopedIds=new Set(scopedPlayers.map(p=>p.id));
     const {accepted,waiting}=collectResponseIds(event); const memberMap=buildMemberMap(group);
+    const sourceGroupName=String(group?.name||'').trim();
+    const sourceMembershipTrusted=normaliseName(sourceGroupName)==='clare pickleball members';
     const sourceAttendees=[...accepted].map(id=>attendeeFromMember(id,memberMap[id])).filter(Boolean);
     const clientChoices=Object.fromEntries((body.matchChoices||[]).map(x=>[String(x.spondId),String(x.playerId||'')]));
     const allowedGuests=new Set((body.allowGuestSpondIds||[]).map(x=>String(x)));
@@ -247,15 +251,15 @@ Deno.serve(async (req) => {
       else if(match.status==='matched') player=match.matched;
       else if(match.status==='ambiguous'){ambiguous.push({spondId:attendee.spondId,fullName:attendee.fullName,candidates:match.candidates});continue;}
       if(!player){
-        if(!allowedGuests.has(String(attendee.spondId))){unresolved.push({spondId:attendee.spondId,fullName:attendee.fullName});continue;}
-        player=await base44.asServiceRole.entities.Player.create({full_name:attendee.fullName,email:attendee.email||'',phone:attendee.phoneNumber||'',avatar_url:attendee.avatarUrl||'',status:'Active',relationship_type:'guest',relationship_status:'active',tenant_id:tenantId,club_id:clubId,wins:0,losses:0,matches_played:0});scopedPlayers.push(player);scopedIds.add(player.id);created++;
+        if(!sourceMembershipTrusted&&!allowedGuests.has(String(attendee.spondId))){unresolved.push({spondId:attendee.spondId,fullName:attendee.fullName});continue;}
+        player=await base44.asServiceRole.entities.Player.create({full_name:attendee.fullName,email:attendee.email||'',phone:attendee.phoneNumber||'',avatar_url:attendee.avatarUrl||'',status:'Active',relationship_type:sourceMembershipTrusted?'member':'guest',relationship_status:'active',tenant_id:tenantId,club_id:clubId,wins:0,losses:0,matches_played:0});scopedPlayers.push(player);scopedIds.add(player.id);created++;
       }else matched++;
       rosterIds.add(player.id);
     }
     if(ambiguous.length||unresolved.length)return Response.json({error:'Resolve all unmatched player identities before refreshing the roster.',ambiguous,unresolved},{status:409});
-    const now=new Date().toISOString(); const message=`Spond refresh: ${rosterIds.size} confirmed players (${matched} matched, ${created} new guests, ${waiting.size} waiting-list excluded).`;
+    const now=new Date().toISOString(); const createdLabel=sourceMembershipTrusted?'new members':'new guests'; const message=`Spond refresh: ${rosterIds.size} confirmed players (${matched} matched, ${created} ${createdLabel}, ${waiting.size} waiting-list excluded).`;
     await base44.asServiceRole.entities.Tournament.update(tournamentId,{player_ids:[...rosterIds],start_date:selectedDate,kotc_spond_group_id:String(groupId),kotc_spond_event_id:String(eventId),kotc_last_import_message:message,kotc_last_imported_at:now});
-    return Response.json({success:true,created,matched,total:rosterIds.size,waitingListCount:waiting.size,event:{id:event.id,heading:event.heading,startTimestamp:authoritativeStart,location:event.location?.address||event.location?.feature||''},message});
+    return Response.json({success:true,created,matched,total:rosterIds.size,waitingListCount:waiting.size,sourceMembershipTrusted,sourceGroupName,event:{id:event.id,heading:event.heading,startTimestamp:authoritativeStart,location:event.location?.address||event.location?.feature||''},message});
   }
 
   return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
