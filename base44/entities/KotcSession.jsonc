@@ -162,6 +162,16 @@
       "type": "boolean",
       "default": false
     },
+    "demo_mode": {
+      "type": "boolean",
+      "default": false,
+      "description": "Read-only demonstration session retained for display/training"
+    },
+    "exclude_from_aggregates": {
+      "type": "boolean",
+      "default": false,
+      "description": "Exclude this session from KOTC historical aggregates and future-history seeding"
+    },
     "finalised_at": {
       "type": "string",
       "format": "date-time"
