@@ -144,20 +144,30 @@ Deno.serve(async (req) => {
     if (commandType === 'undo_start_round') {
       const currentRevision=Number(session.revision||0);
       if(Number(body.expectedSessionRevision)!==currentRevision)return Response.json({error:'Session changed since you opened it. Refresh and try again.',conflict:true,currentSessionRevision:currentRevision},{status:409});
-      const round=(await base44.asServiceRole.entities.KotcRound.filter({id:body.roundId,session_id:session.id}))?.[0];
+      // Round state and score-touch validation are independent reads. Fetch both together so
+      // the host gets an immediate response instead of waiting through sequential round-trips.
+      const [roundRows,matches]=await Promise.all([
+        base44.asServiceRole.entities.KotcRound.filter({id:body.roundId,session_id:session.id}),
+        base44.asServiceRole.entities.KotcMatch.filter({round_id:body.roundId,session_id:session.id}),
+      ]);
+      const round=roundRows?.[0];
       if(!round)return Response.json({error:'Round not found.'},{status:404});
       if(round.status!=='started')return Response.json({error:'Only the current started round can be returned to setup.'},{status:409});
       if(Number(round.round_number)!==Number(session.current_round_number))return Response.json({error:'Only the current round can be returned to setup.'},{status:409});
-      const matches=await base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id});
       const touched=(matches||[]).filter((m:any)=>RESOLVED.has(m.status)||m.team_a_score!=null||m.team_b_score!=null||m.autosaved_at);
       if(touched.length)return Response.json({error:'A score has already been entered or saved. Use score correction instead of Undo Start.'},{status:409});
-      const updatedRound=await base44.asServiceRole.entities.KotcRound.update(round.id,{status:'proposed',started_at:undefined,confirmed_at:undefined,confirmed_by_user_id:undefined});
       const isRoundOne=Number(round.round_number)===1;
       const resetTimerState={roundId:round.id,roundNumber:Number(round.round_number||0),durationSeconds:Math.max(1,Number(session.play_minutes||8))*60,remainingSeconds:Math.max(1,Number(session.play_minutes||8))*60,running:false,deadlineAt:null,lastAction:'reset',updatedAt:nowIso(),updatedByUserId:user.id};
       const update:any={revision:currentRevision+1,last_command_id:commandId,status:session.status==='in_progress'&&isRoundOne?'ready':session.status,timer_state_json:JSON.stringify(resetTimerState)};
       if(isRoundOne)update.actual_first_round_start=undefined;
-      session=await base44.asServiceRole.entities.KotcSession.update(session.id,update);
-      if(isRoundOne&&session.tournament_id)await base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'Draft',finalised_at:undefined});
+      // Once validation passes, reverting the round, session and tournament are independent.
+      // Commit them together and return the authoritative state straight back to the UI.
+      const [updatedRound,updatedSession]=await Promise.all([
+        base44.asServiceRole.entities.KotcRound.update(round.id,{status:'proposed',started_at:undefined,confirmed_at:undefined,confirmed_by_user_id:undefined}),
+        base44.asServiceRole.entities.KotcSession.update(session.id,update),
+        isRoundOne&&session.tournament_id?base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'Draft',finalised_at:undefined}):Promise.resolve(null),
+      ]);
+      session=updatedSession;
       try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_round_start_undone',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,reason:'Host returned unscored round to setup'});}catch{}
       return Response.json({success:true,session,round:updatedRound});
     }
