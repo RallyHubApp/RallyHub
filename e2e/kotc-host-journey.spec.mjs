@@ -341,9 +341,11 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   await expect(page.getByTestId('kotc-bench')).toContainText('Player 18');
 
   // Real host adjustment: swap a court player with a bench player before Round 1.
-  await page.getByTestId('kotc-slot-r1-c1-A-1').click();
+  const firstSlot = page.getByTestId('kotc-slot-r1-c1-A-1');
+  const outgoingPlayer = (await firstSlot.innerText()).trim();
+  await firstSlot.click();
   await page.getByTestId('kotc-bench-player-participant-17').click();
-  await expect(page.getByTestId('kotc-bench')).toContainText('Player 01');
+  await expect(page.getByTestId('kotc-bench')).toContainText(outgoingPlayer);
 
   // Lock one pair and make sure the editor reflects the saved lock.
   await page.getByRole('button', { name: 'Lock pair' }).first().click();
