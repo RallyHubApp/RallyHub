@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { ungzip } from 'npm:pako@2.1.0';
 
 const MIGRATION_ID = 'clare-membership-2026-27-20260909';
 const CONFIRM = 'INSPECT_CLARE_152_V2';
@@ -7,9 +8,8 @@ async function decodePayload(b64:string){
   let clean = String(b64 || '').replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');
   while (clean.length % 4) clean += '=';
   const bytes = Uint8Array.from(atob(clean), c => c.charCodeAt(0));
-  const ds = new DecompressionStream('gzip');
-  const decompressed = new Response(new Blob([bytes]).stream().pipeThrough(ds));
-  return JSON.parse(await decompressed.text());
+  const text = new TextDecoder().decode(ungzip(bytes));
+  return JSON.parse(text);
 }
 
 Deno.serve(async (req) => {
