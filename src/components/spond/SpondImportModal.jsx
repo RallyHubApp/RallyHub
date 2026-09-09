@@ -416,7 +416,7 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
 
                 {sourceMembershipTrusted && <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-2.5 text-xs text-green-400">Trusted member source: {sourceGroupName || 'Clare Pickleball Members'}. Unmatched attendees will be created as Clare Pickleball members, never guests.</div>}
                 {waitingListCount > 0 && <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-2.5 text-xs text-amber-500">{waitingListCount} waiting-list member{waitingListCount === 1 ? '' : 's'} excluded from the playing roster.</div>}
-                {ambiguousCount > 0 && <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">{ambiguousCount} attendee{ambiguousCount===1?' needs':'s need'} identity confirmation before the roster can be refreshed.</div>
+                {ambiguousCount > 0 && <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">{ambiguousCount} attendee{ambiguousCount===1?' needs':'s need'} identity confirmation before the roster can be refreshed.</div>}
 
                 {/* Court recommendation */}
                 <div className="glass rounded-lg p-3 flex items-center gap-3">
