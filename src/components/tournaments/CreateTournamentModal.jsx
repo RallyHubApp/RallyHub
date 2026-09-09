@@ -8,40 +8,46 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Users, User, Shuffle, Crown } from 'lucide-react';
+import { Crown, Zap, Flag, Trophy, ArrowLeft, ArrowRight, User, Users, Shuffle } from 'lucide-react';
 
-const FORMATS = [
-  { value: 'Single Elimination', label: 'Single Elimination', desc: 'Classic knockout — lose once and you\'re out. Seeds placed to avoid early top clashes.' },
-  { value: 'Double Elimination', label: 'Double Elimination', desc: 'Two lives — losers drop to a consolation bracket, guaranteeing at least 2 matches.' },
-  { value: 'Consolation (FRLC)', label: 'Consolation (FRLC)', desc: 'First-round losers continue in a parallel consolation bracket. Guarantees 2 matches.' },
-  { value: 'Round Robin', label: 'Round Robin', desc: 'Everyone plays everyone. Best for 4–12 entries. Fair ranking, more matches.' },
-  { value: 'Compass Draw', label: 'Compass Draw', desc: 'Winners go North, losers go West/South. Guarantees 3–4 matches per player.' },
-  { value: 'Ladder League', label: 'Ladder League', desc: 'Ongoing league ladder — challenge up or down.' },
-  { value: 'King of the Court', label: 'King of the Court', desc: 'Winners stay on court, challengers rotate in.' },
-  { value: 'Tournival', label: 'Tournival', desc: 'Mixed-doubles round robin (4 group rounds) followed by seeded knockout cup matches.' },
-  { value: 'Club Challenge', label: 'Club Challenge', desc: 'Inter-club team event with rotating partners, fairness controls, live club scoring and display workflow.' },
-  { value: 'Mixed Doubles', label: 'Mixed Doubles', desc: 'Fixed male/female pairs.' },
+const FEATURED_FORMATS = [
+  { value: 'King of the Court', label: 'King of the Court', desc: 'Fast-moving court rotation for club sessions and social competition.', icon: Crown, accent: 'text-yellow-400 bg-yellow-500/10' },
+  { value: 'Tournival', label: 'Tournival', desc: 'Group play followed by a seeded knockout competition.', icon: Zap, accent: 'text-accent bg-accent/10' },
+  { value: 'Club Challenge', label: 'Club Challenge', desc: 'Two-club event with fairness, live scoring and event-day controls.', icon: Flag, accent: 'text-primary bg-primary/10' },
+];
+
+const OTHER_FORMATS = [
+  { value: 'Round Robin', label: 'Round Robin' },
+  { value: 'Single Elimination', label: 'Single Elimination' },
+  { value: 'Double Elimination', label: 'Double Elimination' },
+  { value: 'Consolation (FRLC)', label: 'Consolation (FRLC)' },
+  { value: 'Compass Draw', label: 'Compass Draw' },
+  { value: 'Ladder League', label: 'Ladder League' },
+  { value: 'Mixed Doubles', label: 'Mixed Doubles' },
 ];
 
 const PARTNERSHIP_TYPES = [
-  { value: 'Singles', label: 'Singles', icon: User, desc: 'Individual players compete solo' },
-  { value: 'Fixed Partners', label: 'Fixed Partners', icon: Users, desc: 'Pre-set doubles pairs (upload from spreadsheet)' },
-  { value: 'Random Partners', label: 'Random Partners', icon: Shuffle, desc: 'Partners randomly assigned on the day' },
+  { value: 'Singles', label: 'Singles', icon: User },
+  { value: 'Fixed Partners', label: 'Fixed Partners', icon: Users },
+  { value: 'Random Partners', label: 'Random Partners', icon: Shuffle },
 ];
 
+const initialForm = {
+  name: '', format: '', partnership_type: 'Singles', start_date: '', end_date: '',
+  location: '', max_players: '', description: '', prize_info: '',
+  skill_range_min: '', skill_range_max: '',
+};
+
 export default function CreateTournamentModal({ open, onOpenChange, onCreated }) {
-  const [form, setForm] = useState({
-    name: '', format: 'Single Elimination', partnership_type: 'Singles',
-    start_date: '', end_date: '',
-    location: '', max_players: '', description: '', prize_info: '',
-    skill_range_min: '', skill_range_max: '',
-    kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11',
-  });
+  const [step, setStep] = useState('format');
+  const [form, setForm] = useState(initialForm);
   const [saving, setSaving] = useState(false);
   const [venues, setVenues] = useState([]);
 
   useEffect(() => {
     if (!open) return;
+    setStep('format');
+    setForm(initialForm);
     let cancelled = false;
     (async () => {
       try {
@@ -56,187 +62,180 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
     return () => { cancelled = true; };
   }, [open]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.name || !form.format) { toast.error('Name and format are required'); return; }
-    setSaving(true);
-    const currentUser = await base44.auth.me().catch(() => null);
-    const isClubChallenge = form.format === 'Club Challenge';
-    const typedLocation = form.location.trim();
-    let matchedVenue = venues.find(v => v.name?.trim().toLowerCase() === typedLocation.toLowerCase()) || null;
-    if (typedLocation && !matchedVenue && currentUser?.active_tenant_id && currentUser?.active_club_id) {
-      try {
-        matchedVenue = await base44.entities.Venue.create({ tenant_id: currentUser.active_tenant_id, club_id: currentUser.active_club_id, name: typedLocation, status: 'active' });
-        setVenues(v => [...v, matchedVenue].sort((a,b) => (a.name || '').localeCompare(b.name || '')));
-      } catch (e) {
-        console.warn('Venue could not be saved for reuse', e);
-      }
-    }
-    const created = await base44.entities.Tournament.create({
-      ...form,
-      location: typedLocation,
-      venue_id: matchedVenue?.id || undefined,
-      inter_club: isClubChallenge,
-      partnership_type: isClubChallenge ? 'Random Partners' : form.partnership_type,
-      tenant_id: currentUser?.active_tenant_id || undefined,
-      host_club_id: currentUser?.active_club_id || undefined,
-      max_players: form.max_players ? Number(form.max_players) : undefined,
-      skill_range_min: form.skill_range_min ? Number(form.skill_range_min) : undefined,
-      skill_range_max: form.skill_range_max ? Number(form.skill_range_max) : undefined,
-      kotc_num_courts: Number(form.kotc_num_courts) || 4,
-      kotc_num_rounds: Number(form.kotc_num_rounds) || 9,
-      status: 'Draft',
-      player_ids: [],
-      partner_pairs: []
-    });
-    toast.success('Tournament created!');
-    setSaving(false);
-    onCreated?.(created);
-    onOpenChange(false);
-    setForm({ name: '', format: 'Single Elimination', partnership_type: 'Singles', start_date: '', end_date: '', location: '', max_players: '', description: '', prize_info: '', skill_range_min: '', skill_range_max: '', kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11' });
+  const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+  const selectedFeatured = FEATURED_FORMATS.find(f => f.value === form.format);
+  const selectedOther = OTHER_FORMATS.find(f => f.value === form.format);
+  const selectedLabel = selectedFeatured?.label || selectedOther?.label || '';
+  const usesGenericPartnership = !['King of the Court', 'Club Challenge', 'Tournival', 'Mixed Doubles'].includes(form.format);
+
+  const chooseFormat = (format) => {
+    update('format', format);
+    setStep('details');
   };
 
-  const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) return toast.error('Competition name is required');
+    if (!form.format) return toast.error('Choose a competition format');
+    setSaving(true);
+    try {
+      const currentUser = await base44.auth.me().catch(() => null);
+      const typedLocation = form.location.trim();
+      let matchedVenue = venues.find(v => v.name?.trim().toLowerCase() === typedLocation.toLowerCase()) || null;
+      if (typedLocation && !matchedVenue && currentUser?.active_tenant_id && currentUser?.active_club_id) {
+        try {
+          matchedVenue = await base44.entities.Venue.create({ tenant_id: currentUser.active_tenant_id, club_id: currentUser.active_club_id, name: typedLocation, status: 'active' });
+          setVenues(v => [...v, matchedVenue].sort((a,b) => (a.name || '').localeCompare(b.name || '')));
+        } catch (err) { console.warn('Venue could not be saved for reuse', err); }
+      }
 
-  const selectedFormat = FORMATS.find(f => f.value === form.format);
-  const isKotc = form.format === 'King of the Court';
+      const defaults = form.format === 'King of the Court'
+        ? { kotc_num_courts: 4, kotc_num_rounds: 30, kotc_score_format: 'timed_8' }
+        : form.format === 'Tournival'
+          ? { kotc_num_courts: 4 }
+          : {};
+
+      const created = await base44.entities.Tournament.create({
+        ...form,
+        ...defaults,
+        name: form.name.trim(),
+        location: typedLocation,
+        venue_id: matchedVenue?.id || undefined,
+        inter_club: form.format === 'Club Challenge',
+        partnership_type: form.format === 'Club Challenge' ? 'Random Partners' : form.partnership_type,
+        tenant_id: currentUser?.active_tenant_id || undefined,
+        host_club_id: currentUser?.active_club_id || undefined,
+        max_players: form.max_players ? Number(form.max_players) : undefined,
+        skill_range_min: form.skill_range_min ? Number(form.skill_range_min) : undefined,
+        skill_range_max: form.skill_range_max ? Number(form.skill_range_max) : undefined,
+        status: 'Draft',
+        player_ids: [],
+        partner_pairs: [],
+      });
+      toast.success(`${selectedLabel} created`);
+      onCreated?.(created);
+      onOpenChange(false);
+    } catch (err) {
+      toast.error(err?.message || 'Could not create competition');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-lg bg-card border-border max-h-[94dvh] overflow-y-auto p-4 sm:p-6 rounded-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-foreground">Create Tournament</DialogTitle>
-          <DialogDescription className="text-muted-foreground">Choose the competition format, then add only the details that format needs.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
-          <div>
-            <Label className="text-foreground text-sm">Tournament Name *</Label>
-            <Input value={form.name} onChange={e => update('name', e.target.value)} placeholder="e.g. Summer Tournival 2026" className="bg-secondary border-border mt-1" />
-          </div>
+      <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-2xl bg-card border-border max-h-[94dvh] overflow-y-auto p-4 sm:p-6 rounded-2xl">
+        {step === 'format' ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Create Competition</DialogTitle>
+              <DialogDescription className="text-muted-foreground">First choose what you want to run.</DialogDescription>
+            </DialogHeader>
 
-          {/* Draw Format */}
-          <div>
-            <Label className="text-foreground text-sm">Draw Format *</Label>
-            <div className="grid gap-2 mt-1 sm:grid-cols-2">
-              {FORMATS.map(f => (
-                <label key={f.value} className={cn(
-                  'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all',
-                  form.format === f.value ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground'
-                )}>
-                  <input type="radio" name="format" value={f.value} checked={form.format === f.value} onChange={() => update('format', f.value)} className="mt-0.5 accent-primary" />
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {FEATURED_FORMATS.map(item => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => chooseFormat(item.value)}
+                    className="group text-left rounded-2xl border border-border bg-secondary/30 p-4 hover:bg-secondary/60 hover:border-primary/40 transition-all min-h-[142px]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center', item.accent)}><item.icon className="w-5 h-5" /></div>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                    <p className="text-sm font-semibold text-foreground mt-3">{item.label}</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="rounded-2xl border border-border bg-secondary/20 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Trophy className="w-4 h-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-foreground">{f.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{f.desc}</p>
+                    <p className="text-sm font-semibold text-foreground">Other formats</p>
+                    <p className="text-xs text-muted-foreground">Use these for standard tournament structures.</p>
                   </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* King of the Court config */}
-          {isKotc && (
-            <div className="glass rounded-xl p-4 space-y-3 border border-yellow-500/20">
-              <div className="flex items-center gap-2">
-                <Crown className="w-4 h-4 text-yellow-400" />
-                <p className="text-sm font-semibold text-foreground">King of the Court Settings</p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Courts</Label>
-                  <Input type="number" min={1} max={8} value={form.kotc_num_courts}
-                    onChange={e => update('kotc_num_courts', e.target.value)}
-                    className="bg-secondary border-border mt-1" />
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Rounds</Label>
-                  <Select value={String(form.kotc_num_rounds)} onValueChange={v => update('kotc_num_rounds', v)}>
-                    <SelectTrigger className="mt-1 bg-secondary border-border"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7">7 rounds</SelectItem>
-                      <SelectItem value="8">8 rounds</SelectItem>
-                      <SelectItem value="9">9 rounds</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Match Format</Label>
-                <Select value={form.kotc_score_format} onValueChange={v => update('kotc_score_format', v)}>
-                  <SelectTrigger className="mt-1 bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <Select value="" onValueChange={chooseFormat}>
+                  <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Choose another format…" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="timed_10">10-min timed rounds</SelectItem>
-                    <SelectItem value="first_7">First to 7</SelectItem>
-                    <SelectItem value="first_11">First to 11 (win by 1)</SelectItem>
-                    <SelectItem value="first_15">First to 15</SelectItem>
+                    {OTHER_FORMATS.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-          )}
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="ghost" size="icon" onClick={() => setStep('format')} className="shrink-0"><ArrowLeft className="w-4 h-4" /></Button>
+                <div>
+                  <DialogTitle className="text-foreground">{selectedLabel}</DialogTitle>
+                  <DialogDescription className="text-muted-foreground">Add the event details. Format-specific setup comes next.</DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
 
-          {/* Partnership Type — only for formats that actually need a generic partnership choice */}
-          {!['King of the Court', 'Club Challenge', 'Tournival', 'Mixed Doubles'].includes(form.format) && <div>
-            <Label className="text-foreground text-sm">Partnership Type</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
-              {PARTNERSHIP_TYPES.map(pt => (
-                <label key={pt.value} className={cn(
-                  'flex flex-col items-center gap-1.5 p-3 rounded-lg border cursor-pointer transition-all text-center',
-                  form.partnership_type === pt.value ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground'
-                )}>
-                  <input type="radio" name="partnership_type" value={pt.value} checked={form.partnership_type === pt.value} onChange={() => update('partnership_type', pt.value)} className="sr-only" />
-                  <pt.icon className={cn('w-4 h-4', form.partnership_type === pt.value ? 'text-primary' : 'text-muted-foreground')} />
-                  <p className="text-xs font-medium text-foreground">{pt.label}</p>
-                </label>
-              ))}
-            </div>
-          </div>}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label className="text-foreground text-sm">Competition name *</Label>
+                <Input autoFocus value={form.name} onChange={e => update('name', e.target.value)} placeholder={`e.g. ${selectedLabel} — Monday Night`} className="bg-secondary border-border mt-1" />
+              </div>
 
-          {/* Dates + Location */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label className="text-foreground text-sm">Start Date</Label>
-              <Input type="date" value={form.start_date} onChange={e => update('start_date', e.target.value)} className="bg-secondary border-border mt-1" />
-            </div>
-            <div>
-              <Label className="text-foreground text-sm">End Date</Label>
-              <Input type="date" value={form.end_date} onChange={e => update('end_date', e.target.value)} className="bg-secondary border-border mt-1" />
-            </div>
-          </div>
-          <div>
-            <Label className="text-foreground text-sm">Location / Venue</Label>
-            <Input list="rallyhub-venue-options" value={form.location} onChange={e => update('location', e.target.value)} placeholder="Choose a saved venue or type a new one" className="bg-secondary border-border mt-1" />
-            <datalist id="rallyhub-venue-options">
-              {venues.map(v => <option key={v.id} value={v.name}>{v.address || ''}</option>)}
-            </datalist>
-            <p className="text-[10px] text-muted-foreground mt-1">Saved club venues appear in the dropdown. A new venue you type is saved for reuse when the tournament is created.</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <Label className="text-foreground text-sm">Max Players</Label>
-              <Input type="number" value={form.max_players} onChange={e => update('max_players', e.target.value)} className="bg-secondary border-border mt-1" />
-            </div>
-            <div>
-              <Label className="text-foreground text-sm">Min Rating</Label>
-              <Input type="number" step="0.1" value={form.skill_range_min} onChange={e => update('skill_range_min', e.target.value)} className="bg-secondary border-border mt-1" />
-            </div>
-            <div>
-              <Label className="text-foreground text-sm">Max Rating</Label>
-              <Input type="number" step="0.1" value={form.skill_range_max} onChange={e => update('skill_range_max', e.target.value)} className="bg-secondary border-border mt-1" />
-            </div>
-          </div>
-          <div>
-            <Label className="text-foreground text-sm">Description</Label>
-            <Textarea value={form.description} onChange={e => update('description', e.target.value)} className="bg-secondary border-border mt-1" rows={2} />
-          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-foreground text-sm">Date</Label>
+                  <Input type="date" value={form.start_date} onChange={e => update('start_date', e.target.value)} className="bg-secondary border-border mt-1" />
+                </div>
+                <div>
+                  <Label className="text-foreground text-sm">Venue</Label>
+                  <Input list="rallyhub-venue-options" value={form.location} onChange={e => update('location', e.target.value)} placeholder="Choose or type a venue" className="bg-secondary border-border mt-1" />
+                  <datalist id="rallyhub-venue-options">{venues.map(v => <option key={v.id} value={v.name}>{v.address || ''}</option>)}</datalist>
+                </div>
+              </div>
 
-          <div className="sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-card/95 backdrop-blur border-t border-border flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-            <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={saving} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
-              {saving ? 'Creating…' : 'Create Tournament'}
-            </Button>
-          </div>
-        </form>
+              {usesGenericPartnership && (
+                <div>
+                  <Label className="text-foreground text-sm">Partnership type</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
+                    {PARTNERSHIP_TYPES.map(pt => (
+                      <button key={pt.value} type="button" onClick={() => update('partnership_type', pt.value)} className={cn('rounded-xl border p-3 text-left transition-all', form.partnership_type === pt.value ? 'border-primary bg-primary/5' : 'border-border bg-secondary/20')}>
+                        <pt.icon className={cn('w-4 h-4 mb-2', form.partnership_type === pt.value ? 'text-primary' : 'text-muted-foreground')} />
+                        <p className="text-xs font-semibold text-foreground">{pt.label}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!['King of the Court', 'Club Challenge', 'Tournival'].includes(form.format) && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div><Label className="text-foreground text-sm">Max players</Label><Input type="number" value={form.max_players} onChange={e => update('max_players', e.target.value)} className="bg-secondary border-border mt-1" /></div>
+                  <div><Label className="text-foreground text-sm">Min rating</Label><Input type="number" step="0.1" value={form.skill_range_min} onChange={e => update('skill_range_min', e.target.value)} className="bg-secondary border-border mt-1" /></div>
+                  <div><Label className="text-foreground text-sm">Max rating</Label><Input type="number" step="0.1" value={form.skill_range_max} onChange={e => update('skill_range_max', e.target.value)} className="bg-secondary border-border mt-1" /></div>
+                </div>
+              )}
+
+              <div>
+                <Label className="text-foreground text-sm">Description</Label>
+                <Textarea value={form.description} onChange={e => update('description', e.target.value)} className="bg-secondary border-border mt-1" rows={2} />
+              </div>
+
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+                After you create this competition, RallyHub will open the dedicated <span className="font-semibold text-foreground">{selectedLabel}</span> workspace for roster, courts, scoring and format-specific setup.
+              </div>
+
+              <div className="sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-card/95 backdrop-blur border-t border-border flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+                <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => setStep('format')}><ArrowLeft className="w-4 h-4 mr-2" />Change format</Button>
+                <Button type="submit" disabled={saving || !form.name.trim()} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">{saving ? 'Creating…' : `Create ${selectedLabel}`}</Button>
+              </div>
+            </form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
