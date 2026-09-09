@@ -1,0 +1,158 @@
+{
+  "name": "ClubMembership",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "member_id": {
+      "type": "string"
+    },
+    "membership_season": {
+      "type": "string"
+    },
+    "membership_type": {
+      "type": "string"
+    },
+    "membership_status": {
+      "type": "string",
+      "enum": [
+        "paid_active",
+        "pending_payment",
+        "no_response",
+        "not_renewing",
+        "inactive",
+        "former_member"
+      ],
+      "default": "paid_active"
+    },
+    "relationship_type": {
+      "type": "string",
+      "enum": [
+        "member",
+        "guest",
+        "booking_only",
+        "waiting_list",
+        "inactive",
+        "former_member"
+      ],
+      "default": "member"
+    },
+    "join_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "renewal_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "membership_fee": {
+      "type": "number"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "paid",
+        "pending",
+        "failed",
+        "not_required",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "previous_member_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "alternate_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "alternate_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_rows": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "duplicate_flag": {
+      "type": "string"
+    },
+    "admin_notes": {
+      "type": "string"
+    },
+    "include_in_rallyhub": {
+      "type": "boolean",
+      "default": true
+    },
+    "source_system": {
+      "type": "string"
+    },
+    "source_external_id": {
+      "type": "string"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data_quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "person_id",
+    "membership_season",
+    "membership_status",
+    "relationship_type"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "name": "ExternalIdentity",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "spond",
+        "google_membership",
+        "dupr",
+        "rallyhub_legacy",
+        "other"
+      ]
+    },
+    "external_person_id": {
+      "type": "string"
+    },
+    "external_email": {
+      "type": "string"
+    },
+    "external_mobile": {
+      "type": "string"
+    },
+    "external_name": {
+      "type": "string"
+    },
+    "match_status": {
+      "type": "string",
+      "enum": [
+        "matched",
+        "possible_match",
+        "unmatched",
+        "excluded"
+      ],
+      "default": "unmatched"
+    },
+    "match_method": {
+      "type": "string",
+      "enum": [
+        "external_id",
+        "manual",
+        "email",
+        "mobile",
+        "name_dob",
+        "composite"
+      ]
+    },
+    "is_authoritative_identity": {
+      "type": "boolean",
+      "default": false
+    },
+    "last_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "provider",
+    "match_status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

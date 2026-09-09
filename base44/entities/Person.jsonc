@@ -1,0 +1,139 @@
+{
+  "name": "Person",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "preferred_name": {
+      "type": "string"
+    },
+    "primary_email": {
+      "type": "string"
+    },
+    "alternate_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "alternate_phones": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "gender": {
+      "type": "string"
+    },
+    "profile_photo_url": {
+      "type": "string"
+    },
+    "photo_visibility": {
+      "type": "string",
+      "enum": [
+        "private",
+        "club",
+        "public"
+      ],
+      "default": "club"
+    },
+    "address_line1": {
+      "type": "string"
+    },
+    "address_line2": {
+      "type": "string"
+    },
+    "town_city": {
+      "type": "string"
+    },
+    "county_region": {
+      "type": "string"
+    },
+    "postal_code": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "preferred_language": {
+      "type": "string"
+    },
+    "communication_preference": {
+      "type": "string"
+    },
+    "emergency_contact_name": {
+      "type": "string"
+    },
+    "emergency_contact_relationship": {
+      "type": "string"
+    },
+    "emergency_mobile": {
+      "type": "string"
+    },
+    "secondary_emergency_contact_name": {
+      "type": "string"
+    },
+    "secondary_emergency_contact_mobile": {
+      "type": "string"
+    },
+    "profile_visibility": {
+      "type": "string",
+      "enum": [
+        "private",
+        "club",
+        "public"
+      ],
+      "default": "club"
+    },
+    "source_system": {
+      "type": "string"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data_quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "tenant_id",
+    "full_name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -33,7 +33,7 @@ Deno.serve(async(req)=>{try{
  if(action==='finish'){
    const finalMatches=await base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id});
    const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id});
-   for(const row of standings(finalMatches||[],participants||[]))await base44.asServiceRole.entities.KotcSessionParticipant.update(row.id,{final_rank:row.rank});
+   for(const row of standings(finalMatches||[],participants||[]))await base44.asServiceRole.entities.KotcSessionParticipant.update(row.id,{final_rank:row.rank,podium_group:row.rank===1?'gold':row.rank===2?'silver':row.rank===3?'bronze':'none'});
  }
  if(session.tournament_id)await base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:action==='finish'?'Completed':'Cancelled',finalised_at:action==='finish'?now:undefined});
  await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:action==='finish'?'kotc_session_finished':'kotc_session_abandoned',entity_type:'KotcSession',entity_id:session.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({status:session.status,revision:session.revision}),after_state:JSON.stringify({status:updated.status,revision:updated.revision}),reason:action==='finish'?'Host finished session and preserved completed results':String(body.reason||'Session abandoned by host')});

@@ -1,0 +1,83 @@
+{
+  "name": "PersonDocument",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "document_type": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "private",
+        "club_admin",
+        "session_authorised",
+        "public"
+      ],
+      "default": "private"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "expired",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "person_id",
+    "document_type",
+    "title",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "name": "PersonRelationship",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "related_person_id": {
+      "type": "string"
+    },
+    "relationship_type": {
+      "type": "string",
+      "enum": [
+        "spouse_partner",
+        "parent",
+        "child",
+        "guardian",
+        "emergency_contact",
+        "household",
+        "other"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "person_id",
+    "related_person_id",
+    "relationship_type",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
