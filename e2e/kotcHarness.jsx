@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
 import KotcV2SessionView from '@/components/kotc/KotcV2SessionView';
 import '@/index.css';
 
@@ -34,7 +33,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <main className="min-h-screen bg-background p-3 sm:p-4 max-w-5xl mx-auto">
         <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} />
       </main>
-      <Toaster richColors position="top-center" />
     </QueryClientProvider>
   </React.StrictMode>
 );
