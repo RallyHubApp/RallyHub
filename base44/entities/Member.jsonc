@@ -39,6 +39,75 @@
       ],
       "default": "paid_active"
     },
+    "profile_type": {
+      "type": "string",
+      "enum": [
+        "member",
+        "booking_only",
+        "guest",
+        "staff",
+        "other"
+      ],
+      "default": "member"
+    },
+    "include_in_rallyhub": {
+      "type": "boolean",
+      "default": true
+    },
+    "club_membership_id": {
+      "type": "string"
+    },
+    "previous_membership_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "membership_type": {
+      "type": "string"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "paid",
+        "pending",
+        "failed",
+        "not_required",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "membership_amount": {
+      "type": "number"
+    },
+    "alternate_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "alternate_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_rows": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "duplicate_flag": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
     "emergency_contact": {
       "type": "string"
     },
