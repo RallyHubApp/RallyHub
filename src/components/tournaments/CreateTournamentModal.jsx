@@ -178,7 +178,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
           {/* Partnership Type — only for formats that actually need a generic partnership choice */}
           {!['King of the Court', 'Club Challenge', 'Tournival', 'Mixed Doubles'].includes(form.format) && <div>
             <Label className="text-foreground text-sm">Partnership Type</Label>
-            <div className="grid grid-cols-3 gap-2 mt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
               {PARTNERSHIP_TYPES.map(pt => (
                 <label key={pt.value} className={cn(
                   'flex flex-col items-center gap-1.5 p-3 rounded-lg border cursor-pointer transition-all text-center',
@@ -231,8 +231,8 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
           </div>
 
           <div className="sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-card/95 backdrop-blur border-t border-border flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={saving} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
               {saving ? 'Creating…' : 'Create Tournament'}
             </Button>
           </div>
