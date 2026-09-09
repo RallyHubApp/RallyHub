@@ -38,7 +38,7 @@ const initialForm = {
   skill_range_min: '', skill_range_max: '',
 };
 
-export default function CreateTournamentModal({ open, onOpenChange, onCreated }) {
+export default function CreateTournamentModal({ open, onOpenChange, onCreated, initialFormat = '' }) {
   const [step, setStep] = useState('format');
   const [form, setForm] = useState(initialForm);
   const [saving, setSaving] = useState(false);
@@ -46,8 +46,8 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
 
   useEffect(() => {
     if (!open) return;
-    setStep('format');
-    setForm(initialForm);
+    setStep(initialFormat ? 'details' : 'format');
+    setForm({ ...initialForm, format: initialFormat || '' });
     let cancelled = false;
     (async () => {
       try {
@@ -60,7 +60,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
       } catch { if (!cancelled) setVenues([]); }
     })();
     return () => { cancelled = true; };
-  }, [open]);
+  }, [open, initialFormat]);
 
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
   const selectedFeatured = FEATURED_FORMATS.find(f => f.value === form.format);
