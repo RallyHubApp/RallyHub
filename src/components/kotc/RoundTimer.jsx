@@ -15,7 +15,11 @@ function formatTime(seconds) {
 
 function createAudioContext() {
   const AudioContext = window.AudioContext || window.webkitAudioContext;
-  return AudioContext ? new AudioContext() : null;
+  if (!AudioContext) return null;
+  if (window.__rallyhubAudioContext) return window.__rallyhubAudioContext;
+  const ctx = new AudioContext();
+  window.__rallyhubAudioContext = ctx;
+  return ctx;
 }
 
 function beep(ctx, frequency, start, duration, volume) {
@@ -166,6 +170,10 @@ export default function RoundTimer({
     if (!autoStart || !enabled || disabled || !autoStartKey || !hydrated || !hydratedRef.current) return;
     if (autoStartedKeyRef.current === autoStartKey) return;
     autoStartedKeyRef.current = autoStartKey;
+    if (!audioRef.current && window.__rallyhubAudioContext) {
+      audioRef.current = window.__rallyhubAudioContext;
+      setAudioReady(audioRef.current?.state === 'running');
+    }
     startPhase('play', { unlock: false });
     persistTimer('start', playSeconds);
     if (autoFullscreen) setFullscreen(true);
