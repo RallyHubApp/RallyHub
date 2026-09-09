@@ -43,9 +43,9 @@ export default function Dashboard() {
             <Upload className="w-4 h-4" /> Import Players
           </Button>
         </Link>
-        <Link to="/app/tournaments">
-          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-            <Plus className="w-4 h-4" /> New Tournament
+        <Link to="/app/tournaments?create=1">
+          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto">
+            <Plus className="w-4 h-4" /> Create Competition
           </Button>
         </Link>
       </PageHeader>
