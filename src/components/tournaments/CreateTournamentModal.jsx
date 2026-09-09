@@ -72,7 +72,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
         console.warn('Venue could not be saved for reuse', e);
       }
     }
-    await base44.entities.Tournament.create({
+    const created = await base44.entities.Tournament.create({
       ...form,
       location: typedLocation,
       venue_id: matchedVenue?.id || undefined,
@@ -91,7 +91,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated })
     });
     toast.success('Tournament created!');
     setSaving(false);
-    onCreated?.();
+    onCreated?.(created);
     onOpenChange(false);
     setForm({ name: '', format: 'Single Elimination', partnership_type: 'Singles', start_date: '', end_date: '', location: '', max_players: '', description: '', prize_info: '', skill_range_min: '', skill_range_max: '', kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11' });
   };
