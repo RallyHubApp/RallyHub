@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Crown, Play, Pause, Trophy, AlertTriangle, GripVertical, Undo2, UserRound, HeartPulse, LogOut, Clock3, Volume2, ChevronDown, ChevronUp, Menu, Lock, Unlock, Phone, History, Settings2, CheckCircle2, X, Pencil, Link2, Mail, ArrowLeft } from 'lucide-react';
+import { Crown, Play, Pause, Trophy, AlertTriangle, GripVertical, Undo2, UserRound, HeartPulse, LogOut, Clock3, Menu, Lock, Unlock, Phone, History, Settings2, X, Pencil, Link2, Mail, ArrowLeft } from 'lucide-react';
 import RoundTimer from './RoundTimer';
 import KotcHostAccessPanel from './KotcHostAccessPanel';
 import { activeCourtCount } from '@/lib/kotcV2Domain';
