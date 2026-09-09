@@ -159,13 +159,16 @@ Deno.serve(async (req) => {
       const isRoundOne=Number(round.round_number)===1;
       const resetTimerState={roundId:round.id,roundNumber:Number(round.round_number||0),durationSeconds:Math.max(1,Number(session.play_minutes||8))*60,remainingSeconds:Math.max(1,Number(session.play_minutes||8))*60,running:false,deadlineAt:null,lastAction:'reset',updatedAt:nowIso(),updatedByUserId:user.id};
       const update:any={revision:currentRevision+1,last_command_id:commandId,status:session.status==='in_progress'&&isRoundOne?'ready':session.status,timer_state_json:JSON.stringify(resetTimerState)};
-      if(isRoundOne)update.actual_first_round_start=undefined;
+      if(isRoundOne)update.actual_first_round_start=null;
+      // Base44 omits undefined fields on update, so explicit nulls are required to clear
+      // stale start/confirm timestamps when a round is returned to setup.
+      const roundReset:any={status:'proposed',started_at:null,confirmed_at:null,confirmed_by_user_id:null};
       // Once validation passes, reverting the round, session and tournament are independent.
       // Commit them together and return the authoritative state straight back to the UI.
       const [updatedRound,updatedSession]=await Promise.all([
-        base44.asServiceRole.entities.KotcRound.update(round.id,{status:'proposed',started_at:undefined,confirmed_at:undefined,confirmed_by_user_id:undefined}),
+        base44.asServiceRole.entities.KotcRound.update(round.id,roundReset),
         base44.asServiceRole.entities.KotcSession.update(session.id,update),
-        isRoundOne&&session.tournament_id?base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'Draft',finalised_at:undefined}):Promise.resolve(null),
+        isRoundOne&&session.tournament_id?base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'Draft',finalised_at:null}):Promise.resolve(null),
       ]);
       session=updatedSession;
       try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_round_start_undone',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,reason:'Host returned unscored round to setup'});}catch{}
