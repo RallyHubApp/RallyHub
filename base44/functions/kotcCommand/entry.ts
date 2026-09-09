@@ -66,10 +66,14 @@ async function createSnapshot(base44:any, session:any, commandId:string, checkpo
   const sequence = Math.max(0, ...(prior || []).map((x:any) => Number(x.sequence || 0))) + 1;
   const snapshot = { schemaVersion:1, session, participants, rounds, slots, matches, participationEvents:events, sessionCourts:courts };
   try {
+    const snapshotJson=JSON.stringify(snapshot);
+    // Recovery support must never break a live host action. Skip oversized
+    // snapshots rather than attempting a write that can surface as Axios 500.
+    if(snapshotJson.length>350000){console.warn('KOTC recovery checkpoint skipped: snapshot too large',{sessionId:session.id,checkpointType,bytes:snapshotJson.length});return null;}
     return await base44.asServiceRole.entities.KotcRecoveryCheckpoint.create({
       tenant_id:session.tenant_id, club_id:session.club_id, session_id:session.id,
       sequence, session_revision:Number(session.revision || 0), current_round_number:Number(session.current_round_number || 0),
-      checkpoint_type:checkpointType, snapshot_json:JSON.stringify(snapshot), command_id:commandId,
+      checkpoint_type:checkpointType, snapshot_json:snapshotJson, command_id:commandId,
       created_by_user_id:userId, created_at:nowIso(),
     });
   } catch (error) {
@@ -149,7 +153,8 @@ Deno.serve(async (req) => {
       if(touched.length)return Response.json({error:'A score has already been entered or saved. Use score correction instead of Undo Start.'},{status:409});
       const updatedRound=await base44.asServiceRole.entities.KotcRound.update(round.id,{status:'proposed',started_at:undefined,confirmed_at:undefined,confirmed_by_user_id:undefined});
       const isRoundOne=Number(round.round_number)===1;
-      const update:any={revision:currentRevision+1,last_command_id:commandId,status:session.status==='in_progress'&&isRoundOne?'ready':session.status};
+      const resetTimerState={roundId:round.id,roundNumber:Number(round.round_number||0),durationSeconds:Math.max(1,Number(session.play_minutes||8))*60,remainingSeconds:Math.max(1,Number(session.play_minutes||8))*60,running:false,deadlineAt:null,lastAction:'reset',updatedAt:nowIso(),updatedByUserId:user.id};
+      const update:any={revision:currentRevision+1,last_command_id:commandId,status:session.status==='in_progress'&&isRoundOne?'ready':session.status,timer_state_json:JSON.stringify(resetTimerState)};
       if(isRoundOne)update.actual_first_round_start=undefined;
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,update);
       if(isRoundOne&&session.tournament_id)await base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'Draft',finalised_at:undefined});
@@ -322,7 +327,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.KotcParticipationEvent.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:participant.id,round_id:round?.id,round_number:effectiveRound,event_type:eventType,effective_from_round:effectiveRound,effective_to_round:action==='voluntary_rest'?effectiveRound:undefined,fairness_credit:false,reason,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now});
       await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_participant_status_changed',entity_type:'KotcSessionParticipant',entity_id:participant.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({status:participant.status,availability_effective_from_round:participant.availability_effective_from_round,available_again_from_round:participant.available_again_from_round}),after_state:JSON.stringify(update),reason});
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
-      result={success:true,session,participant:updated,effectiveRound}; await createSnapshot(base44,session,commandId,'command',user.id);
+      result={success:true,session,participant:updated,effectiveRound};
     } else if (commandType === 'adjust_proposed_round') {
       const rounds = await base44.asServiceRole.entities.KotcRound.filter({ id:body.roundId, session_id:session.id });
       const round = rounds?.[0];
@@ -380,7 +385,7 @@ Deno.serve(async (req) => {
       let pair=null;
       if(body.locked!==false){pair=await base44.asServiceRole.entities.KotcFixedPair.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,pair_name:`${byId.get(p1)?.display_name||'Player'} / ${byId.get(p2)?.display_name||'Player'}`,participant1_id:p1,participant2_id:p2,pair_source:'host_selected',status:'active'});}
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
-      result={success:true,session,pair,locked:body.locked!==false}; await createSnapshot(base44,session,commandId,'command',user.id);
+      result={success:true,session,pair,locked:body.locked!==false};
     } else if (commandType === 'takeover_host') {
       if (!String(body.reason || '').trim()) return Response.json({ error:'Host takeover reason is required.' }, { status:400 });
       const leases = await base44.asServiceRole.entities.KotcHostLease.filter({ session_id:session.id, status:'active' });
