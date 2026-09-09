@@ -117,6 +117,22 @@ Deno.serve(async (req) => {
     if (accessRole === 'assistant_host' && !['autosave_score','complete_match','correct_match'].includes(commandType)) return Response.json({ error:'Assistant hosts can enter and correct scores only.' }, { status:403 });
     if (session.status === 'finalised') return Response.json({ error:'Finalised KOTC sessions are read-only.' }, { status:409 });
 
+    // A real host always has authority over a player-held scoring lease. Claiming a court
+    // is deliberately non-structural and does not bump the match revision, so simply
+    // focusing a host score box cannot create an artificial stale-score conflict.
+    if (commandType === 'host_claim_score') {
+      if (accessRole === 'assistant_host') return Response.json({ error:'Assistant hosts cannot take over player scorer locks.' }, { status:403 });
+      if (!['in_progress','paused'].includes(session.status)) return Response.json({ error:'Host scoring takeover is only available during a live session.' }, { status:409 });
+      const match=(await base44.asServiceRole.entities.KotcMatch.filter({id:body.matchId,session_id:session.id}))?.[0];
+      if(!match)return Response.json({error:'Match not found'},{status:404});
+      const displaced=String(match.scoring_lock_owner||'');
+      if(displaced){
+        await base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:null,scoring_lock_acquired_at:null,scoring_lock_expires_at:null});
+        try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_host_took_over_scoring',entity_type:'KotcMatch',entity_id:match.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({scoring_lock_owner:displaced}),reason:'Host began entering the court score'});}catch{}
+      }
+      return Response.json({success:true,hostAuthority:true,displacedScorer:!!displaced});
+    }
+
     // Fast paths for the host's most time-critical actions. Do not route START ROUND
     // or first-pass score completion through large recovery snapshots: those extra
     // entity reads can hit Base44 rate limits during live play.
@@ -136,6 +152,7 @@ Deno.serve(async (req) => {
         team_a_score:score.a, team_b_score:score.b, winner_side:score.winner, result_method:score.method,
         serving_side_at_horn:score.method === 'timed_serving_tiebreak' ? body.servingSideAtHorn : undefined,
         status:'completed', completed_at:now, revision:current + 1, command_id:commandId, scored_by_user_id:user.id,
+        scoring_lock_owner:null, scoring_lock_acquired_at:null, scoring_lock_expires_at:null,
       });
       try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_score_completed',entity_type:'KotcMatch',entity_id:match.id,scope_type:'KotcSession',scope_id:session.id,after_state:JSON.stringify({team_a_score:score.a,team_b_score:score.b,winner_side:score.winner,revision:current+1})});}catch{}
       return Response.json({success:true,match:updated});
@@ -264,7 +281,7 @@ Deno.serve(async (req) => {
       const score:any = validateFinalScore(body, session);
       if (score.error) return Response.json({ error:score.error }, { status:400 });
       const original = isCorrection ? (match.original_result_json || JSON.stringify({ team_a_score:match.team_a_score, team_b_score:match.team_b_score, winner_side:match.winner_side, result_method:match.result_method, revision:current })) : undefined;
-      const update:any = { team_a_score:score.a, team_b_score:score.b, winner_side:score.winner, result_method:score.method, serving_side_at_horn:score.method === 'timed_serving_tiebreak' ? body.servingSideAtHorn : undefined, status:'completed', completed_at:match.completed_at || now, revision:current + 1, command_id:commandId, scored_by_user_id:match.scored_by_user_id || user.id };
+      const update:any = { team_a_score:score.a, team_b_score:score.b, winner_side:score.winner, result_method:score.method, serving_side_at_horn:score.method === 'timed_serving_tiebreak' ? body.servingSideAtHorn : undefined, status:'completed', completed_at:match.completed_at || now, revision:current + 1, command_id:commandId, scored_by_user_id:match.scored_by_user_id || user.id, scoring_lock_owner:null, scoring_lock_acquired_at:null, scoring_lock_expires_at:null };
       if (isCorrection) Object.assign(update, { correction_count:Number(match.correction_count || 0) + 1, last_corrected_at:now, last_corrected_by_user_id:user.id, last_correction_reason:String(body.reason).trim(), original_result_json:original });
       const updated = await base44.asServiceRole.entities.KotcMatch.update(match.id, update);
       if (isCorrection) {
