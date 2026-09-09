@@ -173,8 +173,14 @@ Deno.serve(async (req) => {
       if(round.status==='started'&&String(session.current_round_id||'')===String(round.id))return Response.json({success:true,alreadyStarted:true,session,round});
       if(round.status!=='proposed')return Response.json({error:`Round cannot start from ${round.status}.`},{status:409});
       if(Number(body.expectedProposalRevision)!==Number(round.proposal_revision||1))return Response.json({error:'Round proposal changed since you opened it. Refresh and try again.',conflict:true,currentProposalRevision:Number(round.proposal_revision||1)},{status:409});
-      const slots=(await base44.asServiceRole.entities.KotcRoundSlot.filter({round_id:round.id,session_id:session.id})).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank)||String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number));
-      const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id});
+      // These reads are independent. Run them together so START ROUND is not held up by
+      // three sequential Base44 round-trips on a host's phone.
+      const [slotRows,participants,lockRows]=await Promise.all([
+        base44.asServiceRole.entities.KotcRoundSlot.filter({round_id:round.id,session_id:session.id}),
+        base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}),
+        base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'}),
+      ]);
+      const slots=(slotRows||[]).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank)||String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number));
       const eligible=new Set((participants||[]).filter((p:any)=>['registered','confirmed','present','leaving_early'].includes(p.status)).map((p:any)=>String(p.id)));
       const requested=body.slotParticipantIds||{};const nextIds=slots.map((s:any)=>String(requested[s.id]||s.participant_id));const expected=Number(round.active_court_count||0)*4;
       if(slots.length!==expected||nextIds.length!==expected)return Response.json({error:`Round not ready: expected ${expected} court positions.`},{status:409});
@@ -186,9 +192,16 @@ Deno.serve(async (req) => {
       for(const l of locks){const a=String(l.participant1_id),b=String(l.participant2_id);if(nextIds.includes(a)&&nextIds.includes(b)&&!Object.values(teams).some((t:any)=>t.includes(a)&&t.includes(b)))return Response.json({error:`Round not ready: locked pair ${l.pair_name||''} is split.`},{status:409});}
       const changedCourts=new Set<number>();for(let i=0;i<slots.length;i++){const s=slots[i],id=nextIds[i];if(id!==String(s.participant_id)){await base44.asServiceRole.entities.KotcRoundSlot.update(s.id,{participant_id:id,assignment_type:'manual_override',assignment_revision:Number(s.assignment_revision||1)+1});changedCourts.add(Number(s.ladder_court_rank));}}
       if(changedCourts.size){const ms=await base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id});for(const m of ms){const rank=Number(m.ladder_court_rank);if(!changedCourts.has(rank))continue;const court=slots.map((s:any,i:number)=>({...s,participant_id:nextIds[i]})).filter((s:any)=>Number(s.ladder_court_rank)===rank);await base44.asServiceRole.entities.KotcMatch.update(m.id,{team_a_participant_ids:court.filter((s:any)=>s.team_side==='A').sort((a:any,b:any)=>Number(a.slot_number)-Number(b.slot_number)).map((s:any)=>s.participant_id),team_b_participant_ids:court.filter((s:any)=>s.team_side==='B').sort((a:any,b:any)=>Number(a.slot_number)-Number(b.slot_number)).map((s:any)=>s.participant_id),revision:Number(m.revision||0)+1,command_id:commandId});}}
-      const startedAt=nowIso();const updatedRound=await base44.asServiceRole.entities.KotcRound.update(round.id,{status:'started',confirmed_at:startedAt,confirmed_by_user_id:user.id,started_at:startedAt});
+      const startedAt=nowIso();
       const sessionUpdate:any={status:session.status==='ready'?'in_progress':session.status,revision:currentRevision+1,last_command_id:commandId,current_round_number:round.round_number,current_round_id:round.id};if(!session.actual_first_round_start)sessionUpdate.actual_first_round_start=startedAt;
-      session=await base44.asServiceRole.entities.KotcSession.update(session.id,sessionUpdate);if(session.tournament_id)await base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'In Progress'});
+      // The round, session and parent tournament updates are independent once validation
+      // has passed. Commit them in parallel to minimise the host-visible START delay.
+      const [updatedRound,updatedSession]=await Promise.all([
+        base44.asServiceRole.entities.KotcRound.update(round.id,{status:'started',confirmed_at:startedAt,confirmed_by_user_id:user.id,started_at:startedAt}),
+        base44.asServiceRole.entities.KotcSession.update(session.id,sessionUpdate),
+        session.tournament_id?base44.asServiceRole.entities.Tournament.update(session.tournament_id,{status:'In Progress'}):Promise.resolve(null),
+      ]);
+      session=updatedSession;
       try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_round_started',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,after_state:JSON.stringify({round_number:round.round_number,started_at:startedAt,manual_courts:[...changedCourts]})});}catch{}
       return Response.json({success:true,session,round:updatedRound});
     }
