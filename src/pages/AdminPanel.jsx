@@ -241,7 +241,6 @@ export default function AdminPanel() {
 
   const setApprovalStatus = async (userId, status) => {
     setUpdatingApproval(userId);
-    const targetUser = allUsers.find(u => u.id === userId);
     const approvalRes = await base44.functions.invoke('adminUserTools', { action: 'set_approval', userId, status });
     if (approvalRes.data?.error) {
       toast.error(approvalRes.data.error);
