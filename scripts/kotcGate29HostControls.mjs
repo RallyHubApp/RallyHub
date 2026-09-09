@@ -33,7 +33,7 @@ ok(command.includes("action==='leaving_early'"),'leaving early wired');
 ok(command.includes("action==='back_available'"),'return available wired');
 ok(command.includes("fairness_credit:false"),'status exceptions do not earn fairness credit');
 ok(command.includes("available_again_from_round"),'temporary/rest return round persisted');
-ok(v2.includes('Live Player Controls'),'live player controls rendered');
+ok(v2.includes('PlayerStatusControls'),'live player controls rendered through the current Session Menu component');
 ok(v2.includes("act('voluntary_rest')"),'sit-out quick action rendered');
 ok(v2.includes("act('injured')"),'injury quick action rendered');
 ok(v2.includes("act('leaving_early')"),'leaving-early quick action rendered');
