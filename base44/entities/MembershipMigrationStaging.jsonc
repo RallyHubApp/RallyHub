@@ -11,6 +11,9 @@
     "payload_base64": {
       "type": "string"
     },
+    "payload_json": {
+      "type": "string"
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -28,7 +31,6 @@
   "required": [
     "migration_id",
     "batch_no",
-    "payload_base64",
     "status"
   ],
   "rls": {
