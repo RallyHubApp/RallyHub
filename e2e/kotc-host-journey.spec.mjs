@@ -412,6 +412,14 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   await expect(page.getByText('Round 1 — LIVE')).toBeVisible({ timeout: 1800 });
   metric(report, 'restart_to_live_ms', Date.now() - started, 1500);
   await dismissTimerFullscreen(page);
+  // A player/scorer device has Court 1 locked. The host touching the score box must
+  // take authority immediately without changing the match revision.
+  const round1Court1=model.matches.find(m=>m.id==='match-r1-c1');
+  round1Court1.scoring_lock_owner='player-device-1';
+  round1Court1.scoring_lock_expires_at=new Date(Date.now()+90000).toISOString();
+  await page.getByTestId('kotc-score-1-a').focus();
+  await expect.poll(()=>round1Court1.scoring_lock_owner).toBe('host:e2e');
+  report.host_displaced_player_scorer=true;
   report.round1_score_save_ms = await scoreCurrentRound(page, 4, 11);
   for (const ms of report.round1_score_save_ms) expect(ms).toBeLessThanOrEqual(1200);
 
@@ -460,6 +468,23 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   await expect(page.getByText('Gold')).toBeVisible();
   await expect(page.getByText('Silver')).toBeVisible();
   await expect(page.getByText('Bronze')).toBeVisible();
+
+  // Post-event audit correction: reopen Round 1 / Court 1, reverse the result and
+  // confirm RallyHub stores it as a correction without rewriting later court assignments.
+  await expect(page.getByText('Review & Correct Results')).toBeVisible();
+  await page.getByRole('button',{name:'Round 1',exact:true}).click();
+  const preCorrectionRound2=JSON.stringify(model.slots.filter(s=>s.round_id==='round-2'));
+  const reviewCard=page.getByTestId('kotc-score-card-1').first();
+  await reviewCard.getByRole('button',{name:'Edit result'}).click();
+  await reviewCard.getByTestId('kotc-score-1-a').fill('2');
+  await reviewCard.getByTestId('kotc-score-1-b').fill('12');
+  await reviewCard.getByRole('button',{name:'Save Correction'}).click();
+  await expect(reviewCard).toContainText('Saved 2–12',{timeout:1800});
+  const corrected=model.matches.find(m=>m.id==='match-r1-c1');
+  expect(corrected.correction_count).toBe(1);
+  expect(corrected.winner_side).toBe('B');
+  expect(JSON.stringify(model.slots.filter(s=>s.round_id==='round-2'))).toBe(preCorrectionRound2);
+  report.post_event_score_correction=true;
 
   report.rounds_created = model.rounds.length;
   report.function_calls = model.calls.length;
