@@ -116,6 +116,18 @@
     },
     "command_id": {
       "type": "string"
+    },
+    "scoring_lock_owner": {
+      "type": "string",
+      "description": "Ephemeral browser/client id holding the scorer edit lease for this court"
+    },
+    "scoring_lock_acquired_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scoring_lock_expires_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
