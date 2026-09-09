@@ -275,6 +275,7 @@ export default function RoundTimer({
 
   return (
     <div
+      data-testid="kotc-timer"
       ref={timerRef}
       style={floating && !fullscreen ? { left: position.x, top: position.y, width: 'min(92vw, 360px)' } : undefined}
       className={cn(
@@ -316,7 +317,7 @@ export default function RoundTimer({
         floating && !fullscreen && 'text-5xl',
         fullscreen && 'text-[18vw] sm:text-[14vw]'
       )}>
-        {formatTime(seconds)}
+        <span data-testid="kotc-timer-value">{formatTime(seconds)}</span>
       </div>
 
       <div className="h-2.5 sm:h-3 bg-secondary rounded-full overflow-hidden">
@@ -332,9 +333,9 @@ export default function RoundTimer({
       )}
 
       <div className="flex gap-2">
-        {running&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {persistTimer('pause',seconds);setRunning(false);deadlineRef.current=null;}} disabled={disabled || !enabled}><Pause className="w-4 h-4" /> Pause Timer</Button>}
-        {!running&&seconds>0&&<Button className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {if(seconds===maxSeconds){startPhase('play');persistTimer('start',maxSeconds);}else{deadlineRef.current=Date.now()+seconds*1000;setRunning(true);persistTimer('resume',seconds);}}} disabled={disabled || !enabled}><Play className="w-4 h-4" /> {seconds===maxSeconds?'Start Timer':'Resume Timer'}</Button>}
-        <Button variant="outline" onClick={reset} className="gap-2 h-11 sm:h-12"><RotateCcw className="w-4 h-4" /> Reset</Button>
+        {running&&<Button data-testid="kotc-timer-pause" className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {persistTimer('pause',seconds);setRunning(false);deadlineRef.current=null;}} disabled={disabled || !enabled}><Pause className="w-4 h-4" /> Pause Timer</Button>}
+        {!running&&seconds>0&&<Button data-testid="kotc-timer-start" className="flex-1 bg-primary text-primary-foreground gap-2 h-11 sm:h-12" onClick={() => {if(seconds===maxSeconds){startPhase('play');persistTimer('start',maxSeconds);}else{deadlineRef.current=Date.now()+seconds*1000;setRunning(true);persistTimer('resume',seconds);}}} disabled={disabled || !enabled}><Play className="w-4 h-4" /> {seconds===maxSeconds?'Start Timer':'Resume Timer'}</Button>}
+        <Button data-testid="kotc-timer-reset" variant="outline" onClick={reset} className="gap-2 h-11 sm:h-12"><RotateCcw className="w-4 h-4" /> Reset</Button>
       </div>
 
       {!audioReady && !floating && !fullscreen && (
