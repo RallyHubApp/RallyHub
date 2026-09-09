@@ -174,6 +174,15 @@ function createModel() {
     }
 
     if (name === 'kotcCommand') {
+      if (body.commandType === 'host_claim_score') {
+        const match = model.matches.find(m => m.id === body.matchId);
+        if (!match) return { success: false, error: 'Match not found' };
+        const displaced = !!match.scoring_lock_owner && match.scoring_lock_owner !== 'host:e2e';
+        match.scoring_lock_owner = 'host:e2e';
+        match.scoring_lock_expires_at = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+        return { success: true, hostAuthority: true, displacedScorer: displaced };
+      }
+
       if (body.commandType === 'set_pair_lock') {
         await sleep(260);
         model.fixedPairs = model.fixedPairs.filter(pair => pair.status !== 'active');
@@ -210,16 +219,20 @@ function createModel() {
         return { success: true, session: model.session, round };
       }
 
-      if (body.commandType === 'complete_match') {
+      if (body.commandType === 'complete_match' || body.commandType === 'correct_match') {
         await sleep(320);
         const match = model.matches.find(m => m.id === body.matchId);
+        const correction = body.commandType === 'correct_match';
         match.team_a_score = Number(body.teamAScore);
         match.team_b_score = Number(body.teamBScore);
         match.winner_side = match.team_a_score >= match.team_b_score ? 'A' : 'B';
         match.status = 'completed';
-        match.completed_at = new Date().toISOString();
+        match.completed_at = match.completed_at || new Date().toISOString();
+        match.scoring_lock_owner = null;
+        match.scoring_lock_expires_at = null;
+        if (correction) match.correction_count = Number(match.correction_count || 0) + 1;
         match.revision += 1;
-        return { success: true, match };
+        return { success: true, match, correction };
       }
 
       if (body.commandType === 'generate_next_round') {
