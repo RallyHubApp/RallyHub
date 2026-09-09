@@ -153,6 +153,14 @@ export default function RoundTimer({
 
   useEffect(() => {
     if (!sessionId || !roundId) { hydratedRef.current = true; setHydrated(true); return; }
+    // A fresh sporting round was just started by this host. Do not make the visible
+    // timer wait for a second server read before it can start; the explicit START ROUND
+    // command is already the authority. Reopened/refresh sessions still hydrate normally.
+    if (autoStart && String(autoStartKey) === String(roundId)) {
+      hydratedRef.current = true;
+      setHydrated(true);
+      return;
+    }
     let cancelled = false;
     hydratedRef.current = false;
     setHydrated(false);
