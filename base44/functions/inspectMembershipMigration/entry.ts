@@ -22,7 +22,13 @@ Deno.serve(async (req) => {
     const batches:any[] = [];
     let total = 0;
     for (const row of rows) {
-      const decoded = await decodePayload(row.payload_base64);
+      const raw = String(row.payload_base64 || '');
+      const invalid = [...new Set((raw.match(/[^A-Za-z0-9+\/_=\-\s]/g) || []))].slice(0,20);
+      if (invalid.length) {
+        batches.push({batch_no:row.batch_no,payload_length:raw.length,invalid_chars:invalid,prefix:raw.slice(0,4),suffix:raw.slice(-4)});
+        continue;
+      }
+      const decoded = await decodePayload(raw);
       const items = Array.isArray(decoded) ? decoded : (decoded.records || decoded.people || decoded.members || decoded.items || []);
       total += Array.isArray(items) ? items.length : 0;
       const sample = Array.isArray(items) && items.length ? items[0] : decoded;
