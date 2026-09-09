@@ -175,6 +175,10 @@
     "created_from_session_id": {
       "type": "string",
       "description": "Source session when cloned"
+    },
+    "timer_state_json": {
+      "type": "string",
+      "description": "Persisted KOTC round timer state for refresh/recovery"
     }
   },
   "required": [
