@@ -1,0 +1,82 @@
+{
+  "name": "SportProfile",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "sport": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    },
+    "primary_club_id": {
+      "type": "string"
+    },
+    "skill_level": {
+      "type": "string"
+    },
+    "playing_category": {
+      "type": "string"
+    },
+    "preferred_side": {
+      "type": "string"
+    },
+    "dupr_id": {
+      "type": "string"
+    },
+    "dupr_rating": {
+      "type": "number"
+    },
+    "dupr_singles_rating": {
+      "type": "number"
+    },
+    "dupr_doubles_rating": {
+      "type": "number"
+    },
+    "dupr_last_synced": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "person_id",
+    "sport",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

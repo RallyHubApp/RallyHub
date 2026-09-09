@@ -1,0 +1,55 @@
+{
+  "name": "HouseholdRelationship",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "person_id_1": {
+      "type": "string"
+    },
+    "person_id_2": {
+      "type": "string"
+    },
+    "relationship_type": {
+      "type": "string"
+    },
+    "shared_contact_note": {
+      "type": "string"
+    },
+    "source_system": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "person_id_1",
+    "person_id_2",
+    "relationship_type"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

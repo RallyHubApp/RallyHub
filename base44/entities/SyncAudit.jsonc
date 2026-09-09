@@ -1,0 +1,79 @@
+{
+  "name": "SyncAudit",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "source_system": {
+      "type": "string"
+    },
+    "source_record": {
+      "type": "string"
+    },
+    "sync_type": {
+      "type": "string"
+    },
+    "matched_by": {
+      "type": "string"
+    },
+    "match_status": {
+      "type": "string"
+    },
+    "target_entity_type": {
+      "type": "string"
+    },
+    "target_entity_id": {
+      "type": "string"
+    },
+    "changed_fields_json": {
+      "type": "string"
+    },
+    "conflicts_json": {
+      "type": "string"
+    },
+    "data_quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "synced_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "source_system",
+    "sync_type",
+    "synced_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": false,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

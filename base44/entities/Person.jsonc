@@ -5,6 +5,10 @@
     "tenant_id": {
       "type": "string"
     },
+    "linked_user_id": {
+      "type": "string",
+      "description": "Optional Base44 User ID linked to this permanent RallyHub Person"
+    },
     "full_name": {
       "type": "string"
     },

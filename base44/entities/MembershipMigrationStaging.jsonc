@@ -1,0 +1,56 @@
+{
+  "name": "MembershipMigrationStaging",
+  "type": "object",
+  "properties": {
+    "migration_id": {
+      "type": "string"
+    },
+    "batch_no": {
+      "type": "number"
+    },
+    "payload_base64": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "staged",
+        "processed",
+        "failed"
+      ],
+      "default": "staged"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "migration_id",
+    "batch_no",
+    "payload_base64",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
