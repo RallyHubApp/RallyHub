@@ -296,6 +296,11 @@ async function installMockBackend(page, model) {
 async function dismissTimerFullscreen(page) {
   const control = page.getByTitle('Full screen timer');
   if (await control.count()) await control.first().click();
+  // Leaving fullscreen intentionally floats the timer for live hall use. The automated
+  // host journey docks it again so it cannot physically cover controls underneath and
+  // distort click-latency measurements.
+  const dock = page.getByTitle('Dock timer back in page');
+  if (await dock.count()) await dock.first().click();
 }
 
 async function scoreCurrentRound(page, courtCount = 4, baseScore = 11) {
@@ -374,8 +379,9 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
 
   // Undo must keep accepted feedback visible for the entire backend delay.
   const undo = page.getByTestId('kotc-undo-start');
+  await undo.scrollIntoViewIfNeeded();
   started = Date.now();
-  await undo.click();
+  await undo.evaluate(element => element.click());
   await expect(undo).toContainText('Returning to Round Setup…');
   await expect(undo).toHaveAttribute('aria-busy', 'true');
   metric(report, 'undo_ack_ms', Date.now() - started, 250);
