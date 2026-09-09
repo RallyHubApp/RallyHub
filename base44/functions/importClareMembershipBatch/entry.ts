@@ -83,4 +83,17 @@ async function finalise(base44:any){
  await base44.asServiceRole.entities.AuditLog.create({tenant_id:TENANT,club_id:CLUB,user_id:'system-membership-import',action:'membership_master_import_completed',entity_type:'ClubMembership',entity_id:'2026-27',scope_type:'Club',scope_id:CLUB,after_state:JSON.stringify(result),reason:'Clare 2026-27 membership master initial import'});return result;
 }
 
-Deno.serve(async(req)=>{try{const base44=createClientFromRequest(req);const body=await req.json().catch(()=>({}));if(body.confirmation!==CONFIRM)return Response.json({error:'confirmation required'},{status:403});if(body.action==='finalise')return Response.json(await finalise(base44));return Response.json({success:true,...await processBatch(base44,body.members)});}catch(e){console.error('[importClareMembershipBatch]',e);return Response.json({success:false,error:String((e as any)?.message||e)},{status:500});}});
+async function qualityReport(base44:any){
+ const persons=await base44.asServiceRole.entities.Person.filter({tenant_id:TENANT,source_system:SOURCE});
+ const buckets:any={dob:[],postal_address:[],eircode:[],emergency_contact:[],emergency_mobile:[],membership_id:[],other:[]};
+ const seen:any=Object.fromEntries(Object.keys(buckets).map(k=>[k,new Set()]));
+ for(const p of persons){for(const raw of (p.data_quality_flags||[])){const f=norm(raw);let b='other';if(f.includes('date_of_birth')||f.includes('missing_dob')||f.includes('invalid_date'))b='dob';else if(f.includes('postal_address')||f.includes('missing_postal_address'))b='postal_address';else if(f.includes('eircode'))b='eircode';else if(f.includes('emergency_contact'))b='emergency_contact';else if(f.includes('emergency_mobile'))b='emergency_mobile';else if(f.includes('membership_id'))b='membership_id';if(!seen[b].has(p.id)){seen[b].add(p.id);buckets[b].push(p.full_name);}}}
+ }
+ return {success:true,total_persons:persons.length,needs_attention:persons.filter((p:any)=>(p.data_quality_flags||[]).length).length,buckets:Object.fromEntries(Object.entries(buckets).map(([k,v]:any)=>[k,{count:v.length,names:v.sort((a:string,b:string)=>a.localeCompare(b))}]))};
+}
+async function cleanupMigration(base44:any){
+ const rows=await base44.asServiceRole.entities.MembershipMigrationStaging.filter({migration_id:'clare-membership-2026-27-20260909'});
+ for(const r of rows)await base44.asServiceRole.entities.MembershipMigrationStaging.delete(r.id);
+ return {success:true,deleted_staging_rows:rows.length};
+}
+Deno.serve(async(req)=>{try{const base44=createClientFromRequest(req);const body=await req.json().catch(()=>({}));if(body.confirmation!==CONFIRM)return Response.json({error:'confirmation required'},{status:403});if(body.action==='finalise')return Response.json(await finalise(base44));if(body.action==='quality_report')return Response.json(await qualityReport(base44));if(body.action==='cleanup_staging')return Response.json(await cleanupMigration(base44));return Response.json({success:true,...await processBatch(base44,body.members)});}catch(e){console.error('[importClareMembershipBatch]',e);return Response.json({success:false,error:String((e as any)?.message||e)},{status:500});}});
