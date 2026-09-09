@@ -16,6 +16,7 @@
       "enum": [
         "member",
         "guest",
+        "waiting_list",
         "booking_only",
         "former_member",
         "other"
@@ -37,6 +38,51 @@
     "end_date": {
       "type": "string",
       "format": "date"
+    },
+    "how_heard_about_club": {
+      "type": "string",
+      "enum": [
+        "member_referral",
+        "social_media",
+        "website_search",
+        "sports_partnership",
+        "event_or_course",
+        "spond",
+        "other",
+        "unknown"
+      ]
+    },
+    "entry_route": {
+      "type": "string",
+      "enum": [
+        "direct_membership",
+        "waiting_list",
+        "beginner_course",
+        "guest_play",
+        "external_club_event",
+        "open_tournament",
+        "booking_only",
+        "other",
+        "unknown"
+      ]
+    },
+    "waiting_list_position": {
+      "type": "number"
+    },
+    "waiting_list_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "offered",
+        "deferred",
+        "removed",
+        "joined"
+      ],
+      "description": "Used only when relationship_type is waiting_list"
+    },
+    "waiting_list_joined_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "source_system": {
       "type": "string"
