@@ -72,6 +72,7 @@ export default function RoundTimer({
   autoStart = false,
   autoStartKey = null,
   autoFullscreen = false,
+  onAutoStartHandled = null,
   sessionId = null,
   roundId = null,
 }) {
@@ -155,7 +156,7 @@ export default function RoundTimer({
     let cancelled = false;
     hydratedRef.current = false;
     setHydrated(false);
-    (async()=>{try{const res=await base44.functions.invoke('kotcTimer',{sessionId,roundId,action:'get'});if(cancelled)return;const s=res.data?.state;if(s){const remaining=Math.max(0,Number(s.remainingSeconds||0));setPhase('play');setSeconds(remaining);setRunning(!!s.running&&remaining>0);deadlineRef.current=s.running&&s.deadlineAt?Date.parse(s.deadlineAt):null;if(s.lastAction==='start'||s.lastAction==='resume'||s.lastAction==='pause'||s.lastAction==='reset'||s.lastAction==='finish')autoStartedKeyRef.current=autoStartKey;}}catch{}finally{if(!cancelled){hydratedRef.current=true;setHydrated(true);}}})()
+    (async()=>{try{const res=await base44.functions.invoke('kotcTimer',{sessionId,roundId,action:'get'});if(cancelled)return;const s=res.data?.state;if(s){const remaining=Math.max(0,Number(s.remainingSeconds||0));setPhase('play');setSeconds(remaining);setRunning(!!s.running&&remaining>0);deadlineRef.current=s.running&&s.deadlineAt?Date.parse(s.deadlineAt):null;if(s.lastAction==='start'||s.lastAction==='resume'||s.lastAction==='pause'||s.lastAction==='finish')autoStartedKeyRef.current=autoStartKey;}}catch{}finally{if(!cancelled){hydratedRef.current=true;setHydrated(true);}}})()
     return()=>{cancelled=true;};
   },[sessionId,roundId]);
 
@@ -179,6 +180,7 @@ export default function RoundTimer({
     startPhase('play', { unlock: false });
     persistTimer('start', playSeconds);
     if (autoFullscreen) setFullscreen(true);
+    onAutoStartHandled?.();
     // autoStartKey is the sporting round identity; one automatic timer start per round.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, autoStartKey, enabled, disabled, hydrated]);
