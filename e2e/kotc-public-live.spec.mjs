@@ -51,5 +51,5 @@ test('public KOTC live link: assignments → live scores → podium', async ({pa
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
   await expect(page.getByText('Final Standings')).toBeVisible();
-  await expect(page.getByText('Guest One')).toBeVisible();
+  await expect(page.getByTestId('public-kotc-podium').getByText('Guest One')).toBeVisible();
 });
