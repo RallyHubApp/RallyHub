@@ -6,7 +6,7 @@
     "config": {
       "trigger_type": "scheduled",
       "events": [],
-      "schedule_mode": "once",
+      "schedule_mode": "one_time",
       "cron_expression": null,
       "one_time_date": "2026-09-09T21:08:00Z",
       "timezone": "UTC",
