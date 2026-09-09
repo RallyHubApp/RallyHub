@@ -11,6 +11,10 @@
     "user_id": {
       "type": "string"
     },
+    "person_id": {
+      "type": "string",
+      "description": "Permanent RallyHub Person linked to this club access record"
+    },
     "player_id": {
       "type": "string"
     },
@@ -28,6 +32,7 @@
         "member",
         "guest",
         "waiting_list",
+        "booking_only",
         "inactive",
         "former_member"
       ],
