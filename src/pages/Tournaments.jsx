@@ -32,6 +32,7 @@ const statusColors = {
 
 export default function Tournaments() {
   const [createOpen, setCreateOpen] = useState(false);
+  const [createFormat, setCreateFormat] = useState('');
   const [kotcSpondOpen, setKotcSpondOpen] = useState(false);
   const [kotcXlsxOpen, setKotcXlsxOpen] = useState(false);
   const [newKotcTournament, setNewKotcTournament] = useState(null);
@@ -44,6 +45,7 @@ export default function Tournaments() {
 
   useEffect(() => {
     if (searchParams.get('create') === '1') {
+      setCreateFormat('');
       setCreateOpen(true);
       const next = new URLSearchParams(searchParams);
       next.delete('create');
@@ -55,60 +57,14 @@ export default function Tournaments() {
     base44.auth.me().then(u => setIsAdmin(u?.role === 'admin')).catch(() => {});
   }, []);
 
-  const handleQuickKotc = async () => {
-    const user = await base44.auth.me().catch(() => null);
-    const t = await base44.entities.Tournament.create({
-      name: `King of the Court — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
-      format: 'King of the Court',
-      partnership_type: 'Singles',
-      status: 'Draft',
-      start_date: todayIreland(),
-      tenant_id: user?.active_tenant_id || undefined,
-      host_club_id: user?.active_club_id || undefined,
-      kotc_num_courts: 4,
-      kotc_num_rounds: 9,
-      kotc_score_format: 'first_11',
-      player_ids: [],
-      partner_pairs: [],
-    });
-    queryClient.invalidateQueries({ queryKey: ['tournaments'] });
-    navigate(`/app/tournaments/${t.id}`);
+  const openCreateFor = (format = '') => {
+    setCreateFormat(format);
+    setCreateOpen(true);
   };
 
-  const handleQuickTournival = async () => {
-    const user = await base44.auth.me().catch(() => null);
-    const t = await base44.entities.Tournament.create({
-      name: `Tournival — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
-      format: 'Tournival',
-      partnership_type: 'Singles',
-      status: 'Draft',
-      tenant_id: user?.active_tenant_id || undefined,
-      host_club_id: user?.active_club_id || undefined,
-      kotc_num_courts: 4,
-      player_ids: [],
-      partner_pairs: [],
-    });
-    queryClient.invalidateQueries({ queryKey: ['tournaments'] });
-    navigate(`/app/tournaments/${t.id}`);
-  };
-
-  const handleQuickClubChallenge = async () => {
-    const user = await base44.auth.me().catch(() => null);
-    const t = await base44.entities.Tournament.create({
-      name: `Club Challenge — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
-      format: 'Club Challenge',
-      partnership_type: 'Random Partners',
-      inter_club: true,
-      status: 'Draft',
-      tenant_id: user?.active_tenant_id || undefined,
-      host_club_id: user?.active_club_id || undefined,
-      kotc_num_courts: 4,
-      player_ids: [],
-      partner_pairs: [],
-    });
-    queryClient.invalidateQueries({ queryKey: ['tournaments'] });
-    navigate(`/app/tournaments/${t.id}`);
-  };
+  const handleQuickKotc = () => openCreateFor('King of the Court');
+  const handleQuickTournival = () => openCreateFor('Tournival');
+  const handleQuickClubChallenge = () => openCreateFor('Club Challenge');
 
   const handleDelete = async (e, id) => {
     e.preventDefault();
@@ -146,7 +102,7 @@ export default function Tournaments() {
   return (
     <div className="space-y-6">
       <PageHeader title="Tournament Control Centre" description={`${tournaments.length} event${tournaments.length === 1 ? '' : 's'} · create, run and review competitions`}>
-        <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
+        <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto" onClick={() => openCreateFor('')}>
           <Plus className="w-4 h-4" /> Create Competition
         </Button>
       </PageHeader>
