@@ -251,12 +251,12 @@ export default function AdminPanel() {
     queryClient.invalidateQueries({ queryKey: ['all-users'] });
     toast.success(`User ${status}`);
     setUpdatingApproval(null);
-    // Notify the user by email if approved or rejected
-    if ((status === 'approved' || status === 'rejected') && targetUser?.email) {
+    // Notify the user by email if approved or rejected. The backend resolves the
+    // recipient/name from userId so no caller-controlled email address is accepted.
+    if (status === 'approved' || status === 'rejected') {
       base44.functions.invoke('notifyAdminsOnSignup', {
         notifyUserApproval: true,
-        userEmail: targetUser.email,
-        userName: targetUser.full_name || targetUser.email,
+        userId,
         status
       }).catch(() => {});
     }
