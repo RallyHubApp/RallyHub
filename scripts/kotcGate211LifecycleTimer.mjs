@@ -16,8 +16,10 @@ ok(view.includes('autoStart={timerStartRoundId===currentRound.id}'), 'timer auto
 ok(view.includes('onAutoStartHandled={()=>setTimerStartRoundId(null)}'), 'one-shot timer auto-start token is cleared after use');
 ok(!view.includes("setTimerStartRoundId(currentRound"), 'loaded current-round state cannot arm timer auto-start');
 
-// Timer hydration/recovery must restore persisted state, not silently reset/restart it.
-ok(timer.includes("action:'get'"), 'timer hydrates from persisted backend state');
+// A fresh explicit host start must be immediate, while reopen/refresh still hydrates safely.
+ok(timer.includes("if (autoStart && String(autoStartKey) === String(roundId))"), 'fresh explicit round start bypasses unnecessary timer hydration delay');
+ok(timer.includes('the explicit START ROUND'), 'timer fast-start documents the authoritative host action');
+ok(timer.includes("action:'get'"), 'reopened timer hydrates from persisted backend state');
 ok(timer.includes('setRunning(!!s.running&&remaining>0)'), 'hydration restores backend running state only');
 ok(timer.includes("if(s.lastAction==='start'||s.lastAction==='resume'||s.lastAction==='pause'||s.lastAction==='finish')autoStartedKeyRef.current=autoStartKey"), 'hydration marks recovered live/paused/finished rounds as already auto-started');
 ok(timerFn.includes('if(state.running&&state.deadlineAt)'), 'backend reconciles persisted running timer against its deadline');
@@ -40,5 +42,7 @@ ok(command.includes('Recovery support must never break a live host action'), 're
 ok(command.includes('if(snapshotJson.length>350000)'), 'oversized recovery snapshots are skipped before write');
 ok(command.includes("console.warn('KOTC recovery checkpoint skipped'"), 'checkpoint write failures are caught and logged');
 ok(command.indexOf("if (commandType === 'start_proposed_round')") < command.indexOf('const duplicates = await base44.asServiceRole.entities.KotcCommandLog.filter'), 'START ROUND uses the lightweight fast path before command-log/snapshot overhead');
+ok(command.includes('const [slotRows,participants,lockRows]=await Promise.all'), 'independent START ROUND validation reads run in parallel');
+ok(command.includes('const [updatedRound,updatedSession]=await Promise.all'), 'round/session/tournament start writes run in parallel');
 
 console.log(`KOTC Gate 2.11 lifecycle/timer regression: PASS\n${checks} lifecycle/timer checks, 0 failures.`);
