@@ -47,9 +47,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    if (user.role !== 'admin' && user.approval_status !== 'approved') {
+      return Response.json({ error: 'Forbidden: Approved account required' }, { status: 403 });
+    }
+
     const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
     const isKotcManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole);
     const sameTenant = user.role === 'admin' || (!!tournament.tenant_id && tournament.tenant_id === user.active_tenant_id);
+
+    // Every authenticated mutation is tenant-bound. The service role below may bypass
+    // entity RLS, so this explicit ownership check must happen before registration or management.
+    if (!sameTenant) {
+      return Response.json({ error: 'Forbidden: Tournament belongs to another tenant' }, { status: 403 });
+    }
 
     if (_managerProbe) {
       if (!isKotcManager || !sameTenant) {
@@ -91,16 +101,21 @@ Deno.serve(async (req) => {
     // Find or create player
     let player = null;
     if (email?.trim()) {
-      const existing = await base44.asServiceRole.entities.Player.filter({ email: email.trim() });
+      const existing = await base44.asServiceRole.entities.Player.filter({
+        email: email.trim().toLowerCase(),
+        tenant_id: tournament.tenant_id,
+      });
       player = existing[0] || null;
     }
 
     if (!player) {
       player = await base44.asServiceRole.entities.Player.create({
         full_name: full_name.trim(),
-        email: email?.trim() || undefined,
+        email: email?.trim().toLowerCase() || undefined,
         phone: phone?.trim() || undefined,
         status: 'Active',
+        tenant_id: tournament.tenant_id,
+        club_id: tournament.host_club_id || undefined,
       });
     }
 
