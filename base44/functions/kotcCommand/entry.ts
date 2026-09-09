@@ -65,12 +65,26 @@ async function createSnapshot(base44:any, session:any, commandId:string, checkpo
   ]);
   const sequence = Math.max(0, ...(prior || []).map((x:any) => Number(x.sequence || 0))) + 1;
   const snapshot = { schemaVersion:1, session, participants, rounds, slots, matches, participationEvents:events, sessionCourts:courts };
-  return await base44.asServiceRole.entities.KotcRecoveryCheckpoint.create({
-    tenant_id:session.tenant_id, club_id:session.club_id, session_id:session.id,
-    sequence, session_revision:Number(session.revision || 0), current_round_number:Number(session.current_round_number || 0),
-    checkpoint_type:checkpointType, snapshot_json:JSON.stringify(snapshot), command_id:commandId,
-    created_by_user_id:userId, created_at:nowIso(),
-  });
+  try {
+    return await base44.asServiceRole.entities.KotcRecoveryCheckpoint.create({
+      tenant_id:session.tenant_id, club_id:session.club_id, session_id:session.id,
+      sequence, session_revision:Number(session.revision || 0), current_round_number:Number(session.current_round_number || 0),
+      checkpoint_type:checkpointType, snapshot_json:JSON.stringify(snapshot), command_id:commandId,
+      created_by_user_id:userId, created_at:nowIso(),
+    });
+  } catch (error) {
+    // Recovery checkpoints are safety/audit support, never part of the live sporting
+    // transaction. A large snapshot or temporary Base44 rate limit must not turn an
+    // otherwise successful host action (undo, pair lock, score, next round, etc.)
+    // into an Axios 500 for the person running the hall.
+    console.warn('KOTC recovery checkpoint skipped', {
+      sessionId: session.id,
+      commandId,
+      checkpointType,
+      error: String((error as any)?.message || error),
+    });
+    return null;
+  }
 }
 
 Deno.serve(async (req) => {
