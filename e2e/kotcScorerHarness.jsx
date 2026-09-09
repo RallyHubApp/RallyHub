@@ -1,13 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PublicKotcScorer from '@/pages/PublicKotcScorer';
 import '@/index.css';
 
-function Harness(){
-  const token='e2e-player-score-token';
-  const original=window.history.pushState.bind(window.history);
-  React.useEffect(()=>{if(!window.location.pathname.includes('/kotc-score/'))original({},'',`/kotc-score/${token}`);},[]);
-  return <PublicKotcScorer/>;
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<Harness/>);
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <MemoryRouter initialEntries={['/kotc-score/e2e-player-score-token']}>
+    <Routes><Route path="/kotc-score/:token" element={<PublicKotcScorer/>}/></Routes>
+  </MemoryRouter>
+);
