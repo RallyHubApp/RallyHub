@@ -43,10 +43,11 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated, i
   const [form, setForm] = useState(initialForm);
   const [saving, setSaving] = useState(false);
   const [venues, setVenues] = useState([]);
+  const [existingKotc, setExistingKotc] = useState([]);
 
   useEffect(() => {
     if (!open) return;
-    setStep(initialFormat ? 'details' : 'format');
+    setStep(initialFormat === 'King of the Court' ? 'kotc_choice' : initialFormat ? 'details' : 'format');
     setForm({ ...initialForm, format: initialFormat || '' });
     let cancelled = false;
     (async () => {
@@ -56,7 +57,9 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated, i
         const filters = { tenant_id: user.active_tenant_id, status: 'active' };
         if (user.active_club_id) filters.club_id = user.active_club_id;
         const rows = await base44.entities.Venue.filter(filters, 'name', 100);
-        if (!cancelled) setVenues(rows || []);
+        const tournamentRows = await base44.entities.Tournament.list('-updated_date', 100).catch(() => []);
+        const kotcRows = (tournamentRows || []).filter(t => t.format === 'King of the Court' && !['Completed', 'Cancelled'].includes(t.status) && (!user.active_tenant_id || t.tenant_id === user.active_tenant_id) && (!user.active_club_id || t.host_club_id === user.active_club_id));
+        if (!cancelled) { setVenues(rows || []); setExistingKotc(kotcRows); }
       } catch { if (!cancelled) setVenues([]); }
     })();
     return () => { cancelled = true; };
@@ -70,7 +73,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated, i
 
   const chooseFormat = (format) => {
     update('format', format);
-    setStep('details');
+    setStep(format === 'King of the Court' ? 'kotc_choice' : 'details');
   };
 
   const handleSubmit = async (e) => {
