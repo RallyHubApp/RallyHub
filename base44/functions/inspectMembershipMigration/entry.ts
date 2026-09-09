@@ -19,19 +19,20 @@ Deno.serve(async (req) => {
     if (body.confirmation !== CONFIRM) return Response.json({ error:'confirmation required' }, { status:403 });
     const rows = (await base44.asServiceRole.entities.MembershipMigrationStaging.filter({ migration_id:MIGRATION_ID }))
       .sort((a:any,b:any)=>Number(a.batch_no)-Number(b.batch_no));
-    const batches:any[] = [];
-    let total = 0;
-    for (const row of rows) {
-      const raw = String(row.payload_base64 || '');
-      const invalid = [...new Set((raw.match(/[^A-Za-z0-9+\/_=\-\s]/g) || []))].slice(0,20);
-      if (invalid.length) {
-        batches.push({batch_no:row.batch_no,payload_length:raw.length,invalid_chars:invalid,prefix:raw.slice(0,4),suffix:raw.slice(-4)});
-        continue;
-      }
-      const eq:any[]=[]; for(let i=0;i<raw.length;i++) if(raw[i]==='=') eq.push(i);
-      batches.push({batch_no:row.batch_no,payload_length:raw.length,mod4:raw.length%4,equals_count:eq.length,equals_first:eq.slice(0,10),equals_last:eq.slice(-10),prefix:raw.slice(0,4),suffix:raw.slice(-4)});
-    }
-    const summary = { success:true, staging_rows:rows.length, inferred_total:total, batches };
+    const batches:any[] = rows.map((row:any)=>({batch_no:row.batch_no,payload_length:String(row.payload_base64||'').length}));
+    const joined = rows.map((r:any)=>String(r.payload_base64||'')).join('');
+    const decoded = await decodePayload(joined);
+    const items = Array.isArray(decoded) ? decoded : (decoded.records || decoded.people || decoded.members || decoded.items || []);
+    const sample = Array.isArray(items) && items.length ? items[0] : decoded;
+    const summary = {
+      success:true, staging_rows:rows.length, joined_length:joined.length,
+      inferred_total:Array.isArray(items)?items.length:null,
+      top_level_type:Array.isArray(decoded)?'array':typeof decoded,
+      top_level_keys:decoded && !Array.isArray(decoded) && typeof decoded==='object'?Object.keys(decoded).sort():[],
+      item_keys:sample && typeof sample==='object'?Object.keys(sample).sort():[],
+      nested_shapes:sample && typeof sample==='object'?Object.fromEntries(Object.entries(sample).filter(([_,v])=>v&&typeof v==='object').map(([k,v]:any)=>[k,Array.isArray(v)?`array:${v.length}`:`object:${Object.keys(v).sort().join(',')}`])):{},
+      batches
+    };
     await base44.asServiceRole.entities.AuditLog.create({
       tenant_id:'6a9b7790bc4a8d299938bda9', club_id:'6a9b779684daba85b3ffdeb5',
       user_id:'system-membership-import', action:'membership_migration_staging_inspected', entity_type:'MembershipMigrationStaging',
