@@ -48,10 +48,20 @@ RallyHub`.trim()
       return Response.json({ success: true, notified: admins.length, pendingCount: pendingUsers.length });
     }
 
-    // Mode: notifyUserApproval — called when admin approves/rejects a user
+    // Mode: notifyUserApproval — called when admin approves/rejects a user.
+    // The caller supplies only a user ID; recipient/name are loaded server-side so an
+    // admin request cannot turn this into an arbitrary-email sender.
     if (payload.notifyUserApproval) {
-      const { userEmail, userName, status } = payload;
-      if (!userEmail) return Response.json({ error: 'No userEmail provided' }, { status: 400 });
+      const { userId, status } = payload;
+      if (!userId) return Response.json({ error: 'No userId provided' }, { status: 400 });
+      if (!['approved', 'rejected'].includes(status)) {
+        return Response.json({ error: 'Invalid approval status' }, { status: 400 });
+      }
+      const targets = await base44.asServiceRole.entities.User.filter({ id: userId });
+      const target = targets?.[0];
+      if (!target?.email) return Response.json({ error: 'Target user/email not found' }, { status: 404 });
+      const userEmail = target.email;
+      const userName = target.full_name || target.display_name || target.email;
 
       const isApproved = status === 'approved';
       await base44.asServiceRole.integrations.Core.SendEmail({
