@@ -126,11 +126,12 @@ Deno.serve(async (req) => {
       const match=(await base44.asServiceRole.entities.KotcMatch.filter({id:body.matchId,session_id:session.id}))?.[0];
       if(!match)return Response.json({error:'Match not found'},{status:404});
       const displaced=String(match.scoring_lock_owner||'');
-      if(displaced){
-        await base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:null,scoring_lock_acquired_at:null,scoring_lock_expires_at:null});
-        try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_host_took_over_scoring',entity_type:'KotcMatch',entity_id:match.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({scoring_lock_owner:displaced}),reason:'Host began entering the court score'});}catch{}
+      const hostOwner=`host:${user.id}`; const now=nowIso(); const expires=new Date(Date.now()+5*60*1000).toISOString();
+      await base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:hostOwner,scoring_lock_acquired_at:now,scoring_lock_expires_at:expires});
+      if(displaced&&displaced!==hostOwner){
+        try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_host_took_over_scoring',entity_type:'KotcMatch',entity_id:match.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({scoring_lock_owner:displaced}),after_state:JSON.stringify({scoring_lock_owner:hostOwner}),reason:'Host began entering the court score'});}catch{}
       }
-      return Response.json({success:true,hostAuthority:true,displacedScorer:!!displaced});
+      return Response.json({success:true,hostAuthority:true,displacedScorer:!!displaced&&displaced!==hostOwner,expires_at:expires});
     }
 
     // Fast paths for the host's most time-critical actions. Do not route START ROUND
