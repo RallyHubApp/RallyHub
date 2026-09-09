@@ -12,154 +12,109 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Test timeout of 45000ms exceeded.
+```
 
-Locator: getByText('Player 03 updated')
-Expected: visible
-Timeout: 1200ms
-Error: element(s) not found
-
+```
+Error: locator.click: Test timeout of 45000ms exceeded.
 Call log:
-  - Expect "toBeVisible" getByText('Player 03 updated') with timeout 1200ms
-  - waiting for getByText('Player 03 updated')
+  - waiting for getByTestId('kotc-finish-session')
 
 ```
 
+# Page snapshot
+
 ```yaml
-- main:
-  - paragraph: Round 2 — LIVE
-  - paragraph: 4 courts · 2 bench
-  - button "Session Menu":
-    - img
-    - text: Session Menu
-  - button "Round History":
-    - img
-    - text: Round History
-  - button "Players":
-    - img
-    - text: Players
-  - button "Timer":
-    - img
-    - text: Timer
-  - button "Contacts":
-    - img
-    - text: Contacts
-  - button "Copy Player Link":
-    - img
-    - text: Copy Player Link
-  - button "Email Players":
-    - img
-    - text: Email Players
-  - button "Resend Results":
-    - img
-    - text: Resend Results
-  - button "Player 02 present"
-  - button "Player 07 present"
-  - button "Player 09 present"
-  - button "Player 15 present"
-  - button "Player 01 present"
-  - button "Player 08 present"
-  - button "Player 10 present"
-  - button "Player 13 present"
-  - button "Player 04 present"
-  - button "Player 06 present"
-  - button "Player 11 present"
-  - button "Player 14 present"
-  - button "Player 03 voluntary rest"
-  - button "Player 05 present"
-  - button "Player 12 present"
-  - button "Player 16 present"
-  - button "Player 17 present"
-  - button "Player 18 present"
-  - button "Session Host Access Give a host full control of this KOTC session only, without wider RallyHub access.":
-    - img
-    - paragraph: Session Host Access
-    - paragraph: Give a host full control of this KOTC session only, without wider RallyHub access.
-    - img
-  - button "Pause Session":
-    - img
-    - text: Pause Session
-  - button "Finish Session Now":
-    - img
-    - text: Finish Session Now
-  - button "Abandon / Cancel"
-  - paragraph: Play Time
-  - img
-  - button "Test / enable speaker sound":
-    - img
-  - button "Dock timer back in page":
-    - img
-  - button "Full screen timer":
-    - img
-  - text: 07:59
-  - button "Pause Timer":
-    - img
-    - text: Pause Timer
-  - button "Reset":
-    - img
-    - text: Reset
-  - paragraph: Need to finish early? Pause the timer and enter the final scores now — you do not need to wait for 00:00.
-  - button "Undo Start / Back to Round Setup":
-    - img
-    - text: Undo Start / Back to Round Setup
-  - paragraph: Bench This Round
-  - paragraph: Player 02 · Player 18
-  - img
-  - text: Court 1 LIVE
-  - paragraph: Team A
-  - paragraph: Player 17 & Player 07
-  - spinbutton
-  - paragraph: Team B
-  - paragraph: Player 09 & Player 15
-  - spinbutton
-  - button "Complete Match" [disabled]
-  - text: Court 2 LIVE
-  - paragraph: Team A
-  - paragraph: Player 01 & Player 08
-  - spinbutton
-  - paragraph: Team B
-  - paragraph: Player 10 & Player 13
-  - spinbutton
-  - button "Complete Match" [disabled]
-  - text: Court 3 LIVE
-  - paragraph: Team A
-  - paragraph: Player 04 & Player 06
-  - spinbutton
-  - paragraph: Team B
-  - paragraph: Player 11 & Player 14
-  - spinbutton
-  - button "Complete Match" [disabled]
-  - text: Court 4 LIVE
-  - paragraph: Team A
-  - paragraph: Player 03 & Player 05
-  - spinbutton
-  - paragraph: Team B
-  - paragraph: Player 12 & Player 16
-  - spinbutton
-  - button "Complete Match" [disabled]
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: Round 4 — ROUND READY
+        - paragraph [ref=e8]: 4 courts · 2 bench
+      - button "Session Menu" [active] [ref=e9] [cursor=pointer]
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - paragraph [ref=e12]: Bench This Round
+        - generic [ref=e13]:
+          - button "Player 17" [ref=e14] [cursor=pointer]
+          - button "Player 18" [ref=e15] [cursor=pointer]
+        - paragraph [ref=e16]: Tap a court player, then a bench player, to swap them.
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - heading "Host Round Editor" [level=4] [ref=e19]
+          - paragraph [ref=e20]: Tap one player then another to swap. Only one pending selection is allowed.
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - generic [ref=e23]: Court 1
+            - generic [ref=e27]:
+              - generic [ref=e28]:
+                - paragraph [ref=e29]: Team A
+                - button "Lock pair" [ref=e30] [cursor=pointer]
+              - generic [ref=e31]:
+                - button "Player 04" [ref=e32] [cursor=pointer]
+                - button "Player 05" [ref=e41] [cursor=pointer]
+            - generic [ref=e50]:
+              - generic [ref=e51]:
+                - paragraph [ref=e52]: Team B
+                - button "Lock pair" [ref=e53] [cursor=pointer]
+              - generic [ref=e54]:
+                - button "Player 11" [ref=e55] [cursor=pointer]
+                - button "Player 16" [ref=e64] [cursor=pointer]
+          - generic [ref=e73]:
+            - generic [ref=e74]: Court 2
+            - generic [ref=e76]:
+              - generic [ref=e77]:
+                - paragraph [ref=e78]: Team A
+                - button "Lock pair" [ref=e79] [cursor=pointer]
+              - generic [ref=e80]:
+                - button "Player 02" [ref=e81] [cursor=pointer]
+                - button "Player 06" [ref=e90] [cursor=pointer]
+            - generic [ref=e99]:
+              - generic [ref=e100]:
+                - paragraph [ref=e101]: Team B
+                - button "Lock pair" [ref=e102] [cursor=pointer]
+              - generic [ref=e103]:
+                - button "Player 12" [ref=e104] [cursor=pointer]
+                - button "Player 15" [ref=e113] [cursor=pointer]
+          - generic [ref=e122]:
+            - generic [ref=e123]: Court 3
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - paragraph [ref=e127]: Team A
+                - button "Lock pair" [ref=e128] [cursor=pointer]
+              - generic [ref=e129]:
+                - button "Player 01" [ref=e130] [cursor=pointer]
+                - button "Player 07" [ref=e139] [cursor=pointer]
+            - generic [ref=e148]:
+              - generic [ref=e149]:
+                - paragraph [ref=e150]: Team B
+                - button "Lock pair" [ref=e151] [cursor=pointer]
+              - generic [ref=e152]:
+                - button "Player 10" [ref=e153] [cursor=pointer]
+                - button "Player 13" [ref=e162] [cursor=pointer]
+          - generic [ref=e171]:
+            - generic [ref=e172]: Court 4
+            - generic [ref=e174]:
+              - generic [ref=e175]:
+                - paragraph [ref=e176]: Team A
+                - button "Lock pair" [ref=e177] [cursor=pointer]
+              - generic [ref=e178]:
+                - button "Player 03" [ref=e179] [cursor=pointer]
+                - button "Player 08" [ref=e188] [cursor=pointer]
+            - generic [ref=e197]:
+              - generic [ref=e198]:
+                - paragraph [ref=e199]: Team B
+                - button "Lock pair" [ref=e200] [cursor=pointer]
+              - generic [ref=e201]:
+                - button "Player 09" [ref=e202] [cursor=pointer]
+                - button "Player 14" [ref=e211] [cursor=pointer]
+      - button "START ROUND 4" [ref=e220] [cursor=pointer]
+      - button "Restore Original Draw" [ref=e221] [cursor=pointer]
 ```
 
 # Test source
 
 ```ts
-  318 | }
-  319 | 
-  320 | function metric(report, name, value, max) {
-  321 |   report[name] = value;
-  322 |   expect(value, `${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);
-  323 | }
-  324 | 
-  325 | test.use({ viewport: { width: 390, height: 844 } });
-  326 | 
-  327 | test('18-player mobile host journey: setup → controls → rounds → podium', async ({ page }, testInfo) => {
-  328 |   const model = createModel();
-  329 |   const report = {};
-  330 |   await installMockBackend(page, model);
-  331 |   page.on('dialog', dialog => dialog.accept());
-  332 | 
-  333 |   await page.goto('/e2e/kotcHarness.html');
-  334 |   await expect(page.getByText('18 players · 4 active courts · 2 bench')).toBeVisible();
-  335 | 
   336 |   await page.getByRole('button', { name: 'Player 17', exact: true }).click();
   337 |   await page.getByRole('button', { name: 'Player 18', exact: true }).click();
   338 |   const create = page.getByTestId('kotc-create-session');
@@ -242,8 +197,7 @@ Call log:
   415 |   await page.getByTestId('kotc-players-menu').click();
   416 |   await page.getByTestId('kotc-player-participant-03').click();
   417 |   await page.getByTestId('kotc-player-sit-out').click();
-> 418 |   await expect(page.getByText('Player 03 updated')).toBeVisible({ timeout: 1200 });
-      |                                                     ^ Error: expect(locator).toBeVisible() failed
+  418 |   await expect(page.getByTestId('kotc-player-participant-03')).toContainText('voluntary rest', { timeout: 1500 });
   419 |   expect(model.participants.find(p => p.id === 'participant-03')?.status).toBe('voluntary_rest');
   420 | 
   421 |   report.round2_score_save_ms = await scoreCurrentRound(page, 4, 10);
@@ -261,7 +215,8 @@ Call log:
   433 | 
   434 |   await page.getByTestId('kotc-session-menu').click();
   435 |   started = Date.now();
-  436 |   await page.getByTestId('kotc-finish-session').click();
+> 436 |   await page.getByTestId('kotc-finish-session').click();
+      |                                                 ^ Error: locator.click: Test timeout of 45000ms exceeded.
   437 |   await expect(page.getByTestId('kotc-podium')).toBeVisible({ timeout: 1800 });
   438 |   metric(report, 'finish_to_podium_ms', Date.now() - started, 1500);
   439 |   await expect(page.getByText('Session complete')).toBeVisible();
