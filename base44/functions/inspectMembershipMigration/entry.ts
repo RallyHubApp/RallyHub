@@ -4,7 +4,9 @@ const MIGRATION_ID = 'clare-membership-2026-27-20260909';
 const CONFIRM = 'INSPECT_CLARE_152_V2';
 
 async function decodePayload(b64:string){
-  const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  let clean = String(b64 || '').replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');
+  while (clean.length % 4) clean += '=';
+  const bytes = Uint8Array.from(atob(clean), c => c.charCodeAt(0));
   const ds = new DecompressionStream('gzip');
   const decompressed = new Response(new Blob([bytes]).stream().pipeThrough(ds));
   return JSON.parse(await decompressed.text());
