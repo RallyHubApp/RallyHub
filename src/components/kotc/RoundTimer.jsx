@@ -81,6 +81,7 @@ export default function RoundTimer({
   const [floating, setFloating] = useState(false);
   const [position, setPosition] = useState({ x: 12, y: 76 });
   const [audioReady, setAudioReady] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const audioRef = useRef(null);
   const timerRef = useRef(null);
   const deadlineRef = useRef(null);
@@ -144,10 +145,11 @@ export default function RoundTimer({
   };
 
   useEffect(() => {
-    if (!sessionId || !roundId) { hydratedRef.current = true; return; }
+    if (!sessionId || !roundId) { hydratedRef.current = true; setHydrated(true); return; }
     let cancelled = false;
     hydratedRef.current = false;
-    (async()=>{try{const res=await base44.functions.invoke('kotcTimer',{sessionId,roundId,action:'get'});if(cancelled)return;const s=res.data?.state;if(s){const remaining=Math.max(0,Number(s.remainingSeconds||0));setPhase('play');setSeconds(remaining);setRunning(!!s.running&&remaining>0);deadlineRef.current=s.running&&s.deadlineAt?Date.parse(s.deadlineAt):null;if(s.lastAction==='start'||s.lastAction==='resume'||s.lastAction==='pause'||s.lastAction==='reset'||s.lastAction==='finish')autoStartedKeyRef.current=autoStartKey;}}catch{}finally{hydratedRef.current=true;}})();
+    setHydrated(false);
+    (async()=>{try{const res=await base44.functions.invoke('kotcTimer',{sessionId,roundId,action:'get'});if(cancelled)return;const s=res.data?.state;if(s){const remaining=Math.max(0,Number(s.remainingSeconds||0));setPhase('play');setSeconds(remaining);setRunning(!!s.running&&remaining>0);deadlineRef.current=s.running&&s.deadlineAt?Date.parse(s.deadlineAt):null;if(s.lastAction==='start'||s.lastAction==='resume'||s.lastAction==='pause'||s.lastAction==='reset'||s.lastAction==='finish')autoStartedKeyRef.current=autoStartKey;}}catch{}finally{if(!cancelled){hydratedRef.current=true;setHydrated(true);}}})()
     return()=>{cancelled=true;};
   },[sessionId,roundId]);
 
@@ -161,7 +163,7 @@ export default function RoundTimer({
   }, []);
 
   useEffect(() => {
-    if (!autoStart || !enabled || disabled || !autoStartKey || !hydratedRef.current) return;
+    if (!autoStart || !enabled || disabled || !autoStartKey || !hydrated || !hydratedRef.current) return;
     if (autoStartedKeyRef.current === autoStartKey) return;
     autoStartedKeyRef.current = autoStartKey;
     startPhase('play', { unlock: false });
@@ -169,7 +171,7 @@ export default function RoundTimer({
     if (autoFullscreen) setFullscreen(true);
     // autoStartKey is the sporting round identity; one automatic timer start per round.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoStart, autoStartKey, enabled, disabled]);
+  }, [autoStart, autoStartKey, enabled, disabled, hydrated]);
 
   useEffect(() => {
     if (!running) return;
