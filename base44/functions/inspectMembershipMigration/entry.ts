@@ -33,7 +33,14 @@ Deno.serve(async (req) => {
         nested_shapes: sample && typeof sample === 'object' ? Object.fromEntries(Object.entries(sample).filter(([_,v])=>v && typeof v==='object').map(([k,v]:any)=>[k,Array.isArray(v)?`array:${v.length}`:`object:${Object.keys(v).sort().join(',')}`])) : {},
       });
     }
-    return Response.json({ success:true, staging_rows:rows.length, inferred_total:total, batches });
+    const summary = { success:true, staging_rows:rows.length, inferred_total:total, batches };
+    await base44.asServiceRole.entities.AuditLog.create({
+      tenant_id:'6a9b7790bc4a8d299938bda9', club_id:'6a9b779684daba85b3ffdeb5',
+      action:'membership_migration_staging_inspected', entity_type:'MembershipMigrationStaging',
+      scope_type:'Club', scope_id:'6a9b779684daba85b3ffdeb5', after_state:JSON.stringify(summary),
+      reason:'One-time structure-only inspection before 152-member import'
+    });
+    return Response.json(summary);
   } catch (e) {
     return Response.json({ success:false, error:String((e as any)?.message || e) }, { status:500 });
   }
