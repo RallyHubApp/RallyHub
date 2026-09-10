@@ -53,6 +53,7 @@ function allowedAccess(a:any, tenantId:string, sessionId:string) {
 function validateFinalScore(body:any, session:any) {
   const a = int0(body.teamAScore), b = int0(body.teamBScore);
   if (a == null || b == null) return { error: 'Scores must be non-negative whole numbers.' };
+  if (a > 99 || b > 99) return { error: 'KOTC scores cannot exceed 99.' };
   if (session.scoring_mode === 'timed') {
     if (a === b) {
       if (!['A','B'].includes(body.servingSideAtHorn)) return { error: 'A tied timed match requires the serving side at the horn.' };
@@ -288,6 +289,7 @@ Deno.serve(async (req) => {
       if (RESOLVED.has(match.status)) return Response.json({ error:'Resolved matches require a correction command.' }, { status:409 });
       const a = int0(body.teamAScore), b = int0(body.teamBScore);
       if (a == null || b == null) return Response.json({ error:'Scores must be non-negative whole numbers.' }, { status:400 });
+      if (a > 99 || b > 99) return Response.json({ error:'KOTC scores cannot exceed 99.' }, { status:400 });
       const updated = await base44.asServiceRole.entities.KotcMatch.update(match.id, { team_a_score:a, team_b_score:b, status:match.status === 'scheduled' ? 'in_progress' : match.status, revision:current + 1, command_id:commandId, autosaved_at:now });
       result = { success:true, match:updated };
       await createSnapshot(base44, session, commandId, 'score_saved', user.id);
