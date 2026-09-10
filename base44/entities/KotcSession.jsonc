@@ -165,13 +165,11 @@
     },
     "demo_mode": {
       "type": "boolean",
-      "default": false,
-      "description": "Read-only demonstration session retained for display/training"
+      "default": false
     },
     "exclude_from_aggregates": {
       "type": "boolean",
-      "default": false,
-      "description": "Exclude this session from KOTC historical aggregates and future-history seeding"
+      "default": false
     },
     "finalised_at": {
       "type": "string",
@@ -184,12 +182,10 @@
       "type": "string"
     },
     "created_from_session_id": {
-      "type": "string",
-      "description": "Source session when cloned"
+      "type": "string"
     },
     "timer_state_json": {
-      "type": "string",
-      "description": "Persisted KOTC round timer state for refresh/recovery"
+      "type": "string"
     }
   },
   "required": [
