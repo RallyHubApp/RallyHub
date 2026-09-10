@@ -34,14 +34,15 @@ test('desktop public KOTC: live session and round history are clear without over
 
   await page.goto('/e2e/kotcLiveHarness.html');
   await expect(page.getByText('Round Ready · Round 1')).toBeVisible();
-  phase='live';await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  phase='live';await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByText('On Court Now · Round 1')).toBeVisible({timeout:1800});
   await expect(page.getByText('Live Standings')).toBeVisible();
   let layout=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,innerWidth:innerWidth}));
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth+1);
 
-  phase='finished';await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  phase='finished';await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
+  await expect(page.getByText('King of the Court · Final Results')).toBeVisible();
   await expect(page.getByTestId('public-kotc-round-history')).toBeVisible();
   await expect(page.getByTestId('public-kotc-round-history')).toContainText('Round 2');
   await page.getByTestId('public-kotc-round-history').getByRole('button',{name:'Round 1'}).click();
