@@ -91,8 +91,10 @@ test('delegated host: session-only controls, attendee contacts, links and keyboa
   await expect(page.getByTestId('kotc-next-action')).toContainText('Round 1 live · 0/1 scores saved',{timeout:1800});
 
   // Simulate real keyboard entry rather than programmatic value injection.
+  // KOTC pickleball score boxes are physically limited to two digits.
   const a=page.getByTestId('kotc-score-1-a'),b=page.getByTestId('kotc-score-1-b');
-  await a.focus();await page.keyboard.type('11');await page.keyboard.press('Tab');await page.keyboard.type('7');
+  await a.focus();await page.keyboard.type('123');await expect(a).toHaveValue('12');
+  await a.fill('');await page.keyboard.type('11');await page.keyboard.press('Tab');await page.keyboard.type('7');
   await expect(a).toHaveValue('11');await expect(b).toHaveValue('7');
   const save=page.getByTestId('kotc-complete-1');
   const box=await save.boundingBox();expect(box?.height||0).toBeGreaterThanOrEqual(44);
