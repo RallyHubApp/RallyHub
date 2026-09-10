@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Crown, Play, Pause, Trophy, AlertTriangle, GripVertical, Undo2, UserRound, HeartPulse, LogOut, Clock3, Menu, Lock, Unlock, Phone, History, Settings2, X, Pencil, Link2, Mail, ArrowLeft } from 'lucide-react';
 import RoundTimer from './RoundTimer';
 import KotcHostAccessPanel from './KotcHostAccessPanel';
+import KotcSetupPanel from './KotcSetupPanel';
 import { activeCourtCount } from '@/lib/kotcV2Domain';
 
 function commandId(prefix='kotc'){return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;}
