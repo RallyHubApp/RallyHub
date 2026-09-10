@@ -22,8 +22,8 @@ function makeState(phase){
 
 test.use({ viewport:{width:390,height:844} });
 
-test('public KOTC live link: assignments → live scores → podium', async ({page})=>{
-  let phase='ready';
+test('public KOTC link: assignments → live scores → permanent final results with polling stopped', async ({page})=>{
+  let phase='ready';let publicCalls=0;
   await page.route('**/api/apps/**', async route=>{
     const request=route.request();
     const path=new URL(request.url()).pathname;
@@ -31,7 +31,7 @@ test('public KOTC live link: assignments → live scores → podium', async ({pa
     const idx=path.indexOf(marker);
     if(idx>=0){
       const name=decodeURIComponent(path.slice(idx+marker.length).split('/')[0]);
-      if(name==='kotcResultsShare')return json(route,makeState(phase));
+      if(name==='kotcResultsShare'){publicCalls++;return json(route,{...makeState(phase),poll_after_ms:phase==='finished'?0:12000});}
     }
     return json(route,[]);
   });
@@ -41,15 +41,18 @@ test('public KOTC live link: assignments → live scores → podium', async ({pa
   await expect(page.getByTestId('public-kotc-court-1')).toContainText('Players assigned');
 
   phase='live';
-  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByText('On Court Now · Round 1')).toBeVisible({timeout:1800});
   await expect(page.getByTestId('public-kotc-court-1')).toContainText('11');
   await expect(page.getByTestId('public-kotc-court-2')).toContainText('8');
   await expect(page.getByText('Live Standings')).toBeVisible();
 
   phase='finished';
-  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
+  await expect(page.getByText('King of the Court · Final Results')).toBeVisible();
   await expect(page.getByText('Final Standings')).toBeVisible();
+  await expect(page.getByText('These are the final saved results. This link remains available after the session.')).toBeVisible();
   await expect(page.getByTestId('public-kotc-podium').getByText('Guest One')).toBeVisible();
+  const callsAtFinish=publicCalls;await new Promise(resolve=>setTimeout(resolve,500));expect(publicCalls,'completed public results must stop polling Base44').toBe(callsAtFinish);
 });
