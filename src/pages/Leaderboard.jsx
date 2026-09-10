@@ -18,7 +18,7 @@ export default function Leaderboard() {
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list('-skill_rating', 200)
+    queryFn: () => base44.entities.Player.list('full_name', 500)
   });
 
   const clubs = [...new Set(players.map(p => p.club).filter(Boolean))];
@@ -30,14 +30,21 @@ export default function Leaderboard() {
       const matchClub = clubFilter === 'all' || p.club === clubFilter;
       return matchSearch && matchGender && matchClub;
     })
-    .sort((a, b) => (b.skill_rating || 0) - (a.skill_rating || 0));
+    .sort((a, b) => {
+      const ar = a.dupr_rating != null, br = b.dupr_rating != null;
+      if (ar !== br) return br - ar;
+      if (ar && br && Number(a.dupr_rating) !== Number(b.dupr_rating)) return Number(b.dupr_rating) - Number(a.dupr_rating);
+      return String(a.full_name || '').localeCompare(String(b.full_name || ''));
+    });
 
-  const top3 = sorted.slice(0, 3);
-  const rest = sorted.slice(3);
+  const rated = sorted.filter(p => p.dupr_rating != null);
+  const top3 = rated.length >= 3 ? rated.slice(0, 3) : [];
+  const top3Ids = new Set(top3.map(p => p.id));
+  const rest = sorted.filter(p => !top3Ids.has(p.id));
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Leaderboard" description="Player rankings by skill rating" />
+      <PageHeader title="Leaderboard" description="Club player order — DUPR shown only where a verified rating exists" />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -83,7 +90,7 @@ export default function Leaderboard() {
                     <span className="text-lg font-bold text-primary">{(player.full_name || 'P')[0]}</span>
                   </div>
                   <p className="text-xs font-semibold text-foreground text-center group-hover:text-primary transition-colors">{player.full_name}</p>
-                  <p className="text-lg font-black font-mono text-primary">{(player.skill_rating || 3.0).toFixed(1)}</p>
+                  <p className="text-lg font-black font-mono text-primary">DUPR {Number(player.dupr_rating).toFixed(2)}</p>
                 </Link>
                 <div className={cn("w-20 rounded-t-lg bg-primary/10 mt-2", height)} />
               </motion.div>
@@ -97,7 +104,7 @@ export default function Leaderboard() {
         <div className="grid grid-cols-[3rem_1fr_5rem_4rem_4rem] sm:grid-cols-[3rem_1fr_6rem_5rem_5rem_6rem] items-center px-4 py-2.5 bg-secondary text-xs font-medium text-muted-foreground">
           <span>#</span>
           <span>Player</span>
-          <span className="text-right">Rating</span>
+          <span className="text-right">DUPR</span>
           <span className="text-right">W</span>
           <span className="text-right">L</span>
           <span className="text-right hidden sm:block">Win %</span>
@@ -106,7 +113,7 @@ export default function Leaderboard() {
           <p className="text-xs text-muted-foreground text-center py-8">No players to rank</p>
         )}
         {rest.map((player, i) => {
-          const rank = i + 4;
+          const rank = sorted.findIndex(p => p.id === player.id) + 1;
           const winRate = player.matches_played > 0 ? Math.round((player.wins / player.matches_played) * 100) : 0;
           return (
             <motion.div
@@ -129,7 +136,7 @@ export default function Leaderboard() {
                     <p className="text-[10px] text-muted-foreground truncate">{player.club || ''}</p>
                   </div>
                 </div>
-                <span className="text-sm font-bold font-mono text-primary text-right">{(player.skill_rating || 3.0).toFixed(1)}</span>
+                <span className="text-sm font-bold font-mono text-primary text-right">{player.dupr_rating != null ? Number(player.dupr_rating).toFixed(2) : 'Unrated'}</span>
                 <span className="text-sm text-foreground text-right">{player.wins || 0}</span>
                 <span className="text-sm text-foreground text-right">{player.losses || 0}</span>
                 <span className="text-sm text-muted-foreground text-right hidden sm:block">{winRate}%</span>
