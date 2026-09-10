@@ -429,6 +429,21 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch { return null; }
   };
   const formatInfo = calculateFormat();
+  const previewFormatInfo = useMemo(() => {
+    const actualA = aPlayers.length;
+    const actualB = bPlayers.length;
+    const plannedTotal = Math.max(8, Math.floor(number(setup.plannedPlayersTotal, 32) / 2) * 2);
+    const plannedPerClub = plannedTotal / 2;
+    const countA = actualA || plannedPerClub;
+    const countB = actualB || plannedPerClub;
+    try {
+      return calculateClubChallengeFormat({
+        clubAPlayerCount: countA, clubBPlayerCount: countB, courts: number(setup.courts), availableMinutes: number(setup.availableMinutes),
+        playMinutes: number(setup.playMinutes), changeoverMinutes: number(setup.changeoverMinutes), includeBreak: setup.includeBreak,
+        breakMinutes: number(setup.breakMinutes), breakAfterRound: number(setup.breakAfterRound),
+      });
+    } catch { return null; }
+  }, [aPlayers.length, bPlayers.length, setup.plannedPlayersTotal, setup.courts, setup.availableMinutes, setup.playMinutes, setup.changeoverMinutes, setup.includeBreak, setup.breakMinutes, setup.breakAfterRound]);
 
   const generateDraw = async () => {
     if (!event) return;
