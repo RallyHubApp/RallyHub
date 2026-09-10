@@ -21,6 +21,7 @@ const hostUi=read('src/components/kotc/KotcV2SessionView.jsx');
 const scorerUi=read('src/pages/PublicKotcScorer.jsx');
 const workflow=read('src/lib/kotcV2Workflow.js');
 const dashboard=read('src/pages/Dashboard.jsx');
+const hostSessionPage=read('src/pages/KotcHostSession.jsx');
 
 // Super Admin / host boundary.
 includes(access,"caller.role!=='admin'",'only platform admins may grant or revoke delegated host access');
@@ -67,6 +68,8 @@ includes(command,"KOTC scores cannot exceed 99.",'general correction/autosave pa
 includes(workflow,"KOTC scores cannot exceed 99.",'sporting workflow validation must enforce the same two-digit score ceiling');
 assert(!dashboard.includes("player.skill_rating || 3.0"),'dashboard must never display a manufactured 3.0 rating for an unrated player');
 includes(dashboard,'player.dupr_rating != null','dashboard may show a rating only when a genuine DUPR value exists');
+assert(!create.includes('skill_rating||3')&&!create.includes('skill_rating || 3'),'KOTC session creation must not manufacture a 3.0 rating snapshot');
+assert(!hostSessionPage.includes('rating_snapshot||3')&&!hostSessionPage.includes('rating_snapshot || 3'),'restricted host view must not manufacture a 3.0 rating');
 
 // Host is authoritative over a player scorer.
 includes(command,"commandType === 'host_claim_score'",'host must have explicit scorer takeover command');
@@ -115,6 +118,12 @@ includes(prepareNext,'was split between court and bench','an available locked pa
 includes(prepareNext,'reached different destination courts.','a pair lock must never be repaired by moving a player to an unearned court');
 includes(saveScore,"withRateLimitRetry('score match save'",'host score save must retry transient Base44 rate limits');
 includes(scorer,"withRateLimitRetry('scorer result save'",'player scorer save must retry transient Base44 rate limits');
+includes(create,"KotcSessionParticipant.bulkCreate(participantPayload)",'Round 1 participant creation must be batched rather than one write per player');
+includes(create,"KotcRoundSlot.bulkCreate(slotPayload)",'Round 1 slot creation must be batched rather than one write per slot');
+includes(create,"KotcMatch.bulkCreate(matchPayload)",'Round 1 match creation must be batched rather than one write per court');
+includes(create,"retry('session create'",'KOTC session creation must internally retry Base44 provider rate limits');
+includes(create,"retry('round1 slots bulk create'",'Round 1 slot batch must internally retry Base44 provider rate limits');
+includes(hostUi,"PageTransitionEvent",'host browser test must cover mobile back-forward restoration');
 includes(command,'command-log finalisation skipped after successful sporting write','secondary command-log failure must not report sporting failure');
 
 console.log(`KOTC access/architecture gate: PASS\n${checks} role, privacy, scoring-lock, membership and correction checks, 0 failures.`);
