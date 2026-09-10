@@ -114,7 +114,7 @@ export default function KotcV2SessionView({ tournament, players, queryClient }){
   // flags and reconcile against authoritative Base44 state whenever the host returns.
   useEffect(()=>{
     const reconcile=()=>{
-      setCreating(false);setCommanding(false);setStartingRound(false);setPreparingRound(false);setUndoingStart(false);setSharing(false);setPairBusyKey?.('');
+      setCreating(false);setCommanding(false);setStartingRound(false);setPreparingRound(false);setUndoingStart(false);setSharing(false);
       refetch?.().catch(()=>{});
     };
     const onPageShow=()=>reconcile();
