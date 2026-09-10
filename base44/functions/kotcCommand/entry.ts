@@ -319,17 +319,20 @@ Deno.serve(async (req) => {
       if(isCorrection&&['completed','finalised'].includes(session.status))await refreshKotcAggregates(base44,session);
       await createSnapshot(base44, session, commandId, 'score_saved', user.id);
     } else if (commandType === 'generate_next_round') {
-      const rounds = await base44.asServiceRole.entities.KotcRound.filter({ session_id:session.id });
+      // The host normally presses Prepare immediately after the fourth score save.
+      // Give Base44's burst window a moment to clear, then retry provider 429s internally.
+      await sleep(250);
+      const rounds = await withRateLimitRetry('prepare rounds',()=>base44.asServiceRole.entities.KotcRound.filter({ session_id:session.id }));
       const currentRound = (rounds || []).filter((r:any)=>Number(r.round_number)===Number(session.current_round_number)).sort((a:any,b:any)=>Number(b.proposal_revision||0)-Number(a.proposal_revision||0))[0];
       if (!currentRound) return Response.json({ error:'Current round not found.' }, { status:404 });
       if (!['started','completed'].includes(currentRound.status)) return Response.json({ error:'Current round must be started before generating the next round.' }, { status:409 });
-      const matches = (await base44.asServiceRole.entities.KotcMatch.filter({ round_id:currentRound.id, session_id:session.id })).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank));
+      const matches = (await withRateLimitRetry('prepare current matches',()=>base44.asServiceRole.entities.KotcMatch.filter({ round_id:currentRound.id, session_id:session.id }))).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank));
       const unresolved = matches.filter((m:any)=>!RESOLVED.has(m.status));
       if (unresolved.length) return Response.json({ error:`${unresolved.length} current-round match result(s) unresolved.` }, { status:409 });
       const playableMatches = matches.filter((m:any)=>m.status==='completed');
       if (!playableMatches.length) return Response.json({ error:'No completed sporting results are available to generate movement.' }, { status:409 });
       const participants = await base44.asServiceRole.entities.KotcSessionParticipant.filter({ session_id:session.id });
-      const fixedPairs=await base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'});
+      const fixedPairs=await withRateLimitRetry('prepare fixed pairs',()=>base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'}));
       const activeLocks=(fixedPairs||[]).filter((p:any)=>p.pair_source==='host_selected');
       const nextNumber=Number(currentRound.round_number)+1;
       const eligible = participants.filter((p:any)=>{
@@ -345,7 +348,7 @@ Deno.serve(async (req) => {
       const currentActiveCourts=Number(currentRound.active_court_count||playableMatches.length);
       const courts = playableMatches.map((m:any)=>({courtRank:Number(m.ladder_court_rank),teamA:[...(m.team_a_participant_ids||[])],teamB:[...(m.team_b_participant_ids||[])]}));
       const results:any = Object.fromEntries(playableMatches.map((m:any)=>[Number(m.ladder_court_rank),m.winner_side]));
-      const allCompleted = await base44.asServiceRole.entities.KotcMatch.filter({ session_id:session.id, status:'completed' });
+      const allCompleted = await withRateLimitRetry('prepare completed history',()=>base44.asServiceRole.entities.KotcMatch.filter({ session_id:session.id, status:'completed' }));
       const partnerCounts:any={}; for(const m of allCompleted){for(const pair of [m.team_a_participant_ids||[],m.team_b_participant_ids||[]])if(pair.length===2){const k=pairKey(pair[0],pair[1]);partnerCounts[k]=(partnerCounts[k]||0)+1;}}
       const currentCourtIds=new Set(courts.flatMap((c:any)=>[...c.teamA,...c.teamB])); const currentBenchIds=new Set(eligible.map((p:any)=>p.id).filter((id:string)=>!currentCourtIds.has(id))); const court1Ids=new Set(courts.find((c:any)=>c.courtRank===1)?[...courts.find((c:any)=>c.courtRank===1).teamA,...courts.find((c:any)=>c.courtRank===1).teamB]:[]);
       const currentCourtRank:any={};for(const c of courts)for(const id of [...c.teamA,...c.teamB])currentCourtRank[id]=c.courtRank;
@@ -371,12 +374,12 @@ Deno.serve(async (req) => {
       for(const lock of activeLocks){const a=String(lock.participant1_id),b=String(lock.participant2_id);const sa=finalSlots.find((s:any)=>String(s.participant_id)===a),sb=finalSlots.find((s:any)=>String(s.participant_id)===b);if(sa&&sb&&(Number(sa.ladder_court_rank)!==Number(sb.ladder_court_rank)||String(sa.team_side)!==String(sb.team_side)))return Response.json({error:`Locked pair ${lock.pair_name||''} could not be kept together automatically.`},{status:409});}
       const existingNext=(rounds||[]).filter((r:any)=>Number(r.round_number)===nextNumber&&!['superseded','abandoned'].includes(r.status)).sort((a:any,b:any)=>Number(b.proposal_revision||0)-Number(a.proposal_revision||0))[0];
       if(existingNext){
-        session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,current_round_number:nextNumber,current_round_id:existingNext.id});
+        session=await withRateLimitRetry('prepare reconcile existing round',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,current_round_number:nextNumber,current_round_id:existingNext.id}));
         result={success:true,duplicateGenerationPrevented:true,session,round:existingNext};
         await base44.asServiceRole.entities.KotcCommandLog.update(commandLog.id,{status:'applied',applied_session_revision:Number(session.revision||currentSessionRevision),result_json:JSON.stringify(result),applied_at:nowIso()});
         return Response.json(result);
       }
-      const newRound=await base44.asServiceRole.entities.KotcRound.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_number:nextNumber,status:'proposed',proposal_revision:1,active_court_count:activeCourts,bench_count:benchPlaces,generated_by_command_id:commandId,engine_input_hash:String(stableHash(JSON.stringify({results,selected,currentActiveCourts,activeCourts}))),engine_output_hash:String(stableHash(JSON.stringify(finalSlots)))});
+      const newRound=await withRateLimitRetry('prepare create round',()=>base44.asServiceRole.entities.KotcRound.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_number:nextNumber,status:'proposed',proposal_revision:1,active_court_count:activeCourts,bench_count:benchPlaces,generated_by_command_id:commandId,engine_input_hash:String(stableHash(JSON.stringify({results,selected,currentActiveCourts,activeCourts}))),engine_output_hash:String(stableHash(JSON.stringify(finalSlots)))}));
       const slotCreates=finalSlots.map((s:any)=>({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_id:newRound.id,round_number:nextNumber,ladder_court_rank:s.ladder_court_rank,team_side:s.team_side,slot_number:s.slot_number,participant_id:s.participant_id,assignment_type:s.assignment_type,assignment_revision:1,replacement_for_participant_id:s.replacement_for_participant_id,destination_from_prior_round:s.destination_from_prior_round}));
       const matchCreates=Array.from({length:activeCourts},(_,idx)=>{const rank=idx+1,ss=finalSlots.filter((s:any)=>s.ladder_court_rank===rank);return{tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_id:newRound.id,round_number:nextNumber,ladder_court_rank:rank,team_a_participant_ids:ss.filter((s:any)=>s.team_side==='A').sort((a:any,b:any)=>a.slot_number-b.slot_number).map((s:any)=>s.participant_id),team_b_participant_ids:ss.filter((s:any)=>s.team_side==='B').sort((a:any,b:any)=>a.slot_number-b.slot_number).map((s:any)=>s.participant_id),status:'scheduled',revision:0,correction_count:0};});
       const returningIds=new Set((participants||[]).filter((p:any)=>['temporarily_unavailable','voluntary_rest'].includes(p.status)&&Number(p.available_again_from_round||0)>0&&nextNumber>=Number(p.available_again_from_round)).map((p:any)=>String(p.id)));
