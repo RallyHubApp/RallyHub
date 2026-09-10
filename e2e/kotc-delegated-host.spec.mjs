@@ -102,3 +102,21 @@ test('delegated host: session-only controls, attendee contacts, links and keyboa
   const layout=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,innerWidth:window.innerWidth}));
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth+1);
 });
+
+test('busy-hall recovery: failed score save preserves keystrokes and retries safely',async({page})=>{
+  const model=createModel({failFirstScore:true});await install(page,model);
+  await page.goto('/e2e/kotcDelegatedHostHarness.html');
+  await page.getByTestId('kotc-start-round').click();
+  await expect(page.getByTestId('kotc-next-action')).toContainText('Round 1 live',{timeout:1800});
+
+  const a=page.getByTestId('kotc-score-1-a'),b=page.getByTestId('kotc-score-1-b');
+  await a.focus();await page.keyboard.type('11');await page.keyboard.press('Tab');await page.keyboard.type('7');
+  await page.getByTestId('kotc-complete-1').click();
+
+  await expect(page.getByTestId('kotc-score-card-1')).toContainText('Save failed — your score is still on screen',{timeout:1800});
+  await expect(a).toHaveValue('11');await expect(b).toHaveValue('7');
+  await expect(page.getByTestId('kotc-complete-1')).toContainText('Retry Save');
+  await page.getByTestId('kotc-complete-1').click();
+  await expect(page.getByTestId('kotc-score-card-1')).toContainText('Saved 11–7',{timeout:1800});
+  expect(model.match.revision).toBe(1);
+});
