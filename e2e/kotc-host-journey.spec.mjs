@@ -353,7 +353,7 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   const create = page.getByTestId('kotc-create-session');
   const createAt = Date.now();
   await create.click();
-  await expect(create).toContainText('Creating…');
+  await expect(create).toContainText('Creating Round 1…');
   metric(report, 'create_ack_ms', Date.now() - createAt, 250);
   await expect(page.getByTestId('kotc-round-editor')).toBeVisible({ timeout: 2000 });
   metric(report, 'create_to_editor_ms', Date.now() - createAt, 1500);
