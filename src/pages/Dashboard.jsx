@@ -33,7 +33,10 @@ export default function Dashboard() {
     return d === new Date().toDateString();
   });
   const recentMatches = matches.filter(m => m.status === 'Completed').slice(0, 5);
-  const topPlayers = [...players].sort((a, b) => (b.skill_rating || 0) - (a.skill_rating || 0)).slice(0, 5);
+  // Do not manufacture a 3.0 skill rating for unrated members. Until RallyHub has
+  // verified DUPR data, the dashboard shows a neutral club roster preview rather
+  // than presenting legacy/default skill values as a ranking.
+  const topPlayers = [...players].filter(p => p.status === 'Active').sort((a, b) => String(a.full_name || '').localeCompare(String(b.full_name || ''))).slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -55,14 +58,14 @@ export default function Dashboard() {
         <StatCard title="Total Players" value={players.length} icon={Users} trend={`${players.filter(p => p.status === 'Active').length} active`} trendUp delay={0} accentColor="primary" />
         <StatCard title="Active Tournaments" value={activeTournaments.length} icon={Trophy} delay={0.1} accentColor="accent" />
         <StatCard title="Matches Today" value={todayMatches.length} icon={Swords} delay={0.2} accentColor="chart-3" />
-        <StatCard title="Top Rating" value={topPlayers[0]?.skill_rating?.toFixed(1) || '—'} icon={Crown} delay={0.3} accentColor="chart-4" />
+        <StatCard title="Rated Players" value={players.filter(p => p.dupr_rating != null).length} icon={Crown} delay={0.3} accentColor="chart-4" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Top Ranked */}
+        {/* Club roster preview — not a rating leaderboard until genuine DUPR is connected */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-foreground">Top Ranked</h3>
+            <h3 className="text-sm font-semibold text-foreground">Club Players</h3>
             <Link to="/app/leaderboard" className="text-xs text-primary hover:underline flex items-center gap-1">
               View all <ArrowRight className="w-3 h-3" />
             </Link>
@@ -79,7 +82,7 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{player.full_name}</p>
                   <p className="text-xs text-muted-foreground">{player.club || 'No club'}</p>
                 </div>
-                <span className="text-sm font-bold font-mono text-primary">{(player.skill_rating || 3.0).toFixed(1)}</span>
+                {player.dupr_rating != null && <span className="text-sm font-bold font-mono text-primary">DUPR {Number(player.dupr_rating).toFixed(2)}</span>}
               </Link>
             ))}
           </div>
