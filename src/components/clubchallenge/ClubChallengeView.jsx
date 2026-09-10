@@ -1024,7 +1024,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           {!event ? <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">Save Setup first.</div> : <>
             <div className="glass rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div><p className="text-sm font-semibold">Participants</p><p className="text-xs text-muted-foreground">Event ranks are independent of permanent RallyHub skill ratings.</p></div>
-              <Button variant="outline" className="w-full sm:w-auto min-h-11" onClick={loadTestRoster} disabled={locked || saving}><Users className="w-4 h-4 mr-2" />Load 16+16 Gate 3 Test Roster</Button>
+              <Button variant="outline" className="w-full sm:w-auto min-h-11" onClick={loadTestRoster} disabled={locked || saving || !canManageEvent}><Users className="w-4 h-4 mr-2" />Practice with 32 Test Players</Button>
             </div>
             <div className="grid lg:grid-cols-2 gap-4">
               {['club_a','club_b'].map(side => <div key={side} className="glass rounded-xl p-4"><div className="grid grid-cols-[1fr_auto] gap-2"><Input placeholder={`Add ${side === 'club_a' ? setup.clubAName : setup.clubBName} player`} value={manual[side]} onChange={e => setManual(m => ({ ...m, [side]: e.target.value }))} className="bg-secondary" /><Button className="w-11 h-11 p-0" onClick={() => addManual(side)} disabled={locked || !manual[side].trim()}><Plus className="w-4 h-4" /></Button></div></div>)}
