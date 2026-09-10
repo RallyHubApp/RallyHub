@@ -11,9 +11,22 @@ import PageHeader from '@/components/shared/PageHeader';
 import { format } from 'date-fns';
 
 export default function Dashboard() {
+  const { data: currentUser = null } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: () => base44.auth.me().catch(() => null)
+  });
+
   const { data: players = [] } = useQuery({
-    queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list('-created_date', 100)
+    queryKey: ['players', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: () => {
+      const filters = {};
+      if (currentUser?.active_tenant_id) filters.tenant_id = currentUser.active_tenant_id;
+      if (currentUser?.active_club_id) filters.club_id = currentUser.active_club_id;
+      return Object.keys(filters).length
+        ? base44.entities.Player.filter(filters, 'full_name', 500)
+        : base44.entities.Player.list('full_name', 500);
+    },
+    enabled: !!currentUser
   });
 
   const { data: tournaments = [] } = useQuery({
@@ -58,7 +71,7 @@ export default function Dashboard() {
         <StatCard title="Total Players" value={players.length} icon={Users} trend={`${players.filter(p => p.status === 'Active').length} active`} trendUp delay={0} accentColor="primary" />
         <StatCard title="Active Tournaments" value={activeTournaments.length} icon={Trophy} delay={0.1} accentColor="accent" />
         <StatCard title="Matches Today" value={todayMatches.length} icon={Swords} delay={0.2} accentColor="chart-3" />
-        <StatCard title="Rated Players" value={players.filter(p => p.dupr_rating != null).length} icon={Crown} delay={0.3} accentColor="chart-4" />
+        <StatCard title="DUPR Rated" value={players.filter(p => p.dupr_rating != null).length} icon={Crown} delay={0.3} accentColor="chart-4" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -66,7 +79,7 @@ export default function Dashboard() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Club Players</h3>
-            <Link to="/app/leaderboard" className="text-xs text-primary hover:underline flex items-center gap-1">
+            <Link to="/app/players" className="text-xs text-primary hover:underline flex items-center gap-1">
               View all <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
