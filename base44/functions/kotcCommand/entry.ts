@@ -54,39 +54,33 @@ async function refreshKotcAggregates(base44:any,session:any){
 }
 
 async function createSnapshot(base44:any, session:any, commandId:string, checkpointType:string, userId:string) {
-  const [participants, rounds, slots, matches, events, courts, prior] = await Promise.all([
-    base44.asServiceRole.entities.KotcSessionParticipant.filter({ session_id:session.id }),
-    base44.asServiceRole.entities.KotcRound.filter({ session_id:session.id }),
-    base44.asServiceRole.entities.KotcRoundSlot.filter({ session_id:session.id }),
-    base44.asServiceRole.entities.KotcMatch.filter({ session_id:session.id }),
-    base44.asServiceRole.entities.KotcParticipationEvent.filter({ session_id:session.id }),
-    base44.asServiceRole.entities.KotcSessionCourt.filter({ session_id:session.id }),
-    base44.asServiceRole.entities.KotcRecoveryCheckpoint.filter({ session_id:session.id }),
-  ]);
-  const sequence = Math.max(0, ...(prior || []).map((x:any) => Number(x.sequence || 0))) + 1;
-  const snapshot = { schemaVersion:1, session, participants, rounds, slots, matches, participationEvents:events, sessionCourts:courts };
+  // Base44 has strict practical payload/rate limits. The entity records themselves are
+  // the authoritative recoverable sporting state, so a recovery checkpoint must remain
+  // a tiny marker rather than re-reading and duplicating the entire live session.
   try {
-    const snapshotJson=JSON.stringify(snapshot);
-    // Recovery support must never break a live host action. Skip oversized
-    // snapshots rather than attempting a write that can surface as Axios 500.
-    if(snapshotJson.length>12000){console.warn('KOTC recovery checkpoint skipped: snapshot too large',{sessionId:session.id,checkpointType,bytes:snapshotJson.length});return null;}
-    return await base44.asServiceRole.entities.KotcRecoveryCheckpoint.create({
-      tenant_id:session.tenant_id, club_id:session.club_id, session_id:session.id,
-      sequence, session_revision:Number(session.revision || 0), current_round_number:Number(session.current_round_number || 0),
-      checkpoint_type:checkpointType, snapshot_json:snapshotJson, command_id:commandId,
-      created_by_user_id:userId, created_at:nowIso(),
-    });
-  } catch (error) {
-    // Recovery checkpoints are safety/audit support, never part of the live sporting
-    // transaction. A large snapshot or temporary Base44 rate limit must not turn an
-    // otherwise successful host action (undo, pair lock, score, next round, etc.)
-    // into an Axios 500 for the person running the hall.
-    console.warn('KOTC recovery checkpoint skipped', {
-      sessionId: session.id,
-      commandId,
+    const prior=await base44.asServiceRole.entities.KotcRecoveryCheckpoint.filter({session_id:session.id});
+    const sequence=Math.max(0,...(prior||[]).map((x:any)=>Number(x.sequence||0)))+1;
+    const snapshotJson=JSON.stringify({
+      schemaVersion:2,
+      recoveryModel:'authoritative_entities',
+      sessionId:session.id,
+      sessionRevision:Number(session.revision||0),
+      status:session.status,
+      currentRoundId:session.current_round_id||null,
+      currentRoundNumber:Number(session.current_round_number||0),
+      lastCommandId:session.last_command_id||commandId,
       checkpointType,
-      error: String((error as any)?.message || error),
     });
+    return await base44.asServiceRole.entities.KotcRecoveryCheckpoint.create({
+      tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,
+      sequence,session_revision:Number(session.revision||0),current_round_number:Number(session.current_round_number||0),
+      checkpoint_type:checkpointType,snapshot_json:snapshotJson,command_id:commandId,
+      created_by_user_id:userId,created_at:nowIso(),
+    });
+  } catch(error) {
+    // Supporting recovery telemetry can never turn a successful sporting write into
+    // a host-visible failure. State recovery comes from the authoritative entities.
+    console.warn('KOTC recovery checkpoint skipped',{sessionId:session.id,commandId,checkpointType,error:String((error as any)?.message||error)});
     return null;
   }
 }
