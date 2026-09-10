@@ -12,6 +12,7 @@ const scorer=read('base44/functions/kotcScorer/entry.ts');
 const saveScore=read('base44/functions/saveKotcScore/entry.ts');
 const startRound=read('base44/functions/startKotcRound/entry.ts');
 const pairLock=read('base44/functions/setKotcPairLock/entry.ts');
+const prepareNext=read('base44/functions/prepareKotcNextRound/entry.ts');
 const scorerLinks=read('base44/functions/manageKotcScorerLinks/entry.ts');
 const results=read('base44/functions/kotcResultsShare/entry.ts');
 const create=read('base44/functions/createKotcV2Session/entry.ts');
@@ -94,25 +95,26 @@ includes(command,"x.participant_type==='member'",'historical aggregate records m
 includes(command,"commandType === 'correct_match' && user.role === 'admin'",'finalised score corrections must require Super Admin');
 includes(command,"action:'kotc_score_corrected'",'score correction must be audit logged');
 
-// Base44 provider resilience: use small recovery markers and batched writes.
+// Base44 provider resilience: use small recovery markers and dedicated, rate-limit-aware live endpoints.
 includes(command,"recoveryModel:'authoritative_entities'",'recovery checkpoints must reference authoritative entities rather than copying the whole session');
 assert(!command.includes('participationEvents:events')&&!command.includes('sessionCourts:courts'),'recovery checkpoints must not duplicate large live collections');
-includes(command,'KotcRoundSlot.bulkCreate(slotCreates)','next-round slot creation must use Base44 bulkCreate');
-includes(command,"withRateLimitRetry('prepare rounds'",'next-round preparation must retry Base44 provider rate limits internally');
-includes(command,"withRateLimitRetry('prepare advance session'",'final next-round session advance must be rate-limit resilient');
-const nextRoundStart=command.indexOf("commandType === 'generate_next_round'");
-const nextRoundEnd=command.indexOf("commandType === 'set_participant_status'",nextRoundStart);
-const nextRoundBlock=command.slice(nextRoundStart,nextRoundEnd);
-assert(!nextRoundBlock.includes('await Promise.all(['),'next-round provider writes must not be fired concurrently against Base44 burst limits');
+includes(hostUi,"functions.invoke('prepareKotcNextRound'",'host Prepare Next Round must use its dedicated live-session endpoint');
+assert(!hostUi.includes("commandType:'generate_next_round'"),'host UI must not route Prepare Next Round through the heavy general command pipeline');
+includes(prepareNext,"runtimeVersion:'kotc-2026-09-10-r6'",'dedicated next-round endpoint must expose its deployed runtime contract version');
+includes(prepareNext,"retry('create slots'",'next-round slot creation must retry Base44 provider limits internally');
+includes(prepareNext,"retry('advance session'",'final next-round session advance must be rate-limit resilient');
+assert(!prepareNext.includes('Promise.all(['),'next-round provider writes must not be fired concurrently against Base44 burst limits');
+assert(!prepareNext.includes('KotcRecoveryCheckpoint')&&!prepareNext.includes('snapshot_json'),'dedicated next-round endpoint must never depend on recovery snapshot payloads');
+includes(prepareNext,'KotcRoundSlot.bulkCreate(slotPayload)','next-round slot creation must use Base44 bulkCreate');
+includes(prepareNext,'KotcMatch.bulkCreate(matchPayload)','next-round match creation must use Base44 bulkCreate');
+includes(prepareNext,'KotcSessionParticipant.bulkUpdate(participantPayload)','next-round participant updates must use Base44 bulkUpdate');
+includes(prepareNext,'KotcParticipationEvent.bulkCreate(eventPayload)','next-round participation events must be batched');
+includes(prepareNext,'enforceLocks(finalSlots,locks,new Set(eligible.map','active host pair locks must be enforced before next-round slots are persisted');
+includes(prepareNext,"assignment_type:'locked_pair_override'",'automatic persistent-lock repair must be identifiable in the proposed draw');
+includes(prepareNext,'was split between court and bench','an available locked pair must never be split between court and bench');
+includes(prepareNext,'reached different destination courts.','a pair lock must never be repaired by moving a player to an unearned court');
 includes(saveScore,"withRateLimitRetry('score match save'",'host score save must retry transient Base44 rate limits');
 includes(scorer,"withRateLimitRetry('scorer result save'",'player scorer save must retry transient Base44 rate limits');
-includes(command,'KotcMatch.bulkCreate(matchCreates)','next-round match creation must use Base44 bulkCreate');
-includes(command,'KotcSessionParticipant.bulkUpdate(participantUpdates)','next-round participant updates must use Base44 bulkUpdate');
-includes(command,'KotcParticipationEvent.bulkCreate(participationEvents)','next-round participation events must be batched');
-includes(command,'enforcePersistentLocks(finalSlots,activeLocks,new Set(eligible.map','active host pair locks must be enforced before next-round slots are persisted');
-includes(command,"assignment_type:'locked_pair_override'",'automatic persistent-lock repair must be identifiable in the proposed draw');
-includes(command,'was split between court and bench','an available locked pair must never be split between court and bench');
-includes(command,'reached different destination courts. The round was not saved.','a pair lock must never be repaired by moving a player to an unearned court');
 includes(command,'command-log finalisation skipped after successful sporting write','secondary command-log failure must not report sporting failure');
 
 console.log(`KOTC access/architecture gate: PASS\n${checks} role, privacy, scoring-lock, membership and correction checks, 0 failures.`);
