@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, action, phase, expectedRevision } = body;
+    const { eventId, action, phase, expectedRevision, minutes } = body;
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id: eventId });
     const event = events?.[0];
     if (!event) return Response.json({ error: 'Club Challenge event not found' }, { status: 404 });
@@ -43,9 +43,18 @@ Deno.serve(async (req) => {
     let next: any = current;
 
     if (action === 'start') {
-      const seconds = phase === 'play' ? Number(event.play_minutes || 10) * 60 : phase === 'changeover' ? Number(event.changeover_minutes || 2) * 60 : phase === 'break' ? Number(event.break_minutes || 20) * 60 : 0;
+      const currentRound = Number(event.current_round || 1);
+      const preparedPlaySeconds = phase === 'play' && current.phase === 'play' && Number(current.round || 0) === currentRound && !current.running && Number(current.remaining_seconds || 0) > 0
+        ? Number(current.remaining_seconds)
+        : 0;
+      const seconds = preparedPlaySeconds || (phase === 'play' ? Number(event.play_minutes || 10) * 60 : phase === 'changeover' ? Number(event.changeover_minutes || 2) * 60 : phase === 'break' ? Number(event.break_minutes || 20) * 60 : 0);
       if (!seconds) return Response.json({ error: 'Invalid timer phase' }, { status: 400 });
-      next = { phase, running: true, remaining_seconds: seconds, started_at: now.toISOString(), round: Number(event.current_round || 1) };
+      next = { phase, running: true, remaining_seconds: seconds, started_at: now.toISOString(), round: currentRound };
+    } else if (action === 'set_round_minutes') {
+      const value = Number(minutes);
+      if (!Number.isInteger(value) || value < 1 || value > 60) return Response.json({ error: 'Round duration must be between 1 and 60 minutes.' }, { status: 400 });
+      if (current.running) return Response.json({ error: 'Pause the timer before changing the round duration.' }, { status: 400 });
+      next = { phase: 'play', running: false, remaining_seconds: value * 60, started_at: null, round: Number(event.current_round || 1) };
     } else if (action === 'pause') {
       next = { ...current, running: false, remaining_seconds: remainingNow, started_at: null };
     } else if (action === 'resume') {
