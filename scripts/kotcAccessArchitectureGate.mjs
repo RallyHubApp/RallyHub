@@ -9,6 +9,8 @@ const access=read('base44/functions/manageKotcSessionAccess/entry.ts');
 const state=read('base44/functions/getKotcV2State/entry.ts');
 const command=read('base44/functions/kotcCommand/entry.ts');
 const scorer=read('base44/functions/kotcScorer/entry.ts');
+const saveScore=read('base44/functions/saveKotcScore/entry.ts');
+const startRound=read('base44/functions/startKotcRound/entry.ts');
 const scorerLinks=read('base44/functions/manageKotcScorerLinks/entry.ts');
 const results=read('base44/functions/kotcResultsShare/entry.ts');
 const create=read('base44/functions/createKotcV2Session/entry.ts');
@@ -47,7 +49,12 @@ assert(!scorer.includes('set_participant_status'),'player scorer must never chan
 // Host is authoritative over a player scorer.
 includes(command,"commandType === 'host_claim_score'",'host must have explicit scorer takeover command');
 includes(command,'scoring_lock_owner:hostOwner','host takeover must own the court lease');
-includes(command,'scoring_lock_owner:null','host save/correction must release the court lease');
+includes(command,'scoring_lock_owner:null','host correction must release the court lease');
+includes(saveScore,'scoring_lock_owner:null','dedicated host score save must release the court lease');
+includes(saveScore,'alreadySaved:true','score-save retry after a lost response must reconcile as success');
+includes(saveScore,'AuditLog.create','dedicated score save retains best-effort audit support');
+includes(saveScore,"console.warn('KOTC score audit skipped'",'score audit failure must not poison the sporting save');
+includes(startRound,"round.status==='started'",'START ROUND retry after a lost response must be idempotent');
 
 // Membership is not inferred from Player existence.
 includes(create,'entities.ClubRelationship.filter','session participant classification must consult club relationship');
@@ -60,5 +67,14 @@ includes(command,"x.participant_type==='member'",'historical aggregate records m
 // Historical corrections are controlled and do not mutate future draw history.
 includes(command,"commandType === 'correct_match' && user.role === 'admin'",'finalised score corrections must require Super Admin');
 includes(command,"action:'kotc_score_corrected'",'score correction must be audit logged');
+
+// Base44 provider resilience: use small recovery markers and batched writes.
+includes(command,"recoveryModel:'authoritative_entities'",'recovery checkpoints must reference authoritative entities rather than copying the whole session');
+assert(!command.includes('participationEvents:events')&&!command.includes('sessionCourts:courts'),'recovery checkpoints must not duplicate large live collections');
+includes(command,'KotcRoundSlot.bulkCreate(slotCreates)','next-round slot creation must use Base44 bulkCreate');
+includes(command,'KotcMatch.bulkCreate(matchCreates)','next-round match creation must use Base44 bulkCreate');
+includes(command,'KotcSessionParticipant.bulkUpdate(participantUpdates)','next-round participant updates must use Base44 bulkUpdate');
+includes(command,'KotcParticipationEvent.bulkCreate(participationEvents)','next-round participation events must be batched');
+includes(command,'command-log finalisation skipped after successful sporting write','secondary command-log failure must not report sporting failure');
 
 console.log(`KOTC access/architecture gate: PASS\n${checks} role, privacy, scoring-lock, membership and correction checks, 0 failures.`);
