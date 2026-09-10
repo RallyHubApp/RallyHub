@@ -12,17 +12,36 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Test timeout of 45000ms exceeded.
+```
 
-Locator: getByText('Live Player View')
-Expected: visible
-Error: strict mode violation: getByText('Live Player View') resolved to 2 elements:
-    1) <p data-dynamic-content="false" class="text-xs text-muted-foreground mt-1" data-source-location="src/components/kotc/KotcHostAccessPanel.jsx:53:168">Live player view, scorer access and restricted ho…</p> aka getByRole('button', { name: 'Session Links & Access Live' })
-    2) <p data-dynamic-content="false" class="text-xs font-semibold flex items-center gap-2" data-source-location="src/components/kotc/KotcHostAccessPanel.jsx:58:66">…</p> aka getByText('Live Player View', { exact: true })
-
+```
+Error: locator.click: Test timeout of 45000ms exceeded.
 Call log:
-  - Expect "toBeVisible" getByText('Live Player View') with timeout 3000ms
-  - waiting for getByText('Live Player View')
+  - waiting for getByTestId('kotc-complete-1')
+    - locator resolved to <button data-dynamic-content="true" data-testid="kotc-complete-1" data-source-location="src/components/kotc/KotcV2SessionView.jsx:46:16" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px…>Complete Match</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div data-testid="kotc-timer" data-dynamic-content="true" data-source-location="src/components/kotc/RoundTimer.jsx:277:4" class="glass space-y-4 border border-primary/20 fixed inset-0 z-[100] rounded-none flex flex-col justify-center p-6 sm:p-8 bg-background">…</div> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div data-testid="kotc-timer" data-dynamic-content="true" data-source-location="src/components/kotc/RoundTimer.jsx:277:4" class="glass space-y-4 border border-primary/20 fixed inset-0 z-[100] rounded-none flex flex-col justify-center p-6 sm:p-8 bg-background">…</div> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    83 × waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div data-testid="kotc-timer" data-dynamic-content="true" data-source-location="src/components/kotc/RoundTimer.jsx:277:4" class="glass space-y-4 border border-primary/20 fixed inset-0 z-[100] rounded-none flex flex-col justify-center p-6 sm:p-8 bg-background">…</div> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
 
 ```
 
@@ -33,84 +52,41 @@ Call log:
   - generic [ref=e4]:
     - generic [ref=e5]:
       - generic [ref=e6]:
-        - paragraph [ref=e7]: Round 1 — ROUND READY
-        - paragraph [ref=e8]: 1 courts · 0 bench
+        - paragraph [ref=e7]: Round 1 — LIVE
+        - paragraph [ref=e8]: 1 courts · 0 bench · 0/1 scores saved
       - button "Session Menu" [ref=e9] [cursor=pointer]
     - generic [ref=e10]:
       - paragraph [ref=e11]: What happens next
-      - paragraph [ref=e12]: Round 1 ready
-      - paragraph [ref=e13]: "Next: check the 1 court assignments, then Start Round 1."
+      - paragraph [ref=e12]: Round 1 live · 0/1 scores saved
+      - paragraph [ref=e13]: "Next: collect Court 1 result. You can correct any saved score before advancing."
     - generic [ref=e14]:
       - generic [ref=e15]:
-        - button "Round History" [ref=e16] [cursor=pointer]
-        - button "Players" [ref=e17] [cursor=pointer]
-        - button "Timer" [ref=e18] [cursor=pointer]
-        - button "Contacts" [ref=e19] [cursor=pointer]
-        - button "Copy Live Link" [ref=e20] [cursor=pointer]
-        - button "Email Players" [ref=e21] [cursor=pointer]
-        - button "Resend Results" [ref=e22] [cursor=pointer]
-      - generic [ref=e23]:
-        - generic [ref=e24]:
-          - paragraph [ref=e25]: Host Player 1
-          - paragraph [ref=e26]: "Mobile: 0850000001"
-          - paragraph [ref=e27]: "Emergency contact: Emergency One — Partner"
-          - paragraph [ref=e28]: "Emergency mobile: 0860000001"
-        - generic [ref=e29]:
-          - paragraph [ref=e30]: Host Player 2
-          - paragraph [ref=e31]: "Mobile: 0850000002"
-          - paragraph [ref=e32]: "Emergency contact: Emergency Two — Spouse"
-          - paragraph [ref=e33]: "Emergency mobile: 0860000002"
-        - generic [ref=e34]:
-          - paragraph [ref=e35]: Host Player 3
-          - paragraph [ref=e36]: "Mobile: 0850000003"
-          - paragraph [ref=e37]: "Emergency contact: Emergency Three — Sibling"
-          - paragraph [ref=e38]: "Emergency mobile: 0860000003"
+        - paragraph [ref=e17]: Play Time
+        - generic [ref=e18]:
+          - button "Test / enable speaker sound" [ref=e19] [cursor=pointer]
+          - button "Float and move timer" [ref=e20] [cursor=pointer]
+          - button "Full screen timer" [ref=e21] [cursor=pointer]
+      - generic [ref=e22]: 07:16
+      - generic [ref=e25]:
+        - button "Pause Timer" [ref=e26] [cursor=pointer]
+        - button "Reset" [ref=e27] [cursor=pointer]
+    - paragraph [ref=e28]: Need to finish early? Pause the timer and enter the final scores now — you do not need to wait for 00:00.
+    - button "Undo Start / Back to Round Setup" [ref=e29] [cursor=pointer]
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]: Court 1
+        - generic [ref=e37]: LIVE
+      - generic [ref=e38]:
         - generic [ref=e39]:
-          - paragraph [ref=e40]: Host Player 4
-          - paragraph [ref=e41]: "Mobile: 0850000004"
-          - paragraph [ref=e42]: "Emergency contact: Emergency Four — Friend"
-          - paragraph [ref=e43]: "Emergency mobile: 0860000004"
-      - generic [ref=e44]:
-        - button [active] [ref=e45] [cursor=pointer]:
-          - generic [ref=e50]:
-            - paragraph [ref=e51]: Session Links & Access
-            - paragraph [ref=e52]: Live player view, scorer access and restricted host control for this session.
-        - generic [ref=e56]:
-          - generic [ref=e57]:
-            - paragraph [ref=e58]: Live Player View
-            - paragraph [ref=e62]: Public, read-only and updates automatically through assignments, live scores, standings and podium.
-            - button "Copy Live Link" [ref=e63] [cursor=pointer]
-          - generic [ref=e64]:
-            - paragraph [ref=e65]: Player Scoring Link
-            - paragraph [ref=e69]: Share with all players. Each court nominates one player to enter/correct that court’s score. Per-court edit locking prevents two devices overwriting each other.
-            - button "Copy Player Scoring Link" [ref=e70] [cursor=pointer]
-      - generic [ref=e71]:
-        - button "Finish Session Now" [ref=e72] [cursor=pointer]
-        - button "Abandon / Cancel" [ref=e73] [cursor=pointer]
-    - generic [ref=e74]:
-      - generic [ref=e75]:
-        - generic [ref=e76]:
-          - heading "Host Round Editor" [level=4] [ref=e77]
-          - paragraph [ref=e78]: Tap one player then another to swap. Only one pending selection is allowed.
-        - generic [ref=e80]:
-          - generic [ref=e81]: Court 1
-          - generic [ref=e85]:
-            - generic [ref=e86]:
-              - paragraph [ref=e87]: Team A
-              - button "Lock pair" [ref=e88] [cursor=pointer]
-            - generic [ref=e89]:
-              - button "Host Player 1" [ref=e90] [cursor=pointer]
-              - button "Host Player 2" [ref=e99] [cursor=pointer]
-          - generic [ref=e108]:
-            - generic [ref=e109]:
-              - paragraph [ref=e110]: Team B
-              - button "Lock pair" [ref=e111] [cursor=pointer]
-            - generic [ref=e112]:
-              - button "Host Player 3" [ref=e113] [cursor=pointer]
-              - button "Host Player 4" [ref=e122] [cursor=pointer]
-      - button "START ROUND 1" [ref=e131] [cursor=pointer]
-      - button "Back to Setup" [ref=e132] [cursor=pointer]
-      - button "Restore Original Draw" [ref=e133] [cursor=pointer]
+          - paragraph [ref=e40]: Team A
+          - paragraph [ref=e41]: Host Player 1 & Host Player 2
+        - spinbutton [ref=e42]: "11"
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - paragraph [ref=e45]: Team B
+          - paragraph [ref=e46]: Host Player 3 & Host Player 4
+        - spinbutton [active] [ref=e47]: "7"
+      - button "Complete Match" [ref=e48] [cursor=pointer]
 ```
 
 # Test source
@@ -190,9 +166,8 @@ Call log:
   72 | 
   73 |   // Delegated host can prepare player/public links but cannot appoint another host.
   74 |   await page.getByText('Session Links & Access').click();
-> 75 |   await expect(page.getByText('Live Player View')).toBeVisible();
-     |                                                    ^ Error: expect(locator).toBeVisible() failed
-  76 |   await expect(page.getByText('Player Scoring Link')).toBeVisible();
+  75 |   await expect(page.getByText('Live Player View',{exact:true})).toBeVisible();
+  76 |   await expect(page.getByText('Player Scoring Link',{exact:true})).toBeVisible();
   77 |   await expect(page.getByText('Restricted Host Link')).toHaveCount(0);
   78 |   await expect(page.getByRole('button',{name:/Grant Host Access/i})).toHaveCount(0);
   79 |   expect(model.calls.some(c=>c.name==='manageKotcSessionAccess')).toBe(false);
@@ -208,7 +183,8 @@ Call log:
   89 |   await expect(a).toHaveValue('11');await expect(b).toHaveValue('7');
   90 |   const save=page.getByTestId('kotc-complete-1');
   91 |   const box=await save.boundingBox();expect(box?.height||0).toBeGreaterThanOrEqual(44);
-  92 |   await save.click();
+> 92 |   await save.click();
+     |              ^ Error: locator.click: Test timeout of 45000ms exceeded.
   93 |   await expect(page.getByTestId('kotc-next-action')).toContainText('scores complete',{timeout:1800});
   94 |   await expect(page.getByTestId('kotc-next-action')).toContainText('review the 1 results');
   95 | 
