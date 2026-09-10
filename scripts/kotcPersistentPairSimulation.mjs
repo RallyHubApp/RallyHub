@@ -22,9 +22,10 @@ for(let playerCount=4;playerCount<=40;playerCount++){
     const benchCounts=Object.fromEntries(ids.map(id=>[id,0]));for(const id of currentBench)benchCounts[id]++;
     for(let round=1;round<=12;round++){
       const results={};for(const c of courts)results[c.rank]=((stableHash(`${playerCount}|${courtLimit}|${round}|${c.rank}`)&1)===0?'A':'B');
-      const earnedCourt=results[courtOf(courts,'p1')]==='A'
-        ? Math.max(1,courtOf(courts,'p1')-1)
-        : Math.min(activeCourts,courtOf(courts,'p1')+1);
+      const lockedCourt=courts.find(c=>c.a.includes('p1')||c.b.includes('p1'));const lockedSide=lockedCourt.a.includes('p1')?'A':'B';
+      const earnedCourt=results[lockedCourt.rank]===lockedSide
+        ? Math.max(1,lockedCourt.rank-1)
+        : Math.min(activeCourts,lockedCourt.rank+1);
       const d=destinations(courts,results);let sporting=[];
       for(const [rankText,pairs] of Object.entries(d)){const rank=Number(rankText),teams=crossSplit(pairs.one,pairs.two,`${playerCount}|${courtLimit}|r${round}|c${rank}`,lock);for(const [side,team] of [['A',teams[0]],['B',teams[1]]])for(const id of team)sporting.push({id,rank,side});}
       const benchPlaces=playerCount-courtCapacity;
