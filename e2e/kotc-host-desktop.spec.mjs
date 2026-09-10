@@ -511,3 +511,30 @@ test('18-player desktop Preview host journey: setup → controls → rounds → 
   console.log(`KOTC DESKTOP HOST JOURNEY REPORT\n${JSON.stringify(report, null, 2)}`);
   await testInfo.attach('kotc-host-desktop-journey-report.json', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
 });
+
+test('Base44 resilience: score committed but response fails is reconciled as Saved',async({page})=>{
+  const model=createModel({commitThenFailScore:true});await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+  await createAndStartRoundOne(page);
+  await page.getByTestId('kotc-score-1-a').fill('11');await page.getByTestId('kotc-score-1-b').fill('7');
+  await page.getByTestId('kotc-complete-1').click();
+  await expect(page.getByTestId('kotc-score-card-1')).toContainText('Saved 11–7',{timeout:2200});
+  await expect(page.getByTestId('kotc-score-card-1')).not.toContainText('Retry Save');
+  expect(model.scoreFailureInjected).toBe(true);expect(model.matches.find(m=>m.id==='match-r1-c1').revision).toBe(1);
+});
+
+test('Base44 resilience: next round committed but response fails is reconciled without duplicate generation',async({page})=>{
+  const model=createModel({commitThenFailPrepare:true});await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+  await createAndStartRoundOne(page);await scoreCurrentRound(page,4,11);
+  await page.getByTestId('kotc-prepare-next-round').click();
+  await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 2',{timeout:2500});
+  expect(model.prepareFailureInjected).toBe(true);expect(model.rounds.filter(r=>r.round_number===2)).toHaveLength(1);
+});
+
+test('Base44 resilience: genuine prepare failure stays explicit and safely retryable',async({page})=>{
+  const model=createModel({failPrepareBeforeCommit:true});await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+  await createAndStartRoundOne(page);await scoreCurrentRound(page,4,11);
+  await page.getByTestId('kotc-prepare-next-round').click();
+  await expect(page.getByTestId('kotc-prepare-status')).toContainText('Could not prepare the next round',{timeout:2200});
+  expect(model.rounds.filter(r=>r.round_number===2)).toHaveLength(0);
+  await expect(page.getByTestId('kotc-prepare-next-round')).toBeEnabled();
+});
