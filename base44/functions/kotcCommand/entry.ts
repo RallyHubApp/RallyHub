@@ -331,7 +331,7 @@ Deno.serve(async (req) => {
       if (unresolved.length) return Response.json({ error:`${unresolved.length} current-round match result(s) unresolved.` }, { status:409 });
       const playableMatches = matches.filter((m:any)=>m.status==='completed');
       if (!playableMatches.length) return Response.json({ error:'No completed sporting results are available to generate movement.' }, { status:409 });
-      const participants = await base44.asServiceRole.entities.KotcSessionParticipant.filter({ session_id:session.id });
+      const participants = await withRateLimitRetry('prepare participants',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({ session_id:session.id }));
       const fixedPairs=await withRateLimitRetry('prepare fixed pairs',()=>base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'}));
       const activeLocks=(fixedPairs||[]).filter((p:any)=>p.pair_source==='host_selected');
       const nextNumber=Number(currentRound.round_number)+1;
@@ -385,16 +385,15 @@ Deno.serve(async (req) => {
       const returningIds=new Set((participants||[]).filter((p:any)=>['temporarily_unavailable','voluntary_rest'].includes(p.status)&&Number(p.available_again_from_round||0)>0&&nextNumber>=Number(p.available_again_from_round)).map((p:any)=>String(p.id)));
       const participantUpdates=projected.map((p:any)=>({id:p.id,rounds_played:p.rounds_played,fairness_benches:p.fairness_benches,consecutive_rounds_played:p.consecutive_rounds_played,consecutive_court1_rounds:p.consecutive_court1_rounds,court1_rounds:p.court1_rounds,...(returningIds.has(String(p.id))?{status:'present',availability_effective_from_round:null,available_again_from_round:null}:{})}));
       const participationEvents=[...selected.map((id:string)=>({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:id,round_id:newRound.id,round_number:nextNumber,event_type:'fairness_bench',effective_from_round:nextNumber,effective_to_round:nextNumber,fairness_credit:true,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now})),...[...returningIds].map((id:string)=>({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:id,round_id:newRound.id,round_number:nextNumber,event_type:'returned_available',effective_from_round:nextNumber,fairness_credit:false,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now}))];
-      // Base44 live-session rule: batch independent child writes instead of issuing dozens
-      // of one-record requests that can trip provider rate limits in a busy hall.
-      await Promise.all([
-        slotCreates.length?base44.asServiceRole.entities.KotcRoundSlot.bulkCreate(slotCreates):Promise.resolve([]),
-        matchCreates.length?base44.asServiceRole.entities.KotcMatch.bulkCreate(matchCreates):Promise.resolve([]),
-        participantUpdates.length?base44.asServiceRole.entities.KotcSessionParticipant.bulkUpdate(participantUpdates):Promise.resolve([]),
-        participationEvents.length?base44.asServiceRole.entities.KotcParticipationEvent.bulkCreate(participationEvents):Promise.resolve([]),
-        currentRound.status!=='completed'?base44.asServiceRole.entities.KotcRound.update(currentRound.id,{status:'completed',completed_at:now}):Promise.resolve(currentRound),
-      ]);
-      session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,current_round_number:nextNumber,current_round_id:newRound.id});
+      // Base44 live-session rule: keep child writes batched, but do NOT fire the batches
+      // concurrently. Concurrent provider calls can trip Base44's burst limit even when
+      // the total request count is modest. Each batch retries 429s with backoff.
+      if(slotCreates.length)await withRateLimitRetry('prepare round slots',()=>base44.asServiceRole.entities.KotcRoundSlot.bulkCreate(slotCreates));
+      if(matchCreates.length)await withRateLimitRetry('prepare round matches',()=>base44.asServiceRole.entities.KotcMatch.bulkCreate(matchCreates));
+      if(participantUpdates.length)await withRateLimitRetry('prepare participant counters',()=>base44.asServiceRole.entities.KotcSessionParticipant.bulkUpdate(participantUpdates));
+      if(participationEvents.length)await withRateLimitRetry('prepare participation events',()=>base44.asServiceRole.entities.KotcParticipationEvent.bulkCreate(participationEvents));
+      if(currentRound.status!=='completed')await withRateLimitRetry('prepare close current round',()=>base44.asServiceRole.entities.KotcRound.update(currentRound.id,{status:'completed',completed_at:now}));
+      session=await withRateLimitRetry('prepare advance session',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,current_round_number:nextNumber,current_round_id:newRound.id}));
       result={success:true,session,round:newRound,benchParticipantIds:selected};
       if(activeCourts!==currentActiveCourts){try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_court_count_transition',entity_type:'KotcRound',entity_id:newRound.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({activeCourts:currentActiveCourts,eligiblePlayers:currentCourtIds.size}),after_state:JSON.stringify({activeCourts,eligiblePlayers:eligible.length,benchPlaces}),reason:'Availability change required safe court-count remap'});}catch(error){console.warn('KOTC court transition audit skipped',{sessionId:session.id,error:String((error as any)?.message||error)});}}
       await createSnapshot(base44,session,commandId,'round_completed',user.id);
