@@ -109,6 +109,21 @@ export default function KotcV2SessionView({ tournament, players, queryClient }){
   const [creating,setCreating]=useState(false);const [commanding,setCommanding]=useState(false);const [startingRound,setStartingRound]=useState(false);const [startError,setStartError]=useState('');const [preparingRound,setPreparingRound]=useState(false);const [prepareStatus,setPrepareStatus]=useState('');const [undoingStart,setUndoingStart]=useState(false);const [timerStartRoundId,setTimerStartRoundId]=useState(null);const [menuOpen,setMenuOpen]=useState(false);const [historyOpen,setHistoryOpen]=useState(false);const [historyRoundId,setHistoryRoundId]=useState(null);const [timerSettingsOpen,setTimerSettingsOpen]=useState(false);const [playerControlsOpen,setPlayerControlsOpen]=useState(false);const [contactsOpen,setContactsOpen]=useState(false);const [contactSearch,setContactSearch]=useState('');const [sharing,setSharing]=useState(false);const [rankingOpen,setRankingOpen]=useState(false);
   const [venueCourts,setVenueCourts]=useState('4');const [duration,setDuration]=useState('90');const [playMinutes,setPlayMinutes]=useState('8');const [scoringMode,setScoringMode]=useState('timed');const [scoreTarget,setScoreTarget]=useState('11');const [winByTwo,setWinByTwo]=useState(false);const [seedingSource,setSeedingSource]=useState('roster');const [drawMethod,setDrawMethod]=useState('balanced');const [benchIds,setBenchIds]=useState([]);const [useTimer,setUseTimer]=useState(true);const [livePlayMinutes,setLivePlayMinutes]=useState('8');
   const [playerOrder,setPlayerOrder]=useState(players.map(p=>p.id));useEffect(()=>setPlayerOrder(prev=>{const ids=players.map(p=>p.id);const kept=prev.filter(id=>ids.includes(id));return [...kept,...ids.filter(id=>!kept.includes(id))];}),[players.length]);
+  // Mobile browsers can restore this screen from the back-forward cache while preserving
+  // transient React busy flags from the moment the user navigated away. Clear those UI-only
+  // flags and reconcile against authoritative Base44 state whenever the host returns.
+  useEffect(()=>{
+    const reconcile=()=>{
+      setCreating(false);setCommanding(false);setStartingRound(false);setPreparingRound(false);setUndoingStart(false);setSharing(false);setPairBusyKey?.('');
+      refetch?.().catch(()=>{});
+    };
+    const onPageShow=()=>reconcile();
+    const onVisibility=()=>{if(document.visibilityState==='visible')reconcile();};
+    window.addEventListener('pageshow',onPageShow);
+    window.addEventListener('focus',reconcile);
+    document.addEventListener('visibilitychange',onVisibility);
+    return()=>{window.removeEventListener('pageshow',onPageShow);window.removeEventListener('focus',reconcile);document.removeEventListener('visibilitychange',onVisibility);};
+  },[tournament.id]);
   const {data:kotcAggregates=[]}=useQuery({queryKey:['kotc-player-aggregates',players.map(p=>p.id).join('|')],queryFn:()=>players.length?base44.entities.KotcPlayerAggregate.filter({player_id:{$in:players.map(p=>p.id)}}):[],enabled:players.length>0});
   const applySeedingSource=(source)=>{setSeedingSource(source);if(source==='roster'){setPlayerOrder(players.map(p=>p.id));setRankingOpen(false);}else if(source==='manual'){setRankingOpen(true);}else if(source==='dupr'){setPlayerOrder([...players].sort((a,b)=>(b.dupr_rating??-Infinity)-(a.dupr_rating??-Infinity)||String(a.full_name).localeCompare(String(b.full_name))).map(p=>p.id));setRankingOpen(true);}else if(source==='previous_kotc'){const byId=Object.fromEntries((kotcAggregates||[]).map(a=>[a.player_id,a]));setPlayerOrder([...players].sort((a,b)=>{const aa=byId[a.id],bb=byId[b.id];const ar=aa&&aa.matches_played?Number(aa.wins||0)/Number(aa.matches_played):-1,br=bb&&bb.matches_played?Number(bb.wins||0)/Number(bb.matches_played):-1;return br-ar||Number(bb?.court1_rounds||0)-Number(aa?.court1_rounds||0)||Number(aa?.best_session_rank||999)-Number(bb?.best_session_rank||999)||String(a.full_name).localeCompare(String(b.full_name));}).map(p=>p.id));setRankingOpen(true);}}
   const {data:state,isLoading,refetch}=useQuery({queryKey:['kotc-v2-state',tournament.id],queryFn:async()=> (await base44.functions.invoke('getKotcV2State',{tournamentId:tournament.id})).data,refetchInterval:8000});
