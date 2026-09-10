@@ -10,25 +10,27 @@ function pairKey(a:string,b:string){return [a,b].sort().join('|');}
 function keepsLocks(teams:string[][],locks:any[]){return (locks||[]).every((l:any)=>{const a=String(l.participant1_id),b=String(l.participant2_id);const present=teams.flat().includes(a)&&teams.flat().includes(b);return !present||teams.some(t=>t.includes(a)&&t.includes(b));});}
 function splitFour(ids:string[],partnerCounts:any,seed:string,locks:any[]=[]){const [a,b,c,d]=ids;let opts=[[[a,b],[c,d]],[[a,c],[b,d]],[[a,d],[b,c]]].filter((x:any)=>keepsLocks(x,locks)).map((x:any)=>({teamA:x[0],teamB:x[1],pen:(partnerCounts[pairKey(x[0][0],x[0][1])]||0)+(partnerCounts[pairKey(x[1][0],x[1][1])]||0),key:`${x[0].join(',')}|${x[1].join(',')}`}));if(!opts.length)throw new Error('Locked-pair constraints cannot be satisfied on this court.');return opts.sort((x:any,y:any)=>x.pen-y.pen||stableHash(`${seed}|${x.key}`)-stableHash(`${seed}|${y.key}`)||x.key.localeCompare(y.key))[0];}
 function crossSplit(pairOne:string[],pairTwo:string[],partnerCounts:any,seed:string,locks:any[]=[]){const [a,b]=pairOne,[c,d]=pairTwo;let raw=[[[a,c],[b,d]],[[a,d],[b,c]],[[a,b],[c,d]]];const opts=raw.filter((x:any)=>keepsLocks(x,locks)).map((x:any)=>({teamA:x[0],teamB:x[1],pen:(partnerCounts[pairKey(x[0][0],x[0][1])]||0)+(partnerCounts[pairKey(x[1][0],x[1][1])]||0),key:`${x[0].join(',')}|${x[1].join(',')}`}));if(!opts.length)throw new Error('Locked-pair constraints cannot be satisfied on this court.');return opts.sort((x:any,y:any)=>x.pen-y.pen||stableHash(`${seed}|${x.key}`)-stableHash(`${seed}|${y.key}`)||x.key.localeCompare(y.key))[0];}
-function enforcePersistentLocks(slots:any[],locks:any[]){
+function enforcePersistentLocks(slots:any[],locks:any[],eligibleIds:Set<string>){
   const out=slots.map((s:any)=>({...s}));
   const lockedIds=new Set((locks||[]).flatMap((l:any)=>[String(l.participant1_id),String(l.participant2_id)]));
   const sameTeam=(a:string,b:string)=>{const sa=out.find((s:any)=>String(s.participant_id)===a),sb=out.find((s:any)=>String(s.participant_id)===b);return !!sa&&!!sb&&Number(sa.ladder_court_rank)===Number(sb.ladder_court_rank)&&String(sa.team_side)===String(sb.team_side);};
   for(const lock of locks||[]){
     const a=String(lock.participant1_id),b=String(lock.participant2_id);const ia=out.findIndex((s:any)=>String(s.participant_id)===a),ib=out.findIndex((s:any)=>String(s.participant_id)===b);
-    // If one partner is genuinely unavailable/benched, keep the persistent lock stored
-    // and let it resume automatically when both are next on court.
+    const bothAvailable=eligibleIds.has(a)&&eligibleIds.has(b);
+    if(bothAvailable&&((ia<0)!==(ib<0)))throw new Error(`Locked pair ${lock.pair_name||''} was split between court and bench.`);
     if(ia<0||ib<0||sameTeam(a,b))continue;
+    if(Number(out[ia].ladder_court_rank)!==Number(out[ib].ladder_court_rank))throw new Error(`Locked pair ${lock.pair_name||''} reached different destination courts. The round was not saved.`);
+    // Repair only inside the same earned court. Never drag a locked player to a
+    // different court merely to make the visual pairing look correct.
     const candidates:any[]=[];
     for(const [anchorIndex,otherIndex] of [[ia,ib],[ib,ia]] as any){
-      const anchor=out[anchorIndex],other=out[otherIndex];
+      const anchor=out[anchorIndex];
       const mateIndex=out.findIndex((s:any,idx:number)=>idx!==anchorIndex&&Number(s.ladder_court_rank)===Number(anchor.ladder_court_rank)&&String(s.team_side)===String(anchor.team_side));
       if(mateIndex<0)continue;const mateId=String(out[mateIndex].participant_id);if(lockedIds.has(mateId))continue;
-      const penalty=Math.abs(Number(other.destination_from_prior_round||other.ladder_court_rank)-Number(anchor.ladder_court_rank))+Math.abs(Number(out[mateIndex].destination_from_prior_round||out[mateIndex].ladder_court_rank)-Number(other.ladder_court_rank));
-      candidates.push({anchorIndex,otherIndex,mateIndex,penalty});
+      candidates.push({anchorIndex,otherIndex,mateIndex});
     }
-    if(!candidates.length)throw new Error(`Locked pair ${lock.pair_name||''} could not be placed together automatically.`);
-    const chosen=candidates.sort((x:any,y:any)=>x.penalty-y.penalty||x.anchorIndex-y.anchorIndex)[0];
+    if(!candidates.length)throw new Error(`Locked pair ${lock.pair_name||''} could not be kept together on their earned court.`);
+    const chosen=candidates.sort((x:any,y:any)=>x.anchorIndex-y.anchorIndex)[0];
     const movedLocked=out[chosen.otherIndex].participant_id,movedSingle=out[chosen.mateIndex].participant_id;
     out[chosen.mateIndex]={...out[chosen.mateIndex],participant_id:movedLocked,assignment_type:'locked_pair_override'};
     out[chosen.otherIndex]={...out[chosen.otherIndex],participant_id:movedSingle,assignment_type:'locked_pair_override'};
@@ -360,7 +362,7 @@ Deno.serve(async (req) => {
       }
       // Persistent host pair locks are a sporting invariant, not a warning preference.
       // Auto-repair the generated proposal before any RoundSlot/Match is persisted.
-      finalSlots=enforcePersistentLocks(finalSlots,activeLocks);
+      finalSlots=enforcePersistentLocks(finalSlots,activeLocks,new Set(eligible.map((p:any)=>String(p.id))));
       for(const lock of activeLocks){const a=String(lock.participant1_id),b=String(lock.participant2_id);const sa=finalSlots.find((s:any)=>String(s.participant_id)===a),sb=finalSlots.find((s:any)=>String(s.participant_id)===b);if(sa&&sb&&(Number(sa.ladder_court_rank)!==Number(sb.ladder_court_rank)||String(sa.team_side)!==String(sb.team_side)))return Response.json({error:`Locked pair ${lock.pair_name||''} could not be kept together automatically.`},{status:409});}
       const existingNext=(rounds||[]).filter((r:any)=>Number(r.round_number)===nextNumber&&!['superseded','abandoned'].includes(r.status)).sort((a:any,b:any)=>Number(b.proposal_revision||0)-Number(a.proposal_revision||0))[0];
       if(existingNext){
