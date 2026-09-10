@@ -43,6 +43,9 @@ assert(!scorerLinks.includes('manageKotcSessionAccess'),'scorer-link function mu
 includes(scorer,'This device is already scoring Court','one scorer device may hold only one court lease');
 includes(scorer,'is being scored on another device','same-court scorer collision must be rejected');
 includes(scorer,'expectedRevision','scorer save must use optimistic revision protection');
+includes(scorer,'scorer_correction_owner_client_id:clientId','successful player score must retain correction ownership for the saving device');
+includes(scorer,'Only the scorer device that saved it, or the host','another player device must not reopen an already-saved court');
+includes(scorer,'can_correct:RESOLVED.has(m.status)','scorer state must expose correction ability only to the saving device');
 assert(!scorer.includes('generate_next_round'),'player scorer must never advance the sporting round');
 assert(!scorer.includes('set_participant_status'),'player scorer must never change participant availability');
 
@@ -75,6 +78,9 @@ includes(command,'KotcRoundSlot.bulkCreate(slotCreates)','next-round slot creati
 includes(command,'KotcMatch.bulkCreate(matchCreates)','next-round match creation must use Base44 bulkCreate');
 includes(command,'KotcSessionParticipant.bulkUpdate(participantUpdates)','next-round participant updates must use Base44 bulkUpdate');
 includes(command,'KotcParticipationEvent.bulkCreate(participationEvents)','next-round participation events must be batched');
+includes(command,'enforcePersistentLocks(finalSlots,activeLocks)','active host pair locks must be enforced before next-round slots are persisted');
+includes(command,"assignment_type:'locked_pair_override'",'automatic persistent-lock repair must be identifiable in the proposed draw');
+includes(command,'Locked pair ${lock.pair_name||\'\'} could not be kept together automatically.','impossible persistent lock must fail before an invalid round is persisted');
 includes(command,'command-log finalisation skipped after successful sporting write','secondary command-log failure must not report sporting failure');
 
 console.log(`KOTC access/architecture gate: PASS\n${checks} role, privacy, scoring-lock, membership and correction checks, 0 failures.`);
