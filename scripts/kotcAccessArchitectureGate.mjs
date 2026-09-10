@@ -78,9 +78,10 @@ includes(command,'KotcRoundSlot.bulkCreate(slotCreates)','next-round slot creati
 includes(command,'KotcMatch.bulkCreate(matchCreates)','next-round match creation must use Base44 bulkCreate');
 includes(command,'KotcSessionParticipant.bulkUpdate(participantUpdates)','next-round participant updates must use Base44 bulkUpdate');
 includes(command,'KotcParticipationEvent.bulkCreate(participationEvents)','next-round participation events must be batched');
-includes(command,'enforcePersistentLocks(finalSlots,activeLocks)','active host pair locks must be enforced before next-round slots are persisted');
+includes(command,'enforcePersistentLocks(finalSlots,activeLocks,new Set(eligible.map','active host pair locks must be enforced before next-round slots are persisted');
 includes(command,"assignment_type:'locked_pair_override'",'automatic persistent-lock repair must be identifiable in the proposed draw');
-includes(command,'Locked pair ${lock.pair_name||\'\'} could not be kept together automatically.','impossible persistent lock must fail before an invalid round is persisted');
+includes(command,'was split between court and bench','an available locked pair must never be split between court and bench');
+includes(command,'reached different destination courts. The round was not saved.','a pair lock must never be repaired by moving a player to an unearned court');
 includes(command,'command-log finalisation skipped after successful sporting write','secondary command-log failure must not report sporting failure');
 
 console.log(`KOTC access/architecture gate: PASS\n${checks} role, privacy, scoring-lock, membership and correction checks, 0 failures.`);
