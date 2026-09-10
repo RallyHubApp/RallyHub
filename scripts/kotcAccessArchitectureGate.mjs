@@ -82,10 +82,16 @@ includes(saveScore,'AuditLog.create','dedicated score save retains best-effort a
 includes(saveScore,"console.warn('KOTC score audit skipped'",'score audit failure must not poison the sporting save');
 includes(startRound,"round.status==='started'",'START ROUND retry after a lost response must be idempotent');
 includes(hostUi,"functions.invoke('setKotcPairLock'",'host pair lock must use its dedicated lightweight backend function');
-includes(pairLock,"runtimeVersion:'kotc-2026-09-10-r5'",'pair-lock endpoint must expose its deployed runtime contract version');
+includes(pairLock,"RUNTIME_VERSION='kotc-2026-09-10-r7'",'pair-lock endpoint must expose its deployed runtime contract version');
 assert(!pairLock.includes('KotcRecoveryCheckpoint')&&!pairLock.includes('snapshot_json'),'pair-lock endpoint must never depend on recovery snapshot payloads');
 includes(hostUi,"Saving…",'pair-lock tap must acknowledge immediately while the backend confirms it');
 includes(hostUi,"Locked ✓ · Unlock",'confirmed pair lock must be visually unmistakable');
+includes(pairLock,"slotParticipantIds",'pair-lock endpoint must receive the current proposed-round draft');
+includes(pairLock,"draft slot save",'pair-lock endpoint must persist changed proposed-round slots before confirming the lock');
+includes(pairLock,"draft match save",'pair-lock endpoint must keep proposed-round match teams aligned with persisted slot changes');
+includes(pairLock,"round proposal revision",'persisting pair-related draft changes must advance the proposed-round revision');
+includes(pairLock,"KOTC pair-lock rate limit",'pair-lock endpoint must retry transient Base44 provider limits');
+includes(hostUi,"slotParticipantIds:shouldLock?draft",'host UI must send the current Round Editor draft when locking a pair');
 
 // Membership is not inferred from Player existence.
 includes(create,'entities.ClubRelationship.filter','session participant classification must consult club relationship');
