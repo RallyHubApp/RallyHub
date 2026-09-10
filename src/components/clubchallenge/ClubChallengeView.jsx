@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Check, CheckCircle2, Clock, GripVertical, ImagePlus, ListChecks, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, GripVertical, ImagePlus, ListChecks, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import {
@@ -58,12 +58,16 @@ function ClubBadge({ name, logo, primary, secondary }) {
 
 function RankingList({ side, title, participants, locked, onReorder }) {
   const ordered = [...participants].sort((a, b) => (a.event_rank || 999) - (b.event_rank || 999));
+  const move = (from, to) => {
+    if (locked || to < 0 || to >= ordered.length || from === to) return;
+    const next = [...ordered];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onReorder(side, next);
+  };
   const handleDragEnd = result => {
     if (!result.destination || locked) return;
-    const next = [...ordered];
-    const [moved] = next.splice(result.source.index, 1);
-    next.splice(result.destination.index, 0, moved);
-    onReorder(side, next);
+    move(result.source.index, result.destination.index);
   };
   return (
     <div className="glass rounded-xl p-4">
