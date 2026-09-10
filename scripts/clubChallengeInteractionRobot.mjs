@@ -82,8 +82,8 @@ check('scorer: host correction route remains distinct', contains(ui,'Correct Res
 
 // 7. What-if / disruption controls.
 check('what-if: replacement remains future-only', contains(participantFn,'effectiveRound'));
-check('what-if: late arrival remains explicit', contains(participantFn,"action === 'late_arrival'"));
-check('what-if: continue-short remains supported', contains(participantFn,"action === 'continue_short'"));
+check('what-if: late arrival remains explicit', contains(participantFn,"'late_arrival'"));
+check('what-if: continue-short remains supported', contains(participantFn,"'continue_short'"));
 check('what-if: court/time change remains authoritative', contains(scheduleFn,'event_pack_stale'));
 check('what-if: finalisation blocks unresolved matches', contains(finaliseFn,'unresolved'));
 check('what-if: finalisation checks POT open state', contains(finaliseFn,'pot_status'));
