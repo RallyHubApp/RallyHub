@@ -14,6 +14,7 @@ Deno.serve(async(req)=>{try{
  // host action may advance it after the editor opened. The round id + proposal revision
  // below are the authoritative sporting guards, so unrelated session drift must not strand
  // a valid proposed round in a busy hall.
+ if(round.status==='started'&&String(session.current_round_id||'')===String(round.id))return Response.json({success:true,alreadyStarted:true,session,round});
  if(round.status!=='proposed')return Response.json({error:`Round cannot start from ${round.status}.`},{status:409});
  if(Number(body.expectedProposalRevision)!==Number(round.proposal_revision||1))return Response.json({error:'Round proposal changed since you opened it. Refresh and try again.',conflict:true,currentProposalRevision:Number(round.proposal_revision||1)},{status:409});
  const [slotRows,participants,lockRows]=await Promise.all([
