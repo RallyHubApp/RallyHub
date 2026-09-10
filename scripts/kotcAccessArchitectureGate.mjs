@@ -11,6 +11,7 @@ const command=read('base44/functions/kotcCommand/entry.ts');
 const scorer=read('base44/functions/kotcScorer/entry.ts');
 const saveScore=read('base44/functions/saveKotcScore/entry.ts');
 const startRound=read('base44/functions/startKotcRound/entry.ts');
+const pairLock=read('base44/functions/setKotcPairLock/entry.ts');
 const scorerLinks=read('base44/functions/manageKotcScorerLinks/entry.ts');
 const results=read('base44/functions/kotcResultsShare/entry.ts');
 const create=read('base44/functions/createKotcV2Session/entry.ts');
@@ -72,6 +73,11 @@ includes(saveScore,'alreadySaved:true','score-save retry after a lost response m
 includes(saveScore,'AuditLog.create','dedicated score save retains best-effort audit support');
 includes(saveScore,"console.warn('KOTC score audit skipped'",'score audit failure must not poison the sporting save');
 includes(startRound,"round.status==='started'",'START ROUND retry after a lost response must be idempotent');
+includes(hostUi,"functions.invoke('setKotcPairLock'",'host pair lock must use its dedicated lightweight backend function');
+includes(pairLock,"runtimeVersion:'kotc-2026-09-10-r5'",'pair-lock endpoint must expose its deployed runtime contract version');
+assert(!pairLock.includes('KotcRecoveryCheckpoint')&&!pairLock.includes('snapshot_json'),'pair-lock endpoint must never depend on recovery snapshot payloads');
+includes(hostUi,"Saving…",'pair-lock tap must acknowledge immediately while the backend confirms it');
+includes(hostUi,"Locked ✓ · Unlock",'confirmed pair lock must be visually unmistakable');
 
 // Membership is not inferred from Player existence.
 includes(create,'entities.ClubRelationship.filter','session participant classification must consult club relationship');
