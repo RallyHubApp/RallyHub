@@ -69,7 +69,7 @@ async function createSnapshot(base44:any, session:any, commandId:string, checkpo
     const snapshotJson=JSON.stringify(snapshot);
     // Recovery support must never break a live host action. Skip oversized
     // snapshots rather than attempting a write that can surface as Axios 500.
-    if(snapshotJson.length>350000){console.warn('KOTC recovery checkpoint skipped: snapshot too large',{sessionId:session.id,checkpointType,bytes:snapshotJson.length});return null;}
+    if(snapshotJson.length>12000){console.warn('KOTC recovery checkpoint skipped: snapshot too large',{sessionId:session.id,checkpointType,bytes:snapshotJson.length});return null;}
     return await base44.asServiceRole.entities.KotcRecoveryCheckpoint.create({
       tenant_id:session.tenant_id, club_id:session.club_id, session_id:session.id,
       sequence, session_revision:Number(session.revision || 0), current_round_number:Number(session.current_round_number || 0),
