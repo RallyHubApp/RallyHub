@@ -5,7 +5,7 @@ function int0(v:any){const n=Number(v);return Number.isInteger(n)&&n>=0?n:null;}
 function nowIso(){return new Date().toISOString();}
 function validAccess(a:any,tenantId:string,sessionId:string){if(!a||a.status!=='active'||String(a.tenant_id)!==String(tenantId)||String(a.session_id)!==String(sessionId)||!['session_host','assistant_host'].includes(a.role))return false;const now=Date.now();if(a.starts_at&&Date.parse(a.starts_at)>now)return false;if(a.ends_at&&Date.parse(a.ends_at)<now)return false;return true;}
 function validateFinalScore(body:any,session:any){
-  const a=int0(body.teamAScore),b=int0(body.teamBScore);if(a==null||b==null)return{error:'Scores must be non-negative whole numbers.'};
+  const a=int0(body.teamAScore),b=int0(body.teamBScore);if(a==null||b==null)return{error:'Scores must be non-negative whole numbers.'};if(a>99||b>99)return{error:'KOTC scores cannot exceed 99.'};
   if(session.scoring_mode==='timed'){
     if(a===b){if(!['A','B'].includes(body.servingSideAtHorn))return{error:'A tied timed match requires the serving side at the horn.'};return{a,b,winner:body.servingSideAtHorn==='B'?'B':'A',method:'timed_serving_tiebreak'};}
     return{a,b,winner:a>b?'A':'B',method:'normal'};
