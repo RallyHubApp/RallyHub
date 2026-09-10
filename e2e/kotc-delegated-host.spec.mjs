@@ -34,7 +34,7 @@ function createModel({failFirstScore=false}={}){
     if(name==='startKotcRound'||(name==='kotcCommand'&&body.commandType==='start_proposed_round')){
       await sleep(80);round.status='started';round.started_at=new Date().toISOString();session.status='in_progress';session.revision++;session.actual_first_round_start=round.started_at;return {success:true,session,round};
     }
-    if(name==='kotcCommand'&&body.commandType==='complete_match'){
+    if(name==='saveKotcScore'||(name==='kotcCommand'&&body.commandType==='complete_match')){
       if(failFirstScore&&!failedScoreOnce){failedScoreOnce=true;return {__status:503,error:'Temporary hall network interruption'};}
       await sleep(60);match.team_a_score=Number(body.teamAScore);match.team_b_score=Number(body.teamBScore);match.winner_side=match.team_a_score>match.team_b_score?'A':'B';match.status='completed';match.revision++;return {success:true,match};
     }
