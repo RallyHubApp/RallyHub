@@ -39,9 +39,13 @@ ok(timer.includes("persistTimer('resume',seconds)"), 'manual Resume Timer persis
 ok(timerFn.includes("if(action==='start'||action==='resume')"), 'backend supports explicit start/resume only');
 
 // Live host actions must not fail just because recovery/audit support is oversized or rate-limited.
-ok(command.includes('Recovery support must never break a live host action'), 'recovery snapshot is non-blocking by design');
-ok(command.includes('if(snapshotJson.length>12000)'), 'oversized recovery snapshots are skipped before write');
+ok(command.includes("recoveryModel:'authoritative_entities'"), 'recovery checkpoints use small authoritative-entity markers rather than full session copies');
+ok(!command.includes('participationEvents:events')&&!command.includes('sessionCourts:courts'), 'recovery checkpoint no longer duplicates large live entity collections');
 ok(command.includes("console.warn('KOTC recovery checkpoint skipped'"), 'checkpoint write failures are caught and logged');
+ok(command.includes("bulkCreate(slotCreates)"), 'next-round court slots are bulk-created to reduce Base44 request pressure');
+ok(command.includes("bulkCreate(matchCreates)"), 'next-round matches are bulk-created to reduce Base44 request pressure');
+ok(command.includes("bulkUpdate(participantUpdates)"), 'next-round participant counters are bulk-updated');
+ok(command.includes("command-log finalisation skipped after successful sporting write"), 'command-log finalisation cannot poison a successful sporting action');
 ok(startCommand.includes("round.status==='started'"), 'dedicated START ROUND endpoint is idempotent after success');
 ok(startCommand.includes('const [slotRows,participants,lockRows]=await Promise.all'), 'independent START ROUND validation reads run in parallel');
 ok(startCommand.includes('const [updatedRound,updatedSession]=await Promise.all'), 'round/session/tournament start writes run in parallel');
