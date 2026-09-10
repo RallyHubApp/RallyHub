@@ -151,7 +151,7 @@ export default function KotcV2SessionView({ tournament, players, queryClient }){
   if(isLoading)return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading King of the Court…</div>;
   if(!session){
     const orderedPlayers=playerOrder.map(id=>players.find(p=>p.id===id)).filter(Boolean);
-    return <KotcSetupPanel
+    return <><KotcSetupPanel
       players={players} courts={courts} requiredBench={requiredBench}
       venueCourts={venueCourts} setVenueCourts={setVenueCourts} duration={duration} setDuration={setDuration}
       scoringMode={scoringMode} setScoringMode={setScoringMode} playMinutes={playMinutes} setPlayMinutes={setPlayMinutes}
@@ -160,7 +160,7 @@ export default function KotcV2SessionView({ tournament, players, queryClient }){
       kotcAggregates={kotcAggregates} rankingOpen={rankingOpen} setRankingOpen={setRankingOpen}
       orderedPlayers={orderedPlayers} setPlayerOrder={setPlayerOrder} setSeedingSource={setSeedingSource}
       benchIds={benchIds} toggleBench={toggleBench} creating={creating} createSession={createSession}
-    />;
+    /><HostScrollControls/></>;
   }
 
   const brokenPreStartSetup = session?.status === 'ready' && !session?.actual_first_round_start && (
