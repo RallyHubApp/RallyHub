@@ -991,6 +991,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           </div>
           <div className="glass rounded-xl p-4 sm:p-5 space-y-4">
             <p className="text-sm font-semibold">Event Configuration</p>
+            <div className="grid sm:grid-cols-[220px_1fr] gap-3 items-end">
+              <div><Label className="text-xs">Planned total players</Label><Input type="number" min="8" step="2" value={setup.plannedPlayersTotal} onChange={e => setSetup(s => ({ ...s, plannedPlayersTotal: e.target.value }))} className="mt-1 bg-secondary" /><p className="text-[10px] text-muted-foreground mt-1">Used for the setup estimate until the real rosters are entered. Split equally between clubs.</p></div>
+              {previewFormatInfo && <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center"><p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Estimated event duration</p><p className="text-3xl font-bold mt-1">{durationLabel(previewFormatInfo.structuredMinutes)}</p><p className="text-xs text-muted-foreground mt-1">{previewFormatInfo.recommendedRounds} rounds × {previewFormatInfo.playMinutes + previewFormatInfo.changeoverMinutes} min block{previewFormatInfo.break.enabled ? ` + ${previewFormatInfo.break.minutes} min break` : ''} · {previewFormatInfo.remainingMinutes} min contingency</p></div>}
+            </div>
             <div className="grid sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {[['Courts','courts'],['Available min','availableMinutes'],['Play min','playMinutes'],['Changeover min','changeoverMinutes'],['Break min','breakMinutes'],['Break after round','breakAfterRound']].map(([label,key]) => <div key={key}><Label className="text-xs">{label}</Label><Input type="number" value={setup[key]} onChange={e => setSetup(s => ({ ...s, [key]: e.target.value }))} className="mt-1 bg-secondary" /></div>)}
             </div>
