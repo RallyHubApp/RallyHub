@@ -19,6 +19,7 @@ const role=read('src/hooks/useKotcRole.jsx');
 const hostUi=read('src/components/kotc/KotcV2SessionView.jsx');
 const scorerUi=read('src/pages/PublicKotcScorer.jsx');
 const workflow=read('src/lib/kotcV2Workflow.js');
+const dashboard=read('src/pages/Dashboard.jsx');
 
 // Super Admin / host boundary.
 includes(access,"caller.role!=='admin'",'only platform admins may grant or revoke delegated host access');
@@ -63,6 +64,8 @@ includes(saveScore,"KOTC scores cannot exceed 99.",'dedicated host score endpoin
 includes(scorer,"KOTC scores cannot exceed 99.",'player scorer endpoint must reject scores above 99');
 includes(command,"KOTC scores cannot exceed 99.",'general correction/autosave path must reject scores above 99');
 includes(workflow,"KOTC scores cannot exceed 99.",'sporting workflow validation must enforce the same two-digit score ceiling');
+assert(!dashboard.includes("player.skill_rating || 3.0"),'dashboard must never display a manufactured 3.0 rating for an unrated player');
+includes(dashboard,'player.dupr_rating != null','dashboard may show a rating only when a genuine DUPR value exists');
 
 // Host is authoritative over a player scorer.
 includes(command,"commandType === 'host_claim_score'",'host must have explicit scorer takeover command');
@@ -95,6 +98,14 @@ includes(command,"action:'kotc_score_corrected'",'score correction must be audit
 includes(command,"recoveryModel:'authoritative_entities'",'recovery checkpoints must reference authoritative entities rather than copying the whole session');
 assert(!command.includes('participationEvents:events')&&!command.includes('sessionCourts:courts'),'recovery checkpoints must not duplicate large live collections');
 includes(command,'KotcRoundSlot.bulkCreate(slotCreates)','next-round slot creation must use Base44 bulkCreate');
+includes(command,"withRateLimitRetry('prepare rounds'",'next-round preparation must retry Base44 provider rate limits internally');
+includes(command,"withRateLimitRetry('prepare advance session'",'final next-round session advance must be rate-limit resilient');
+const nextRoundStart=command.indexOf("commandType === 'generate_next_round'");
+const nextRoundEnd=command.indexOf("commandType === 'set_participant_status'",nextRoundStart);
+const nextRoundBlock=command.slice(nextRoundStart,nextRoundEnd);
+assert(!nextRoundBlock.includes('await Promise.all(['),'next-round provider writes must not be fired concurrently against Base44 burst limits');
+includes(saveScore,"withRateLimitRetry('score match save'",'host score save must retry transient Base44 rate limits');
+includes(scorer,"withRateLimitRetry('scorer result save'",'player scorer save must retry transient Base44 rate limits');
 includes(command,'KotcMatch.bulkCreate(matchCreates)','next-round match creation must use Base44 bulkCreate');
 includes(command,'KotcSessionParticipant.bulkUpdate(participantUpdates)','next-round participant updates must use Base44 bulkUpdate');
 includes(command,'KotcParticipationEvent.bulkCreate(participationEvents)','next-round participation events must be batched');
