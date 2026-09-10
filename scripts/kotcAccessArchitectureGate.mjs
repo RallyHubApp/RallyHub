@@ -15,6 +15,9 @@ const scorerLinks=read('base44/functions/manageKotcScorerLinks/entry.ts');
 const results=read('base44/functions/kotcResultsShare/entry.ts');
 const create=read('base44/functions/createKotcV2Session/entry.ts');
 const role=read('src/hooks/useKotcRole.jsx');
+const hostUi=read('src/components/kotc/KotcV2SessionView.jsx');
+const scorerUi=read('src/pages/PublicKotcScorer.jsx');
+const workflow=read('src/lib/kotcV2Workflow.js');
 
 // Super Admin / host boundary.
 includes(access,"caller.role!=='admin'",'only platform admins may grant or revoke delegated host access');
@@ -24,6 +27,7 @@ includes(state,"currentAccessRole==='session_host'",'session_host must be a reco
 includes(state,"user.role==='admin'||currentAccessRole==='session_host'",'contact directory must be limited to admin/session_host');
 includes(state,'entities.Person.filter','session contacts must come from canonical Person records');
 includes(state,"participants||[]).map((p:any)=>p.player_id",'contact lookup must start from the session participant roster');
+includes(state,"person.emergency_contact_name||person.emergency_contact_raw||player.emergency_contact",'session contacts must fall back to the imported raw emergency name when structured name is empty');
 
 // Public live view: token first, no authentication requirement, and no private contact fields in public branch.
 const publicStart=results.indexOf("if(action==='public_state')");
@@ -48,6 +52,16 @@ includes(scorer,'Only the scorer device that saved it, or the host','another pla
 includes(scorer,'can_correct:RESOLVED.has(m.status)','scorer state must expose correction ability only to the saving device');
 assert(!scorer.includes('generate_next_round'),'player scorer must never advance the sporting round');
 assert(!scorer.includes('set_participant_status'),'player scorer must never change participant availability');
+
+// KOTC pickleball score-entry ergonomics and server validation.
+assert((hostUi.match(/maxLength=\{2\}/g)||[]).length>=2,'host score inputs must physically limit entry to two digits');
+assert((scorerUi.match(/maxLength=\{2\}/g)||[]).length>=2,'player scorer inputs must physically limit entry to two digits');
+includes(hostUi,'inputMode="numeric"','host score inputs must request the numeric mobile keypad');
+includes(scorerUi,'inputMode="numeric"','player scorer inputs must request the numeric mobile keypad');
+includes(saveScore,"KOTC scores cannot exceed 99.",'dedicated host score endpoint must reject scores above 99');
+includes(scorer,"KOTC scores cannot exceed 99.",'player scorer endpoint must reject scores above 99');
+includes(command,"KOTC scores cannot exceed 99.",'general correction/autosave path must reject scores above 99');
+includes(workflow,"KOTC scores cannot exceed 99.",'sporting workflow validation must enforce the same two-digit score ceiling');
 
 // Host is authoritative over a player scorer.
 includes(command,"commandType === 'host_claim_score'",'host must have explicit scorer takeover command');
