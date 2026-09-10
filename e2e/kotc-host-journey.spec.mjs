@@ -173,6 +173,14 @@ function createModel() {
       return { success: true, state: model.timer };
     }
 
+    if (name === 'setKotcPairLock') {
+      await sleep(260);
+      model.fixedPairs = model.fixedPairs.filter(pair => pair.status !== 'active');
+      if (body.locked !== false) model.fixedPairs.push({ id: 'pair-lock-1', session_id: model.session.id, participant1_id: body.participant1Id, participant2_id: body.participant2Id, pair_name: 'Locked Pair', pair_source: 'host_selected', status: 'active' });
+      model.session.revision += 1;
+      return { success: true, session: model.session, pair: model.fixedPairs[0] || null, locked: body.locked !== false, runtimeVersion:'kotc-2026-09-10-r5' };
+    }
+
     if (name === 'kotcCommand' || name === 'startKotcRound' || name === 'saveKotcScore') {
       if (body.commandType === 'host_claim_score') {
         const match = model.matches.find(m => m.id === body.matchId);
