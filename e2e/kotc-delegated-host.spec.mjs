@@ -31,7 +31,7 @@ function createModel({failFirstScore=false}={}){
     if(name==='manageKotcScorerLinks')return {success:true,token:'delegated-score-token'};
     if(name==='kotcTimer')return {success:true,state:{roundId:round.id,durationSeconds:480,remainingSeconds:480,running:false,deadlineAt:null,lastAction:body.action||'get'}};
     if(name==='kotcCommand'&&body.commandType==='host_claim_score')return {success:true,hostAuthority:true,displacedScorer:false};
-    if(name==='kotcCommand'&&body.commandType==='start_proposed_round'){
+    if(name==='startKotcRound'||(name==='kotcCommand'&&body.commandType==='start_proposed_round')){
       await sleep(80);round.status='started';round.started_at=new Date().toISOString();session.status='in_progress';session.revision++;session.actual_first_round_start=round.started_at;return {success:true,session,round};
     }
     if(name==='kotcCommand'&&body.commandType==='complete_match'){
