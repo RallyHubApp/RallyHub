@@ -5,6 +5,7 @@ const view = fs.readFileSync('src/components/kotc/KotcV2SessionView.jsx','utf8')
 const timer = fs.readFileSync('src/components/kotc/RoundTimer.jsx','utf8');
 const timerFn = fs.readFileSync('base44/functions/kotcTimer/entry.ts','utf8');
 const command = fs.readFileSync('base44/functions/kotcCommand/entry.ts','utf8');
+const startCommand = fs.readFileSync('base44/functions/startKotcRound/entry.ts','utf8');
 let checks = 0;
 const ok = (value, message) => { checks++; assert.ok(value, message); };
 
@@ -39,11 +40,11 @@ ok(timerFn.includes("if(action==='start'||action==='resume')"), 'backend support
 
 // Live host actions must not fail just because recovery/audit support is oversized or rate-limited.
 ok(command.includes('Recovery support must never break a live host action'), 'recovery snapshot is non-blocking by design');
-ok(command.includes('if(snapshotJson.length>350000)'), 'oversized recovery snapshots are skipped before write');
+ok(command.includes('if(snapshotJson.length>12000)'), 'oversized recovery snapshots are skipped before write');
 ok(command.includes("console.warn('KOTC recovery checkpoint skipped'"), 'checkpoint write failures are caught and logged');
-ok(command.indexOf("if (commandType === 'start_proposed_round')") < command.indexOf('const duplicates = await base44.asServiceRole.entities.KotcCommandLog.filter'), 'START ROUND uses the lightweight fast path before command-log/snapshot overhead');
-ok(command.includes('const [slotRows,participants,lockRows]=await Promise.all'), 'independent START ROUND validation reads run in parallel');
-ok(command.includes('const [updatedRound,updatedSession]=await Promise.all'), 'round/session/tournament start writes run in parallel');
+ok(startCommand.includes("round.status==='started'"), 'dedicated START ROUND endpoint is idempotent after success');
+ok(startCommand.includes('const [slotRows,participants,lockRows]=await Promise.all'), 'independent START ROUND validation reads run in parallel');
+ok(startCommand.includes('const [updatedRound,updatedSession]=await Promise.all'), 'round/session/tournament start writes run in parallel');
 
 // Undo Start must provide continuous feedback and return directly to Round Setup.
 ok(view.includes('const [undoingStart,setUndoingStart]=useState(false)'), 'undo has its own persistent in-flight UI state');
