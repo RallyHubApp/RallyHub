@@ -175,10 +175,17 @@ function createModel() {
 
     if (name === 'setKotcPairLock') {
       await sleep(260);
+      const round=currentRound();
+      let draftSaved=false;
+      if(body.locked!==false&&body.slotParticipantIds&&round?.status==='proposed'){
+        const roundSlots=currentSlots();
+        for(const slot of roundSlots){const next=body.slotParticipantIds[slot.id];if(next&&next!==slot.participant_id){slot.participant_id=next;slot.assignment_type='manual_override';slot.assignment_revision=Number(slot.assignment_revision||1)+1;draftSaved=true;}}
+        if(draftSaved){round.proposal_revision=Number(round.proposal_revision||1)+1;syncMatchesFromSlots(round.id);}
+      }
       model.fixedPairs = model.fixedPairs.filter(pair => pair.status !== 'active');
       if (body.locked !== false) model.fixedPairs.push({ id: 'pair-lock-1', session_id: model.session.id, participant1_id: body.participant1Id, participant2_id: body.participant2Id, pair_name: 'Locked Pair', pair_source: 'host_selected', status: 'active' });
       model.session.revision += 1;
-      return { success: true, session: model.session, pair: model.fixedPairs[0] || null, locked: body.locked !== false, runtimeVersion:'kotc-2026-09-10-r5' };
+      return { success: true, session: model.session, round, slots:currentSlots(), matches:model.matches.filter(m=>m.round_id===round?.id), pair: model.fixedPairs[0] || null, locked: body.locked !== false, draftSaved, runtimeVersion:'kotc-2026-09-10-r7' };
     }
 
     if (name === 'kotcCommand' || name === 'startKotcRound' || name === 'saveKotcScore' || name === 'prepareKotcNextRound') {
@@ -388,9 +395,17 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   await page.getByTestId('kotc-bench-player-participant-17').click();
   await expect(page.getByTestId('kotc-bench')).toContainText(outgoingPlayer);
 
-  // Lock one pair and make sure the editor reflects the saved lock.
+  // Lock one pair and make sure the editor reflects the saved lock. The lock action must
+  // also persist the current proposed-round draft, so the court/bench swap is no longer
+  // stranded only in the browser until START ROUND is pressed.
+  const swappedSlotId='r1-c1-A-1';
+  const swappedParticipantBeforeLock=model.slots.find(s=>s.id===swappedSlotId)?.participant_id;
   await page.getByRole('button', { name: 'Lock pair' }).first().click();
   await expect(page.getByRole('button', { name: 'Unlock' }).first()).toBeVisible({ timeout: 1500 });
+  const pairLockCall=[...model.calls].reverse().find(c=>c.name==='setKotcPairLock');
+  expect(pairLockCall?.body?.slotParticipantIds).toBeTruthy();
+  expect(model.slots.find(s=>s.id===swappedSlotId)?.participant_id).not.toBe(swappedParticipantBeforeLock);
+  expect(Number(model.rounds.find(r=>r.id==='round-1')?.proposal_revision||0)).toBeGreaterThan(1);
 
   // START ROUND must acknowledge instantly and transition to LIVE promptly.
   let started = Date.now();
