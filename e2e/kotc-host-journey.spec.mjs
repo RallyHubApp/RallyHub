@@ -368,6 +368,19 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   await expect(page.getByTestId('kotc-bench')).toContainText('Player 17');
   await expect(page.getByTestId('kotc-bench')).toContainText('Player 18');
 
+  // The host must be able to get the scoring/public links from the live Round screen
+  // without navigating backwards through the app.
+  await page.getByTestId('kotc-quick-links').click();
+  await expect(page.getByText('Session Links & Access')).toBeVisible();
+  await page.getByTestId('kotc-session-menu').click();
+
+  // Mobile back/forward-cache recovery: returning to the host page must force a fresh
+  // authoritative state read and leave Start Round actionable rather than stuck disabled.
+  const stateReadsBeforeReturn=model.calls.filter(c=>c.name==='getKotcV2State').length;
+  await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));
+  await expect.poll(()=>model.calls.filter(c=>c.name==='getKotcV2State').length).toBeGreaterThan(stateReadsBeforeReturn);
+  await expect(page.getByTestId('kotc-start-round')).toBeEnabled();
+
   // Real host adjustment: swap a court player with a bench player before Round 1.
   const firstSlot = page.getByTestId('kotc-slot-r1-c1-A-1');
   const outgoingPlayer = (await firstSlot.innerText()).trim();
