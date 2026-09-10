@@ -6,6 +6,9 @@ const RESOLVED = new Set(['completed','retired','abandoned','not_played']);
 function nowIso() { return new Date().toISOString(); }
 function int0(v:any) { const n = Number(v); return Number.isInteger(n) && n >= 0 ? n : null; }
 function stableHash(value:any){const text=String(value??'');let h=2166136261;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function sleep(ms:number){return new Promise(resolve=>setTimeout(resolve,ms));}
+function isRateLimit(error:any){return /rate limit|too many requests|\b429\b/i.test(String(error?.message||error||''));}
+async function withRateLimitRetry<T>(label:string,fn:()=>Promise<T>,attempts=5){let last:any;for(let i=0;i<attempts;i++){try{return await fn();}catch(error){last=error;if(!isRateLimit(error)||i===attempts-1)throw error;const delay=Math.min(2200,300*Math.pow(2,i))+Math.floor(Math.random()*120);console.warn('KOTC Base44 rate limit — retrying',{label,attempt:i+1,delay});await sleep(delay);}}throw last;}
 function pairKey(a:string,b:string){return [a,b].sort().join('|');}
 function keepsLocks(teams:string[][],locks:any[]){return (locks||[]).every((l:any)=>{const a=String(l.participant1_id),b=String(l.participant2_id);const present=teams.flat().includes(a)&&teams.flat().includes(b);return !present||teams.some(t=>t.includes(a)&&t.includes(b));});}
 function splitFour(ids:string[],partnerCounts:any,seed:string,locks:any[]=[]){const [a,b,c,d]=ids;let opts=[[[a,b],[c,d]],[[a,c],[b,d]],[[a,d],[b,c]]].filter((x:any)=>keepsLocks(x,locks)).map((x:any)=>({teamA:x[0],teamB:x[1],pen:(partnerCounts[pairKey(x[0][0],x[0][1])]||0)+(partnerCounts[pairKey(x[1][0],x[1][1])]||0),key:`${x[0].join(',')}|${x[1].join(',')}`}));if(!opts.length)throw new Error('Locked-pair constraints cannot be satisfied on this court.');return opts.sort((x:any,y:any)=>x.pen-y.pen||stableHash(`${seed}|${x.key}`)-stableHash(`${seed}|${y.key}`)||x.key.localeCompare(y.key))[0];}
