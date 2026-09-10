@@ -88,12 +88,28 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
   await expect(card).toContainText('Score saved: 12–8');
   expect(model.matches[0].revision).toBe(2);expect(model.matches[0].correction_count).toBe(1);
 
-  // Court 2 can save in parallel and the player page waits for the host rather than advancing.
-  const card2=await fillCourt(b,2,9,6);await card2.getByRole('button',{name:'Save Result'}).click();
+  // Sporting-integrity guard: a tied timed game cannot be saved until the scorer
+  // explicitly confirms which team was serving at the horn. There is no Team A default.
+  let card2=await fillCourt(b,2,8,8);
+  await expect(card2.getByText('Tie at the horn — who was serving?')).toBeVisible();
+  await expect(card2.getByRole('button',{name:'Save Result'})).toBeDisabled();
+  await card2.getByRole('combobox').click();
+  await b.getByRole('option',{name:'Team B serving at horn'}).click();
+  await expect(card2.getByRole('button',{name:'Save Result'})).toBeEnabled();
+
+  // Court 2 can then save in parallel and the player page waits for the host rather than advancing.
+  card2=await fillCourt(b,2,9,6);await card2.getByRole('button',{name:'Save Result'}).click();
   await expect(card2).toContainText('Score saved: 9–6');
   await expect(b.getByText('All court scores saved')).toBeVisible({timeout:2500});
   await expect(b.getByText(/waiting for the host/i)).toBeVisible();
   expect(model.calls.some(c=>c.commandType==='generate_next_round'||c.action==='generate_next_round')).toBe(false);
+
+  // Busy-hall phone checks: no sideways scrolling and primary score controls are
+  // comfortably tappable rather than tiny desktop targets.
+  const mobileLayout=await b.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,innerWidth:window.innerWidth}));
+  expect(mobileLayout.scrollWidth).toBeLessThanOrEqual(mobileLayout.innerWidth+1);
+  const updateBox=await card2.getByRole('button',{name:'Undo / Update Score'}).boundingBox();
+  expect(updateBox?.height||0).toBeGreaterThanOrEqual(44);
 
   await aCtx.close();await bCtx.close();
 });
