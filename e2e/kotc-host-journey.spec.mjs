@@ -173,7 +173,7 @@ function createModel() {
       return { success: true, state: model.timer };
     }
 
-    if (name === 'kotcCommand' || name === 'startKotcRound') {
+    if (name === 'kotcCommand' || name === 'startKotcRound' || name === 'saveKotcScore') {
       if (body.commandType === 'host_claim_score') {
         const match = model.matches.find(m => m.id === body.matchId);
         if (!match) return { success: false, error: 'Match not found' };
@@ -219,7 +219,7 @@ function createModel() {
         return { success: true, session: model.session, round };
       }
 
-      if (body.commandType === 'complete_match' || body.commandType === 'correct_match') {
+      if (name === 'saveKotcScore' || body.commandType === 'complete_match' || body.commandType === 'correct_match') {
         await sleep(320);
         const match = model.matches.find(m => m.id === body.matchId);
         const correction = body.commandType === 'correct_match';
