@@ -283,7 +283,7 @@ export default function RoundTimer({
         isRest ? 'border-yellow-400/30' : 'border-primary/20',
         floating && !fullscreen && 'fixed z-[90] shadow-2xl bg-background/95 backdrop-blur-xl',
         fallbackFullscreen && 'fixed inset-0 z-[100] rounded-none bg-background flex flex-col justify-center p-6 sm:p-8',
-        fullscreen && 'bg-background'
+        fullscreen && 'bg-background min-h-screen flex flex-col justify-center p-6 sm:p-10 space-y-8'
       )}
     >
       <div
