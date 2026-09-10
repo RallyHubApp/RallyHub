@@ -12,106 +12,136 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Error: expect(locator).toContainText(expected) failed
 
-Locator: getByText('18 players · 4 active courts · 2 bench')
-Expected: visible
+Locator: getByTestId('kotc-create-session')
+Expected substring: "Creating…"
 Timeout: 3000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('18 players · 4 active courts · 2 bench') with timeout 3000ms
-  - waiting for getByText('18 players · 4 active courts · 2 bench')
+  - Expect "toContainText" getByTestId('kotc-create-session') with timeout 3000ms
+  - waiting for getByTestId('kotc-create-session')
+    5 × locator resolved to <button disabled data-dynamic-content="true" data-testid="kotc-create-session" data-source-location="src/components/kotc/KotcSetupPanel.jsx:73:10" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 …>…</button>
+      - unexpected value "Creating Round 1…"
 
 ```
 
 ```yaml
 - main:
-  - img
-  - paragraph: King of the Court
-  - heading "Set up tonight’s session" [level=2]
-  - paragraph: Confirm the hall settings, decide the Round 1 draw and choose the bench. You can review the actual courts before anything starts.
-  - text: 18 players 4 courts 2 bench
-  - img
-  - paragraph: 1 · Session settings
-  - paragraph: The essentials for this hall and tonight’s scoring.
-  - text: Venue courts
-  - spinbutton: "4"
-  - text: Hall / session duration
-  - spinbutton: "90"
-  - text: min Scoring
-  - combobox: Timed rounds
-  - text: Round duration
-  - spinbutton: "8"
-  - text: min
-  - img
-  - paragraph: 2 · Round 1 setup
-  - paragraph: Choose how the starting order is built and how that order is distributed across courts.
-  - text: Starting order
-  - combobox: Roster order
-  - paragraph: This sets the starting order only. RallyHub does not invent ratings.
-  - text: Round 1 draw
-  - combobox: Balanced Random
-  - paragraph: Balanced Random spreads the starting order across courts while keeping some variety.
-  - button "Review player order (18) Show"
-  - img
-  - paragraph: 3 · Choose Round 1 bench
-  - paragraph: Choose exactly 2. You can still swap the proposed Round 1 courts before starting.
-  - text: 0/2
-  - button "Player 01"
-  - button "Player 02"
-  - button "Player 03"
-  - button "Player 04"
-  - button "Player 05"
-  - button "Player 06"
-  - button "Player 07"
-  - button "Player 08"
-  - button "Player 09"
-  - button "Player 10"
-  - button "Player 11"
-  - button "Player 12"
-  - button "Player 13"
-  - button "Player 14"
-  - button "Player 15"
-  - button "Player 16"
+  - paragraph: Round 1 — ROUND READY
+  - paragraph: 4 courts · 2 bench
+  - button "Session Menu":
+    - img
+    - text: Session Menu
+  - paragraph: What happens next
+  - paragraph: Round 1 ready
+  - paragraph: "Next: check the 4 court assignments and bench, then Start Round 1."
+  - paragraph: Bench This Round
   - button "Player 17"
   - button "Player 18"
-  - complementary:
-    - paragraph: Ready check
-    - heading "Create Round 1" [level=3]
-    - paragraph: RallyHub will generate the proposed courts next. You will review them before the timer starts.
-    - text: Players
-    - strong: "18"
-    - text: Active courts
-    - strong: "4"
-    - text: Bench
-    - strong: "2"
-    - text: Scoring
-    - strong: 8 min timed rounds
-    - text: Starting order
-    - strong: Roster order
-    - text: Draw
-    - strong: Balanced Random
-    - paragraph: Choose 2 more bench players
-    - button "Create Round 1" [disabled]:
-      - img
-      - text: Create Round 1
+  - paragraph: Tap a court player, then a bench player, to swap them.
+  - heading "Host Round Editor" [level=4]
+  - paragraph: Tap one player then another to swap. Only one pending selection is allowed.
+  - img
+  - text: Court 1
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 02":
+    - img
+    - text: Player 02
+  - button "Player 05":
+    - img
+    - text: Player 05
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 11":
+    - img
+    - text: Player 11
+  - button "Player 16":
+    - img
+    - text: Player 16
+  - text: Court 2
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 01":
+    - img
+    - text: Player 01
+  - button "Player 07":
+    - img
+    - text: Player 07
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 09":
+    - img
+    - text: Player 09
+  - button "Player 14":
+    - img
+    - text: Player 14
+  - text: Court 3
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 04":
+    - img
+    - text: Player 04
+  - button "Player 08":
+    - img
+    - text: Player 08
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 10":
+    - img
+    - text: Player 10
+  - button "Player 15":
+    - img
+    - text: Player 15
+  - text: Court 4
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 03":
+    - img
+    - text: Player 03
+  - button "Player 06":
+    - img
+    - text: Player 06
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 12":
+    - img
+    - text: Player 12
+  - button "Player 13":
+    - img
+    - text: Player 13
+  - button "START ROUND 1":
+    - img
+    - text: START ROUND 1
+  - button "Back to Setup":
+    - img
+    - text: Back to Setup
+  - button "Restore Original Draw":
+    - img
+    - text: Restore Original Draw
 ```
 
 # Test source
 
 ```ts
-  244 |         const priorBench = model.participants.filter(p => ['present', 'registered', 'confirmed', 'leaving_early'].includes(p.status) && !priorActive.has(p.id)).map(p => p.id);
-  245 |         const next = makeRound(Number(prior.round_number) + 1, priorBench.slice().reverse());
-  246 |         model.session.revision += 1;
-  247 |         return { success: true, session: model.session, round: next };
-  248 |       }
-  249 | 
-  250 |       if (body.commandType === 'set_participant_status') {
-  251 |         await sleep(300);
-  252 |         const participant = model.participants.find(p => p.id === body.participantId);
-  253 |         if (body.statusAction === 'voluntary_rest') {
-  254 |           participant.status = 'voluntary_rest';
   255 |           participant.availability_effective_from_round = Number(model.session.current_round_number) + 1;
   256 |           participant.available_again_from_round = Number(model.session.current_round_number) + 2;
   257 |         } else if (body.statusAction === 'back_available') {
@@ -201,106 +231,117 @@ Call log:
   341 |   page.on('dialog', dialog => dialog.accept());
   342 | 
   343 |   await page.goto('/e2e/kotcHarness.html');
-> 344 |   await expect(page.getByText('18 players · 4 active courts · 2 bench')).toBeVisible();
-      |                                                                          ^ Error: expect(locator).toBeVisible() failed
-  345 | 
-  346 |   await page.getByRole('button', { name: 'Player 17', exact: true }).click();
-  347 |   await page.getByRole('button', { name: 'Player 18', exact: true }).click();
-  348 |   const create = page.getByTestId('kotc-create-session');
-  349 |   const createAt = Date.now();
-  350 |   await create.click();
-  351 |   await expect(create).toContainText('Creating…');
-  352 |   metric(report, 'create_ack_ms', Date.now() - createAt, 250);
-  353 |   await expect(page.getByTestId('kotc-round-editor')).toBeVisible({ timeout: 2000 });
-  354 |   metric(report, 'create_to_editor_ms', Date.now() - createAt, 1500);
-  355 |   await expect(page.getByTestId('kotc-bench')).toContainText('Player 17');
-  356 |   await expect(page.getByTestId('kotc-bench')).toContainText('Player 18');
-  357 | 
-  358 |   // Real host adjustment: swap a court player with a bench player before Round 1.
-  359 |   const firstSlot = page.getByTestId('kotc-slot-r1-c1-A-1');
-  360 |   const outgoingPlayer = (await firstSlot.innerText()).trim();
-  361 |   await firstSlot.click();
-  362 |   await page.getByTestId('kotc-bench-player-participant-17').click();
-  363 |   await expect(page.getByTestId('kotc-bench')).toContainText(outgoingPlayer);
-  364 | 
-  365 |   // Lock one pair and make sure the editor reflects the saved lock.
-  366 |   await page.getByRole('button', { name: 'Lock pair' }).first().click();
-  367 |   await expect(page.getByRole('button', { name: 'Unlock' }).first()).toBeVisible({ timeout: 1500 });
+  344 |   await expect(page.getByTestId('kotc-setup')).toBeVisible();
+  345 |   await expect(page.getByTestId('kotc-setup')).toContainText('18 players');
+  346 |   await expect(page.getByTestId('kotc-setup')).toContainText('4 courts');
+  347 |   await expect(page.getByTestId('kotc-setup')).toContainText('2 bench');
+  348 |   await expect(page.getByTestId('kotc-setup-summary')).toContainText('Create Round 1');
+  349 | 
+  350 |   await page.getByRole('button', { name: 'Player 17', exact: true }).click();
+  351 |   await page.getByRole('button', { name: 'Player 18', exact: true }).click();
+  352 |   const create = page.getByTestId('kotc-create-session');
+  353 |   const createAt = Date.now();
+  354 |   await create.click();
+> 355 |   await expect(create).toContainText('Creating…');
+      |                        ^ Error: expect(locator).toContainText(expected) failed
+  356 |   metric(report, 'create_ack_ms', Date.now() - createAt, 250);
+  357 |   await expect(page.getByTestId('kotc-round-editor')).toBeVisible({ timeout: 2000 });
+  358 |   metric(report, 'create_to_editor_ms', Date.now() - createAt, 1500);
+  359 |   await expect(page.getByTestId('kotc-bench')).toContainText('Player 17');
+  360 |   await expect(page.getByTestId('kotc-bench')).toContainText('Player 18');
+  361 | 
+  362 |   // Real host adjustment: swap a court player with a bench player before Round 1.
+  363 |   const firstSlot = page.getByTestId('kotc-slot-r1-c1-A-1');
+  364 |   const outgoingPlayer = (await firstSlot.innerText()).trim();
+  365 |   await firstSlot.click();
+  366 |   await page.getByTestId('kotc-bench-player-participant-17').click();
+  367 |   await expect(page.getByTestId('kotc-bench')).toContainText(outgoingPlayer);
   368 | 
-  369 |   // START ROUND must acknowledge instantly and transition to LIVE promptly.
-  370 |   let started = Date.now();
-  371 |   const startRound = page.getByTestId('kotc-start-round');
-  372 |   await startRound.click();
-  373 |   await expect(startRound).toContainText('Starting…');
-  374 |   metric(report, 'start_ack_ms', Date.now() - started, 250);
-  375 |   await expect(page.getByText('Round 1 — LIVE')).toBeVisible({ timeout: 2000 });
-  376 |   metric(report, 'start_to_live_ms', Date.now() - started, 1500);
-  377 |   await expect(page.getByTestId('kotc-timer-pause')).toBeVisible({ timeout: 1000 });
-  378 |   metric(report, 'start_to_timer_running_ms', Date.now() - started, 1700);
-  379 | 
-  380 |   // Timer controls: pause → reset → explicit Start Timer.
-  381 |   await page.getByTestId('kotc-timer-pause').click();
-  382 |   await expect(page.getByTestId('kotc-timer-start')).toContainText(/Resume Timer|Start Timer/);
-  383 |   await page.getByTestId('kotc-timer-reset').click();
-  384 |   await expect(page.getByTestId('kotc-timer-value')).toHaveText('08:00');
-  385 |   await expect(page.getByTestId('kotc-timer-start')).toContainText('Start Timer');
-  386 |   await page.getByTestId('kotc-timer-start').click();
-  387 |   await expect(page.getByTestId('kotc-timer-pause')).toBeVisible();
-  388 |   await dismissTimerFullscreen(page);
-  389 | 
-  390 |   // Undo must keep accepted feedback visible for the entire backend delay.
-  391 |   const undo = page.getByTestId('kotc-undo-start');
-  392 |   await undo.scrollIntoViewIfNeeded();
-  393 |   started = Date.now();
-  394 |   await undo.evaluate(element => element.click());
-  395 |   await expect(undo).toContainText('Returning to Round Setup…');
-  396 |   await expect(undo).toHaveAttribute('aria-busy', 'true');
-  397 |   metric(report, 'undo_ack_ms', Date.now() - started, 250);
-  398 |   await sleep(350);
+  369 |   // Lock one pair and make sure the editor reflects the saved lock.
+  370 |   await page.getByRole('button', { name: 'Lock pair' }).first().click();
+  371 |   await expect(page.getByRole('button', { name: 'Unlock' }).first()).toBeVisible({ timeout: 1500 });
+  372 | 
+  373 |   // START ROUND must acknowledge instantly and transition to LIVE promptly.
+  374 |   let started = Date.now();
+  375 |   const startRound = page.getByTestId('kotc-start-round');
+  376 |   await startRound.click();
+  377 |   await expect(startRound).toContainText('Starting…');
+  378 |   metric(report, 'start_ack_ms', Date.now() - started, 250);
+  379 |   await expect(page.getByText('Round 1 — LIVE')).toBeVisible({ timeout: 2000 });
+  380 |   metric(report, 'start_to_live_ms', Date.now() - started, 1500);
+  381 |   await expect(page.getByTestId('kotc-timer-pause')).toBeVisible({ timeout: 1000 });
+  382 |   metric(report, 'start_to_timer_running_ms', Date.now() - started, 1700);
+  383 | 
+  384 |   // Timer controls: pause → reset → explicit Start Timer.
+  385 |   await page.getByTestId('kotc-timer-pause').click();
+  386 |   await expect(page.getByTestId('kotc-timer-start')).toContainText(/Resume Timer|Start Timer/);
+  387 |   await page.getByTestId('kotc-timer-reset').click();
+  388 |   await expect(page.getByTestId('kotc-timer-value')).toHaveText('08:00');
+  389 |   await expect(page.getByTestId('kotc-timer-start')).toContainText('Start Timer');
+  390 |   await page.getByTestId('kotc-timer-start').click();
+  391 |   await expect(page.getByTestId('kotc-timer-pause')).toBeVisible();
+  392 |   await dismissTimerFullscreen(page);
+  393 | 
+  394 |   // Undo must keep accepted feedback visible for the entire backend delay.
+  395 |   const undo = page.getByTestId('kotc-undo-start');
+  396 |   await undo.scrollIntoViewIfNeeded();
+  397 |   started = Date.now();
+  398 |   await undo.evaluate(element => element.click());
   399 |   await expect(undo).toContainText('Returning to Round Setup…');
-  400 |   await expect(undo).toBeDisabled();
-  401 |   await expect(page.getByTestId('kotc-round-editor')).toBeVisible({ timeout: 1600 });
-  402 |   metric(report, 'undo_to_editor_ms', Date.now() - started, 1500);
-  403 |   expect(model.timer?.running).toBe(false);
-  404 |   expect(model.timer?.remainingSeconds).toBe(480);
-  405 | 
-  406 |   // Start again and complete Round 1.
-  407 |   started = Date.now();
-  408 |   await page.getByTestId('kotc-start-round').click();
-  409 |   await expect(page.getByText('Round 1 — LIVE')).toBeVisible({ timeout: 1800 });
-  410 |   metric(report, 'restart_to_live_ms', Date.now() - started, 1500);
-  411 |   await dismissTimerFullscreen(page);
-  412 |   // A player/scorer device has Court 1 locked. The host touching the score box must
-  413 |   // take authority immediately without changing the match revision.
-  414 |   const round1Court1=model.matches.find(m=>m.id==='match-r1-c1');
-  415 |   round1Court1.scoring_lock_owner='player-device-1';
-  416 |   round1Court1.scoring_lock_expires_at=new Date(Date.now()+90000).toISOString();
-  417 |   await page.getByTestId('kotc-score-1-a').focus();
-  418 |   await expect.poll(()=>round1Court1.scoring_lock_owner).toBe('host:e2e');
-  419 |   report.host_displaced_player_scorer=true;
-  420 |   report.round1_score_save_ms = await scoreCurrentRound(page, 4, 11);
-  421 |   for (const ms of report.round1_score_save_ms) expect(ms).toBeLessThanOrEqual(1200);
-  422 | 
-  423 |   await expect(page.getByText('All scores saved for Round 1')).toBeVisible({ timeout: 1800 });
-  424 |   expect(model.rounds.find(r => r.round_number === 1)?.status).toBe('started');
-  425 |   started = Date.now();
-  426 |   await page.getByTestId('kotc-prepare-next-round').click();
-  427 |   await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 2', { timeout: 2200 });
-  428 |   metric(report, 'round1_review_to_round2_editor_ms', Date.now() - started, 2200);
-  429 |   expect(model.rounds.find(r => r.round_number === 1)?.status).toBe('completed');
-  430 | 
-  431 |   // Round 2: start, then use the real Session Menu to sit one player out for the next round.
-  432 |   await page.getByTestId('kotc-start-round').click();
-  433 |   await expect(page.getByText('Round 2 — LIVE')).toBeVisible({ timeout: 1800 });
-  434 |   await dismissTimerFullscreen(page);
-  435 |   await page.getByTestId('kotc-session-menu').click();
-  436 |   await page.getByTestId('kotc-players-menu').click();
-  437 |   await page.getByTestId('kotc-player-participant-03').click();
-  438 |   await page.getByTestId('kotc-player-sit-out').click();
-  439 |   await expect(page.getByTestId('kotc-player-participant-03')).toContainText('voluntary rest', { timeout: 1500 });
-  440 |   expect(model.participants.find(p => p.id === 'participant-03')?.status).toBe('voluntary_rest');
-  441 | 
-  442 |   report.round2_score_save_ms = await scoreCurrentRound(page, 4, 10);
-  443 |   await expect(page.getByText('All scores saved for Round 2')).toBeVisible({ timeout: 1800 });
-  444 |   await page.getByTestId('kotc-prepare-next-round').click();
+  400 |   await expect(undo).toHaveAttribute('aria-busy', 'true');
+  401 |   metric(report, 'undo_ack_ms', Date.now() - started, 250);
+  402 |   await sleep(350);
+  403 |   await expect(undo).toContainText('Returning to Round Setup…');
+  404 |   await expect(undo).toBeDisabled();
+  405 |   await expect(page.getByTestId('kotc-round-editor')).toBeVisible({ timeout: 1600 });
+  406 |   metric(report, 'undo_to_editor_ms', Date.now() - started, 1500);
+  407 |   expect(model.timer?.running).toBe(false);
+  408 |   expect(model.timer?.remainingSeconds).toBe(480);
+  409 | 
+  410 |   // Start again and complete Round 1.
+  411 |   started = Date.now();
+  412 |   await page.getByTestId('kotc-start-round').click();
+  413 |   await expect(page.getByText('Round 1 — LIVE')).toBeVisible({ timeout: 1800 });
+  414 |   metric(report, 'restart_to_live_ms', Date.now() - started, 1500);
+  415 |   await dismissTimerFullscreen(page);
+  416 |   // A player/scorer device has Court 1 locked. The host touching the score box must
+  417 |   // take authority immediately without changing the match revision.
+  418 |   const round1Court1=model.matches.find(m=>m.id==='match-r1-c1');
+  419 |   round1Court1.scoring_lock_owner='player-device-1';
+  420 |   round1Court1.scoring_lock_expires_at=new Date(Date.now()+90000).toISOString();
+  421 |   await page.getByTestId('kotc-score-1-a').focus();
+  422 |   await expect.poll(()=>round1Court1.scoring_lock_owner).toBe('host:e2e');
+  423 |   report.host_displaced_player_scorer=true;
+  424 |   report.round1_score_save_ms = await scoreCurrentRound(page, 4, 11);
+  425 |   for (const ms of report.round1_score_save_ms) expect(ms).toBeLessThanOrEqual(1200);
+  426 | 
+  427 |   await expect(page.getByText('All scores saved for Round 1')).toBeVisible({ timeout: 1800 });
+  428 |   expect(model.rounds.find(r => r.round_number === 1)?.status).toBe('started');
+  429 |   started = Date.now();
+  430 |   await page.getByTestId('kotc-prepare-next-round').click();
+  431 |   await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 2', { timeout: 2200 });
+  432 |   metric(report, 'round1_review_to_round2_editor_ms', Date.now() - started, 2200);
+  433 |   expect(model.rounds.find(r => r.round_number === 1)?.status).toBe('completed');
+  434 | 
+  435 |   // Round 2: start, then use the real Session Menu to sit one player out for the next round.
+  436 |   await page.getByTestId('kotc-start-round').click();
+  437 |   await expect(page.getByText('Round 2 — LIVE')).toBeVisible({ timeout: 1800 });
+  438 |   await dismissTimerFullscreen(page);
+  439 |   await page.getByTestId('kotc-session-menu').click();
+  440 |   await page.getByTestId('kotc-players-menu').click();
+  441 |   await page.getByTestId('kotc-player-participant-03').click();
+  442 |   await page.getByTestId('kotc-player-sit-out').click();
+  443 |   await expect(page.getByTestId('kotc-player-participant-03')).toContainText('voluntary rest', { timeout: 1500 });
+  444 |   expect(model.participants.find(p => p.id === 'participant-03')?.status).toBe('voluntary_rest');
+  445 | 
+  446 |   report.round2_score_save_ms = await scoreCurrentRound(page, 4, 10);
+  447 |   await expect(page.getByText('All scores saved for Round 2')).toBeVisible({ timeout: 1800 });
+  448 |   await page.getByTestId('kotc-prepare-next-round').click();
+  449 |   await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 3', { timeout: 2200 });
+  450 |   const round3Ids = new Set(model.slots.filter(s => s.round_id === 'round-3').map(s => s.participant_id));
+  451 |   expect(round3Ids.has('participant-03'), 'one-round rest player must not be assigned in Round 3').toBe(false);
+  452 | 
+  453 |   // Round 3: prove the reduced available roster still stages correctly, then finish the session.
+  454 |   await page.getByTestId('kotc-start-round').click();
+  455 |   await expect(page.getByText('Round 3 — LIVE')).toBeVisible({ timeout: 1800 });
 ```
