@@ -4,7 +4,7 @@ const APP_ID = process.env.VITE_BASE44_APP_ID || '6a01dc00702b7dd2a2978c28';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
-function createModel({commitThenFailScore=false,commitThenFailPrepare=false,failPrepareBeforeCommit=false}={}) {
+function createModel({commitThenFailScore=false,commitThenFailPrepare=false,failPrepareBeforeCommit=false,stressProfile=null}={}) {
   const players = Array.from({ length: 18 }, (_, index) => ({
     id: `player-${String(index + 1).padStart(2, '0')}`,
     full_name: `Player ${String(index + 1).padStart(2, '0')}`,
@@ -36,6 +36,17 @@ function createModel({commitThenFailScore=false,commitThenFailPrepare=false,fail
     failPrepareBeforeCommit,
     scoreFailureInjected:false,
     prepareFailureInjected:false,
+    stressProfile,
+    delayCounts:{},
+  };
+
+  const delayFor=async(name,base)=>{
+    const profile=model.stressProfile;
+    if(!profile)return sleep(base);
+    const seq=profile[name]||[base];
+    const index=model.delayCounts[name]||0;model.delayCounts[name]=index+1;
+    const value=Number(seq[index%seq.length]??base);
+    await sleep(value);
   };
 
   const currentRound = () => model.rounds.find(r => r.id === model.session?.current_round_id) || null;
@@ -128,7 +139,7 @@ function createModel({commitThenFailScore=false,commitThenFailPrepare=false,fail
   model.handleFunction = async (name, body) => {
     model.calls.push({ name, body, at: Date.now() });
     if (name === 'getKotcV2State') {
-      await sleep(40);
+      await delayFor('getKotcV2State',40);
       return {
         session: model.session,
         participants: model.participants,
@@ -143,7 +154,7 @@ function createModel({commitThenFailScore=false,commitThenFailPrepare=false,fail
     }
 
     if (name === 'createKotcV2Session') {
-      await sleep(450);
+      await delayFor('createKotcV2Session',450);
       model.participants = players.map(player => ({ ...participantByPlayer.get(player.id) }));
       model.session = {
         id: 'e2e-session', tournament_id: 'e2e-kotc-tournament', name: 'E2E 18 Player KOTC', status: 'ready',
@@ -163,7 +174,7 @@ function createModel({commitThenFailScore=false,commitThenFailPrepare=false,fail
     }
 
     if (name === 'kotcTimer') {
-      await sleep(80);
+      await delayFor('kotcTimer',80);
       const duration = Number(model.session?.play_minutes || 8) * 60;
       if (!model.timer || model.timer.roundId !== body.roundId) model.timer = { roundId: body.roundId, durationSeconds: duration, remainingSeconds: duration, running: false, deadlineAt: null, lastAction: 'reset' };
       if (body.action === 'get') return { state: model.timer };
@@ -205,7 +216,7 @@ function createModel({commitThenFailScore=false,commitThenFailPrepare=false,fail
       }
 
       if (body.commandType === 'start_proposed_round' || name === 'startKotcRound') {
-        await sleep(600);
+        await delayFor(name==='startKotcRound'?'startKotcRound':'kotcCommand',600);
         const round = currentRound();
         for (const slot of currentSlots()) if (body.slotParticipantIds?.[slot.id]) slot.participant_id = body.slotParticipantIds[slot.id];
         syncMatchesFromSlots(round.id);
@@ -233,7 +244,7 @@ function createModel({commitThenFailScore=false,commitThenFailPrepare=false,fail
       }
 
       if (name === 'saveKotcScore' || body.commandType === 'complete_match' || body.commandType === 'correct_match') {
-        await sleep(320);
+        await delayFor(name==='saveKotcScore'?'saveKotcScore':'kotcCommand',320);
         const match = model.matches.find(m => m.id === body.matchId);
         const correction = body.commandType === 'correct_match';
         match.team_a_score = Number(body.teamAScore);
@@ -250,7 +261,7 @@ function createModel({commitThenFailScore=false,commitThenFailPrepare=false,fail
       }
 
       if (name === 'prepareKotcNextRound' || body.commandType === 'generate_next_round') {
-        await sleep(500);
+        await delayFor(name==='prepareKotcNextRound'?'prepareKotcNextRound':'kotcCommand',500);
         if(model.failPrepareBeforeCommit&&!model.prepareFailureInjected){model.prepareFailureInjected=true;return {__status:429,error:'Rate limit exceeded before sporting write'};}
         const prior = currentRound();
         prior.status = 'completed';
@@ -289,7 +300,7 @@ function createModel({commitThenFailScore=false,commitThenFailPrepare=false,fail
     }
 
     if (name === 'endKotcSession') {
-      await sleep(450);
+      await delayFor('endKotcSession',450);
       if (body.action === 'finish') model.session.status = 'completed';
       if (body.action === 'abandon') model.session.status = 'abandoned';
       model.session.actual_session_end = new Date().toISOString();
