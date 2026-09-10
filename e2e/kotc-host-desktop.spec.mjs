@@ -560,6 +560,7 @@ test('desktop timer: full screen centres a dominant clock and exits back into th
   expect(metrics.timer.width).toBeGreaterThan(metrics.w*0.9);expect(metrics.timer.height).toBeGreaterThan(metrics.h*0.9);expect(metrics.fontSize).toBeGreaterThan(140);
   const valueCenterY=metrics.value.y+metrics.value.height/2;expect(Math.abs(valueCenterY-metrics.h/2)).toBeLessThan(metrics.h*0.22);
   await page.getByTitle('Exit full screen timer').click();
+  await expect.poll(()=>page.evaluate(()=>document.fullscreenElement===null),{timeout:2000}).toBe(true);
   await expect(page.getByTitle('Full screen timer')).toBeVisible({timeout:1500});
-  const docked=await page.getByTestId('kotc-timer').boundingBox();expect(docked.height).toBeLessThan(520);
+  await expect.poll(async()=>Math.round((await page.getByTestId('kotc-timer').boundingBox())?.height||9999),{timeout:2000}).toBeLessThan(520);
 });
