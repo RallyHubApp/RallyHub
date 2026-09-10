@@ -381,29 +381,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     finally { setLogoUploading(''); }
   };
 
-  const clearParticipants = async () => {
-    const existingMatches = matches.filter(m => ['completed', 'draw'].includes(m.status));
-    if (existingMatches.length) throw new Error('Cannot clear players after results have been recorded.');
-    for (const m of matches) await base44.entities.ClubChallengeMatch.delete(m.id);
-    for (const p of participants) await base44.entities.ClubChallengeParticipant.delete(p.id);
-  };
-
   const loadTestRoster = async () => {
     if (!event) { toast.error('Save Setup first.'); return; }
-    if (!window.confirm('Load 16 Clare + 16 Galway test participants? Existing unplayed Club Challenge participants will be replaced.')) return;
+    if (!window.confirm('Load 32 practice players? Existing unplayed Club Challenge participants and draw fixtures will be replaced. Practice players are clearly labelled and should not be used for a live event.')) return;
     setSaving(true);
     try {
-      await clearParticipants();
-      const records = [];
-      for (let i = 1; i <= 16; i++) {
-        records.push({ tenant_id: event.tenant_id, challenge_event_id: event.id, tournament_id: tournament.id, side: 'club_a', display_name: `Clare Test ${String(i).padStart(2, '0')}`, event_rank: i, gender: i % 2 ? 'Male' : 'Female', status: 'active', available_from_round: 1, unique_identity_key: `gate3-clare-${i}` });
-        records.push({ tenant_id: event.tenant_id, challenge_event_id: event.id, tournament_id: tournament.id, side: 'club_b', display_name: `Galway Test ${String(i).padStart(2, '0')}`, event_rank: i, gender: i % 2 ? 'Male' : 'Female', status: 'active', available_from_round: 1, unique_identity_key: `gate3-galway-${i}` });
-      }
-      await base44.entities.ClubChallengeParticipant.bulkCreate(records);
-      await base44.entities.ClubChallengeEvent.update(event.id, { status: 'draft', fairness_json: '', draw_approved_at: null, draw_approved_by: null, event_pack_stale: true });
-      toast.success('32 test participants loaded');
+      const res = await base44.functions.invoke('loadClubChallengePracticeRoster', { eventId:event.id });
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success('32 practice players loaded. You can now rehearse the full setup and draw journey.');
       await sync();
-    } catch (e) { toast.error(e?.message || 'Could not load test roster'); }
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not load practice players'); }
     setSaving(false);
   };
 
