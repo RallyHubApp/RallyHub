@@ -24,7 +24,9 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   const { data: kotcState } = useQuery({
     queryKey: ['kotc-shell-state', tournament.id],
     queryFn: async () => (await base44.functions.invoke('getKotcV2State', { tournamentId: tournament.id })).data,
-    refetchInterval: 3000,
+    // The child live-session view owns polling once a session exists. Re-polling the
+    // shell every 3s can remount the roster/setup path on mobile during a live start.
+    refetchInterval: (query) => query.state.data?.session ? false : 3000,
   });
   const hasSession = !!kotcState?.session;
 
