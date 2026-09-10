@@ -178,6 +178,14 @@ function createModel({commitThenFailScore=false,commitThenFailPrepare=false,fail
       return { success: true, state: model.timer };
     }
 
+    if (name === 'setKotcPairLock') {
+      await sleep(260);
+      model.fixedPairs = model.fixedPairs.filter(pair => pair.status !== 'active');
+      if (body.locked !== false) model.fixedPairs.push({ id: 'pair-lock-1', session_id: model.session.id, participant1_id: body.participant1Id, participant2_id: body.participant2Id, pair_name: 'Locked Pair', pair_source: 'host_selected', status: 'active' });
+      model.session.revision += 1;
+      return { success: true, session: model.session, pair: model.fixedPairs[0] || null, locked: body.locked !== false, runtimeVersion:'kotc-2026-09-10-r5' };
+    }
+
     if (name === 'kotcCommand' || name === 'startKotcRound' || name === 'saveKotcScore') {
       if (body.commandType === 'host_claim_score') {
         const match = model.matches.find(m => m.id === body.matchId);
@@ -385,9 +393,11 @@ test('18-player desktop Preview host journey: setup → controls → rounds → 
   await page.getByTestId('kotc-bench-player-participant-17').click();
   await expect(page.getByTestId('kotc-bench')).toContainText(outgoingPlayer);
 
-  // Lock one pair and make sure the editor reflects the saved lock.
-  await page.getByRole('button', { name: 'Lock pair' }).first().click();
-  await expect(page.getByRole('button', { name: 'Unlock' }).first()).toBeVisible({ timeout: 1500 });
+  // Lock one pair. The host must get immediate acknowledgement, then a persistent locked state.
+  const lockButton=page.getByRole('button', { name: 'Lock pair' }).first();
+  await lockButton.click();
+  await expect(page.getByRole('button', { name: 'Saving…' }).first()).toBeVisible({ timeout: 250 });
+  await expect(page.getByRole('button', { name: /Locked ✓ · Unlock/ }).first()).toBeVisible({ timeout: 1500 });
 
   // START ROUND must acknowledge instantly and transition to LIVE promptly.
   let started = Date.now();
