@@ -7,6 +7,7 @@ const includes=(text,needle,message)=>assert(text.includes(needle),message||`mis
 
 const access=read('base44/functions/manageKotcSessionAccess/entry.ts');
 const state=read('base44/functions/getKotcV2State/entry.ts');
+const contacts=read('base44/functions/getKotcContacts/entry.ts');
 const command=read('base44/functions/kotcCommand/entry.ts');
 const scorer=read('base44/functions/kotcScorer/entry.ts');
 const saveScore=read('base44/functions/saveKotcScore/entry.ts');
@@ -28,11 +29,12 @@ const mobileHostTest=read('e2e/kotc-host-journey.spec.mjs');
 includes(access,"caller.role!=='admin'",'only platform admins may grant or revoke delegated host access');
 includes(role,"user.role === 'admin'",'platform admin must resolve through KOTC role hook');
 includes(role,"return 'super_admin'",'platform admin must resolve as KOTC super_admin');
-includes(state,"currentAccessRole==='session_host'",'session_host must be a recognised state access role');
-includes(state,"user.role==='admin'||currentAccessRole==='session_host'",'contact directory must be limited to admin/session_host');
-includes(state,'entities.Person.filter','session contacts must come from canonical Person records');
-includes(state,"participants||[]).map((p:any)=>p.player_id",'contact lookup must start from the session participant roster');
-includes(state,"person.emergency_contact_name||person.emergency_contact_raw||player.emergency_contact",'session contacts must fall back to the imported raw emergency name when structured name is empty');
+includes(state,"['session_host','assistant_host','viewer'].includes(a.role)",'session_host must remain a recognised state access role');
+includes(state,'contactDirectory:{}','normal KOTC state must not fetch private contacts on the live hot path');
+includes(contacts,"a.role!=='session_host'",'contact endpoint must be limited to primary session_host or platform admin');
+includes(contacts,'entities.Person.filter','session contacts must come from canonical Person records');
+includes(contacts,"participants||[]).map((p:any)=>p.player_id",'contact lookup must start from the session participant roster');
+includes(contacts,"person.emergency_contact_name||person.emergency_contact_raw||player.emergency_contact",'session contacts must fall back to the imported raw emergency name when structured name is empty');
 
 // Public live view: token first, no authentication requirement, and no private contact fields in public branch.
 const publicStart=results.indexOf("if(action==='public_state')");
@@ -110,7 +112,7 @@ includes(command,"recoveryModel:'authoritative_entities'",'recovery checkpoints 
 assert(!command.includes('participationEvents:events')&&!command.includes('sessionCourts:courts'),'recovery checkpoints must not duplicate large live collections');
 includes(hostUi,"functions.invoke('prepareKotcNextRound'",'host Prepare Next Round must use its dedicated live-session endpoint');
 assert(!hostUi.includes("commandType:'generate_next_round'"),'host UI must not route Prepare Next Round through the heavy general command pipeline');
-includes(prepareNext,"runtimeVersion:'kotc-2026-09-10-r6'",'dedicated next-round endpoint must expose its deployed runtime contract version');
+includes(prepareNext,"RUNTIME_VERSION='kotc-prepare-2026-09-10-r8'",'dedicated next-round endpoint must expose its current runtime contract version');
 includes(prepareNext,"retry('create slots'",'next-round slot creation must retry Base44 provider limits internally');
 includes(prepareNext,"retry('advance session'",'final next-round session advance must be rate-limit resilient');
 assert(!prepareNext.includes('Promise.all(['),'next-round provider writes must not be fired concurrently against Base44 burst limits');
