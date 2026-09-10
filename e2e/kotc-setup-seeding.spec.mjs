@@ -34,8 +34,7 @@ test('desktop setup: visible seeding choice is the seeding order sent to the eng
   await page.getByRole('option',{name:'Genuine DUPR'}).click();
   await expect(page.getByTestId('kotc-seeding-source')).toContainText('Genuine DUPR');
   await expect(page.getByText('Current starting order')).toBeVisible();
-  const orderPanel=page.getByText('Current starting order').locator('..').locator('..');
-  await expect(orderPanel).toContainText('Player 18');
+  await expect(page.getByTestId('kotc-player-order-1')).toContainText('Player 18');
 
   await page.getByTestId('kotc-draw-method').click();
   await page.getByRole('option',{name:'Strict Ranking'}).click();
