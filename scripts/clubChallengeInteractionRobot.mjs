@@ -92,10 +92,10 @@ check('what-if: finalisation checks POT open state', contains(finaliseFn,'pot_st
 check('player: public voting asks voter identity', /Select your name|Who are you|Voting player/.test(publicVote));
 check('player: public voting asks nominee', /Select player|Player of/.test(publicVote));
 check('player: public voting has a submit action', /Cast Vote|Submit Vote/.test(publicVote));
-check('voting: self-vote is blocked server-side', /self/i.test(voteFn));
-check('voting: duplicate vote is blocked server-side', /already|duplicate/i.test(voteFn));
-check('voting: personal access code remains server-side verified', /access|code/i.test(voteFn));
-check('voting: ballot audit does not expose nominee', !/new_value_json.*nominee/i.test(voteFn));
+check('voting: self-vote is blocked server-side', contains(voteFn,'voterParticipantId === nomineeParticipantId') && /cannot vote for themselves/i.test(voteFn));
+check('voting: duplicate vote is blocked server-side', /already voted/i.test(voteFn));
+check('voting: personal access code remains server-side verified', contains(voteFn,'guest_access_token') && /access code is incorrect/i.test(voteFn));
+check('voting: ballot audit does not expose nominee', contains(voteFn,"JSON.stringify({ voter_participant_id:voter.id, access_route:'qr' })") && /nominee intentionally omitted/i.test(voteFn));
 
 // 9. Simple outcome model used by the robot to challenge the journey.
 const clearWinner = calculateClubChallengeScore(Array.from({length:48},(_,i)=>({scoreA:i<28?11:8,scoreB:i<28?8:11,status:'completed'})),{winPoints:2,drawPoints:1,lossPoints:0});
