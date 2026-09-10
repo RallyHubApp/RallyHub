@@ -79,7 +79,7 @@ ok(view.includes("commandType:'start_proposed_round'"),'single START ROUND path 
 ok(view.includes("doCommand('generate_next_round'"),'generate next round wired');
 ok(view.includes("doCommand('pause_session'"),'pause wired');
 ok(view.includes("doCommand('resume_session'"),'resume wired');
-ok(view.includes('Finish Session Now'),'finish-now control is available in Session Menu');
+ok(view.includes('data-testid="kotc-finish-session"')&&view.includes('Finish Session'),'finish control is available in Session Menu');
 ok(view.includes("functions.invoke('endKotcSession'"),'finish/abandon UI uses dedicated session-end function');
 ok(endCommand.includes("action==='finish'"),'dedicated finish path exists');
 ok(endCommand.includes("action==='abandon'"),'dedicated abandon path exists');
