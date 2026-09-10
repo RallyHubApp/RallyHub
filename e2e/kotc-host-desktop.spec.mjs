@@ -341,6 +341,16 @@ function metric(report, name, value, max) {
   expect(value, `${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);
 }
 
+async function createAndStartRoundOne(page){
+  await page.goto('/e2e/kotcHarness.html');
+  await page.getByRole('button',{name:'Player 17',exact:true}).click();
+  await page.getByRole('button',{name:'Player 18',exact:true}).click();
+  await page.getByTestId('kotc-create-session').click();
+  await expect(page.getByTestId('kotc-round-editor')).toBeVisible({timeout:2000});
+  await page.getByTestId('kotc-start-round').click();
+  await expect(page.getByText('Round 1 — LIVE')).toBeVisible({timeout:2000});
+}
+
 test.use({ viewport: { width: 1440, height: 900 } });
 
 test('18-player desktop Preview host journey: setup → controls → rounds → podium', async ({ page }, testInfo) => {
