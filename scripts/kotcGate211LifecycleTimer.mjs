@@ -10,7 +10,7 @@ const ok = (value, message) => { checks++; assert.ok(value, message); };
 
 // Opening or refreshing an existing session must never manufacture a fresh timer start.
 ok(view.includes('const [timerStartRoundId,setTimerStartRoundId]=useState(null)'), 'timer auto-start token begins empty');
-ok(view.includes("commandType:'start_proposed_round'"), 'sporting round start remains an explicit host command');
+ok(view.includes("functions.invoke('startKotcRound'"), 'sporting round start uses the dedicated host start function');
 ok(view.indexOf('setTimerStartRoundId(roundId)') > view.indexOf("if(!res.data?.success)throw new Error"), 'timer auto-start token is set only after successful START ROUND');
 ok(view.includes('autoStart={timerStartRoundId===currentRound.id}'), 'timer auto-start is tied to the explicit one-shot round token');
 ok(view.includes('onAutoStartHandled={()=>setTimerStartRoundId(null)}'), 'one-shot timer auto-start token is cleared after use');
