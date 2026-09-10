@@ -72,8 +72,8 @@ test('delegated host: session-only controls, attendee contacts, links and keyboa
 
   // Delegated host can prepare player/public links but cannot appoint another host.
   await page.getByText('Session Links & Access').click();
-  await expect(page.getByText('Live Player View')).toBeVisible();
-  await expect(page.getByText('Player Scoring Link')).toBeVisible();
+  await expect(page.getByText('Live Player View',{exact:true})).toBeVisible();
+  await expect(page.getByText('Player Scoring Link',{exact:true})).toBeVisible();
   await expect(page.getByText('Restricted Host Link')).toHaveCount(0);
   await expect(page.getByRole('button',{name:/Grant Host Access/i})).toHaveCount(0);
   expect(model.calls.some(c=>c.name==='manageKotcSessionAccess')).toBe(false);
