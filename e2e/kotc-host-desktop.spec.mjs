@@ -538,3 +538,28 @@ test('Base44 resilience: genuine prepare failure stays explicit and safely retry
   expect(model.rounds.filter(r=>r.round_number===2)).toHaveLength(0);
   await expect(page.getByTestId('kotc-prepare-next-round')).toBeEnabled();
 });
+
+test('desktop usability: long host screens expose mouse-click up/down navigation',async({page})=>{
+  const model=createModel();await installMockBackend(page,model);
+  await page.goto('/e2e/kotcHarness.html');
+  await expect(page.getByTestId('kotc-scroll-controls')).toBeVisible({timeout:1800});
+  const before=await page.evaluate(()=>window.scrollY);
+  await page.getByRole('button',{name:'Scroll down'}).click();
+  await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeGreaterThan(before+100);
+  await expect(page.getByRole('button',{name:'Scroll up'})).toBeEnabled();
+  await page.getByRole('button',{name:'Scroll up'}).click();
+  await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeLessThan(120);
+});
+
+test('desktop timer: full screen centres a dominant clock and exits back into the page',async({page})=>{
+  const model=createModel();await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+  await createAndStartRoundOne(page);
+  await page.getByTitle('Full screen timer').click();
+  await expect(page.getByTitle('Exit full screen timer')).toBeVisible({timeout:1500});
+  const metrics=await page.evaluate(()=>{const timer=document.querySelector('[data-testid="kotc-timer"]')?.getBoundingClientRect();const value=document.querySelector('[data-testid="kotc-timer-value"]')?.getBoundingClientRect();const style=getComputedStyle(document.querySelector('[data-testid="kotc-timer-value"]'));return{timer,value,fontSize:parseFloat(style.fontSize),w:innerWidth,h:innerHeight};});
+  expect(metrics.timer.width).toBeGreaterThan(metrics.w*0.9);expect(metrics.timer.height).toBeGreaterThan(metrics.h*0.9);expect(metrics.fontSize).toBeGreaterThan(140);
+  const valueCenterY=metrics.value.y+metrics.value.height/2;expect(Math.abs(valueCenterY-metrics.h/2)).toBeLessThan(metrics.h*0.22);
+  await page.getByTitle('Exit full screen timer').click();
+  await expect(page.getByTitle('Full screen timer')).toBeVisible({timeout:1500});
+  const docked=await page.getByTestId('kotc-timer').boundingBox();expect(docked.height).toBeLessThan(520);
+});
