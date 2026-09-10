@@ -92,6 +92,7 @@ export function validateKotcScore({ teamAScore, teamBScore, session, servingSide
   if (!wholeNonNegative(a) || !wholeNonNegative(b)) {
     return { valid: false, error: 'Scores must be non-negative whole numbers.' };
   }
+  if (a > 99 || b > 99) return { valid: false, error: 'KOTC scores cannot exceed 99.' };
 
   if (!final) return { valid: true, teamAScore: a, teamBScore: b, winnerSide: a === b ? null : a > b ? 'A' : 'B', resultMethod: null };
 
@@ -128,6 +129,7 @@ export function prepareScoreAutosave({ match, teamAScore, teamBScore, expectedRe
   const revision = checkRevision({ expectedRevision, currentRevision: match?.revision ?? 0, label: 'Match' });
   if (revision.conflict) return { ok: false, conflict: true, current: match };
   if (!wholeNonNegative(teamAScore) || !wholeNonNegative(teamBScore)) return { ok: false, conflict: false, error: 'Scores must be non-negative whole numbers.' };
+  if (Number(teamAScore) > 99 || Number(teamBScore) > 99) return { ok: false, conflict: false, error: 'KOTC scores cannot exceed 99.' };
   if (RESOLVED_MATCH_STATUSES.has(match?.status)) return { ok: false, conflict: false, error: 'Resolved matches require a correction command.' };
 
   return {
