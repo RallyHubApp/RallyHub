@@ -173,7 +173,7 @@ function createModel() {
       return { success: true, state: model.timer };
     }
 
-    if (name === 'kotcCommand') {
+    if (name === 'kotcCommand' || name === 'startKotcRound') {
       if (body.commandType === 'host_claim_score') {
         const match = model.matches.find(m => m.id === body.matchId);
         if (!match) return { success: false, error: 'Match not found' };
@@ -191,7 +191,7 @@ function createModel() {
         return { success: true, session: model.session, pair: model.fixedPairs[0], locked: body.locked !== false };
       }
 
-      if (body.commandType === 'start_proposed_round') {
+      if (body.commandType === 'start_proposed_round' || name === 'startKotcRound') {
         await sleep(600);
         const round = currentRound();
         for (const slot of currentSlots()) if (body.slotParticipantIds?.[slot.id]) slot.participant_id = body.slotParticipantIds[slot.id];
