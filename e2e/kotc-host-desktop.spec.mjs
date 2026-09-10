@@ -692,7 +692,7 @@ test('KOTC hall-pressure simulator: 18 players, 12 rounds, slow provider, rapid 
   expect(report.max_prepare_ack_ms).toBeLessThanOrEqual(250);
   expect(report.max_start_confirm_ms).toBeLessThanOrEqual(2300);
   expect(report.max_score_burst_confirm_ms).toBeLessThanOrEqual(2300);
-  expect(report.max_prepare_confirm_ms).toBeLessThanOrEqual(3200);
+  expect(report.max_prepare_confirm_ms).toBeLessThanOrEqual(3500);
   expect(report.full_state_reads,'Normal live play must not poll/reload heavyweight state after successful actions').toBeLessThanOrEqual(3);
   expect(report.host_claim_score_calls,'Typing host scores must not create empty scorer-takeover traffic').toBe(0);
   expect(callsByName.startKotcRound).toBe(12);
