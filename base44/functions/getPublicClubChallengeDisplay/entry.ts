@@ -22,9 +22,11 @@ Deno.serve(async (req) => {
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200);
     const pmap = new Map(participants.map((p:any) => [p.id, maskName(p.display_name, !!event.junior_display_mode)]));
+    const safeParticipants = participants.filter((p:any) => ['active','late'].includes(p.status)).map((p:any) => ({ id:p.id, display_name:pmap.get(p.id) || 'Player' }));
     const safeMatches = matches.map((m:any) => ({
       id:m.id, round_number:m.round_number, court_number:m.court_number, status:m.status, winner:m.winner,
       score_a:m.score_a, score_b:m.score_b, is_showcase:!!m.is_showcase,
+      club_a_participant_ids:m.club_a_participant_ids || [], club_b_participant_ids:m.club_b_participant_ids || [],
       club_a_names:(m.club_a_participant_ids || []).map((id:string) => pmap.get(id) || 'Player'),
       club_b_names:(m.club_b_participant_ids || []).map((id:string) => pmap.get(id) || 'Player'),
     }));
@@ -35,7 +37,7 @@ Deno.serve(async (req) => {
       current_round:event.current_round, timer_state_json:event.timer_state_json, timer_revision:event.timer_revision,
       play_minutes:event.play_minutes, changeover_minutes:event.changeover_minutes, junior_display_mode:!!event.junior_display_mode,
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
-    }, matches:safeMatches });
+    }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
     return Response.json({ error:error?.message || 'Unexpected public display error' }, { status:500 });
   }
