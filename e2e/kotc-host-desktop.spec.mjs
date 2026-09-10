@@ -237,11 +237,13 @@ function createModel({commitThenFailScore=false,commitThenFailPrepare=false,fail
         match.scoring_lock_expires_at = null;
         if (correction) match.correction_count = Number(match.correction_count || 0) + 1;
         match.revision += 1;
+        if(name==='saveKotcScore'&&model.commitThenFailScore&&!model.scoreFailureInjected){model.scoreFailureInjected=true;return {__status:503,error:'Base44 response lost after commit'};}
         return { success: true, match, correction };
       }
 
       if (body.commandType === 'generate_next_round') {
         await sleep(500);
+        if(model.failPrepareBeforeCommit&&!model.prepareFailureInjected){model.prepareFailureInjected=true;return {__status:429,error:'Rate limit exceeded before sporting write'};}
         const prior = currentRound();
         prior.status = 'completed';
         prior.completed_at = new Date().toISOString();
@@ -249,6 +251,7 @@ function createModel({commitThenFailScore=false,commitThenFailPrepare=false,fail
         const priorBench = model.participants.filter(p => ['present', 'registered', 'confirmed', 'leaving_early'].includes(p.status) && !priorActive.has(p.id)).map(p => p.id);
         const next = makeRound(Number(prior.round_number) + 1, priorBench.slice().reverse());
         model.session.revision += 1;
+        if(model.commitThenFailPrepare&&!model.prepareFailureInjected){model.prepareFailureInjected=true;return {__status:503,error:'Base44 response lost after Round 2 commit'};}
         return { success: true, session: model.session, round: next };
       }
 
