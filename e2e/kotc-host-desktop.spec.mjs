@@ -4,7 +4,7 @@ const APP_ID = process.env.VITE_BASE44_APP_ID || '6a01dc00702b7dd2a2978c28';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
-function createModel() {
+function createModel({commitThenFailScore=false,commitThenFailPrepare=false,failPrepareBeforeCommit=false}={}) {
   const players = Array.from({ length: 18 }, (_, index) => ({
     id: `player-${String(index + 1).padStart(2, '0')}`,
     full_name: `Player ${String(index + 1).padStart(2, '0')}`,
@@ -31,6 +31,11 @@ function createModel() {
     fixedPairs: [],
     timer: null,
     calls: [],
+    commitThenFailScore,
+    commitThenFailPrepare,
+    failPrepareBeforeCommit,
+    scoreFailureInjected:false,
+    prepareFailureInjected:false,
   };
 
   const currentRound = () => model.rounds.find(r => r.id === model.session?.current_round_id) || null;
