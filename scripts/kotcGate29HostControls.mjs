@@ -3,6 +3,7 @@ import fs from 'node:fs';
 
 const v2=fs.readFileSync('src/components/kotc/KotcV2SessionView.jsx','utf8');
 const command=fs.readFileSync('base44/functions/kotcCommand/entry.ts','utf8');
+const startCommand=fs.readFileSync('base44/functions/startKotcRound/entry.ts','utf8');
 let checks=0; const ok=(v,m)=>{checks++;assert.ok(v,m)};
 
 ok(v2.includes('Host Round Editor'),'proposed round host editor present');
@@ -15,15 +16,14 @@ ok(v2.includes("functions.invoke('startKotcRound'"),'UI starts the proposed roun
 ok(v2.includes("currentRound?.status==='proposed'&&!assistant&&<ProposedRoundEditor"),'editor only appears for proposed round');
 ok(!v2.includes("currentRound?.status==='started'&&<ProposedRoundEditor"),'started rounds cannot be host-edited');
 
-ok(command.includes("'start_proposed_round'"),'atomic proposed-round start command is structural');
-ok(command.includes("round.status!=='proposed'"),'server rejects start from a non-proposed round');
-ok(command.includes("new Set(nextIds).size!==nextIds.length"),'duplicate-player invariant guarded at start');
-ok(command.includes('every team must contain two players'),'two-player team integrity guarded at start');
-ok(command.includes("assignment_type:'manual_override'"),'manual overrides are explicitly recorded');
-ok(command.includes('changedCourts'),'only changed courts are rebuilt');
-ok(command.includes("action:'kotc_round_started'"),'round start and manual court changes are audited');
-ok(command.includes('team_a_participant_ids:court.filter'),'match Team A is rebuilt from edited slots');
-ok(command.includes('team_b_participant_ids:court.filter'),'match Team B is rebuilt from edited slots');
+ok(startCommand.includes("round.status!=='proposed'"),'server rejects start from a non-proposed round');
+ok(startCommand.includes("new Set(nextIds).size!==nextIds.length"),'duplicate-player invariant guarded at start');
+ok(startCommand.includes('every team must contain two players'),'two-player team integrity guarded at start');
+ok(startCommand.includes("assignment_type:'manual_override'"),'manual overrides are explicitly recorded');
+ok(startCommand.includes('changedCourts'),'only changed courts are rebuilt');
+ok(startCommand.includes("action:'kotc_round_started'"),'round start and manual court changes are audited');
+ok(startCommand.includes('team_a_participant_ids:court.filter'),'match Team A is rebuilt from edited slots');
+ok(startCommand.includes('team_b_participant_ids:court.filter'),'match Team B is rebuilt from edited slots');
 
 ok(command.includes("commandType === 'set_participant_status'"),'participant status command wired');
 ok(command.includes("action==='voluntary_rest'"),'one-round voluntary rest wired');
