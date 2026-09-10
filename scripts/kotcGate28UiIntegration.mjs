@@ -21,7 +21,7 @@ ok(v2.includes('setTimerStartRoundId(roundId)'),'successful host start arms one-
 ok(v2.includes("doCommand('generate_next_round'"),'next-round generation wired');
 ok(v2.includes("doCommand('pause_session'"),'pause wired');
 ok(v2.includes("doCommand('resume_session'"),'resume wired');
-ok(v2.includes('Finish Session Now'),'finish-now control remains visible in Session Menu');
+ok(v2.includes('data-testid="kotc-finish-session"')&&v2.includes('Finish Session'),'finish control remains visible in Session Menu');
 ok(v2.includes("functions.invoke('endKotcSession'"),'finish/abandon uses dedicated session-end endpoint');
 ok(command.includes("commandType === 'generate_next_round'"),'server command must own next-round generation');
 ok(command.includes('Fairness substitution invariant failed'),'server fairness invariant guard present');
