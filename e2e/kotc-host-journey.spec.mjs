@@ -181,7 +181,7 @@ function createModel() {
       return { success: true, session: model.session, pair: model.fixedPairs[0] || null, locked: body.locked !== false, runtimeVersion:'kotc-2026-09-10-r5' };
     }
 
-    if (name === 'kotcCommand' || name === 'startKotcRound' || name === 'saveKotcScore') {
+    if (name === 'kotcCommand' || name === 'startKotcRound' || name === 'saveKotcScore' || name === 'prepareKotcNextRound') {
       if (body.commandType === 'host_claim_score') {
         const match = model.matches.find(m => m.id === body.matchId);
         if (!match) return { success: false, error: 'Match not found' };
@@ -243,7 +243,7 @@ function createModel() {
         return { success: true, match, correction };
       }
 
-      if (body.commandType === 'generate_next_round') {
+      if (name === 'prepareKotcNextRound' || body.commandType === 'generate_next_round') {
         await sleep(500);
         const prior = currentRound();
         prior.status = 'completed';
@@ -252,7 +252,7 @@ function createModel() {
         const priorBench = model.participants.filter(p => ['present', 'registered', 'confirmed', 'leaving_early'].includes(p.status) && !priorActive.has(p.id)).map(p => p.id);
         const next = makeRound(Number(prior.round_number) + 1, priorBench.slice().reverse());
         model.session.revision += 1;
-        return { success: true, session: model.session, round: next };
+        return { success: true, session: model.session, round: next, slots:model.slots.filter(s=>s.round_id===next.id), matches:model.matches.filter(m=>m.round_id===next.id), participants:model.participants, runtimeVersion:'kotc-2026-09-10-r6' };
       }
 
       if (body.commandType === 'set_participant_status') {
