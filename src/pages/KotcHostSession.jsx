@@ -22,7 +22,7 @@ export default function KotcHostSession(){
   if(error||!state?.session)return <div className="min-h-screen bg-background p-4 flex items-center justify-center"><div className="max-w-md w-full glass rounded-xl p-5 space-y-3"><h1 className="font-bold">Session access unavailable</h1><p className="text-sm text-muted-foreground">This host link is invalid, expired, revoked, or your account has not been granted access to this session.</p><Button variant="outline" onClick={()=>logout()}>Sign out</Button></div></div>;
 
   const session=state.session;
-  const players=(state.participants||[]).map(p=>({id:p.player_id||p.id,full_name:p.display_name||'Player',skill_rating:p.rating_snapshot||3}));
+  const players=(state.participants||[]).map(p=>({id:p.player_id||p.id,full_name:p.display_name||'Player',skill_rating:p.rating_snapshot??null,dupr_rating:p.dupr_rating_snapshot??null}));
   const tournament={id:session.tournament_id,name:session.name,format:'King of the Court',status:session.status==='ready'?'In Progress':'In Progress',player_ids:players.map(p=>p.id)};
 
   return <div className="min-h-screen bg-background">
