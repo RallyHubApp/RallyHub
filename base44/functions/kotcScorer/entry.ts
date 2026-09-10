@@ -14,13 +14,13 @@ function lockSeconds(match:any){return match?.scoring_lock_expires_at?Math.max(0
 Deno.serve(async req=>{try{
  const base44=createClientFromRequest(req);const body=await req.json().catch(()=>({}));const token=String(body.token||'');if(!token)return Response.json({error:'Token required'},{status:400});
  const scorer=await resolveToken(base44,token);const session=(await withRateLimitRetry('scorer session read',()=>base44.asServiceRole.entities.KotcSession.filter({id:scorer.session_id})))?.[0];if(!session)return Response.json({error:'Session not found'},{status:404});
- const round=(await base44.asServiceRole.entities.KotcRound.filter({id:session.current_round_id,session_id:session.id}))?.[0]||null;
- const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id});const names=Object.fromEntries((participants||[]).map((p:any)=>[p.id,p.display_name]));
+ const round=(await withRateLimitRetry('scorer round read',()=>base44.asServiceRole.entities.KotcRound.filter({id:session.current_round_id,session_id:session.id})))?.[0]||null;
+ const participants=await withRateLimitRetry('scorer participants read',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));const names=Object.fromEntries((participants||[]).map((p:any)=>[p.id,p.display_name]));
  const requestedAction=String(body.action||'state');const clientId=String(body.clientId||'').trim();
  if(['claim','heartbeat','release'].includes(requestedAction)){
   if(!clientId)return Response.json({error:'Scorer device id required'},{status:400});
   if(session.status!=='in_progress'||round?.status!=='started')return Response.json({error:'Court scoring is only available while the current round is live.'},{status:409});
-  const match=(await base44.asServiceRole.entities.KotcMatch.filter({id:String(body.matchId||''),session_id:session.id,round_id:round.id}))?.[0];if(!match)return Response.json({error:'Current-round match not found'},{status:404});
+  const match=(await withRateLimitRetry('scorer current match read',()=>base44.asServiceRole.entities.KotcMatch.filter({id:String(body.matchId||''),session_id:session.id,round_id:round.id})))?.[0];if(!match)return Response.json({error:'Current-round match not found'},{status:404});
   if(requestedAction==='release'){if(String(match.scoring_lock_owner||'')===clientId)await base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:null,scoring_lock_acquired_at:null,scoring_lock_expires_at:null});return Response.json({success:true,released:true});}
   if(requestedAction==='claim'){
    if(RESOLVED.has(match.status)){
@@ -40,7 +40,7 @@ Deno.serve(async req=>{try{
  if(requestedAction==='save'||requestedAction==='correct'){
   if(session.status!=='in_progress'||round?.status!=='started')return Response.json({error:'Scores can only be entered or corrected while this round is still open with the host.'},{status:409});
   if(!clientId)return Response.json({error:'Scorer device id required'},{status:400});
-  const match=(await base44.asServiceRole.entities.KotcMatch.filter({id:String(body.matchId||''),session_id:session.id,round_id:round.id}))?.[0];if(!match)return Response.json({error:'Current-round match not found'},{status:404});
+  const match=(await withRateLimitRetry('scorer current match read',()=>base44.asServiceRole.entities.KotcMatch.filter({id:String(body.matchId||''),session_id:session.id,round_id:round.id})))?.[0];if(!match)return Response.json({error:'Current-round match not found'},{status:404});
   if(!lockActive(match)||String(match.scoring_lock_owner||'')!==clientId)return Response.json({error:`Court ${match.ladder_court_rank} is not locked to this scorer. Tap Score/Edit again.`,locked:true,retry_after_seconds:lockSeconds(match)},{status:423});
   const correcting=requestedAction==='correct';
   if(correcting&&!RESOLVED.has(match.status))return Response.json({error:'This score has not been saved yet.'},{status:409});
