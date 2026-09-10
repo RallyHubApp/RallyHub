@@ -585,3 +585,120 @@ test('desktop timer: full screen centres a dominant clock and exits back into th
   await expect(page.getByTitle('Full screen timer')).toBeVisible({timeout:1500});
   await expect.poll(async()=>Math.round((await page.getByTestId('kotc-timer').boundingBox())?.height||9999),{timeout:2000}).toBeLessThan(520);
 });
+
+test('KOTC hall-pressure simulator: 18 players, 12 rounds, slow provider, rapid scoring, phone focus churn',async({page},testInfo)=>{
+  test.setTimeout(120000);
+  await page.setViewportSize({width:390,height:844});
+  const stressProfile={
+    getKotcV2State:[220,900,350],
+    createKotcV2Session:[850],
+    startKotcRound:[1250,420,1750,680,1100,510,1500,760],
+    saveKotcScore:[900,1650,520,1250,700,1450,430,1050],
+    prepareKotcNextRound:[1850,620,2250,880,1600,700],
+    kotcTimer:[70,110,60],
+    endKotcSession:[1450],
+  };
+  const model=createModel({stressProfile});
+  const report={rounds:12,start_ack_ms:[],start_confirm_ms:[],score_ack_ms:[],score_burst_confirm_ms:[],prepare_ack_ms:[],prepare_confirm_ms:[]};
+  await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+  await page.goto('/e2e/kotcHarness.html');
+  await page.getByRole('button',{name:'Player 17',exact:true}).click();
+  await page.getByRole('button',{name:'Player 18',exact:true}).click();
+  await page.getByTestId('kotc-create-session').click();
+  await expect(page.getByTestId('kotc-round-editor')).toBeVisible({timeout:3000});
+
+  for(let round=1;round<=12;round++){
+    const start=page.getByTestId('kotc-start-round');
+    await expect(start).toContainText(`START ROUND ${round}`);
+    const startAt=Date.now();
+    await start.click();
+    await expect(start).toContainText('Starting…',{timeout:250});
+    report.start_ack_ms.push(Date.now()-startAt);
+    await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Starting Round ${round}`,{timeout:300});
+    await sleep(180);
+    await page.evaluate(()=>{window.dispatchEvent(new Event('focus'));document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:false}));});
+    await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Starting Round ${round}`);
+    await expect(start).toBeDisabled();
+    await expect(page.getByText(`Round ${round} — LIVE`)).toBeVisible({timeout:3500});
+    report.start_confirm_ms.push(Date.now()-startAt);
+
+    const hostClaimsBefore=model.calls.filter(c=>c.body?.commandType==='host_claim_score').length;
+    for(let court=1;court<=4;court++){
+      await page.getByTestId(`kotc-score-${court}-a`).fill(String(8+((round+court)%6)));
+      await page.getByTestId(`kotc-score-${court}-b`).fill(String(2+((round*2+court)%5)));
+    }
+    const burstAt=Date.now();
+    for(let court=1;court<=4;court++){
+      const button=page.getByTestId(`kotc-complete-${court}`);
+      const ackAt=Date.now();
+      await button.click();
+      await expect(button).toContainText('Saving…',{timeout:250});
+      report.score_ack_ms.push(Date.now()-ackAt);
+    }
+    await sleep(220);
+    await page.evaluate(()=>{window.dispatchEvent(new Event('focus'));document.dispatchEvent(new Event('visibilitychange'));});
+    for(let court=1;court<=4;court++)await expect(page.getByTestId(`kotc-score-card-${court}`)).toContainText('Saved',{timeout:3000});
+    report.score_burst_confirm_ms.push(Date.now()-burstAt);
+    const hostClaimsAfter=model.calls.filter(c=>c.body?.commandType==='host_claim_score').length;
+    expect(hostClaimsAfter,`Round ${round} must not claim scorer leases when no player scorer owns a court`).toBe(hostClaimsBefore);
+    await expect(page.getByText(`All scores saved for Round ${round}`)).toBeVisible();
+
+    if(round<12){
+      const prepare=page.getByTestId('kotc-prepare-next-round');
+      const prepAt=Date.now();
+      await prepare.click();
+      await expect(prepare).toContainText('Preparing Round…',{timeout:250});
+      report.prepare_ack_ms.push(Date.now()-prepAt);
+      await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Preparing Round ${round+1}`,{timeout:300});
+      await sleep(300);
+      await page.evaluate(()=>{window.dispatchEvent(new Event('focus'));document.dispatchEvent(new Event('visibilitychange'));});
+      await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Preparing Round ${round+1}`);
+      await expect(prepare).toBeDisabled();
+      await expect(page.getByTestId('kotc-start-round')).toContainText(`START ROUND ${round+1}`,{timeout:4000});
+      report.prepare_confirm_ms.push(Date.now()-prepAt);
+    }
+  }
+
+  const roundsBeforeFinish=model.rounds.length;
+  const finish=page.getByTestId('kotc-finish-after-scores');
+  await expect(finish).toBeVisible();
+  const finishAt=Date.now();
+  await finish.click();
+  await expect(page.getByTestId('kotc-host-action-status')).toContainText('Finishing session',{timeout:300});
+  await sleep(250);
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await expect(page.getByTestId('kotc-host-action-status')).toContainText('Finishing session');
+  await expect(page.getByTestId('kotc-podium')).toBeVisible({timeout:3500});
+  report.finish_to_podium_ms=Date.now()-finishAt;
+  expect(model.rounds.length,'Finish after scores must not manufacture an unused next round').toBe(roundsBeforeFinish);
+  expect(model.rounds.length).toBe(12);
+
+  const callsByName=Object.fromEntries([...new Set(model.calls.map(c=>c.name))].map(name=>[name,model.calls.filter(c=>c.name===name).length]));
+  report.calls_by_name=callsByName;
+  report.total_function_calls=model.calls.length;
+  report.full_state_reads=callsByName.getKotcV2State||0;
+  report.host_claim_score_calls=model.calls.filter(c=>c.body?.commandType==='host_claim_score').length;
+  report.max_start_ack_ms=Math.max(...report.start_ack_ms);
+  report.max_start_confirm_ms=Math.max(...report.start_confirm_ms);
+  report.max_score_ack_ms=Math.max(...report.score_ack_ms);
+  report.max_score_burst_confirm_ms=Math.max(...report.score_burst_confirm_ms);
+  report.max_prepare_ack_ms=Math.max(...report.prepare_ack_ms);
+  report.max_prepare_confirm_ms=Math.max(...report.prepare_confirm_ms);
+
+  expect(report.max_start_ack_ms).toBeLessThanOrEqual(250);
+  expect(report.max_score_ack_ms).toBeLessThanOrEqual(250);
+  expect(report.max_prepare_ack_ms).toBeLessThanOrEqual(250);
+  expect(report.max_start_confirm_ms).toBeLessThanOrEqual(2300);
+  expect(report.max_score_burst_confirm_ms).toBeLessThanOrEqual(2300);
+  expect(report.max_prepare_confirm_ms).toBeLessThanOrEqual(2800);
+  expect(report.full_state_reads,'Normal live play must not poll/reload heavyweight state after successful actions').toBeLessThanOrEqual(3);
+  expect(report.host_claim_score_calls,'Typing host scores must not create empty scorer-takeover traffic').toBe(0);
+  expect(callsByName.startKotcRound).toBe(12);
+  expect(callsByName.saveKotcScore).toBe(48);
+  expect(callsByName.prepareKotcNextRound).toBe(11);
+  expect(callsByName.endKotcSession).toBe(1);
+  expect(report.total_function_calls,'12-round host journey should remain inside a compact API-call budget').toBeLessThanOrEqual(95);
+
+  console.log(`KOTC HALL-PRESSURE SIMULATOR REPORT\n${JSON.stringify(report,null,2)}`);
+  await testInfo.attach('kotc-hall-pressure-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
+});
