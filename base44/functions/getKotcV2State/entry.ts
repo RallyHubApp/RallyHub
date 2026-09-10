@@ -32,7 +32,7 @@ Deno.serve(async(req)=>{try{
    const personById=Object.fromEntries((people||[]).map((p:any)=>[p.id,p]));
    contactDirectory=Object.fromEntries((playerRecords||[]).map((player:any)=>{
     const person=personById[player.person_id]||{};
-    const emergencyName=String(person.emergency_contact_name||'').trim();
+    const emergencyName=String(person.emergency_contact_name||person.emergency_contact_raw||player.emergency_contact||'').trim();
     const emergencyRelationship=String(person.emergency_contact_relationship||'').trim();
     const emergencyMobile=String(person.emergency_mobile||'').trim();
     const emergencyLabel=[emergencyName,emergencyRelationship].filter(Boolean).join(' — ');
@@ -41,7 +41,7 @@ Deno.serve(async(req)=>{try{
       emergency_name:emergencyName,
       emergency_relationship:emergencyRelationship,
       emergency_mobile:emergencyMobile,
-      emergency_contact:emergencyLabel||person.emergency_contact_raw||player.emergency_contact||'',
+      emergency_contact:emergencyLabel||emergencyName||'',
     }];
    }));
   }
