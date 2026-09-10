@@ -35,7 +35,10 @@ test('17 members + 1 one-off guest creates event participant only',async({page})
   });
 
   await page.goto('/e2e/kotcGuestHarness.html');
-  await expect(page.getByText('18 players · 4 active courts · 2 bench')).toBeVisible();
+  const setup=page.getByTestId('kotc-setup');
+  await expect(setup).toContainText('18 players');
+  await expect(setup).toContainText('4 courts');
+  await expect(setup).toContainText('2 bench');
   await expect(page.getByRole('button',{name:'Guest One',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Member 16',exact:true}).click();
   await page.getByRole('button',{name:'Member 17',exact:true}).click();
