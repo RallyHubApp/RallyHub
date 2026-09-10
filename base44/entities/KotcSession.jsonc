@@ -110,13 +110,14 @@
     "seeding_mode": {
       "type": "string",
       "enum": [
+        "roster_order",
         "internal_rating",
         "dupr",
         "manual",
         "previous_kotc",
         "random_seeded"
       ],
-      "default": "manual"
+      "default": "roster_order"
     },
     "random_seed": {
       "type": "string"
