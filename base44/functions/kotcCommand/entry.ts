@@ -263,7 +263,7 @@ Deno.serve(async (req) => {
       return Response.json({success:true,session,round:updatedRound});
     }
 
-    const duplicates = await base44.asServiceRole.entities.KotcCommandLog.filter({ session_id:session.id, command_id:commandId });
+    const duplicates = await withRateLimitRetry('command duplicate check',()=>base44.asServiceRole.entities.KotcCommandLog.filter({ session_id:session.id, command_id:commandId }));
     if (duplicates?.length) {
       const existing = duplicates[0];
       return Response.json({ duplicate:true, commandId, status:existing.status, result:existing.result_json ? JSON.parse(existing.result_json) : null });
@@ -274,11 +274,11 @@ Deno.serve(async (req) => {
       return Response.json({ conflict:true, error:'Session changed since you opened it.', currentSessionRevision, expectedSessionRevision:Number(body.expectedSessionRevision) }, { status:409 });
     }
 
-    commandLog = await base44.asServiceRole.entities.KotcCommandLog.create({
+    commandLog = await withRateLimitRetry('command log create',()=>base44.asServiceRole.entities.KotcCommandLog.create({
       tenant_id:session.tenant_id, club_id:session.club_id, session_id:session.id,
       command_id:commandId, command_type:commandType, expected_session_revision:Number(body.expectedSessionRevision ?? currentSessionRevision),
       status:'received', payload_json:JSON.stringify(body), issued_by_user_id:user.id, issued_at:nowIso(),
-    });
+    }));
 
     let result:any = null;
     const now = nowIso();
