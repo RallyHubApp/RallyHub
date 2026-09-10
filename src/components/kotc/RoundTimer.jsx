@@ -279,7 +279,7 @@ export default function RoundTimer({
       ref={timerRef}
       style={floating && !fullscreen ? { left: position.x, top: position.y, width: 'min(92vw, 360px)' } : undefined}
       className={cn(
-        'glass rounded-2xl p-4 sm:p-5 space-y-4 border',
+        'glass rounded-2xl p-3 sm:p-4 space-y-3 border',
         isRest ? 'border-yellow-400/30' : 'border-primary/20',
         floating && !fullscreen && 'fixed z-[90] shadow-2xl bg-background/95 backdrop-blur-xl',
         fallbackFullscreen && 'fixed inset-0 z-[100] rounded-none bg-background flex flex-col justify-center p-6 sm:p-8',
@@ -312,7 +312,7 @@ export default function RoundTimer({
       </div>
 
       <div className={cn(
-        'font-mono font-black text-center tracking-tight text-6xl sm:text-8xl leading-none',
+        'font-mono font-black text-center tracking-tight text-5xl sm:text-6xl leading-none',
         isRest ? 'text-yellow-400' : 'text-primary',
         floating && !fullscreen && 'text-5xl',
         fullscreen && 'text-[18vw] sm:text-[14vw]'
@@ -320,12 +320,12 @@ export default function RoundTimer({
         <span data-testid="kotc-timer-value">{formatTime(seconds)}</span>
       </div>
 
-      <div className="h-2.5 sm:h-3 bg-secondary rounded-full overflow-hidden">
+      <div className="h-2 bg-secondary rounded-full overflow-hidden">
         <div className={cn('h-full rounded-full transition-all duration-300', isRest ? 'bg-yellow-400' : 'bg-primary')} style={{ width: `${pct * 100}%` }} />
       </div>
 
       {!fullscreen && !floating && (
-        <div className="flex items-center gap-3 rounded-2xl bg-secondary/60 p-3">
+        <div className="flex items-center gap-3 rounded-xl bg-secondary/50 px-3 py-2">
           <Volume2 className="w-4 h-4 text-muted-foreground" />
           <input type="range" min="0" max="1" step="0.05" value={volume} onChange={event => setVolume(Number(event.target.value))} className="w-full" />
           <span className="text-xs font-mono text-muted-foreground w-10 text-right">{Math.round(volume * 100)}%</span>
