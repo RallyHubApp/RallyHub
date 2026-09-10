@@ -22,6 +22,7 @@ const scorerUi=read('src/pages/PublicKotcScorer.jsx');
 const workflow=read('src/lib/kotcV2Workflow.js');
 const dashboard=read('src/pages/Dashboard.jsx');
 const hostSessionPage=read('src/pages/KotcHostSession.jsx');
+const mobileHostTest=read('e2e/kotc-host-journey.spec.mjs');
 
 // Super Admin / host boundary.
 includes(access,"caller.role!=='admin'",'only platform admins may grant or revoke delegated host access');
@@ -123,7 +124,9 @@ includes(create,"KotcRoundSlot.bulkCreate(slotPayload)",'Round 1 slot creation m
 includes(create,"KotcMatch.bulkCreate(matchPayload)",'Round 1 match creation must be batched rather than one write per court');
 includes(create,"retry('session create'",'KOTC session creation must internally retry Base44 provider rate limits');
 includes(create,"retry('round1 slots bulk create'",'Round 1 slot batch must internally retry Base44 provider rate limits');
-includes(hostUi,"PageTransitionEvent",'host browser test must cover mobile back-forward restoration');
+includes(hostUi,"'pageshow'",'host UI must reconcile authoritative state when a mobile browser restores the page');
+includes(hostUi,'kotc-quick-links','host UI must expose scoring/public links without backwards navigation');
+includes(mobileHostTest,'PageTransitionEvent','mobile host robot must exercise back-forward-cache restoration');
 includes(command,'command-log finalisation skipped after successful sporting write','secondary command-log failure must not report sporting failure');
 
 console.log(`KOTC access/architecture gate: PASS\n${checks} role, privacy, scoring-lock, membership and correction checks, 0 failures.`);
