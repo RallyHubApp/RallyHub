@@ -37,13 +37,14 @@ const TABS = [
 const DEFAULT_SETUP = {
   clubAName: 'Clare Pickleball Club', clubALogo: '', clubAPrimary: '#2563eb', clubASecondary: '#facc15',
   clubBName: 'Galway Pickleball', clubBLogo: '', clubBPrimary: '#7f1d1d', clubBSecondary: '#f8fafc',
-  courts: 4, availableMinutes: 180, playMinutes: 10, changeoverMinutes: 2,
+  courts: 4, plannedPlayersTotal: 32, availableMinutes: 180, playMinutes: 10, changeoverMinutes: 2,
   includeBreak: true, breakMinutes: 20, breakAfterRound: 6,
   matchType: 'timed', target: 11, winBy: 1, drawsAllowed: true,
   compositionMode: 'open', showcaseEnabled: true, showcasePoints: 5, potEnabled: true, juniorDisplayMode: false,
 };
 
 function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
+function durationLabel(minutes) { const total = Math.max(0, Math.round(Number(minutes) || 0)); const h = Math.floor(total / 60); const m = total % 60; return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`; }
 function genderKey(value) { const v = String(value || '').trim().toLowerCase(); return v.startsWith('f') ? 'female' : v.startsWith('m') ? 'male' : ''; }
 function privacyName(name, junior) { if (!junior) return name || ''; const parts = String(name || '').trim().split(/\s+/).filter(Boolean); return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : (parts[0] || ''); }
 
