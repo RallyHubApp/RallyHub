@@ -307,11 +307,8 @@ async function installMockBackend(page, model) {
 }
 
 async function dismissTimerFullscreen(page) {
-  const control = page.getByTitle('Full screen timer');
-  if (await control.count()) await control.first().click();
-  // Leaving fullscreen intentionally floats the timer for live hall use. The automated
-  // host journey docks it again so it cannot physically cover controls underneath and
-  // distort click-latency measurements.
+  const exit = page.getByTitle('Exit full screen timer');
+  if (await exit.count()) await exit.first().click();
   const dock = page.getByTitle('Dock timer back in page');
   if (await dock.count()) await dock.first().click();
 }
