@@ -427,7 +427,7 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   expect(model.rounds.find(r => r.round_number === 1)?.status).toBe('started');
   started = Date.now();
   await page.getByTestId('kotc-prepare-next-round').click();
-  await expect(page.getByText('START ROUND 2')).toBeVisible({ timeout: 2200 });
+  await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 2', { timeout: 2200 });
   metric(report, 'round1_review_to_round2_editor_ms', Date.now() - started, 2200);
   expect(model.rounds.find(r => r.round_number === 1)?.status).toBe('completed');
 
@@ -445,7 +445,7 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   report.round2_score_save_ms = await scoreCurrentRound(page, 4, 10);
   await expect(page.getByText('All scores saved for Round 2')).toBeVisible({ timeout: 1800 });
   await page.getByTestId('kotc-prepare-next-round').click();
-  await expect(page.getByText('START ROUND 3')).toBeVisible({ timeout: 2200 });
+  await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 3', { timeout: 2200 });
   const round3Ids = new Set(model.slots.filter(s => s.round_id === 'round-3').map(s => s.participant_id));
   expect(round3Ids.has('participant-03'), 'one-round rest player must not be assigned in Round 3').toBe(false);
 
