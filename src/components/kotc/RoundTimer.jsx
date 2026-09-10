@@ -240,7 +240,7 @@ export default function RoundTimer({
       if (fullscreen || document.fullscreenElement) {
         if (document.fullscreenElement) await document.exitFullscreen?.();
         setFullscreen(false);
-        setFloating(true);
+        setFloating(false);
       } else if (timerRef.current?.requestFullscreen) {
         await timerRef.current.requestFullscreen();
         setFullscreen(true);
@@ -250,7 +250,7 @@ export default function RoundTimer({
         setFloating(false);
       }
     } catch {
-      if (fullscreen) { setFullscreen(false); setFloating(true); }
+      if (fullscreen) { setFullscreen(false); setFloating(false); }
       else { setFullscreen(true); setFloating(false); }
     }
   };
@@ -305,7 +305,7 @@ export default function RoundTimer({
           <Button variant="outline" size="icon" onClick={() => setFloating(value => !value)} title={floating ? 'Dock timer back in page' : 'Float and move timer'}>
             {floating ? <X className="w-4 h-4" /> : <Move className="w-4 h-4" />}
           </Button>
-          <Button variant="outline" size="icon" onClick={toggleFullscreen} title="Full screen timer">
+          <Button variant="outline" size="icon" onClick={toggleFullscreen} title={fullscreen ? 'Exit full screen timer' : 'Full screen timer'}>
             {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </Button>
         </div>
