@@ -559,6 +559,19 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const pauseTimer = async () => { if (await timerAction('pause')) speak('Event paused.'); };
   const resumeTimer = async () => { if (await timerAction('resume')) speak(`${roundLabel(currentRound)}. Resume play.`); };
   const resetTimer = () => timerAction('reset');
+  const preparedRoundMinutes = timerState?.phase === 'play' && Number(timerState?.round || 0) === Number(currentRound) && !timerState?.running && Number(timerState?.remaining_seconds || 0) > 0
+    ? Math.max(1, Math.round(Number(timerState.remaining_seconds) / 60))
+    : Number(event?.play_minutes || 10);
+  const setRoundMinutes = async value => {
+    const minutes = Math.max(1, Math.min(60, Math.round(Number(value) || Number(event?.play_minutes || 10))));
+    if (!event || !canManageEvent || timerState?.running) return;
+    try {
+      const res = await base44.functions.invoke('updateClubChallengeTimer', { eventId:event.id, action:'set_round_minutes', minutes, expectedRevision:Number(event.timer_revision || 0) });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      await refetchEvent();
+      toast.success(`${roundLabel(currentRound)} set to ${minutes} minutes.`);
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not change this round duration'); await refetchEvent(); }
+  };
   const fmtTimer = s => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
   const testVoice = () => speak(`${roundLabel(currentRound)}. Play. ${Number(event?.play_minutes || 10)} minutes.`, { force: true });
   const runCompressedTimerAudioTest = async () => {
