@@ -81,7 +81,7 @@ ok(champions.participantIds.join('|')==='p1|p2','Court 1 Champions preserve winn
 // UI lifecycle rehearsal.
 ok(!view.includes("doCommand('confirm_round'"),'redundant confirm-round UI removed');
 ok(view.includes("functions.invoke('startKotcRound'"),'single START ROUND path is wired through the dedicated start endpoint');
-ok(view.includes("doCommand('generate_next_round'"),'generate next round wired');
+ok(view.includes("commandType:'generate_next_round'")&&view.includes('preparingRound'),'Prepare Next Round uses the explicit reconciliation-aware generation flow');
 ok(view.includes("doCommand('pause_session'"),'pause wired');
 ok(view.includes("doCommand('resume_session'"),'resume wired');
 ok(view.includes('data-testid="kotc-finish-session"')&&view.includes('Finish Session'),'finish control is available in Session Menu');
