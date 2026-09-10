@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Crown, Play, Pause, Trophy, AlertTriangle, GripVertical, Undo2, UserRound, HeartPulse, LogOut, Clock3, Menu, Lock, Unlock, Phone, History, Settings2, X, Pencil, Link2, Mail, ArrowLeft } from 'lucide-react';
+import { Crown, Play, Pause, Trophy, AlertTriangle, GripVertical, Undo2, UserRound, HeartPulse, LogOut, Clock3, Menu, Lock, Unlock, Phone, History, Settings2, X, Pencil, Link2, Mail, ArrowLeft, ArrowUp, ArrowDown } from 'lucide-react';
 import RoundTimer from './RoundTimer';
 import KotcHostAccessPanel from './KotcHostAccessPanel';
 import KotcSetupPanel from './KotcSetupPanel';
@@ -16,6 +16,19 @@ import { activeCourtCount } from '@/lib/kotcV2Domain';
 function commandId(prefix='kotc'){return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;}
 function errMsg(error){return error?.response?.data?.error||error?.data?.error||error?.message||'Unexpected KOTC error';}
 const RESOLVED=new Set(['completed','retired','abandoned','not_played']);
+
+function HostScrollControls(){
+  const [state,setState]=useState({up:false,down:false});
+  useEffect(()=>{
+    const update=()=>{const root=document.documentElement;const top=window.scrollY||root.scrollTop||0;const max=Math.max(0,root.scrollHeight-window.innerHeight);setState({up:top>80,down:top<max-80});};
+    update();window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);const id=setInterval(update,1000);return()=>{window.removeEventListener('scroll',update);window.removeEventListener('resize',update);clearInterval(id);};
+  },[]);
+  if(!state.up&&!state.down)return null;
+  return <div className="hidden md:flex fixed right-4 bottom-6 z-[80] flex-col gap-2" data-testid="kotc-scroll-controls">
+    <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full shadow-lg border" aria-label="Scroll up" disabled={!state.up} onClick={()=>window.scrollBy({top:-Math.max(320,window.innerHeight*0.72),behavior:'smooth'})}><ArrowUp className="w-5 h-5"/></Button>
+    <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full shadow-lg border" aria-label="Scroll down" disabled={!state.down} onClick={()=>window.scrollBy({top:Math.max(320,window.innerHeight*0.72),behavior:'smooth'})}><ArrowDown className="w-5 h-5"/></Button>
+  </div>;
+}
 function shuffle(list){const a=[...list];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function drawOrderFromRanking(rankedIds,benchIds,courts,method){const bench=new Set(benchIds);const active=rankedIds.filter(id=>!bench.has(id));if(method==='pure_random')return [...shuffle(active),...benchIds];if(method==='strict')return [...active,...benchIds];const c=Math.max(1,courts);const tiers=[];for(let i=0;i<4;i++)tiers.push(shuffle(active.slice(i*c,(i+1)*c)));const balanced=[];for(let court=0;court<c;court++)for(let tier=0;tier<4;tier++)if(tiers[tier]?.[court])balanced.push(tiers[tier][court]);return [...balanced,...benchIds];}
 
