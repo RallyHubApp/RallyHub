@@ -358,6 +358,10 @@ Deno.serve(async (req) => {
         if(activeIds.length!==activeCourts*4)return Response.json({error:'Court transition did not produce exactly four players per active court.'},{status:409});
         for(let rank=1;rank<=activeCourts;rank++){const four=activeIds.slice((rank-1)*4,rank*4);const split=splitFour(four,partnerCounts,`${session.random_seed}|court-transition|r${nextNumber}|c${rank}`,activeLocks);for(const [side,ids] of [['A',split.teamA],['B',split.teamB]] as any)for(let i=0;i<2;i++)finalSlots.push({participant_id:ids[i],ladder_court_rank:rank,team_side:side,slot_number:i+1,assignment_type:'sporting_movement',destination_from_prior_round:destinationRank[ids[i]]});}
       }
+      // Persistent host pair locks are a sporting invariant, not a warning preference.
+      // Auto-repair the generated proposal before any RoundSlot/Match is persisted.
+      finalSlots=enforcePersistentLocks(finalSlots,activeLocks);
+      for(const lock of activeLocks){const a=String(lock.participant1_id),b=String(lock.participant2_id);const sa=finalSlots.find((s:any)=>String(s.participant_id)===a),sb=finalSlots.find((s:any)=>String(s.participant_id)===b);if(sa&&sb&&(Number(sa.ladder_court_rank)!==Number(sb.ladder_court_rank)||String(sa.team_side)!==String(sb.team_side)))return Response.json({error:`Locked pair ${lock.pair_name||''} could not be kept together automatically.`},{status:409});}
       const existingNext=(rounds||[]).filter((r:any)=>Number(r.round_number)===nextNumber&&!['superseded','abandoned'].includes(r.status)).sort((a:any,b:any)=>Number(b.proposal_revision||0)-Number(a.proposal_revision||0))[0];
       if(existingNext){
         session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId,current_round_number:nextNumber,current_round_id:existingNext.id});
