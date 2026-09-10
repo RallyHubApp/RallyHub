@@ -341,7 +341,11 @@ test('18-player desktop Preview host journey: setup → controls → rounds → 
   page.on('dialog', dialog => dialog.accept());
 
   await page.goto('/e2e/kotcHarness.html');
-  await expect(page.getByText('18 players · 4 active courts · 2 bench')).toBeVisible();
+  await expect(page.getByTestId('kotc-setup')).toBeVisible();
+  await expect(page.getByTestId('kotc-setup')).toContainText('18 players');
+  await expect(page.getByTestId('kotc-setup')).toContainText('4 courts');
+  await expect(page.getByTestId('kotc-setup')).toContainText('2 bench');
+  await expect(page.getByTestId('kotc-setup-summary')).toContainText('Create Round 1');
 
   await page.getByRole('button', { name: 'Player 17', exact: true }).click();
   await page.getByRole('button', { name: 'Player 18', exact: true }).click();
