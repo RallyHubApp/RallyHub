@@ -16,7 +16,7 @@ ok(v2.includes("functions.invoke('getKotcV2State'"),'state read is server-author
 ok(v2.includes("functions.invoke('kotcCommand'"),'mutations use command endpoint');
 ok(v2.includes("'correct_match':'complete_match'"),'score completion wired');
 ok(!v2.includes("doCommand('confirm_round'"),'redundant separate round confirmation removed');
-ok(v2.includes("commandType:'start_proposed_round'"),'single host START ROUND path wired');
+ok(v2.includes("functions.invoke('startKotcRound'"),'single host START ROUND path uses the dedicated start function');
 ok(v2.includes('setTimerStartRoundId(roundId)'),'successful host start arms one-shot timer start');
 ok(v2.includes("doCommand('generate_next_round'"),'next-round generation wired');
 ok(v2.includes("doCommand('pause_session'"),'pause wired');
