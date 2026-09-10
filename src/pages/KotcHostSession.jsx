@@ -35,7 +35,7 @@ export default function KotcHostSession(){
       <Button variant="outline" size="sm" onClick={()=>logout()}><LogOut className="w-4 h-4 mr-1"/>Sign out</Button>
     </header>
     <main className="p-3 sm:p-4 max-w-5xl mx-auto">
-      <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient}/>
+      <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} sessionId={session.id}/>
     </main>
   </div>;
 }
