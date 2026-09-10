@@ -16,16 +16,17 @@ function createModel({failFirstScore=false}={}){
   const match={id:'delegated-match-1',session_id:'delegated-session',round_id:round.id,round_number:1,ladder_court_rank:1,team_a_participant_ids:['participant-1','participant-2'],team_b_participant_ids:['participant-3','participant-4'],status:'scheduled',revision:0,correction_count:0};
   const session={id:'delegated-session',tournament_id:'delegated-host-tournament',name:'Delegated Host KOTC',status:'ready',current_round_number:1,current_round_id:round.id,revision:0,play_minutes:8,scoring_mode:'timed',venue_court_limit:1,available_court_limit:1};
   const calls=[];let failedScoreOnce=false;
-  const state=()=>({session,participants,rounds:[round],slots,matches:[match],fixedPairs:[],contactDirectory:{
+  const contactDirectory={
     'player-1':{phone:'0850000001',emergency_name:'Emergency One',emergency_relationship:'Partner',emergency_mobile:'0860000001'},
     'player-2':{phone:'0850000002',emergency_name:'Emergency Two',emergency_relationship:'Spouse',emergency_mobile:'0860000002'},
     'player-3':{phone:'0850000003',emergency_name:'Emergency Three',emergency_relationship:'Sibling',emergency_mobile:'0860000003'},
     'player-4':{phone:'0850000004',emergency_name:'Emergency Four',emergency_relationship:'Friend',emergency_mobile:'0860000004'},
-    outsider:{phone:'999',emergency_name:'SHOULD NOT APPEAR',emergency_mobile:'999'},
-  },currentAccessRole:'session_host',isAdmin:false});
+  };
+  const state=()=>({session,participants,rounds:[round],slots,matches:[match],fixedPairs:[],contactDirectory:{},currentAccessRole:'session_host',isAdmin:false});
   const handle=async(name,body)=>{
     calls.push({name,body});
     if(name==='getKotcV2State')return state();
+    if(name==='getKotcContacts')return {success:true,contactDirectory};
     if(name==='manageKotcSessionAccess')return {__status:403,error:'Platform admin access required'};
     if(name==='kotcResultsShare')return {success:true,token:'delegated-live-token'};
     if(name==='manageKotcScorerLinks')return {success:true,token:'delegated-score-token'};
