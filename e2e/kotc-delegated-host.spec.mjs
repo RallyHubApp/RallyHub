@@ -67,13 +67,14 @@ test('delegated host: session-only controls, attendee contacts, links and keyboa
   await page.getByTestId('kotc-session-menu').click();
   await page.getByRole('button',{name:'Contacts'}).click();
   await page.getByTestId('kotc-contact-search').fill('Host Player 1');
-  await expect(page.getByText('Host Player 1',{exact:true})).toBeVisible();
-  await expect(page.getByText('Host Player 2',{exact:true})).toHaveCount(0);
+  const contacts=page.getByTestId('kotc-contact-directory');
+  await expect(contacts.getByText('Host Player 1',{exact:true})).toBeVisible();
+  await expect(contacts.getByText('Host Player 2',{exact:true})).toHaveCount(0);
   const memberCall=page.locator('a[href="tel:0850000001"]');const emergencyCall=page.locator('a[href="tel:0860000001"]');
   await expect(memberCall).toBeVisible();await expect(emergencyCall).toBeVisible();
   expect((await memberCall.boundingBox())?.height||0).toBeGreaterThanOrEqual(40);
-  await expect(page.getByText('Emergency One')).toBeVisible();
-  await expect(page.getByText('SHOULD NOT APPEAR')).toHaveCount(0);
+  await expect(contacts.getByText('Emergency One')).toBeVisible();
+  await expect(contacts.getByText('SHOULD NOT APPEAR')).toHaveCount(0);
   await page.getByTestId('kotc-contact-search').fill('');
 
   // Delegated host can prepare player/public links but cannot appoint another host.
