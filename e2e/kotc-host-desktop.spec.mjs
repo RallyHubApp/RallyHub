@@ -308,6 +308,7 @@ async function installMockBackend(page, model) {
       let body = {};
       try { body = request.postDataJSON() || {}; } catch { body = {}; }
       const payload = await model.handleFunction(name, body);
+      if(payload?.__status)return json(route,{error:payload.error},payload.__status);
       return json(route, payload);
     }
     return json(route, []);
