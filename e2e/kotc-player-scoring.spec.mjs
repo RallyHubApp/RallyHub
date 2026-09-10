@@ -76,6 +76,8 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
   await expect(b.getByTestId('scorer-court-1')).toContainText(/another device|LOCKED/);
   await b.getByTestId('scorer-court-2').getByRole('button',{name:'Score This Court'}).click();
   await expect(b.getByTestId('scorer-court-2')).toContainText('Court locked to this device');
+  const bCourt2First=b.getByTestId('scorer-court-2').locator('input').nth(0);
+  await bCourt2First.focus();await b.keyboard.type('123');await expect(bCourt2First).toHaveValue('12');await bCourt2First.fill('');
 
   // Court 1 saves and gives explicit confirmation.
   let card=await fillCourt(a,1,11,7);await card.getByRole('button',{name:'Save Result'}).click();
