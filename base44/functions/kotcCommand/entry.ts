@@ -546,7 +546,7 @@ Deno.serve(async (req) => {
       return Response.json({ error:`Command ${commandType} is not wired in Gate 2.4 yet.` }, { status:400 });
     }
 
-    await base44.asServiceRole.entities.KotcCommandLog.update(commandLog.id, { status:'applied', applied_session_revision:Number(session.revision || currentSessionRevision), result_json:JSON.stringify(result), applied_at:nowIso() });
+    try{await base44.asServiceRole.entities.KotcCommandLog.update(commandLog.id,{status:'applied',applied_session_revision:Number(session.revision||currentSessionRevision),result_json:JSON.stringify(result),applied_at:nowIso()});}catch(error){console.warn('KOTC command-log finalisation skipped after successful sporting write',{sessionId:session.id,commandId,error:String((error as any)?.message||error)});}
     return Response.json(result);
   } catch (error) {
     try {
