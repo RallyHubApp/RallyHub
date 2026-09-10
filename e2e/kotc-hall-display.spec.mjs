@@ -55,7 +55,7 @@ test('hall display: current round, big timer, four courts and podium remain glan
   for(const box of boxes)expect((box?.y||0)+(box?.height||0)).toBeLessThanOrEqual(layout.innerHeight+2);
 
   phase='finished';
-  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
   await expect(page.getByTestId('public-kotc-podium')).toContainText('Guest One');
   const podiumBox=await page.getByTestId('public-kotc-podium').boundingBox();
