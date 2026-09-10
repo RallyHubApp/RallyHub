@@ -32,9 +32,14 @@ ok(command.includes('lease_revision:currentLeaseRevision + 1'),'host takeover is
 // Live host / exception rehearsal.
 ok(view.includes('Host Round Editor'),'host can review and adjust proposed rounds');
 ok(!view.includes('Save Host Adjustments'),'redundant explicit host-adjustment save removed from normal flow');
-ok(view.includes("functions.invoke('kotcCommand'"),'one-tap start uses established KOTC command endpoint');
-ok(command.includes("if (commandType === 'start_proposed_round')"),'start-proposed-round fast path exists before command-log snapshots');
-ok(command.includes("status:'started'"),'fast start path commits the round to started');
+ok(view.includes("functions.invoke('kotcCommand'"),'general live host mutations use the KOTC command endpoint');
+ok(view.includes("functions.invoke('startKotcRound'"),'START ROUND uses the dedicated lightweight start endpoint');
+ok(startCommand.includes("if(!user)return Response.json({error:'Unauthorized'}"),'dedicated start endpoint requires authentication');
+ok(startCommand.includes("Primary session host access required"),'dedicated start endpoint requires primary host access');
+ok(startCommand.includes("round.status==='started'"),'dedicated start endpoint is idempotent after a successful start');
+ok(startCommand.includes("round.status!=='proposed'"),'dedicated start endpoint only starts proposed rounds');
+ok(startCommand.includes("expectedProposalRevision"),'dedicated start endpoint guards the sporting proposal revision');
+ok(startCommand.includes("status:'started'"),'dedicated start endpoint commits the round to started');
 ok(view.includes('Undo Start / Back to Round Setup'),'safe unscored-round recovery is visible');
 ok(command.includes("commandType === 'undo_start_round'"),'undo-start backend command exists');
 ok(command.includes("commandType === 'set_pair_lock'"),'host pair-lock backend command exists');
@@ -75,7 +80,7 @@ ok(champions.participantIds.join('|')==='p1|p2','Court 1 Champions preserve winn
 
 // UI lifecycle rehearsal.
 ok(!view.includes("doCommand('confirm_round'"),'redundant confirm-round UI removed');
-ok(view.includes("commandType:'start_proposed_round'"),'single START ROUND path wired through KOTC command fast path');
+ok(view.includes("functions.invoke('startKotcRound'"),'single START ROUND path is wired through the dedicated start endpoint');
 ok(view.includes("doCommand('generate_next_round'"),'generate next round wired');
 ok(view.includes("doCommand('pause_session'"),'pause wired');
 ok(view.includes("doCommand('resume_session'"),'resume wired');
