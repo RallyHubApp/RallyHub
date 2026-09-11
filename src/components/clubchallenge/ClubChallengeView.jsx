@@ -170,6 +170,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [audioReady, setAudioReady] = useState(false);
   const [hostAction, setHostAction] = useState('');
   const timerCommandRef = React.useRef(false);
+  const sportingActionRef = React.useRef(false);
   const lastTimerAnnouncementRef = React.useRef(new Set());
   const wakeLockRef = React.useRef(null);
   const [roundLabels, setRoundLabels] = useState({});
