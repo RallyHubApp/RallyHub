@@ -68,21 +68,27 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
   await install(aCtx,model);await install(bCtx,model);
   const [a,b]=await Promise.all([openScorer(aCtx),openScorer(bCtx)]);
 
-  // Phone A claims Court 1.
-  await a.getByTestId('scorer-court-1').getByRole('button',{name:'Score This Court'}).click();
-  await expect(a.getByTestId('scorer-court-1')).toContainText('Court 1 ready — enter the score');
+  // First actual digit claims Court 1 for Phone A. No separate claim button is needed.
+  const aCourt1First=a.getByTestId('scorer-court-1').locator('input').nth(0);
+  await aCourt1First.fill('1');
+  await expect(a.getByTestId('scorer-court-1')).toContainText('locked to you');
+  await expect(aCourt1First).toHaveValue('1');
 
-  // Same phone cannot hoard a second court while holding Court 1.
-  await a.getByTestId('scorer-court-2').getByRole('button',{name:'Score This Court'}).click();
+  // Same phone cannot hoard a second court while holding Court 1; the attempted digit never appears.
+  const aCourt2First=a.getByTestId('scorer-court-2').locator('input').nth(0);
+  await aCourt2First.fill('2');
   await expect(a.getByTestId('scorer-court-2')).toContainText('already scoring Court 1');
+  await expect(aCourt2First).toHaveValue('');
 
-  // Phone B cannot take Court 1, but can score Court 2 independently.
-  await b.getByTestId('scorer-court-1').getByRole('button',{name:'Score This Court'}).click();
-  await expect(b.getByTestId('scorer-court-1')).toContainText(/another device|LOCKED/);
-  await b.getByTestId('scorer-court-2').getByRole('button',{name:'Score This Court'}).click();
-  await expect(b.getByTestId('scorer-court-2')).toContainText('Court 2 ready — enter the score');
+  // Phone B cannot take Court 1, but its first digit can claim Court 2 independently.
+  const bCourt1First=b.getByTestId('scorer-court-1').locator('input').nth(0);
+  await bCourt1First.fill('9');
+  await expect(b.getByTestId('scorer-court-1')).toContainText(/another device|LOCKED|being scored/);
+  await expect(bCourt1First).toHaveValue('');
   const bCourt2First=b.getByTestId('scorer-court-2').locator('input').nth(0);
-  await bCourt2First.focus();await b.keyboard.type('123');await expect(bCourt2First).toHaveValue('12');await bCourt2First.fill('');
+  await bCourt2First.fill('7');
+  await expect(b.getByTestId('scorer-court-2')).toContainText('locked to you');
+  await bCourt2First.fill('123');await expect(bCourt2First).toHaveValue('12');await bCourt2First.fill('');
 
   // Court 1 saves and gives explicit confirmation even if Base44 transiently rate-limits
   // the first save attempt. The scorer page must retry instead of exposing a raw 429.
@@ -94,7 +100,7 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
   // Other players on Court 1 can see the saved result but cannot reopen it.
   await expect(b.getByTestId('scorer-court-1')).toContainText('Score saved: 11–7',{timeout:6500});
   await expect(b.getByTestId('scorer-court-1').getByRole('button',{name:'Undo / Update Score'})).toHaveCount(0);
-  await expect(b.getByTestId('scorer-court-1')).toContainText('Only the scorer device that saved it, or the host');
+  await expect(b.getByTestId('scorer-court-1')).toContainText(/Result already entered|host can update/i);
 
   // The scorer device that saved it can reopen and correct while the host has not advanced the round.
   await card.getByRole('button',{name:'Undo / Update Score'}).click();
@@ -125,6 +131,13 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
   expect(mobileLayout.scrollWidth).toBeLessThanOrEqual(mobileLayout.innerWidth+1);
   const updateBox=await card2.getByRole('button',{name:'Undo / Update Score'}).boundingBox();
   expect(updateBox?.height||0).toBeGreaterThanOrEqual(44);
+
+  // The helper correction privilege is deliberately short-lived. Simulate expiry and
+  // force a state refresh: the helper must lose Undo / Update while the host remains authoritative.
+  model.matches[0].completedAt=Date.now()-91000;model.matches[0].lockOwner='';model.matches[0].lockExpires=0;
+  await a.reload();await expect(a.getByText('E2E Player Scoring')).toBeVisible();
+  await expect(a.getByTestId('scorer-court-1').getByRole('button',{name:/Undo \/ Update Score/})).toHaveCount(0);
+  await expect(a.getByTestId('scorer-court-1')).toContainText(/host/i);
 
   await aCtx.close();await bCtx.close();
 });
