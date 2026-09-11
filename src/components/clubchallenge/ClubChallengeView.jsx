@@ -1158,9 +1158,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
           <div className="rounded-xl border border-border bg-card p-5 space-y-4">
             <div>
-              <p className="text-sm font-semibold">Simulation controls</p>
-              <p className="text-xs text-muted-foreground mt-1">These controls are deliberately restricted to events containing the Gate 3 dummy roster, so live club data cannot be bulk-scored by mistake.</p>
+              <p className="text-sm font-semibold">TEST MODE controls</p>
+              <p className="text-xs text-muted-foreground mt-1">Use these only with the RallyHub dummy roster. The full-populate action uses one authorised server command so a host can inspect every populated screen without creating dozens of browser requests or risking Base44 rate-limit problems.</p>
             </div>
+            <div className="rounded-xl border-2 border-primary/30 bg-primary/10 p-4"><p className="text-xs uppercase tracking-wider font-bold text-primary">First-time host rehearsal</p><p className="text-sm font-semibold mt-1">Populate the complete dummy event</p><p className="text-xs text-muted-foreground mt-1">Fills all normal scores, the Showcase Final and sample Player of Tournament votes, then opens Results. Afterward you can revisit Draw and Live Event to see those screens fully populated too.</p><Button className="mt-3 w-full sm:w-auto min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={populateFullPracticeResult}><Trophy className="w-4 h-4 mr-2" />Populate Full Test Event</Button></div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
               <Button className="min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={() => runEndScenario('clear_winner', 'Clear winner after 48')}>Simulate 48 — Clear Winner</Button>
               <Button className="min-h-11" disabled={!isGate3TestEvent || simulating || !matches.length} onClick={() => runEndScenario('tie_metrics', 'Tie — decide by metrics')}>Simulate Tie — Use Metrics</Button>
