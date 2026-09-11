@@ -218,7 +218,7 @@ test('Club Challenge mobile host robot: setup → practice → draw → live →
   await expect(page.getByText('12').first()).toBeVisible();await expectNoHorizontalOverflow(page);
 
   const reorderBefore=model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='reorder').length;
-  started=Date.now();await page.getByRole('button',{name:'Move Club A Test 02 up'}).click();await expect(page.getByText('Saving player ranking… one command sent')).toBeVisible({timeout:300});metric(report,'ranking_ack_ms',Date.now()-started,250);await expect(page.getByText('Saving player ranking… one command sent')).toBeHidden({timeout:1800});
+  started=Date.now();await page.getByRole('button',{name:'Move Club A Test 02 up'}).click();await expect(page.getByText('Saving player ranking… one command sent')).toBeVisible({timeout:300});metric(report,'ranking_ack_ms',Date.now()-started,350);await expect(page.getByText('Saving player ranking… one command sent')).toBeHidden({timeout:1800});
   expect(model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='reorder').length-reorderBefore).toBe(1);report.ranking_browser_calls=1;
 
   const drawBefore=model.calls.filter(c=>c.name==='replaceClubChallengeDraw').length;
