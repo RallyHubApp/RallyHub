@@ -20,7 +20,7 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   await page.route(`**/api/apps/${APP_ID}/functions/**`,async route=>{
     const name=new URL(route.request().url()).pathname.split('/functions/')[1]?.split('/')[0]||'';functionCalls.push(name);
     if(name==='getKotcV2State')return json(route,state);
-    if(name==='kotcResultsShare')return json(route,{success:true,token:'share-token'});
+    if(name==='kotcResultsShare'){let body={};try{body=route.request().postDataJSON()||{};}catch{}if(body.action==='email_players'){await new Promise(resolve=>setTimeout(resolve,350));return json(route,{success:true,token:'share-token',sent:16,skipped:1,alreadySent:0,failed:0});}return json(route,{success:true,token:'share-token'});}
     return json(route,{success:true});
   });
   await page.route(`**/api/apps/${APP_ID}/analytics/**`,route=>json(route,{success:true}));
@@ -36,5 +36,8 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   await expect(page.getByRole('button',{name:'Email Players'})).toBeVisible();
   await expect(page.getByText('King of the Court · Hall Display')).toHaveCount(0);
   expect(functionCalls.filter(x=>x==='kotcResultsShare')).toHaveLength(0);
+  await page.getByTestId('kotc-email-players').click();
+  await expect(page.getByTestId('kotc-email-players')).toContainText('Sending…');
+  await expect(page.getByTestId('kotc-email-status')).toContainText('Results email complete · 16 sent · 1 skipped');
   expect(errors).toEqual([]);
 });
