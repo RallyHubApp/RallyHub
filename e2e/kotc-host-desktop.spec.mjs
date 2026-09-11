@@ -453,17 +453,12 @@ test('18-player desktop Preview host journey: setup → controls → rounds → 
   await expect(page.getByText('Round 1 — LIVE')).toBeVisible({ timeout: 1800 });
   metric(report, 'restart_to_live_ms', Date.now() - started, 1500);
   await dismissTimerFullscreen(page);
-  // A player scorer may acquire Court 1 after the host screen loaded. Host authority is
-  // applied on the actual sporting SAVE transaction, never by creating a focus-time call.
-  const round1Court1=model.matches.find(m=>m.id==='match-r1-c1');
-  round1Court1.scoring_lock_owner='player-device-1';
-  round1Court1.scoring_lock_expires_at=new Date(Date.now()+90000).toISOString();
+  // Host-only sessions remain fast: ordinary score entry does not create scorer-lease traffic.
+  // Collaborative first-claim-wins locking is covered separately by the host + two scorer robot.
   const claimsBefore=model.calls.filter(c=>c.body?.commandType==='host_claim_score').length;
   await page.getByTestId('kotc-score-1-a').focus();
   expect(model.calls.filter(c=>c.body?.commandType==='host_claim_score').length).toBe(claimsBefore);
   report.round1_score_save_ms = await scoreCurrentRound(page, 4, 11);
-  expect(round1Court1.scoring_lock_owner).toBe(null);
-  report.host_displaced_player_scorer=true;
   for (const ms of report.round1_score_save_ms) expect(ms).toBeLessThanOrEqual(1200);
 
   await expect(page.getByText('All scores saved for Round 1')).toBeVisible({ timeout: 1800 });
