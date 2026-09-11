@@ -130,6 +130,10 @@ test('host + two scorer devices: first claim wins, mixed parallel scoring, manua
 
   // Player saves do not magically appear on host: host has only its local Court 3 result until Refresh.
   await expect(host.getByTestId('kotc-next-action')).toContainText('1/4 scores saved');
+  await expect(host.getByTestId('kotc-player-score-toolbar')).toBeVisible();
+  await expect(host.getByTestId('kotc-player-score-toolbar')).toContainText('1/4 saved');
+  const toolbarBeforeCourtOne=await host.evaluate(()=>{const toolbar=document.querySelector('[data-testid="kotc-player-score-toolbar"]'),court=document.querySelector('[data-testid="kotc-score-card-1"]');if(!toolbar||!court)return false;return !!(toolbar.compareDocumentPosition(court)&Node.DOCUMENT_POSITION_FOLLOWING);});
+  expect(toolbarBeforeCourtOne,'Player Scores refresh toolbar should sit immediately before the court score grid').toBe(true);
   const refreshReadsBefore=model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length;
   await host.waitForTimeout(1500);
   expect(model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length).toBe(refreshReadsBefore);
