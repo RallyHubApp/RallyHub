@@ -61,7 +61,7 @@ test('public KOTC link: assignments → live scores → permanent final results 
 test('finished KOTC host management: secure menu, local share, explicit email and post-event correction',async({page})=>{
   const finished=makeState('finished');
   let correctionCalls=0,emailCalls=0,managementCalls=0,publicCalls=0;
-  const management={canManage:true,role:'admin',sessionId:'session-finished',tournamentId:'tournament-finished',sessionName:'E2E Live KOTC',matches:[{id:'match-r3-c1',round_id:'round-3',round_number:3,court:1,team_a_participant_ids:['p1','p2'],team_b_participant_ids:['p3','p4'],team_a:['Player 01','Player 02'],team_b:['Player 03','Player 04'],team_a_score:11,team_b_score:9,winner_side:'A',result_method:'normal',revision:1}]};
+  const management={canManage:true,role:'admin',sessionId:'session-finished',tournamentId:'tournament-finished',sessionName:'E2E Live KOTC',matches:[{id:'match-r1-c1',round_id:'round-1',round_number:1,court:1,team_a_participant_ids:['p1','p2'],team_b_participant_ids:['p3','p4'],team_a:['Player 01','Player 02'],team_b:['Player 03','Player 04'],team_a_score:11,team_b_score:9,winner_side:'A',result_method:'normal',revision:1}]};
   await page.addInitScript(()=>{navigator.share=async payload=>{window.__kotcShared=payload;};});
   await page.route('**/api/apps/**',async route=>{
     const request=route.request();const path=new URL(request.url()).pathname;const marker=`/api/apps/${APP_ID}/functions/`;const idx=path.indexOf(marker);
