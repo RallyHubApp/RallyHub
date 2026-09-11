@@ -146,7 +146,7 @@ includes(command,'command-log finalisation skipped after successful sporting wri
 includes(timerUi,'Sound check. RallyHub timer ready.','KOTC must provide a real spoken sound check before play');
 assert(!timerUi.includes('kotc-voice-mode')&&!timerUi.includes('KOTC announcement voice')&&!timerUi.includes('Timer announcement voice'),'KOTC must not expose unreliable male/female/device voice selectors');
 includes(timerUi,'utterance.volume = 1;','KOTC spoken announcements must use full app-level speech volume');
-includes(timerUi,"Announcements use this device’s default voice",'KOTC must clearly use the device default voice');
+includes(timerUi,"using this device’s default voice",'KOTC must clearly use the device default voice');
 const soundCheckStart=timerUi.indexOf('const testSound = async () =>');
 const soundCheckEnd=timerUi.indexOf('return <div data-testid="kotc-sound-check"',soundCheckStart);
 assert(soundCheckStart>=0&&soundCheckEnd>soundCheckStart&&!timerUi.slice(soundCheckStart,soundCheckEnd).includes('base44.'),'pre-round sound check must be device-local with zero Base44 calls');
