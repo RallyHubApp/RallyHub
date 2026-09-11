@@ -938,6 +938,21 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) { toast.error(e?.message || 'Could not reset simulation'); }
     finally { setSimulating(false); }
   };
+  const populateFullPracticeResult = async () => {
+    if (!event || !isGate3TestEvent || !matches.length || simulating) return;
+    if (!window.confirm('TEST MODE: populate every normal result, Showcase Final and sample Player of Tournament votes so you can inspect the fully completed journey? This is restricted to dummy data.')) return;
+    setSimulating(true);
+    setHostAction('Populating full TEST MODE event… one server command sent');
+    try {
+      const res = await base44.functions.invoke('populateClubChallengePracticeScenario', { eventId:event.id, mode:'full_result' });
+      if (res.data?.error) throw new Error(res.data.error);
+      addSimLog(`Full TEST MODE result populated — ${res.data.normalMatches} normal matches${res.data.showcase ? ' + Showcase' : ''}${res.data.practiceVotes ? ` + ${res.data.practiceVotes} sample votes` : ''}`, 'pass');
+      toast.success('TEST MODE fully populated. Review Draw, Live Event and Results screens.');
+      await sync();
+      setTab('results');
+    } catch (e) { addSimLog(`Full TEST MODE population FAILED — ${e?.response?.data?.error || e?.message || e}`, 'fail'); toast.error(e?.response?.data?.error || e?.message || 'Could not populate full practice result'); }
+    finally { setSimulating(false); setHostAction(''); }
+  };
   const structuralChecks = useMemo(() => {
     const normal = matches.filter(m => !m.is_showcase);
     const roundCount = new Set(normal.map(m => m.round_number)).size;
