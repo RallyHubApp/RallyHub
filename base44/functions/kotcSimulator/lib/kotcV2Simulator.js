@@ -109,8 +109,8 @@ function benchMetricsAfterRound(participants, round, fairnessBenchIds) {
 }
 
 export function simulateSteadyKotcSession({ playerCount, venueCourtLimit, rounds = 9 } = {}) {
-  if (!Number.isInteger(playerCount) || playerCount < 4 || playerCount > 18) throw new Error('playerCount must be 4-18');
-  if (!Number.isInteger(venueCourtLimit) || venueCourtLimit < 1 || venueCourtLimit > 4) throw new Error('venueCourtLimit must be 1-4');
+  if (!Number.isInteger(playerCount) || playerCount < 4 || playerCount > 40) throw new Error('playerCount must be 4-40');
+  if (!Number.isInteger(venueCourtLimit) || venueCourtLimit < 1 || venueCourtLimit > 10) throw new Error('venueCourtLimit must be 1-10');
   if (!Number.isInteger(rounds) || rounds < 1) throw new Error('rounds must be positive');
 
   const scenario = `${playerCount} players / ${venueCourtLimit} venue courts`;
@@ -276,8 +276,8 @@ export function simulateAvailabilityAndCourtTransitions() {
 }
 
 export function runKotcV2ProductionSimulation({ rounds = 9, playerCounts = null, courtLimits = null } = {}) {
-  const counts = playerCounts ?? Array.from({ length: 15 }, (_, index) => index + 4);
-  const courts = courtLimits ?? [1, 2, 3, 4];
+  const counts = playerCounts ?? Array.from({ length: 37 }, (_, index) => index + 4);
+  const courts = courtLimits ?? Array.from({ length: 10 }, (_, index) => index + 1);
   const runs = [];
   for (const playerCount of counts) {
     for (const venueCourtLimit of courts) {
