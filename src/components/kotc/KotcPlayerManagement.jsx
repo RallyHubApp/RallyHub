@@ -11,8 +11,14 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
   const [selectedIds, setSelectedIds] = useState([]);
   const [replaceFrom, setReplaceFrom] = useState('');
   const [replaceTo, setReplaceTo] = useState('');
+  const [replaceSearch, setReplaceSearch] = useState('');
   const [newName, setNewName] = useState('');
-  const availablePlayers = allPlayers.filter(p => !tournament.player_ids?.includes(p.id));
+  const availablePlayers = [...allPlayers]
+    .filter(p => !tournament.player_ids?.includes(p.id))
+    .sort((a,b) => String(a.full_name || '').localeCompare(String(b.full_name || ''), 'en', { sensitivity:'base' }));
+  const replacementMatches = replaceSearch.trim()
+    ? availablePlayers.filter(p => String(p.full_name || '').toLowerCase().includes(replaceSearch.trim().toLowerCase()))
+    : availablePlayers;
   const guestRoster = tournament.kotc_guest_roster || [];
   const guestIds = new Set(guestRoster.map(g => g.guest_id));
 
@@ -21,7 +27,7 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
     queryClient.invalidateQueries({ queryKey: ['players'] });
   };
 
-  const close = () => { setMode(null); setSelectedIds([]); setReplaceFrom(''); setReplaceTo(''); setNewName(''); };
+  const close = () => { setMode(null); setSelectedIds([]); setReplaceFrom(''); setReplaceTo(''); setReplaceSearch(''); setNewName(''); };
 
   const removePlayers = async () => {
     await base44.entities.Tournament.update(tournament.id, {
@@ -89,10 +95,12 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
                 <option value="">Pick player to replace</option>
                 {players.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
               </select>
-              <select className="w-full h-9 rounded-md bg-secondary border border-border px-3 text-sm" value={replaceTo} onChange={e => setReplaceTo(e.target.value)}>
-                <option value="">Pick replacement from directory</option>
-                {availablePlayers.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+              <Input data-testid="kotc-replacement-search" placeholder="Search replacement by name…" value={replaceSearch} onChange={e => setReplaceSearch(e.target.value)} className="bg-secondary border-border" />
+              <select className="w-full h-10 rounded-md bg-secondary border border-border px-3 text-sm" value={replaceTo} onChange={e => setReplaceTo(e.target.value)}>
+                <option value="">Pick replacement from active directory</option>
+                {replacementMatches.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
               </select>
+              <p className="text-[10px] text-muted-foreground">Alphabetical local search — typing does not call Base44.</p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-px bg-border flex-1" />or add a genuine one-off guest<span className="h-px bg-border flex-1" /></div>
               <Input placeholder="Guest / One-off Player name" value={newName} onChange={e => setNewName(e.target.value)} className="bg-secondary border-border" />
             </div>
@@ -117,7 +125,6 @@ function Picker({ players, selectedIds, setSelectedIds }) {
         <label key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary cursor-pointer">
           <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={e => setSelectedIds(prev => e.target.checked ? [...prev, p.id] : prev.filter(id => id !== p.id))} />
           <span className="text-sm text-foreground flex-1">{p.full_name}</span>
-          <span className="text-xs font-mono text-primary">{(p.skill_rating || 3).toFixed(1)}</span>
         </label>
       ))}
       {players.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No available players</p>}
