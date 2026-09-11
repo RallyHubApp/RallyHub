@@ -86,7 +86,9 @@ export default function TournamentDetail() {
 
   const { data: allPlayers = [] } = useQuery({
     queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list('-skill_rating', 200)
+    // Player directories are a name-based operational list, not a legacy-rating ranking.
+    // KOTC filters active/archived status locally so searching 150+ players never calls Base44 per keystroke.
+    queryFn: () => base44.entities.Player.list('full_name', 500)
   });
 
   const { data: matches = [] } = useQuery({
