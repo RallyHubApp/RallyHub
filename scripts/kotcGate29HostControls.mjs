@@ -11,7 +11,7 @@ ok(v2.includes('Tap one player then another to swap'),'single tap-to-swap intera
 ok(v2.includes('clickCourt'),'court-player tap selection is wired');
 ok(v2.includes('clickBench'),'bench-to-court swap path is wired');
 ok(!v2.includes('Save Host Adjustments'),'redundant separate save step removed');
-ok(v2.includes('onClick={()=>onStart(draft)}'),'edited draft is submitted by the explicit START ROUND tap');
+ok(v2.includes('onClick={()=>onStart(draft,roundMinutes)}'),'edited draft and confirmed round duration are submitted by the explicit START ROUND tap');
 ok(v2.includes("functions.invoke('startKotcRound'"),'UI starts the proposed round through the dedicated start function');
 ok(v2.includes("currentRound?.status==='proposed'&&!assistant&&<ProposedRoundEditor"),'editor only appears for proposed round');
 ok(!v2.includes("currentRound?.status==='started'&&<ProposedRoundEditor"),'started rounds cannot be host-edited');
