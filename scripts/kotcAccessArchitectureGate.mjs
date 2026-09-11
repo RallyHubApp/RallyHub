@@ -27,6 +27,7 @@ const mobileHostTest=read('e2e/kotc-host-journey.spec.mjs');
 const kotcView=read('src/components/kotc/KotcView.jsx');
 const setupPanel=read('src/components/kotc/KotcSetupPanel.jsx');
 const timerUi=read('src/components/kotc/RoundTimer.jsx');
+const tournamentsUi=read('src/pages/Tournaments.jsx');
 
 // Super Admin / host boundary.
 includes(access,"caller.role!=='admin'",'only platform admins may grant or revoke delegated host access');
@@ -160,5 +161,11 @@ includes(create,'demo_mode:testMode,exclude_from_aggregates:testMode','test mode
 includes(hostUi,'const testMode=isSuperAdmin&&!!(session?.exclude_from_aggregates||session?.demo_mode)','Fill Test Scores must require both stored test state and Super Admin status');
 includes(hostUi,'data-testid="kotc-fill-test-scores"','test-mode host UI must expose the local Fill Test Scores helper');
 includes(hostUi,'setTestFillKey(Date.now())','Fill Test Scores must populate local score UI rather than bulk-writing results');
+
+// Completed KOTC navigation must be lightweight and results-first, not reopen the live host workspace.
+includes(results,"action==='get_or_create_by_tournament'",'results-share endpoint must resolve a completed KOTC directly from its tournament');
+includes(tournamentsUi,"if (t.status === 'Completed') return openingResultsId === t.id ? 'Opening final results…' : 'View final results'",'completed KOTC cards must clearly open final results');
+includes(tournamentsUi,"action:'get_or_create_by_tournament'",'completed KOTC card click must use the narrow results-link endpoint');
+includes(tournamentsUi,"navigate(`/kotc-live/${res.data.token}`)",'completed KOTC card must navigate to the permanent read-only results page');
 
 console.log(`KOTC access/architecture gate: PASS\n${checks} role, privacy, scoring-lock, membership and correction checks, 0 failures.`);
