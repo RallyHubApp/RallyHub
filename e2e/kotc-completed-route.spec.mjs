@@ -20,7 +20,7 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   await page.route(`**/api/apps/${APP_ID}/functions/**`,async route=>{
     const name=new URL(route.request().url()).pathname.split('/functions/')[1]?.split('/')[0]||'';functionCalls.push(name);
     if(name==='getKotcV2State')return json(route,state);
-    if(name==='kotcResultsShare'){let body={};try{body=route.request().postDataJSON()||{};}catch{}if(body.action==='email_players'){await new Promise(resolve=>setTimeout(resolve,350));return json(route,{success:true,token:'share-token',sent:16,skipped:1,alreadySent:0,failed:0});}return json(route,{success:true,token:'share-token'});}
+    if(name==='kotcResultsShare'){let body={};try{body=route.request().postDataJSON()||{};}catch{}if(body.action==='email_preview')return json(route,{success:true,token:'share-token',fromName:'Brian Moore via RallyHub',subject:'830 Session — your results',sampleBody:'Hi [First name],\n\nHere are the results from 830 Session.\n\nView your results: https://rallyhub.ie/kotc-live/share-token\n\nThanks for playing. Looking forward to seeing you on court again soon.\n\nRegards,\nBrian Moore\nSession Host\nRallyHub',recipientCount:16,guestOrUnlinked:1,missingOrDuplicate:0,transportReady:false,transportMessage:'Club-wide email is not connected yet.'});if(body.action==='email_players')return json(route,{error:'Club-wide email is not connected.',transportReady:false},409);return json(route,{success:true,token:'share-token'});}
     return json(route,{success:true});
   });
   await page.route(`**/api/apps/${APP_ID}/analytics/**`,route=>json(route,{success:true}));
@@ -37,7 +37,12 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   await expect(page.getByText('King of the Court · Hall Display')).toHaveCount(0);
   expect(functionCalls.filter(x=>x==='kotcResultsShare')).toHaveLength(0);
   await page.getByTestId('kotc-email-players').click();
-  await expect(page.getByTestId('kotc-email-players')).toContainText('Sending…');
-  await expect(page.getByTestId('kotc-email-status')).toContainText('Results email complete · 16 sent · 1 skipped');
+  await expect(page.getByTestId('kotc-email-preview')).toBeVisible();
+  await expect(page.getByTestId('kotc-email-preview')).toContainText('Brian Moore via RallyHub');
+  await expect(page.getByTestId('kotc-email-preview')).toContainText('830 Session — your results');
+  await expect(page.getByTestId('kotc-email-preview')).toContainText('Hi [First name]');
+  await expect(page.getByTestId('kotc-email-preview')).toContainText('16 players · 1 guest/unlinked excluded');
+  await expect(page.getByRole('button',{name:'Email sending not connected'})).toBeDisabled();
+  expect(functionCalls.filter(x=>x==='kotcResultsShare')).toHaveLength(1);
   expect(errors).toEqual([]);
 });
