@@ -18,6 +18,7 @@ const finaliseFn = fs.readFileSync('base44/functions/finaliseClubChallenge/entry
 const practiceFn = fs.readFileSync('base44/functions/loadClubChallengePracticeRoster/entry.ts','utf8');
 const fullPracticeFn = fs.readFileSync('base44/functions/populateClubChallengePracticeScenario/entry.ts','utf8');
 const hallAudio = fs.readFileSync('src/lib/rallyHubHallAudio.js','utf8');
+const drawFn = fs.readFileSync('base44/functions/replaceClubChallengeDraw/entry.ts','utf8');
 
 let passed = 0;
 const check = (name, condition) => {
@@ -90,6 +91,10 @@ check('sound: one-minute, 30-second, 10-second and five-second countdown cues ex
 check('sound: round-end cue asks for scores', contains(ui,'Round finished. Please give your scores.'));
 check('Base44 control: timer actions are single-flight', contains(ui,'timerCommandRef.current'));
 check('Base44 control: major sporting actions are single-flight', contains(ui,'sportingActionRef.current'));
+check('Base44 control: player ranking is one browser function call, not 16 parallel entity writes', contains(ui,"action:'reorder'") && !contains(ui,'Promise.all(ordered.map'));
+check('Base44 control: full draw replacement is one browser function call', contains(ui,"replaceClubChallengeDraw") && contains(drawFn,'ClubChallengeMatch.bulkCreate'));
+check('Base44 control: approve/start route through authorised event backend', contains(ui,"action:'approve_draw'") && contains(ui,"action:'start'"));
+check('Base44 control: public voting double-tap is single-flight', contains(publicVote,'savingRef.current'));
 check('busy-hall UX: accepted host command stays visibly acknowledged', contains(ui,'RallyHub has accepted your tap'));
 
 // 6. Scorer perspective.
