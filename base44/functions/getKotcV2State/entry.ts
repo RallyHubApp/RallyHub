@@ -27,7 +27,9 @@ Deno.serve(async(req)=>{try{
  const rounds=await retry('rounds read',()=>base44.asServiceRole.entities.KotcRound.filter({session_id:session.id},'round_number',100));
  const matches=await retry('matches read',()=>base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id},'round_number',500));
  const fixedPairs=await retry('pair locks read',()=>base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id},'phase_order',100));
+ const scorerTokens=await retry('scorer link status read',()=>base44.asServiceRole.entities.KotcScorerToken.filter({session_id:session.id,status:'active'}));
+ const scorerLinkActive=(scorerTokens||[]).some((t:any)=>!t.expires_at||Date.parse(t.expires_at)>Date.now());
  const currentRound=(rounds||[]).filter((r:any)=>Number(r.round_number)===Number(session.current_round_number)&&!['superseded'].includes(r.status)).sort((a:any,b:any)=>Number(b.proposal_revision||0)-Number(a.proposal_revision||0))[0]||null;
  const slots=currentRound?await retry('current slots read',()=>base44.asServiceRole.entities.KotcRoundSlot.filter({session_id:session.id,round_id:currentRound.id},'ladder_court_rank',100)):[];
- return Response.json({session,participants,rounds,slots,matches,fixedPairs:fixedPairs||[],contactDirectory:{},currentUserId:user.id,currentAccessRole,isAdmin:user.role==='admin',runtimeVersion:RUNTIME_VERSION});
+ return Response.json({session,participants,rounds,slots,matches,fixedPairs:fixedPairs||[],scorerLinkActive,contactDirectory:{},currentUserId:user.id,currentAccessRole,isAdmin:user.role==='admin',runtimeVersion:RUNTIME_VERSION});
 }catch(error){return Response.json({error:error?.message||'Unexpected KOTC state error',runtimeVersion:RUNTIME_VERSION},{status:isRateLimit(error)?503:500});}});
