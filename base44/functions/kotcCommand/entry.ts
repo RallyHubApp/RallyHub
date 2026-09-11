@@ -146,14 +146,19 @@ Deno.serve(async (req) => {
     // A real host always has authority over a player-held scoring lease. Claiming a court
     // is deliberately non-structural and does not bump the match revision, so simply
     // focusing a host score box cannot create an artificial stale-score conflict.
-    if (commandType === 'host_claim_score') {
+    if (commandType === 'host_claim_score' || commandType === 'host_release_score') {
       if (accessRole === 'assistant_host') return Response.json({ error:'Assistant hosts cannot take over player scorer locks.' }, { status:403 });
-      if (!['in_progress','paused'].includes(session.status)) return Response.json({ error:'Host scoring takeover is only available during a live session.' }, { status:409 });
-      const match=(await base44.asServiceRole.entities.KotcMatch.filter({id:body.matchId,session_id:session.id}))?.[0];
+      if (!['in_progress','paused'].includes(session.status)) return Response.json({ error:'Host scoring control is only available during a live session.' }, { status:409 });
+      const match=(await withRateLimitRetry('host scoring match read',()=>base44.asServiceRole.entities.KotcMatch.filter({id:body.matchId,session_id:session.id})))?.[0];
       if(!match)return Response.json({error:'Match not found'},{status:404});
+      const hostOwner=`host:${user.id}`;
+      if(commandType==='host_release_score'){
+        if(String(match.scoring_lock_owner||'')===hostOwner)await withRateLimitRetry('host scoring release',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:null,scoring_lock_acquired_at:null,scoring_lock_expires_at:null}));
+        return Response.json({success:true,released:true});
+      }
       const displaced=String(match.scoring_lock_owner||'');
-      const hostOwner=`host:${user.id}`; const now=nowIso(); const expires=new Date(Date.now()+5*60*1000).toISOString();
-      await base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:hostOwner,scoring_lock_acquired_at:now,scoring_lock_expires_at:expires});
+      const now=nowIso(); const expires=new Date(Date.now()+5*60*1000).toISOString();
+      await withRateLimitRetry('host scoring claim',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:hostOwner,scoring_lock_acquired_at:now,scoring_lock_expires_at:expires}));
       if(displaced&&displaced!==hostOwner){
         try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_host_took_over_scoring',entity_type:'KotcMatch',entity_id:match.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({scoring_lock_owner:displaced}),after_state:JSON.stringify({scoring_lock_owner:hostOwner}),reason:'Host began entering the court score'});}catch{}
       }
