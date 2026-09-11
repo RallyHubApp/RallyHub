@@ -40,7 +40,7 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   await expect(page.getByTestId('kotc-email-players')).toContainText('Loading preview…');
   await expect(page.getByTestId('kotc-email-players')).toBeDisabled();
   await expect(page.getByTestId('kotc-email-status')).toContainText('Preview failed');
-  await expect(page.getByTestId('kotc-email-players')).toContainText('Retry preview');
+  await expect(page.getByTestId('kotc-email-players')).toContainText('Preview failed — retry');
   await page.getByTestId('kotc-email-players').click();
   await expect(page.getByTestId('kotc-email-preview')).toBeVisible();
   await expect(page.getByTestId('kotc-email-preview')).toContainText('Clare Pickleball <clarepb2025@gmail.com>');
