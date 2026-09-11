@@ -59,7 +59,7 @@ function ScoreCard({ match, names, session, onSaved, disabled, allowHostTakeover
     try{
       const res=await base44.functions.invoke('kotcCommand',{sessionId:session.id,commandId:commandId('host-score-claim'),commandType:'host_claim_score',matchId:match.id});
       setHostOwnsCourt(true);if(forCorrection)setEditing(true);
-      toast.success(res.data?.displacedScorer?`Court ${match.ladder_court_rank}: host took over score entry`:`Court ${match.ladder_court_rank} ready for host score entry`);
+      toast.success(`Court ${match.ladder_court_rank} ready for host score entry`);
     }catch(e){toast.error(errMsg(e));}finally{setClaiming(false);}
   };
   const releaseHost=async()=>{
