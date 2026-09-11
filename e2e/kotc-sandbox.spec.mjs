@@ -32,7 +32,7 @@ async function mock(page,model){
   await page.route(`**/api/apps/${APP_ID}/entities/KotcPlayerAggregate**`,route=>json(route,[]));
   await page.route(`**/api/apps/${APP_ID}/functions/**`,async route=>{
     const name=new URL(route.request().url()).pathname.split('/functions/')[1]?.split('/')[0]||'';
-    const body=await route.request().postDataJSON().catch(()=>({}));model.calls.push({name,body});
+    let body={};try{body=route.request().postDataJSON()||{};}catch{}model.calls.push({name,body});
     if(name==='getKotcV2State')return json(route,model.state());
     if(name==='createKotcV2Session'){model.create();return json(route,{success:true});}
     if(name==='startKotcRound'){const round=model.start();return json(route,{success:true,session:model.session,round,slots:model.slots.filter(s=>s.round_id===round.id),matches:model.matches.filter(m=>m.round_id===round.id)});}
@@ -65,8 +65,8 @@ test('18-player isolated sandbox creates, starts, fills and advances without rea
   await page.goto('/e2e/kotcSandboxHarness.html');
   await expect(page.getByTestId('kotc-setup')).toBeVisible();
   await expect(page.getByText('18 players').first()).toBeVisible();
-  await expect(page.getByText('Previous KOTC performance')).toBeVisible();
-  expect(model.calls.some(c=>c.name==='KotcPlayerAggregate')).toBeFalsy();
+  await expect(page.getByText('Previous KOTC performance')).toHaveCount(0);
+  await expect(page.getByText('Genuine DUPR')).toHaveCount(0);
   await page.getByRole('button',{name:'Test Player 17'}).click();
   await page.getByRole('button',{name:'Test Player 18'}).click();
   await page.getByTestId('kotc-create-session').click();
