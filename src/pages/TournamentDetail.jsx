@@ -46,7 +46,7 @@ export default function TournamentDetail() {
   const [generating, setGenerating] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [editForm, setEditForm] = useState({});
+  const [editForm, setEditForm] = useState(/** @type {any} */ ({}));
   const [isAdmin, setIsAdmin] = useState(false);
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
