@@ -16,6 +16,7 @@ import KotcPlayerManagement from './KotcPlayerManagement';
 export default function KotcView({ tournament, players, allPlayers, queryClient }) {
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
+  const [playerSearch, setPlayerSearch] = useState('');
   const [spondOpen, setSpondOpen] = useState(false);
   const [xlsxOpen, setXlsxOpen] = useState(false);
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
@@ -33,13 +34,21 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   const isStarted = hasSession || tournament.status === 'Completed';
   const guestPlayers = (tournament.kotc_guest_roster || []).map(g => ({ id: g.guest_id, full_name: g.display_name, is_guest: true, relationship_type: 'guest' }));
   const sessionPlayers = [...players, ...guestPlayers];
-  const availablePlayers = allPlayers.filter(p => !tournament.player_ids?.includes(p.id));
+  const operationalPlayers = React.useMemo(() => [...(allPlayers || [])]
+    .filter(p => String(p.status || 'Active').toLowerCase() === 'active')
+    .filter(p => !['archived','inactive'].includes(String(p.relationship_status || '').toLowerCase()))
+    .sort((a,b) => String(a.full_name || '').localeCompare(String(b.full_name || ''), 'en', { sensitivity:'base' })), [allPlayers]);
+  const availablePlayers = operationalPlayers.filter(p => !tournament.player_ids?.includes(p.id));
+  const searchedAvailablePlayers = playerSearch.trim()
+    ? availablePlayers.filter(p => String(p.full_name || '').toLowerCase().includes(playerSearch.trim().toLowerCase()))
+    : availablePlayers;
 
   const addPlayers = async () => {
     const newIds = [...(tournament.player_ids || []), ...selectedPlayerIds];
     await base44.entities.Tournament.update(tournament.id, { player_ids: newIds });
     toast.success(`${selectedPlayerIds.length} players added`);
     setSelectedPlayerIds([]);
+    setPlayerSearch('');
     setAddPlayersOpen(false);
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
     queryClient.invalidateQueries({ queryKey: ['players'] });
@@ -87,7 +96,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={() => setXlsxOpen(true)}><FileSpreadsheet className="w-3 h-3 mr-1" />Import Spond XLSX</Button>
               <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}><UserPlus className="w-3 h-3 mr-1" />Add Player</Button>
-              <KotcPlayerManagement tournament={tournament} players={sessionPlayers} allPlayers={allPlayers} queryClient={queryClient} />
+              <KotcPlayerManagement tournament={tournament} players={sessionPlayers} allPlayers={operationalPlayers} queryClient={queryClient} />
             </div>
             {sessionPlayers.length === 0 ? <div className="text-center py-4"><Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2"/><p className="text-xs text-muted-foreground">No players on this session roster yet.</p></div> : <div className="grid sm:grid-cols-2 gap-1 max-h-64 overflow-auto">
               {sessionPlayers.map((p, i) => <div key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 bg-secondary/30"><span className="text-[10px] font-bold text-muted-foreground w-5">{i + 1}</span><span className="text-xs font-medium flex-1 truncate">{p.full_name}</span>{p.is_guest && <span className="text-[9px] uppercase rounded border px-1.5 py-0.5 text-amber-500 border-amber-400/30">Guest</span>}{p.dupr_rating != null && <span className="text-[10px] font-mono text-primary">DUPR {Number(p.dupr_rating).toFixed(2)}</span>}</div>)}
@@ -140,11 +149,22 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
             <DialogTitle className="text-foreground">Add Players</DialogTitle>
             <DialogDescription className="text-muted-foreground">Select players to register for King of the Court</DialogDescription>
           </DialogHeader>
+          <div className="space-y-2">
+            <Input
+              data-testid="kotc-player-search"
+              placeholder="Search player by name…"
+              value={playerSearch}
+              onChange={e => setPlayerSearch(e.target.value)}
+              className="bg-secondary border-border"
+              autoFocus
+            />
+            <p className="text-[10px] text-muted-foreground">Active club players only · alphabetical · search runs on this device with no extra Base44 calls.</p>
+          </div>
           <div className="max-h-64 overflow-auto space-y-1">
-            {availablePlayers.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-4">All players are already registered</p>
+            {searchedAvailablePlayers.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-4">{playerSearch.trim() ? 'No active player matches that name' : 'All active players are already registered'}</p>
             )}
-            {availablePlayers.map(p => (
+            {searchedAvailablePlayers.map(p => (
               <label key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary cursor-pointer">
                 <input
                   type="checkbox"
@@ -161,7 +181,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
             ))}
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setAddPlayersOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setPlayerSearch(''); setAddPlayersOpen(false); }}>Cancel</Button>
             <Button onClick={addPlayers} disabled={selectedPlayerIds.length === 0} className="bg-primary text-primary-foreground">
               Add {selectedPlayerIds.length} Players
             </Button>
