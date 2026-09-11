@@ -56,8 +56,9 @@ function createModel(){
       if(action==='save'||action==='correct'){
         if(!active(m)||m.scoring_lock_owner!==clientId)return {status:423,body:{error:`Court ${m.ladder_court_rank} is not locked to this scorer.`}};
         if(Number(body.expectedRevision)!==m.revision)return {status:409,body:{error:'This score changed since you opened it.'}};
-        m.team_a_score=Number(body.teamAScore);m.team_b_score=Number(body.teamBScore);m.winner_side=m.team_a_score>m.team_b_score?'A':'B';m.status='completed';m.revision+=1;m.completed_at=new Date().toISOString();m.scoring_lock_owner=null;m.scoring_lock_expires_at=null;m.scorer_correction_owner_client_id=clientId;
-        return {success:true,message:action==='correct'?'Updated score saved':'Score saved',match:{...m,can_correct:true,lock_status:'free'}};
+        const correcting=action==='correct';if(correcting&&!correctionOpen(m,clientId))return {status:423,body:{error:'The 90-second scorer correction window has closed. Ask the host to correct this result.'}};
+        m.team_a_score=Number(body.teamAScore);m.team_b_score=Number(body.teamBScore);m.winner_side=m.team_a_score>m.team_b_score?'A':'B';m.status='completed';m.revision+=1;if(!correcting)m.completed_at=new Date().toISOString();m.scoring_lock_owner=null;m.scoring_lock_expires_at=null;m.scorer_correction_owner_client_id=clientId;
+        return {success:true,message:correcting?'Updated score saved':'Score saved',match:{...m,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((Date.parse(m.completed_at)+90000-Date.now())/1000)):0,lock_status:'free'}};
       }
     }
     if(name==='kotcCommand'&&body.commandType==='host_claim_score'){
@@ -72,6 +73,12 @@ function createModel(){
     }
     if(name==='kotcCommand'&&body.commandType==='host_release_score'){
       const m=model.matches.find(x=>x.id===body.matchId);if(m?.scoring_lock_owner==='host:host-e2e'){m.scoring_lock_owner=null;m.scoring_lock_expires_at=null;}return {success:true,released:true};
+    }
+    if(name==='kotcCommand'&&body.commandType==='correct_match'){
+      const m=model.matches.find(x=>x.id===body.matchId);if(!m)return {status:404,body:{error:'Match not found'}};
+      if(!active(m)||m.scoring_lock_owner!=='host:host-e2e')return {status:423,body:{error:'This saved score is being corrected elsewhere or your correction lock expired. Refresh before trying again.',locked:true}};
+      if(Number(body.expectedMatchRevision)!==m.revision)return {status:409,body:{error:'Match changed since you opened it.'}};
+      m.team_a_score=Number(body.teamAScore);m.team_b_score=Number(body.teamBScore);m.winner_side=m.team_a_score>m.team_b_score?'A':'B';m.revision+=1;m.scoring_lock_owner=null;m.scoring_lock_expires_at=null;m.scorer_correction_owner_client_id=null;return {success:true,match:{...m},correction:true};
     }
     if(name==='saveKotcScore'){
       const m=model.matches.find(x=>x.id===body.matchId);if(!m)return {status:404,body:{error:'Match not found'}};
