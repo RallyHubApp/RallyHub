@@ -406,17 +406,24 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const addManual = async side => {
     const name = manual[side].trim();
-    if (!event || !name) return;
-    const sidePlayers = side === 'club_a' ? aPlayers : bPlayers;
-    await base44.entities.ClubChallengeParticipant.create({ tenant_id: event.tenant_id, challenge_event_id: event.id, tournament_id: tournament.id, side, display_name: name, event_rank: sidePlayers.length + 1, status: 'active', available_from_round: 1, unique_identity_key: `${side}-${name.toLowerCase()}-${Date.now()}` });
-    setManual(m => ({ ...m, [side]: '' }));
-    await refetchParticipants();
+    if (!event || !name || !canManageEvent) return;
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'add_manual', side, displayName:name });
+      if (res.data?.error) throw new Error(res.data.error);
+      setManual(m => ({ ...m, [side]: '' }));
+      await sync();
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not add player'); }
   };
 
   const reorder = async (side, ordered) => {
-    await Promise.all(ordered.map((p, i) => base44.entities.ClubChallengeParticipant.update(p.id, { event_rank: i + 1 })));
-    await base44.entities.ClubChallengeEvent.update(event.id, { fairness_json: '', status: event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale: true });
-    await sync();
+    if (!event || !canManageEvent || sportingActionRef.current) return;
+    sportingActionRef.current = true; setHostAction('Saving player ranking… one command sent');
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'reorder', side, orderedParticipantIds:ordered.map(p=>p.id) });
+      if (res.data?.error) throw new Error(res.data.error);
+      await sync();
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not save player ranking'); }
+    finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
   const calculateFormat = () => {
