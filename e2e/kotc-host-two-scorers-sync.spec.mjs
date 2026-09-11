@@ -164,3 +164,27 @@ test('host + two scorer devices: first claim wins, mixed parallel scoring, manua
 
   await hostCtx.close();await aCtx.close();await bCtx.close();
 });
+
+test('stale host cannot type over a helper score that was already saved',async({browser})=>{
+  const model=createModel();
+  const hostCtx=await browser.newContext({viewport:{width:1280,height:900}}),scorerCtx=await browser.newContext({viewport:{width:390,height:844}});
+  await install(hostCtx,model,'host');await install(scorerCtx,model,'scorer-a');
+  const host=await hostCtx.newPage();await host.goto('/e2e/kotcHarness.html');await expect(host.getByText('Round 1 — LIVE')).toBeVisible();
+  const scorer=await openScorer(scorerCtx);
+
+  // Host deliberately never refreshes after the helper starts. From the host's stale local view Court 1 still looks free.
+  const helperCard=await fillCourt(scorer,1,11,2);await helperCard.getByRole('button',{name:'Save Result'}).click();
+  await expect(helperCard).toContainText('Score saved: 11–2');
+  await expect(host.getByTestId('kotc-score-1-a')).toHaveValue('');
+  await expect(host.getByTestId('kotc-score-1-a')).toBeEnabled();
+
+  // First attempted host digit hits the authoritative claim endpoint. Because the helper already saved,
+  // the digit must never appear; the UI performs one lightweight refresh and renders 11–2 instead.
+  await host.getByTestId('kotc-score-1-a').fill('5');
+  await expect(host.getByTestId('kotc-score-card-1')).toContainText('Saved 11–2');
+  await expect(host.getByTestId('kotc-score-1-a')).toHaveValue('11');
+  expect(model.matches[0].team_a_score).toBe(11);expect(model.matches[0].team_b_score).toBe(2);expect(model.matches[0].revision).toBe(1);
+  expect(model.calls.some(c=>c.source==='host'&&c.name==='kotcCommand'&&c.body.commandType==='host_claim_score')).toBe(true);
+
+  await hostCtx.close();await scorerCtx.close();
+});
