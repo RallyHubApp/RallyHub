@@ -18,10 +18,11 @@ function createModel(){
     matches.push({id:`match-${c}`,session_id:'session-live',round_id:'round-1',round_number:1,ladder_court_rank:c,team_a_participant_ids:ids.slice(0,2),team_b_participant_ids:ids.slice(2),status:'scheduled',revision:0,team_a_score:null,team_b_score:null,scoring_lock_owner:null,scoring_lock_expires_at:null,scorer_correction_owner_client_id:null});
   }
   const model={
-    calls:[],participants,slots,matches,
+    calls:[],participants,slots,matches,rateLimits:{},
     round:{id:'round-1',session_id:'session-live',round_number:1,status:'started',proposal_revision:1,active_court_count:4,bench_count:2},
     session:{id:'session-live',tournament_id:'e2e-kotc-tournament',name:'Collaborative Score E2E',status:'in_progress',current_round_number:1,current_round_id:'round-1',revision:2,play_minutes:8,scoring_mode:'timed',score_target:11,win_by_two:false,timer_state_json:JSON.stringify({roundId:'round-1',roundNumber:1,durationSeconds:480,remainingSeconds:420,running:true,deadlineAt:new Date(Date.now()+420000).toISOString(),lastAction:'start'})},
   };
+  model.setRateLimit=(source,name,action,count=1)=>{model.rateLimits[`${source}:${name}:${action}`]=count;};
   const active=m=>!!(m.scoring_lock_owner&&m.scoring_lock_expires_at&&Date.parse(m.scoring_lock_expires_at)>now());
   const names=Object.fromEntries(participants.map(p=>[p.id,p.display_name]));
   const liveScorePayload=()=>({liveScoresOnly:true,session:{id:model.session.id,status:model.session.status,current_round_id:model.session.current_round_id,current_round_number:1,revision:model.session.revision,timer_state_json:model.session.timer_state_json},matches:model.matches.map(m=>({id:m.id,status:m.status,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,serving_side_at_horn:m.serving_side_at_horn,result_method:m.result_method,revision:m.revision,correction_count:0,completed_at:m.completed_at,command_id:m.command_id,scoring_lock_active:active(m),scoring_lock_kind:active(m)?(String(m.scoring_lock_owner).startsWith('host:')?'host':'player'):'none',scoring_lock_expires_at:active(m)?m.scoring_lock_expires_at:null}))});
@@ -29,6 +30,8 @@ function createModel(){
   const scorerState=clientId=>({success:true,session:{name:model.session.name,status:model.session.status,current_round_number:1,scoring_mode:'timed',score_target:11,win_by_two:false},round:{id:model.round.id,round_number:1,status:model.round.status},bench:['Player 17','Player 18'],timer:{running:true,remainingSeconds:420,deadlineAt:new Date(Date.now()+420000).toISOString()},matches:model.matches.map(m=>({id:m.id,court:m.ladder_court_rank,status:m.status,revision:m.revision,team_a:m.team_a_participant_ids.map(id=>names[id]),team_b:m.team_b_participant_ids.map(id=>names[id]),team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:active(m)?(m.scoring_lock_owner===clientId?'mine':'other'):'free',lock_seconds:active(m)?Math.ceil((Date.parse(m.scoring_lock_expires_at)-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((Date.parse(m.completed_at)+90000-Date.now())/1000)):0}))});
   model.handle=async(source,name,body)=>{
     model.calls.push({source,name,body:{...body},at:Date.now()});
+    const actionKey=String(body.action||body.commandType||(body.liveScoresOnly?'liveScoresOnly':'state'));const rateKey=`${source}:${name}:${actionKey}`;
+    if(Number(model.rateLimits[rateKey]||0)>0){model.rateLimits[rateKey]-=1;return {status:429,body:{error:'Rate limit exceeded'}};}
     if(name==='getKotcV2State'){
       if(body.liveScoresOnly)return liveScorePayload();
       return {session:model.session,participants:model.participants,rounds:[model.round],slots:model.slots,matches:model.matches,fixedPairs:[],scorerLinkActive:true,contactDirectory:{},currentAccessRole:'admin',isAdmin:true};
