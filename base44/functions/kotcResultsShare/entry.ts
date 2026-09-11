@@ -35,13 +35,25 @@ Deno.serve(async req=>{try{
    // public_state is deliberately read-only. Do not write analytics on every spectator poll.
    return Response.json({session:{name:session.name,status:session.status,current_round_number:finished?currentRound?.round_number:session.current_round_number,scoring_mode:session.scoring_mode,actual_session_end:session.actual_session_end},completed_rounds:completedRounds.length,current_round:currentRound?{round_number:currentRound.round_number,status:currentRound.status}:null,current_matches:currentMatches,bench,timer,standings:table,matches:publicMatches,podium:finished?table.slice(0,3):[],finished,poll_after_ms:finished?0:12000,runtimeVersion:RUNTIME_VERSION});
  }
- const user=await base44.auth.me();if(!user)return Response.json({error:'Unauthorized',runtimeVersion:RUNTIME_VERSION},{status:401});const sessionId=String(body.sessionId||'');if(!sessionId)return Response.json({error:'sessionId required',runtimeVersion:RUNTIME_VERSION},{status:400});const session=(await retry('host session read',()=>base44.asServiceRole.entities.KotcSession.filter({id:sessionId})))?.[0];if(!session)return Response.json({error:'Session not found',runtimeVersion:RUNTIME_VERSION},{status:404});
+ const user=await base44.auth.me();if(!user)return Response.json({error:'Unauthorized',runtimeVersion:RUNTIME_VERSION},{status:401});
+ let sessionId=String(body.sessionId||'');let session:any=null;
+ if(action==='get_or_create_by_tournament'){
+   const tournamentId=String(body.tournamentId||'');if(!tournamentId)return Response.json({error:'tournamentId required',runtimeVersion:RUNTIME_VERSION},{status:400});
+   const sessions=(await retry('tournament results session read',()=>base44.asServiceRole.entities.KotcSession.filter({tournament_id:tournamentId})))||[];
+   session=sessions.filter((s:any)=>!['cancelled'].includes(s.status)).sort((a:any,b:any)=>Date.parse(b.created_date||0)-Date.parse(a.created_date||0))[0]||null;
+   if(!session)return Response.json({error:'No KOTC session found for this tournament.',runtimeVersion:RUNTIME_VERSION},{status:404});
+   sessionId=String(session.id);
+ }else{
+   if(!sessionId)return Response.json({error:'sessionId required',runtimeVersion:RUNTIME_VERSION},{status:400});
+   session=(await retry('host session read',()=>base44.asServiceRole.entities.KotcSession.filter({id:sessionId})))?.[0]||null;
+ }
+ if(!session)return Response.json({error:'Session not found',runtimeVersion:RUNTIME_VERSION},{status:404});
  let allowed=user.role==='admin';if(!allowed){const grants=await retry('host access read',()=>base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'}));allowed=(grants||[]).some((a:any)=>validAccess(a,session.tenant_id,session.id));}if(!allowed)return Response.json({error:'Primary session host access required',runtimeVersion:RUNTIME_VERSION},{status:403});
  let shares=await retry('existing share read',()=>base44.asServiceRole.entities.KotcSessionShare.filter({session_id:session.id,status:'active'}));let share=(shares||[]).sort((a:any,b:any)=>Date.parse(b.created_date||0)-Date.parse(a.created_date||0))[0]||null;
  if(action==='revoke'){if(share)await retry('revoke share',()=>base44.asServiceRole.entities.KotcSessionShare.update(share.id,{status:'revoked'}));return Response.json({success:true,runtimeVersion:RUNTIME_VERSION});}
  // Results links do not expire automatically. They remain available after Finish until explicitly revoked.
  if(!share){share=await retry('create share',()=>base44.asServiceRole.entities.KotcSessionShare.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,tournament_id:session.tournament_id,token:token(),status:'active',created_by_user_id:user.id}));}
- if(action==='get_or_create')return Response.json({success:true,token:share.token,shareId:share.id,livePath:`/kotc-live/${share.token}`,permanent:true,runtimeVersion:RUNTIME_VERSION});
+ if(action==='get_or_create'||action==='get_or_create_by_tournament')return Response.json({success:true,token:share.token,shareId:share.id,livePath:`/kotc-live/${share.token}`,permanent:true,runtimeVersion:RUNTIME_VERSION});
  if(action==='email_players'){
    const link=`${APP_BASE_URL}/kotc-live/${share.token}`;const resend=body.resend===true;
    const participants=await retry('email participants',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));const playerIds=[...new Set((participants||[]).map((p:any)=>p.player_id).filter(Boolean))];const players=playerIds.length?await retry('email players',()=>base44.asServiceRole.entities.Player.filter({id:{$in:playerIds}})):[];const byId=Object.fromEntries((players||[]).map((p:any)=>[p.id,p]));const prior=await retry('prior recipients',()=>base44.asServiceRole.entities.KotcSessionShareRecipient.filter({share_id:share.id,delivery_status:'sent'}));const priorEmails=new Set((prior||[]).map((r:any)=>String(r.email||'').toLowerCase()));const seen=new Set();let sent=0,skipped=0,failed=0,alreadySent=0;
