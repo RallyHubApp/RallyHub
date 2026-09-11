@@ -15,6 +15,7 @@ async function parseSpondXlsx(file) {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
+        // @ts-ignore Remote ESM is intentionally loaded at runtime in the browser.
         const { read, utils } = await import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm');
         const wb = read(e.target.result, { type: 'array' });
 
@@ -70,6 +71,7 @@ async function parseSpondXlsx(file) {
 }
 
 async function parsePrintSheet(wb) {
+  // @ts-ignore Remote ESM is intentionally loaded at runtime in the browser.
   const { utils } = await import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm');
   const sheetName = wb.SheetNames.includes('For print') ? 'For print' : wb.SheetNames[0];
   const ws = wb.Sheets[sheetName];
@@ -104,7 +106,7 @@ export default function SpondXlsxImportModal({ open, onOpenChange, tournament, o
   const [error, setError] = useState(null);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState(null);
-  const fileRef = useRef();
+  const fileRef = useRef(/** @type {HTMLInputElement|null} */ (null));
 
   const reset = () => {
     setStep('upload');
