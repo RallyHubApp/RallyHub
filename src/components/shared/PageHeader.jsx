@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
+/** @param {any} props */
 export default function PageHeader({ title, description, children }) {
   return (
     <motion.div
