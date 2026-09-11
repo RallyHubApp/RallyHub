@@ -259,3 +259,39 @@ test('host/helper simultaneous correction attempts use first-claim-wins correcti
   expect(model.matches[0].team_a_score).toBe(12);expect(model.matches[0].team_b_score).toBe(3);expect(model.matches[0].scoring_lock_owner).toBe(null);
   await hostCtx.close();await scorerCtx.close();
 });
+
+test('four scorer phones recover from simultaneous 429 claim/save burst with bounded calls',async({browser})=>{
+  test.setTimeout(60000);
+  const model=createModel();
+  const hostCtx=await browser.newContext({viewport:{width:1280,height:900}});await install(hostCtx,model,'host');
+  const host=await hostCtx.newPage();await host.goto('/e2e/kotcHarness.html');await expect(host.getByText('Round 1 — LIVE')).toBeVisible();
+  const contexts=[],pages=[];
+  for(let i=1;i<=4;i++){
+    const ctx=await browser.newContext({viewport:{width:390,height:844}});contexts.push(ctx);await install(ctx,model,`scorer-${i}`);pages.push(await openScorer(ctx));
+    model.setRateLimit(`scorer-${i}`,'kotcScorer','claim',1);model.setRateLimit(`scorer-${i}`,'kotcScorer','save',1);
+  }
+  const stateBefore=model.calls.filter(c=>c.name==='kotcScorer'&&c.body.action==='state').length;
+  await pages[0].waitForTimeout(5500);
+  expect(model.calls.filter(c=>c.name==='kotcScorer'&&c.body.action==='state').length).toBe(stateBefore);
+
+  await Promise.all(pages.map((p,i)=>p.getByTestId(`scorer-court-${i+1}`).locator('input').nth(0).fill(String(i+1))));
+  for(let i=0;i<4;i++){
+    const card=pages[i].getByTestId(`scorer-court-${i+1}`);await expect(card).toContainText('locked to you');await expect(card).not.toContainText(/rate limit/i);
+    await card.locator('input').nth(0).fill('11');await card.locator('input').nth(1).fill(String(i+1));
+  }
+
+  await Promise.all(pages.map((p,i)=>p.getByTestId(`scorer-court-${i+1}`).getByRole('button',{name:'Save Result'}).click()));
+  for(let i=0;i<4;i++){const card=pages[i].getByTestId(`scorer-court-${i+1}`);await expect(card).toContainText(`Score saved: 11–${i+1}`);await expect(card).not.toContainText(/rate limit/i);}
+  expect(model.matches.every(m=>m.status==='completed'&&m.revision===1&&!m.scoring_lock_owner)).toBe(true);
+
+  await expect(host.getByTestId('kotc-player-score-toolbar')).toContainText('0/4 saved');
+  await host.getByTestId('kotc-refresh-player-scores').click();await expect(host.getByText('All scores saved for Round 1')).toBeVisible();
+  await expect(host.getByTestId('kotc-player-score-toolbar')).toContainText('4/4 saved');
+
+  const scorerCalls=model.calls.filter(c=>c.name==='kotcScorer');
+  const claimCalls=scorerCalls.filter(c=>c.body.action==='claim').length,saveCalls=scorerCalls.filter(c=>c.body.action==='save').length,stateCalls=scorerCalls.filter(c=>c.body.action==='state').length,heartbeatCalls=scorerCalls.filter(c=>c.body.action==='heartbeat').length;
+  expect(claimCalls).toBe(8);expect(saveCalls).toBe(8);expect(stateCalls).toBeLessThanOrEqual(8);expect(heartbeatCalls).toBe(0);
+  console.log('KOTC COLLABORATIVE SCORING PRESSURE',JSON.stringify({claimCalls,saveCalls,stateCalls,heartbeatCalls,totalScorerCalls:scorerCalls.length,hostLiveRefreshes:model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length},null,2));
+
+  for(const ctx of contexts)await ctx.close();await hostCtx.close();
+});
