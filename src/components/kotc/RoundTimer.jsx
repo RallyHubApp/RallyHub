@@ -54,23 +54,10 @@ function playSignal(ctx, type, volume) {
   beep(ctx, 330, now + 0.56, 0.35, volume);
 }
 
-function chooseVoice(voices, mode) {
-  if (!voices?.length || mode === 'device_default') return null;
-  const ie = voices.filter(v => /^en[-_]IE$/i.test(v.lang) || /irish|ireland/i.test(`${v.name} ${v.lang}`));
-  const femaleHint = /female|siri.*(female|2)|moira|fiona|caitlin|orla|aoife/i;
-  const maleHint = /male|siri.*(male|1)|liam|sean|colm|cian/i;
-  if (mode === 'irish_female') return ie.find(v => femaleHint.test(v.name)) || ie.find(v => !maleHint.test(v.name)) || ie[0] || null;
-  if (mode === 'irish_male') return ie.find(v => maleHint.test(v.name)) || ie.find(v => !femaleHint.test(v.name)) || ie[0] || null;
-  return null;
-}
-
-function speak(text, volume, voiceMode = 'irish_female', voices = []) {
+function speak(text, volume) {
   if (!('speechSynthesis' in window)) return;
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.volume = Math.min(1, Math.max(0, volume));
-  utterance.lang = 'en-IE';
-  const voice = chooseVoice(voices, voiceMode);
-  if (voice) utterance.voice = voice;
   utterance.rate = 0.92;
   utterance.pitch = 1;
   window.speechSynthesis.cancel();
@@ -79,33 +66,20 @@ function speak(text, volume, voiceMode = 'irish_female', voices = []) {
 }
 
 export function KotcSoundCheck({ compact = false }) {
-  const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('kotc-voice-mode') || 'irish_female');
-  const [voices, setVoices] = useState([]);
   const [checking, setChecking] = useState(false);
-  useEffect(() => {
-    if (!('speechSynthesis' in window)) return;
-    const load = () => setVoices(window.speechSynthesis.getVoices());
-    load();
-    window.speechSynthesis.addEventListener?.('voiceschanged', load);
-    return () => window.speechSynthesis.removeEventListener?.('voiceschanged', load);
-  }, []);
-  useEffect(() => { localStorage.setItem('kotc-voice-mode', voiceMode); }, [voiceMode]);
   const testSound = async () => {
     setChecking(true);
     try {
       const ctx = createAudioContext();
       if (ctx?.state === 'suspended') await ctx.resume();
       playSignal(ctx, 'start', 1);
-      window.setTimeout(() => speak('Sound check. RallyHub timer ready.', 1, voiceMode, voices), 500);
+      window.setTimeout(() => speak('Sound check. RallyHub timer ready.', 1), 500);
       if ('vibrate' in navigator) navigator.vibrate(120);
     } finally { window.setTimeout(() => setChecking(false), 1200); }
   };
   return <div data-testid="kotc-sound-check" className={cn('rounded-xl border border-primary/25 bg-primary/5', compact ? 'p-2' : 'p-3')}>
     <div className="flex flex-col sm:flex-row sm:items-center gap-2">
       <div className="flex-1 min-w-0"><p className="text-xs font-bold">Hall sound check</p><p className="text-[10px] text-muted-foreground mt-0.5">Test the real cue and spoken voice before play. This uses your device/speaker only — no Base44 call.</p></div>
-      <select aria-label="KOTC announcement voice" className="h-10 rounded-md bg-secondary border border-border px-2 text-xs" value={voiceMode} onChange={e=>setVoiceMode(e.target.value)}>
-        <option value="irish_female">Irish Female</option><option value="irish_male">Irish Male</option><option value="device_default">Device Default</option>
-      </select>
       <Button type="button" variant="outline" className="min-h-10" onClick={testSound} disabled={checking}><Volume2 className="w-4 h-4 mr-2"/>{checking?'Playing…':'Test Sound'}</Button>
     </div>
   </div>;
@@ -129,8 +103,6 @@ export default function RoundTimer({
   const [seconds, setSeconds] = useState(playSeconds);
   const [running, setRunning] = useState(false);
   const [volume, setVolume] = useState(() => { const v = Number(localStorage.getItem('kotc-timer-volume')); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; });
-  const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('kotc-voice-mode') || 'irish_female');
-  const [voices, setVoices] = useState([]);
   const [fullscreen, setFullscreen] = useState(false);
   const [floating, setFloating] = useState(false);
   const [position, setPosition] = useState({ x: 12, y: 76 });
@@ -156,7 +128,7 @@ export default function RoundTimer({
     setAudioReady(true);
     if (test) {
       playSignal(audioRef.current, 'start', Math.max(0.75, volume));
-      window.setTimeout(() => speak('Sound check. RallyHub timer ready.', volume, voiceMode, voices), 500);
+      window.setTimeout(() => speak('Sound check. RallyHub timer ready.', volume), 500);
       if ('vibrate' in navigator) navigator.vibrate(120);
     }
   };
@@ -171,7 +143,7 @@ export default function RoundTimer({
 
   const announce = (text, signal = 'warning') => {
     playSignal(audioRef.current, signal, volume);
-    speak(text, volume, voiceMode, voices);
+    speak(text, volume);
     if ('vibrate' in navigator) navigator.vibrate(signal === 'end' ? [250, 120, 250] : 120);
   };
 
@@ -221,15 +193,7 @@ export default function RoundTimer({
     return()=>{cancelled=true;};
   },[sessionId,roundId]);
 
-  useEffect(() => {
-    if (!('speechSynthesis' in window)) return;
-    const load = () => setVoices(window.speechSynthesis.getVoices());
-    load();
-    window.speechSynthesis.resume?.();
-    window.speechSynthesis.addEventListener?.('voiceschanged', load);
-    return () => window.speechSynthesis.removeEventListener?.('voiceschanged', load);
-  }, []);
-  useEffect(() => { localStorage.setItem('kotc-voice-mode', voiceMode); }, [voiceMode]);
+  useEffect(() => { window.speechSynthesis?.resume?.(); }, []);
   useEffect(() => { localStorage.setItem('kotc-timer-volume', String(volume)); }, [volume]);
 
   useEffect(() => {
@@ -265,7 +229,7 @@ export default function RoundTimer({
       if (remaining <= 5 && remaining > 0 && !lastAnnouncedRef.current.has(`count-${remaining}`)) {
         lastAnnouncedRef.current.add(`count-${remaining}`);
         playSignal(audioRef.current, 'warning', volume * 0.9);
-        speak(String(remaining), volume, voiceMode, voices);
+        speak(String(remaining), volume);
       }
       if (remaining === 0) {
         setRunning(false);
@@ -386,7 +350,7 @@ export default function RoundTimer({
             <input type="range" min="0" max="1" step="0.05" value={volume} onChange={event => setVolume(Number(event.target.value))} className="w-full" />
             <span className="text-xs font-mono text-muted-foreground w-10 text-right">{Math.round(volume * 100)}%</span>
           </div>
-          <div className="flex items-center justify-between gap-2"><span className="text-[10px] text-muted-foreground">Announcement voice</span><select aria-label="Timer announcement voice" className="h-9 rounded-md bg-background border border-border px-2 text-xs" value={voiceMode} onChange={e=>setVoiceMode(e.target.value)}><option value="irish_female">Irish Female</option><option value="irish_male">Irish Male</option><option value="device_default">Device Default</option></select></div>
+          <p className="text-[10px] text-muted-foreground text-center">Announcements use this device’s default voice.</p>
         </div>
       )}
 
