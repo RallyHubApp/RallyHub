@@ -14,15 +14,24 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('Player of the Tournament')
+Locator: getByText('Club A Test 01')
 Expected: visible
-Error: strict mode violation: getByText('Player of the Tournament') resolved to 2 elements:
-    1) <p data-dynamic-content="false" class="text-sm font-semibold" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1288:102">Player of the Tournament</p> aka getByText('Player of the Tournament').first()
-    2) <p class="font-bold mt-2" data-dynamic-content="true" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1292:161">Player of the Tournament</p> aka getByText('Player of the Tournament').nth(1)
+Error: strict mode violation: getByText('Club A Test 01') resolved to 15 elements:
+    1) <p class="text-xs" data-dynamic-content="true" data-collection-item-id="cc-a-1" data-collection-item-field="event_rank" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1015:734">#2 Club A Test 01</p> aka getByText('#2 Club A Test')
+    2) <td class="border p-1" data-dynamic-content="true" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1015:1612">Club A Test 02 & Club A Test 01</td> aka locator('tbody').getByText('Club A Test 02 & Club A Test 01')
+    3) <td class="border p-1" data-dynamic-content="true" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1015:1612">Club A Test 01 & Club A Test 04</td> aka locator('tbody').getByText('Club A Test 01 & Club A Test 04')
+    4) <td class="border p-1" data-dynamic-content="true" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1015:1612">Club A Test 01 & Club A Test 03</td> aka locator('tbody').getByText('Club A Test 01 & Club A Test 03')
+    5) <td class="border p-1" data-dynamic-content="true" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1015:1612">Club A Test 01 & Club A Test 06</td> aka locator('tbody').getByText('Club A Test 01 & Club A Test 06')
+    6) <td class="border p-1" data-dynamic-content="true" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1015:1612">Club A Test 01 & Club A Test 05</td> aka locator('tbody').getByText('Club A Test 01 & Club A Test 05')
+    7) <td class="border p-1" data-dynamic-content="true" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1015:1612">Club A Test 01 & Club A Test 08</td> aka locator('tbody').getByText('Club A Test 01 & Club A Test 08')
+    8) <p class="text-lg mt-1" data-dynamic-content="true" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1292:287">Club A Test 01</p> aka getByText('Club A Test 01', { exact: true })
+    9) <p data-dynamic-content="true" data-collection-item-field="name" class="text-xs text-muted-foreground" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1292:474">Club A Test 01: 8 votes</p> aka getByText('Club A Test 01: 8 votes')
+    10) <span data-dynamic-content="true" class="truncate text-right" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1301:22">Club A Test 02 & Club A Test 01</span> aka locator('span').filter({ hasText: 'Club A Test 02 & Club A Test 01' })
+    ...
 
 Call log:
-  - Expect "toBeVisible" getByText('Player of the Tournament') with timeout 3000ms
-  - waiting for getByText('Player of the Tournament')
+  - Expect "toBeVisible" getByText('Club A Test 01') with timeout 3000ms
+  - waiting for getByText('Club A Test 01')
 
 ```
 
@@ -491,8 +500,8 @@ Call log:
   242 | 
   243 |   await page.getByTestId('cc-tab-simulator').click();await expect(page.getByTestId('cc-populate-full')).toBeVisible();
   244 |   const populateBefore=model.calls.filter(c=>c.name==='populateClubChallengePracticeScenario').length;started=Date.now();await page.getByTestId('cc-populate-full').click();await expect(page.getByText('Populating full TEST MODE event… one server command sent')).toBeVisible({timeout:300});metric(report,'full_test_ack_ms',Date.now()-started,250);await expect(page.getByText('Final Result')).toBeVisible({timeout:2200});metric(report,'full_test_to_results_ms',Date.now()-started,2000);expect(model.calls.filter(c=>c.name==='populateClubChallengePracticeScenario').length-populateBefore).toBe(1);expect(model.matches.filter(m=>!m.is_showcase&&m.status==='completed').length).toBe(48);expect(model.matches.filter(m=>m.is_showcase&&m.status==='completed').length).toBe(1);expect(model.votes.length).toBe(8);report.full_population_browser_calls=1;
-> 245 |   await expect(page.getByText('Player of the Tournament')).toBeVisible();await expect(page.getByText('Club A Test 01')).toBeVisible();await expectNoHorizontalOverflow(page);
-      |                                                            ^ Error: expect(locator).toBeVisible() failed
+> 245 |   await expect(page.getByText('Player of the Tournament',{exact:true}).first()).toBeVisible();await expect(page.getByText('Club A Test 01')).toBeVisible();await expectNoHorizontalOverflow(page);
+      |                                                                                                                                              ^ Error: expect(locator).toBeVisible() failed
   246 | 
   247 |   await page.getByTestId('cc-tab-draw').click();await expect(page.getByText('Round 12',{exact:true})).toBeVisible();await page.getByTestId('cc-tab-live').click();await expect(page.getByText('Round at a Glance')).toBeVisible();report.revisit_populated_screens=true;
   248 | 
