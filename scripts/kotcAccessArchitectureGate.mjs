@@ -24,6 +24,9 @@ const workflow=read('src/lib/kotcV2Workflow.js');
 const dashboard=read('src/pages/Dashboard.jsx');
 const hostSessionPage=read('src/pages/KotcHostSession.jsx');
 const mobileHostTest=read('e2e/kotc-host-journey.spec.mjs');
+const kotcView=read('src/components/kotc/KotcView.jsx');
+const setupPanel=read('src/components/kotc/KotcSetupPanel.jsx');
+const timerUi=read('src/components/kotc/RoundTimer.jsx');
 
 // Super Admin / host boundary.
 includes(access,"caller.role!=='admin'",'only platform admins may grant or revoke delegated host access');
@@ -136,5 +139,23 @@ includes(hostUi,"'pageshow'",'host UI must reconcile authoritative state when a 
 includes(hostUi,'kotc-quick-links','host UI must expose scoring/public links without backwards navigation');
 includes(mobileHostTest,'PageTransitionEvent','mobile host robot must exercise back-forward-cache restoration');
 includes(command,'command-log finalisation skipped after successful sporting write','secondary command-log failure must not report sporting failure');
+
+// Busy-hall UX safeguards: sound check, local player search and explicit test-only scoring helpers.
+includes(timerUi,'Sound check. RallyHub timer ready.','KOTC must provide a real spoken sound check before play');
+includes(timerUi,"localStorage.getItem('kotc-voice-mode')",'KOTC announcement voice choice must persist on the host device');
+includes(timerUi,"utterance.lang = 'en-IE'",'KOTC speech must request Irish English when supported by the device');
+const soundCheckStart=timerUi.indexOf('const testSound = async () =>');
+const soundCheckEnd=timerUi.indexOf('return <div data-testid="kotc-sound-check"',soundCheckStart);
+assert(soundCheckStart>=0&&soundCheckEnd>soundCheckStart&&!timerUi.slice(soundCheckStart,soundCheckEnd).includes('base44.'),'pre-round sound check must be device-local with zero Base44 calls');
+includes(kotcView,"String(p.status || 'Active').toLowerCase() === 'active'",'KOTC operational player picker must exclude inactive players');
+includes(kotcView,"!['archived','inactive'].includes",'KOTC player picker must exclude archived relationships');
+includes(kotcView,"localeCompare(String(b.full_name || ''), 'en'",'KOTC player picker must sort alphabetically on-device');
+includes(kotcView,'data-testid="kotc-player-search"','KOTC add-player picker must expose a name search');
+includes(kotcView,'searchedAvailablePlayers = playerSearch.trim()','KOTC player search must filter the already-loaded directory locally');
+includes(setupPanel,'data-testid="kotc-test-mode"','KOTC setup must require an explicit test-mode choice');
+includes(create,'demo_mode:testMode,exclude_from_aggregates:testMode','test mode must be excluded from historical aggregates at session creation');
+includes(hostUi,'session?.exclude_from_aggregates||session?.demo_mode','Fill Test Scores must be gated by stored test/demo state');
+includes(hostUi,'data-testid="kotc-fill-test-scores"','test-mode host UI must expose the local Fill Test Scores helper');
+includes(hostUi,'setTestFillKey(Date.now())','Fill Test Scores must populate local score UI rather than bulk-writing results');
 
 console.log(`KOTC access/architecture gate: PASS\n${checks} role, privacy, scoring-lock, membership and correction checks, 0 failures.`);
