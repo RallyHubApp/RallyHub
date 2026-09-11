@@ -165,11 +165,12 @@ includes(hostUi,'const testMode=isSuperAdmin&&!!(session?.exclude_from_aggregate
 includes(hostUi,'data-testid="kotc-fill-test-scores"','test-mode host UI must expose the local Fill Test Scores helper');
 includes(hostUi,'setTestFillKey(Date.now())','Fill Test Scores must populate local score UI rather than bulk-writing results');
 
-// Completed KOTC navigation must be lightweight and results-first, not reopen the live host workspace.
-includes(results,"action==='get_or_create_by_tournament'",'results-share endpoint must resolve a completed KOTC directly from its tournament');
-includes(tournamentsUi,"if (t.status === 'Completed') return openingResultsId === t.id ? 'Opening final results…' : 'View final results'",'completed KOTC cards must clearly open final results');
-includes(tournamentsUi,"action:'get_or_create_by_tournament'",'completed KOTC card click must use the narrow results-link endpoint');
-includes(tournamentsUi,"navigate(`/kotc-live/${res.data.token}?manage=1`)",'completed KOTC card must open the permanent results page in authenticated host-management mode');
+// Completed KOTC navigation: Tournament Control Centre stays in the authenticated host
+// review/editor journey. Public/live results remain a separate share route.
+includes(results,"action==='get_or_create_by_tournament'",'results-share endpoint must still be able to resolve a completed KOTC for public sharing');
+includes(tournamentsUi,"if (t.status === 'Completed') return 'Review & edit results';",'completed KOTC cards must clearly advertise the host review/edit journey');
+includes(tournamentsUi,'<Link to={`/app/tournaments/${t.id}`}', 'completed KOTC cards must open the authenticated tournament control route');
+assert(!tournamentsUi.includes('navigate(`/kotc-live/'),'Tournament Control Centre must not send the host into the public live/results route');
 includes(results,"action==='management_state'",'results-share endpoint must verify host/Admin management access server-side');
 includes(publicResultsUi,'data-testid="kotc-results-host-menu"','authenticated completed results must expose a host management menu');
 includes(publicResultsUi,'Correct Results','host results management must expose post-event correction');
