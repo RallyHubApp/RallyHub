@@ -60,8 +60,10 @@ includes(scorer,'This device is already scoring Court','one scorer device may ho
 includes(scorer,'is being scored on another device','same-court scorer collision must be rejected');
 includes(scorer,'expectedRevision','scorer save must use optimistic revision protection');
 includes(scorer,'scorer_correction_owner_client_id:clientId','successful player score must retain correction ownership for the saving device');
-includes(scorer,'Only the scorer device that saved it, or the host','another player device must not reopen an already-saved court');
-includes(scorer,'can_correct:RESOLVED.has(m.status)','scorer state must expose correction ability only to the saving device');
+includes(scorer,'SCORER_CORRECTION_WINDOW_MS=90*1000','helper correction rights must be capped at 90 seconds');
+includes(scorer,"String(match?.scorer_correction_owner_client_id||'')!==String(clientId)",'another player device must not reopen an already-saved court');
+includes(scorer,'The scorer correction window has closed','expired helper correction attempts must be rejected server-side');
+includes(scorer,'can_correct:scorerCorrectionOpen(m,clientId)','scorer state must expose correction ability only to the saving device while its correction window is open');
 assert(!scorer.includes('generate_next_round'),'player scorer must never advance the sporting round');
 assert(!scorer.includes('set_participant_status'),'player scorer must never change participant availability');
 
