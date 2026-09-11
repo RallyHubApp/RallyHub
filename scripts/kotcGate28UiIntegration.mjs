@@ -32,5 +32,5 @@ ok(create.includes('KotcSessionParticipant.bulkCreate'),'participants persisted 
 ok(create.includes('KotcRoundSlot.bulkCreate'),'round slots persisted independently in a rate-limit-safe batch');
 ok(create.includes('KotcMatch.bulkCreate'),'matches persisted independently in a rate-limit-safe batch');
 ok(get.includes('KotcSessionAccess'),'secure state read checks session access');
-ok(get.includes('KotcHostLease'),'host lease surfaced to UI state');
+ok(!get.includes('KotcHostLease')&&get.includes('leases, partnership phases and contact records are not part of the hot path'),'live state keeps host leases off the Base44 hot path');
 console.log(`KOTC Gate 2.8 UI integration: PASS\n${checks} architecture/integration checks, 0 failures.`);
