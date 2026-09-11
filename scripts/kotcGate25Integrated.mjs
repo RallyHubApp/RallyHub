@@ -13,8 +13,8 @@ for (const name of ['kotcV2Domain.js', 'kotcV2Engine.js', 'kotcV2Fairness.js', '
 }
 
 const full = runKotcV2ProductionSimulation({ rounds: 9 });
-assert.equal(full.steadyScenarioCount, 60);
-assert.equal(full.scenarioCount, 62);
+assert.equal(full.steadyScenarioCount, 370);
+assert.equal(full.scenarioCount, 372);
 assert.equal(full.passed, true, JSON.stringify(full.failedChecks.slice(0, 20), null, 2));
 assert.equal(full.failureCount, 0);
 
@@ -25,11 +25,14 @@ for (const [players, courts, rounds] of [
   [15, 4, 12],
   [14, 3, 14],
   [18, 4, 12],
+  [24, 6, 12],
+  [32, 8, 12],
+  [40, 10, 12],
 ]) {
   const run = simulateSteadyKotcSession({ playerCount: players, venueCourtLimit: courts, rounds });
   assert.equal(run.passed, true, `${run.scenario}: ${JSON.stringify(run.checks.filter((c) => !c.passed), null, 2)}`);
 }
 
 console.log('KOTC Gate 2.5 integrated production simulator: PASS');
-console.log(`Production V2 modules used directly. ${full.steadyScenarioCount} player/court scenarios x 9 rounds + workflow and transition safety scenarios.`);
+console.log(`Production V2 modules used directly. ${full.steadyScenarioCount} player/court combinations x 9 rounds + workflow and transition safety scenarios.`);
 console.log(`${full.checkCount} integrated invariant checks, ${full.failureCount} failures.`);
