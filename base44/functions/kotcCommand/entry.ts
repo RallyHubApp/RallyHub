@@ -143,9 +143,9 @@ Deno.serve(async (req) => {
     if (accessRole === 'assistant_host' && !['autosave_score','complete_match','correct_match'].includes(commandType)) return Response.json({ error:'Assistant hosts can enter and correct scores only.' }, { status:403 });
     if (session.status === 'finalised' && !(commandType === 'correct_match' && user.role === 'admin')) return Response.json({ error:'Finalised KOTC sessions are read-only except for audited Super Admin score corrections.' }, { status:409 });
 
-    // A real host always has authority over a player-held scoring lease. Claiming a court
-    // is deliberately non-structural and does not bump the match revision, so simply
-    // focusing a host score box cannot create an artificial stale-score conflict.
+    // Collaborative score entry is first-claim-wins. A primary host may claim a free
+    // court, but never displaces an active player scorer. Claim/release is deliberately
+    // non-structural and does not bump the sporting match revision.
     if (commandType === 'host_claim_score' || commandType === 'host_release_score') {
       if (accessRole === 'assistant_host') return Response.json({ error:'Assistant hosts cannot take over player scorer locks.' }, { status:403 });
       if (!['in_progress','paused'].includes(session.status)) return Response.json({ error:'Host scoring control is only available during a live session.' }, { status:409 });
