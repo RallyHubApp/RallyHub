@@ -156,10 +156,12 @@ Deno.serve(async (req) => {
         if(String(match.scoring_lock_owner||'')===hostOwner)await withRateLimitRetry('host scoring release',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:null,scoring_lock_acquired_at:null,scoring_lock_expires_at:null}));
         return Response.json({success:true,released:true});
       }
-      if(RESOLVED.has(match.status))return Response.json({error:`Court ${match.ladder_court_rank} has already been saved. Refresh player scores to load the result before making any correction.`,saved:true,refresh_required:true},{status:409});
+      const correctionClaim=body.forCorrection===true;
+      if(RESOLVED.has(match.status)&&!correctionClaim)return Response.json({error:`Court ${match.ladder_court_rank} has already been saved. Refresh player scores to load the result before making any correction.`,saved:true,refresh_required:true},{status:409});
+      if(!RESOLVED.has(match.status)&&correctionClaim)return Response.json({error:`Court ${match.ladder_court_rank} has not been saved yet.`,saved:false},{status:409});
       const existingOwner=String(match.scoring_lock_owner||'');const lockActive=!!(existingOwner&&match.scoring_lock_expires_at&&Date.parse(match.scoring_lock_expires_at)>Date.now());
-      if(lockActive&&existingOwner!==hostOwner)return Response.json({error:`Court ${match.ladder_court_rank} is already being entered by a player. Wait for them to save or cancel, then refresh player scores.`,locked:true,retry_after_seconds:Math.max(0,Math.ceil((Date.parse(match.scoring_lock_expires_at)-Date.now())/1000))},{status:423});
-      const now=nowIso(); const expires=new Date(Date.now()+5*60*1000).toISOString();
+      if(lockActive&&existingOwner!==hostOwner)return Response.json({error:correctionClaim?`Court ${match.ladder_court_rank} is already being corrected on another device. Wait for that correction to save or cancel.`:`Court ${match.ladder_court_rank} is already being entered by a player. Wait for them to save or cancel, then refresh player scores.`,locked:true,retry_after_seconds:Math.max(0,Math.ceil((Date.parse(match.scoring_lock_expires_at)-Date.now())/1000))},{status:423});
+      const now=nowIso(); const expires=new Date(Date.now()+(correctionClaim?90:5*60)*1000).toISOString();
       await withRateLimitRetry('host scoring claim',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:hostOwner,scoring_lock_acquired_at:match.scoring_lock_acquired_at||now,scoring_lock_expires_at:expires}));
       return Response.json({success:true,hostAuthority:true,expires_at:expires});
     }
