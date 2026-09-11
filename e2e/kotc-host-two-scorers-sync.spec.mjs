@@ -25,7 +25,8 @@ function createModel(){
   const active=m=>!!(m.scoring_lock_owner&&m.scoring_lock_expires_at&&Date.parse(m.scoring_lock_expires_at)>now());
   const names=Object.fromEntries(participants.map(p=>[p.id,p.display_name]));
   const liveScorePayload=()=>({liveScoresOnly:true,session:{id:model.session.id,status:model.session.status,current_round_id:model.session.current_round_id,current_round_number:1,revision:model.session.revision,timer_state_json:model.session.timer_state_json},matches:model.matches.map(m=>({id:m.id,status:m.status,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,serving_side_at_horn:m.serving_side_at_horn,result_method:m.result_method,revision:m.revision,correction_count:0,completed_at:m.completed_at,command_id:m.command_id,scoring_lock_active:active(m),scoring_lock_kind:active(m)?(String(m.scoring_lock_owner).startsWith('host:')?'host':'player'):'none',scoring_lock_expires_at:active(m)?m.scoring_lock_expires_at:null}))});
-  const scorerState=clientId=>({success:true,session:{name:model.session.name,status:model.session.status,current_round_number:1,scoring_mode:'timed',score_target:11,win_by_two:false},round:{id:model.round.id,round_number:1,status:model.round.status},bench:['Player 17','Player 18'],timer:{running:true,remainingSeconds:420,deadlineAt:new Date(Date.now()+420000).toISOString()},matches:model.matches.map(m=>({id:m.id,court:m.ladder_court_rank,status:m.status,revision:m.revision,team_a:m.team_a_participant_ids.map(id=>names[id]),team_b:m.team_b_participant_ids.map(id=>names[id]),team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:active(m)?(m.scoring_lock_owner===clientId?'mine':'other'):'free',lock_seconds:active(m)?Math.ceil((Date.parse(m.scoring_lock_expires_at)-now())/1000):0,can_correct:m.status==='completed'&&m.scorer_correction_owner_client_id===clientId}))});
+  const correctionOpen=(m,clientId)=>m.status==='completed'&&m.scorer_correction_owner_client_id===clientId&&m.completed_at&&Date.now()-Date.parse(m.completed_at)<=90000;
+  const scorerState=clientId=>({success:true,session:{name:model.session.name,status:model.session.status,current_round_number:1,scoring_mode:'timed',score_target:11,win_by_two:false},round:{id:model.round.id,round_number:1,status:model.round.status},bench:['Player 17','Player 18'],timer:{running:true,remainingSeconds:420,deadlineAt:new Date(Date.now()+420000).toISOString()},matches:model.matches.map(m=>({id:m.id,court:m.ladder_court_rank,status:m.status,revision:m.revision,team_a:m.team_a_participant_ids.map(id=>names[id]),team_b:m.team_b_participant_ids.map(id=>names[id]),team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:active(m)?(m.scoring_lock_owner===clientId?'mine':'other'):'free',lock_seconds:active(m)?Math.ceil((Date.parse(m.scoring_lock_expires_at)-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((Date.parse(m.completed_at)+90000-Date.now())/1000)):0}))});
   model.handle=async(source,name,body)=>{
     model.calls.push({source,name,body:{...body},at:Date.now()});
     if(name==='getKotcV2State'){
@@ -38,9 +39,12 @@ function createModel(){
       if(action==='state')return scorerState(clientId);
       const m=model.matches.find(x=>x.id===body.matchId);if(!m)return {status:404,body:{error:'Match not found'}};
       if(action==='claim'){
+        if(m.status==='completed'&&!correctionOpen(m,clientId))return {status:423,body:{error:`Court ${m.ladder_court_rank} is already saved. The scorer correction window has closed; the host can still correct this result.`,saved:true,read_only:true}};
         const mine=model.matches.find(x=>x.id!==m.id&&x.scoring_lock_owner===clientId&&active(x));if(mine)return {status:423,body:{error:`This device is already scoring Court ${mine.ladder_court_rank}. Save or cancel that court first.`,locked:true}};
         if(active(m)&&m.scoring_lock_owner!==clientId)return {status:423,body:{error:`Court ${m.ladder_court_rank} is being scored on another device.`,locked:true}};
-        m.scoring_lock_owner=clientId;m.scoring_lock_expires_at=new Date(Date.now()+90000).toISOString();return {success:true,claimed:true,lease_seconds:90,expires_at:m.scoring_lock_expires_at};
+        await new Promise(r=>setTimeout(r,10));m.scoring_lock_owner=clientId;m.scoring_lock_expires_at=new Date(Date.now()+90000).toISOString();await new Promise(r=>setTimeout(r,35));
+        if(m.scoring_lock_owner!==clientId||!active(m))return {status:423,body:{error:`Court ${m.ladder_court_rank} was claimed by another scorer.`,locked:true}};
+        return {success:true,claimed:true,lease_seconds:90,expires_at:m.scoring_lock_expires_at};
       }
       if(action==='heartbeat'){
         if(!active(m)||m.scoring_lock_owner!==clientId)return {status:423,body:{error:'Your scoring lock is no longer active.'}};
@@ -58,8 +62,13 @@ function createModel(){
     }
     if(name==='kotcCommand'&&body.commandType==='host_claim_score'){
       const m=model.matches.find(x=>x.id===body.matchId);if(!m)return {status:404,body:{error:'Match not found'}};
-      if(active(m)&&m.scoring_lock_owner!=='host:host-e2e')return {status:423,body:{error:`Court ${m.ladder_court_rank} is already being entered by a player. Wait for them to save or cancel, then refresh player scores.`,locked:true}};
-      m.scoring_lock_owner='host:host-e2e';m.scoring_lock_expires_at=new Date(Date.now()+300000).toISOString();return {success:true,hostAuthority:true,expires_at:m.scoring_lock_expires_at};
+      const correction=body.forCorrection===true;
+      if(m.status==='completed'&&!correction)return {status:409,body:{error:`Court ${m.ladder_court_rank} has already been saved. Refresh player scores to load the result before making any correction.`,saved:true,refresh_required:true}};
+      if(m.status!=='completed'&&correction)return {status:409,body:{error:`Court ${m.ladder_court_rank} has not been saved yet.`}};
+      if(active(m)&&m.scoring_lock_owner!=='host:host-e2e')return {status:423,body:{error:correction?`Court ${m.ladder_court_rank} is already being corrected on another device.`:`Court ${m.ladder_court_rank} is already being entered by a player. Wait for them to save or cancel, then refresh player scores.`,locked:true}};
+      await new Promise(r=>setTimeout(r,10));m.scoring_lock_owner='host:host-e2e';m.scoring_lock_expires_at=new Date(Date.now()+90000).toISOString();await new Promise(r=>setTimeout(r,35));
+      if(m.scoring_lock_owner!=='host:host-e2e'||!active(m))return {status:423,body:{error:`Court ${m.ladder_court_rank} was claimed by another scorer.`,locked:true}};
+      return {success:true,hostAuthority:true,expires_at:m.scoring_lock_expires_at};
     }
     if(name==='kotcCommand'&&body.commandType==='host_release_score'){
       const m=model.matches.find(x=>x.id===body.matchId);if(m?.scoring_lock_owner==='host:host-e2e'){m.scoring_lock_owner=null;m.scoring_lock_expires_at=null;}return {success:true,released:true};
