@@ -63,7 +63,7 @@ function ScoreCard({ match, names, session, onSaved, onRefreshPlayerScores=null,
       return true;
     }catch(e){const data=e?.response?.data||e?.data||{};const status=Number(e?.response?.status||e?.status||0);if(data.refresh_required||status===423){try{await onRefreshPlayerScores?.();}catch{}toast.info(errMsg(e));}else toast.error(errMsg(e));return false;}finally{setClaiming(false);}
   };
-  const changeHostScore=async(side,raw)=>{const value=raw.replace(/\D/g,'').slice(0,2);if(!collaborativeScoring){if(side==='A')setA(value);else setB(value);return;}if(resolved||playerEntering||claiming||saving)return;if(hostOwnsCourt){if(side==='A')setA(value);else setB(value);return;}if(value==='')return;const claimed=await claimHost(false);if(claimed){if(side==='A')setA(value);else setB(value);}};
+  const changeHostScore=async(side,raw)=>{const value=raw.replace(/\D/g,'').slice(0,2);if(!collaborativeScoring){if(side==='A')setA(value);else setB(value);return;}if(playerEntering||claiming||saving)return;if(hostOwnsCourt){if(side==='A')setA(value);else setB(value);return;}if(resolved)return;if(value==='')return;const claimed=await claimHost(false);if(claimed){if(side==='A')setA(value);else setB(value);}};
   const releaseHost=async()=>{
     if(!collaborativeScoring||!hostOwnsCourt)return true;
     try{await base44.functions.invoke('kotcCommand',{sessionId:session.id,commandId:commandId('host-score-release'),commandType:'host_release_score',matchId:match.id});setHostOwnsCourt(false);return true;}catch(e){toast.error(`Could not release Court ${match.ladder_court_rank}: ${errMsg(e)}`);return false;}
