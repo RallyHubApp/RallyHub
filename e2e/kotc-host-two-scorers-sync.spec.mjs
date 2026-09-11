@@ -261,6 +261,45 @@ test('host/helper simultaneous correction attempts use first-claim-wins correcti
   await hostCtx.close();await scorerCtx.close();
 });
 
+test('stale helper correction button cannot bypass the 90-second correction window',async({browser})=>{
+  const model=createModel();
+  const hostCtx=await browser.newContext({viewport:{width:1280,height:900}}),scorerCtx=await browser.newContext({viewport:{width:390,height:844}});
+  await install(hostCtx,model,'host');await install(scorerCtx,model,'scorer-a');
+  const host=await hostCtx.newPage();await host.goto('/e2e/kotcHarness.html');await expect(host.getByText('Round 1 — LIVE')).toBeVisible();
+  const scorer=await openScorer(scorerCtx);const card=await fillCourt(scorer,1,11,2);await card.getByRole('button',{name:'Save Result'}).click();
+  await expect(card).toContainText('Score saved: 11–2');await expect(card.getByRole('button',{name:/Undo \/ Update Score/})).toBeVisible();
+
+  // Simulate the helper leaving this stale page open until the server-side 90-second window expires.
+  model.matches[0].completed_at=new Date(Date.now()-91000).toISOString();
+  await card.getByRole('button',{name:/Undo \/ Update Score/}).click();
+  await expect(card.getByRole('button',{name:/Undo \/ Update Score/})).toHaveCount(0);
+  await expect(card).toContainText('Result already entered');
+  expect(model.matches[0].revision).toBe(1);expect(model.matches[0].team_a_score).toBe(11);expect(model.matches[0].team_b_score).toBe(2);
+
+  // Host authority to correct remains available after the helper window closes.
+  await host.getByTestId('kotc-refresh-player-scores').click();await expect(host.getByTestId('kotc-score-card-1')).toContainText('Saved 11–2');
+  await host.getByTestId('kotc-score-card-1').getByRole('button',{name:'Edit result'}).click();await expect(host.getByTestId('kotc-score-card-1')).toContainText('HOST ENTERING');
+  await host.getByTestId('kotc-score-card-1').getByRole('button',{name:'Cancel'}).click();
+  await hostCtx.close();await scorerCtx.close();
+});
+
+test('Prepare Next Round immediately cuts off helper correction rights even on a stale scorer screen',async({browser})=>{
+  const model=createModel();const scorerCtx=await browser.newContext({viewport:{width:390,height:844}});await install(scorerCtx,model,'scorer-a');
+  const scorer=await openScorer(scorerCtx);const card=await fillCourt(scorer,1,11,3);await card.getByRole('button',{name:'Save Result'}).click();
+  await expect(card).toContainText('Score saved: 11–3');await expect(card.getByRole('button',{name:/Undo \/ Update Score/})).toBeVisible();
+
+  // Simulate host preparing/starting Round 2 while helper still has the old Round 1 screen open.
+  const round2Matches=model.matches.slice(0,4).map((m,i)=>({...m,id:`match-r2-${i+1}`,round_id:'round-2',round_number:2,status:'scheduled',revision:0,team_a_score:null,team_b_score:null,winner_side:null,completed_at:null,scoring_lock_owner:null,scoring_lock_expires_at:null,scorer_correction_owner_client_id:null}));
+  model.matches.push(...round2Matches);model.round={id:'round-2',session_id:model.session.id,round_number:2,status:'started',proposal_revision:1,active_court_count:4,bench_count:2};model.session.current_round_number=2;model.session.current_round_id='round-2';model.session.revision+=1;
+
+  // Stale helper action must be rejected against the old match, then refresh to the new round.
+  await card.getByRole('button',{name:/Undo \/ Update Score/}).click();
+  await expect(scorer.getByText('Round 2')).toBeVisible();await expect(scorer.getByTestId('scorer-court-1')).not.toContainText('Score saved: 11–3');
+  await expect(scorer.getByTestId('scorer-court-1').getByRole('button',{name:/Undo \/ Update Score/})).toHaveCount(0);
+  expect(model.matches[0].revision).toBe(1);expect(model.matches[0].team_a_score).toBe(11);expect(model.matches[0].team_b_score).toBe(3);
+  await scorerCtx.close();
+});
+
 test('four scorer phones recover from simultaneous 429 claim/save burst with bounded calls',async({browser})=>{
   test.setTimeout(60000);
   const model=createModel();
