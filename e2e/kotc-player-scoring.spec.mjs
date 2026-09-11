@@ -146,3 +146,14 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
 
   await aCtx.close();await bCtx.close();
 });
+
+test('scorer reconciles committed save when Base44 response is lost and ignores double tap',async({browser})=>{
+  const model=createModel();model.setCommitThenFail(1);
+  const ctx=await browser.newContext({viewport:{width:390,height:844}});await install(ctx,model);const page=await openScorer(ctx);
+  const card=await fillCourt(page,1,11,4),save=card.getByRole('button',{name:'Save Result'});
+  await Promise.allSettled([save.click(),save.click({force:true})]);
+  await expect(card).toContainText('Score saved: 11–4');await expect(card).not.toContainText(/Response lost|Save failed|rate limit/i);
+  expect(model.matches[0].revision).toBe(1);expect(model.matches[0].team_a_score).toBe(11);expect(model.matches[0].team_b_score).toBe(4);
+  expect(model.calls.filter(c=>c.action==='save').length).toBe(1);
+  await ctx.close();
+});
