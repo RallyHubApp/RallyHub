@@ -129,12 +129,12 @@ test('host + two scorer devices: first claim wins, mixed parallel scoring, manua
   await expect(cardA).toContainText('Score saved: 11–1');await expect(cardB).toContainText('Score saved: 7–8');await expect(host.getByTestId('kotc-score-card-3')).toContainText('Saved 6–4');
 
   // Player saves do not magically appear on host: host has only its local Court 3 result until Refresh.
-  await expect(host.getByText(/1\/4 scores saved/)).toBeVisible();
+  await expect(host.getByTestId('kotc-next-action')).toContainText('1/4 scores saved');
   const refreshReadsBefore=model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length;
   await host.waitForTimeout(1500);
   expect(model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length).toBe(refreshReadsBefore);
   await host.getByTestId('kotc-refresh-player-scores').click();
-  await expect(host.getByText(/3\/4 scores saved/)).toBeVisible();
+  await expect(host.getByTestId('kotc-next-action')).toContainText('3/4 scores saved');
   await expect(host.getByTestId('kotc-score-card-1')).toContainText('Saved 11–1');
   await expect(host.getByTestId('kotc-score-card-2')).toContainText('Saved 7–8');
 
