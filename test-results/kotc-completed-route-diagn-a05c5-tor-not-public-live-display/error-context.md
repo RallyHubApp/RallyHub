@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: kotc-completed-route.spec.mjs >> completed KOTC tournament opens host review/editor, not public live display
-- Location: e2e/kotc-completed-route.spec.mjs:14:1
+- Name: kotc-completed-route-diagnostic.spec.mjs >> completed KOTC tournament opens host review/editor, not public live display
+- Location: e2e/kotc-completed-route-diagnostic.spec.mjs:14:1
 
 # Error details
 
@@ -54,16 +54,20 @@ Call log:
   24 |     return json(route,{success:true});
   25 |   });
   26 |   await page.route(`**/api/apps/${APP_ID}/analytics/**`,route=>json(route,{success:true}));
-  27 |   await page.goto('/e2e/kotcCompletedRouteHarness.html');
-> 28 |   await expect(page.getByRole('heading',{name:'830 Session'}).first()).toBeVisible();
+  27 |   page.on('console',m=>{if(m.type()==='error')console.log('CONSOLEERR',m.text())});
+  28 |   page.on('request',r=>{if(r.url().includes('/api/apps/'))console.log('REQ',r.method(),r.url())});
+  29 |   page.on('response',r=>{if(r.url().includes('/api/apps/'))console.log('RES',r.status(),r.url())});
+  30 |   await page.goto('/e2e/kotcCompletedRouteHarness.html');
+  31 |   await page.waitForTimeout(1200); console.log('BODY',await page.locator('body').innerText()); console.log('ERRORS',errors);
+> 32 |   await expect(page.getByRole('heading',{name:'830 Session'}).first()).toBeVisible();
      |                                                                        ^ Error: expect(locator).toBeVisible() failed
-  29 |   await expect(page.getByText('Session complete')).toBeVisible();
-  30 |   await expect(page.getByText('Review & Correct Results')).toBeVisible();
-  31 |   await expect(page.getByRole('button',{name:'Share Results'})).toBeVisible();
-  32 |   await expect(page.getByRole('button',{name:'Copy Results Link'})).toBeVisible();
-  33 |   await expect(page.getByRole('button',{name:'Email Players'})).toBeVisible();
-  34 |   await expect(page.getByText('King of the Court · Hall Display')).toHaveCount(0);
-  35 |   expect(errors).toEqual([]);
-  36 | });
-  37 | 
+  33 |   await expect(page.getByText('Session complete')).toBeVisible();
+  34 |   await expect(page.getByText('Review & Correct Results')).toBeVisible();
+  35 |   await expect(page.getByRole('button',{name:'Share Results'})).toBeVisible();
+  36 |   await expect(page.getByRole('button',{name:'Copy Results Link'})).toBeVisible();
+  37 |   await expect(page.getByRole('button',{name:'Email Players'})).toBeVisible();
+  38 |   await expect(page.getByText('King of the Court · Hall Display')).toHaveCount(0);
+  39 |   expect(errors).toEqual([]);
+  40 | });
+  41 | 
 ```
