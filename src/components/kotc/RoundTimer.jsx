@@ -128,7 +128,9 @@ export default function RoundTimer({
   const [phase, setPhase] = useState('play');
   const [seconds, setSeconds] = useState(playSeconds);
   const [running, setRunning] = useState(false);
-  const [volume, setVolume] = useState(1);
+  const [volume, setVolume] = useState(() => { const v = Number(localStorage.getItem('kotc-timer-volume')); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; });
+  const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('kotc-voice-mode') || 'irish_female');
+  const [voices, setVoices] = useState([]);
   const [fullscreen, setFullscreen] = useState(false);
   const [floating, setFloating] = useState(false);
   const [position, setPosition] = useState({ x: 12, y: 76 });
@@ -148,11 +150,15 @@ export default function RoundTimer({
     try { await base44.functions.invoke('kotcTimer', { sessionId, roundId, action, remainingSeconds: Math.max(0, Math.ceil(Number(remaining)||0)) }); } catch { /* timer UI remains usable if persistence briefly fails */ }
   };
 
-  const unlockAudio = async () => {
+  const unlockAudio = async ({ test = false } = {}) => {
     if (!audioRef.current) audioRef.current = createAudioContext();
     if (audioRef.current?.state === 'suspended') await audioRef.current.resume();
-    playSignal(audioRef.current, 'start', volume * 0.25);
     setAudioReady(true);
+    if (test) {
+      playSignal(audioRef.current, 'start', Math.max(0.75, volume));
+      window.setTimeout(() => speak('Sound check. RallyHub timer ready.', volume, voiceMode, voices), 500);
+      if ('vibrate' in navigator) navigator.vibrate(120);
+    }
   };
 
   const requestWakeLock = async () => {
@@ -164,8 +170,8 @@ export default function RoundTimer({
   };
 
   const announce = (text, signal = 'warning') => {
-    playSignal(audioRef.current, signal, volume * 0.7);
-    speak(text, volume);
+    playSignal(audioRef.current, signal, volume);
+    speak(text, volume, voiceMode, voices);
     if ('vibrate' in navigator) navigator.vibrate(signal === 'end' ? [250, 120, 250] : 120);
   };
 
@@ -216,13 +222,15 @@ export default function RoundTimer({
   },[sessionId,roundId]);
 
   useEffect(() => {
-    if ('speechSynthesis' in window) {
-      // Warm the browser voice engine while the host is on the round screen. Some
-      // mobile browsers otherwise take several seconds before the first phrase.
-      window.speechSynthesis.getVoices?.();
-      window.speechSynthesis.resume?.();
-    }
+    if (!('speechSynthesis' in window)) return;
+    const load = () => setVoices(window.speechSynthesis.getVoices());
+    load();
+    window.speechSynthesis.resume?.();
+    window.speechSynthesis.addEventListener?.('voiceschanged', load);
+    return () => window.speechSynthesis.removeEventListener?.('voiceschanged', load);
   }, []);
+  useEffect(() => { localStorage.setItem('kotc-voice-mode', voiceMode); }, [voiceMode]);
+  useEffect(() => { localStorage.setItem('kotc-timer-volume', String(volume)); }, [volume]);
 
   useEffect(() => {
     if (!autoStart || !enabled || disabled || !autoStartKey || !hydrated || !hydratedRef.current) return;
@@ -256,8 +264,8 @@ export default function RoundTimer({
       }
       if (remaining <= 5 && remaining > 0 && !lastAnnouncedRef.current.has(`count-${remaining}`)) {
         lastAnnouncedRef.current.add(`count-${remaining}`);
-        playSignal(audioRef.current, 'warning', volume * 0.6);
-        speak(String(remaining), volume);
+        playSignal(audioRef.current, 'warning', volume * 0.9);
+        speak(String(remaining), volume, voiceMode, voices);
       }
       if (remaining === 0) {
         setRunning(false);
@@ -346,7 +354,7 @@ export default function RoundTimer({
         </div>
         <div className="flex gap-1.5 shrink-0">
           {floating && !fullscreen && <Move className="w-4 h-4 text-muted-foreground self-center mr-1" />}
-          <Button variant="outline" size="icon" onClick={unlockAudio} disabled={disabled || !enabled} title="Test / enable speaker sound">
+          <Button variant="outline" size="icon" onClick={() => unlockAudio({ test: true })} disabled={disabled || !enabled} title="Test speaker and spoken announcement">
             {audioReady ? <Volume2 className="w-4 h-4 text-primary" /> : <VolumeX className="w-4 h-4" />}
           </Button>
           <Button variant="outline" size="icon" onClick={() => setFloating(value => !value)} title={floating ? 'Dock timer back in page' : 'Float and move timer'}>
@@ -372,10 +380,13 @@ export default function RoundTimer({
       </div>
 
       {!fullscreen && !floating && (
-        <div className="flex items-center gap-3 rounded-xl bg-secondary/50 px-3 py-2">
-          <Volume2 className="w-4 h-4 text-muted-foreground" />
-          <input type="range" min="0" max="1" step="0.05" value={volume} onChange={event => setVolume(Number(event.target.value))} className="w-full" />
-          <span className="text-xs font-mono text-muted-foreground w-10 text-right">{Math.round(volume * 100)}%</span>
+        <div className="space-y-2 rounded-xl bg-secondary/50 px-3 py-2">
+          <div className="flex items-center gap-3">
+            <Volume2 className="w-4 h-4 text-muted-foreground" />
+            <input type="range" min="0" max="1" step="0.05" value={volume} onChange={event => setVolume(Number(event.target.value))} className="w-full" />
+            <span className="text-xs font-mono text-muted-foreground w-10 text-right">{Math.round(volume * 100)}%</span>
+          </div>
+          <div className="flex items-center justify-between gap-2"><span className="text-[10px] text-muted-foreground">Announcement voice</span><select aria-label="Timer announcement voice" className="h-9 rounded-md bg-background border border-border px-2 text-xs" value={voiceMode} onChange={e=>setVoiceMode(e.target.value)}><option value="irish_female">Irish Female</option><option value="irish_male">Irish Male</option><option value="device_default">Device Default</option></select></div>
         </div>
       )}
 
