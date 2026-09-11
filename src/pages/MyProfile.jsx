@@ -43,7 +43,7 @@ export default function MyProfile() {
     queryFn: () => base44.entities.Match.list('-created_date', 200)
   });
 
-  const [form, setForm] = useState({});
+  const [form, setForm] = useState(/** @type {any} */ ({}));
 
   useEffect(() => {
     if (linkedPlayer) {
@@ -119,7 +119,7 @@ export default function MyProfile() {
     if (!linkedPlayer) { toast.error('Save your profile first'); return; }
     setSyncingDupr(true);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = /** @type {any} */ (await base44.integrations.Core.InvokeLLM({
         prompt: `Look up the DUPR pickleball rating for player with DUPR ID: ${form.dupr_id}. 
 Go to https://mydupr.com or the DUPR API to find their current rating. 
 Return ONLY the numeric rating value (e.g. 4.123). If you cannot find a rating for this ID, return null.`,
@@ -131,7 +131,7 @@ Return ONLY the numeric rating value (e.g. 4.123). If you cannot find a rating f
             found: { type: 'boolean' }
           }
         }
-      });
+      }));
       const { rating, found } = res;
       const updateData = {
         dupr_id: form.dupr_id,
