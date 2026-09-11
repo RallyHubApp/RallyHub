@@ -28,9 +28,9 @@ ok(command.includes('Fairness substitution invariant failed'),'server fairness i
 ok(command.includes('current-round match result(s) unresolved'),'unresolved results block generation');
 ok(create.includes("ENGINE_VERSION='2.0.0-rc.1'"),'new sessions pin accepted RC engine');
 ok(v2.includes('Tap one player then another to swap'),'current tap-to-swap host editor is mounted');
-ok(create.includes('KotcSessionParticipant.create'),'participants persisted independently');
-ok(create.includes('KotcRoundSlot.create'),'round slots persisted independently');
-ok(create.includes('KotcMatch.create'),'matches persisted independently');
+ok(create.includes('KotcSessionParticipant.bulkCreate'),'participants persisted independently in a rate-limit-safe batch');
+ok(create.includes('KotcRoundSlot.bulkCreate'),'round slots persisted independently in a rate-limit-safe batch');
+ok(create.includes('KotcMatch.bulkCreate'),'matches persisted independently in a rate-limit-safe batch');
 ok(get.includes('KotcSessionAccess'),'secure state read checks session access');
 ok(get.includes('KotcHostLease'),'host lease surfaced to UI state');
 console.log(`KOTC Gate 2.8 UI integration: PASS\n${checks} architecture/integration checks, 0 failures.`);
