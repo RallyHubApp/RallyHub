@@ -94,7 +94,7 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
 
   // The scorer device that saved it can reopen and correct while the host has not advanced the round.
   await card.getByRole('button',{name:'Undo / Update Score'}).click();
-  await expect(card).toContainText('Score unlocked for correction');
+  await expect(card).toContainText('Court 1 ready for correction');
   card=await fillCourt(a,1,12,8);await card.getByRole('button',{name:'Save Updated Score'}).click();
   await expect(card).toContainText('Score saved: 12–8');
   expect(model.matches[0].revision).toBe(2);expect(model.matches[0].correction_count).toBe(1);
