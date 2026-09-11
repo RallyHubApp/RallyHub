@@ -319,6 +319,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, []);
   React.useEffect(() => { localStorage.setItem('cc-voice-mode', voiceMode); }, [voiceMode]);
   React.useEffect(() => { localStorage.setItem('cc-voice-muted', String(voiceMuted)); }, [voiceMuted]);
+  React.useEffect(() => { localStorage.setItem('cc-hall-volume', String(hallVolume)); }, [hallVolume]);
+  React.useEffect(() => () => { wakeLockRef.current?.release?.(); window.speechSynthesis?.cancel(); }, []);
   React.useEffect(() => {
     const online = () => setNetworkOnline(true), offline = () => setNetworkOnline(false);
     window.addEventListener('online', online); window.addEventListener('offline', offline);
