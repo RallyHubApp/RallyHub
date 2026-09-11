@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2, Crown, FileSpreadsheet, Zap, Flag, ArrowRight } from 'lucide-react';
+import { Plus, Trophy, Calendar, MapPin, Users, Search, Trash2, Crown, FileSpreadsheet, Zap, Flag, ArrowRight, FlaskConical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,7 @@ export default function Tournaments() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [sandboxCreating, setSandboxCreating] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -65,6 +66,18 @@ export default function Tournaments() {
   const handleQuickKotc = () => openCreateFor('King of the Court');
   const handleQuickTournival = () => openCreateFor('Tournival');
   const handleQuickClubChallenge = () => openCreateFor('Club Challenge');
+  const createKotcSandbox = async () => {
+    if (sandboxCreating) return;
+    try {
+      setSandboxCreating(true);
+      const res = await base44.functions.invoke('manageKotcTestSandbox', { action:'create' });
+      if (!res.data?.success || !res.data?.tournamentId) throw new Error(res.data?.error || 'Could not create KOTC Test Sandbox');
+      queryClient.invalidateQueries({ queryKey:['tournaments'] });
+      navigate(`/app/tournaments/${res.data.tournamentId}`);
+    } finally {
+      setSandboxCreating(false);
+    }
+  };
 
   const handleDelete = async (e, id) => {
     e.preventDefault();
@@ -114,6 +127,10 @@ export default function Tournaments() {
             <p className="text-sm font-semibold text-foreground">Start a competition</p>
             <p className="text-xs text-muted-foreground mt-0.5">Choose a featured format, add the event details, then continue into its dedicated setup.</p>
           </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+          {isAdmin&&<Button data-testid="kotc-create-sandbox" variant="outline" size="sm" className="justify-start sm:justify-center border-amber-400/40 text-amber-600" onClick={createKotcSandbox} disabled={sandboxCreating}>
+            <FlaskConical className="w-4 h-4 mr-2" /> {sandboxCreating?'Creating sandbox…':'KOTC Test Sandbox'}
+          </Button>}
           <Button variant="ghost" size="sm" className="justify-start sm:justify-center text-muted-foreground" onClick={async () => {
             const user = await base44.auth.me().catch(() => null);
             const t = await base44.entities.Tournament.create({
@@ -128,6 +145,7 @@ export default function Tournaments() {
           }}>
             <FileSpreadsheet className="w-4 h-4 mr-2" /> Import KOTC roster
           </Button>
+          </div>
         </div>
         <div className="grid md:grid-cols-3 gap-3">
           {[
