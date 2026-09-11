@@ -500,26 +500,28 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } finally { timerCommandRef.current = false; setHostAction(''); }
   };
 
-  const chooseVoice = mode => {
-    if (!voices.length || mode === 'device_default') return null;
-    const ie = voices.filter(v => /^en[-_]IE$/i.test(v.lang) || /irish|ireland/i.test(`${v.name} ${v.lang}`));
-    const femaleHint = /female|siri.*(female|2)|moira|fiona|caitlin|orla|aoife/i;
-    const maleHint = /male|siri.*(male|1)|liam|sean|colm|cian/i;
-    if (mode === 'irish_female') return ie.find(v => femaleHint.test(v.name)) || ie.find(v => !maleHint.test(v.name)) || ie[0] || null;
-    if (mode === 'irish_male') return ie.find(v => maleHint.test(v.name)) || ie.find(v => !femaleHint.test(v.name)) || ie[0] || null;
-    return null;
+  const unlockHallAudio = async ({ test = false } = {}) => {
+    try {
+      const ctx = await unlockRallyHubAudio();
+      setAudioReady(!!ctx && ctx.state === 'running');
+      if (test) {
+        playRallyHubSignal(ctx, 'start', Math.max(0.8, hallVolume));
+        window.setTimeout(() => speakRallyHub('Sound check. RallyHub Club Challenge ready.', { volume: hallVolume, voiceMode, voices }), 450);
+        if ('vibrate' in navigator) navigator.vibrate(120);
+      }
+      return ctx;
+    } catch { return null; }
   };
-  const speak = (text, { force = false } = {}) => {
-    if (!text || !('speechSynthesis' in window) || voiceMode === 'off' || (voiceMuted && !force)) return false;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-IE';
-    const voice = chooseVoice(voiceMode);
-    if (voice) utterance.voice = voice;
-    utterance.rate = 0.95;
-    window.speechSynthesis.speak(utterance);
-    setLastAnnouncement(text);
-    return true;
+  const requestWakeLock = async () => {
+    try { if ('wakeLock' in navigator) wakeLockRef.current = await navigator.wakeLock.request('screen'); } catch { /* best effort */ }
+  };
+  const speak = (text, { force = false, signal = null } = {}) => {
+    if (!text || voiceMode === 'off' || (voiceMuted && !force)) return false;
+    const ctx = window.__rallyhubAudioContext || null;
+    if (signal) playRallyHubSignal(ctx, signal, hallVolume);
+    const spoken = speakRallyHub(text, { volume: hallVolume, voiceMode, voices });
+    if (spoken) setLastAnnouncement(text);
+    return spoken;
   };
   const roundLabel = round => roundLabels[round] || `Round ${round}`;
   const saveRoundLabel = async round => {
