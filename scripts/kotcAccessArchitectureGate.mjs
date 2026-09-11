@@ -28,6 +28,7 @@ const kotcView=read('src/components/kotc/KotcView.jsx');
 const setupPanel=read('src/components/kotc/KotcSetupPanel.jsx');
 const timerUi=read('src/components/kotc/RoundTimer.jsx');
 const tournamentsUi=read('src/pages/Tournaments.jsx');
+const publicResultsUi=read('src/pages/PublicKotcResults.jsx');
 
 // Super Admin / host boundary.
 includes(access,"caller.role!=='admin'",'only platform admins may grant or revoke delegated host access');
@@ -166,6 +167,13 @@ includes(hostUi,'setTestFillKey(Date.now())','Fill Test Scores must populate loc
 includes(results,"action==='get_or_create_by_tournament'",'results-share endpoint must resolve a completed KOTC directly from its tournament');
 includes(tournamentsUi,"if (t.status === 'Completed') return openingResultsId === t.id ? 'Opening final results…' : 'View final results'",'completed KOTC cards must clearly open final results');
 includes(tournamentsUi,"action:'get_or_create_by_tournament'",'completed KOTC card click must use the narrow results-link endpoint');
-includes(tournamentsUi,"navigate(`/kotc-live/${res.data.token}`)",'completed KOTC card must navigate to the permanent read-only results page');
+includes(tournamentsUi,"navigate(`/kotc-live/${res.data.token}?manage=1`)",'completed KOTC card must open the permanent results page in authenticated host-management mode');
+includes(results,"action==='management_state'",'results-share endpoint must verify host/Admin management access server-side');
+includes(publicResultsUi,'data-testid="kotc-results-host-menu"','authenticated completed results must expose a host management menu');
+includes(publicResultsUi,'Correct Results','host results management must expose post-event correction');
+includes(publicResultsUi,'Share Results','host results management must expose local results sharing');
+includes(publicResultsUi,'Send to Players','host results management must expose on-demand participant email');
+includes(publicResultsUi,"navigator.share",'results sharing should use the local device share sheet where available');
+includes(publicResultsUi,"action:'email_players'",'player email must happen only on an explicit host action');
 
 console.log(`KOTC access/architecture gate: PASS\n${checks} role, privacy, scoring-lock, membership and correction checks, 0 failures.`);
