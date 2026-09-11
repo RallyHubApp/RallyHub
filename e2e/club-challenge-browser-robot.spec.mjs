@@ -21,4 +21,6 @@ test('club challenge harness diagnostic', async ({ page }) => {
   await page.goto('/e2e/clubChallengeHarness.html');
   await expect(page.getByText('Club Challenge v1.0')).toBeVisible({ timeout: 5000 });
   await expect(page.getByText('Estimated event duration')).toBeVisible();
+  await page.getByRole('button', { name: 'Create & Continue to Teams' }).click();
+  await page.waitForTimeout(1200);
 });
