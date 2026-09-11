@@ -195,3 +195,64 @@ test('stale host cannot type over a helper score that was already saved',async({
 
   await hostCtx.close();await scorerCtx.close();
 });
+
+test('same-millisecond host/helper first digits leave exactly one court owner',async({browser})=>{
+  const model=createModel();
+  const hostCtx=await browser.newContext({viewport:{width:1280,height:900}}),scorerCtx=await browser.newContext({viewport:{width:390,height:844}});
+  await install(hostCtx,model,'host');await install(scorerCtx,model,'scorer-a');
+  const host=await hostCtx.newPage();await host.goto('/e2e/kotcHarness.html');await expect(host.getByText('Round 1 — LIVE')).toBeVisible();
+  const scorer=await openScorer(scorerCtx);
+  const hostInput=host.getByTestId('kotc-score-1-a'),scorerInput=scorer.getByTestId('scorer-court-1').locator('input').nth(0);
+
+  await Promise.allSettled([hostInput.fill('8'),scorerInput.fill('9')]);
+  await host.waitForTimeout(250);
+  const scorerClaim=model.calls.find(c=>c.source==='scorer-a'&&c.name==='kotcScorer'&&c.body.action==='claim');
+  const scorerClient=scorerClaim?.body.clientId;
+  const owner=model.matches[0].scoring_lock_owner;
+  expect(['host:host-e2e',scorerClient]).toContain(owner);
+  expect(owner).toBeTruthy();
+
+  if(owner==='host:host-e2e'){
+    await expect(hostInput).toHaveValue('8');
+    await expect(scorerInput).toHaveValue('');
+    await host.getByTestId('kotc-score-card-1').getByRole('button',{name:'Cancel'}).click();
+    await scorer.getByTestId('scorer-refresh').click();
+    await scorerInput.fill('4');await expect(scorerInput).toHaveValue('4');
+  }else{
+    await expect(scorerInput).toHaveValue('9');
+    await expect(hostInput).toHaveValue('');
+    await scorer.getByTestId('scorer-court-1').getByRole('button',{name:'Cancel'}).click();
+    await host.getByTestId('kotc-refresh-player-scores').click();
+    await hostInput.fill('4');await expect(hostInput).toHaveValue('4');
+  }
+  expect(model.matches[0].scoring_lock_owner).toBeTruthy();
+  await hostCtx.close();await scorerCtx.close();
+});
+
+test('host/helper simultaneous correction attempts use first-claim-wins correction lock',async({browser})=>{
+  const model=createModel();
+  const hostCtx=await browser.newContext({viewport:{width:1280,height:900}}),scorerCtx=await browser.newContext({viewport:{width:390,height:844}});
+  await install(hostCtx,model,'host');await install(scorerCtx,model,'scorer-a');
+  const host=await hostCtx.newPage();await host.goto('/e2e/kotcHarness.html');await expect(host.getByText('Round 1 — LIVE')).toBeVisible();
+  const scorer=await openScorer(scorerCtx);
+
+  const helperCard=await fillCourt(scorer,1,11,2);await helperCard.getByRole('button',{name:'Save Result'}).click();await expect(helperCard).toContainText('Score saved: 11–2');
+  await host.getByTestId('kotc-refresh-player-scores').click();await expect(host.getByTestId('kotc-score-card-1')).toContainText('Saved 11–2');
+  const hostEdit=host.getByTestId('kotc-score-card-1').getByRole('button',{name:'Edit result'}),helperEdit=helperCard.getByRole('button',{name:/Undo \/ Update Score/});
+  await Promise.allSettled([hostEdit.click(),helperEdit.click()]);
+  await host.waitForTimeout(250);
+
+  const scorerClaim=[...model.calls].reverse().find(c=>c.source==='scorer-a'&&c.name==='kotcScorer'&&c.body.action==='claim');
+  const scorerClient=scorerClaim?.body.clientId;const owner=model.matches[0].scoring_lock_owner;
+  expect(['host:host-e2e',scorerClient]).toContain(owner);
+  if(owner==='host:host-e2e'){
+    await host.getByTestId('kotc-score-1-a').fill('12');await host.getByTestId('kotc-score-1-b').fill('3');
+    await host.getByTestId('kotc-score-card-1').getByRole('button',{name:'Save Correction'}).click();
+  }else{
+    await helperCard.locator('input').nth(0).fill('12');await helperCard.locator('input').nth(1).fill('3');
+    await helperCard.getByRole('button',{name:'Save Updated Score'}).click();
+  }
+  await expect.poll(()=>model.matches[0].revision).toBe(2);
+  expect(model.matches[0].team_a_score).toBe(12);expect(model.matches[0].team_b_score).toBe(3);expect(model.matches[0].scoring_lock_owner).toBe(null);
+  await hostCtx.close();await scorerCtx.close();
+});
