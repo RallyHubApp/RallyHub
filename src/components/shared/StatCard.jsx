@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+/** @param {any} props */
 export default function StatCard({ title, value, icon: Icon, trend, trendUp, delay = 0, accentColor = 'primary' }) {
   return (
     <motion.div
