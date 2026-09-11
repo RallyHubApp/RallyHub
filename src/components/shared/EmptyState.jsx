@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 
+/** @param {any} props */
 export default function EmptyState({ icon: Icon, title, description, actionLabel, onAction }) {
   return (
     <motion.div
