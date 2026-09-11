@@ -550,11 +550,6 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       await sync();
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reopen Club Challenge'); }
   };
-  const announcePhase = (phase, round = currentRound) => {
-    const label = roundLabel(round);
-    const text = phase === 'play' ? `${label}. Play. ${Number(event?.play_minutes || 10)} minutes.` : phase === 'changeover' ? `${label} complete. Changeover. ${Number(event?.changeover_minutes || 2)} minutes.` : `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`;
-    speak(text);
-  };
   const startPhase = async phase => {
     // The host's tap is the best chance to unlock mobile audio before the network await.
     await unlockHallAudio();
@@ -582,6 +577,29 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
   const fmtTimer = s => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
   const testVoice = () => unlockHallAudio({ test:true });
+  React.useEffect(() => {
+    if (!timerState?.running) return;
+    const phase = timerState.phase || 'play';
+    const announceOnce = (key, text, signal = 'warning') => {
+      if (lastTimerAnnouncementRef.current.has(key)) return;
+      lastTimerAnnouncementRef.current.add(key);
+      speak(text, { signal });
+    };
+    const prefix = `${currentRound}-${phase}`;
+    if (phase === 'play') {
+      if (timerRemaining === 60) announceOnce(`${prefix}-60`, 'One minute remaining.');
+      if (timerRemaining === 30) announceOnce(`${prefix}-30`, 'Thirty seconds.');
+      if (timerRemaining === 10) announceOnce(`${prefix}-10`, 'Ten seconds.');
+    } else if (phase === 'changeover') {
+      if (timerRemaining === 30) announceOnce(`${prefix}-30`, 'Thirty seconds until the next round.');
+      if (timerRemaining === 10) announceOnce(`${prefix}-10`, 'Ten seconds.');
+    }
+    if (timerRemaining <= 5 && timerRemaining > 0) announceOnce(`${prefix}-count-${timerRemaining}`, String(timerRemaining));
+    if (timerRemaining === 0) {
+      announceOnce(`${prefix}-end`, phase === 'play' ? 'Round finished. Please give your scores.' : phase === 'changeover' ? 'Changeover finished. Next round ready.' : 'Break finished.', 'end');
+      wakeLockRef.current?.release?.();
+    }
+  }, [timerRemaining, timerState?.running, timerState?.phase, currentRound, hallVolume, voiceMode, voiceMuted, voices]);
   const runCompressedTimerAudioTest = async () => {
     if (compressedTimer.running) return;
     const steps = [
