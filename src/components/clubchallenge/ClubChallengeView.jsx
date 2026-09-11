@@ -483,7 +483,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const timerAction = async (action, phase) => {
-    if (!event) return false;
+    if (!event || timerCommandRef.current) return false;
+    timerCommandRef.current = true;
+    setHostAction(action === 'start' ? `Starting ${phase || 'timer'}… command sent` : action === 'pause' ? 'Pausing timer… command sent' : action === 'resume' ? 'Resuming timer… command sent' : 'Updating timer… command sent');
     try {
       const res = await base44.functions.invoke('updateClubChallengeTimer', { eventId: event.id, action, phase, expectedRevision: Number(event.timer_revision || 0) });
       if (res.data?.conflict) { toast.error('Timer changed on another device. RallyHub has refreshed the authoritative timer.'); await refetchEvent(); return false; }
@@ -491,11 +493,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       await refetchEvent();
       return true;
     } catch (e) {
-      if (e?.response?.status === 409) toast.error('Timer changed on another device. Refreshing authoritative timer.');
-      else toast.error(e?.response?.data?.error || e?.message || 'Could not update timer');
       await refetchEvent();
+      if (e?.response?.status === 409) toast.error('Timer changed on another device. Authoritative state reloaded.');
+      else toast.error(e?.response?.data?.error || e?.message || 'Could not update timer');
       return false;
-    }
+    } finally { timerCommandRef.current = false; setHostAction(''); }
   };
 
   const chooseVoice = mode => {
