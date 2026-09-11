@@ -110,6 +110,9 @@ test('host + two scorer devices: first claim wins, mixed parallel scoring, manua
   expect(model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length).toBe(before);
 
   const [a,b]=await Promise.all([openScorer(aCtx),openScorer(bCtx)]);
+  const scorerStateBefore=model.calls.filter(c=>c.name==='kotcScorer'&&c.body.action==='state').length;
+  await a.waitForTimeout(5500);
+  expect(model.calls.filter(c=>c.name==='kotcScorer'&&c.body.action==='state').length).toBe(scorerStateBefore);
   await a.getByTestId('scorer-court-1').locator('input').nth(0).fill('1');
   await b.getByTestId('scorer-court-2').locator('input').nth(0).fill('7');
   await expect(a.getByTestId('scorer-court-1')).toContainText('locked to you');
@@ -122,10 +125,12 @@ test('host + two scorer devices: first claim wins, mixed parallel scoring, manua
   await expect(host.getByTestId('kotc-score-card-2')).toContainText('Player entering this court');
   await expect(host.getByTestId('kotc-score-2-a')).toBeDisabled();
 
-  // Host claims a different free court on the first actual digit; scorer pages see that court as unavailable.
+  // Host claims a different free court on the first actual digit. The scorer page does not poll;
+  // one explicit scorer refresh reveals the host lock.
   await host.getByTestId('kotc-score-3-a').fill('6');
   await expect(host.getByTestId('kotc-score-card-3')).toContainText('HOST ENTERING');
-  await expect(a.getByTestId('scorer-court-3')).toContainText(/host or another scorer|LOCKED/,{timeout:6500});
+  await a.getByTestId('scorer-refresh').click();
+  await expect(a.getByTestId('scorer-court-3')).toContainText(/host or another scorer|LOCKED/);
 
   // All three can score in parallel on separate courts.
   const cardA=await fillCourt(a,1,11,1),cardB=await fillCourt(b,2,7,8);
