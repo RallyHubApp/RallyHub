@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+/** @param {any} props */
 export default function GlassCard({ children, className, glow, delay = 0, ...props }) {
   return (
     <motion.div
