@@ -97,8 +97,12 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
   await expect(card).toContainText('Score saved: 11–7');
   expect(model.matches[0].revision).toBe(1);
 
-  // Other players on Court 1 can see the saved result but cannot reopen it.
-  await expect(b.getByTestId('scorer-court-1')).toContainText('Score saved: 11–7',{timeout:6500});
+  // Other players pull the saved result only when they explicitly refresh; there is no hidden scorer polling.
+  const bStateBefore=model.calls.filter(c=>c.action==='state').length;
+  await b.waitForTimeout(5500);
+  expect(model.calls.filter(c=>c.action==='state').length).toBe(bStateBefore);
+  await b.getByTestId('scorer-refresh').click();
+  await expect(b.getByTestId('scorer-court-1')).toContainText('Score saved: 11–7');
   await expect(b.getByTestId('scorer-court-1').getByRole('button',{name:'Undo / Update Score'})).toHaveCount(0);
   await expect(b.getByTestId('scorer-court-1')).toContainText(/Result already entered|host can update/i);
 
