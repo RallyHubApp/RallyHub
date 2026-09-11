@@ -84,6 +84,32 @@ export default function PublicKotcResults(){
 
   return <div className="min-h-screen bg-background p-3 sm:p-5"><main className="max-w-5xl mx-auto space-y-4">
     {offline&&<div className="sticky top-2 z-30 rounded-lg bg-yellow-500 text-black p-3 text-center font-semibold"><WifiOff className="inline w-4 h-4 mr-2"/>Connection lost — showing last known state. RallyHub will resynchronise automatically.</div>}
+    {requestedManage&&managementLoading&&<div className="glass rounded-xl p-3 text-sm text-muted-foreground">Checking host controls…</div>}
+    {management?.canManage&&<section className="glass rounded-xl p-3 sm:p-4 space-y-3" data-testid="kotc-results-host-menu">
+      <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[.18em] text-primary font-bold">Host results management</p><p className="text-xs text-muted-foreground mt-0.5">Review, correct and share this finished session.</p></div><Button variant="outline" size="sm" onClick={()=>setHostMenuOpen(v=>!v)}><Menu className="w-4 h-4 mr-1"/>{hostMenuOpen?'Close':'Host Menu'}</Button></div>
+      {hostMenuOpen&&<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <Button variant="outline" className="min-h-11" onClick={()=>navigate('/app/tournaments')}><ArrowLeft className="w-4 h-4 mr-1"/>Tournaments</Button>
+        <Button variant="outline" className="min-h-11" onClick={()=>{setCorrectionOpen(v=>!v);setHostMenuOpen(false);}}><Pencil className="w-4 h-4 mr-1"/>Correct Results</Button>
+        <Button variant="outline" className="min-h-11" onClick={shareResults}><Share2 className="w-4 h-4 mr-1"/>Share Results</Button>
+        <Button className="min-h-11" onClick={sendToPlayers} disabled={sendingPlayers}><Mail className="w-4 h-4 mr-1"/>{sendingPlayers?'Sending…':'Send to Players'}</Button>
+      </div>}
+    </section>}
+    {management?.canManage&&correctionOpen&&<section className="glass rounded-xl p-3 sm:p-4 space-y-3" data-testid="kotc-results-correction-panel">
+      <div className="flex items-start justify-between gap-3"><div><h2 className="font-semibold">Correct Results</h2><p className="text-xs text-muted-foreground mt-1">Choose a completed round and correct one court. Saving recalculates the standings and podium; historical court assignments do not change.</p></div><Button size="sm" variant="ghost" onClick={()=>{setCorrectionOpen(false);setEditingMatchId('');}}><X className="w-4 h-4"/></Button></div>
+      <div className="flex gap-2 overflow-x-auto pb-1">{historyRounds.map(r=><Button key={`edit-${r}`} size="sm" variant={selectedHistoryRound===r?'default':'outline'} className="shrink-0" onClick={()=>{setHistoryRound(r);setEditingMatchId('');}}>Round {r}</Button>)}</div>
+      <div className="grid md:grid-cols-2 gap-3">{(management.matches||[]).filter(m=>Number(m.round_number)===Number(selectedHistoryRound)).map(m=><div key={m.id} className="rounded-xl border p-3 space-y-3">
+        <div className="flex items-center justify-between"><p className="font-semibold text-sm">Court {m.court}</p><Badge variant="outline">Round {m.round_number}</Badge></div>
+        {editingMatchId===m.id?<>
+          <div className="grid grid-cols-[1fr_82px] items-center gap-2"><span className="text-sm leading-tight">{m.team_a.join(' & ')}</span><Input type="number" min="0" max="99" value={editA} onChange={e=>setEditA(e.target.value)} className="text-center text-lg font-bold"/></div>
+          <div className="grid grid-cols-[1fr_82px] items-center gap-2"><span className="text-sm leading-tight">{m.team_b.join(' & ')}</span><Input type="number" min="0" max="99" value={editB} onChange={e=>setEditB(e.target.value)} className="text-center text-lg font-bold"/></div>
+          {data.session.scoring_mode==='timed'&&editA!==''&&editB!==''&&Number(editA)===Number(editB)&&<div className="rounded-lg border p-2"><p className="text-xs font-semibold mb-2">Who was serving at the horn?</p><div className="grid grid-cols-2 gap-2"><Button size="sm" variant={editServing==='A'?'default':'outline'} onClick={()=>setEditServing('A')}>Team A</Button><Button size="sm" variant={editServing==='B'?'default':'outline'} onClick={()=>setEditServing('B')}>Team B</Button></div></div>}
+          <div className="grid grid-cols-2 gap-2"><Button onClick={()=>saveCorrection(m)} disabled={savingCorrection||editA===''||editB===''}><Save className="w-4 h-4 mr-1"/>{savingCorrection?'Saving…':'Save Correction'}</Button><Button variant="outline" onClick={()=>setEditingMatchId('')} disabled={savingCorrection}>Cancel</Button></div>
+        </>:<>
+          <div className="flex items-center justify-between gap-3 text-sm"><span>{m.team_a.join(' & ')}</span><strong>{m.team_a_score}</strong></div><div className="flex items-center justify-between gap-3 text-sm"><span>{m.team_b.join(' & ')}</span><strong>{m.team_b_score}</strong></div>
+          <Button variant="outline" className="w-full" onClick={()=>beginCorrection(m)}><Pencil className="w-4 h-4 mr-1"/>Edit Court Result</Button>
+        </>}
+      </div>)}</div>
+    </section>}
     <header className="glass rounded-xl p-5 text-center relative">
       <div className="sm:absolute sm:right-3 sm:top-3"><Button variant="outline" size="sm" onClick={()=>toggleHall(true)} data-testid="enter-hall-display"><MonitorUp className="w-4 h-4 mr-1"/>Hall Display</Button></div>
       <p className="text-[10px] uppercase tracking-[.22em] text-primary font-bold mt-3 sm:mt-0">King of the Court · {finished?'Final Results':'Live'}</p>
