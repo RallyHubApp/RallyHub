@@ -798,24 +798,29 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const advanceRound = async () => {
+    if (sportingActionRef.current) return;
     const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase);
     const unresolved = currentMatches.filter(m => !['completed', 'draw', 'retired', 'forfeit', 'abandoned', 'not_played'].includes(m.status));
     if (unresolved.length) { toast.error(`${unresolved.length} result${unresolved.length === 1 ? '' : 's'} still missing in Round ${currentRound}.`); return; }
-    const maxRound = Math.max(...rounds);
-    if (currentRound < maxRound) {
-      const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1 });
-      if (res.data?.error) { toast.error(res.data.error); return; }
-      toast.success(`Round ${currentRound + 1} ready`);
-      await refetchEvent();
-    } else {
-      if (resolvedNormalCount !== normalMatches.length) { toast.error('All normal match results must be resolved before the event can finish.'); return; }
-      if (score.clubA === score.clubB) {
-        toast.info('Normal Club Challenge points are tied. Choose Showcase Final, metrics, or overall draw in Results.');
-        setTab('results');
-        return;
+    sportingActionRef.current = true; setHostAction(currentRound < Math.max(...rounds) ? `Preparing Round ${currentRound + 1}… command sent` : 'Finalising Club Challenge… command sent');
+    try {
+      const maxRound = Math.max(...rounds);
+      if (currentRound < maxRound) {
+        const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1 });
+        if (res.data?.error) { toast.error(res.data.error); return; }
+        toast.success(`Round ${currentRound + 1} ready`);
+        await refetchEvent();
+      } else {
+        if (resolvedNormalCount !== normalMatches.length) { toast.error('All normal match results must be resolved before the event can finish.'); return; }
+        if (score.clubA === score.clubB) {
+          toast.info('Normal Club Challenge points are tied. Choose Showcase Final, metrics, or overall draw in Results.');
+          setTab('results');
+          return;
+        }
+        await finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Club Challenge matches.');
       }
-      await finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Club Challenge matches.');
-    }
+    } catch (e) { await refetchEvent(); toast.error(e?.response?.data?.error || e?.message || 'Could not advance Club Challenge'); }
+    finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
   const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase);
