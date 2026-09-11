@@ -54,11 +54,13 @@ function playSignal(ctx, type, volume) {
   beep(ctx, 330, now + 0.56, 0.35, volume);
 }
 
-function speak(text, volume) {
+function speak(text) {
   if (!('speechSynthesis' in window)) return;
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.volume = Math.min(1, Math.max(0, volume));
-  utterance.rate = 0.92;
+  // Browser speech cannot raise the phone/tablet's physical media volume, so
+  // RallyHub always sends announcements at the strongest clean speech level.
+  utterance.volume = 1;
+  utterance.rate = 0.88;
   utterance.pitch = 1;
   window.speechSynthesis.cancel();
   window.speechSynthesis.resume?.();
@@ -73,7 +75,7 @@ export function KotcSoundCheck({ compact = false }) {
       const ctx = createAudioContext();
       if (ctx?.state === 'suspended') await ctx.resume();
       playSignal(ctx, 'start', 1);
-      window.setTimeout(() => speak('Sound check. RallyHub timer ready.', 1), 500);
+      window.setTimeout(() => speak('Sound check. RallyHub timer ready.'), 500);
       if ('vibrate' in navigator) navigator.vibrate(120);
     } finally { window.setTimeout(() => setChecking(false), 1200); }
   };
@@ -128,7 +130,7 @@ export default function RoundTimer({
     setAudioReady(true);
     if (test) {
       playSignal(audioRef.current, 'start', Math.max(0.75, volume));
-      window.setTimeout(() => speak('Sound check. RallyHub timer ready.', volume), 500);
+      window.setTimeout(() => speak('Sound check. RallyHub timer ready.'), 500);
       if ('vibrate' in navigator) navigator.vibrate(120);
     }
   };
@@ -143,7 +145,7 @@ export default function RoundTimer({
 
   const announce = (text, signal = 'warning') => {
     playSignal(audioRef.current, signal, volume);
-    speak(text, volume);
+    speak(text);
     if ('vibrate' in navigator) navigator.vibrate(signal === 'end' ? [250, 120, 250] : 120);
   };
 
@@ -229,7 +231,7 @@ export default function RoundTimer({
       if (remaining <= 5 && remaining > 0 && !lastAnnouncedRef.current.has(`count-${remaining}`)) {
         lastAnnouncedRef.current.add(`count-${remaining}`);
         playSignal(audioRef.current, 'warning', volume * 0.9);
-        speak(String(remaining), volume);
+        speak(String(remaining));
       }
       if (remaining === 0) {
         setRunning(false);
@@ -350,7 +352,7 @@ export default function RoundTimer({
             <input type="range" min="0" max="1" step="0.05" value={volume} onChange={event => setVolume(Number(event.target.value))} className="w-full" />
             <span className="text-xs font-mono text-muted-foreground w-10 text-right">{Math.round(volume * 100)}%</span>
           </div>
-          <p className="text-[10px] text-muted-foreground text-center">Announcements use this device’s default voice.</p>
+          <p className="text-[10px] text-muted-foreground text-center">Announcements use this device’s default voice at full speech volume. Check the device media volume before play.</p>
         </div>
       )}
 
