@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 const RUNTIME_VERSION='kotc-results-2026-09-10-r8';
 function token(){const b=new Uint8Array(32);crypto.getRandomValues(b);return Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join('');}
 function nowIso(){return new Date().toISOString();}
-function firstName(value:any){const clean=String(value||'Player').replace(/,/g,' ').trim();return clean.split(/\s+/)[0]||'Player';}
+function firstName(value:any){const raw=String(value||'Player').trim();if(raw.startsWith('[')&&raw.endsWith(']'))return raw;const clean=raw.replace(/,/g,' ').trim();return clean.split(/\s+/)[0]||'Player';}
 function hostName(user:any){return String(user?.full_name||user?.name||String(user?.email||'').split('@')[0]||'Session Host').trim();}
 function emailTemplate(session:any,recipientName:string,host:string,link:string){return {subject:`${session.name} — your results`,body:`Hi ${firstName(recipientName)},\n\nHere are the results from ${session.name}.\n\nView your results: ${link}\n\nThanks for playing. Looking forward to seeing you on court again soon.\n\nRegards,\n${host}\nSession Host\nRallyHub`};}
 const APP_BASE_URL='https://rallyhub.ie';
