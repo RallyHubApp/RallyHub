@@ -1,6 +1,6 @@
 # RallyHub Pre-Deployment Front-End Test Plan
 
-> **Historical test evidence.** The canonical testing standard is now `docs/RALLYHUB_MASTER_TESTING_BLUEPRINT.md`. Use the Master Testing Blueprint for all new RallyHub testing decisions, test-depth selection, sandbox/isolation rules, robot strategy and release-readiness decisions. This file remains as historical evidence of the earlier test programme.
+> **Historical test evidence.** The canonical testing standard is now `RallyHub_Master_Testing_Blueprint.docx` in the RallyHub project files. `docs/RALLYHUB_MASTER_TESTING_BLUEPRINT.md` is only a development mirror. Use the Word master for all new RallyHub testing decisions, test-depth selection, sandbox/isolation rules, robot strategy and release-readiness decisions. This file remains historical evidence of the earlier test programme.
 
 Purpose: maximise confidence before the next live deployment while preserving the agreed strategy of simulate heavily and deploy sparingly.
 
