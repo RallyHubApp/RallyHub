@@ -10,7 +10,7 @@ function errorMessage(error){
   return error?.response?.data?.error || error?.data?.error || error?.message || 'Host access action failed.';
 }
 
-export default function KotcHostAccessPanel({ session, isAdmin }){
+export default function KotcHostAccessPanel({ session, isAdmin, onScorerLinkReady }){
   const [open,setOpen]=useState(false);
   const [email,setEmail]=useState('');
   const [loading,setLoading]=useState(false);
@@ -45,7 +45,7 @@ export default function KotcHostAccessPanel({ session, isAdmin }){
   };
   const copyText=async(url,label,key)=>{try{await navigator.clipboard.writeText(url);setCopied(key);setTimeout(()=>setCopied(''),1800);toast.success(`${label} copied`);}catch{window.prompt(`Copy ${label}:`,url);}};
   const prepareLive=async()=>{setLoading(true);try{const res=await base44.functions.invoke('kotcResultsShare',{action:'get_or_create',sessionId:session.id});const url=`${window.location.origin}/kotc-live/${res.data.token}`;setLiveUrl(url);await copyText(url,'Live Player View link','live');}catch(e){toast.error(errorMessage(e));}finally{setLoading(false);}};
-  const prepareScorer=async()=>{setLoading(true);try{const res=await base44.functions.invoke('manageKotcScorerLinks',{action:'get_or_create',sessionId:session.id});const url=`${window.location.origin}/kotc-score/${res.data.token}`;setScorerUrl(url);await copyText(url,'Scorer link','scorer');}catch(e){toast.error(errorMessage(e));}finally{setLoading(false);}};
+  const prepareScorer=async()=>{setLoading(true);try{const res=await base44.functions.invoke('manageKotcScorerLinks',{action:'get_or_create',sessionId:session.id});const url=`${window.location.origin}/kotc-score/${res.data.token}`;setScorerUrl(url);onScorerLinkReady?.();await copyText(url,'Scorer link','scorer');}catch(e){toast.error(errorMessage(e));}finally{setLoading(false);}};
   const copyHost=()=>copyText(hostUrl,'Session Host link','host');
 
   return <div className="glass rounded-xl p-3 sm:p-4 space-y-3 border border-primary/20">
