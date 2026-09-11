@@ -36,6 +36,19 @@ Deno.serve(async req=>{try{
    return Response.json({session:{name:session.name,status:session.status,current_round_number:finished?currentRound?.round_number:session.current_round_number,scoring_mode:session.scoring_mode,actual_session_end:session.actual_session_end},completed_rounds:completedRounds.length,current_round:currentRound?{round_number:currentRound.round_number,status:currentRound.status}:null,current_matches:currentMatches,bench,timer,standings:table,matches:publicMatches,podium:finished?table.slice(0,3):[],finished,poll_after_ms:finished?0:12000,runtimeVersion:RUNTIME_VERSION});
  }
  const user=await base44.auth.me();if(!user)return Response.json({error:'Unauthorized',runtimeVersion:RUNTIME_VERSION},{status:401});
+ if(action==='management_state'){
+   const shareToken=String(body.token||'');if(!shareToken)return Response.json({error:'Token required',runtimeVersion:RUNTIME_VERSION},{status:400});
+   const share=(await retry('management share read',()=>base44.asServiceRole.entities.KotcSessionShare.filter({token:shareToken,status:'active'})))?.[0];if(!share)return Response.json({error:'Results link is invalid or revoked.',runtimeVersion:RUNTIME_VERSION},{status:404});
+   const session=(await retry('management session read',()=>base44.asServiceRole.entities.KotcSession.filter({id:share.session_id})))?.[0];if(!session)return Response.json({error:'Session not found.',runtimeVersion:RUNTIME_VERSION},{status:404});
+   let allowed=user.role==='admin';let role=user.role==='admin'?'admin':null;
+   if(!allowed){const grants=await retry('management access read',()=>base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'}));const valid=(grants||[]).filter((a:any)=>validAccess(a,session.tenant_id,session.id));allowed=valid.length>0;role=valid[0]?.role||null;}
+   if(!allowed)return Response.json({error:'Host access required',runtimeVersion:RUNTIME_VERSION},{status:403});
+   const participants=await retry('management participants',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));
+   const matches=await retry('management matches',()=>base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id}));
+   const names=Object.fromEntries((participants||[]).map((p:any)=>[p.id,p.display_name]));
+   const editableMatches=(matches||[]).filter((m:any)=>m.status==='completed').sort((a:any,b:any)=>Number(a.round_number)-Number(b.round_number)||Number(a.ladder_court_rank)-Number(b.ladder_court_rank)).map((m:any)=>({id:m.id,round_id:m.round_id,round_number:m.round_number,court:m.ladder_court_rank,team_a_participant_ids:m.team_a_participant_ids||[],team_b_participant_ids:m.team_b_participant_ids||[],team_a:(m.team_a_participant_ids||[]).map((id:string)=>names[id]||'Player'),team_b:(m.team_b_participant_ids||[]).map((id:string)=>names[id]||'Player'),team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,result_method:m.result_method,serving_side_at_horn:m.serving_side_at_horn,revision:m.revision||0}));
+   return Response.json({canManage:true,role,sessionId:session.id,tournamentId:session.tournament_id,sessionName:session.name,matches:editableMatches,runtimeVersion:RUNTIME_VERSION});
+ }
  let sessionId=String(body.sessionId||'');let session:any=null;
  if(action==='get_or_create_by_tournament'){
    const tournamentId=String(body.tournamentId||'');if(!tournamentId)return Response.json({error:'tournamentId required',runtimeVersion:RUNTIME_VERSION},{status:400});
