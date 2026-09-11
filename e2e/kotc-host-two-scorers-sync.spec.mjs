@@ -41,7 +41,7 @@ function createModel(){
     if(name==='kotcScorer'){
       const action=body.action||'state',clientId=body.clientId||'';
       if(action==='state')return scorerState(clientId);
-      const m=model.matches.find(x=>x.id===body.matchId);if(!m)return {status:404,body:{error:'Match not found'}};
+      const m=currentMatches().find(x=>x.id===body.matchId);if(!m)return {status:404,body:{error:'Current-round match not found'}};
       if(action==='claim'){
         if(m.status==='completed'&&!correctionOpen(m,clientId))return {status:423,body:{error:`Court ${m.ladder_court_rank} is already saved. The scorer correction window has closed; the host can still correct this result.`,saved:true,read_only:true}};
         const mine=model.matches.find(x=>x.id!==m.id&&x.scoring_lock_owner===clientId&&active(x));if(mine)return {status:423,body:{error:`This device is already scoring Court ${mine.ladder_court_rank}. Save or cancel that court first.`,locked:true}};
