@@ -7,7 +7,7 @@ const json = (route, body, status = 200) => route.fulfill({ status, contentType:
 function createModel(){
   const now=()=>Date.now();
   const matches=[1,2].map(c=>({id:`match-${c}`,court:c,status:'scheduled',revision:0,team_a:[`P${c}A1`,`P${c}A2`],team_b:[`P${c}B1`,`P${c}B2`],team_a_score:null,team_b_score:null,lockOwner:'',lockExpires:0,correctionOwner:'',correction_count:0}));
-  const calls=[];
+  const calls=[];let transientSaveRateLimits=0;
   const state=(clientId)=>({success:true,session:{name:'E2E Player Scoring',status:'in_progress',current_round_number:1,scoring_mode:'timed'},round:{id:'round-1',round_number:1,status:'started'},bench:[],timer:{running:true,remainingSeconds:300,deadlineAt:new Date(Date.now()+300000).toISOString()},matches:matches.map(m=>({id:m.id,court:m.court,status:m.status,revision:m.revision,team_a:m.team_a,team_b:m.team_b,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:m.lockOwner&&m.lockExpires>now()?(m.lockOwner===clientId?'mine':'other'):'free',lock_seconds:m.lockExpires>now()?Math.ceil((m.lockExpires-now())/1000):0,can_correct:m.status==='completed'&&m.correctionOwner===clientId}))});
   const handle=async(body)=>{
     calls.push({...body,at:Date.now()});
@@ -29,6 +29,7 @@ function createModel(){
       if(m.lockOwner===clientId){m.lockOwner='';m.lockExpires=0;}return {status:200,body:{success:true,released:true}};
     }
     if(action==='save'||action==='correct'){
+      if(transientSaveRateLimits>0){transientSaveRateLimits--;return {status:429,body:{error:'Rate limit exceeded'}};}
       if(m.lockOwner!==clientId||m.lockExpires<=now())return {status:423,body:{error:`Court ${m.court} is not locked to this scorer.`}};
       if(Number(body.expectedRevision)!==m.revision)return {status:409,body:{error:'This score changed since you opened it.',conflict:true,currentRevision:m.revision}};
       const correcting=action==='correct';
@@ -39,7 +40,7 @@ function createModel(){
     }
     return {status:400,body:{error:'Unsupported'}};
   };
-  return {matches,calls,handle};
+  return {matches,calls,handle,setTransientSaveRateLimits:n=>{transientSaveRateLimits=n;}};
 }
 
 async function install(context,model){
@@ -79,13 +80,15 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
   const bCourt2First=b.getByTestId('scorer-court-2').locator('input').nth(0);
   await bCourt2First.focus();await b.keyboard.type('123');await expect(bCourt2First).toHaveValue('12');await bCourt2First.fill('');
 
-  // Court 1 saves and gives explicit confirmation.
+  // Court 1 saves and gives explicit confirmation even if Base44 transiently rate-limits
+  // the first save attempt. The scorer page must retry instead of exposing a raw 429.
+  model.setTransientSaveRateLimits(1);
   let card=await fillCourt(a,1,11,7);await card.getByRole('button',{name:'Save Result'}).click();
   await expect(card).toContainText('Score saved: 11–7');
   expect(model.matches[0].revision).toBe(1);
 
   // Other players on Court 1 can see the saved result but cannot reopen it.
-  await expect(b.getByTestId('scorer-court-1')).toContainText('Score saved: 11–7',{timeout:3500});
+  await expect(b.getByTestId('scorer-court-1')).toContainText('Score saved: 11–7',{timeout:6500});
   await expect(b.getByTestId('scorer-court-1').getByRole('button',{name:'Undo / Update Score'})).toHaveCount(0);
   await expect(b.getByTestId('scorer-court-1')).toContainText('Only the scorer device that saved it, or the host');
 
