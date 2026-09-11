@@ -12,7 +12,7 @@ const state={session,participants,rounds,slots:[],matches,fixedPairs:[],contactD
 const json=(route,body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
 
 test('Tournament Control Centre → completed KOTC opens host review/editor, not public live display',async({page})=>{
-  const errors=[];const functionCalls=[];page.on('pageerror',e=>errors.push(e.message));
+  const errors=[];const functionCalls=[];let previewAttempts=0;page.on('pageerror',e=>errors.push(e.message));
   await page.route('**/api/apps/public/**',route=>json(route,{id:'test',public_settings:{}}));
   await page.route(`**/api/apps/${APP_ID}/entities/Tournament**`,route=>json(route,[tournament]));
   await page.route(`**/api/apps/${APP_ID}/entities/Player**`,route=>json(route,players));
@@ -20,7 +20,7 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   await page.route(`**/api/apps/${APP_ID}/functions/**`,async route=>{
     const name=new URL(route.request().url()).pathname.split('/functions/')[1]?.split('/')[0]||'';functionCalls.push(name);
     if(name==='getKotcV2State')return json(route,state);
-    if(name==='kotcResultsShare'){let body={};try{body=route.request().postDataJSON()||{};}catch{}if(body.action==='email_preview')return json(route,{success:true,token:'share-token',fromName:'Clare Pickleball <clarepb2025@gmail.com>',subject:'830 Session — your results',sampleBody:'Hi [First name],\n\nHere are the results from 830 Session.\n\nView your King of the Court results: https://rallyhub.ie/kotc-live/share-token\n\nThanks for playing. Looking forward to seeing you on court again soon.\n\nRegards,\nBrian Moore\nSession Host\nClare Pickleball\n\n—\nResults powered by RallyHub\nExplore RallyHub: https://rallyhub.ie',recipientCount:16,guestOrUnlinked:1,missingOrDuplicate:0,transportReady:true,transportMessage:'Ready to send from clarepb2025@gmail.com.',testRecipient:'brian.moore007@gmail.com'});if(body.action==='email_test')return json(route,{success:true,test:true,to:'brian.moore007@gmail.com',gmailMessageId:'gmail-test-1'});if(body.action==='email_players')return json(route,{success:true,sent:16,skipped:1,alreadySent:0,failed:0});return json(route,{success:true,token:'share-token'});}
+    if(name==='kotcResultsShare'){let body={};try{body=route.request().postDataJSON()||{};}catch{}if(body.action==='email_preview'){previewAttempts++;if(previewAttempts===1){await new Promise(resolve=>setTimeout(resolve,250));return json(route,{error:'Results email preview failed while loading player email addresses: simulated provider failure',stage:'player emails'},500);}return json(route,{success:true,token:'share-token',fromName:'Clare Pickleball <clarepb2025@gmail.com>',subject:'830 Session — your results',sampleBody:'Hi [First name],\n\nHere are the results from 830 Session.\n\nView your King of the Court results: https://rallyhub.ie/kotc-live/share-token\n\nThanks for playing. Looking forward to seeing you on court again soon.\n\nRegards,\nBrian Moore\nSession Host\nClare Pickleball\n\n—\nResults powered by RallyHub\nExplore RallyHub: https://rallyhub.ie',recipientCount:16,guestOrUnlinked:1,missingOrDuplicate:0,transportReady:true,transportMessage:'Ready to send from clarepb2025@gmail.com.',testRecipient:'brian.moore007@gmail.com'});}if(body.action==='email_test')return json(route,{success:true,test:true,to:'brian.moore007@gmail.com',gmailMessageId:'gmail-test-1'});if(body.action==='email_players')return json(route,{success:true,sent:16,skipped:1,alreadySent:0,failed:0});return json(route,{success:true,token:'share-token'});}
     return json(route,{success:true});
   });
   await page.route(`**/api/apps/${APP_ID}/analytics/**`,route=>json(route,{success:true}));
@@ -36,6 +36,11 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   await expect(page.getByRole('button',{name:'Email Players'})).toBeVisible();
   await expect(page.getByText('King of the Court · Hall Display')).toHaveCount(0);
   expect(functionCalls.filter(x=>x==='kotcResultsShare')).toHaveLength(0);
+  await page.getByTestId('kotc-email-players').click();
+  await expect(page.getByTestId('kotc-email-players')).toContainText('Loading preview…');
+  await expect(page.getByTestId('kotc-email-players')).toBeDisabled();
+  await expect(page.getByTestId('kotc-email-status')).toContainText('Preview failed');
+  await expect(page.getByTestId('kotc-email-players')).toContainText('Retry preview');
   await page.getByTestId('kotc-email-players').click();
   await expect(page.getByTestId('kotc-email-preview')).toBeVisible();
   await expect(page.getByTestId('kotc-email-preview')).toContainText('Clare Pickleball <clarepb2025@gmail.com>');
