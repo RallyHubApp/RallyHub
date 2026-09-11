@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: kotc-host-journey.spec.mjs >> 18-player mobile host journey: setup → controls → rounds → podium
-- Location: e2e/kotc-host-journey.spec.mjs:354:1
+- Name: kotc-setup-seeding.spec.mjs >> desktop setup: visible seeding choice is the seeding order sent to the engine
+- Location: e2e/kotc-setup-seeding.spec.mjs:8:1
 
 # Error details
 
