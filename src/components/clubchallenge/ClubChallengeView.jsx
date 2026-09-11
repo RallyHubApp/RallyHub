@@ -476,7 +476,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (fairness.duplicatePlayerRoundIssues || fairness.sameClubIntegrityIssues || !fairness.equalGames) { toast.error('Hard fairness checks must pass before approval.'); return; }
     sportingActionRef.current = true; setHostAction('Approving and locking draw… command sent');
     try {
-      await base44.entities.ClubChallengeEvent.update(event.id, { status: 'draw_approved', draw_version: Number(event.draw_version || 0) + 1, draw_approved_at: new Date().toISOString(), draw_approved_by: currentUser?.id || '', event_pack_stale: false, event_pack_version: Number(event.draw_version || 0) + 1 });
+      const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'approve_draw' });
+      if (res.data?.error) throw new Error(res.data.error);
       toast.success('Draw approved and locked');
       await sync();
     } catch (e) { await refetchEvent(); toast.error(e?.message || 'Could not approve draw'); }
@@ -488,8 +489,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     sportingActionRef.current = true; setHostAction('Starting Club Challenge… command sent');
     try {
       await unlockHallAudio();
-      await base44.entities.ClubChallengeEvent.update(event.id, { status: 'in_progress', current_round: 1 });
-      await base44.entities.Tournament.update(tournament.id, { status: 'In Progress' });
+      const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'start' });
+      if (res.data?.error) throw new Error(res.data.error);
       toast.success('Club Challenge started');
       await sync(); setTab('live');
     } catch (e) { await refetchEvent(); toast.error(e?.message || 'Could not start Club Challenge'); }
