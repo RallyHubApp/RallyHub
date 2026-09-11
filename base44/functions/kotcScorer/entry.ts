@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 const RESOLVED=new Set(['completed','retired','abandoned','not_played']);
+const SCORER_CORRECTION_WINDOW_MS=90*1000;
 function int0(v:any){const n=Number(v);return Number.isInteger(n)&&n>=0?n:null;}
 function sleep(ms:number){return new Promise(resolve=>setTimeout(resolve,ms));}
 function isRateLimit(error:any){return /rate limit|too many requests|\b429\b/i.test(String(error?.message||error||''));}
@@ -10,6 +11,8 @@ async function resolveToken(base44:any,token:string){const row=(await withRateLi
 function timerState(session:any){let t:any={};try{t=session.timer_state_json?JSON.parse(session.timer_state_json):{};}catch{}if(t.running&&t.deadlineAt)t.remainingSeconds=Math.max(0,Math.ceil((Date.parse(t.deadlineAt)-Date.now())/1000));return t;}
 function lockActive(match:any){return !!(match?.scoring_lock_owner&&match?.scoring_lock_expires_at&&Date.parse(match.scoring_lock_expires_at)>Date.now());}
 function lockSeconds(match:any){return match?.scoring_lock_expires_at?Math.max(0,Math.ceil((Date.parse(match.scoring_lock_expires_at)-Date.now())/1000)):0;}
+function scorerCorrectionOpen(match:any,clientId:string){if(!RESOLVED.has(match?.status)||!clientId||String(match?.scorer_correction_owner_client_id||'')!==String(clientId)||!match?.completed_at)return false;return Date.now()-Date.parse(match.completed_at)<=SCORER_CORRECTION_WINDOW_MS;}
+function scorerCorrectionSeconds(match:any,clientId:string){if(!scorerCorrectionOpen(match,clientId))return 0;return Math.max(0,Math.ceil((Date.parse(match.completed_at)+SCORER_CORRECTION_WINDOW_MS-Date.now())/1000));}
 
 Deno.serve(async req=>{try{
  const base44=createClientFromRequest(req);const body=await req.json().catch(()=>({}));const token=String(body.token||'');if(!token)return Response.json({error:'Token required'},{status:400});
@@ -22,10 +25,7 @@ Deno.serve(async req=>{try{
   const match=(await withRateLimitRetry('scorer current match read',()=>base44.asServiceRole.entities.KotcMatch.filter({id:String(body.matchId||''),session_id:session.id,round_id:round.id})))?.[0];if(!match)return Response.json({error:'Current-round match not found'},{status:404});
   if(requestedAction==='release'){if(String(match.scoring_lock_owner||'')===clientId)await withRateLimitRetry('scorer release lock',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:null,scoring_lock_acquired_at:null,scoring_lock_expires_at:null}));return Response.json({success:true,released:true});}
   if(requestedAction==='claim'){
-   if(RESOLVED.has(match.status)){
-    const correctionOwner=String(match.scorer_correction_owner_client_id||'');
-    if(!correctionOwner||correctionOwner!==clientId)return Response.json({error:`Court ${match.ladder_court_rank} is already saved. Only the scorer device that saved it, or the host, can update this result.`,saved:true,read_only:true},{status:423});
-   }
+   if(RESOLVED.has(match.status)&&!scorerCorrectionOpen(match,clientId))return Response.json({error:`Court ${match.ladder_court_rank} is already saved. The scorer correction window has closed; the host can still correct this result.`,saved:true,read_only:true},{status:423});
    const roundMatches=await withRateLimitRetry('scorer claim round matches',()=>base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id}));const mine=(roundMatches||[]).find((m:any)=>String(m.id)!==String(match.id)&&String(m.scoring_lock_owner||'')===clientId&&lockActive(m));if(mine)return Response.json({error:`This device is already scoring Court ${mine.ladder_court_rank}. Save or cancel that court first.`,locked:true,retry_after_seconds:lockSeconds(mine)},{status:423});
   }
   if(lockActive(match)&&String(match.scoring_lock_owner)!==clientId)return Response.json({error:`Court ${match.ladder_court_rank} is being scored on another device.`,locked:true,retry_after_seconds:lockSeconds(match)},{status:423});
@@ -43,6 +43,7 @@ Deno.serve(async req=>{try{
   if(!lockActive(match)||String(match.scoring_lock_owner||'')!==clientId)return Response.json({error:`Court ${match.ladder_court_rank} is not locked to this scorer. Tap Score/Edit again.`,locked:true,retry_after_seconds:lockSeconds(match)},{status:423});
   const correcting=requestedAction==='correct';
   if(correcting&&!RESOLVED.has(match.status))return Response.json({error:'This score has not been saved yet.'},{status:409});
+  if(correcting&&!scorerCorrectionOpen(match,clientId))return Response.json({error:'The 90-second scorer correction window has closed. Ask the host to correct this result.',read_only:true},{status:423});
   if(!correcting&&RESOLVED.has(match.status))return Response.json({error:'This result is already saved. Use Undo / Update on the scorer screen.'},{status:409});
   const current=Number(match.revision||0);if(Number(body.expectedRevision)!==current)return Response.json({error:'This score changed since you opened it. Refresh and check the saved result.',conflict:true,currentRevision:current},{status:409});
   const result:any=validScore(body,session);if(result.error)return Response.json({error:result.error},{status:400});const now=new Date().toISOString();
@@ -55,6 +56,6 @@ Deno.serve(async req=>{try{
  }
  const participants=await withRateLimitRetry('scorer state participants',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));const names=Object.fromEntries((participants||[]).map((p:any)=>[p.id,p.display_name]));
  const matches=round?await withRateLimitRetry('scorer state matches',()=>base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id},'ladder_court_rank',30)):[];const assigned=new Set((matches||[]).flatMap((m:any)=>[...(m.team_a_participant_ids||[]),...(m.team_b_participant_ids||[])]));const bench=(participants||[]).filter((p:any)=>['registered','confirmed','present','leaving_early'].includes(p.status)&&!assigned.has(p.id)).map((p:any)=>p.display_name);
- const publicMatches=(matches||[]).map((m:any)=>({id:m.id,court:Number(m.ladder_court_rank),status:m.status,revision:Number(m.revision||0),team_a:(m.team_a_participant_ids||[]).map((id:string)=>names[id]||'Player'),team_b:(m.team_b_participant_ids||[]).map((id:string)=>names[id]||'Player'),team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:lockActive(m)?(clientId&&String(m.scoring_lock_owner||'')===clientId?'mine':'other'):'free',lock_seconds:lockActive(m)?lockSeconds(m):0,can_correct:RESOLVED.has(m.status)&&!!clientId&&String(m.scorer_correction_owner_client_id||'')===clientId}));
+ const publicMatches=(matches||[]).map((m:any)=>({id:m.id,court:Number(m.ladder_court_rank),status:m.status,revision:Number(m.revision||0),team_a:(m.team_a_participant_ids||[]).map((id:string)=>names[id]||'Player'),team_b:(m.team_b_participant_ids||[]).map((id:string)=>names[id]||'Player'),team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:lockActive(m)?(clientId&&String(m.scoring_lock_owner||'')===clientId?'mine':'other'):'free',lock_seconds:lockActive(m)?lockSeconds(m):0,can_correct:scorerCorrectionOpen(m,clientId),correction_seconds_remaining:scorerCorrectionSeconds(m,clientId)}));
  return Response.json({success:true,session:{name:session.name,status:session.status,current_round_number:session.current_round_number,scoring_mode:session.scoring_mode,score_target:session.score_target,win_by_two:session.win_by_two},round:round?{id:round.id,round_number:round.round_number,status:round.status}:null,matches:publicMatches,bench,timer:timerState(session)});
 }catch(error){return Response.json({error:error?.message||'Unexpected scorer-link error'},{status:500});}});
