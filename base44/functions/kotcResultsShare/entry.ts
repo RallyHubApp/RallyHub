@@ -76,7 +76,6 @@ Deno.serve(async req=>{try{
  if(!share){share=await retry('create share',()=>base44.asServiceRole.entities.KotcSessionShare.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,tournament_id:session.tournament_id,token:token(),status:'active',created_by_user_id:user.id}));}
  if(action==='get_or_create'||action==='get_or_create_by_tournament')return Response.json({success:true,token:share.token,shareId:share.id,livePath:`/kotc-live/${share.token}`,permanent:true,runtimeVersion:RUNTIME_VERSION});
  if(action==='email_preview'||action==='email_test'||action==='email_players'){
-   if(session.demo_mode===true||session.exclude_from_aggregates===true)return Response.json({error:'Email Players is disabled for KOTC Test Sandbox / excluded sessions.',runtimeVersion:RUNTIME_VERSION},{status:403});
    const link=`${APP_BASE_URL}/kotc-live/${share.token}`;const resend=body.resend===true;
    const [participants,clubs,tournaments,hostGrants]=await Promise.all([
      retry('email participants',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id})),
@@ -84,7 +83,8 @@ Deno.serve(async req=>{try{
      session.tournament_id?retry('email tournament',()=>base44.asServiceRole.entities.Tournament.filter({id:session.tournament_id})):Promise.resolve([]),
      retry('email host grants',()=>base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,role:'session_host',status:'active'})),
    ]);
-   const clubName=String(clubs?.[0]?.name||'Club').trim();const competitionFormat=String(tournaments?.[0]?.format||'King of the Court').trim();
+   const tournament=tournaments?.[0]||null;const isSandbox=session.demo_mode===true||String(tournament?.description||'').includes('RALLYHUB_KOTC_SANDBOX_V1');if(isSandbox)return Response.json({error:'Email Players is disabled for the KOTC Test Sandbox.',runtimeVersion:RUNTIME_VERSION},{status:403});
+   const clubName=String(clubs?.[0]?.name||'Club').trim();const competitionFormat=String(tournament?.format||'King of the Court').trim();
    const primaryHostGrant=(hostGrants||[]).sort((a:any,b:any)=>Date.parse(a.created_date||0)-Date.parse(b.created_date||0))[0]||null;let primaryHost:any=null;
    if(primaryHostGrant?.user_id)primaryHost=(await retry('email primary host',()=>base44.asServiceRole.entities.User.filter({id:primaryHostGrant.user_id})))?.[0]||null;
    const host=hostName(primaryHost||user);const fromName=clubName;const emailableParticipants=(participants||[]).filter((p:any)=>p.player_id&&p.participant_type!=='guest');const playerIds=[...new Set(emailableParticipants.map((p:any)=>p.player_id).filter(Boolean))];const players=playerIds.length?await retry('email players',()=>base44.asServiceRole.entities.Player.filter({id:{$in:playerIds}})):[];const byId=Object.fromEntries((players||[]).map((p:any)=>[p.id,p]));
