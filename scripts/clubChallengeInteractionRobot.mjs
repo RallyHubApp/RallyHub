@@ -16,6 +16,8 @@ const participantFn = fs.readFileSync('base44/functions/manageClubChallengeParti
 const scheduleFn = fs.readFileSync('base44/functions/updateClubChallengeSchedule/entry.ts','utf8');
 const finaliseFn = fs.readFileSync('base44/functions/finaliseClubChallenge/entry.ts','utf8');
 const practiceFn = fs.readFileSync('base44/functions/loadClubChallengePracticeRoster/entry.ts','utf8');
+const fullPracticeFn = fs.readFileSync('base44/functions/populateClubChallengePracticeScenario/entry.ts','utf8');
+const hallAudio = fs.readFileSync('src/lib/rallyHubHallAudio.js','utf8');
 
 let passed = 0;
 const check = (name, condition) => {
@@ -50,6 +52,12 @@ check('host: practice roster has a clear first-time-host affordance', contains(u
 check('host: practice data is protected behind event-manager authority', contains(practiceFn,'Event manager permission required'));
 check('host: practice data cannot overwrite an approved/live event', contains(practiceFn,"['draft','draw_generated'].includes(event.status)"));
 check('host: practice load is audited', contains(practiceFn,"action:'practice_roster_loaded'"));
+check('test mode: complete visual journey has a single host action', contains(ui,'Populate Full Test Event') && contains(ui,"populateClubChallengePracticeScenario"));
+check('test mode: full population is dummy-roster restricted server-side', contains(fullPracticeFn,"startsWith('gate3-')"));
+check('test mode: full population fills all normal scores', contains(fullPracticeFn,"status:'completed'") && contains(fullPracticeFn,"normal_matches:normal.length"));
+check('test mode: full population includes Showcase when enabled', contains(fullPracticeFn,'showcase_enabled') && contains(fullPracticeFn,"is_showcase:true"));
+check('test mode: full population includes sample POT voting', contains(fullPracticeFn,'practiceVotes') && contains(fullPracticeFn,"pot_status:'revealed'"));
+check('test mode: visual bulk population is one browser function invocation', (ui.match(/populateClubChallengePracticeScenario/g)||[]).length === 1);
 
 // 3. Ranking journey: touch-friendly as well as drag/drop.
 check('host: rankings retain drag/drop', contains(ui,'DragDropContext'));
@@ -73,6 +81,16 @@ check('timer: prepared duration is server-side and revision protected', contains
 check('timer: duration cannot be changed while running', contains(timerFn,'Pause the timer before changing the round duration.'));
 check('timer: prepared current-round duration is used when play starts', contains(timerFn,'preparedPlaySeconds'));
 check('timer: ordinary later rounds retain event default', contains(ui,'normal event duration remains'));
+check('sound: hall cue uses local Web Audio rather than a Base44 call', contains(hallAudio,'createOscillator') && !contains(hallAudio,'base44'));
+check('sound: hall volume is explicit and persisted', contains(ui,"cc-hall-volume") && contains(ui,'Club Challenge hall volume'));
+check('sound: Test Sound is available before live play', contains(ui,'Test Sound'));
+check('sound: mobile audio is unlocked from the host play gesture', contains(ui,'await unlockHallAudio()'));
+check('sound: wake lock is requested during the authoritative timer', contains(ui,"navigator.wakeLock.request('screen')"));
+check('sound: one-minute, 30-second, 10-second and five-second countdown cues exist', contains(ui,'One minute remaining.') && contains(ui,'Thirty seconds.') && contains(ui,'Ten seconds.') && contains(ui,'timerRemaining <= 5'));
+check('sound: round-end cue asks for scores', contains(ui,'Round finished. Please give your scores.'));
+check('Base44 control: timer actions are single-flight', contains(ui,'timerCommandRef.current'));
+check('Base44 control: major sporting actions are single-flight', contains(ui,'sportingActionRef.current'));
+check('busy-hall UX: accepted host command stays visibly acknowledged', contains(ui,'RallyHub has accepted your tap'));
 
 // 6. Scorer perspective.
 check('scorer: score controls derive from explicit canScore permission', contains(ui,'canScore={canScoreEvent}'));
