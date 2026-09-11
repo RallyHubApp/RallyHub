@@ -15,6 +15,7 @@ import useKotcRole from '@/hooks/useKotcRole';
 import KotcPlayerManagement from './KotcPlayerManagement';
 
 export default function KotcView({ tournament, players, allPlayers, queryClient }) {
+  const isSandbox = String(tournament?.description || '').includes('RALLYHUB_KOTC_SANDBOX_V1');
   const [addPlayersOpen, setAddPlayersOpen] = useState(false);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
   const [playerSearch, setPlayerSearch] = useState('');
@@ -57,6 +58,11 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
 
   return (
     <div id="kotc-start-section" className="space-y-4">
+      {isSandbox && <div data-testid="kotc-sandbox-banner" className="rounded-xl border-2 border-amber-400/50 bg-amber-500/10 p-3 sm:p-4">
+        <p className="text-xs font-bold uppercase tracking-[.18em] text-amber-600">TEST SANDBOX — isolated</p>
+        <p className="text-sm font-semibold mt-1">18 dummy guests only · excluded from member stats, KOTC history and club leaderboards</p>
+        <p className="text-[11px] text-muted-foreground mt-1">Spond, member imports and player email are disabled here. Public, scorer and delegated-host links remain available for testing.</p>
+      </div>}
       <GlassCard>
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -81,19 +87,19 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
               <p className="text-xs text-muted-foreground mt-1">Refresh from Spond immediately before setup to capture late changes.</p>
             </div>
             <div className="flex gap-2 flex-wrap">
-              {canManagePlayers ? <Button size="sm" onClick={() => setSpondOpen(true)}>
+              {isSandbox ? <span className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-600">Dummy roster locked</span> : canManagePlayers ? <Button size="sm" onClick={() => setSpondOpen(true)}>
                 <Download className="w-3 h-3 mr-1" /> Refresh from Spond
               </Button> : <Button size="sm" className="bg-primary text-primary-foreground gap-1" onClick={() => setSelfRegisterOpen(true)}>
                 <UserPlus className="w-3 h-3" /> Register to Play
               </Button>}
-              {canManagePlayers && <Button variant="outline" size="sm" onClick={() => setRosterOpen(v => !v)}>
+              {canManagePlayers && !isSandbox && <Button variant="outline" size="sm" onClick={() => setRosterOpen(v => !v)}>
                 {rosterOpen ? <ChevronUp className="w-3 h-3 mr-1" /> : <ChevronDown className="w-3 h-3 mr-1" />}
                 Roster tools
               </Button>}
             </div>
           </div>
 
-          {rosterOpen && canManagePlayers && <div className="mt-4 pt-4 border-t border-border space-y-3">
+          {rosterOpen && canManagePlayers && !isSandbox && <div className="mt-4 pt-4 border-t border-border space-y-3">
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={() => setXlsxOpen(true)}><FileSpreadsheet className="w-3 h-3 mr-1" />Import Spond XLSX</Button>
               <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}><UserPlus className="w-3 h-3 mr-1" />Add Player</Button>
