@@ -156,13 +156,11 @@ Deno.serve(async (req) => {
         if(String(match.scoring_lock_owner||'')===hostOwner)await withRateLimitRetry('host scoring release',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:null,scoring_lock_acquired_at:null,scoring_lock_expires_at:null}));
         return Response.json({success:true,released:true});
       }
-      const displaced=String(match.scoring_lock_owner||'');
+      const existingOwner=String(match.scoring_lock_owner||'');const lockActive=!!(existingOwner&&match.scoring_lock_expires_at&&Date.parse(match.scoring_lock_expires_at)>Date.now());
+      if(lockActive&&existingOwner!==hostOwner)return Response.json({error:`Court ${match.ladder_court_rank} is already being entered by a player. Wait for them to save or cancel, then refresh player scores.`,locked:true,retry_after_seconds:Math.max(0,Math.ceil((Date.parse(match.scoring_lock_expires_at)-Date.now())/1000))},{status:423});
       const now=nowIso(); const expires=new Date(Date.now()+5*60*1000).toISOString();
-      await withRateLimitRetry('host scoring claim',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:hostOwner,scoring_lock_acquired_at:now,scoring_lock_expires_at:expires}));
-      if(displaced&&displaced!==hostOwner){
-        try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_host_took_over_scoring',entity_type:'KotcMatch',entity_id:match.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({scoring_lock_owner:displaced}),after_state:JSON.stringify({scoring_lock_owner:hostOwner}),reason:'Host began entering the court score'});}catch{}
-      }
-      return Response.json({success:true,hostAuthority:true,displacedScorer:!!displaced&&displaced!==hostOwner,expires_at:expires});
+      await withRateLimitRetry('host scoring claim',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:hostOwner,scoring_lock_acquired_at:match.scoring_lock_acquired_at||now,scoring_lock_expires_at:expires}));
+      return Response.json({success:true,hostAuthority:true,expires_at:expires});
     }
 
     // Fast paths for the host's most time-critical actions. Do not route START ROUND
