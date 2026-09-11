@@ -555,9 +555,17 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const text = phase === 'play' ? `${label}. Play. ${Number(event?.play_minutes || 10)} minutes.` : phase === 'changeover' ? `${label} complete. Changeover. ${Number(event?.changeover_minutes || 2)} minutes.` : `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`;
     speak(text);
   };
-  const startPhase = async phase => { if (await timerAction('start', phase)) announcePhase(phase); };
-  const pauseTimer = async () => { if (await timerAction('pause')) speak('Event paused.'); };
-  const resumeTimer = async () => { if (await timerAction('resume')) speak(`${roundLabel(currentRound)}. Resume play.`); };
+  const startPhase = async phase => {
+    // The host's tap is the best chance to unlock mobile audio before the network await.
+    await unlockHallAudio();
+    if (await timerAction('start', phase)) {
+      lastTimerAnnouncementRef.current = new Set();
+      speak(phase === 'play' ? `${roundLabel(currentRound)}. Start round.` : phase === 'changeover' ? 'Changeover.' : `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`, { signal:'start' });
+      requestWakeLock();
+    }
+  };
+  const pauseTimer = async () => { if (await timerAction('pause')) { speak('Event paused.'); wakeLockRef.current?.release?.(); } };
+  const resumeTimer = async () => { await unlockHallAudio(); if (await timerAction('resume')) { speak(`${roundLabel(currentRound)}. Resume play.`, { signal:'start' }); requestWakeLock(); } };
   const resetTimer = () => timerAction('reset');
   const preparedRoundMinutes = timerState?.phase === 'play' && Number(timerState?.round || 0) === Number(currentRound) && !timerState?.running && Number(timerState?.remaining_seconds || 0) > 0
     ? Math.max(1, Math.round(Number(timerState.remaining_seconds) / 60))
@@ -573,7 +581,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not change this round duration'); await refetchEvent(); }
   };
   const fmtTimer = s => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
-  const testVoice = () => speak(`${roundLabel(currentRound)}. Play. ${Number(event?.play_minutes || 10)} minutes.`, { force: true });
+  const testVoice = () => unlockHallAudio({ test:true });
   const runCompressedTimerAudioTest = async () => {
     if (compressedTimer.running) return;
     const steps = [
