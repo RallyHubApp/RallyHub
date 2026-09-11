@@ -66,7 +66,7 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
 
   // Phone A claims Court 1.
   await a.getByTestId('scorer-court-1').getByRole('button',{name:'Score This Court'}).click();
-  await expect(a.getByTestId('scorer-court-1')).toContainText('Court locked to this device');
+  await expect(a.getByTestId('scorer-court-1')).toContainText('Court 1 ready — enter the score');
 
   // Same phone cannot hoard a second court while holding Court 1.
   await a.getByTestId('scorer-court-2').getByRole('button',{name:'Score This Court'}).click();
@@ -76,7 +76,7 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
   await b.getByTestId('scorer-court-1').getByRole('button',{name:'Score This Court'}).click();
   await expect(b.getByTestId('scorer-court-1')).toContainText(/another device|LOCKED/);
   await b.getByTestId('scorer-court-2').getByRole('button',{name:'Score This Court'}).click();
-  await expect(b.getByTestId('scorer-court-2')).toContainText('Court locked to this device');
+  await expect(b.getByTestId('scorer-court-2')).toContainText('Court 2 ready — enter the score');
   const bCourt2First=b.getByTestId('scorer-court-2').locator('input').nth(0);
   await bCourt2First.focus();await b.keyboard.type('123');await expect(bCourt2First).toHaveValue('12');await bCourt2First.fill('');
 
