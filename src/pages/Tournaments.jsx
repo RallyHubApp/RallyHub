@@ -15,6 +15,7 @@ import SpondImportModal from '@/components/spond/SpondImportModal';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const todayIreland = () => {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone:'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date());
@@ -39,6 +40,7 @@ export default function Tournaments() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [openingResultsId, setOpeningResultsId] = useState('');
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -94,9 +96,26 @@ export default function Tournaments() {
 
   const cardAction = (t) => {
     if (t.format !== 'King of the Court') return 'Open control centre';
+    if (t.status === 'Completed') return openingResultsId === t.id ? 'Opening final results…' : 'View final results';
     if (t.status === 'In Progress') return 'Continue session';
     if (t.status === 'Draft' && (t.player_ids?.length || 0) > 0) return 'Continue setup';
     return 'Open control centre';
+  };
+
+  const openCompletedKotcResults = async (event, tournament) => {
+    if (tournament.format !== 'King of the Court' || tournament.status !== 'Completed') return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (openingResultsId) return;
+    try {
+      setOpeningResultsId(tournament.id);
+      const res = await base44.functions.invoke('kotcResultsShare', { action:'get_or_create_by_tournament', tournamentId:tournament.id });
+      if (!res.data?.token) throw new Error(res.data?.error || 'Final results link is unavailable.');
+      navigate(`/kotc-live/${res.data.token}`);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.data?.error || error?.message || 'Could not open final results.');
+      setOpeningResultsId('');
+    }
   };
 
   return (
@@ -178,7 +197,7 @@ export default function Tournaments() {
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               )}
-              <Link to={`/app/tournaments/${t.id}`} className="rounded-xl border border-border bg-card/60 p-4 sm:p-5 block hover:border-primary/30 hover:bg-card transition-all duration-200 group h-full">
+              <Link to={`/app/tournaments/${t.id}`} onClick={e => openCompletedKotcResults(e, t)} aria-busy={openingResultsId===t.id} className={`rounded-xl border border-border bg-card/60 p-4 sm:p-5 block hover:border-primary/30 hover:bg-card transition-all duration-200 group h-full ${openingResultsId===t.id?'pointer-events-none opacity-80':''}`}>
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
                     <Badge variant="outline" className="text-[10px] mb-2">{t.format}</Badge>
