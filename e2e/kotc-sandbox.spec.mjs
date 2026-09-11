@@ -56,7 +56,8 @@ test('sandbox safety guards are hard-coded server-side',async()=>{
   expect(manage).toContain("participants.some((p:any)=>!!p.player_id||p.participant_type!=='guest')");
   expect(create).toContain("member Player records are forbidden");
   expect(create).toContain("const testMode=sandboxTournament||");
-  expect(share).toContain("Email Players is disabled for KOTC Test Sandbox / excluded sessions.");
+  expect(share).toContain("RALLYHUB_KOTC_SANDBOX_V1");
+  expect(share).toContain("Email Players is disabled for the KOTC Test Sandbox.");
   expect(aggregate).toContain("s.exclude_from_aggregates!==true");
 });
 
