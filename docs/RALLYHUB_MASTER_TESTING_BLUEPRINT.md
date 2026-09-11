@@ -1,6 +1,8 @@
 # RallyHub Master Testing Blueprint
 
-**Status:** Canonical living testing standard  
+> **Development mirror only.** The canonical master is `RallyHub_Master_Testing_Blueprint.docx` kept in the RallyHub project files beside `RallyHub_Master_Backlog_and_Decisions.docx`. Keep this repo copy aligned when major reusable testing rules change, but do not treat it as the user-facing master.
+
+**Status:** Development mirror of LIVE MASTER  
 **Version:** 1.0  
 **Date:** 11 September 2026  
 **Applies to:** RallyHub Core, King of the Court (KOTC), Club Challenge, Tournival, shared tournament formats, memberships, public displays, and future RallyHub modules.
