@@ -11,11 +11,11 @@ test('club challenge harness diagnostic', async ({ page }) => {
     const url = new URL(req.url());
     console.log('CC API', req.method(), url.pathname, req.postData() || '');
     if (/auth|me/i.test(url.pathname)) return json(route, { id:'e2e-admin', email:'admin@example.test', role:'admin', active_tenant_id:'tenant-clare-e2e', active_club_id:'club-clare-e2e' });
-    if (url.pathname.includes('/entities/Club')) return json(route, [{ id:'club-clare-e2e', name:'Clare Pickleball Club' }]);
     if (url.pathname.includes('/entities/ClubChallengeEvent')) return json(route, []);
     if (url.pathname.includes('/entities/ClubChallengeParticipant')) return json(route, []);
     if (url.pathname.includes('/entities/ClubChallengeMatch')) return json(route, []);
     if (url.pathname.includes('/entities/ClubChallengeVote')) return json(route, []);
+    if (url.pathname.includes('/entities/Club')) return json(route, [{ id:'club-clare-e2e', name:'Clare Pickleball Club' }]);
     return json(route, []);
   });
   await page.goto('/e2e/clubChallengeHarness.html');
