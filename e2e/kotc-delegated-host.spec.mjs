@@ -4,7 +4,7 @@ const APP_ID=process.env.VITE_BASE44_APP_ID||'6a01dc00702b7dd2a2978c28';
 const json=(route,body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
-function createModel({failFirstScore=false}={}){
+function createModel({failFirstScore=false,isAdmin=false}={}){
   const participants=Array.from({length:4},(_,i)=>({id:`participant-${i+1}`,player_id:`player-${i+1}`,display_name:`Host Player ${i+1}`,status:'present',participant_type:'member',seed_rank:i+1}));
   const round={id:'delegated-round-1',session_id:'delegated-session',round_number:1,status:'proposed',proposal_revision:1,active_court_count:1,bench_count:0};
   const slots=[
@@ -22,7 +22,7 @@ function createModel({failFirstScore=false}={}){
     'player-3':{phone:'0850000003',emergency_name:'Emergency Three',emergency_relationship:'Sibling',emergency_mobile:'0860000003'},
     'player-4':{phone:'0850000004',emergency_name:'Emergency Four',emergency_relationship:'Friend',emergency_mobile:'0860000004'},
   };
-  const state=()=>({session,participants,rounds:[round],slots,matches:[match],fixedPairs:[],contactDirectory:{},currentAccessRole:'session_host',isAdmin:false});
+  const state=()=>({session,participants,rounds:[round],slots,matches:[match],fixedPairs:[],contactDirectory:{},currentAccessRole:isAdmin?'admin':'session_host',isAdmin});
   const handle=async(name,body)=>{
     calls.push({name,body});
     if(name==='getKotcV2State')return state();
@@ -107,8 +107,8 @@ test('delegated host: session-only controls, attendee contacts, links and keyboa
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth+1);
 });
 
-test('test-mode host tools stay local until the real sporting save',async({page})=>{
-  const model=createModel();model.session.exclude_from_aggregates=true;await install(page,model);
+test('super admin test-mode tools stay local until the real sporting save',async({page})=>{
+  const model=createModel({isAdmin:true});model.session.exclude_from_aggregates=true;await install(page,model);
   await page.goto('/e2e/kotcDelegatedHostHarness.html');
   await expect(page.getByTestId('kotc-sound-check')).toBeVisible();
   const callsBeforeSound=model.calls.length;
@@ -126,6 +126,14 @@ test('test-mode host tools stay local until the real sporting save',async({page}
   await page.getByTestId('kotc-complete-1').click();
   await expect(page.getByTestId('kotc-score-card-1')).toContainText('Saved 11–6',{timeout:1800});
   expect(model.calls.filter(c=>c.name==='saveKotcScore').length).toBe(savesBefore+1);
+});
+
+test('session host never sees Super Admin test tools even on a test-flagged session',async({page})=>{
+  const model=createModel();model.session.exclude_from_aggregates=true;model.session.demo_mode=true;await install(page,model);
+  await page.goto('/e2e/kotcDelegatedHostHarness.html');
+  await page.getByTestId('kotc-start-round').click();
+  await expect(page.getByTestId('kotc-next-action')).toContainText('Round 1 live',{timeout:1800});
+  await expect(page.getByTestId('kotc-fill-test-scores')).toHaveCount(0);
 });
 
 test('busy-hall recovery: failed score save preserves keystrokes and retries safely',async({page})=>{
