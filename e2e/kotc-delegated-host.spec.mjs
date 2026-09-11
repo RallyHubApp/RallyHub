@@ -107,6 +107,27 @@ test('delegated host: session-only controls, attendee contacts, links and keyboa
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth+1);
 });
 
+test('test-mode host tools stay local until the real sporting save',async({page})=>{
+  const model=createModel();model.session.exclude_from_aggregates=true;await install(page,model);
+  await page.goto('/e2e/kotcDelegatedHostHarness.html');
+  await expect(page.getByTestId('kotc-sound-check')).toBeVisible();
+  const callsBeforeSound=model.calls.length;
+  await page.getByTestId('kotc-sound-check').getByRole('button',{name:'Test Sound'}).click();
+  await page.waitForTimeout(120);
+  expect(model.calls.length,'Sound check must be device-local and make no Base44 call').toBe(callsBeforeSound);
+
+  await page.getByTestId('kotc-start-round').click();
+  await expect(page.getByTestId('kotc-fill-test-scores')).toBeVisible({timeout:1800});
+  const savesBefore=model.calls.filter(c=>c.name==='saveKotcScore').length;
+  await page.getByTestId('kotc-fill-test-scores').click();
+  await expect(page.getByTestId('kotc-score-1-a')).toHaveValue('11');
+  await expect(page.getByTestId('kotc-score-1-b')).toHaveValue('6');
+  expect(model.calls.filter(c=>c.name==='saveKotcScore').length,'Fill Test Scores must not save anything itself').toBe(savesBefore);
+  await page.getByTestId('kotc-complete-1').click();
+  await expect(page.getByTestId('kotc-score-card-1')).toContainText('Saved 11–6',{timeout:1800});
+  expect(model.calls.filter(c=>c.name==='saveKotcScore').length).toBe(savesBefore+1);
+});
+
 test('busy-hall recovery: failed score save preserves keystrokes and retries safely',async({page})=>{
   const model=createModel({failFirstScore:true});await install(page,model);
   await page.goto('/e2e/kotcDelegatedHostHarness.html');
