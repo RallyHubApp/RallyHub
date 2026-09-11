@@ -85,6 +85,7 @@ function FixtureCourtCard({ court, roundNumber, playerMap, editingPlayerId, onRe
   );
 }
 
+/** @param {any} props */
 export default function TournivalFixtures({ rounds, playerMap, onReshuffle, reshuffling, isAdmin, onReplacePlayer, editingPlayerId, seedOrderLocked }) {
   const [showAll, setShowAll] = useState(false);
   const issues = checkFairness(rounds);
