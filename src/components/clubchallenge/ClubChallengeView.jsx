@@ -450,28 +450,25 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, [aPlayers.length, bPlayers.length, setup.plannedPlayersTotal, setup.courts, setup.availableMinutes, setup.playMinutes, setup.changeoverMinutes, setup.includeBreak, setup.breakMinutes, setup.breakAfterRound]);
 
   const generateDraw = async () => {
-    if (!event) return;
+    if (!event || !canManageEvent || sportingActionRef.current) return;
     if (aPlayers.length !== bPlayers.length || aPlayers.length < 4) { toast.error('For this draw, both clubs must have equal playable rosters of at least 4.'); return; }
-    setSaving(true);
+    setSaving(true); sportingActionRef.current = true; setHostAction('Generating draw and fairness report… one command sent');
     try {
       const engA = [...aPlayers].sort((x, y) => x.event_rank - y.event_rank).map(p => ({ id: p.id, name: p.display_name, rank: p.event_rank, gender: p.gender }));
       const engB = [...bPlayers].sort((x, y) => x.event_rank - y.event_rank).map(p => ({ id: p.id, name: p.display_name, rank: p.event_rank, gender: p.gender }));
       const fi = calculateClubChallengeFormat({ clubAPlayerCount: engA.length, clubBPlayerCount: engB.length, courts: number(setup.courts), availableMinutes: number(setup.availableMinutes), playMinutes: number(setup.playMinutes), changeoverMinutes: number(setup.changeoverMinutes), includeBreak: setup.includeBreak, breakMinutes: number(setup.breakMinutes), breakAfterRound: number(setup.breakAfterRound) });
       const schedule = generateClubChallengeFixtures({ clubAPlayers: engA, clubBPlayers: engB, courts: number(setup.courts), rounds: fi.recommendedRounds });
       const report = analyseClubChallengeFairness({ schedule, clubAPlayers: engA, clubBPlayers: engB });
-      const completed = matches.filter(m => ['completed', 'draw', 'retired', 'forfeit', 'abandoned'].includes(m.status));
-      if (completed.length) throw new Error('Completed match history exists. Use Rebalance Remaining Fixtures rather than a full redraw.');
-      for (const m of matches) await base44.entities.ClubChallengeMatch.delete(m.id);
       const participantMap = Object.fromEntries(participants.map(p => [p.id, p]));
       const nextVersion = Number(event.draw_version || 0) + 1;
       const records = fixtureRecordsFromSchedule({ event: { ...event, draw_version: nextVersion }, schedule, participantMap });
-      await base44.entities.ClubChallengeMatch.bulkCreate(records);
-      await base44.entities.ClubChallengeEvent.update(event.id, { status: 'draw_generated', fairness_json: JSON.stringify(report), current_round: 0, event_pack_stale: true });
+      const res = await base44.functions.invoke('replaceClubChallengeDraw', { eventId:event.id, fixtures:records, fairness:report });
+      if (res.data?.error) throw new Error(res.data.error);
       toast.success(`${records.length} fixtures generated`);
       await sync();
       setTab('draw');
-    } catch (e) { toast.error(e?.message || 'Could not generate draw'); }
-    setSaving(false);
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not generate draw'); }
+    finally { setSaving(false); sportingActionRef.current = false; setHostAction(''); }
   };
 
   const approveDraw = async () => {
