@@ -20,7 +20,7 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   await page.route(`**/api/apps/${APP_ID}/functions/**`,async route=>{
     const name=new URL(route.request().url()).pathname.split('/functions/')[1]?.split('/')[0]||'';functionCalls.push(name);
     if(name==='getKotcV2State')return json(route,state);
-    if(name==='kotcResultsShare'){let body={};try{body=route.request().postDataJSON()||{};}catch{}if(body.action==='email_preview')return json(route,{success:true,token:'share-token',fromName:'Brian Moore via RallyHub',subject:'830 Session — your results',sampleBody:'Hi [First name],\n\nHere are the results from 830 Session.\n\nView your results: https://rallyhub.ie/kotc-live/share-token\n\nThanks for playing. Looking forward to seeing you on court again soon.\n\nRegards,\nBrian Moore\nSession Host\nRallyHub',recipientCount:16,guestOrUnlinked:1,missingOrDuplicate:0,transportReady:false,transportMessage:'Club-wide email is not connected yet.'});if(body.action==='email_players')return json(route,{error:'Club-wide email is not connected.',transportReady:false},409);return json(route,{success:true,token:'share-token'});}
+    if(name==='kotcResultsShare'){let body={};try{body=route.request().postDataJSON()||{};}catch{}if(body.action==='email_preview')return json(route,{success:true,token:'share-token',fromName:'Clare Pickleball <clarepb2025@gmail.com>',subject:'830 Session — your results',sampleBody:'Hi [First name],\n\nHere are the results from 830 Session.\n\nView your King of the Court results: https://rallyhub.ie/kotc-live/share-token\n\nThanks for playing. Looking forward to seeing you on court again soon.\n\nRegards,\nBrian Moore\nSession Host\nClare Pickleball\n\n—\nResults powered by RallyHub\nExplore RallyHub: https://rallyhub.ie',recipientCount:16,guestOrUnlinked:1,missingOrDuplicate:0,transportReady:true,transportMessage:'Ready to send from clarepb2025@gmail.com.',testRecipient:'brian.moore007@gmail.com'});if(body.action==='email_test')return json(route,{success:true,test:true,to:'brian.moore007@gmail.com',gmailMessageId:'gmail-test-1'});if(body.action==='email_players')return json(route,{success:true,sent:16,skipped:1,alreadySent:0,failed:0});return json(route,{success:true,token:'share-token'});}
     return json(route,{success:true});
   });
   await page.route(`**/api/apps/${APP_ID}/analytics/**`,route=>json(route,{success:true}));
@@ -38,11 +38,18 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   expect(functionCalls.filter(x=>x==='kotcResultsShare')).toHaveLength(0);
   await page.getByTestId('kotc-email-players').click();
   await expect(page.getByTestId('kotc-email-preview')).toBeVisible();
-  await expect(page.getByTestId('kotc-email-preview')).toContainText('Brian Moore via RallyHub');
+  await expect(page.getByTestId('kotc-email-preview')).toContainText('Clare Pickleball <clarepb2025@gmail.com>');
   await expect(page.getByTestId('kotc-email-preview')).toContainText('830 Session — your results');
   await expect(page.getByTestId('kotc-email-preview')).toContainText('Hi [First name]');
+  await expect(page.getByTestId('kotc-email-preview')).toContainText('View your King of the Court results');
+  await expect(page.getByTestId('kotc-email-preview')).toContainText('Brian Moore');
+  await expect(page.getByTestId('kotc-email-preview')).toContainText('Clare Pickleball');
+  await expect(page.getByTestId('kotc-email-preview')).toContainText('Results powered by RallyHub');
   await expect(page.getByTestId('kotc-email-preview')).toContainText('16 players · 1 guest/unlinked excluded');
-  await expect(page.getByRole('button',{name:'Email sending not connected'})).toBeDisabled();
-  expect(functionCalls.filter(x=>x==='kotcResultsShare')).toHaveLength(1);
+  await expect(page.getByTestId('kotc-email-send-all')).toBeDisabled();
+  await page.getByTestId('kotc-email-test').click();
+  await expect(page.getByTestId('kotc-email-status')).toContainText('Test email sent to brian.moore007@gmail.com');
+  await expect(page.getByTestId('kotc-email-send-all')).toBeEnabled();
+  expect(functionCalls.filter(x=>x==='kotcResultsShare')).toHaveLength(2);
   expect(errors).toEqual([]);
 });
