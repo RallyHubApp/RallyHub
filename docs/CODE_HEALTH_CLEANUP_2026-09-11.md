@@ -42,3 +42,18 @@ Main root fixes:
 
 ## Release requirement after cleanup
 Before this cleanup is accepted, run: build, lint, typecheck, Club Challenge engine/interaction/browser robots, all KOTC sporting/security gates, and current KOTC browser journeys.
+
+## Final acceptance result
+- `npm run build` — PASS
+- `npm run lint` — PASS
+- `npm run typecheck` — PASS (0 errors)
+- Club Challenge Gate 1 engine tests — PASS
+- Club Challenge interaction robot — PASS (71 assertions)
+- Club Challenge browser robot — PASS (3/3)
+- KOTC Gates 2.0–2.11 — PASS
+- KOTC access/architecture gate — PASS (121 checks)
+- KOTC persistent-pair simulation — PASS (60,010 invariants)
+- KOTC scale/integrated simulation — PASS (25,937 invariants across 370 player/court combinations)
+- KOTC browser journeys — PASS (23/23)
+
+Further deletion is intentionally blocked until coverage is strengthened for Tournival, authentication/access-code flows, and legacy public tournament routes.
