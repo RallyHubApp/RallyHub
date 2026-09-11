@@ -13,7 +13,7 @@ export default function KotcSetupPanel({
   players,courts,requiredBench,
   venueCourts,setVenueCourts,duration,setDuration,
   scoringMode,setScoringMode,playMinutes,setPlayMinutes,scoreTarget,setScoreTarget,winByTwo,setWinByTwo,
-  testMode,setTestMode,
+  testMode,setTestMode,canUseTestMode=false,
   seedingSource,applySeedingSource,drawMethod,setDrawMethod,kotcAggregates,
   rankingOpen,setRankingOpen,orderedPlayers,setPlayerOrder,setSeedingSource,
   benchIds,toggleBench,creating,createSession,
@@ -39,10 +39,10 @@ export default function KotcSetupPanel({
             <div><Label>Scoring</Label><Select value={scoringMode} onValueChange={setScoringMode}><SelectTrigger className="mt-1 min-h-11"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="timed">Timed rounds</SelectItem><SelectItem value="first_to">First to score</SelectItem></SelectContent></Select></div>
             {scoringMode==='timed'?<div><Label>Round duration</Label><div className="relative mt-1"><Input className="min-h-11 pr-14" type="number" min="1" value={playMinutes} onChange={e=>setPlayMinutes(e.target.value)}/><span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">min</span></div></div>:<><div><Label>Score target</Label><Input className="mt-1 min-h-11" type="number" min="1" value={scoreTarget} onChange={e=>setScoreTarget(e.target.value)}/></div><div><Label>Winning margin</Label><Select value={winByTwo?'2':'1'} onValueChange={v=>setWinByTwo(v==='2')}><SelectTrigger className="mt-1 min-h-11"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="1">Win by 1</SelectItem><SelectItem value="2">Win by 2</SelectItem></SelectContent></Select></div></>}
           </div>
-          <label className={`mt-4 flex items-start gap-3 rounded-xl border p-3 cursor-pointer ${testMode?'border-amber-400/50 bg-amber-500/10':'border-border bg-secondary/20'}`}>
+          {canUseTestMode&&<label className={`mt-4 flex items-start gap-3 rounded-xl border p-3 cursor-pointer ${testMode?'border-amber-400/50 bg-amber-500/10':'border-border bg-secondary/20'}`}>
             <input data-testid="kotc-test-mode" type="checkbox" className="mt-1" checked={testMode} onChange={e=>setTestMode(e.target.checked)} />
-            <span><span className="text-sm font-semibold">Test mode</span><span className="block text-[11px] text-muted-foreground mt-0.5">Exclude this session from KOTC history and enable local Fill Test Scores controls. Leave this off for a real club session.</span></span>
-          </label>
+            <span><span className="text-sm font-semibold">Super Admin Test mode</span><span className="block text-[11px] text-muted-foreground mt-0.5">Diagnostic only. Excludes this session from KOTC history and enables local Fill Test Scores controls. Session hosts never see this option.</span></span>
+          </label>}
         </section>
 
         <section className="glass rounded-2xl p-4 sm:p-5" data-testid="kotc-setup-round1">
@@ -73,7 +73,7 @@ export default function KotcSetupPanel({
             <div className="flex justify-between gap-3 p-2.5"><span className="text-muted-foreground">Scoring</span><strong className="text-right">{scoringSummary}</strong></div>
             <div className="flex justify-between gap-3 p-2.5"><span className="text-muted-foreground">Starting order</span><strong className="text-right">{seedingLabel[seedingSource]||seedingSource}</strong></div>
             <div className="flex justify-between gap-3 p-2.5"><span className="text-muted-foreground">Draw</span><strong>{drawLabel[drawMethod]||drawMethod}</strong></div>
-            <div className="flex justify-between gap-3 p-2.5"><span className="text-muted-foreground">Mode</span><strong className={testMode?'text-amber-600':''}>{testMode?'TEST · excluded':'Live'}</strong></div>
+            {canUseTestMode&&<div className="flex justify-between gap-3 p-2.5"><span className="text-muted-foreground">Mode</span><strong className={testMode?'text-amber-600':''}>{testMode?'TEST · excluded':'Live'}</strong></div>}
           </div>
           {benchReady?<div className="rounded-lg border border-green-500/20 bg-green-500/10 p-3 flex gap-2"><CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5"/><div><p className="text-xs font-semibold text-green-700">Ready to create the draw</p><p className="text-[10px] text-muted-foreground mt-0.5">Nothing starts until you review Round 1 and press Start Round 1.</p></div></div>:<div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-3"><p className="text-xs font-semibold text-amber-700">Choose {selectedRemaining} more bench player{selectedRemaining===1?'':'s'}</p></div>}
           <Button data-testid="kotc-create-session" className="w-full min-h-12 text-base" onClick={createSession} disabled={creating||players.length<4||!benchReady}><Play className="w-4 h-4 mr-2"/>{creating?'Creating Round 1…':'Create Round 1'}</Button>
