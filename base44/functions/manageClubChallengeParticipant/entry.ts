@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, reason, withdrawalStatus, participantId, fromRound } = body;
-    if (!eventId || !['replace','continue_short','late_arrival'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
+    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, reason, withdrawalStatus, participantId, fromRound, side, displayName, orderedParticipantIds } = body;
+    if (!eventId || !['replace','continue_short','late_arrival','add_manual','reorder'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -37,6 +37,39 @@ Deno.serve(async (req) => {
     const normal = matches.filter((m:any) => !m.is_showcase);
     const currentRound = Math.max(1, Number(event.current_round || 1));
     const now = new Date().toISOString();
+
+    if (action === 'add_manual') {
+      if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Players can only be added before the draw is approved.' }, { status:409 });
+      if (!['club_a','club_b'].includes(side)) return Response.json({ error:'Valid club side required.' }, { status:400 });
+      const cleanName = String(displayName || '').trim().replace(/\s+/g,' ').slice(0,120);
+      if (!cleanName) return Response.json({ error:'Player name required.' }, { status:400 });
+      const identity = cleanName.toLowerCase();
+      if (participants.some((p:any) => ['active','late'].includes(p.status) && String(p.display_name||'').trim().toLowerCase().replace(/\s+/g,' ') === identity)) return Response.json({ error:'That player name is already active in this Club Challenge.' }, { status:409 });
+      const sidePlayers = participants.filter((p:any) => p.side === side && !['replaced'].includes(p.status));
+      const created = await base44.asServiceRole.entities.ClubChallengeParticipant.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id, side, display_name:cleanName, event_rank:sidePlayers.length + 1, status:'active', available_from_round:1, unique_identity_key:`manual-${side}-${crypto.randomUUID().slice(0,12)}` });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_added_manual', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({participant_id:created.id,side,name:cleanName}) });
+      return Response.json({ success:true, participant:created });
+    }
+
+    if (action === 'reorder') {
+      if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Ranking can only be changed before the draw is approved.' }, { status:409 });
+      if (!['club_a','club_b'].includes(side) || !Array.isArray(orderedParticipantIds)) return Response.json({ error:'Valid side and ordered participant list required.' }, { status:400 });
+      const sidePlayers = participants.filter((p:any) => p.side === side && !['replaced'].includes(p.status));
+      const currentIds = sidePlayers.map((p:any) => String(p.id)).sort();
+      const requested = orderedParticipantIds.map(String);
+      if (requested.length !== sidePlayers.length || new Set(requested).size !== requested.length || [...requested].sort().join('|') !== currentIds.join('|')) return Response.json({ error:'Ranking list must contain every current player on that club exactly once.' }, { status:409 });
+      const byId = new Map(sidePlayers.map((p:any) => [String(p.id), p]));
+      let changed = 0;
+      for (let i=0;i<requested.length;i++) {
+        const p:any = byId.get(requested[i]);
+        const rank = i + 1;
+        if (Number(p?.event_rank || 0) !== rank) { await base44.asServiceRole.entities.ClubChallengeParticipant.update(p.id, { event_rank:rank }); changed++; }
+      }
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_ranking_changed', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({side,ordered_participant_ids:requested,changed}) });
+      return Response.json({ success:true, side, changed });
+    }
 
     if (action === 'replace') {
       const outgoing = participants.find((p:any) => p.id === outgoingParticipantId);
