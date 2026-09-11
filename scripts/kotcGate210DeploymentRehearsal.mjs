@@ -34,7 +34,7 @@ ok(view.includes('Host Round Editor'),'host can review and adjust proposed round
 ok(!view.includes('Save Host Adjustments'),'redundant explicit host-adjustment save removed from normal flow');
 ok(view.includes("functions.invoke('kotcCommand'"),'general live host mutations use the KOTC command endpoint');
 ok(view.includes("functions.invoke('startKotcRound'"),'START ROUND uses the dedicated lightweight start endpoint');
-ok(startCommand.includes("if(!user)return Response.json({error:'Unauthorized'}"),'dedicated start endpoint requires authentication');
+ok(startCommand.includes('const user=await base44.auth.me()')&&startCommand.includes("error:'Unauthorized'")&&startCommand.includes('status:401'),'dedicated start endpoint requires authentication');
 ok(startCommand.includes("Primary session host access required"),'dedicated start endpoint requires primary host access');
 ok(startCommand.includes("round.status==='started'"),'dedicated start endpoint is idempotent after a successful start');
 ok(startCommand.includes("round.status!=='proposed'"),'dedicated start endpoint only starts proposed rounds');
@@ -58,8 +58,8 @@ ok(command.includes("commandType === 'abandon_session'"),'abandon fail-safe exis
 // Full production-module sporting simulation.
 const sim=runKotcV2ProductionSimulation({rounds:9});
 ok(sim.passed,`production simulation failed: ${JSON.stringify(sim.failedChecks?.slice(0,3)||[])}`);
-ok(sim.steadyScenarioCount===60,'all 4-18 player / 1-4 court steady scenarios rehearsed');
-ok(sim.checkCount>=4237,'full production simulator invariant volume retained');
+ok(sim.steadyScenarioCount===370,'all 4-40 player / 1-10 court steady combinations rehearsed');
+ok(sim.checkCount>=25000,'full production simulator invariant volume retained');
 
 // Results/final-round rehearsal with deterministic 16-player, 4-court synthetic finish.
 const participants=Array.from({length:16},(_,i)=>({id:`p${i+1}`,display_name:`Player ${i+1}`,seed_rank:i+1}));
@@ -81,7 +81,7 @@ ok(champions.participantIds.join('|')==='p1|p2','Court 1 Champions preserve winn
 // UI lifecycle rehearsal.
 ok(!view.includes("doCommand('confirm_round'"),'redundant confirm-round UI removed');
 ok(view.includes("functions.invoke('startKotcRound'"),'single START ROUND path is wired through the dedicated start endpoint');
-ok(view.includes("commandType:'generate_next_round'")&&view.includes('preparingRound'),'Prepare Next Round uses the explicit reconciliation-aware generation flow');
+ok(view.includes("functions.invoke('prepareKotcNextRound'")&&view.includes('preparingRound')&&view.includes('advanced&&next'),'Prepare Next Round uses the dedicated reconciliation-aware generation flow');
 ok(view.includes("doCommand('pause_session'"),'pause wired');
 ok(view.includes("doCommand('resume_session'"),'resume wired');
 ok(view.includes('data-testid="kotc-finish-session"')&&view.includes('Finish Session'),'finish control is available in Session Menu');
