@@ -111,7 +111,7 @@ export default function Tournaments() {
       setOpeningResultsId(tournament.id);
       const res = await base44.functions.invoke('kotcResultsShare', { action:'get_or_create_by_tournament', tournamentId:tournament.id });
       if (!res.data?.token) throw new Error(res.data?.error || 'Final results link is unavailable.');
-      navigate(`/kotc-live/${res.data.token}`);
+      navigate(`/kotc-live/${res.data.token}?manage=1`);
     } catch (error) {
       toast.error(error?.response?.data?.error || error?.data?.error || error?.message || 'Could not open final results.');
       setOpeningResultsId('');
