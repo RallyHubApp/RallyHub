@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, GripVertical, ImagePlus, ListChecks, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
+import { playRallyHubSignal, speakRallyHub, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
 import {
   analyseClubChallengeFairness,
   applyShowcasePoints,
@@ -165,6 +166,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('cc-voice-mode') || 'irish_female');
   const [voices, setVoices] = useState([]);
   const [voiceMuted, setVoiceMuted] = useState(() => localStorage.getItem('cc-voice-muted') === 'true');
+  const [hallVolume, setHallVolume] = useState(() => { const v = Number(localStorage.getItem('cc-hall-volume')); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; });
+  const [audioReady, setAudioReady] = useState(false);
+  const [hostAction, setHostAction] = useState('');
+  const timerCommandRef = React.useRef(false);
+  const lastTimerAnnouncementRef = React.useRef(new Set());
+  const wakeLockRef = React.useRef(null);
   const [roundLabels, setRoundLabels] = useState({});
   const [lastAnnouncement, setLastAnnouncement] = useState('');
   const [compressedTimer, setCompressedTimer] = useState({ running: false, step: -1, text: 'Not run' });
