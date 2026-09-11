@@ -32,7 +32,7 @@ export default function Leaderboard() {
     })
     .sort((a, b) => {
       const ar = a.dupr_rating != null, br = b.dupr_rating != null;
-      if (ar !== br) return br - ar;
+      if (ar !== br) return Number(br) - Number(ar);
       if (ar && br && Number(a.dupr_rating) !== Number(b.dupr_rating)) return Number(b.dupr_rating) - Number(a.dupr_rating);
       return String(a.full_name || '').localeCompare(String(b.full_name || ''));
     });
