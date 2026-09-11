@@ -21,7 +21,7 @@ export default function AdminPanel() {
   const queryClient = useQueryClient();
   const [playerSearch, setPlayerSearch] = useState('');
   const [editingPlayer, setEditingPlayer] = useState(null);
-  const [editForm, setEditForm] = useState({});
+  const [editForm, setEditForm] = useState(/** @type {any} */ ({}));
   const [saving, setSaving] = useState(false);
   const [assignMatchOpen, setAssignMatchOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
@@ -144,7 +144,7 @@ export default function AdminPanel() {
   const sendInvite = async () => {
     if (!inviteEmail.trim()) { toast.error('Enter an email'); return; }
     setInviting(true);
-    await base44.users.inviteUser(inviteEmail.trim(), inviteRole, { full_name: inviteName.trim() || undefined });
+    await (/** @type {any} */ (base44)).users.inviteUser(inviteEmail.trim(), inviteRole, { full_name: inviteName.trim() || undefined });
     toast.success(`Invitation sent to ${inviteEmail}`);
     setInviteEmail('');
     setInviteName('');
@@ -221,7 +221,7 @@ export default function AdminPanel() {
   const sendPasswordReset = async (user) => {
     setSendingReset(true);
     try {
-      await base44.auth.adminSendPasswordReset(user.email);
+      await (/** @type {any} */ (base44)).auth.adminSendPasswordReset(user.email);
       toast.success(`Password reset email sent to ${user.email}`);
     } catch (error) {
       toast.error('Failed to send reset email. Please try again.');
@@ -657,7 +657,7 @@ export default function AdminPanel() {
                       variant="outline"
                       className="h-7 text-xs"
                       onClick={async () => {
-                        await base44.users.inviteUser(email, 'admin');
+                        await (/** @type {any} */ (base44)).users.inviteUser(email, 'admin');
                         toast.success(`Admin invitation sent to ${email}`);
                       }}
                     >
