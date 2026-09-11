@@ -6,20 +6,23 @@ const json = (route, body, status = 200) => route.fulfill({ status, contentType:
 
 function createModel(){
   const now=()=>Date.now();
-  const matches=[1,2].map(c=>({id:`match-${c}`,court:c,status:'scheduled',revision:0,team_a:[`P${c}A1`,`P${c}A2`],team_b:[`P${c}B1`,`P${c}B2`],team_a_score:null,team_b_score:null,lockOwner:'',lockExpires:0,correctionOwner:'',correction_count:0}));
+  const matches=[1,2].map(c=>({id:`match-${c}`,court:c,status:'scheduled',revision:0,team_a:[`P${c}A1`,`P${c}A2`],team_b:[`P${c}B1`,`P${c}B2`],team_a_score:null,team_b_score:null,lockOwner:'',lockExpires:0,correctionOwner:'',correction_count:0,completedAt:0}));
   const calls=[];let transientSaveRateLimits=0;
-  const state=(clientId)=>({success:true,session:{name:'E2E Player Scoring',status:'in_progress',current_round_number:1,scoring_mode:'timed'},round:{id:'round-1',round_number:1,status:'started'},bench:[],timer:{running:true,remainingSeconds:300,deadlineAt:new Date(Date.now()+300000).toISOString()},matches:matches.map(m=>({id:m.id,court:m.court,status:m.status,revision:m.revision,team_a:m.team_a,team_b:m.team_b,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:m.lockOwner&&m.lockExpires>now()?(m.lockOwner===clientId?'mine':'other'):'free',lock_seconds:m.lockExpires>now()?Math.ceil((m.lockExpires-now())/1000):0,can_correct:m.status==='completed'&&m.correctionOwner===clientId}))});
+  const correctionOpen=(m,clientId)=>m.status==='completed'&&m.correctionOwner===clientId&&m.completedAt>0&&now()-m.completedAt<=90000;
+  const state=(clientId)=>({success:true,session:{name:'E2E Player Scoring',status:'in_progress',current_round_number:1,scoring_mode:'timed'},round:{id:'round-1',round_number:1,status:'started'},bench:[],timer:{running:true,remainingSeconds:300,deadlineAt:new Date(Date.now()+300000).toISOString()},matches:matches.map(m=>({id:m.id,court:m.court,status:m.status,revision:m.revision,team_a:m.team_a,team_b:m.team_b,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:m.lockOwner&&m.lockExpires>now()?(m.lockOwner===clientId?'mine':'other'):'free',lock_seconds:m.lockExpires>now()?Math.ceil((m.lockExpires-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0}))});
   const handle=async(body)=>{
     calls.push({...body,at:Date.now()});
     const action=body.action||'state',clientId=body.clientId||'';
     if(action==='state') return state(clientId);
     const m=matches.find(x=>x.id===body.matchId); if(!m) return {status:404,body:{error:'Current-round match not found'}};
     if(action==='claim'){
-      if(m.status==='completed'&&m.correctionOwner!==clientId)return {status:423,body:{error:`Court ${m.court} is already saved. Only the scorer device that saved it, or the host, can update this result.`,saved:true,read_only:true}};
+      if(m.status==='completed'&&!correctionOpen(m,clientId))return {status:423,body:{error:`Court ${m.court} is already saved. The scorer correction window has closed; the host can still correct this result.`,saved:true,read_only:true}};
       const mine=matches.find(x=>x.id!==m.id&&x.lockOwner===clientId&&x.lockExpires>now());
       if(mine)return {status:423,body:{error:`This device is already scoring Court ${mine.court}. Save or cancel that court first.`,locked:true}};
       if(m.lockOwner&&m.lockExpires>now()&&m.lockOwner!==clientId)return {status:423,body:{error:`Court ${m.court} is being scored on another device.`,locked:true}};
-      await sleep(35);m.lockOwner=clientId;m.lockExpires=now()+90000;return {status:200,body:{success:true,claimed:true,lease_seconds:90}};
+      await sleep(10);m.lockOwner=clientId;m.lockExpires=now()+90000;await sleep(35);
+      if(m.lockOwner!==clientId||m.lockExpires<=now())return {status:423,body:{error:`Court ${m.court} was claimed by another scorer.`,locked:true}};
+      return {status:200,body:{success:true,claimed:true,lease_seconds:90}};
     }
     if(action==='heartbeat'){
       if(m.lockOwner!==clientId||m.lockExpires<=now())return {status:423,body:{error:'Your scoring lock is no longer active.'}};
@@ -34,9 +37,10 @@ function createModel(){
       if(Number(body.expectedRevision)!==m.revision)return {status:409,body:{error:'This score changed since you opened it.',conflict:true,currentRevision:m.revision}};
       const correcting=action==='correct';
       if(correcting&&m.status!=='completed')return {status:409,body:{error:'This score has not been saved yet.'}};
+      if(correcting&&!correctionOpen(m,clientId))return {status:423,body:{error:'The 90-second scorer correction window has closed. Ask the host to correct this result.',read_only:true}};
       if(!correcting&&m.status==='completed')return {status:409,body:{error:'This result is already saved. Use Undo / Update on the scorer screen.'}};
-      m.team_a_score=Number(body.teamAScore);m.team_b_score=Number(body.teamBScore);m.winner_side=m.team_a_score>=m.team_b_score?'A':'B';m.status='completed';m.revision++;if(correcting)m.correction_count++;m.lockOwner='';m.lockExpires=0;m.correctionOwner=clientId;
-      return {status:200,body:{success:true,corrected:correcting,message:correcting?'Updated score saved':'Score saved',match:{...m,can_correct:true,lock_status:'free'}}};
+      m.team_a_score=Number(body.teamAScore);m.team_b_score=Number(body.teamBScore);m.winner_side=m.team_a_score>=m.team_b_score?'A':'B';m.status='completed';m.revision++;if(correcting)m.correction_count++;else m.completedAt=now();m.lockOwner='';m.lockExpires=0;m.correctionOwner=clientId;
+      return {status:200,body:{success:true,corrected:correcting,message:correcting?'Updated score saved':'Score saved',match:{...m,completed_at:new Date(m.completedAt).toISOString(),can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0,lock_status:'free'}}};
     }
     return {status:400,body:{error:'Unsupported'}};
   };
