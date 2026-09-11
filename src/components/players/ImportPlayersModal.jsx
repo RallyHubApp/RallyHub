@@ -85,7 +85,7 @@ export default function ImportPlayersModal({ open, onOpenChange, onImportComplet
 
     const { file_url } = await base44.integrations.Core.UploadFile({ file: selectedFile });
 
-    const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+    const result = /** @type {any} */ (await base44.integrations.Core.ExtractDataFromUploadedFile({
       file_url,
       json_schema: {
         type: "object",
@@ -112,7 +112,7 @@ export default function ImportPlayersModal({ open, onOpenChange, onImportComplet
           }
         }
       }
-    });
+    }));
 
     if (result.status === 'error') {
       toast.error('Failed to parse file: ' + result.details);
