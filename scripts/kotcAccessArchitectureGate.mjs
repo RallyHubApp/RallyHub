@@ -152,9 +152,12 @@ includes(kotcView,"!['archived','inactive'].includes",'KOTC player picker must e
 includes(kotcView,"localeCompare(String(b.full_name || ''), 'en'",'KOTC player picker must sort alphabetically on-device');
 includes(kotcView,'data-testid="kotc-player-search"','KOTC add-player picker must expose a name search');
 includes(kotcView,'searchedAvailablePlayers = playerSearch.trim()','KOTC player search must filter the already-loaded directory locally');
+includes(setupPanel,'canUseTestMode&&<label','KOTC Test Mode setup control must be visible only to a Super Admin');
 includes(setupPanel,'data-testid="kotc-test-mode"','KOTC setup must require an explicit test-mode choice');
+includes(state,"isAdmin:user.role==='admin'",'KOTC state must return server-verified Super Admin status even before a session exists');
+includes(create,"testMode=user.role==='admin'&&Boolean(body.testMode)",'backend must bind Test Mode to the authenticated Super Admin role');
 includes(create,'demo_mode:testMode,exclude_from_aggregates:testMode','test mode must be excluded from historical aggregates at session creation');
-includes(hostUi,'session?.exclude_from_aggregates||session?.demo_mode','Fill Test Scores must be gated by stored test/demo state');
+includes(hostUi,'const testMode=isSuperAdmin&&!!(session?.exclude_from_aggregates||session?.demo_mode)','Fill Test Scores must require both stored test state and Super Admin status');
 includes(hostUi,'data-testid="kotc-fill-test-scores"','test-mode host UI must expose the local Fill Test Scores helper');
 includes(hostUi,'setTestFillKey(Date.now())','Fill Test Scores must populate local score UI rather than bulk-writing results');
 
