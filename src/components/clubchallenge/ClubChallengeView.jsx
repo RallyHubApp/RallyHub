@@ -1170,7 +1170,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {structuralChecks.map(([label, pass]) => (
-              <div key={label} className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
+              <div key={String(label)} className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
                 <div className={cn('w-8 h-8 rounded-full flex items-center justify-center shrink-0', pass ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')}>{pass ? <CheckCircle2 className="w-4 h-4" /> : <span className="text-xs font-bold">!</span>}</div>
                 <div><p className="text-xs font-semibold">{label}</p><p className="text-[10px] text-muted-foreground">{pass ? 'PASS' : 'Not ready'}</p></div>
               </div>
