@@ -47,8 +47,8 @@ ok(command.includes("bulkCreate(matchCreates)"), 'next-round matches are bulk-cr
 ok(command.includes("bulkUpdate(participantUpdates)"), 'next-round participant counters are bulk-updated');
 ok(command.includes("command-log finalisation skipped after successful sporting write"), 'command-log finalisation cannot poison a successful sporting action');
 ok(startCommand.includes("round.status==='started'"), 'dedicated START ROUND endpoint is idempotent after success');
-ok(startCommand.includes('const [slotRows,participants,lockRows]=await Promise.all'), 'independent START ROUND validation reads run in parallel');
-ok(startCommand.includes('const [updatedRound,updatedSession]=await Promise.all'), 'round/session/tournament start writes run in parallel');
+ok(!startCommand.includes('Promise.all([')&&startCommand.includes("retry('slots read'")&&startCommand.includes("retry('participants read'")&&startCommand.includes("retry('locks read'"), 'START ROUND validation reads stay sequential and rate-limit resilient');
+ok(startCommand.includes('Critical sporting commit is sequential')&&startCommand.includes("retry('round start save'")&&startCommand.includes("retry('session start save'"), 'round/session start writes stay sequential to avoid Base44 burst limits');
 
 // Undo Start must provide continuous feedback and return directly to Round Setup.
 ok(view.includes('const [undoingStart,setUndoingStart]=useState(false)'), 'undo has its own persistent in-flight UI state');
