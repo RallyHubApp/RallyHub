@@ -104,7 +104,7 @@ export default function RoundTimer({
   const [phase, setPhase] = useState('play');
   const [seconds, setSeconds] = useState(playSeconds);
   const [running, setRunning] = useState(false);
-  const [volume, setVolume] = useState(() => { const v = Number(localStorage.getItem('kotc-timer-volume')); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; });
+  const volume = 1;
   const [fullscreen, setFullscreen] = useState(false);
   const [floating, setFloating] = useState(false);
   const [position, setPosition] = useState({ x: 12, y: 76 });
@@ -196,7 +196,6 @@ export default function RoundTimer({
   },[sessionId,roundId]);
 
   useEffect(() => { window.speechSynthesis?.resume?.(); }, []);
-  useEffect(() => { localStorage.setItem('kotc-timer-volume', String(volume)); }, [volume]);
 
   useEffect(() => {
     if (!autoStart || !enabled || disabled || !autoStartKey || !hydrated || !hydratedRef.current) return;
@@ -346,13 +345,8 @@ export default function RoundTimer({
       </div>
 
       {!fullscreen && !floating && (
-        <div className="space-y-2 rounded-xl bg-secondary/50 px-3 py-2">
-          <div className="flex items-center gap-3">
-            <Volume2 className="w-4 h-4 text-muted-foreground" />
-            <input type="range" min="0" max="1" step="0.05" value={volume} onChange={event => setVolume(Number(event.target.value))} className="w-full" />
-            <span className="text-xs font-mono text-muted-foreground w-10 text-right">{Math.round(volume * 100)}%</span>
-          </div>
-          <p className="text-[10px] text-muted-foreground text-center">Announcements use this device’s default voice at full speech volume. Check the device media volume before play.</p>
+        <div className="rounded-xl bg-secondary/50 px-3 py-2">
+          <p className="text-[10px] text-muted-foreground text-center">Cue and announcements play at full RallyHub volume using this device’s default voice. Set the actual hall loudness with the device media-volume buttons before play.</p>
         </div>
       )}
 
