@@ -11,6 +11,7 @@
     "typecheck": "tsc -p ./jsconfig.json",
     "test:club-challenge-gate1": "node scripts/clubChallengeGate1.mjs",
     "test:club-challenge-robot": "node scripts/clubChallengeInteractionRobot.mjs",
+    "test:club-challenge-browser-robot": "playwright test e2e/club-challenge-browser-robot.spec.mjs",
     "test:kotc-host-journey": "playwright test e2e/kotc-host-journey.spec.mjs",
     "preview": "vite preview"
   },
