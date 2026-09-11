@@ -151,7 +151,7 @@ test('scorer reconciles committed save when Base44 response is lost and ignores 
   const model=createModel();model.setCommitThenFail(1);
   const ctx=await browser.newContext({viewport:{width:390,height:844}});await install(ctx,model);const page=await openScorer(ctx);
   const card=await fillCourt(page,1,11,4),save=card.getByRole('button',{name:'Save Result'});
-  await Promise.all([save.dispatchEvent('click'),save.dispatchEvent('click')]);
+  await save.evaluate(el=>{el.dispatchEvent(new MouseEvent('click',{bubbles:true}));el.dispatchEvent(new MouseEvent('click',{bubbles:true}));});
   await expect(card).toContainText('Score saved: 11–4');await expect(card).not.toContainText(/Response lost|Save failed|rate limit/i);
   expect(model.matches[0].revision).toBe(1);expect(model.matches[0].team_a_score).toBe(11);expect(model.matches[0].team_b_score).toBe(4);
   expect(model.calls.filter(c=>c.action==='save').length).toBe(1);
