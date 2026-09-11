@@ -110,26 +110,26 @@ test('host + two scorer devices: first claim wins, mixed parallel scoring, manua
   expect(model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length).toBe(before);
 
   const [a,b]=await Promise.all([openScorer(aCtx),openScorer(bCtx)]);
-  await a.getByTestId('scorer-court-1').getByRole('button',{name:'Score This Court'}).click();
-  await b.getByTestId('scorer-court-2').getByRole('button',{name:'Score This Court'}).click();
-  await expect(a.getByTestId('scorer-court-1')).toContainText('Court 1 ready — enter the score');
-  await expect(b.getByTestId('scorer-court-2')).toContainText('Court 2 ready — enter the score');
+  await a.getByTestId('scorer-court-1').locator('input').nth(0).fill('1');
+  await b.getByTestId('scorer-court-2').locator('input').nth(0).fill('7');
+  await expect(a.getByTestId('scorer-court-1')).toContainText('locked to you');
+  await expect(b.getByTestId('scorer-court-2')).toContainText('locked to you');
 
   // Host learns ownership only when deliberately refreshing; claimed player courts become unavailable to host.
   await host.getByTestId('kotc-refresh-player-scores').click();
   await expect(host.getByTestId('kotc-score-card-1')).toContainText('Player entering this court');
-  await expect(host.getByTestId('kotc-host-score-1')).toBeDisabled();
+  await expect(host.getByTestId('kotc-score-1-a')).toBeDisabled();
   await expect(host.getByTestId('kotc-score-card-2')).toContainText('Player entering this court');
-  await expect(host.getByTestId('kotc-host-score-2')).toBeDisabled();
+  await expect(host.getByTestId('kotc-score-2-a')).toBeDisabled();
 
-  // Host claims a different free court; scorer pages see that court as unavailable.
-  await host.getByTestId('kotc-host-score-3').click();
+  // Host claims a different free court on the first actual digit; scorer pages see that court as unavailable.
+  await host.getByTestId('kotc-score-3-a').fill('6');
   await expect(host.getByTestId('kotc-score-card-3')).toContainText('HOST ENTERING');
   await expect(a.getByTestId('scorer-court-3')).toContainText(/host or another scorer|LOCKED/,{timeout:6500});
 
   // All three can score in parallel on separate courts.
   const cardA=await fillCourt(a,1,11,1),cardB=await fillCourt(b,2,7,8);
-  await host.getByTestId('kotc-score-3-a').fill('6');await host.getByTestId('kotc-score-3-b').fill('4');
+  await host.getByTestId('kotc-score-3-b').fill('4');
   await Promise.all([
     cardA.getByRole('button',{name:'Save Result'}).click(),
     cardB.getByRole('button',{name:'Save Result'}).click(),
@@ -137,7 +137,7 @@ test('host + two scorer devices: first claim wins, mixed parallel scoring, manua
   ]);
   await expect(cardA).toContainText('Score saved: 11–1');await expect(cardB).toContainText('Score saved: 7–8');await expect(host.getByTestId('kotc-score-card-3')).toContainText('Saved 6–4');
 
-  // Player saves do not magically appear on host: host has only its local Court 3 result until Refresh.
+  // Player saves do not magically appear on host: host has only its local Court 3 result until a deliberate action.
   await expect(host.getByTestId('kotc-next-action')).toContainText('1/4 scores saved');
   await expect(host.getByTestId('kotc-player-score-toolbar')).toBeVisible();
   await expect(host.getByTestId('kotc-player-score-toolbar')).toContainText('1/4 saved');
@@ -146,13 +146,20 @@ test('host + two scorer devices: first claim wins, mixed parallel scoring, manua
   const refreshReadsBefore=model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length;
   await host.waitForTimeout(1500);
   expect(model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length).toBe(refreshReadsBefore);
-  await host.getByTestId('kotc-refresh-player-scores').click();
-  await expect(host.getByTestId('kotc-next-action')).toContainText('3/4 scores saved');
+
+  // Exact live defect regression: helper has already saved Court 1 but host is stale.
+  // Host's first attempted digit must NEVER appear; claim is rejected and one lightweight refresh pulls the saved result in.
+  await host.getByTestId('kotc-score-1-a').fill('5');
   await expect(host.getByTestId('kotc-score-card-1')).toContainText('Saved 11–1');
+  await expect(host.getByTestId('kotc-score-1-a')).toHaveValue('11');
+  await expect(host.getByTestId('kotc-next-action')).toContainText('3/4 scores saved');
+
+  // Normal manual refresh remains available and cheap.
+  await host.getByTestId('kotc-refresh-player-scores').click();
   await expect(host.getByTestId('kotc-score-card-2')).toContainText('Saved 7–8');
 
-  // Host can take the remaining free court and finish the round locally.
-  await host.getByTestId('kotc-host-score-4').click();await host.getByTestId('kotc-score-4-a').fill('9');await host.getByTestId('kotc-score-4-b').fill('5');await host.getByTestId('kotc-complete-4').click();
+  // Host can take the remaining free court on first digit and finish the round locally.
+  await host.getByTestId('kotc-score-4-a').fill('9');await host.getByTestId('kotc-score-4-b').fill('5');await host.getByTestId('kotc-complete-4').click();
   await expect(host.getByText('All scores saved for Round 1')).toBeVisible();
 
   await hostCtx.close();await aCtx.close();await bCtx.close();
