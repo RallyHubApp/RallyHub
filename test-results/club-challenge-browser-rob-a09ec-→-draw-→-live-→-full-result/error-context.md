@@ -12,13 +12,12 @@
 # Error details
 
 ```
-Error: expect(received).toBeGreaterThan(expected)
+Error: ranking_ack_ms should be <= 250ms but was 262ms
 
-Expected: > 0
-Received:   0
+expect(received).toBeLessThanOrEqual(expected)
 
-Call Log:
-- Timeout 3000ms exceeded while waiting on the predicate
+Expected: <= 250
+Received:    262
 ```
 
 # Page snapshot
@@ -28,383 +27,380 @@ Call Log:
   - main [ref=e3]:
     - generic [ref=e4]:
       - generic [ref=e5]:
-        - generic [ref=e11]:
-          - paragraph [ref=e12]: Club Challenge v1.0
-          - paragraph [ref=e13]: "Status: draw approved"
+        - paragraph [ref=e6]: Saving player ranking… one command sent
+        - paragraph [ref=e7]: RallyHub has accepted your tap. Keep this screen open; the control stays locked until the action resolves.
+      - generic [ref=e8]:
         - generic [ref=e14]:
-          - generic [ref=e15]:
-            - generic [ref=e16]:
-              - generic [ref=e17]: CL
-              - generic [ref=e18]: Clare Pickleball Club
-            - generic [ref=e19]: vs
-            - generic [ref=e20]:
-              - generic [ref=e21]: GA
-              - generic [ref=e22]: Galway Pickleball
-          - button "Public Links / QR" [ref=e23] [cursor=pointer]
-          - button "Print Event Pack v1" [ref=e24] [cursor=pointer]
-      - generic [ref=e26]:
-        - button [ref=e27] [cursor=pointer]
-        - button [ref=e32] [cursor=pointer]
-        - button "3 Draw" [ref=e37] [cursor=pointer]:
-          - generic [ref=e38]: "3"
+          - paragraph [ref=e15]: Club Challenge v1.0
+          - paragraph [ref=e16]: "Status: draft"
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - generic [ref=e19]:
+              - generic [ref=e20]: CL
+              - generic [ref=e21]: Clare Pickleball Club
+            - generic [ref=e22]: vs
+            - generic [ref=e23]:
+              - generic [ref=e24]: GA
+              - generic [ref=e25]: Galway Pickleball
+          - button "Public Links / QR" [ref=e26] [cursor=pointer]
+      - generic [ref=e28]:
+        - button [ref=e29] [cursor=pointer]
+        - button "2 Teams" [ref=e34] [cursor=pointer]:
+          - generic [ref=e35]: "2"
+          - text: Teams
+        - button "3 Draw" [ref=e36] [cursor=pointer]:
+          - generic [ref=e37]: "3"
           - text: Draw
-        - button "4 Live Event" [ref=e39] [cursor=pointer]:
-          - generic [ref=e40]: "4"
+        - button "4 Live Event" [ref=e38] [cursor=pointer]:
+          - generic [ref=e39]: "4"
           - text: Live Event
-        - button "5 Simulator" [ref=e41] [cursor=pointer]:
-          - generic [ref=e42]: "5"
+        - button "5 Simulator" [ref=e40] [cursor=pointer]:
+          - generic [ref=e41]: "5"
           - text: Simulator
-        - button "6 Results" [ref=e43] [cursor=pointer]:
-          - generic [ref=e44]: "6"
+        - button "6 Results" [ref=e42] [cursor=pointer]:
+          - generic [ref=e43]: "6"
           - text: Results
-      - generic [ref=e46]:
-        - generic [ref=e47]:
-          - generic [ref=e48]:
-            - generic [ref=e49]:
-              - paragraph [ref=e50]: Fairness Report
-              - paragraph [ref=e51]: Gate 2 priorities applied
-            - generic [ref=e52]: Hard checks PASS
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - generic [ref=e47]:
+            - paragraph [ref=e48]: Participants
+            - paragraph [ref=e49]: Event ranks are independent of permanent RallyHub skill ratings.
+          - button "Practice with 32 Test Players" [ref=e50] [cursor=pointer]
+        - generic [ref=e51]:
           - generic [ref=e53]:
-            - generic [ref=e54]:
-              - paragraph [ref=e55]: "48"
-              - paragraph [ref=e56]: Matches
-            - generic [ref=e57]:
-              - paragraph [ref=e58]: "6"
-              - paragraph [ref=e59]: Games min
+            - textbox "Add Clare Pickleball Club player" [ref=e54]
+            - button [disabled]
+          - generic [ref=e56]:
+            - textbox "Add Galway Pickleball player" [ref=e57]
+            - button [disabled]
+        - generic [ref=e58]:
+          - generic [ref=e59]:
             - generic [ref=e60]:
-              - paragraph [ref=e61]: "6"
-              - paragraph [ref=e62]: Games max
-            - generic [ref=e63]:
-              - paragraph [ref=e64]: "0"
-              - paragraph [ref=e65]: Partner repeats
-            - generic [ref=e66]:
-              - paragraph [ref=e67]: "2"
-              - paragraph [ref=e68]: Max opp repeat
-            - generic [ref=e69]:
-              - paragraph [ref=e70]: "0"
-              - paragraph [ref=e71]: Consecutive rests
-            - generic [ref=e72]:
-              - paragraph [ref=e73]: "2.33"
-              - paragraph [ref=e74]: Avg strength gap
-            - generic [ref=e75]:
-              - paragraph [ref=e76]: "8"
-              - paragraph [ref=e77]: Max gap
-        - generic [ref=e78]:
-          - generic [ref=e79]:
-            - generic [ref=e80]:
-              - paragraph [ref=e81]: Round 1
-              - generic [ref=e82]: 4 courts
-            - generic [ref=e83]:
-              - generic [ref=e84]:
-                - paragraph [ref=e85]: Court 1
-                - paragraph [ref=e86]: Club A Test 02 & Club A Test 01
-                - paragraph [ref=e87]: vs
-                - paragraph [ref=e88]: Club B Test 01 & Club B Test 02
-              - generic [ref=e89]:
-                - paragraph [ref=e90]: Court 2
-                - paragraph [ref=e91]: Club A Test 03 & Club A Test 04
-                - paragraph [ref=e92]: vs
-                - paragraph [ref=e93]: Club B Test 03 & Club B Test 04
-              - generic [ref=e94]:
-                - paragraph [ref=e95]: Court 3
-                - paragraph [ref=e96]: Club A Test 05 & Club A Test 06
-                - paragraph [ref=e97]: vs
-                - paragraph [ref=e98]: Club B Test 05 & Club B Test 06
-              - generic [ref=e99]:
-                - paragraph [ref=e100]: Court 4
-                - paragraph [ref=e101]: Club A Test 07 & Club A Test 08
-                - paragraph [ref=e102]: vs
-                - paragraph [ref=e103]: Club B Test 07 & Club B Test 08
-          - generic [ref=e104]:
-            - generic [ref=e105]:
-              - paragraph [ref=e106]: Round 2
-              - generic [ref=e107]: 4 courts
-            - generic [ref=e108]:
-              - generic [ref=e109]:
-                - paragraph [ref=e110]: Court 1
-                - paragraph [ref=e111]: Club A Test 09 & Club A Test 10
-                - paragraph [ref=e112]: vs
-                - paragraph [ref=e113]: Club B Test 09 & Club B Test 10
-              - generic [ref=e114]:
-                - paragraph [ref=e115]: Court 2
-                - paragraph [ref=e116]: Club A Test 11 & Club A Test 12
-                - paragraph [ref=e117]: vs
-                - paragraph [ref=e118]: Club B Test 11 & Club B Test 12
-              - generic [ref=e119]:
-                - paragraph [ref=e120]: Court 3
-                - paragraph [ref=e121]: Club A Test 13 & Club A Test 14
-                - paragraph [ref=e122]: vs
-                - paragraph [ref=e123]: Club B Test 13 & Club B Test 14
-              - generic [ref=e124]:
-                - paragraph [ref=e125]: Court 4
-                - paragraph [ref=e126]: Club A Test 15 & Club A Test 16
-                - paragraph [ref=e127]: vs
-                - paragraph [ref=e128]: Club B Test 15 & Club B Test 16
-          - generic [ref=e129]:
-            - generic [ref=e130]:
-              - paragraph [ref=e131]: Round 3
-              - generic [ref=e132]: 4 courts
-            - generic [ref=e133]:
-              - generic [ref=e134]:
-                - paragraph [ref=e135]: Court 1
-                - paragraph [ref=e136]: Club A Test 02 & Club A Test 03
-                - paragraph [ref=e137]: vs
-                - paragraph [ref=e138]: Club B Test 05 & Club B Test 07
-              - generic [ref=e139]:
-                - paragraph [ref=e140]: Court 2
-                - paragraph [ref=e141]: Club A Test 01 & Club A Test 04
-                - paragraph [ref=e142]: vs
-                - paragraph [ref=e143]: Club B Test 06 & Club B Test 08
-              - generic [ref=e144]:
-                - paragraph [ref=e145]: Court 3
-                - paragraph [ref=e146]: Club A Test 05 & Club A Test 07
-                - paragraph [ref=e147]: vs
-                - paragraph [ref=e148]: Club B Test 01 & Club B Test 03
-              - generic [ref=e149]:
-                - paragraph [ref=e150]: Court 4
-                - paragraph [ref=e151]: Club A Test 06 & Club A Test 08
-                - paragraph [ref=e152]: vs
-                - paragraph [ref=e153]: Club B Test 02 & Club B Test 04
-          - generic [ref=e154]:
-            - generic [ref=e155]:
-              - paragraph [ref=e156]: Round 4
-              - generic [ref=e157]: 4 courts
-            - generic [ref=e158]:
-              - generic [ref=e159]:
-                - paragraph [ref=e160]: Court 1
-                - paragraph [ref=e161]: Club A Test 09 & Club A Test 11
-                - paragraph [ref=e162]: vs
-                - paragraph [ref=e163]: Club B Test 13 & Club B Test 15
-              - generic [ref=e164]:
-                - paragraph [ref=e165]: Court 2
-                - paragraph [ref=e166]: Club A Test 10 & Club A Test 12
-                - paragraph [ref=e167]: vs
-                - paragraph [ref=e168]: Club B Test 14 & Club B Test 16
-              - generic [ref=e169]:
-                - paragraph [ref=e170]: Court 3
-                - paragraph [ref=e171]: Club A Test 13 & Club A Test 15
-                - paragraph [ref=e172]: vs
-                - paragraph [ref=e173]: Club B Test 09 & Club B Test 11
-              - generic [ref=e174]:
-                - paragraph [ref=e175]: Court 4
-                - paragraph [ref=e176]: Club A Test 14 & Club A Test 16
-                - paragraph [ref=e177]: vs
-                - paragraph [ref=e178]: Club B Test 10 & Club B Test 12
-          - generic [ref=e179]:
-            - generic [ref=e180]:
-              - paragraph [ref=e181]: Round 5
-              - generic [ref=e182]: 4 courts
-            - generic [ref=e183]:
-              - generic [ref=e184]:
-                - paragraph [ref=e185]: Court 1
-                - paragraph [ref=e186]: Club A Test 05 & Club A Test 08
-                - paragraph [ref=e187]: vs
-                - paragraph [ref=e188]: Club B Test 05 & Club B Test 08
-              - generic [ref=e189]:
-                - paragraph [ref=e190]: Court 2
-                - paragraph [ref=e191]: Club A Test 06 & Club A Test 07
-                - paragraph [ref=e192]: vs
-                - paragraph [ref=e193]: Club B Test 06 & Club B Test 07
-              - generic [ref=e194]:
-                - paragraph [ref=e195]: Court 3
-                - paragraph [ref=e196]: Club A Test 02 & Club A Test 04
-                - paragraph [ref=e197]: vs
-                - paragraph [ref=e198]: Club B Test 01 & Club B Test 04
+              - generic [ref=e61]:
+                - paragraph [ref=e62]: Clare Pickleball Club
+                - paragraph [ref=e63]: "Strongest #1 → developing"
+              - generic [ref=e64]: "16"
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - button [ref=e67] [cursor=pointer]
+                - generic [ref=e75]: "1"
+                - generic [ref=e76]: Club A Test 01
+                - generic [ref=e77]: Male
+                - generic [ref=e78]:
+                  - button "Move Club A Test 01 up" [disabled] [ref=e79]
+                  - button "Move Club A Test 01 down" [ref=e82] [cursor=pointer]
+              - generic [ref=e85]:
+                - button [ref=e86] [cursor=pointer]
+                - generic [ref=e94]: "2"
+                - generic [ref=e95]: Club A Test 02
+                - generic [ref=e96]: Female
+                - generic [ref=e97]:
+                  - button "Move Club A Test 02 up" [active] [ref=e98] [cursor=pointer]
+                  - button "Move Club A Test 02 down" [ref=e101] [cursor=pointer]
+              - generic [ref=e104]:
+                - button [ref=e105] [cursor=pointer]
+                - generic [ref=e113]: "3"
+                - generic [ref=e114]: Club A Test 03
+                - generic [ref=e115]: Male
+                - generic [ref=e116]:
+                  - button "Move Club A Test 03 up" [ref=e117] [cursor=pointer]
+                  - button "Move Club A Test 03 down" [ref=e120] [cursor=pointer]
+              - generic [ref=e123]:
+                - button [ref=e124] [cursor=pointer]
+                - generic [ref=e132]: "4"
+                - generic [ref=e133]: Club A Test 04
+                - generic [ref=e134]: Female
+                - generic [ref=e135]:
+                  - button "Move Club A Test 04 up" [ref=e136] [cursor=pointer]
+                  - button "Move Club A Test 04 down" [ref=e139] [cursor=pointer]
+              - generic [ref=e142]:
+                - button [ref=e143] [cursor=pointer]
+                - generic [ref=e151]: "5"
+                - generic [ref=e152]: Club A Test 05
+                - generic [ref=e153]: Male
+                - generic [ref=e154]:
+                  - button "Move Club A Test 05 up" [ref=e155] [cursor=pointer]
+                  - button "Move Club A Test 05 down" [ref=e158] [cursor=pointer]
+              - generic [ref=e161]:
+                - button [ref=e162] [cursor=pointer]
+                - generic [ref=e170]: "6"
+                - generic [ref=e171]: Club A Test 06
+                - generic [ref=e172]: Female
+                - generic [ref=e173]:
+                  - button "Move Club A Test 06 up" [ref=e174] [cursor=pointer]
+                  - button "Move Club A Test 06 down" [ref=e177] [cursor=pointer]
+              - generic [ref=e180]:
+                - button [ref=e181] [cursor=pointer]
+                - generic [ref=e189]: "7"
+                - generic [ref=e190]: Club A Test 07
+                - generic [ref=e191]: Male
+                - generic [ref=e192]:
+                  - button "Move Club A Test 07 up" [ref=e193] [cursor=pointer]
+                  - button "Move Club A Test 07 down" [ref=e196] [cursor=pointer]
               - generic [ref=e199]:
-                - paragraph [ref=e200]: Court 4
-                - paragraph [ref=e201]: Club A Test 01 & Club A Test 03
-                - paragraph [ref=e202]: vs
-                - paragraph [ref=e203]: Club B Test 02 & Club B Test 03
-          - generic [ref=e204]:
-            - generic [ref=e205]:
-              - paragraph [ref=e206]: Round 6
-              - generic [ref=e207]: 4 courts
-            - generic [ref=e208]:
-              - generic [ref=e209]:
-                - paragraph [ref=e210]: Court 1
-                - paragraph [ref=e211]: Club A Test 13 & Club A Test 16
-                - paragraph [ref=e212]: vs
-                - paragraph [ref=e213]: Club B Test 13 & Club B Test 16
-              - generic [ref=e214]:
-                - paragraph [ref=e215]: Court 2
-                - paragraph [ref=e216]: Club A Test 14 & Club A Test 15
-                - paragraph [ref=e217]: vs
-                - paragraph [ref=e218]: Club B Test 14 & Club B Test 15
-              - generic [ref=e219]:
-                - paragraph [ref=e220]: Court 3
-                - paragraph [ref=e221]: Club A Test 09 & Club A Test 12
-                - paragraph [ref=e222]: vs
-                - paragraph [ref=e223]: Club B Test 09 & Club B Test 12
-              - generic [ref=e224]:
-                - paragraph [ref=e225]: Court 4
-                - paragraph [ref=e226]: Club A Test 10 & Club A Test 11
-                - paragraph [ref=e227]: vs
-                - paragraph [ref=e228]: Club B Test 10 & Club B Test 11
-          - generic [ref=e229]:
-            - generic [ref=e230]:
-              - paragraph [ref=e231]: Round 7
-              - generic [ref=e232]: 4 courts
-            - generic [ref=e233]:
-              - generic [ref=e234]:
-                - paragraph [ref=e235]: Court 1
-                - paragraph [ref=e236]: Club A Test 03 & Club A Test 07
-                - paragraph [ref=e237]: vs
-                - paragraph [ref=e238]: Club B Test 04 & Club B Test 08
-              - generic [ref=e239]:
-                - paragraph [ref=e240]: Court 2
-                - paragraph [ref=e241]: Club A Test 02 & Club A Test 05
-                - paragraph [ref=e242]: vs
-                - paragraph [ref=e243]: Club B Test 02 & Club B Test 06
-              - generic [ref=e244]:
-                - paragraph [ref=e245]: Court 3
-                - paragraph [ref=e246]: Club A Test 04 & Club A Test 08
-                - paragraph [ref=e247]: vs
-                - paragraph [ref=e248]: Club B Test 03 & Club B Test 07
-              - generic [ref=e249]:
-                - paragraph [ref=e250]: Court 4
-                - paragraph [ref=e251]: Club A Test 01 & Club A Test 06
-                - paragraph [ref=e252]: vs
-                - paragraph [ref=e253]: Club B Test 01 & Club B Test 05
-          - generic [ref=e254]:
-            - generic [ref=e255]:
-              - paragraph [ref=e256]: Round 8
-              - generic [ref=e257]: 4 courts
-            - generic [ref=e258]:
-              - generic [ref=e259]:
-                - paragraph [ref=e260]: Court 1
-                - paragraph [ref=e261]: Club A Test 11 & Club A Test 15
-                - paragraph [ref=e262]: vs
-                - paragraph [ref=e263]: Club B Test 12 & Club B Test 16
-              - generic [ref=e264]:
-                - paragraph [ref=e265]: Court 2
-                - paragraph [ref=e266]: Club A Test 09 & Club A Test 13
-                - paragraph [ref=e267]: vs
-                - paragraph [ref=e268]: Club B Test 10 & Club B Test 14
-              - generic [ref=e269]:
-                - paragraph [ref=e270]: Court 3
-                - paragraph [ref=e271]: Club A Test 12 & Club A Test 16
-                - paragraph [ref=e272]: vs
-                - paragraph [ref=e273]: Club B Test 11 & Club B Test 15
-              - generic [ref=e274]:
-                - paragraph [ref=e275]: Court 4
-                - paragraph [ref=e276]: Club A Test 10 & Club A Test 14
-                - paragraph [ref=e277]: vs
-                - paragraph [ref=e278]: Club B Test 09 & Club B Test 13
-          - generic [ref=e279]:
-            - generic [ref=e280]:
-              - paragraph [ref=e281]: Round 9
-              - generic [ref=e282]: 4 courts
-            - generic [ref=e283]:
-              - generic [ref=e284]:
-                - paragraph [ref=e285]: Court 1
-                - paragraph [ref=e286]: Club A Test 02 & Club A Test 06
-                - paragraph [ref=e287]: vs
-                - paragraph [ref=e288]: Club B Test 03 & Club B Test 08
-              - generic [ref=e289]:
-                - paragraph [ref=e290]: Court 2
-                - paragraph [ref=e291]: Club A Test 01 & Club A Test 05
-                - paragraph [ref=e292]: vs
-                - paragraph [ref=e293]: Club B Test 04 & Club B Test 07
+                - button [ref=e200] [cursor=pointer]
+                - generic [ref=e208]: "8"
+                - generic [ref=e209]: Club A Test 08
+                - generic [ref=e210]: Female
+                - generic [ref=e211]:
+                  - button "Move Club A Test 08 up" [ref=e212] [cursor=pointer]
+                  - button "Move Club A Test 08 down" [ref=e215] [cursor=pointer]
+              - generic [ref=e218]:
+                - button [ref=e219] [cursor=pointer]
+                - generic [ref=e227]: "9"
+                - generic [ref=e228]: Club A Test 09
+                - generic [ref=e229]: Male
+                - generic [ref=e230]:
+                  - button "Move Club A Test 09 up" [ref=e231] [cursor=pointer]
+                  - button "Move Club A Test 09 down" [ref=e234] [cursor=pointer]
+              - generic [ref=e237]:
+                - button [ref=e238] [cursor=pointer]
+                - generic [ref=e246]: "10"
+                - generic [ref=e247]: Club A Test 10
+                - generic [ref=e248]: Female
+                - generic [ref=e249]:
+                  - button "Move Club A Test 10 up" [ref=e250] [cursor=pointer]
+                  - button "Move Club A Test 10 down" [ref=e253] [cursor=pointer]
+              - generic [ref=e256]:
+                - button [ref=e257] [cursor=pointer]
+                - generic [ref=e265]: "11"
+                - generic [ref=e266]: Club A Test 11
+                - generic [ref=e267]: Male
+                - generic [ref=e268]:
+                  - button "Move Club A Test 11 up" [ref=e269] [cursor=pointer]
+                  - button "Move Club A Test 11 down" [ref=e272] [cursor=pointer]
+              - generic [ref=e275]:
+                - button [ref=e276] [cursor=pointer]
+                - generic [ref=e284]: "12"
+                - generic [ref=e285]: Club A Test 12
+                - generic [ref=e286]: Female
+                - generic [ref=e287]:
+                  - button "Move Club A Test 12 up" [ref=e288] [cursor=pointer]
+                  - button "Move Club A Test 12 down" [ref=e291] [cursor=pointer]
               - generic [ref=e294]:
-                - paragraph [ref=e295]: Court 3
-                - paragraph [ref=e296]: Club A Test 03 & Club A Test 08
-                - paragraph [ref=e297]: vs
-                - paragraph [ref=e298]: Club B Test 01 & Club B Test 06
-              - generic [ref=e299]:
-                - paragraph [ref=e300]: Court 4
-                - paragraph [ref=e301]: Club A Test 04 & Club A Test 07
-                - paragraph [ref=e302]: vs
-                - paragraph [ref=e303]: Club B Test 02 & Club B Test 05
-          - generic [ref=e304]:
-            - generic [ref=e305]:
-              - paragraph [ref=e306]: Round 10
-              - generic [ref=e307]: 4 courts
-            - generic [ref=e308]:
-              - generic [ref=e309]:
-                - paragraph [ref=e310]: Court 1
-                - paragraph [ref=e311]: Club A Test 09 & Club A Test 14
-                - paragraph [ref=e312]: vs
-                - paragraph [ref=e313]: Club B Test 11 & Club B Test 16
-              - generic [ref=e314]:
-                - paragraph [ref=e315]: Court 2
-                - paragraph [ref=e316]: Club A Test 10 & Club A Test 13
-                - paragraph [ref=e317]: vs
-                - paragraph [ref=e318]: Club B Test 12 & Club B Test 15
-              - generic [ref=e319]:
-                - paragraph [ref=e320]: Court 3
-                - paragraph [ref=e321]: Club A Test 11 & Club A Test 16
-                - paragraph [ref=e322]: vs
-                - paragraph [ref=e323]: Club B Test 09 & Club B Test 14
-              - generic [ref=e324]:
-                - paragraph [ref=e325]: Court 4
-                - paragraph [ref=e326]: Club A Test 12 & Club A Test 15
-                - paragraph [ref=e327]: vs
-                - paragraph [ref=e328]: Club B Test 10 & Club B Test 13
-          - generic [ref=e329]:
-            - generic [ref=e330]:
-              - paragraph [ref=e331]: Round 11
-              - generic [ref=e332]: 4 courts
-            - generic [ref=e333]:
-              - generic [ref=e334]:
-                - paragraph [ref=e335]: Court 1
-                - paragraph [ref=e336]: Club A Test 01 & Club A Test 08
-                - paragraph [ref=e337]: vs
-                - paragraph [ref=e338]: Club B Test 04 & Club B Test 06
-              - generic [ref=e339]:
-                - paragraph [ref=e340]: Court 2
-                - paragraph [ref=e341]: Club A Test 02 & Club A Test 07
-                - paragraph [ref=e342]: vs
-                - paragraph [ref=e343]: Club B Test 03 & Club B Test 05
-              - generic [ref=e344]:
-                - paragraph [ref=e345]: Court 3
-                - paragraph [ref=e346]: Club A Test 04 & Club A Test 06
-                - paragraph [ref=e347]: vs
-                - paragraph [ref=e348]: Club B Test 02 & Club B Test 08
-              - generic [ref=e349]:
-                - paragraph [ref=e350]: Court 4
-                - paragraph [ref=e351]: Club A Test 03 & Club A Test 05
-                - paragraph [ref=e352]: vs
-                - paragraph [ref=e353]: Club B Test 01 & Club B Test 07
-          - generic [ref=e354]:
-            - generic [ref=e355]:
-              - paragraph [ref=e356]: Round 12
-              - generic [ref=e357]: 4 courts
-            - generic [ref=e358]:
-              - generic [ref=e359]:
-                - paragraph [ref=e360]: Court 1
-                - paragraph [ref=e361]: Club A Test 10 & Club A Test 16
-                - paragraph [ref=e362]: vs
-                - paragraph [ref=e363]: Club B Test 12 & Club B Test 14
-              - generic [ref=e364]:
-                - paragraph [ref=e365]: Court 2
-                - paragraph [ref=e366]: Club A Test 09 & Club A Test 15
-                - paragraph [ref=e367]: vs
-                - paragraph [ref=e368]: Club B Test 11 & Club B Test 13
-              - generic [ref=e369]:
-                - paragraph [ref=e370]: Court 3
-                - paragraph [ref=e371]: Club A Test 12 & Club A Test 14
-                - paragraph [ref=e372]: vs
-                - paragraph [ref=e373]: Club B Test 10 & Club B Test 16
-              - generic [ref=e374]:
-                - paragraph [ref=e375]: Court 4
-                - paragraph [ref=e376]: Club A Test 11 & Club A Test 13
-                - paragraph [ref=e377]: vs
-                - paragraph [ref=e378]: Club B Test 09 & Club B Test 15
-        - generic [ref=e379]:
-          - generic [ref=e380]:
-            - paragraph [ref=e381]: Hall sound check before play
-            - paragraph [ref=e382]: Use the actual phone/tablet and speaker now. This is local audio only and makes no Base44 request.
-          - button "Test Sound Again ✓" [active] [ref=e383] [cursor=pointer]
-        - button "Start Club Challenge" [ref=e385] [cursor=pointer]
+                - button [ref=e295] [cursor=pointer]
+                - generic [ref=e303]: "13"
+                - generic [ref=e304]: Club A Test 13
+                - generic [ref=e305]: Male
+                - generic [ref=e306]:
+                  - button "Move Club A Test 13 up" [ref=e307] [cursor=pointer]
+                  - button "Move Club A Test 13 down" [ref=e310] [cursor=pointer]
+              - generic [ref=e313]:
+                - button [ref=e314] [cursor=pointer]
+                - generic [ref=e322]: "14"
+                - generic [ref=e323]: Club A Test 14
+                - generic [ref=e324]: Female
+                - generic [ref=e325]:
+                  - button "Move Club A Test 14 up" [ref=e326] [cursor=pointer]
+                  - button "Move Club A Test 14 down" [ref=e329] [cursor=pointer]
+              - generic [ref=e332]:
+                - button [ref=e333] [cursor=pointer]
+                - generic [ref=e341]: "15"
+                - generic [ref=e342]: Club A Test 15
+                - generic [ref=e343]: Male
+                - generic [ref=e344]:
+                  - button "Move Club A Test 15 up" [ref=e345] [cursor=pointer]
+                  - button "Move Club A Test 15 down" [ref=e348] [cursor=pointer]
+              - generic [ref=e351]:
+                - button [ref=e352] [cursor=pointer]
+                - generic [ref=e360]: "16"
+                - generic [ref=e361]: Club A Test 16
+                - generic [ref=e362]: Female
+                - generic [ref=e363]:
+                  - button "Move Club A Test 16 up" [ref=e364] [cursor=pointer]
+                  - button "Move Club A Test 16 down" [disabled] [ref=e367]
+          - generic [ref=e370]:
+            - generic [ref=e371]:
+              - generic [ref=e372]:
+                - paragraph [ref=e373]: Galway Pickleball
+                - paragraph [ref=e374]: "Strongest #1 → developing"
+              - generic [ref=e375]: "16"
+            - generic [ref=e376]:
+              - generic [ref=e377]:
+                - button [ref=e378] [cursor=pointer]
+                - generic [ref=e386]: "1"
+                - generic [ref=e387]: Club B Test 01
+                - generic [ref=e388]: Male
+                - generic [ref=e389]:
+                  - button "Move Club B Test 01 up" [disabled] [ref=e390]
+                  - button "Move Club B Test 01 down" [ref=e393] [cursor=pointer]
+              - generic [ref=e396]:
+                - button [ref=e397] [cursor=pointer]
+                - generic [ref=e405]: "2"
+                - generic [ref=e406]: Club B Test 02
+                - generic [ref=e407]: Female
+                - generic [ref=e408]:
+                  - button "Move Club B Test 02 up" [ref=e409] [cursor=pointer]
+                  - button "Move Club B Test 02 down" [ref=e412] [cursor=pointer]
+              - generic [ref=e415]:
+                - button [ref=e416] [cursor=pointer]
+                - generic [ref=e424]: "3"
+                - generic [ref=e425]: Club B Test 03
+                - generic [ref=e426]: Male
+                - generic [ref=e427]:
+                  - button "Move Club B Test 03 up" [ref=e428] [cursor=pointer]
+                  - button "Move Club B Test 03 down" [ref=e431] [cursor=pointer]
+              - generic [ref=e434]:
+                - button [ref=e435] [cursor=pointer]
+                - generic [ref=e443]: "4"
+                - generic [ref=e444]: Club B Test 04
+                - generic [ref=e445]: Female
+                - generic [ref=e446]:
+                  - button "Move Club B Test 04 up" [ref=e447] [cursor=pointer]
+                  - button "Move Club B Test 04 down" [ref=e450] [cursor=pointer]
+              - generic [ref=e453]:
+                - button [ref=e454] [cursor=pointer]
+                - generic [ref=e462]: "5"
+                - generic [ref=e463]: Club B Test 05
+                - generic [ref=e464]: Male
+                - generic [ref=e465]:
+                  - button "Move Club B Test 05 up" [ref=e466] [cursor=pointer]
+                  - button "Move Club B Test 05 down" [ref=e469] [cursor=pointer]
+              - generic [ref=e472]:
+                - button [ref=e473] [cursor=pointer]
+                - generic [ref=e481]: "6"
+                - generic [ref=e482]: Club B Test 06
+                - generic [ref=e483]: Female
+                - generic [ref=e484]:
+                  - button "Move Club B Test 06 up" [ref=e485] [cursor=pointer]
+                  - button "Move Club B Test 06 down" [ref=e488] [cursor=pointer]
+              - generic [ref=e491]:
+                - button [ref=e492] [cursor=pointer]
+                - generic [ref=e500]: "7"
+                - generic [ref=e501]: Club B Test 07
+                - generic [ref=e502]: Male
+                - generic [ref=e503]:
+                  - button "Move Club B Test 07 up" [ref=e504] [cursor=pointer]
+                  - button "Move Club B Test 07 down" [ref=e507] [cursor=pointer]
+              - generic [ref=e510]:
+                - button [ref=e511] [cursor=pointer]
+                - generic [ref=e519]: "8"
+                - generic [ref=e520]: Club B Test 08
+                - generic [ref=e521]: Female
+                - generic [ref=e522]:
+                  - button "Move Club B Test 08 up" [ref=e523] [cursor=pointer]
+                  - button "Move Club B Test 08 down" [ref=e526] [cursor=pointer]
+              - generic [ref=e529]:
+                - button [ref=e530] [cursor=pointer]
+                - generic [ref=e538]: "9"
+                - generic [ref=e539]: Club B Test 09
+                - generic [ref=e540]: Male
+                - generic [ref=e541]:
+                  - button "Move Club B Test 09 up" [ref=e542] [cursor=pointer]
+                  - button "Move Club B Test 09 down" [ref=e545] [cursor=pointer]
+              - generic [ref=e548]:
+                - button [ref=e549] [cursor=pointer]
+                - generic [ref=e557]: "10"
+                - generic [ref=e558]: Club B Test 10
+                - generic [ref=e559]: Female
+                - generic [ref=e560]:
+                  - button "Move Club B Test 10 up" [ref=e561] [cursor=pointer]
+                  - button "Move Club B Test 10 down" [ref=e564] [cursor=pointer]
+              - generic [ref=e567]:
+                - button [ref=e568] [cursor=pointer]
+                - generic [ref=e576]: "11"
+                - generic [ref=e577]: Club B Test 11
+                - generic [ref=e578]: Male
+                - generic [ref=e579]:
+                  - button "Move Club B Test 11 up" [ref=e580] [cursor=pointer]
+                  - button "Move Club B Test 11 down" [ref=e583] [cursor=pointer]
+              - generic [ref=e586]:
+                - button [ref=e587] [cursor=pointer]
+                - generic [ref=e595]: "12"
+                - generic [ref=e596]: Club B Test 12
+                - generic [ref=e597]: Female
+                - generic [ref=e598]:
+                  - button "Move Club B Test 12 up" [ref=e599] [cursor=pointer]
+                  - button "Move Club B Test 12 down" [ref=e602] [cursor=pointer]
+              - generic [ref=e605]:
+                - button [ref=e606] [cursor=pointer]
+                - generic [ref=e614]: "13"
+                - generic [ref=e615]: Club B Test 13
+                - generic [ref=e616]: Male
+                - generic [ref=e617]:
+                  - button "Move Club B Test 13 up" [ref=e618] [cursor=pointer]
+                  - button "Move Club B Test 13 down" [ref=e621] [cursor=pointer]
+              - generic [ref=e624]:
+                - button [ref=e625] [cursor=pointer]
+                - generic [ref=e633]: "14"
+                - generic [ref=e634]: Club B Test 14
+                - generic [ref=e635]: Female
+                - generic [ref=e636]:
+                  - button "Move Club B Test 14 up" [ref=e637] [cursor=pointer]
+                  - button "Move Club B Test 14 down" [ref=e640] [cursor=pointer]
+              - generic [ref=e643]:
+                - button [ref=e644] [cursor=pointer]
+                - generic [ref=e652]: "15"
+                - generic [ref=e653]: Club B Test 15
+                - generic [ref=e654]: Male
+                - generic [ref=e655]:
+                  - button "Move Club B Test 15 up" [ref=e656] [cursor=pointer]
+                  - button "Move Club B Test 15 down" [ref=e659] [cursor=pointer]
+              - generic [ref=e662]:
+                - button [ref=e663] [cursor=pointer]
+                - generic [ref=e671]: "16"
+                - generic [ref=e672]: Club B Test 16
+                - generic [ref=e673]: Female
+                - generic [ref=e674]:
+                  - button "Move Club B Test 16 up" [ref=e675] [cursor=pointer]
+                  - button "Move Club B Test 16 down" [disabled] [ref=e678]
+        - generic [ref=e681]:
+          - generic [ref=e682]:
+            - paragraph [ref=e683]: "12"
+            - paragraph [ref=e684]: Rounds
+          - generic [ref=e685]:
+            - paragraph [ref=e686]: "48"
+            - paragraph [ref=e687]: Matches
+          - generic [ref=e688]:
+            - paragraph [ref=e689]: 6–6
+            - paragraph [ref=e690]: Games/player
+          - generic [ref=e691]:
+            - paragraph [ref=e692]: "164"
+            - paragraph [ref=e693]: Structured min
+          - generic [ref=e694]:
+            - paragraph [ref=e695]: "16"
+            - paragraph [ref=e696]: Contingency min
+        - button "Generate Draw & Fairness Report" [ref=e697] [cursor=pointer]
   - region "Notifications alt+T":
     - list:
-      - listitem [ref=e386]:
-        - generic [ref=e390]: Draw approved and locked
+      - listitem [ref=e698]:
+        - generic [ref=e702]: 32 practice players loaded. You can now rehearse the full setup and draw journey.
+      - listitem [ref=e704]:
+        - generic [ref=e708]: Club Challenge setup saved
 ```
 
 # Test source
 
 ```ts
+  101 |         if(body.label)labels[String(body.round)]=body.label;else delete labels[String(body.round)];model.event.round_labels_json=JSON.stringify(labels);
+  102 |       } else if (body.action === 'archive') model.event.status='archived';
+  103 |       else if (body.action === 'reopen') model.event.status='completed';
+  104 |       return { success:true, event:model.event };
+  105 |     }
+  106 | 
+  107 |     if (name === 'updateClubChallengeTimer') {
+  108 |       await sleep(480);
+  109 |       const current = (()=>{try{return model.event.timer_state_json?JSON.parse(model.event.timer_state_json):{};}catch{return {};}})();
+  110 |       if (Number(body.expectedRevision||0)!==Number(model.event.timer_revision||0)) return { conflict:true, error:'Timer revision conflict' };
+  111 |       let next=current;
+  112 |       if (body.action === 'start') {
+  113 |         const seconds = body.phase === 'changeover' ? Number(model.event.changeover_minutes||2)*60 : body.phase === 'break' ? Number(model.event.break_minutes||20)*60 : Number(current.remaining_seconds||0)>0&&current.phase==='play'&&!current.running?Number(current.remaining_seconds):Number(model.event.play_minutes||10)*60;
+  114 |         next={phase:body.phase||'play',running:true,remaining_seconds:seconds,started_at:now(),round:Number(model.event.current_round||1)};
+  115 |       } else if (body.action === 'pause') {
+  116 |         next={...current,running:false,started_at:null};
+  117 |       } else if (body.action === 'resume') {
+  118 |         next={...current,running:true,started_at:now()};
+  119 |       } else if (body.action === 'reset') {
+  120 |         next={phase:'play',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round:Number(model.event.current_round||1)};
+  121 |       } else if (body.action === 'set_round_minutes') {
+  122 |         next={phase:'play',running:false,remaining_seconds:Number(body.minutes)*60,started_at:null,round:Number(model.event.current_round||1)};
+  123 |       } else if (body.action === 'add_minute') {
+  124 |         next={...current,remaining_seconds:Number(current.remaining_seconds||0)+60};
+  125 |       }
+  126 |       model.event.timer_revision=Number(model.event.timer_revision||0)+1;
+  127 |       model.event.timer_state_json=JSON.stringify(next);
+  128 |       return { success:true, event:model.event, state:next, server_now:now() };
+  129 |     }
   130 | 
   131 |     if (name === 'saveClubChallengeScore') {
   132 |       await sleep(260);
@@ -469,14 +465,15 @@ Call Log:
   191 |     class FakeGain{constructor(){this.gain=new FakeParam();}connect(){}}
   192 |     class FakeAudioContext{constructor(){this.state='suspended';this.currentTime=0;this.destination={};}createOscillator(){return new FakeOsc();}createGain(){return new FakeGain();}async resume(){this.state='running';}}
   193 |     Object.defineProperty(window,'AudioContext',{configurable:true,writable:true,value:FakeAudioContext});Object.defineProperty(window,'webkitAudioContext',{configurable:true,writable:true,value:FakeAudioContext});
-  194 |     window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;this.volume=1;this.lang='';this.rate=1;this.pitch=1;this.voice=null;}};
-  195 |     window.speechSynthesis={getVoices:()=>[{name:'Moira',lang:'en-IE'}],cancel(){},resume(){},speak(u){window.__ccDevice.speech.push({text:u.text,volume:u.volume,lang:u.lang});},addEventListener(){},removeEventListener(){}};
+  194 |     Object.defineProperty(window,'SpeechSynthesisUtterance',{configurable:true,writable:true,value:class{constructor(text){this.text=text;this.volume=1;this.lang='';this.rate=1;this.pitch=1;this.voice=null;}}});
+  195 |     Object.defineProperty(window,'speechSynthesis',{configurable:true,writable:true,value:{getVoices:()=>[{name:'Moira',lang:'en-IE'}],cancel(){},resume(){},speak(u){window.__ccDevice.speech.push({text:u.text,volume:u.volume,lang:u.lang});},addEventListener(){},removeEventListener(){}}});
   196 |     Object.defineProperty(navigator,'wakeLock',{configurable:true,value:{request:async()=>{window.__ccDevice.wakeRequests++;return{release:async()=>{window.__ccDevice.wakeReleases++;}};}}});
   197 |     Object.defineProperty(navigator,'vibrate',{configurable:true,value:()=>{window.__ccDevice.vibrations++;return true;}});
   198 |   });
   199 | }
   200 | 
-  201 | function metric(report,name,value,max){report[name]=value;expect(value,`${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);}
+> 201 | function metric(report,name,value,max){report[name]=value;expect(value,`${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);}
+      |                                                                                                                            ^ Error: ranking_ack_ms should be <= 250ms but was 262ms
   202 | async function expectNoHorizontalOverflow(page){const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);expect(overflow,'mobile page should not require horizontal body scrolling').toBeLessThanOrEqual(1);}
   203 | 
   204 | test.use({ viewport:{width:390,height:844} });
@@ -505,8 +502,7 @@ Call Log:
   227 |   const approveBefore=model.calls.filter(c=>c.name==='manageClubChallengeEvent'&&c.body.action==='approve_draw').length;
   228 |   started=Date.now();await page.getByTestId('cc-approve-draw').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Approving and locking draw… command sent')).toBeVisible({timeout:300});metric(report,'approve_ack_ms',Date.now()-started,250);await expect(page.getByTestId('cc-prestart-sound-check')).toBeVisible({timeout:1800});expect(model.calls.filter(c=>c.name==='manageClubChallengeEvent'&&c.body.action==='approve_draw').length-approveBefore).toBe(1);report.approve_double_tap_calls=1;
   229 | 
-> 230 |   const fnBeforeSound=model.calls.length;await page.getByTestId('cc-prestart-sound-check').click();await expect(page.getByTestId('cc-prestart-sound-check')).toContainText('Test Sound Again ✓',{timeout:800});await expect.poll(async()=>await page.evaluate(()=>window.__ccDevice.speech.length)).toBeGreaterThan(0);expect(await page.evaluate(()=>window.__rallyhubAudioContext?.state)).toBe('running');expect(model.calls.length).toBe(fnBeforeSound);report.sound_check_base44_calls=0;report.local_audio_unlocked=true;
-      |                                                                                                                                                                                                                                                                                                     ^ Error: expect(received).toBeGreaterThan(expected)
+  230 |   const fnBeforeSound=model.calls.length;await page.getByTestId('cc-prestart-sound-check').click();await expect(page.getByTestId('cc-prestart-sound-check')).toContainText('Test Sound Again ✓',{timeout:800});await expect.poll(async()=>await page.evaluate(()=>window.__ccDevice.speech.length)).toBeGreaterThan(0);expect(await page.evaluate(()=>window.__rallyhubAudioContext?.state)).toBe('running');expect(model.calls.length).toBe(fnBeforeSound);report.sound_check_base44_calls=0;report.local_audio_unlocked=true;
   231 | 
   232 |   const startBefore=model.calls.filter(c=>c.name==='manageClubChallengeEvent'&&c.body.action==='start').length;
   233 |   started=Date.now();await page.getByTestId('cc-start-event').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Starting Club Challenge… command sent')).toBeVisible({timeout:300});metric(report,'event_start_ack_ms',Date.now()-started,250);await expect(page.getByText('Round at a Glance')).toBeVisible({timeout:2000});metric(report,'event_start_to_live_ms',Date.now()-started,1800);expect(model.calls.filter(c=>c.name==='manageClubChallengeEvent'&&c.body.action==='start').length-startBefore).toBe(1);report.start_double_tap_calls=1;
