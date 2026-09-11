@@ -18,7 +18,7 @@ ok(v2.includes("'correct_match':'complete_match'"),'score completion wired');
 ok(!v2.includes("doCommand('confirm_round'"),'redundant separate round confirmation removed');
 ok(v2.includes("functions.invoke('startKotcRound'"),'single host START ROUND path uses the dedicated start function');
 ok(v2.includes('setTimerStartRoundId(roundId)'),'successful host start arms one-shot timer start');
-ok(v2.includes("commandType:'generate_next_round'")&&v2.includes('prepareStatus'),'next-round generation uses reconciliation-aware host feedback');
+ok(v2.includes("functions.invoke('prepareKotcNextRound'")&&v2.includes('prepareStatus')&&v2.includes('advanced&&next'),'next-round generation uses dedicated endpoint with reconciliation-aware host feedback');
 ok(v2.includes("doCommand('pause_session'"),'pause wired');
 ok(v2.includes("doCommand('resume_session'"),'resume wired');
 ok(v2.includes('data-testid="kotc-finish-session"')&&v2.includes('Finish Session'),'finish control remains visible in Session Menu');
