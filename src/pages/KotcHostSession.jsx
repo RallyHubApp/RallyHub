@@ -15,7 +15,8 @@ export default function KotcHostSession(){
     queryKey:['kotc-host-state',sessionId],
     queryFn:async()=> (await base44.functions.invoke('getKotcV2State',{sessionId})).data,
     enabled:!!sessionId,
-    refetchInterval:3000,
+    staleTime:Infinity,
+    refetchOnWindowFocus:false,
   });
 
   if(isLoading)return <div className="min-h-screen bg-background flex items-center justify-center"><div className="text-sm text-muted-foreground">Opening session host mode…</div></div>;
