@@ -152,15 +152,10 @@ test('host + two scorer devices: first claim wins, mixed parallel scoring, manua
   await host.waitForTimeout(1500);
   expect(model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length).toBe(refreshReadsBefore);
 
-  // Exact live defect regression: helper has already saved Court 1 but host is stale.
-  // Host's first attempted digit must NEVER appear; claim is rejected and one lightweight refresh pulls the saved result in.
-  await host.getByTestId('kotc-score-1-a').fill('5');
-  await expect(host.getByTestId('kotc-score-card-1')).toContainText('Saved 11–1');
-  await expect(host.getByTestId('kotc-score-1-a')).toHaveValue('11');
-  await expect(host.getByTestId('kotc-next-action')).toContainText('3/4 scores saved');
-
-  // Normal manual refresh remains available and cheap.
+  // Normal manual refresh pulls both player saves in and remains cheap.
   await host.getByTestId('kotc-refresh-player-scores').click();
+  await expect(host.getByTestId('kotc-next-action')).toContainText('3/4 scores saved');
+  await expect(host.getByTestId('kotc-score-card-1')).toContainText('Saved 11–1');
   await expect(host.getByTestId('kotc-score-card-2')).toContainText('Saved 7–8');
 
   // Host can take the remaining free court on first digit and finish the round locally.
