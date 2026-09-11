@@ -468,19 +468,28 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const approveDraw = async () => {
-    if (!event || !fairness || !matches.length) return;
+    if (!event || !fairness || !matches.length || sportingActionRef.current) return;
     if (fairness.duplicatePlayerRoundIssues || fairness.sameClubIntegrityIssues || !fairness.equalGames) { toast.error('Hard fairness checks must pass before approval.'); return; }
-    await base44.entities.ClubChallengeEvent.update(event.id, { status: 'draw_approved', draw_version: Number(event.draw_version || 0) + 1, draw_approved_at: new Date().toISOString(), draw_approved_by: currentUser?.id || '', event_pack_stale: false, event_pack_version: Number(event.draw_version || 0) + 1 });
-    toast.success('Draw approved and locked');
-    await sync();
+    sportingActionRef.current = true; setHostAction('Approving and locking draw… command sent');
+    try {
+      await base44.entities.ClubChallengeEvent.update(event.id, { status: 'draw_approved', draw_version: Number(event.draw_version || 0) + 1, draw_approved_at: new Date().toISOString(), draw_approved_by: currentUser?.id || '', event_pack_stale: false, event_pack_version: Number(event.draw_version || 0) + 1 });
+      toast.success('Draw approved and locked');
+      await sync();
+    } catch (e) { await refetchEvent(); toast.error(e?.message || 'Could not approve draw'); }
+    finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
   const startEvent = async () => {
-    if (event?.status !== 'draw_approved') return;
-    await base44.entities.ClubChallengeEvent.update(event.id, { status: 'in_progress', current_round: 1 });
-    await base44.entities.Tournament.update(tournament.id, { status: 'In Progress' });
-    toast.success('Club Challenge started');
-    await sync(); setTab('live');
+    if (event?.status !== 'draw_approved' || sportingActionRef.current) return;
+    sportingActionRef.current = true; setHostAction('Starting Club Challenge… command sent');
+    try {
+      await unlockHallAudio();
+      await base44.entities.ClubChallengeEvent.update(event.id, { status: 'in_progress', current_round: 1 });
+      await base44.entities.Tournament.update(tournament.id, { status: 'In Progress' });
+      toast.success('Club Challenge started');
+      await sync(); setTab('live');
+    } catch (e) { await refetchEvent(); toast.error(e?.message || 'Could not start Club Challenge'); }
+    finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
   const timerAction = async (action, phase) => {
