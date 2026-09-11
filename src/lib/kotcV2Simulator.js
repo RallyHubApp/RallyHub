@@ -276,8 +276,8 @@ export function simulateAvailabilityAndCourtTransitions() {
 }
 
 export function runKotcV2ProductionSimulation({ rounds = 9, playerCounts = null, courtLimits = null } = {}) {
-  const counts = playerCounts ?? Array.from({ length: 15 }, (_, index) => index + 4);
-  const courts = courtLimits ?? [1, 2, 3, 4];
+  const counts = playerCounts ?? Array.from({ length: 37 }, (_, index) => index + 4);
+  const courts = courtLimits ?? Array.from({ length: 10 }, (_, index) => index + 1);
   const runs = [];
   for (const playerCount of counts) {
     for (const venueCourtLimit of courts) {
