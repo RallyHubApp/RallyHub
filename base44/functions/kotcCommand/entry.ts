@@ -161,9 +161,13 @@ Deno.serve(async (req) => {
       if(!RESOLVED.has(match.status)&&correctionClaim)return Response.json({error:`Court ${match.ladder_court_rank} has not been saved yet.`,saved:false},{status:409});
       const existingOwner=String(match.scoring_lock_owner||'');const lockActive=!!(existingOwner&&match.scoring_lock_expires_at&&Date.parse(match.scoring_lock_expires_at)>Date.now());
       if(lockActive&&existingOwner!==hostOwner)return Response.json({error:correctionClaim?`Court ${match.ladder_court_rank} is already being corrected on another device. Wait for that correction to save or cancel.`:`Court ${match.ladder_court_rank} is already being entered by a player. Wait for them to save or cancel, then refresh player scores.`,locked:true,retry_after_seconds:Math.max(0,Math.ceil((Date.parse(match.scoring_lock_expires_at)-Date.now())/1000))},{status:423});
-      const now=nowIso(); const expires=new Date(Date.now()+(correctionClaim?90:5*60)*1000).toISOString();
+      const now=nowIso(); const expires=new Date(Date.now()+90*1000).toISOString();
       await withRateLimitRetry('host scoring claim',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:hostOwner,scoring_lock_acquired_at:match.scoring_lock_acquired_at||now,scoring_lock_expires_at:expires}));
-      return Response.json({success:true,hostAuthority:true,expires_at:expires});
+      await sleep(35);
+      const verify=(await withRateLimitRetry('host scoring claim verify',()=>base44.asServiceRole.entities.KotcMatch.filter({id:match.id,session_id:session.id})))?.[0];
+      const verifyActive=!!(verify?.scoring_lock_owner&&verify?.scoring_lock_expires_at&&Date.parse(verify.scoring_lock_expires_at)>Date.now());
+      if(!verify||String(verify.scoring_lock_owner||'')!==hostOwner||!verifyActive)return Response.json({error:`Court ${match.ladder_court_rank} was claimed by another scorer.`,locked:true,retry_after_seconds:verify?.scoring_lock_expires_at?Math.max(0,Math.ceil((Date.parse(verify.scoring_lock_expires_at)-Date.now())/1000)):0},{status:423});
+      return Response.json({success:true,hostAuthority:true,expires_at:verify.scoring_lock_expires_at});
     }
 
     // Fast paths for the host's most time-critical actions. Do not route START ROUND
@@ -311,6 +315,10 @@ Deno.serve(async (req) => {
       const isCorrection = commandType === 'correct_match';
       if (isCorrection && !RESOLVED.has(match.status)) return Response.json({ error:'Only resolved matches can be corrected.' }, { status:409 });
       if (!isCorrection && RESOLVED.has(match.status)) return Response.json({ error:'Match already resolved; use correction.' }, { status:409 });
+      if (isCorrection) {
+        const hostOwner=`host:${user.id}`;const activeOwner=String(match.scoring_lock_owner||'');const activeLock=!!(activeOwner&&match.scoring_lock_expires_at&&Date.parse(match.scoring_lock_expires_at)>Date.now());
+        if(!activeLock||activeOwner!==hostOwner)return Response.json({error:'This saved score is being corrected elsewhere or your correction lock expired. Refresh before trying again.',locked:true},{status:423});
+      }
       if (isCorrection && !String(body.reason || '').trim()) return Response.json({ error:'A correction reason is required.' }, { status:400 });
       const score:any = validateFinalScore(body, session);
       if (score.error) return Response.json({ error:score.error }, { status:400 });
