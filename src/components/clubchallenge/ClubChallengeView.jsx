@@ -755,15 +755,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try {
       const res = await base44.functions.invoke('finaliseClubChallenge', { eventId:event.id, method });
       if (res.data?.error) { toast.error(res.data.error); return; }
-      toast.success(res.data?.winner === 'draw' ? 'Club Challenge finalised as an overall draw' : `${res.data?.winner === 'club_b' ? event.club_b_name : event.club_a_name} confirmed as Club Challenge winner`);
+      toast.success(res.data?.winner === 'draw' ? `${INTERCLUB_EVENT_LABEL} finalised as an overall draw` : `${res.data?.winner === 'club_b' ? event.club_b_name : event.club_a_name} confirmed as ${INTERCLUB_EVENT_LABEL} winner`);
       await sync(); setTab('results');
     } catch (e) {
-      toast.error(e?.response?.data?.error || e?.message || 'Could not finalise Club Challenge');
+      toast.error(e?.response?.data?.error || e?.message || `Could not finalise ${INTERCLUB_EVENT_LABEL}`);
     }
   };
 
   const resolveTieByMetrics = async () => {
-    if (score.clubA !== score.clubB) { toast.info('The normal Club Challenge points are not tied.'); return; }
+    if (score.clubA !== score.clubB) { toast.info('The normal Interclub points are not tied.'); return; }
     const winner = resolveClubChallengeWinner(score, { allowDraw: false });
     if (winner === 'tiebreak_required') { toast.error('Cumulative point differential is also tied. Play the Showcase Final or record an overall draw if allowed.'); return; }
     await finaliseEvent(winner === 'clubA' ? 'club_a' : 'club_b', 'metrics', `Tie resolved by cumulative point differential (${score.gamePointDifference >= 0 ? '+' : ''}${score.gamePointDifference}).`);
@@ -771,14 +771,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const recordOverallDraw = async () => {
     if (!event?.allow_overall_draw) { toast.error('Overall draw is not enabled for this event.'); return; }
-    if (score.clubA !== score.clubB) { toast.error('Overall draw can only be recorded when Club Challenge points are level.'); return; }
-    await finaliseEvent('draw', 'overall_draw', 'Normal points and chosen tiebreak outcome left the Club Challenge level.');
+    if (score.clubA !== score.clubB) { toast.error('Overall draw can only be recorded when Interclub points are level.'); return; }
+    await finaliseEvent('draw', 'overall_draw', 'Normal points and chosen tiebreak outcome left the Interclub Challenge level.');
   };
 
   const createShowcaseFinal = async () => {
     if (!canManageEvent) return;
     if (!event?.showcase_enabled) { toast.error('Showcase Final is not enabled in Setup.'); return; }
-    if (score.clubA !== score.clubB) { toast.error('The Showcase tiebreak is only needed when normal Club Challenge points are level.'); return; }
+    if (score.clubA !== score.clubB) { toast.error('The Showcase tiebreak is only needed when normal Interclub points are level.'); return; }
     if (Number(event.showcase_points || 0) <= 0) { toast.error('Showcase Final points must be greater than zero.'); return; }
     const ids = [showcaseSelection.aMale, showcaseSelection.aFemale, showcaseSelection.bMale, showcaseSelection.bFemale];
     if (ids.some(id => !id)) { toast.error('Nominate one male and one female player from each club.'); return; }
@@ -800,7 +800,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const finaliseShowcase = async () => {
     if (!showcaseMatch || !['completed'].includes(showcaseMatch.status) || !['club_a','club_b'].includes(showcaseMatch.winner)) { toast.error('Save the Showcase Final result first.'); return; }
-    await finaliseEvent(showcaseMatch.winner, 'showcase_final', `Showcase Final worth ${event.showcase_points} Club Challenge points decided the tied event.`);
+    await finaliseEvent(showcaseMatch.winner, 'showcase_final', `Showcase Final worth ${event.showcase_points} Interclub points decided the tied event.`);
   };
 
   const advanceRound = async () => {
@@ -808,7 +808,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase);
     const unresolved = currentMatches.filter(m => !['completed', 'draw', 'retired', 'forfeit', 'abandoned', 'not_played'].includes(m.status));
     if (unresolved.length) { toast.error(`${unresolved.length} result${unresolved.length === 1 ? '' : 's'} still missing in Round ${currentRound}.`); return; }
-    sportingActionRef.current = true; setHostAction(currentRound < Math.max(...rounds) ? `Preparing Round ${currentRound + 1}… command sent` : 'Finalising Club Challenge… command sent');
+    sportingActionRef.current = true; setHostAction(currentRound < Math.max(...rounds) ? `Preparing Round ${currentRound + 1}… command sent` : `Finalising ${INTERCLUB_EVENT_LABEL}… command sent`);
     try {
       const maxRound = Math.max(...rounds);
       if (currentRound < maxRound) {
@@ -819,13 +819,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       } else {
         if (resolvedNormalCount !== normalMatches.length) { toast.error('All normal match results must be resolved before the event can finish.'); return; }
         if (score.clubA === score.clubB) {
-          toast.info('Normal Club Challenge points are tied. Choose Showcase Final, metrics, or overall draw in Results.');
+          toast.info('Normal Interclub points are tied. Choose Showcase Final, metrics, or overall draw in Results.');
           setTab('results');
           return;
         }
-        await finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Club Challenge matches.');
+        await finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Interclub Challenge matches.');
       }
-    } catch (e) { await refetchEvent(); toast.error(e?.response?.data?.error || e?.message || 'Could not advance Club Challenge'); }
+    } catch (e) { await refetchEvent(); toast.error(e?.response?.data?.error || e?.message || `Could not advance ${INTERCLUB_EVENT_LABEL}`); }
     finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
@@ -948,7 +948,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
   const resetSimulation = async () => {
     if (!isAdmin || !isGate3TestEvent) { toast.error('Reset is restricted to the Gate 3 dummy roster.'); return; }
-    if (!window.confirm('Reset all dummy Club Challenge match results back to the approved draw?')) return;
+    if (!window.confirm(`Reset all dummy ${INTERCLUB_EVENT_LABEL} match results back to the approved draw?`)) return;
     setSimulating(true);
     try {
       await resetDummyRecords();
