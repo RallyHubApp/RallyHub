@@ -62,7 +62,7 @@ export function validateClubChallengeSetup({
   if (clubAPlayers.length !== clubBPlayers.length) warnings.push('Club rosters are unequal; strictly equal games may not be possible.');
 
   const ids = [...clubAPlayers, ...clubBPlayers].map(p => p.id).filter(Boolean);
-  if (new Set(ids).size !== ids.length) errors.push('A participant cannot occupy more than one Club Challenge slot.');
+  if (new Set(ids).size !== ids.length) errors.push('A participant cannot occupy more than one Interclub Challenge slot.');
 
   const checkRanks = (players, label) => {
     const ranks = players.map(p => Number(p.rank));
@@ -402,7 +402,7 @@ export function generateClubChallengeFixtures({ clubAPlayers, clubBPlayers, cour
   if (c * 2 > aPlayers.length || c * 2 > bPlayers.length) throw new Error('Not enough players for the selected number of courts.');
   if (aPlayers.some(p => !p.id) || bPlayers.some(p => !p.id)) throw new Error('Every participant requires an event participant ID.');
   const allIds = [...aPlayers, ...bPlayers].map(p => p.id);
-  if (new Set(allIds).size !== allIds.length) throw new Error('The same participant cannot occupy two Club Challenge slots.');
+  if (new Set(allIds).size !== allIds.length) throw new Error('The same participant cannot occupy two Interclub Challenge slots.');
 
   const aIds = aPlayers.map(p => p.id), bIds = bPlayers.map(p => p.id);
   const aById = Object.fromEntries(aPlayers.map(p => [p.id, p]));
