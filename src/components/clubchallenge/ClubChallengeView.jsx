@@ -373,7 +373,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       if (!tournament.tenant_id || !tournament.host_club_id || tournament.format !== INTERCLUB_INTERNAL_FORMAT || !tournament.inter_club) {
         await base44.entities.Tournament.update(tournament.id, { tenant_id: tenantId, host_club_id: hostClubId, format: INTERCLUB_INTERNAL_FORMAT, inter_club: true });
       }
-      toast.success('Club Challenge setup saved');
+      toast.success(`${INTERCLUB_EVENT_LABEL} setup saved`);
       await sync();
       setTab('teams');
     } catch (e) { toast.error(e?.message || 'Could not save setup'); }
@@ -394,7 +394,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const loadTestRoster = async () => {
     if (!event) { toast.error('Save Setup first.'); return; }
-    if (!window.confirm('Load 32 practice players? Existing unplayed Club Challenge participants and draw fixtures will be replaced. Practice players are clearly labelled and should not be used for a live event.')) return;
+    if (!window.confirm(`Load 32 practice players? Existing unplayed ${INTERCLUB_EVENT_LABEL} participants and draw fixtures will be replaced. Practice players are clearly labelled and should not be used for a live event.`)) return;
     setSaving(true);
     try {
       const res = await base44.functions.invoke('loadClubChallengePracticeRoster', { eventId:event.id });
@@ -487,14 +487,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const startEvent = async () => {
     if (event?.status !== 'draw_approved' || sportingActionRef.current) return;
-    sportingActionRef.current = true; setHostAction('Starting Club Challenge… command sent');
+    sportingActionRef.current = true; setHostAction(`Starting ${INTERCLUB_EVENT_LABEL}… command sent`);
     try {
       await unlockHallAudio();
       const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'start' });
       if (res.data?.error) throw new Error(res.data.error);
-      toast.success('Club Challenge started');
+      toast.success(`${INTERCLUB_EVENT_LABEL} started`);
       await sync(); setTab('live');
-    } catch (e) { await refetchEvent(); toast.error(e?.message || 'Could not start Club Challenge'); }
+    } catch (e) { await refetchEvent(); toast.error(e?.message || `Could not start ${INTERCLUB_EVENT_LABEL}`); }
     finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
@@ -522,7 +522,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       setAudioReady(!!ctx && ctx.state === 'running');
       if (test) {
         playRallyHubSignal(ctx, 'start', Math.max(0.8, hallVolume));
-        window.setTimeout(() => speakRallyHub('Sound check. RallyHub Club Challenge ready.', { volume: hallVolume, voiceMode, voices }), 450);
+        window.setTimeout(() => speakRallyHub('Sound check. RallyHub Interclub ready.', { volume: hallVolume, voiceMode, voices }), 450);
         if ('vibrate' in navigator) navigator.vibrate(120);
       }
       return ctx;
@@ -553,18 +553,18 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try {
       const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'archive' });
       if (res.data?.error) { toast.error(res.data.error); return; }
-      toast.success('Club Challenge archived.');
+      toast.success(`${INTERCLUB_EVENT_LABEL} archived.`);
       await sync();
-    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not archive Club Challenge'); }
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || `Could not archive ${INTERCLUB_EVENT_LABEL}`); }
   };
   const reopenEvent = async () => {
     if (!event || !hasManagePermission) return;
     try {
       const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'reopen' });
       if (res.data?.error) { toast.error(res.data.error); return; }
-      toast.success('Club Challenge reopened to its completed result.');
+      toast.success(`${INTERCLUB_EVENT_LABEL} reopened to its completed result.`);
       await sync();
-    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reopen Club Challenge'); }
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || `Could not reopen ${INTERCLUB_EVENT_LABEL}`); }
   };
   const startPhase = async phase => {
     // The host's tap is the best chance to unlock mobile audio before the network await.
