@@ -10,11 +10,12 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Crown, Zap, Flag, Trophy, ArrowLeft, ArrowRight, User, Users, Shuffle, Plus } from 'lucide-react';
+import { INTERCLUB_EVENT_LABEL, INTERCLUB_INTERNAL_FORMAT } from '@/lib/interclubBranding';
 
 const FEATURED_FORMATS = [
   { value: 'King of the Court', label: 'King of the Court', desc: 'Fast-moving court rotation for club sessions and social competition.', icon: Crown, accent: 'text-yellow-400 bg-yellow-500/10' },
   { value: 'Tournival', label: 'Tournival', desc: 'Group play followed by a seeded knockout competition.', icon: Zap, accent: 'text-accent bg-accent/10' },
-  { value: 'Club Challenge', label: 'Club Challenge', desc: 'Two-club event with fairness, live scoring and event-day controls.', icon: Flag, accent: 'text-primary bg-primary/10' },
+  { value: INTERCLUB_INTERNAL_FORMAT, label: INTERCLUB_EVENT_LABEL, desc: 'RallyHub Interclub for club-versus-club events with fairness, live scoring and event-day controls.', icon: Flag, accent: 'text-primary bg-primary/10' },
 ];
 
 const OTHER_FORMATS = [
@@ -70,7 +71,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated, i
   const selectedFeatured = FEATURED_FORMATS.find(f => f.value === form.format);
   const selectedOther = OTHER_FORMATS.find(f => f.value === form.format);
   const selectedLabel = selectedFeatured?.label || selectedOther?.label || '';
-  const usesGenericPartnership = !['King of the Court', 'Club Challenge', 'Tournival', 'Mixed Doubles'].includes(form.format);
+  const usesGenericPartnership = !['King of the Court', INTERCLUB_INTERNAL_FORMAT, 'Tournival', 'Mixed Doubles'].includes(form.format);
 
   const chooseFormat = (format) => {
     update('format', format);
@@ -105,8 +106,8 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated, i
         name: form.name.trim(),
         location: typedLocation,
         venue_id: matchedVenue?.id || undefined,
-        inter_club: form.format === 'Club Challenge',
-        partnership_type: form.format === 'Club Challenge' ? 'Random Partners' : form.partnership_type,
+        inter_club: form.format === INTERCLUB_INTERNAL_FORMAT,
+        partnership_type: form.format === INTERCLUB_INTERNAL_FORMAT ? 'Random Partners' : form.partnership_type,
         tenant_id: currentUser?.active_tenant_id || undefined,
         host_club_id: currentUser?.active_club_id || undefined,
         max_players: form.max_players ? Number(form.max_players) : undefined,
@@ -243,7 +244,7 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated, i
                 </div>
               )}
 
-              {!['King of the Court', 'Club Challenge', 'Tournival'].includes(form.format) && (
+              {!['King of the Court', INTERCLUB_INTERNAL_FORMAT, 'Tournival'].includes(form.format) && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div><Label className="text-foreground text-sm">Max players</Label><Input type="number" value={form.max_players} onChange={e => update('max_players', e.target.value)} className="bg-secondary border-border mt-1" /></div>
                   <div><Label className="text-foreground text-sm">Min rating</Label><Input type="number" step="0.1" value={form.skill_range_min} onChange={e => update('skill_range_min', e.target.value)} className="bg-secondary border-border mt-1" /></div>
