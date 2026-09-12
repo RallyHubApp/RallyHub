@@ -12,6 +12,7 @@ import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, GripVertical, Image
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import { playRallyHubSignal, speakRallyHub, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
+import { INTERCLUB_EVENT_LABEL, INTERCLUB_INTERNAL_FORMAT, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
 import {
   analyseClubChallengeFairness,
   applyShowcasePoints,
@@ -369,8 +370,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try {
       if (event) await base44.entities.ClubChallengeEvent.update(event.id, { ...data, status: event.status, draw_version: event.draw_version || 0, current_round: event.current_round || 0 });
       else await base44.entities.ClubChallengeEvent.create(data);
-      if (!tournament.tenant_id || !tournament.host_club_id || tournament.format !== 'Club Challenge' || !tournament.inter_club) {
-        await base44.entities.Tournament.update(tournament.id, { tenant_id: tenantId, host_club_id: hostClubId, format: 'Club Challenge', inter_club: true });
+      if (!tournament.tenant_id || !tournament.host_club_id || tournament.format !== INTERCLUB_INTERNAL_FORMAT || !tournament.inter_club) {
+        await base44.entities.Tournament.update(tournament.id, { tenant_id: tenantId, host_club_id: hostClubId, format: INTERCLUB_INTERNAL_FORMAT, inter_club: true });
       }
       toast.success('Club Challenge setup saved');
       await sync();
