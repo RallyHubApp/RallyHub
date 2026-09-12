@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { generateDraw, buildEntries } from '@/lib/drawEngine';
 import { appParams } from '@/lib/app-params';
+import { INTERCLUB_INTERNAL_FORMAT } from '@/lib/interclubBranding';
 
 const statusColors = {
   'Draft': 'bg-secondary text-secondary-foreground',
@@ -110,7 +111,7 @@ export default function TournamentDetail() {
 
   const isKotc = tournament.format === 'King of the Court';
   const isTournival = tournament.format === 'Tournival';
-  const isClubChallenge = tournament.format === 'Club Challenge';
+  const isClubChallenge = tournament.format === INTERCLUB_INTERNAL_FORMAT;
   const isFixedPartners = tournament.partnership_type === 'Fixed Partners';
   const isInterClub = tournament.inter_club;
   const registeredPlayers = allPlayers.filter(p => tournament.player_ids?.includes(p.id));
