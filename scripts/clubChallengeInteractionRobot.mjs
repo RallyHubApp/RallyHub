@@ -19,6 +19,10 @@ const practiceFn = fs.readFileSync('base44/functions/loadClubChallengePracticeRo
 const fullPracticeFn = fs.readFileSync('base44/functions/populateClubChallengePracticeScenario/entry.ts','utf8');
 const hallAudio = fs.readFileSync('src/lib/rallyHubHallAudio.js','utf8');
 const drawFn = fs.readFileSync('base44/functions/replaceClubChallengeDraw/entry.ts','utf8');
+const interclubBranding = fs.readFileSync('src/lib/interclubBranding.js','utf8');
+const tournamentsPage = fs.readFileSync('src/pages/Tournaments.jsx','utf8');
+const createTournamentModal = fs.readFileSync('src/components/tournaments/CreateTournamentModal.jsx','utf8');
+const publicDisplayPage = fs.readFileSync('src/pages/PublicClubChallengeDisplay.jsx','utf8');
 
 let passed = 0;
 const check = (name, condition) => {
@@ -46,6 +50,10 @@ check('sporting: no partner repeats remain protected', fairness.repeatedPartnerP
 check('sporting: no consecutive rests remain protected', fairness.consecutiveRestOccurrences === 0);
 
 // 2. Host setup / first-use journey.
+check('branding: user-facing module is RallyHub Interclub', contains(interclubBranding,"INTERCLUB_MODULE_NAME = 'RallyHub Interclub'") && contains(tournamentsPage,'INTERCLUB_MODULE_NAME'));
+check('branding: user-facing event type is Interclub Challenge', contains(interclubBranding,"INTERCLUB_EVENT_LABEL = 'Interclub Challenge'") && contains(createTournamentModal,'INTERCLUB_EVENT_LABEL'));
+check('branding: internal Club Challenge format key remains stable', contains(interclubBranding,"INTERCLUB_INTERNAL_FORMAT = 'Club Challenge'") && contains(ui,'INTERCLUB_INTERNAL_FORMAT'));
+check('branding: Hall Display uses RallyHub Interclub', contains(publicDisplayPage,'INTERCLUB_MODULE_NAME') && contains(ui,'INTERCLUB_MODULE_NAME} · Hall Display'));
 check('host: live estimated duration is visible during setup', contains(ui,'Estimated event duration'));
 check('host: planned player count drives estimate before roster entry', contains(ui,'Planned total players'));
 check('host: estimate exposes rounds, block, break and contingency', contains(ui,'min contingency'));
