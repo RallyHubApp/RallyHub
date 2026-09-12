@@ -3,7 +3,7 @@ import { analyseClubChallengeFairness, calculateClubChallengeScore, validateClub
 export const CLUB_CHALLENGE_RULES_VERSION = '1.0';
 
 export function createChallengeEventDraft({ tournament, hostClub, opponent, setup }) {
-  if (!tournament?.id || !tournament?.tenant_id) throw new Error('Club Challenge requires a tenant-owned Tournament.');
+  if (!tournament?.id || !tournament?.tenant_id) throw new Error('Interclub Challenge requires a tenant-owned Tournament.');
   if (!hostClub?.name || !opponent?.name) throw new Error('Both clubs require a name.');
   return {
     tenant_id: tournament.tenant_id,
