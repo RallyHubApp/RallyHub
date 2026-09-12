@@ -15,6 +15,7 @@ import SpondImportModal from '@/components/spond/SpondImportModal';
 import SpondXlsxImportModal from '@/components/spond/SpondXlsxImportModal';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { INTERCLUB_INTERNAL_FORMAT, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
 
 const todayIreland = () => {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone:'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date());
@@ -65,7 +66,7 @@ export default function Tournaments() {
 
   const handleQuickKotc = () => openCreateFor('King of the Court');
   const handleQuickTournival = () => openCreateFor('Tournival');
-  const handleQuickClubChallenge = () => openCreateFor('Club Challenge');
+  const handleQuickClubChallenge = () => openCreateFor(INTERCLUB_INTERNAL_FORMAT);
   const createKotcSandbox = async () => {
     if (sandboxCreating) return;
     try {
@@ -151,7 +152,7 @@ export default function Tournaments() {
           {[
             { title: 'King of the Court', desc: 'Fast-moving court rotation for club sessions and social competition.', icon: Crown, action: handleQuickKotc, accent: 'text-yellow-400 bg-yellow-500/10' },
             { title: 'Tournival', desc: 'Group play followed by a seeded knockout competition.', icon: Zap, action: handleQuickTournival, accent: 'text-accent bg-accent/10' },
-            { title: 'Club Challenge', desc: 'Two-club event with fairness, live scoring and event-day controls.', icon: Flag, action: handleQuickClubChallenge, accent: 'text-primary bg-primary/10' },
+            { title: INTERCLUB_MODULE_NAME, desc: 'Run an interclub event with fairness, live scoring and event-day controls.', icon: Flag, action: handleQuickClubChallenge, accent: 'text-primary bg-primary/10' },
           ].map(item => (
             <button key={item.title} onClick={item.action} className="group text-left rounded-xl border border-border bg-secondary/30 p-4 hover:bg-secondary/60 hover:border-muted-foreground/40 transition-all min-h-[132px]">
               <div className="flex items-start justify-between gap-3">
