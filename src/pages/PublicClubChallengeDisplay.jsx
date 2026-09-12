@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, WifiOff } from 'lucide-react';
+import { INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
 
 function score(matches, event) {
   let a=0,b=0;
@@ -32,7 +33,7 @@ export default function PublicClubChallengeDisplay(){
   const remaining=timer.running&&timer.started_at?Math.max(0,Number(timer.remaining_seconds||0)-Math.floor((now-new Date(timer.started_at).getTime())/1000)):Number(timer.remaining_seconds||0);
   return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8 space-y-6">
     {disconnected&&<div className="sticky top-2 z-20 rounded-lg bg-yellow-500 text-black px-4 py-3 font-semibold text-center"><WifiOff className="inline w-4 h-4 mr-2"/>Connection lost — showing last known state. RallyHub will resynchronise automatically.</div>}
-    <header className="text-center"><p className="text-xs uppercase tracking-[.25em] text-primary font-bold">Club Challenge · Hall Display</p><h1 className="text-3xl sm:text-6xl font-bold mt-3">{event.club_a_name} <span className="text-primary">{s.a} – {s.b}</span> {event.club_b_name}</h1><div className="flex justify-center gap-2 mt-4"><Badge variant="outline">Round {round}</Badge><Badge variant="outline">{String(timer.phase||'idle').toUpperCase()}</Badge><Badge className="text-lg tabular-nums">{fmt(remaining)}</Badge></div></header>
+    <header className="text-center"><p className="text-xs uppercase tracking-[.25em] text-primary font-bold">{INTERCLUB_MODULE_NAME} · Hall Display</p><h1 className="text-3xl sm:text-6xl font-bold mt-3">{event.club_a_name} <span className="text-primary">{s.a} – {s.b}</span> {event.club_b_name}</h1><div className="flex justify-center gap-2 mt-4"><Badge variant="outline">Round {round}</Badge><Badge variant="outline">{String(timer.phase||'idle').toUpperCase()}</Badge><Badge className="text-lg tabular-nums">{fmt(remaining)}</Badge></div></header>
     <section><h2 className="text-lg font-bold mb-3">On Court Now</h2><div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">{current.map(m=><div key={m.id} className="rounded-xl border border-border bg-card p-4"><p className="font-bold">Court {m.court_number}</p><p className="mt-2">{m.club_a_names.join(' & ')}</p><p className="text-xs text-muted-foreground my-1">vs</p><p>{m.club_b_names.join(' & ')}</p>{['completed','draw'].includes(m.status)&&<p className="text-xl font-bold text-primary mt-3">{m.score_a} – {m.score_b}</p>}</div>)}</div></section>
     {resting.length>0&&<section className="rounded-xl border border-border bg-card/70 p-4"><h2 className="text-lg font-bold">Resting This Round</h2><div className="flex flex-wrap gap-2 mt-3">{resting.map(p=><span key={p.id} className="rounded-full bg-secondary px-3 py-1.5 text-sm font-medium">{p.display_name}</span>)}</div></section>}
     {next.length>0&&<section><h2 className="text-lg font-bold mb-3">Up Next · Round {round+1}</h2><div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">{next.map(m=><div key={m.id} className="rounded-xl bg-secondary/50 p-3 text-sm"><b>Court {m.court_number}</b><p>{m.club_a_names.join(' & ')} vs {m.club_b_names.join(' & ')}</p></div>)}</div></section>}
