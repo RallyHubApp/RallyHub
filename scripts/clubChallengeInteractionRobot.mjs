@@ -83,7 +83,7 @@ check('timer: duration cannot be changed while running', contains(timerFn,'Pause
 check('timer: prepared current-round duration is used when play starts', contains(timerFn,'preparedPlaySeconds'));
 check('timer: ordinary later rounds retain event default', contains(ui,'normal event duration remains'));
 check('sound: hall cue uses local Web Audio rather than a Base44 call', contains(hallAudio,'createOscillator') && !contains(hallAudio,'base44'));
-check('sound: hall volume is explicit and persisted', contains(ui,"cc-hall-volume") && contains(ui,'Club Challenge hall volume'));
+check('sound: hall volume is explicit and persisted', contains(ui,"cc-hall-volume") && contains(ui,'RallyHub Interclub hall volume'));
 check('sound: Test Sound is available before live play', contains(ui,'Test Sound'));
 check('sound: mobile audio is unlocked from the host play gesture', contains(ui,'await unlockHallAudio()'));
 check('sound: wake lock is requested during the authoritative timer', contains(ui,"navigator.wakeLock.request('screen')"));
