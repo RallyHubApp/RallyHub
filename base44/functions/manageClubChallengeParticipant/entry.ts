@@ -21,8 +21,8 @@ Deno.serve(async (req) => {
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
-    if (!event) return Response.json({ error:'Club Challenge event not found' }, { status:404 });
-    if (['completed','archived'].includes(event.status)) return Response.json({ error:'Finalised Club Challenge participants are read-only.' }, { status:409 });
+    if (!event) return Response.json({ error:'Interclub Challenge event not found' }, { status:404 });
+    if (['completed','archived'].includes(event.status)) return Response.json({ error:'Finalised Interclub Challenge participants are read-only.' }, { status:409 });
 
     let allowed = user.role === 'admin';
     if (!allowed) {
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       const cleanName = String(displayName || '').trim().replace(/\s+/g,' ').slice(0,120);
       if (!cleanName) return Response.json({ error:'Player name required.' }, { status:400 });
       const identity = cleanName.toLowerCase();
-      if (participants.some((p:any) => ['active','late'].includes(p.status) && String(p.display_name||'').trim().toLowerCase().replace(/\s+/g,' ') === identity)) return Response.json({ error:'That player name is already active in this Club Challenge.' }, { status:409 });
+      if (participants.some((p:any) => ['active','late'].includes(p.status) && String(p.display_name||'').trim().toLowerCase().replace(/\s+/g,' ') === identity)) return Response.json({ error:'That player name is already active in this Interclub Challenge.' }, { status:409 });
       const sidePlayers = participants.filter((p:any) => p.side === side && !['replaced'].includes(p.status));
       const created = await base44.asServiceRole.entities.ClubChallengeParticipant.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id, side, display_name:cleanName, event_rank:sidePlayers.length + 1, status:'active', available_from_round:1, unique_identity_key:`manual-${side}-${crypto.randomUUID().slice(0,12)}` });
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
       if (['withdrawn','injured','replaced'].includes(outgoing.status)) return Response.json({ error:'Outgoing participant is already inactive.' }, { status:409 });
       const identity = cleanName.toLowerCase().replace(/\s+/g,' ');
       if (participants.some((p:any) => p.id !== outgoing.id && ['active','late'].includes(p.status) && String(p.display_name||'').trim().toLowerCase().replace(/\s+/g,' ') === identity)) {
-        return Response.json({ error:'That replacement name is already an active participant in this Club Challenge.' }, { status:409 });
+        return Response.json({ error:'That replacement name is already an active participant in this Interclub Challenge.' }, { status:409 });
       }
       const status = ['withdrawn','injured'].includes(withdrawalStatus) ? withdrawalStatus : 'withdrawn';
       const incoming = await base44.asServiceRole.entities.ClubChallengeParticipant.create({

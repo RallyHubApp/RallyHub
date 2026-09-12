@@ -19,11 +19,11 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
     const { eventId, action, round, label } = body;
-    if (!eventId || !['archive','reopen','set_round_label','approve_draw','start'].includes(action)) return Response.json({ error:'Invalid Club Challenge event action.' }, { status:400 });
+    if (!eventId || !['archive','reopen','set_round_label','approve_draw','start'].includes(action)) return Response.json({ error:'Invalid Interclub Challenge event action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
-    if (!event) return Response.json({ error:'Club Challenge event not found' }, { status:404 });
+    if (!event) return Response.json({ error:'Interclub Challenge event not found' }, { status:404 });
 
     let allowed = user.role === 'admin';
     if (!allowed) {
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'start') {
-      if (event.status !== 'draw_approved') return Response.json({ error:'Club Challenge draw must be approved before starting.' }, { status:409 });
+      if (event.status !== 'draw_approved') return Response.json({ error:'Interclub Challenge draw must be approved before starting.' }, { status:409 });
       const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300);
       if (!matches.length) return Response.json({ error:'No approved fixtures found.' }, { status:409 });
       const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'in_progress', current_round:1 });
@@ -59,14 +59,14 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'archive') {
-      if (event.status !== 'completed') return Response.json({ error:'Only a completed Club Challenge can be archived.' }, { status:409 });
+      if (event.status !== 'completed') return Response.json({ error:'Only a completed Interclub Challenge can be archived.' }, { status:409 });
       const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'archived' });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'event_archived', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({status:'completed'}), new_value_json:JSON.stringify({status:'archived'}) });
       return Response.json({ success:true, event:updated });
     }
 
     if (action === 'reopen') {
-      if (event.status !== 'archived') return Response.json({ error:'Only an archived Club Challenge can be reopened.' }, { status:409 });
+      if (event.status !== 'archived') return Response.json({ error:'Only an archived Interclub Challenge can be reopened.' }, { status:409 });
       const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'completed' });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'event_reopened', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({status:'archived'}), new_value_json:JSON.stringify({status:'completed'}) });
       return Response.json({ success:true, event:updated });
@@ -81,6 +81,6 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'round_label_updated', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({round:roundNumber,label:clean}) });
     return Response.json({ success:true, event:updated, round:roundNumber, label:clean });
   } catch (error) {
-    return Response.json({ error:error?.message || 'Unexpected Club Challenge event-management error' }, { status:500 });
+    return Response.json({ error:error?.message || 'Unexpected Interclub Challenge event-management error' }, { status:500 });
   }
 });

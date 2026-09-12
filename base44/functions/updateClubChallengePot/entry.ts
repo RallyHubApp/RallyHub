@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     if (!['open','close','reveal'].includes(action)) return Response.json({ error:'Invalid POT action.' }, { status:400 });
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
-    if (!event) return Response.json({ error:'Club Challenge event not found' }, { status:404 });
+    if (!event) return Response.json({ error:'Interclub Challenge event not found' }, { status:404 });
     if (!event.pot_enabled) return Response.json({ error:'Player of Tournament voting is not enabled.' }, { status:409 });
 
     let allowed = user.role === 'admin';

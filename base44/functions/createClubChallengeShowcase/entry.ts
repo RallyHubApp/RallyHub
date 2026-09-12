@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     const { eventId, clubAMaleId, clubAFemaleId, clubBMaleId, clubBFemaleId } = body;
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
-    if (!event) return Response.json({ error:'Club Challenge event not found' }, { status:404 });
+    if (!event) return Response.json({ error:'Interclub Challenge event not found' }, { status:404 });
 
     let allowed = user.role === 'admin';
     if (!allowed) {
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       else if (m.winner === 'club_b') { clubB += Number(event.win_points ?? 2); clubA += Number(event.loss_points ?? 0); }
       else if (m.winner === 'draw') { clubA += Number(event.draw_points ?? 1); clubB += Number(event.draw_points ?? 1); }
     }
-    if (clubA !== clubB) return Response.json({ error:'Showcase Final is only valid when normal Club Challenge points are tied.' }, { status:409 });
+    if (clubA !== clubB) return Response.json({ error:'Showcase Final is only valid when normal Interclub Challenge points are tied.' }, { status:409 });
 
     const ids = [clubAMaleId, clubAFemaleId, clubBMaleId, clubBFemaleId];
     if (ids.some(id => !id) || new Set(ids).size !== 4) return Response.json({ error:'Nominate four distinct players: one male and one female from each club.' }, { status:400 });

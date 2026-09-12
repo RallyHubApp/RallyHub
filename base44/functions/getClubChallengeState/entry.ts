@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ tournament_id: tournamentId });
     const event = events?.[0];
-    if (!event) return Response.json({ error: 'Club Challenge event not found' }, { status: 404 });
+    if (!event) return Response.json({ error: 'Interclub Challenge event not found' }, { status: 404 });
 
     let accessRole = user.role === 'admin' ? 'admin' : '';
     let permissions = { canManage:false, canScore:false, canCorrectScore:false, canFinalise:false, displayOnly:false };
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
         };
       }
     }
-    if (!accessRole) return Response.json({ error: 'No Club Challenge access for this event' }, { status: 403 });
+    if (!accessRole) return Response.json({ error: 'No Interclub Challenge access for this event' }, { status: 403 });
 
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id: event.id }, 'event_rank', 100);
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id: event.id }, 'round_number', 200);
@@ -69,6 +69,6 @@ Deno.serve(async (req) => {
 
     return Response.json({ success:true, accessRole, permissions, event, participants:safeParticipants, matches, scorers:scorerRows });
   } catch (error) {
-    return Response.json({ error: error?.message || 'Unexpected Club Challenge state error' }, { status: 500 });
+    return Response.json({ error: error?.message || 'Unexpected Interclub Challenge state error' }, { status: 500 });
   }
 });

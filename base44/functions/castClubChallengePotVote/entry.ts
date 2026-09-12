@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     const rows = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
     const voter = rows.find((p:any) => p.id === voterParticipantId);
     const nominee = rows.find((p:any) => p.id === nomineeParticipantId);
-    if (!voter || !nominee) return Response.json({ error:'Voter and nominee must belong to this Club Challenge.' }, { status:409 });
+    if (!voter || !nominee) return Response.json({ error:'Voter and nominee must belong to this Interclub Challenge.' }, { status:409 });
     if (!['active','late'].includes(voter.status)) return Response.json({ error:'This participant is not eligible to vote.' }, { status:409 });
     if (['replaced'].includes(nominee.status)) return Response.json({ error:'That nominee is not eligible.' }, { status:409 });
 

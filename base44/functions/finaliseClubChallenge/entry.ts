@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     if (!['none','metrics','overall_draw','showcase_final'].includes(method)) return Response.json({ error:'Invalid finalisation method.' }, { status:400 });
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
-    if (!event) return Response.json({ error:'Club Challenge event not found' }, { status:404 });
+    if (!event) return Response.json({ error:'Interclub Challenge event not found' }, { status:404 });
 
     let allowed = user.role === 'admin';
     if (!allowed) {
@@ -33,8 +33,8 @@ Deno.serve(async (req) => {
       allowed = ta.some(a => ['event_manager','event_host'].includes(a.role)) || ca.some(a => a.can_finalise || ['owner','organiser'].includes(a.role));
     }
     if (!allowed) return Response.json({ error:'Finalisation permission required' }, { status:403 });
-    if (['completed','archived'].includes(event.status)) return Response.json({ error:'Club Challenge is already finalised.' }, { status:409 });
-    if (!['in_progress','paused'].includes(event.status)) return Response.json({ error:'Club Challenge must be in progress before it can be finalised.' }, { status:409 });
+    if (['completed','archived'].includes(event.status)) return Response.json({ error:'Interclub Challenge is already finalised.' }, { status:409 });
+    if (!['in_progress','paused'].includes(event.status)) return Response.json({ error:'Interclub Challenge must be in progress before it can be finalised.' }, { status:409 });
     if (event.pot_enabled && event.pot_status === 'open') return Response.json({ error:'Player of Tournament voting is still open.' }, { status:409 });
 
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200);
@@ -53,9 +53,9 @@ Deno.serve(async (req) => {
 
     let winner = clubA === clubB ? 'draw' : clubA > clubB ? 'club_a' : 'club_b';
     let overallA = clubA, overallB = clubB;
-    if (method === 'none' && winner === 'draw') return Response.json({ error:'Normal Club Challenge points are tied; choose an approved tie resolution.' }, { status:409 });
+    if (method === 'none' && winner === 'draw') return Response.json({ error:'Normal Interclub Challenge points are tied; choose an approved tie resolution.' }, { status:409 });
     if (method === 'metrics') {
-      if (clubA !== clubB) return Response.json({ error:'Metrics tiebreak is only valid when normal Club Challenge points are tied.' }, { status:409 });
+      if (clubA !== clubB) return Response.json({ error:'Metrics tiebreak is only valid when normal Interclub Challenge points are tied.' }, { status:409 });
       const diff = gameA - gameB;
       if (!diff) return Response.json({ error:'Cumulative point differential is also tied.' }, { status:409 });
       winner = diff > 0 ? 'club_a' : 'club_b';

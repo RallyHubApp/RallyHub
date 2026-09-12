@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     const { eventId, nextRound } = body;
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id: eventId });
     const event = events?.[0];
-    if (!event) return Response.json({ error: 'Club Challenge event not found' }, { status: 404 });
+    if (!event) return Response.json({ error: 'Interclub Challenge event not found' }, { status: 404 });
 
     let allowed = user.role === 'admin';
     if (!allowed) {

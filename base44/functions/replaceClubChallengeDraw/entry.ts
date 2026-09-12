@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
-    if (!event) return Response.json({ error:'Club Challenge event not found' }, { status:404 });
+    if (!event) return Response.json({ error:'Interclub Challenge event not found' }, { status:404 });
     if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'A full draw can only be generated before approval.' }, { status:409 });
 
     let allowed = user.role === 'admin';
