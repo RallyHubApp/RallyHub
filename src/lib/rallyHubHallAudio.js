@@ -96,15 +96,26 @@ export function chooseRallyHubVoice(voices, mode = 'rallyhub_default') {
   const locale = getRallyHubDeviceLocale().toLowerCase();
   const baseLanguage = locale.split('-')[0];
   const normalise = value => String(value || '').replace('_', '-').toLowerCase();
+  const femaleHint = /female|woman|girl|emily|sonia|libby|hazel|susan|serena|moira|fiona|caitlin|orla|aoife|samantha/i;
+  const maleHint = /male|man|boy|connor|ryan|daniel|george|liam|sean|colm|cian/i;
+  const preferFemaleThenMale = candidates => {
+    if (!candidates.length) return null;
+    return candidates.find(v => femaleHint.test(v.name))
+      || candidates.find(v => !maleHint.test(v.name))
+      || candidates.find(v => maleHint.test(v.name))
+      || candidates[0]
+      || null;
+  };
 
   if (mode === 'rallyhub_default' || mode === 'device_default') {
-    // First use the exact voice for the device/browser locale, e.g. en-IE or en-GB.
-    // If there is no exact installed voice, leave regional choice to the browser before
-    // falling back to a same-language/default voice.
-    return available.find(v => normalise(v.lang) === locale)
-      || available.find(v => normalise(v.lang) === baseLanguage)
-      || available.find(v => normalise(v.lang).split('-')[0] === baseLanguage && v.default)
+    const exactLocale = available.filter(v => normalise(v.lang) === locale);
+    const sameLanguage = available.filter(v => normalise(v.lang).split('-')[0] === baseLanguage);
+    // Follow the host device/browser locale first. Within that locale, prefer a female voice;
+    // if one is not exposed, use a male/neutral voice before falling back to the browser default.
+    return preferFemaleThenMale(exactLocale)
+      || preferFemaleThenMale(sameLanguage)
       || available.find(v => v.default)
+      || available[0]
       || null;
   }
 
