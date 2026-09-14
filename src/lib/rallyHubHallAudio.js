@@ -83,7 +83,12 @@ function createRallyHubUtterance(text, { volume = 1, voiceMode = 'irish_female',
   return utterance;
 }
 
-export function speakRallyHub(text, { volume = 1, voiceMode = 'irish_female', voices = [], onStart, onEnd, onError } = {}) {
+/**
+ * @param {string} text
+ * @param {{ volume?: number, voiceMode?: string, voices?: SpeechSynthesisVoice[], onStart?: (event: any) => void, onEnd?: (event: any) => void, onError?: (event: any) => void }} [options]
+ */
+export function speakRallyHub(text, options = {}) {
+  const { volume = 1, voiceMode = 'irish_female', voices = [], onStart, onEnd, onError } = options;
   if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') return false;
   const utterance = createRallyHubUtterance(text, { volume, voiceMode, voices });
   if (onStart) utterance.onstart = onStart;
