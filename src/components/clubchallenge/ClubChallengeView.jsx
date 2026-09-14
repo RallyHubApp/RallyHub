@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
-import { playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
+import { listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
 import { INTERCLUB_EVENT_LABEL, INTERCLUB_INTERNAL_FORMAT, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
 import {
   analyseClubChallengeFairness,
@@ -173,6 +173,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [paStarting, setPaStarting] = useState(false);
   const [paGain, setPaGain] = useState(() => { const v = Number(localStorage.getItem('cc-pa-gain')); return Number.isFinite(v) ? Math.min(1.5, Math.max(0, v)) : 1; });
   const [paMicLabel, setPaMicLabel] = useState('');
+  const [microphones, setMicrophones] = useState([]);
+  const [selectedMicId, setSelectedMicId] = useState(() => localStorage.getItem('cc-pa-mic-id') || 'default');
   const [paError, setPaError] = useState('');
   const [announcementDraft, setAnnouncementDraft] = useState('');
   const [hostAction, setHostAction] = useState('');
@@ -329,6 +331,21 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   React.useEffect(() => { localStorage.setItem('cc-voice-muted', String(voiceMuted)); }, [voiceMuted]);
   React.useEffect(() => { localStorage.setItem('cc-hall-volume', String(hallVolume)); }, [hallVolume]);
   React.useEffect(() => { localStorage.setItem('cc-pa-gain', String(paGain)); if (paActive) setRallyHubPaGain(paGain); }, [paGain, paActive]);
+  React.useEffect(() => { localStorage.setItem('cc-pa-mic-id', selectedMicId); }, [selectedMicId]);
+  React.useEffect(() => {
+    let mounted = true;
+    const refresh = async () => {
+      try {
+        const list = await listRallyHubMicrophones();
+        if (!mounted) return;
+        setMicrophones(list);
+        if (selectedMicId !== 'default' && !list.some(mic => mic.deviceId === selectedMicId)) setSelectedMicId('default');
+      } catch { /* browser may hide device details until mic permission is granted */ }
+    };
+    refresh();
+    navigator.mediaDevices?.addEventListener?.('devicechange', refresh);
+    return () => { mounted = false; navigator.mediaDevices?.removeEventListener?.('devicechange', refresh); };
+  }, [selectedMicId]);
   React.useEffect(() => () => { wakeLockRef.current?.release?.(); stopAllRallyHubAudio(); }, []);
   React.useEffect(() => {
     if (['draw', 'live'].includes(tab) || !paActive) return;
@@ -543,16 +560,27 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const requestWakeLock = async () => {
     try { if ('wakeLock' in navigator) wakeLockRef.current = await navigator.wakeLock.request('screen'); } catch { /* best effort */ }
   };
+  const refreshMicrophones = async () => {
+    try {
+      const list = await listRallyHubMicrophones();
+      setMicrophones(list);
+      return list;
+    } catch {
+      setMicrophones([]);
+      return [];
+    }
+  };
   const startPA = async () => {
     if (paStarting || paActive) return;
     setPaStarting(true);
     setPaError('');
     try {
-      const info = await startRallyHubPA({ volume: paGain });
+      const info = await startRallyHubPA({ volume: paGain, deviceId: selectedMicId });
       setAudioReady(true);
       setPaMicLabel(info.micLabel || 'Default microphone');
+      await refreshMicrophones();
       setPaActive(true);
-      toast.success('Live PA is on. Speak into the laptop microphone.');
+      toast.success(`Live PA is on using ${info.micLabel || 'the selected microphone'}.`);
     } catch (error) {
       const message = error?.name === 'NotAllowedError'
         ? 'Microphone permission was blocked. Allow microphone access for RallyHub in the browser and try again.'
