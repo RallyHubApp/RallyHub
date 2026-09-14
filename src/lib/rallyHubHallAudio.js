@@ -54,9 +54,10 @@ export function playRallyHubSignal(ctx, type = 'warning', volume = 1) {
     return;
   }
   if (type === 'announcement') {
-    chime(ctx, 880, now, 0.28, v);
-    chime(ctx, 880, now + 0.32, 0.28, v);
-    chime(ctx, 1175, now + 0.64, 0.36, v);
+    const loud = Math.max(0.95, v);
+    beep(ctx, 880, now, 0.11, loud);
+    beep(ctx, 880, now + 0.15, 0.11, loud);
+    beep(ctx, 1175, now + 0.30, 0.13, loud);
     return;
   }
   beep(ctx, 740, now, 0.14, v * 0.9);
