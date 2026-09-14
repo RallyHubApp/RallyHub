@@ -633,7 +633,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           toast.error('The device voice did not start. Your announcement text has been kept.');
         }, 4500);
         const ok = speakRallyHub(text, {
-          volume: hallVolume,
+          volume: 1,
           voiceMode: 'device_default',
           voices,
           onStart: () => {
@@ -643,6 +643,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           },
           onEnd: () => {
             window.clearTimeout(watchdog);
+            if (!started) {
+              setAnnouncementSpeaking(false);
+              setAnnouncementStatus('Voice did not audibly start — text kept for retry.');
+              toast.error('The browser ended the voice without starting it. Your text has been kept.');
+              return;
+            }
             setLastAnnouncement(text);
             setAnnouncementDraft('');
             setAnnouncementSpeaking(false);
