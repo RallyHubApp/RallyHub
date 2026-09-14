@@ -124,7 +124,7 @@ export function speakRallyHub(text, options = {}) {
   return true;
 }
 
-export function speakRallyHubAsync(text, { volume = 1, voiceMode = 'irish_female', voices = [] } = {}) {
+export function speakRallyHubAsync(text, { volume = 1, voiceMode = 'device_default', voices = [] } = {}) {
   return new Promise((resolve, reject) => {
     if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') {
       reject(new Error('Text-to-speech is not available.'));
