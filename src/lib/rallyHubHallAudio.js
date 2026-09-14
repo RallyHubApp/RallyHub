@@ -76,26 +76,45 @@ export function playRallyHubSignal(ctx, type = 'warning', volume = 1) {
   beep(ctx, 740, now, 0.14, v * 0.9);
 }
 
-export function chooseRallyHubVoice(voices, mode = 'irish_female') {
-  if (!voices?.length || mode === 'device_default') return null;
-  const ie = voices.filter(v => /^en[-_]IE$/i.test(v.lang) || /irish|ireland/i.test(`${v.name} ${v.lang}`));
-  const femaleHint = /female|siri.*(female|2)|moira|fiona|caitlin|orla|aoife/i;
-  const maleHint = /male|siri.*(male|1)|liam|sean|colm|cian/i;
-  if (mode === 'irish_female') return ie.find(v => femaleHint.test(v.name)) || ie.find(v => !maleHint.test(v.name)) || ie[0] || null;
-  if (mode === 'irish_male') return ie.find(v => maleHint.test(v.name)) || ie.find(v => !femaleHint.test(v.name)) || ie[0] || null;
+export function chooseRallyHubVoice(voices, mode = 'rallyhub_default') {
+  const available = voices?.length
+    ? voices
+    : (typeof window !== 'undefined' ? window.speechSynthesis?.getVoices?.() || [] : []);
+  if (!available.length || mode === 'off') return null;
+
+  const femaleSoftHint = /female|natural|neural|sonia|libby|hazel|susan|serena|emily|moira|fiona|caitlin|orla|aoife|samantha/i;
+  const ie = available.filter(v => /^en[-_]IE$/i.test(v.lang) || /irish|ireland/i.test(`${v.name} ${v.lang}`));
+  const gb = available.filter(v => /^en[-_]GB$/i.test(v.lang) || /british|united kingdom|great britain/i.test(`${v.name} ${v.lang}`));
+  const english = available.filter(v => /^en([_-]|$)/i.test(v.lang));
+
+  if (mode === 'rallyhub_default' || mode === 'device_default') {
+    return ie.find(v => femaleSoftHint.test(v.name))
+      || ie[0]
+      || gb.find(v => femaleSoftHint.test(v.name))
+      || gb[0]
+      || english.find(v => femaleSoftHint.test(v.name))
+      || available.find(v => v.default)
+      || english[0]
+      || available[0]
+      || null;
+  }
+
   return null;
 }
 
-function createRallyHubUtterance(text, { volume = 1, voiceMode = 'device_default', voices = [] } = {}) {
+function createRallyHubUtterance(text, { volume = 1, voiceMode = 'rallyhub_default', voices = [] } = {}) {
   const utterance = new SpeechSynthesisUtterance(text);
   // Shared RallyHub announcer profile. Keep this identical across competition formats.
   utterance.volume = Math.max(0, Math.min(1, Number(volume) || 0));
   utterance.rate = 0.88;
-  utterance.pitch = 1;
-  if (voiceMode !== 'device_default') {
-    utterance.lang = 'en-IE';
-    const voice = chooseRallyHubVoice(voices, voiceMode);
-    if (voice) utterance.voice = voice;
+  utterance.pitch = 0.98;
+  const voice = chooseRallyHubVoice(voices, voiceMode);
+  if (voice) {
+    utterance.voice = voice;
+    utterance.lang = voice.lang;
+  } else {
+    // Prefer a UK-English browser voice rather than an American fallback when no explicit voice is exposed.
+    utterance.lang = 'en-GB';
   }
   return utterance;
 }
@@ -105,7 +124,7 @@ function createRallyHubUtterance(text, { volume = 1, voiceMode = 'device_default
  * @param {{ volume?: number, voiceMode?: string, voices?: SpeechSynthesisVoice[], onStart?: (event: any) => void, onEnd?: (event: any) => void, onError?: (event: any) => void }} [options]
  */
 export function speakRallyHub(text, options = {}) {
-  const { volume = 1, voiceMode = 'device_default', voices = [], onStart, onEnd, onError } = options;
+  const { volume = 1, voiceMode = 'rallyhub_default', voices = [], onStart, onEnd, onError } = options;
   if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') return false;
   const utterance = createRallyHubUtterance(text, { volume, voiceMode, voices });
   window.__rallyhubUtterance = utterance;
@@ -124,7 +143,7 @@ export function speakRallyHub(text, options = {}) {
   return true;
 }
 
-export function speakRallyHubAsync(text, { volume = 1, voiceMode = 'device_default', voices = [] } = {}) {
+export function speakRallyHubAsync(text, { volume = 1, voiceMode = 'rallyhub_default', voices = [] } = {}) {
   return new Promise((resolve, reject) => {
     if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') {
       reject(new Error('Text-to-speech is not available.'));
