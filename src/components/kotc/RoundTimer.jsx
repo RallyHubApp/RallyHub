@@ -57,7 +57,7 @@ function playSignal(ctx, type, volume) {
 
 function speak(text) {
   // Use the same shared RallyHub announcer profile as Interclub and future formats.
-  speakRallyHub(text, { volume: 1, voiceMode: 'device_default' });
+  speakRallyHub(text, { volume: 1, voiceMode: 'rallyhub_default' });
 }
 
 export function KotcSoundCheck({ compact = false }) {
