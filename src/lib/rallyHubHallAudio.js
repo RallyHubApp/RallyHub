@@ -83,9 +83,12 @@ function createRallyHubUtterance(text, { volume = 1, voiceMode = 'irish_female',
   return utterance;
 }
 
-export function speakRallyHub(text, { volume = 1, voiceMode = 'irish_female', voices = [] } = {}) {
+export function speakRallyHub(text, { volume = 1, voiceMode = 'irish_female', voices = [], onStart, onEnd, onError } = {}) {
   if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') return false;
   const utterance = createRallyHubUtterance(text, { volume, voiceMode, voices });
+  if (onStart) utterance.onstart = onStart;
+  if (onEnd) utterance.onend = onEnd;
+  if (onError) utterance.onerror = onError;
   window.speechSynthesis.cancel();
   window.speechSynthesis.resume?.();
   window.speechSynthesis.speak(utterance);
