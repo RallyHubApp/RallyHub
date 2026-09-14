@@ -166,7 +166,6 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [timerNow, setTimerNow] = useState(Date.now());
   const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('cc-voice-mode') === 'off' ? 'off' : 'device_default');
   const [voices, setVoices] = useState([]);
-  const [voiceMuted, setVoiceMuted] = useState(() => localStorage.getItem('cc-voice-muted') === 'true');
   const [hallVolume, setHallVolume] = useState(() => { const v = Number(localStorage.getItem('cc-hall-volume')); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; });
   const [audioReady, setAudioReady] = useState(false);
   const [paActive, setPaActive] = useState(false);
@@ -329,7 +328,6 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     return () => window.speechSynthesis.removeEventListener?.('voiceschanged', loadVoices);
   }, []);
   React.useEffect(() => { localStorage.setItem('cc-voice-mode', voiceMode); }, [voiceMode]);
-  React.useEffect(() => { localStorage.setItem('cc-voice-muted', String(voiceMuted)); }, [voiceMuted]);
   React.useEffect(() => { localStorage.setItem('cc-hall-volume', String(hallVolume)); }, [hallVolume]);
   React.useEffect(() => { localStorage.setItem('cc-pa-gain', String(paGain)); if (paActive) setRallyHubPaGain(paGain); }, [paGain, paActive]);
   React.useEffect(() => { localStorage.setItem('cc-pa-mic-id', selectedMicId); }, [selectedMicId]);
@@ -607,7 +605,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const speak = (text, { force = false, signal = null } = {}) => {
     const ctx = window.__rallyhubAudioContext || null;
     if (signal) playRallyHubSignal(ctx, signal, hallVolume);
-    if (!text || paActive || voiceMode === 'off' || (voiceMuted && !force)) return !!signal;
+    if (!text || paActive || voiceMode === 'off') return !!signal;
     const spoken = speakRallyHub(text, { volume: hallVolume, voiceMode, voices });
     if (spoken) setLastAnnouncement(text);
     return spoken;
@@ -709,7 +707,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       announceOnce(`${prefix}-end`, phase === 'play' ? 'Round finished. Please give your scores.' : phase === 'changeover' ? 'Changeover finished. Next round ready.' : 'Break finished.', 'end');
       wakeLockRef.current?.release?.();
     }
-  }, [timerRemaining, timerState?.running, timerState?.phase, currentRound, hallVolume, voiceMode, voiceMuted, voices]);
+  }, [timerRemaining, timerState?.running, timerState?.phase, currentRound, hallVolume, voiceMode, voices]);
   const runCompressedTimerAudioTest = async () => {
     if (compressedTimer.running) return;
     const steps = [
@@ -1236,7 +1234,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               </div>
               {paMicLabel && paActive && <p className="text-[11px] text-muted-foreground"><strong>Active microphone:</strong> {paMicLabel}</p>}
               {paError && <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">{paError}</div>}
-              <div className="grid sm:grid-cols-[1fr_auto] gap-2"><Input value={announcementDraft} onChange={e => setAnnouncementDraft(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') announceCustom(); }} placeholder="Type a one-off RallyHub announcement…" className="bg-secondary" /><Button variant="outline" disabled={!announcementDraft.trim() || paActive} onClick={announceCustom}><Megaphone className="w-4 h-4 mr-2" />Announce</Button></div>
+              <div className="grid sm:grid-cols-[180px_1fr_auto] gap-2 items-end"><div><Label className="text-xs">Voice announcements</Label><Select value={voiceMode} onValueChange={setVoiceMode}><SelectTrigger className="mt-1 bg-secondary"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="device_default">On · Device default</SelectItem><SelectItem value="off">Off</SelectItem></SelectContent></Select></div><Input value={announcementDraft} onChange={e => setAnnouncementDraft(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !announcementSpeaking) announceCustom(); }} placeholder="Type a one-off RallyHub announcement…" className="bg-secondary" disabled={announcementSpeaking} /><Button variant="outline" disabled={!announcementDraft.trim() || paActive || announcementSpeaking || voiceMode === 'off'} onClick={announceCustom}><Megaphone className="w-4 h-4 mr-2" />{announcementSpeaking ? 'Speaking…' : 'Announce'}</Button></div>
               <div className="rounded-lg bg-secondary/30 p-3 text-[11px] text-muted-foreground space-y-1"><p><strong>V1 JBL path:</strong> laptop built-in mic → RallyHub → laptop Bluetooth output → JBL Charge 6; full V1 then adds JBL PartyBox Encore 2 through Auracast.</p><p>While Live PA is on, spoken RallyHub voice announcements are suppressed so RallyHub does not talk over the host. Critical start/end/warning tones can still sound.</p><p>For the first hardware test, set the Charge 6 as the laptop’s active audio output before pressing Start PA.</p></div>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-3">
@@ -1244,10 +1242,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <div className="text-center py-2"><p className="text-xs uppercase tracking-wider text-muted-foreground">{roundLabel(currentRound)} · {timerState?.phase || 'idle'}</p><p className="text-4xl font-bold tabular-nums mt-1">{fmtTimer(timerRemaining)}</p></div>
               <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-2 rounded-lg bg-secondary/40 p-3">
                 <div><Label className="text-xs">Round label</Label><Input className="mt-1 bg-secondary" value={roundLabels[currentRound] || ''} onChange={e => setRoundLabels(r => ({ ...r, [currentRound]: e.target.value }))} onBlur={() => saveRoundLabel(currentRound)} disabled={!canManageEvent} placeholder={`Round ${currentRound}`} /></div>
-                <div><Label className="text-xs">Voice</Label><Select value={voiceMode} onValueChange={setVoiceMode}><SelectTrigger className="mt-1 bg-secondary"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="irish_female">Irish Female</SelectItem><SelectItem value="irish_male">Irish Male</SelectItem><SelectItem value="device_default">Device Default</SelectItem><SelectItem value="off">Voice Off</SelectItem></SelectContent></Select></div>
+                <div><Label className="text-xs">Voice announcements</Label><Select value={voiceMode} onValueChange={setVoiceMode}><SelectTrigger className="mt-1 bg-secondary"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="device_default">On · Device default</SelectItem><SelectItem value="off">Off</SelectItem></SelectContent></Select></div>
                 <div><Label className="text-xs">Hall volume · {Math.round(hallVolume * 100)}%</Label><input aria-label="RallyHub Interclub hall volume" type="range" min="0" max="1" step="0.05" value={hallVolume} onChange={e => setHallVolume(Number(e.target.value))} className="mt-3 w-full" /></div>
                 <div className="flex items-end"><Button variant="outline" className="w-full" onClick={testVoice}>{audioReady ? 'Test Sound ✓' : 'Test Sound'}</Button></div>
-                <div className="flex items-end gap-2"><Button variant="outline" className="flex-1" onClick={() => setVoiceMuted(v => !v)}>{voiceMuted ? 'Unmute Voice' : 'Mute Voice'}</Button><Button variant="outline" disabled={!lastAnnouncement} onClick={() => speak(lastAnnouncement, { force: true, signal:'warning' })}>Repeat</Button></div>
+                <div className="flex items-end"><Button variant="outline" className="w-full" disabled={!lastAnnouncement || voiceMode === 'off'} onClick={() => speak(lastAnnouncement, { force: true, signal:'warning' })}>Repeat Last</Button></div>
               </div>
               <p className="text-[10px] text-muted-foreground">Run Test Sound before play. RallyHub uses a local hall cue plus spoken announcement at the selected volume, so sound does not depend on a Base44 call. Irish voices use en-IE when the device exposes one; otherwise the device voice is used. Screen wake lock is requested while the timer runs.</p>
               <div className="rounded-lg border border-border bg-secondary/30 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><p className="text-xs font-semibold">This round duration</p><p className="text-[10px] text-muted-foreground">Adjust before play, or pause first. The normal event duration remains {event.play_minutes} minutes for later rounds.</p></div><div className="flex items-center justify-center gap-2"><Button variant="outline" size="icon" aria-label="Reduce this round by one minute" disabled={!canManageEvent || !!timerState?.running || preparedRoundMinutes <= 1} onClick={() => setRoundMinutes(preparedRoundMinutes - 1)}><Minus className="w-4 h-4" /></Button><div className="min-w-20 text-center"><p className="text-2xl font-bold tabular-nums">{preparedRoundMinutes}:00</p></div><Button variant="outline" size="icon" aria-label="Add one minute to this round" disabled={!canManageEvent || !!timerState?.running || preparedRoundMinutes >= 60} onClick={() => setRoundMinutes(preparedRoundMinutes + 1)}><Plus className="w-4 h-4" /></Button></div></div>
