@@ -71,3 +71,112 @@ export async function unlockRallyHubAudio() {
   if (ctx?.state === 'suspended') await ctx.resume();
   return ctx;
 }
+
+function getPaState() {
+  if (typeof window === 'undefined') return null;
+  return window.__rallyhubPaState || null;
+}
+
+export function isRallyHubPaActive() {
+  return !!getPaState()?.active;
+}
+
+export function getRallyHubPaInfo() {
+  const state = getPaState();
+  if (!state) return { active: false, micLabel: '', settings: null };
+  return { active: !!state.active, micLabel: state.micLabel || '', settings: state.settings || null };
+}
+
+export function setRallyHubPaGain(volume = 1) {
+  const state = getPaState();
+  if (!state?.gain || !state?.ctx) return false;
+  const value = Math.max(0, Math.min(1.5, Number(volume) || 0));
+  state.gain.gain.setTargetAtTime(value, state.ctx.currentTime, 0.02);
+  return true;
+}
+
+export async function startRallyHubPA({ volume = 1 } = {}) {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') throw new Error('Live PA is not available on this device.');
+  if (!navigator.mediaDevices?.getUserMedia) throw new Error('This browser does not support microphone access for RallyHub PA.');
+
+  const existing = getPaState();
+  if (existing?.active) {
+    setRallyHubPaGain(volume);
+    return getRallyHubPaInfo();
+  }
+
+  const ctx = await unlockRallyHubAudio();
+  if (!ctx) throw new Error('This browser does not support RallyHub audio.');
+
+  window.speechSynthesis?.cancel?.();
+
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: {
+      echoCancellation: { ideal: true },
+      noiseSuppression: { ideal: true },
+      autoGainControl: { ideal: true },
+      channelCount: { ideal: 1 },
+    },
+    video: false,
+  });
+
+  const track = stream.getAudioTracks()[0];
+  if (!track) {
+    stream.getTracks().forEach(t => t.stop());
+    throw new Error('RallyHub could not find an active microphone.');
+  }
+
+  const source = ctx.createMediaStreamSource(stream);
+  const highPass = ctx.createBiquadFilter();
+  highPass.type = 'highpass';
+  highPass.frequency.setValueAtTime(90, ctx.currentTime);
+  highPass.Q.setValueAtTime(0.7, ctx.currentTime);
+
+  const compressor = ctx.createDynamicsCompressor();
+  compressor.threshold.setValueAtTime(-20, ctx.currentTime);
+  compressor.knee.setValueAtTime(12, ctx.currentTime);
+  compressor.ratio.setValueAtTime(4, ctx.currentTime);
+  compressor.attack.setValueAtTime(0.004, ctx.currentTime);
+  compressor.release.setValueAtTime(0.18, ctx.currentTime);
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(Math.max(0, Math.min(1.5, Number(volume) || 0)), ctx.currentTime);
+
+  source.connect(highPass);
+  highPass.connect(compressor);
+  compressor.connect(gain);
+  gain.connect(ctx.destination);
+
+  const settings = track.getSettings?.() || null;
+  window.__rallyhubPaState = {
+    active: true,
+    ctx,
+    stream,
+    source,
+    highPass,
+    compressor,
+    gain,
+    track,
+    micLabel: track.label || 'Default microphone',
+    settings,
+  };
+
+  return getRallyHubPaInfo();
+}
+
+export function stopRallyHubPA() {
+  const state = getPaState();
+  if (!state) return false;
+  try { state.source?.disconnect?.(); } catch {}
+  try { state.highPass?.disconnect?.(); } catch {}
+  try { state.compressor?.disconnect?.(); } catch {}
+  try { state.gain?.disconnect?.(); } catch {}
+  try { state.stream?.getTracks?.().forEach(track => track.stop()); } catch {}
+  window.__rallyhubPaState = null;
+  return true;
+}
+
+export function stopAllRallyHubAudio() {
+  stopRallyHubPA();
+  if (typeof window !== 'undefined') window.speechSynthesis?.cancel?.();
+}
