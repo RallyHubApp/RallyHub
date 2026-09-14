@@ -112,6 +112,27 @@ export function speakRallyHub(text, options = {}) {
   return true;
 }
 
+/**
+ * Queue speech immediately from the user's click, but hold playback until resume() is called.
+ * This keeps browser TTS armed while an announcement attention chime plays first.
+ */
+export function queueRallyHubSpeechPaused(text, options = {}) {
+  const { volume = 1, voiceMode = 'device_default', voices = [], onStart, onEnd, onError } = options;
+  if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') return null;
+  const synth = window.speechSynthesis;
+  const utterance = createRallyHubUtterance(text, { volume, voiceMode, voices });
+  if (onStart) utterance.onstart = onStart;
+  if (onEnd) utterance.onend = onEnd;
+  if (onError) utterance.onerror = onError;
+  synth.cancel();
+  synth.pause();
+  synth.speak(utterance);
+  return {
+    resume: () => synth.resume?.(),
+    cancel: () => synth.cancel(),
+  };
+}
+
 export function speakRallyHubAsync(text, { volume = 1, voiceMode = 'irish_female', voices = [] } = {}) {
   return new Promise((resolve, reject) => {
     if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') {
