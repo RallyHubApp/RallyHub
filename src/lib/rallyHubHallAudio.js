@@ -23,6 +23,32 @@ function beep(ctx, frequency, start, duration, volume) {
   oscillator.stop(start + duration + 0.04);
 }
 
+function bell(ctx, frequency, start, duration, volume) {
+  if (!ctx) return;
+  const master = ctx.createGain();
+  const peak = Math.max(0.0001, Math.min(1, volume));
+  master.gain.setValueAtTime(0.0001, start);
+  master.gain.exponentialRampToValueAtTime(peak, start + 0.015);
+  master.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  master.connect(ctx.destination);
+
+  [
+    [1, 0.72],
+    [2.01, 0.20],
+    [3.98, 0.08],
+  ].forEach(([multiple, level]) => {
+    const oscillator = ctx.createOscillator();
+    const partialGain = ctx.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(frequency * multiple, start);
+    partialGain.gain.setValueAtTime(level, start);
+    oscillator.connect(partialGain);
+    partialGain.connect(master);
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.05);
+  });
+}
+
 export function playRallyHubSignal(ctx, type = 'warning', volume = 1) {
   if (!ctx) return;
   const now = ctx.currentTime;
@@ -39,10 +65,10 @@ export function playRallyHubSignal(ctx, type = 'warning', volume = 1) {
     return;
   }
   if (type === 'announcement') {
-    const loud = Math.max(0.95, v);
-    beep(ctx, 880, now, 0.11, loud);
-    beep(ctx, 880, now + 0.15, 0.11, loud);
-    beep(ctx, 1175, now + 0.30, 0.13, loud);
+    // Familiar PA-style attention cue: three resonant bells, rising in pitch and intensity.
+    bell(ctx, 659.25, now, 1.15, 0.58);
+    bell(ctx, 783.99, now + 0.95, 1.25, 0.76);
+    bell(ctx, 987.77, now + 1.95, 1.45, 1.0);
     return;
   }
   beep(ctx, 740, now, 0.14, v * 0.9);
