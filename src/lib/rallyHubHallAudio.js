@@ -23,21 +23,6 @@ function beep(ctx, frequency, start, duration, volume) {
   oscillator.stop(start + duration + 0.04);
 }
 
-function chime(ctx, frequency, start, duration, volume) {
-  if (!ctx) return;
-  const oscillator = ctx.createOscillator();
-  const gain = ctx.createGain();
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(frequency, start);
-  gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, Math.min(0.7, volume)), start + 0.012);
-  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-  oscillator.connect(gain);
-  gain.connect(ctx.destination);
-  oscillator.start(start);
-  oscillator.stop(start + duration + 0.04);
-}
-
 export function playRallyHubSignal(ctx, type = 'warning', volume = 1) {
   if (!ctx) return;
   const now = ctx.currentTime;
