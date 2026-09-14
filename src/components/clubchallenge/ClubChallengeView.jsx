@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
-import { listRallyHubMicrophones, playRallyHubSignal, queueRallyHubSpeechPaused, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
+import { listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
 import { INTERCLUB_EVENT_LABEL, INTERCLUB_INTERNAL_FORMAT, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
 import {
   analyseClubChallengeFairness,
@@ -622,45 +622,46 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const ctx = await unlockHallAudio();
       if (!ctx) throw new Error('RallyHub audio is not available in this browser.');
 
-      let started = false;
-      let watchdog = null;
-      const queuedSpeech = queueRallyHubSpeechPaused(text, {
-        volume: hallVolume,
-        voiceMode: 'device_default',
-        voices,
-        onStart: () => {
-          started = true;
-          if (watchdog) window.clearTimeout(watchdog);
-          setAnnouncementStatus('Speaking…');
-        },
-        onEnd: () => {
-          if (watchdog) window.clearTimeout(watchdog);
-          setLastAnnouncement(text);
-          setAnnouncementDraft('');
-          setAnnouncementSpeaking(false);
-          setAnnouncementStatus('Announcement played.');
-          toast.success('Announcement played.');
-        },
-        onError: () => {
-          if (watchdog) window.clearTimeout(watchdog);
-          setAnnouncementSpeaking(false);
-          setAnnouncementStatus('Voice playback failed — text kept for retry.');
-          toast.error('Voice playback failed. Your announcement text has been kept.');
-        },
-      });
-      if (!queuedSpeech) throw new Error('Text-to-speech is unavailable in this browser.');
-
       playRallyHubSignal(ctx, 'announcement', hallVolume);
       window.setTimeout(() => {
-        setAnnouncementStatus('Speaking…');
-        queuedSpeech.resume();
-        watchdog = window.setTimeout(() => {
+        let started = false;
+        const watchdog = window.setTimeout(() => {
           if (started) return;
-          queuedSpeech.cancel();
+          window.speechSynthesis?.cancel?.();
           setAnnouncementSpeaking(false);
           setAnnouncementStatus('Voice did not start — text kept for retry.');
           toast.error('The device voice did not start. Your announcement text has been kept.');
         }, 4500);
+        const ok = speakRallyHub(text, {
+          volume: hallVolume,
+          voiceMode: 'device_default',
+          voices,
+          onStart: () => {
+            started = true;
+            window.clearTimeout(watchdog);
+            setAnnouncementStatus('Speaking…');
+          },
+          onEnd: () => {
+            window.clearTimeout(watchdog);
+            setLastAnnouncement(text);
+            setAnnouncementDraft('');
+            setAnnouncementSpeaking(false);
+            setAnnouncementStatus('Announcement played.');
+            toast.success('Announcement played.');
+          },
+          onError: () => {
+            window.clearTimeout(watchdog);
+            setAnnouncementSpeaking(false);
+            setAnnouncementStatus('Voice playback failed — text kept for retry.');
+            toast.error('Voice playback failed. Your announcement text has been kept.');
+          },
+        });
+        if (!ok) {
+          window.clearTimeout(watchdog);
+          setAnnouncementSpeaking(false);
+          setAnnouncementStatus('Text-to-speech is unavailable — text kept for retry.');
+          toast.error('Text-to-speech is unavailable in this browser.');
+        }
       }, 3500);
     } catch (error) {
       setAnnouncementSpeaking(false);
