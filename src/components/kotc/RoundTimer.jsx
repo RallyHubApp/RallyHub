@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Maximize2, Minimize2, Move, Pause, Play, RotateCcw, Volume2, VolumeX, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
+import { speakRallyHub } from '@/lib/rallyHubHallAudio.js';
 
 const DEFAULT_PLAY_MINUTES = 8;
 const DEFAULT_REST_MINUTES = 2;
@@ -55,16 +56,8 @@ function playSignal(ctx, type, volume) {
 }
 
 function speak(text) {
-  if (!('speechSynthesis' in window)) return;
-  const utterance = new SpeechSynthesisUtterance(text);
-  // Browser speech cannot raise the phone/tablet's physical media volume, so
-  // RallyHub always sends announcements at the strongest clean speech level.
-  utterance.volume = 1;
-  utterance.rate = 0.88;
-  utterance.pitch = 1;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.resume?.();
-  window.speechSynthesis.speak(utterance);
+  // Use the same shared RallyHub announcer profile as Interclub and future formats.
+  speakRallyHub(text, { volume: 1, voiceMode: 'device_default' });
 }
 
 export function KotcSoundCheck({ compact = false }) {
