@@ -65,10 +65,12 @@ export function playRallyHubSignal(ctx, type = 'warning', volume = 1) {
     return;
   }
   if (type === 'announcement') {
-    // Familiar PA-style attention cue: three resonant bells, rising in pitch and intensity.
-    bell(ctx, 659.25, now, 1.15, 0.58);
-    bell(ctx, 783.99, now + 0.95, 1.25, 0.76);
-    bell(ctx, 987.77, now + 1.95, 1.45, 1.0);
+    // Commercial PA-style pre-announcement cue: four ascending resonant tones.
+    // The tones overlap slightly so they ring like a paging chime rather than UI beeps.
+    bell(ctx, 523.25, now, 1.10, 0.52);
+    bell(ctx, 659.25, now + 0.82, 1.15, 0.66);
+    bell(ctx, 783.99, now + 1.68, 1.25, 0.82);
+    bell(ctx, 1046.50, now + 2.58, 1.40, 1.0);
     return;
   }
   beep(ctx, 740, now, 0.14, v * 0.9);
