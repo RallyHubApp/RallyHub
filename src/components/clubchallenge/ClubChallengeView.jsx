@@ -164,7 +164,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [networkOnline, setNetworkOnline] = useState(() => navigator.onLine);
   const [pendingScores, setPendingScores] = useState(() => { try { return JSON.parse(localStorage.getItem(`cc-pending-${tournament.id}`) || '[]'); } catch { return []; } });
   const [timerNow, setTimerNow] = useState(Date.now());
-  const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('cc-voice-mode') === 'off' ? 'off' : 'device_default');
+  const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('cc-voice-mode') === 'off' ? 'off' : 'rallyhub_default');
   const [voices, setVoices] = useState([]);
   const [hallVolume, setHallVolume] = useState(() => { const v = Number(localStorage.getItem('cc-hall-volume')); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; });
   const [audioReady, setAudioReady] = useState(false);
@@ -634,7 +634,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         }, 4500);
         const ok = speakRallyHub(text, {
           volume: 1,
-          voiceMode: 'device_default',
+          voiceMode: 'rallyhub_default',
           voices,
           onStart: () => {
             started = true;
@@ -1278,7 +1278,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               </div>
               {paMicLabel && paActive && <p className="text-[11px] text-muted-foreground"><strong>Active microphone:</strong> {paMicLabel}</p>}
               {paError && <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">{paError}</div>}
-              <div className="flex flex-col md:flex-row md:items-end gap-2"><div className="w-full md:w-44 md:shrink-0"><Label className="text-xs">Voice announcements</Label><Select value={voiceMode} onValueChange={setVoiceMode}><SelectTrigger className="mt-1 bg-secondary"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="device_default">On · Device default</SelectItem><SelectItem value="off">Off</SelectItem></SelectContent></Select></div><div className="w-full md:max-w-3xl"><Label className="text-xs">Announcement text</Label><Input type="text" name="rallyhub-announcement-text" autoComplete="off" inputMode="text" aria-autocomplete="none" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" value={announcementDraft} onChange={e => { setAnnouncementDraft(e.target.value); if (!announcementSpeaking) setAnnouncementStatus(''); }} onKeyDown={e => { if (e.key === 'Enter' && !announcementSpeaking) announceCustom(); }} placeholder="Type a one-off RallyHub announcement…" className="mt-1 bg-secondary" disabled={announcementSpeaking} /></div><Button className="w-full md:w-36 md:shrink-0" variant="outline" disabled={!announcementDraft.trim() || paActive || announcementSpeaking || voiceMode === 'off'} onClick={announceCustom}><Megaphone className="w-4 h-4 mr-2" />{announcementSpeaking ? 'Speaking…' : 'Announce'}</Button></div>{announcementStatus && <p className="text-[11px] text-muted-foreground md:ml-[11.5rem]">{announcementStatus}</p>}
+              <div className="flex flex-col md:flex-row md:items-end gap-2"><div className="w-full md:w-44 md:shrink-0"><Label className="text-xs">Voice announcements</Label><Select value={voiceMode} onValueChange={setVoiceMode}><SelectTrigger className="mt-1 bg-secondary"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="rallyhub_default">On · RallyHub announcer</SelectItem><SelectItem value="off">Off</SelectItem></SelectContent></Select></div><div className="w-full md:max-w-3xl"><Label className="text-xs">Announcement text</Label><Input type="text" name="rallyhub-announcement-text" autoComplete="off" inputMode="text" aria-autocomplete="none" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" value={announcementDraft} onChange={e => { setAnnouncementDraft(e.target.value); if (!announcementSpeaking) setAnnouncementStatus(''); }} onKeyDown={e => { if (e.key === 'Enter' && !announcementSpeaking) announceCustom(); }} placeholder="Type a one-off RallyHub announcement…" className="mt-1 bg-secondary" disabled={announcementSpeaking} /></div><Button className="w-full md:w-36 md:shrink-0" variant="outline" disabled={!announcementDraft.trim() || paActive || announcementSpeaking || voiceMode === 'off'} onClick={announceCustom}><Megaphone className="w-4 h-4 mr-2" />{announcementSpeaking ? 'Speaking…' : 'Announce'}</Button></div>{announcementStatus && <p className="text-[11px] text-muted-foreground md:ml-[11.5rem]">{announcementStatus}</p>}
               <div className="rounded-lg bg-secondary/30 p-3 text-[11px] text-muted-foreground space-y-1"><p><strong>V1 JBL path:</strong> laptop built-in mic → RallyHub → laptop Bluetooth output → JBL Charge 6; full V1 then adds JBL PartyBox Encore 2 through Auracast.</p><p>While Live PA is on, spoken RallyHub voice announcements are suppressed so RallyHub does not talk over the host. Critical start/end/warning tones can still sound.</p><p>For the first hardware test, set the Charge 6 as the laptop’s active audio output before pressing Start PA.</p></div>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-3">
