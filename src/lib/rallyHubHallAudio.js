@@ -95,7 +95,19 @@ export function setRallyHubPaGain(volume = 1) {
   return true;
 }
 
-export async function startRallyHubPA({ volume = 1 } = {}) {
+export async function listRallyHubMicrophones() {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.enumerateDevices) return [];
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  return devices
+    .filter(device => device.kind === 'audioinput')
+    .map((device, index) => ({
+      deviceId: device.deviceId,
+      groupId: device.groupId,
+      label: device.label || `Microphone ${index + 1}`,
+    }));
+}
+
+export async function startRallyHubPA({ volume = 1, deviceId = '' } = {}) {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') throw new Error('Live PA is not available on this device.');
   if (!navigator.mediaDevices?.getUserMedia) throw new Error('This browser does not support microphone access for RallyHub PA.');
 
@@ -110,13 +122,16 @@ export async function startRallyHubPA({ volume = 1 } = {}) {
 
   window.speechSynthesis?.cancel?.();
 
+  const audioConstraints = {
+    echoCancellation: { ideal: true },
+    noiseSuppression: { ideal: true },
+    autoGainControl: { ideal: true },
+    channelCount: { ideal: 1 },
+  };
+  if (deviceId && deviceId !== 'default') audioConstraints.deviceId = { exact: deviceId };
+
   const stream = await navigator.mediaDevices.getUserMedia({
-    audio: {
-      echoCancellation: { ideal: true },
-      noiseSuppression: { ideal: true },
-      autoGainControl: { ideal: true },
-      channelCount: { ideal: 1 },
-    },
+    audio: audioConstraints,
     video: false,
   });
 
