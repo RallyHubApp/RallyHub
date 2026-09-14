@@ -75,7 +75,7 @@ export function chooseRallyHubVoice(voices, mode = 'irish_female') {
 function createRallyHubUtterance(text, { volume = 1, voiceMode = 'irish_female', voices = [] } = {}) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.volume = Math.max(0, Math.min(1, Number(volume) || 0));
-  utterance.lang = 'en-IE';
+  if (voiceMode !== 'device_default') utterance.lang = 'en-IE';
   utterance.rate = 0.92;
   utterance.pitch = 1;
   const voice = chooseRallyHubVoice(voices, voiceMode);
