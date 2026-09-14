@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
-import { listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, speakRallyHubAsync, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
+import { listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
 import { INTERCLUB_EVENT_LABEL, INTERCLUB_INTERNAL_FORMAT, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
 import {
   analyseClubChallengeFairness,
@@ -177,6 +177,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [paError, setPaError] = useState('');
   const [announcementDraft, setAnnouncementDraft] = useState('');
   const [announcementSpeaking, setAnnouncementSpeaking] = useState(false);
+  const [announcementStatus, setAnnouncementStatus] = useState('');
   const [hostAction, setHostAction] = useState('');
   const timerCommandRef = React.useRef(false);
   const sportingActionRef = React.useRef(false);
@@ -616,19 +617,54 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (paActive) { toast.info('Turn off Live PA before playing a RallyHub voice announcement.'); return; }
     if (voiceMode === 'off') { toast.error('RallyHub voice is off. Turn Voice On before using Announce.'); return; }
     setAnnouncementSpeaking(true);
+    setAnnouncementStatus('Attention chime…');
     try {
       const ctx = await unlockHallAudio();
       if (!ctx) throw new Error('RallyHub audio is not available in this browser.');
       playRallyHubSignal(ctx, 'announcement', hallVolume);
-      await new Promise(resolve => window.setTimeout(resolve, 1150));
-      await speakRallyHubAsync(text, { volume: hallVolume, voiceMode: 'device_default', voices });
-      setLastAnnouncement(text);
-      setAnnouncementDraft('');
-      toast.success('Announcement played.');
+      window.setTimeout(() => {
+        let started = false;
+        const watchdog = window.setTimeout(() => {
+          if (started) return;
+          setAnnouncementSpeaking(false);
+          setAnnouncementStatus('Voice did not start — text kept for retry.');
+          toast.error('The device voice did not start. Your announcement text has been kept.');
+        }, 4500);
+        const ok = speakRallyHub(text, {
+          volume: hallVolume,
+          voiceMode: 'device_default',
+          voices,
+          onStart: () => {
+            started = true;
+            window.clearTimeout(watchdog);
+            setAnnouncementStatus('Speaking…');
+          },
+          onEnd: () => {
+            window.clearTimeout(watchdog);
+            setLastAnnouncement(text);
+            setAnnouncementDraft('');
+            setAnnouncementSpeaking(false);
+            setAnnouncementStatus('Announcement played.');
+            toast.success('Announcement played.');
+          },
+          onError: () => {
+            window.clearTimeout(watchdog);
+            setAnnouncementSpeaking(false);
+            setAnnouncementStatus('Voice playback failed — text kept for retry.');
+            toast.error('Voice playback failed. Your announcement text has been kept.');
+          },
+        });
+        if (!ok) {
+          window.clearTimeout(watchdog);
+          setAnnouncementSpeaking(false);
+          setAnnouncementStatus('Text-to-speech is unavailable — text kept for retry.');
+          toast.error('Text-to-speech is unavailable in this browser.');
+        }
+      }, 1150);
     } catch (error) {
-      toast.error(error?.message || 'Could not play the announcement. Your text has been kept so you can try again.');
-    } finally {
       setAnnouncementSpeaking(false);
+      setAnnouncementStatus('Announcement could not start — text kept for retry.');
+      toast.error(error?.message || 'Could not play the announcement. Your text has been kept so you can try again.');
     }
   };
   const roundLabel = round => roundLabels[round] || `Round ${round}`;
