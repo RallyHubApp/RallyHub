@@ -615,8 +615,19 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const text = announcementDraft.trim();
     if (!text) return;
     if (paActive) { toast.info('Turn off Live PA before playing a RallyHub voice announcement.'); return; }
-    await unlockHallAudio();
-    if (speak(text, { force: true, signal:'warning' })) setAnnouncementDraft('');
+    if (voiceMode === 'off') { toast.error('RallyHub voice is set to Off. Choose a voice before using Announce.'); return; }
+    try {
+      const ctx = await unlockHallAudio();
+      if (!ctx) { toast.error('RallyHub audio is not available in this browser.'); return; }
+      playRallyHubSignal(ctx, 'warning', hallVolume);
+      const spoken = speakRallyHub(text, { volume: hallVolume, voiceMode, voices });
+      if (!spoken) { toast.error('Text-to-speech could not start on this device.'); return; }
+      setLastAnnouncement(text);
+      setAnnouncementDraft('');
+      toast.success('Announcement sent to the selected audio output.');
+    } catch (error) {
+      toast.error(error?.message || 'Could not play the announcement.');
+    }
   };
   const roundLabel = round => roundLabels[round] || `Round ${round}`;
   const saveRoundLabel = async round => {
