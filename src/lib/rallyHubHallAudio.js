@@ -23,6 +23,21 @@ function beep(ctx, frequency, start, duration, volume) {
   oscillator.stop(start + duration + 0.04);
 }
 
+function chime(ctx, frequency, start, duration, volume) {
+  if (!ctx) return;
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(frequency, start);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, Math.min(0.7, volume)), start + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  oscillator.connect(gain);
+  gain.connect(ctx.destination);
+  oscillator.start(start);
+  oscillator.stop(start + duration + 0.04);
+}
+
 export function playRallyHubSignal(ctx, type = 'warning', volume = 1) {
   if (!ctx) return;
   const now = ctx.currentTime;
@@ -38,6 +53,12 @@ export function playRallyHubSignal(ctx, type = 'warning', volume = 1) {
     beep(ctx, 330, now + 0.56, 0.35, v);
     return;
   }
+  if (type === 'announcement') {
+    chime(ctx, 880, now, 0.28, v);
+    chime(ctx, 880, now + 0.32, 0.28, v);
+    chime(ctx, 1175, now + 0.64, 0.36, v);
+    return;
+  }
   beep(ctx, 740, now, 0.14, v * 0.9);
 }
 
@@ -51,8 +72,7 @@ export function chooseRallyHubVoice(voices, mode = 'irish_female') {
   return null;
 }
 
-export function speakRallyHub(text, { volume = 1, voiceMode = 'irish_female', voices = [] } = {}) {
-  if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') return false;
+function createRallyHubUtterance(text, { volume = 1, voiceMode = 'irish_female', voices = [] } = {}) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.volume = Math.max(0, Math.min(1, Number(volume) || 0));
   utterance.lang = 'en-IE';
@@ -60,10 +80,36 @@ export function speakRallyHub(text, { volume = 1, voiceMode = 'irish_female', vo
   utterance.pitch = 1;
   const voice = chooseRallyHubVoice(voices, voiceMode);
   if (voice) utterance.voice = voice;
+  return utterance;
+}
+
+export function speakRallyHub(text, { volume = 1, voiceMode = 'irish_female', voices = [] } = {}) {
+  if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') return false;
+  const utterance = createRallyHubUtterance(text, { volume, voiceMode, voices });
   window.speechSynthesis.cancel();
   window.speechSynthesis.resume?.();
   window.speechSynthesis.speak(utterance);
   return true;
+}
+
+export function speakRallyHubAsync(text, { volume = 1, voiceMode = 'irish_female', voices = [] } = {}) {
+  return new Promise((resolve, reject) => {
+    if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') {
+      reject(new Error('Text-to-speech is not available.'));
+      return;
+    }
+    const utterance = createRallyHubUtterance(text, { volume, voiceMode, voices });
+    let started = false;
+    const timeout = window.setTimeout(() => {
+      if (!started) reject(new Error('The selected voice did not start. Try Test Sound or choose the other Irish voice.'));
+    }, 5000);
+    utterance.onstart = () => { started = true; window.clearTimeout(timeout); };
+    utterance.onend = () => { window.clearTimeout(timeout); resolve(true); };
+    utterance.onerror = event => { window.clearTimeout(timeout); reject(new Error(event?.error ? `Voice playback failed: ${event.error}` : 'Voice playback failed.')); };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.resume?.();
+    window.speechSynthesis.speak(utterance);
+  });
 }
 
 export async function unlockRallyHubAudio() {
