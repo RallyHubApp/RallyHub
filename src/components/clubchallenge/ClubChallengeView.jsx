@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
-import { listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
+import { listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, speakRallyHubAsync, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
 import { INTERCLUB_EVENT_LABEL, INTERCLUB_INTERNAL_FORMAT, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
 import {
   analyseClubChallengeFairness,
@@ -164,7 +164,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [networkOnline, setNetworkOnline] = useState(() => navigator.onLine);
   const [pendingScores, setPendingScores] = useState(() => { try { return JSON.parse(localStorage.getItem(`cc-pending-${tournament.id}`) || '[]'); } catch { return []; } });
   const [timerNow, setTimerNow] = useState(Date.now());
-  const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('cc-voice-mode') || 'irish_female');
+  const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('cc-voice-mode') === 'off' ? 'off' : 'device_default');
   const [voices, setVoices] = useState([]);
   const [voiceMuted, setVoiceMuted] = useState(() => localStorage.getItem('cc-voice-muted') === 'true');
   const [hallVolume, setHallVolume] = useState(() => { const v = Number(localStorage.getItem('cc-hall-volume')); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; });
@@ -177,6 +177,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [selectedMicId, setSelectedMicId] = useState(() => localStorage.getItem('cc-pa-mic-id') || 'default');
   const [paError, setPaError] = useState('');
   const [announcementDraft, setAnnouncementDraft] = useState('');
+  const [announcementSpeaking, setAnnouncementSpeaking] = useState(false);
   const [hostAction, setHostAction] = useState('');
   const timerCommandRef = React.useRef(false);
   const sportingActionRef = React.useRef(false);
@@ -613,20 +614,23 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
   const announceCustom = async () => {
     const text = announcementDraft.trim();
-    if (!text) return;
+    if (!text || announcementSpeaking) return;
     if (paActive) { toast.info('Turn off Live PA before playing a RallyHub voice announcement.'); return; }
-    if (voiceMode === 'off') { toast.error('RallyHub voice is set to Off. Choose a voice before using Announce.'); return; }
+    if (voiceMode === 'off') { toast.error('RallyHub voice is off. Turn Voice On before using Announce.'); return; }
+    setAnnouncementSpeaking(true);
     try {
       const ctx = await unlockHallAudio();
-      if (!ctx) { toast.error('RallyHub audio is not available in this browser.'); return; }
-      playRallyHubSignal(ctx, 'warning', hallVolume);
-      const spoken = speakRallyHub(text, { volume: hallVolume, voiceMode, voices });
-      if (!spoken) { toast.error('Text-to-speech could not start on this device.'); return; }
+      if (!ctx) throw new Error('RallyHub audio is not available in this browser.');
+      playRallyHubSignal(ctx, 'announcement', hallVolume);
+      await new Promise(resolve => window.setTimeout(resolve, 1150));
+      await speakRallyHubAsync(text, { volume: hallVolume, voiceMode: 'device_default', voices });
       setLastAnnouncement(text);
       setAnnouncementDraft('');
-      toast.success('Announcement sent to the selected audio output.');
+      toast.success('Announcement played.');
     } catch (error) {
-      toast.error(error?.message || 'Could not play the announcement.');
+      toast.error(error?.message || 'Could not play the announcement. Your text has been kept so you can try again.');
+    } finally {
+      setAnnouncementSpeaking(false);
     }
   };
   const roundLabel = round => roundLabels[round] || `Round ${round}`;
