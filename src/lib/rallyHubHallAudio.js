@@ -86,14 +86,17 @@ export function chooseRallyHubVoice(voices, mode = 'irish_female') {
   return null;
 }
 
-function createRallyHubUtterance(text, { volume = 1, voiceMode = 'irish_female', voices = [] } = {}) {
+function createRallyHubUtterance(text, { volume = 1, voiceMode = 'device_default', voices = [] } = {}) {
   const utterance = new SpeechSynthesisUtterance(text);
+  // Shared RallyHub announcer profile. Keep this identical across competition formats.
   utterance.volume = Math.max(0, Math.min(1, Number(volume) || 0));
-  if (voiceMode !== 'device_default') utterance.lang = 'en-IE';
-  utterance.rate = 0.92;
+  utterance.rate = 0.88;
   utterance.pitch = 1;
-  const voice = chooseRallyHubVoice(voices, voiceMode);
-  if (voice) utterance.voice = voice;
+  if (voiceMode !== 'device_default') {
+    utterance.lang = 'en-IE';
+    const voice = chooseRallyHubVoice(voices, voiceMode);
+    if (voice) utterance.voice = voice;
+  }
   return utterance;
 }
 
@@ -102,7 +105,7 @@ function createRallyHubUtterance(text, { volume = 1, voiceMode = 'irish_female',
  * @param {{ volume?: number, voiceMode?: string, voices?: SpeechSynthesisVoice[], onStart?: (event: any) => void, onEnd?: (event: any) => void, onError?: (event: any) => void }} [options]
  */
 export function speakRallyHub(text, options = {}) {
-  const { volume = 1, voiceMode = 'irish_female', voices = [], onStart, onEnd, onError } = options;
+  const { volume = 1, voiceMode = 'device_default', voices = [], onStart, onEnd, onError } = options;
   if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') return false;
   const utterance = createRallyHubUtterance(text, { volume, voiceMode, voices });
   window.__rallyhubUtterance = utterance;
