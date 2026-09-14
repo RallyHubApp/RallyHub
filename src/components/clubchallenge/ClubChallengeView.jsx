@@ -8,10 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, GripVertical, ImagePlus, ListChecks, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
-import { playRallyHubSignal, speakRallyHub, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
+import { playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
 import { INTERCLUB_EVENT_LABEL, INTERCLUB_INTERNAL_FORMAT, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
 import {
   analyseClubChallengeFairness,
@@ -169,6 +169,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [voiceMuted, setVoiceMuted] = useState(() => localStorage.getItem('cc-voice-muted') === 'true');
   const [hallVolume, setHallVolume] = useState(() => { const v = Number(localStorage.getItem('cc-hall-volume')); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; });
   const [audioReady, setAudioReady] = useState(false);
+  const [paActive, setPaActive] = useState(false);
+  const [paStarting, setPaStarting] = useState(false);
+  const [paGain, setPaGain] = useState(() => { const v = Number(localStorage.getItem('cc-pa-gain')); return Number.isFinite(v) ? Math.min(1.5, Math.max(0, v)) : 1; });
+  const [paMicLabel, setPaMicLabel] = useState('');
+  const [paError, setPaError] = useState('');
+  const [announcementDraft, setAnnouncementDraft] = useState('');
   const [hostAction, setHostAction] = useState('');
   const timerCommandRef = React.useRef(false);
   const sportingActionRef = React.useRef(false);
@@ -322,7 +328,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   React.useEffect(() => { localStorage.setItem('cc-voice-mode', voiceMode); }, [voiceMode]);
   React.useEffect(() => { localStorage.setItem('cc-voice-muted', String(voiceMuted)); }, [voiceMuted]);
   React.useEffect(() => { localStorage.setItem('cc-hall-volume', String(hallVolume)); }, [hallVolume]);
-  React.useEffect(() => () => { wakeLockRef.current?.release?.(); window.speechSynthesis?.cancel(); }, []);
+  React.useEffect(() => { localStorage.setItem('cc-pa-gain', String(paGain)); if (paActive) setRallyHubPaGain(paGain); }, [paGain, paActive]);
+  React.useEffect(() => () => { wakeLockRef.current?.release?.(); stopAllRallyHubAudio(); }, []);
+  React.useEffect(() => {
+    if (tab === 'live' || !paActive) return;
+    stopRallyHubPA();
+    setPaActive(false);
+  }, [tab, paActive]);
   React.useEffect(() => {
     const online = () => setNetworkOnline(true), offline = () => setNetworkOnline(false);
     window.addEventListener('online', online); window.addEventListener('offline', offline);
@@ -531,13 +543,52 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const requestWakeLock = async () => {
     try { if ('wakeLock' in navigator) wakeLockRef.current = await navigator.wakeLock.request('screen'); } catch { /* best effort */ }
   };
+  const startPA = async () => {
+    if (paStarting || paActive) return;
+    setPaStarting(true);
+    setPaError('');
+    try {
+      const info = await startRallyHubPA({ volume: paGain });
+      setAudioReady(true);
+      setPaMicLabel(info.micLabel || 'Default microphone');
+      setPaActive(true);
+      toast.success('Live PA is on. Speak into the laptop microphone.');
+    } catch (error) {
+      const message = error?.name === 'NotAllowedError'
+        ? 'Microphone permission was blocked. Allow microphone access for RallyHub in the browser and try again.'
+        : error?.name === 'NotFoundError'
+          ? 'No microphone was found on this laptop.'
+          : error?.name === 'NotReadableError'
+            ? 'The microphone is busy in another app. Close the other microphone app and try again.'
+            : (error?.message || 'RallyHub could not start the live PA microphone.');
+      setPaError(message);
+      toast.error(message);
+    } finally { setPaStarting(false); }
+  };
+  const stopPA = () => {
+    stopRallyHubPA();
+    setPaActive(false);
+    toast.success('Live PA off.');
+  };
+  const silenceAudio = () => {
+    stopAllRallyHubAudio();
+    setPaActive(false);
+    toast.info('Live PA and spoken RallyHub audio stopped.');
+  };
   const speak = (text, { force = false, signal = null } = {}) => {
-    if (!text || voiceMode === 'off' || (voiceMuted && !force)) return false;
     const ctx = window.__rallyhubAudioContext || null;
     if (signal) playRallyHubSignal(ctx, signal, hallVolume);
+    if (!text || paActive || voiceMode === 'off' || (voiceMuted && !force)) return !!signal;
     const spoken = speakRallyHub(text, { volume: hallVolume, voiceMode, voices });
     if (spoken) setLastAnnouncement(text);
     return spoken;
+  };
+  const announceCustom = async () => {
+    const text = announcementDraft.trim();
+    if (!text) return;
+    if (paActive) { toast.info('Turn off Live PA before playing a RallyHub voice announcement.'); return; }
+    await unlockHallAudio();
+    if (speak(text, { force: true, signal:'warning' })) setAnnouncementDraft('');
   };
   const roundLabel = round => roundLabels[round] || `Round ${round}`;
   const saveRoundLabel = async round => {
