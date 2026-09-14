@@ -4,6 +4,7 @@ declare global {
   interface Window {
     webkitAudioContext?: typeof AudioContext;
     __rallyhubAudioContext?: AudioContext;
+    __rallyhubUtterance?: SpeechSynthesisUtterance | null;
     __rallyhubPaState?: {
       active: boolean;
       ctx: AudioContext;
