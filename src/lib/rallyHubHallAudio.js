@@ -76,26 +76,35 @@ export function playRallyHubSignal(ctx, type = 'warning', volume = 1) {
   beep(ctx, 740, now, 0.14, v * 0.9);
 }
 
+export function getRallyHubDeviceLocale() {
+  if (typeof navigator === 'undefined') return 'en';
+  const candidates = [...(navigator.languages || []), navigator.language].filter(Boolean);
+  const preferred = candidates[0] || 'en';
+  try {
+    return Intl.getCanonicalLocales(preferred)[0] || preferred;
+  } catch {
+    return preferred;
+  }
+}
+
 export function chooseRallyHubVoice(voices, mode = 'rallyhub_default') {
   const available = voices?.length
     ? voices
     : (typeof window !== 'undefined' ? window.speechSynthesis?.getVoices?.() || [] : []);
   if (!available.length || mode === 'off') return null;
 
-  const femaleSoftHint = /female|natural|neural|sonia|libby|hazel|susan|serena|emily|moira|fiona|caitlin|orla|aoife|samantha/i;
-  const ie = available.filter(v => /^en[-_]IE$/i.test(v.lang) || /irish|ireland/i.test(`${v.name} ${v.lang}`));
-  const gb = available.filter(v => /^en[-_]GB$/i.test(v.lang) || /british|united kingdom|great britain/i.test(`${v.name} ${v.lang}`));
-  const english = available.filter(v => /^en([_-]|$)/i.test(v.lang));
+  const locale = getRallyHubDeviceLocale().toLowerCase();
+  const baseLanguage = locale.split('-')[0];
+  const normalise = value => String(value || '').replace('_', '-').toLowerCase();
 
   if (mode === 'rallyhub_default' || mode === 'device_default') {
-    return ie.find(v => femaleSoftHint.test(v.name))
-      || ie[0]
-      || gb.find(v => femaleSoftHint.test(v.name))
-      || gb[0]
-      || english.find(v => femaleSoftHint.test(v.name))
+    // First use the exact voice for the device/browser locale, e.g. en-IE or en-GB.
+    // If there is no exact installed voice, leave regional choice to the browser before
+    // falling back to a same-language/default voice.
+    return available.find(v => normalise(v.lang) === locale)
+      || available.find(v => normalise(v.lang) === baseLanguage)
+      || available.find(v => normalise(v.lang).split('-')[0] === baseLanguage && v.default)
       || available.find(v => v.default)
-      || english[0]
-      || available[0]
       || null;
   }
 
@@ -104,17 +113,16 @@ export function chooseRallyHubVoice(voices, mode = 'rallyhub_default') {
 
 function createRallyHubUtterance(text, { volume = 1, voiceMode = 'rallyhub_default', voices = [] } = {}) {
   const utterance = new SpeechSynthesisUtterance(text);
-  // Shared RallyHub announcer profile. Keep this identical across competition formats.
+  // Shared RallyHub announcer profile. Language follows the host device/browser locale.
   utterance.volume = Math.max(0, Math.min(1, Number(volume) || 0));
   utterance.rate = 0.88;
-  utterance.pitch = 0.98;
+  utterance.pitch = 1;
+  const deviceLocale = getRallyHubDeviceLocale();
+  utterance.lang = deviceLocale;
   const voice = chooseRallyHubVoice(voices, voiceMode);
   if (voice) {
     utterance.voice = voice;
-    utterance.lang = voice.lang;
-  } else {
-    // Prefer a UK-English browser voice rather than an American fallback when no explicit voice is exposed.
-    utterance.lang = 'en-GB';
+    utterance.lang = voice.lang || deviceLocale;
   }
   return utterance;
 }
@@ -152,7 +160,7 @@ export function speakRallyHubAsync(text, { volume = 1, voiceMode = 'rallyhub_def
     const utterance = createRallyHubUtterance(text, { volume, voiceMode, voices });
     let started = false;
     const timeout = window.setTimeout(() => {
-      if (!started) reject(new Error('The selected voice did not start. Try Test Sound or choose the other Irish voice.'));
+      if (!started) reject(new Error('The device voice did not start. Try Test Sound and check this device’s language/voice settings.'));
     }, 5000);
     utterance.onstart = () => { started = true; window.clearTimeout(timeout); };
     utterance.onend = () => { window.clearTimeout(timeout); resolve(true); };
