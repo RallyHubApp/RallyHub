@@ -103,34 +103,20 @@ export function speakRallyHub(text, options = {}) {
   const { volume = 1, voiceMode = 'irish_female', voices = [], onStart, onEnd, onError } = options;
   if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') return false;
   const utterance = createRallyHubUtterance(text, { volume, voiceMode, voices });
+  window.__rallyhubUtterance = utterance;
   if (onStart) utterance.onstart = onStart;
-  if (onEnd) utterance.onend = onEnd;
-  if (onError) utterance.onerror = onError;
+  utterance.onend = event => {
+    if (window.__rallyhubUtterance === utterance) window.__rallyhubUtterance = null;
+    onEnd?.(event);
+  };
+  utterance.onerror = event => {
+    if (window.__rallyhubUtterance === utterance) window.__rallyhubUtterance = null;
+    onError?.(event);
+  };
   window.speechSynthesis.cancel();
   window.speechSynthesis.resume?.();
   window.speechSynthesis.speak(utterance);
   return true;
-}
-
-/**
- * Queue speech immediately from the user's click, but hold playback until resume() is called.
- * This keeps browser TTS armed while an announcement attention chime plays first.
- */
-export function queueRallyHubSpeechPaused(text, options = {}) {
-  const { volume = 1, voiceMode = 'device_default', voices = [], onStart, onEnd, onError } = options;
-  if (!text || typeof window === 'undefined' || !('speechSynthesis' in window) || voiceMode === 'off') return null;
-  const synth = window.speechSynthesis;
-  const utterance = createRallyHubUtterance(text, { volume, voiceMode, voices });
-  if (onStart) utterance.onstart = onStart;
-  if (onEnd) utterance.onend = onEnd;
-  if (onError) utterance.onerror = onError;
-  synth.cancel();
-  synth.pause();
-  synth.speak(utterance);
-  return {
-    resume: () => synth.resume?.(),
-    cancel: () => synth.cancel(),
-  };
 }
 
 export function speakRallyHubAsync(text, { volume = 1, voiceMode = 'irish_female', voices = [] } = {}) {
