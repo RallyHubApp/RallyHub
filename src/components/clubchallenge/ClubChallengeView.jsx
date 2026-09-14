@@ -660,7 +660,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           setAnnouncementStatus('Text-to-speech is unavailable — text kept for retry.');
           toast.error('Text-to-speech is unavailable in this browser.');
         }
-      }, 1150);
+      }, 460);
     } catch (error) {
       setAnnouncementSpeaking(false);
       setAnnouncementStatus('Announcement could not start — text kept for retry.');
