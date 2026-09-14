@@ -126,7 +126,7 @@ function createRallyHubUtterance(text, { volume = 1, voiceMode = 'rallyhub_defau
   const utterance = new SpeechSynthesisUtterance(text);
   // Shared RallyHub announcer profile. Language follows the host device/browser locale.
   utterance.volume = Math.max(0, Math.min(1, Number(volume) || 0));
-  utterance.rate = 0.88;
+  utterance.rate = 0.82;
   utterance.pitch = 1;
   const deviceLocale = getRallyHubDeviceLocale();
   utterance.lang = deviceLocale;
