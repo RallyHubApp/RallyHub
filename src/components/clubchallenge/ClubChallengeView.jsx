@@ -1235,7 +1235,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.juniorDisplayMode} onChange={e => setSetup(s => ({ ...s, juniorDisplayMode: e.target.checked }))} /> Junior display privacy (first name + surname initial)</label>
             </div>
           </div>
-          <Button data-testid="cc-save-setup" onClick={saveSetup} disabled={!isAdmin || saving} className="w-full h-11">{saving ? 'Saving…' : event ? 'Save & Continue to Teams' : 'Create & Continue to Teams'}</Button>
+          <Button data-testid="cc-save-setup" onClick={saveSetup} disabled={!isAdmin || saving || !!logoUploading} className="w-full h-11">{logoUploading ? 'Uploading logo…' : saving ? 'Saving…' : event ? 'Save & Continue to Teams' : 'Create & Continue to Teams'}</Button>
         </div>
       )}
 
