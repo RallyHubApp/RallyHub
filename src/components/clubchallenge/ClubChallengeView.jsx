@@ -965,7 +965,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       if (currentRound < maxRound) {
         const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1 });
         if (res.data?.error) { toast.error(res.data.error); return; }
-        toast.success(`Round ${currentRound + 1} ready`);
+        const nextRound = currentRound + 1;
+        const nextMatches = normalMatches.filter(m => m.round_number === nextRound);
+        const activeIds = new Set(nextMatches.flatMap(m => [...(m.club_a_participant_ids || []), ...(m.club_b_participant_ids || [])]));
+        const restingCount = participants.filter(p => ['active','late'].includes(p.status) && !activeIds.has(p.id)).length;
+        toast.success(`Round ${nextRound} ready · ${nextMatches.length} courts · ${restingCount} players resting`);
         await refetchEvent();
       } else {
         if (resolvedNormalCount !== normalMatches.length) { toast.error('All normal match results must be resolved before the event can finish.'); return; }
@@ -1324,8 +1328,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               {!timerState && <p className="text-[11px] text-muted-foreground text-center">Start Play first. Changeover becomes available after play starts, so an accidental pre-round changeover cannot replace the match timer.</p>}
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">Round {currentRound} Scores</p><p className="text-xs text-muted-foreground">Enter each court result as it comes in — you do not need to wait for the timer to finish.</p></div><Badge variant="outline">{currentRoundSavedCount}/{currentMatches.length} saved</Badge></div>
+            <div className={cn('rounded-xl border bg-card p-4 sm:p-5 space-y-3', currentRoundComplete ? 'border-primary/50' : 'border-border')}>
+              <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">Round {currentRound} Scores</p><p className={cn('text-xs', currentRoundComplete ? 'text-primary font-medium' : 'text-muted-foreground')}>{currentRoundComplete ? `Round ${currentRound} complete — ready to advance.` : 'Enter each court result as it comes in — you do not need to wait for the timer to finish.'}</p></div><Badge className={currentRoundComplete ? 'bg-primary/10 text-primary' : ''} variant={currentRoundComplete ? 'default' : 'outline'}>{currentRoundSavedCount}/{currentMatches.length} saved</Badge></div>
               <div className="grid md:grid-cols-2 gap-3">{currentMatches.sort((a,b)=>a.court_number-b.court_number).map(m => <ScoreCard key={`${m.id}-${m.revision}`} match={m} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={refetchMatches} networkOnline={networkOnline} onQueue={queueOfflineScore} canScore={canScoreEvent} />)}</div>
               {!['completed','archived'].includes(event.status) && <Button className="w-full h-12" disabled={!canManageEvent || !currentRoundComplete} onClick={advanceRound}>{currentRoundComplete ? (currentRound < Math.max(...rounds) ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Finalise {INTERCLUB_EVENT_LABEL}</>) : `Save all ${currentMatches.length} results to complete Round ${currentRound}`}</Button>}
             </div>
