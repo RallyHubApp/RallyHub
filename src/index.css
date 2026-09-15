@@ -113,6 +113,8 @@
 html {
   scrollbar-color: hsl(220 10% 46%) hsl(220 18% 8%);
   scrollbar-width: auto;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 
 ::-webkit-scrollbar {
