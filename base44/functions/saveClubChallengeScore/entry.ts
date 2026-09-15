@@ -15,6 +15,7 @@ function validClubChallengeGrant(a:any, tenantId:string) {
 function validateScore(scoreA, scoreB, event) {
   const a = Number(scoreA), b = Number(scoreB);
   if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) return 'Scores must be non-negative whole numbers.';
+  if (a > 99 || b > 99) return 'Scores must be between 0 and 99.';
   if (event.normal_match_type === 'timed') {
     if (a === b && event.timed_draws_allowed === false) return 'This timed format requires a winner.';
     return null;
