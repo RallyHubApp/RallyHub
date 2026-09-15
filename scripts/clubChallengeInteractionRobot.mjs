@@ -89,7 +89,7 @@ check('host: per-round duration has plus control', contains(ui,'Add one minute t
 check('timer: prepared duration is server-side and revision protected', contains(timerFn,"action === 'set_round_minutes'") && contains(timerFn,'expectedRevision'));
 check('timer: duration cannot be changed while running', contains(timerFn,'Pause the timer before changing the round duration.'));
 check('timer: prepared current-round duration is used when play starts', contains(timerFn,'preparedPlaySeconds'));
-check('timer: ordinary later rounds retain event default', contains(ui,'normal event duration remains'));
+check('timer: ordinary later rounds retain event default', contains(ui,"Number(event?.play_minutes || 10)"));
 check('sound: hall cue uses local Web Audio rather than a Base44 call', contains(hallAudio,'createOscillator') && !contains(hallAudio,'base44'));
 check('sound: hall volume is explicit and persisted', contains(ui,"cc-hall-volume") && contains(ui,'RallyHub Interclub hall volume'));
 check('sound: Test Sound is available before live play', contains(ui,'Test Sound'));
