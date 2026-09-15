@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, reason, withdrawalStatus, participantId, fromRound, side, displayName, orderedParticipantIds } = body;
-    if (!eventId || !['replace','continue_short','late_arrival','add_manual','reorder'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
+    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, orderedParticipantIds } = body;
+    if (!eventId || !['replace','continue_short','late_arrival','add_manual','reorder','replacement_candidates'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -33,6 +33,38 @@ Deno.serve(async (req) => {
     if (!allowed) return Response.json({ error:'Event manager permission required' }, { status:403 });
 
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
+
+    if (action === 'replacement_candidates') {
+      const normalise = (value:any) => String(value || '').trim().toLowerCase().replace(/\s+/g,' ');
+      const clubA = normalise(event.club_a_name), clubB = normalise(event.club_b_name);
+      const registered = await base44.asServiceRole.entities.TournamentParticipant.filter({ tournament_id:event.tournament_id }, 'display_name', 500);
+      const candidates = registered
+        .filter((tp:any) => tp.status === 'active')
+        .map((tp:any) => {
+          const club = normalise(tp.club_name_snapshot);
+          const candidateSide = club === clubA ? 'club_a' : club === clubB ? 'club_b' : '';
+          return { tp, candidateSide };
+        })
+        .filter(({ tp, candidateSide }:any) => {
+          if (!candidateSide) return false;
+          return !participants.some((p:any) => {
+            if (p.side !== candidateSide) return false;
+            if (tp.source_player_id && p.source_player_id && String(tp.source_player_id) === String(p.source_player_id)) return true;
+            return normalise(p.display_name) === normalise(tp.display_name);
+          });
+        })
+        .map(({ tp, candidateSide }:any) => ({
+          id:tp.id,
+          side:candidateSide,
+          displayName:tp.display_name,
+          gender:tp.gender_snapshot || '',
+          sourcePlayerId:tp.source_player_id || '',
+          participantType:tp.participant_type || 'member',
+          clubName:tp.club_name_snapshot || (candidateSide === 'club_a' ? event.club_a_name : event.club_b_name),
+        }));
+      return Response.json({ success:true, candidates });
+    }
+
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300);
     const normal = matches.filter((m:any) => !m.is_showcase);
     const currentRound = Math.max(1, Number(event.current_round || 1));
@@ -84,6 +116,7 @@ Deno.serve(async (req) => {
       const incoming = await base44.asServiceRole.entities.ClubChallengeParticipant.create({
         tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id,
         side:outgoing.side, display_name:cleanName, gender:String(incomingGender || outgoing.gender || ''),
+        source_player_id:String(incomingSourcePlayerId || ''), participant_type:String(incomingParticipantType || outgoing.participant_type || 'member'),
         event_rank:outgoing.event_rank, status:'active', available_from_round:currentRound,
         replacement_for_participant_id:outgoing.id, replacement_effective_round:currentRound,
         unique_identity_key:`replacement-${outgoing.side}-${cleanName.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${crypto.randomUUID().slice(0,8)}`,
