@@ -109,10 +109,16 @@ check('busy-hall UX: accepted host command stays visibly acknowledged', contains
 check('scorer: score controls derive from explicit canScore permission', contains(ui,'canScore={canScoreEvent}'));
 check('scorer: stale revision conflict remains surfaced', contains(ui,'Score conflict: this result changed on another device'));
 check('scorer: offline result is never presented as saved', contains(ui,'UNSYNCHRONISED'));
-check('scorer: host correction route remains distinct', contains(ui,'Correct Result'));
+check('scorer: host correction route remains distinct', contains(ui,'Update Result') && contains(scoreFn,'score_corrected'));
+check('scorer: score entry is capped to two digits in UI and backend', contains(ui,'maxLength={2}') && contains(scoreFn,'a > 99 || b > 99'));
 
 // 7. What-if / disruption controls.
 check('what-if: replacement remains future-only', contains(participantFn,'effectiveRound'));
+check('busy-hall UX: sticky host bar keeps round, timer and scores visible', contains(ui,'sticky top-2 z-30') && contains(ui,'scores saved'));
+check('busy-hall UX: PA is collapsible during normal scoring', contains(ui,'id="cc-pa-panel"') && contains(ui,'Open only when you need the microphone or an announcement.'));
+check('busy-hall UX: player controls are separate and discoverable', contains(ui,'id="cc-player-controls"') && contains(ui,'Player Controls'));
+check('what-if: registered replacement candidates can be offered before manual entry', contains(participantFn,"'replacement_candidates'") && contains(ui,'Registered reserve / available player'));
+check('what-if: changeover is state-gated so it cannot replace the initial play timer', contains(ui,'changeoverAvailable') && contains(ui,'Start Play first. Changeover becomes available'));
 check('what-if: late arrival remains explicit', contains(participantFn,"'late_arrival'"));
 check('what-if: continue-short remains supported', contains(participantFn,"'continue_short'"));
 check('what-if: court/time change remains authoritative', contains(scheduleFn,'event_pack_stale'));
