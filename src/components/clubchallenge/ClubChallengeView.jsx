@@ -834,12 +834,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const res = await base44.functions.invoke('manageClubChallengeParticipant', {
         eventId:event.id, action:'replace', outgoingParticipantId:replacement.outgoingId,
         incomingName:replacement.incomingName.trim(), incomingGender:replacement.incomingGender,
+        incomingSourcePlayerId:replacement.incomingSourcePlayerId, incomingParticipantType:replacement.incomingParticipantType,
         reason:replacement.reason, withdrawalStatus:replacement.status,
       });
       if (res.data?.error) { toast.error(res.data.error); return; }
-      setReplacement({ outgoingId:'', incomingName:'', incomingGender:'', reason:'', status:'withdrawn' });
+      setReplacement({ outgoingId:'', candidateId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
       toast.success(`${res.data.outgoingName} replaced from Round ${res.data.effectiveRound}; ${res.data.affected} future fixture${res.data.affected === 1 ? '' : 's'} updated.`);
       await sync();
+      await refetchReplacementCandidates();
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not apply replacement'); }
   };
 
@@ -851,7 +853,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         reason:replacement.reason, withdrawalStatus:replacement.status,
       });
       if (res.data?.error) { toast.error(res.data.error); return; }
-      setReplacement({ outgoingId:'', incomingName:'', incomingGender:'', reason:'', status:'withdrawn' });
+      setReplacement({ outgoingId:'', candidateId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
       toast.success(`${res.data.outgoingName} withdrawn; ${res.data.affected} future match${res.data.affected === 1 ? '' : 'es'} marked Not Played.`);
       await sync();
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not continue short'); }
