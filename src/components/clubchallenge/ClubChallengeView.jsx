@@ -968,6 +968,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase);
+  const currentRoundSavedCount = currentMatches.filter(m => ['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status)).length;
+  const currentRoundComplete = currentMatches.length > 0 && currentRoundSavedCount === currentMatches.length;
   const isGate3TestEvent = participants.length >= 8 && participants.every(p => String(p.unique_identity_key || '').startsWith('gate3-'));
   const addSimLog = (message, status = 'info') => setSimLog(log => [{ at: new Date().toLocaleTimeString('en-IE'), message, status }, ...log].slice(0, 12));
   const scoreForSimulation = (match, index = 0, mode = 'mixed') => {
