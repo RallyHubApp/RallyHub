@@ -152,7 +152,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [logoUploading, setLogoUploading] = useState('');
   const [simLog, setSimLog] = useState([]);
   const [showcaseSelection, setShowcaseSelection] = useState({ aMale: '', aFemale: '', bMale: '', bFemale: '' });
-  const [replacement, setReplacement] = useState({ outgoingId: '', incomingName: '', incomingGender: '', reason: '', status: 'withdrawn' });
+  const [replacement, setReplacement] = useState({ outgoingId: '', candidateId: '', incomingName: '', incomingGender: '', incomingSourcePlayerId: '', incomingParticipantType: '', reason: '', status: 'withdrawn' });
   const [lateArrival, setLateArrival] = useState({ participantId: '', round: 1 });
   const [eventDayAdjust, setEventDayAdjust] = useState({ courts: 0, availableMinutes: 0 });
   const [eventDayProposal, setEventDayProposal] = useState(null);
@@ -276,6 +276,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const canScoreEvent = !!permissions.canScore && !eventReadOnly;
   const canFinaliseEvent = !!permissions.canFinalise && !eventReadOnly;
   const displayOnly = !!permissions.displayOnly;
+  const { data: replacementCandidates = [], refetch: refetchReplacementCandidates } = useQuery({
+    queryKey: ['club-challenge-replacement-candidates', event?.id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'replacement_candidates' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.candidates || [];
+    },
+    enabled: !!event?.id && canManageEvent && ['in_progress','paused'].includes(event?.status),
+    staleTime: 30000,
+  });
   const aPlayers = participants.filter(p => p.side === 'club_a');
   const bPlayers = participants.filter(p => p.side === 'club_b');
   const normalMatches = matches.filter(m => !m.is_showcase);
