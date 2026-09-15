@@ -109,6 +109,7 @@ function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true,
   const [b, setB] = useState(match.score_b ?? '');
   const [saving, setSaving] = useState(false);
   const saved = ['completed', 'draw'].includes(match.status);
+  const setScore = setter => event => setter(String(event.target.value || '').replace(/\D/g, '').slice(0, 2));
   const save = async () => {
     const payload = { matchId: match.id, expectedRevision: match.revision || 0, scoreA: number(a), scoreB: number(b) };
     if (!networkOnline) { onQueue?.({ ...payload, queuedAt: new Date().toISOString(), clubAName, clubBName, matchLabel: `R${match.round_number} C${match.court_number}` }); toast.warning('Offline: result retained on this device as UNSYNCHRONISED.'); return; }
