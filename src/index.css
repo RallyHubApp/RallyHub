@@ -109,23 +109,29 @@
   }
 }
 
-/* Custom scrollbar */
+/* Accessible scrollbar: wider and higher contrast for desktop/full-screen use. */
+html {
+  scrollbar-color: hsl(220 10% 46%) hsl(220 18% 8%);
+  scrollbar-width: auto;
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(220 18% 6%);
+  background: hsl(220 18% 8%);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(220 14% 20%);
-  border-radius: 3px;
+  background: hsl(220 10% 46%);
+  border: 2px solid hsl(220 18% 8%);
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(220 14% 30%);
+  background: hsl(220 10% 62%);
 }
 
 /* Glassmorphism utility */
