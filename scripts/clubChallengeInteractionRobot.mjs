@@ -11,6 +11,7 @@ const ui = fs.readFileSync('src/components/clubchallenge/ClubChallengeView.jsx',
 const publicDisplay = fs.readFileSync('src/pages/PublicClubChallengeDisplay.jsx','utf8');
 const publicVote = fs.readFileSync('src/pages/PublicClubChallengeVote.jsx','utf8');
 const timerFn = fs.readFileSync('base44/functions/updateClubChallengeTimer/entry.ts','utf8');
+const scoreFn = fs.readFileSync('base44/functions/saveClubChallengeScore/entry.ts','utf8');
 const voteFn = fs.readFileSync('base44/functions/castPublicClubChallengePotVote/entry.ts','utf8');
 const participantFn = fs.readFileSync('base44/functions/manageClubChallengeParticipant/entry.ts','utf8');
 const scheduleFn = fs.readFileSync('base44/functions/updateClubChallengeSchedule/entry.ts','utf8');
