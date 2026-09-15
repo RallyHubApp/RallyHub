@@ -133,18 +133,12 @@ function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true,
   return (
     <div data-testid={`cc-score-card-r${match.round_number}-c${match.court_number}`} className="glass rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between"><span className="text-xs font-bold">Court {match.court_number}</span><Badge variant="outline">R{match.round_number}</Badge></div>
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-stretch sm:items-center">
-        <div className="rounded-lg bg-secondary p-3"><p className="text-[10px] text-muted-foreground">{clubAName}</p><p className="text-xs font-semibold">{(match.club_a_names || []).join(' & ')}</p></div>
-        <span className="text-xs text-muted-foreground text-center self-center">vs</span>
-        <div className="rounded-lg bg-secondary p-3"><p className="text-[10px] text-muted-foreground">{clubBName}</p><p className="text-xs font-semibold">{(match.club_b_names || []).join(' & ')}</p></div>
+      <div className="grid sm:grid-cols-2 gap-2">
+        <div className="rounded-lg bg-secondary p-3 flex items-center gap-3"><div className="min-w-0 flex-1"><p className="text-[10px] text-muted-foreground">{clubAName}</p><p className="text-xs font-semibold truncate">{(match.club_a_names || []).join(' & ')}</p></div><Input data-testid={`cc-score-r${match.round_number}-c${match.court_number}-a`} inputMode="numeric" type="text" maxLength={2} value={a} onChange={setScore(setA)} aria-label={`${clubAName} score`} className="w-16 h-11 text-center bg-background text-lg font-bold tabular-nums shrink-0" /></div>
+        <div className="rounded-lg bg-secondary p-3 flex items-center gap-3"><div className="min-w-0 flex-1"><p className="text-[10px] text-muted-foreground">{clubBName}</p><p className="text-xs font-semibold truncate">{(match.club_b_names || []).join(' & ')}</p></div><Input data-testid={`cc-score-r${match.round_number}-c${match.court_number}-b`} inputMode="numeric" type="text" maxLength={2} value={b} onChange={setScore(setB)} aria-label={`${clubBName} score`} className="w-16 h-11 text-center bg-background text-lg font-bold tabular-nums shrink-0" /></div>
       </div>
-      <div className="flex gap-2 items-center">
-        <Input data-testid={`cc-score-r${match.round_number}-c${match.court_number}-a`} inputMode="numeric" type="number" min="0" value={a} onChange={e => setA(e.target.value)} className="text-center bg-secondary h-11 text-base" />
-        <span>—</span>
-        <Input data-testid={`cc-score-r${match.round_number}-c${match.court_number}-b`} inputMode="numeric" type="number" min="0" value={b} onChange={e => setB(e.target.value)} className="text-center bg-secondary h-11 text-base" />
-      </div>
-      <Button data-testid={`cc-save-score-r${match.round_number}-c${match.court_number}`} className="w-full h-11" onClick={save} disabled={!canScore || a === '' || b === '' || saving}>{!canScore ? 'Read-only' : saving ? 'Saving…' : !networkOnline ? 'Retain Offline Result' : saved ? 'Correct Result' : 'Save Result'}</Button>
-      {saved && <p className="text-[10px] text-muted-foreground text-center">Revision {match.revision || 0} · {match.winner === 'draw' ? 'Draw' : match.winner === 'club_a' ? `${clubAName} win` : `${clubBName} win`}</p>}
+      <Button data-testid={`cc-save-score-r${match.round_number}-c${match.court_number}`} className="w-full h-11" onClick={save} disabled={!canScore || a === '' || b === '' || saving}>{!canScore ? 'Read-only' : saving ? 'Saving…' : !networkOnline ? 'Retain Offline Result' : saved ? 'Update Result' : 'Save Result'}</Button>
+      {saved && <p className="text-[10px] text-muted-foreground text-center">Saved · {match.winner === 'draw' ? 'Draw' : match.winner === 'club_a' ? `${clubAName} win` : `${clubBName} win`}</p>}
     </div>
   );
 }
