@@ -415,8 +415,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       if (!file_url) throw new Error('No file URL returned');
-      setSetup(s => ({ ...s, [side === 'A' ? 'clubALogo' : 'clubBLogo']: file_url }));
-      toast.success(`${side === 'A' ? setup.clubAName : setup.clubBName} logo uploaded`);
+      const setupKey = side === 'A' ? 'clubALogo' : 'clubBLogo';
+      const eventKey = side === 'A' ? 'club_a_logo_url' : 'club_b_logo_url';
+      setSetup(s => ({ ...s, [setupKey]: file_url }));
+      // Once an Interclub event exists, persist the logo immediately so a host
+      // cannot lose it by navigating away after a successful upload.
+      if (event?.id && isAdmin) {
+        await base44.entities.ClubChallengeEvent.update(event.id, { [eventKey]: file_url });
+        await refetchEvent();
+      }
+      toast.success(`${side === 'A' ? setup.clubAName : setup.clubBName} logo uploaded${event?.id ? ' and saved' : ''}`);
     } catch (e) { toast.error(e?.message || 'Could not upload logo'); }
     finally { setLogoUploading(''); }
   };
