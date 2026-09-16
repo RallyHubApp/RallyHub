@@ -36,12 +36,9 @@ export default function PublicClubProfile() {
                 <h1 className="text-4xl sm:text-5xl font-black tracking-tight">{club.name}</h1>
                 <p className="mt-3 text-lg text-muted-foreground max-w-3xl">{club.description}</p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <a href={club.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
-                    <Globe2 className="w-4 h-4" /> Website
-                  </a>
-                  <a href={club.waitingListUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold">
-                    <Users className="w-4 h-4" /> {club.joiningCtaLabel || 'Contact club'}
-                  </a>
+                  {club.website && <a href={club.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Globe2 className="w-4 h-4" /> Website</a>}
+                  {club.waitingListUrl && <a href={club.waitingListUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold"><Users className="w-4 h-4" /> {club.joiningCtaLabel || 'Contact club'}</a>}
+                  {!club.website && !club.waitingListUrl && club.contact?.phoneHref && <a href={club.contact.phoneHref} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Phone className="w-4 h-4" /> Contact club</a>}
                 </div>
               </div>
             </div>
@@ -131,9 +128,12 @@ export default function PublicClubProfile() {
                       </div>
                       <span className="rounded-full bg-accent/10 text-accent px-2 py-1 text-[10px] font-semibold">{venue.indoor ? 'INDOOR' : 'OUTDOOR'}</span>
                     </div>
-                    <div className="mt-4 flex items-center justify-between">
-                      <p className="text-sm">{venue.courts ? `${venue.courts} courts` : 'Court details pending'}</p>
-                      <a href={venue.mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Map <ExternalLink className="w-3.5 h-3.5" /></a>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-sm">{venue.courts ? `${venue.courts} courts` : 'Court details pending'}{venue.playType ? ` · ${venue.playType}` : ''}</p>
+                      <div className="flex items-center gap-3">
+                        {venue.websiteUrl && <a href={venue.websiteUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Venue <ExternalLink className="w-3.5 h-3.5" /></a>}
+                        <a href={venue.mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Map <ExternalLink className="w-3.5 h-3.5" /></a>
+                      </div>
                     </div>
                   </article>
                 ))}
@@ -146,15 +146,9 @@ export default function PublicClubProfile() {
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Club contact</p>
               <h2 className="text-xl font-bold mt-1">Contact {club.contact.name}</h2>
               <div className="mt-4 space-y-2">
-                <a href={club.contact.phoneHref} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40">
-                  <Phone className="w-4 h-4 text-primary" /><span className="text-sm font-medium">{club.contact.phone}</span>
-                </a>
-                <a href={club.contact.whatsapp} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40">
-                  <MessageCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium">WhatsApp {club.contact.name}</span>
-                </a>
-                <a href={`mailto:${club.contact.email}`} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40">
-                  <Mail className="w-4 h-4 text-primary" /><span className="text-sm font-medium break-all">{club.contact.email}</span>
-                </a>
+                {club.contact.phoneHref && club.contact.phone && <a href={club.contact.phoneHref} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Phone className="w-4 h-4 text-primary" /><span className="text-sm font-medium">{club.contact.phone}</span></a>}
+                {club.contact.whatsapp && <a href={club.contact.whatsapp} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><MessageCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium">WhatsApp {club.contact.name}</span></a>}
+                {club.contact.email && <a href={`mailto:${club.contact.email}`} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Mail className="w-4 h-4 text-primary" /><span className="text-sm font-medium break-all">{club.contact.email}</span></a>}
               </div>
             </section>
 
@@ -162,24 +156,22 @@ export default function PublicClubProfile() {
               <h2 className="font-bold">Club details</h2>
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex justify-between gap-4"><dt className="text-muted-foreground">County</dt><dd>{club.county}</dd></div>
-                <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Founded</dt><dd>{club.founded}</dd></div>
-                <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Affiliation</dt><dd>{club.affiliation}</dd></div>
+                {club.founded && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Founded</dt><dd>{club.founded}</dd></div>}
+                {club.affiliation && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Affiliation</dt><dd>{club.affiliation}</dd></div>}
                 <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Membership</dt><dd className="text-right">{club.membershipStatus}</dd></div>
               </dl>
             </section>
 
-            <section className="glass rounded-2xl p-5">
-              <h2 className="font-bold">Follow {club.name}</h2>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <a href={club.facebook} target="_blank" rel="noreferrer" className="flex-1 inline-flex justify-center items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold"><Facebook className="w-4 h-4" /> Facebook</a>
-                <a href={club.instagram} target="_blank" rel="noreferrer" className="flex-1 inline-flex justify-center items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold">Instagram</a>
-                {club.waiverUrl && (
-                  <a href={club.waiverUrl} target="_blank" rel="noreferrer" className="w-full inline-flex justify-center items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold">
-                    Club waiver <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-              </div>
-            </section>
+            {(club.facebook || club.instagram || club.waiverUrl) && (
+              <section className="glass rounded-2xl p-5">
+                <h2 className="font-bold">Club links</h2>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {club.facebook && <a href={club.facebook} target="_blank" rel="noreferrer" className="flex-1 inline-flex justify-center items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold"><Facebook className="w-4 h-4" /> Facebook</a>}
+                  {club.instagram && <a href={club.instagram} target="_blank" rel="noreferrer" className="flex-1 inline-flex justify-center items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold">Instagram</a>}
+                  {club.waiverUrl && <a href={club.waiverUrl} target="_blank" rel="noreferrer" className="w-full inline-flex justify-center items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold">Club waiver <ExternalLink className="w-3.5 h-3.5" /></a>}
+                </div>
+              </section>
+            )}
           </aside>
         </div>
       </main>
