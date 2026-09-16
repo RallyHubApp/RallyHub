@@ -138,7 +138,14 @@ export default function DirectoryClaim() {
                 <p className="text-sm text-muted-foreground mt-2">
                   Your account is verified for this directory listing only. This does not give you access to a RallyHub Club, player records or club-management tools.
                 </p>
-                <p className="text-sm text-foreground mt-4 font-medium">Listing editing tools are the next step in the directory rollout.</p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link to={`/directory/${club.slug}/edit`}>
+                    <Button className="gap-2"><UserCheck className="w-4 h-4" /> Edit your listing</Button>
+                  </Link>
+                  <Link to={`/directory/${club.slug}`}>
+                    <Button variant="outline">View public listing</Button>
+                  </Link>
+                </div>
               </div>
             ) : pending ? (
               <div className="mt-8 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-6">
