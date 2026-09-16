@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Building2, CalendarDays, CheckCircle2, ExternalLink, Globe2,
-  Image as ImageIcon, Info, Link2, MapPin, Plus, Save, Trash2, UserRound
+  Image as ImageIcon, Info, MapPin, Plus, Save, Trash2, UserRound
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
