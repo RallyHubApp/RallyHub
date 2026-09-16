@@ -16,7 +16,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
 });
 
-const listedCountyCount = new Set(directoryClubs.map(club => club.county)).size;
 const countySlug = county => county.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const clubInitials = name => name
@@ -79,11 +78,12 @@ export default function PublicDirectory() {
   }, [directoryState]);
 
   const allSessions = useMemo(() => effectiveClubs.flatMap(club => (club.sessions || []).map(session => ({...session, club}))), [effectiveClubs]);
+  const listedCountyCount = useMemo(() => new Set(effectiveClubs.map(club => club.county)).size, [effectiveClubs]);
   const counties = ['All counties', ...irelandCounties];
 
   const filteredClubs = useMemo(() => effectiveClubs.filter(club => {
     const text = query.trim().toLowerCase();
-    const searchable = [club.name, club.sport, club.county, ...(club.venues || []).flatMap(v => [v.name, v.address, v.eircode])].join(' ').toLowerCase();
+    const searchable = [club.name, club.sport, club.county, club.town, ...(club.venues || []).flatMap(v => [v.name, v.address, v.eircode])].filter(Boolean).join(' ').toLowerCase();
     const queryMatch = !text || searchable.includes(text);
     const countyMatch = county === 'All counties' || club.county === county;
     const dayMatch = day === 'Any day' || (club.sessions || []).some(session => session.day === day);
@@ -96,12 +96,12 @@ export default function PublicDirectory() {
     '@type': 'CollectionPage',
     name: 'RallyHub All-Ireland Pickleball Club Directory',
     url: `${SITE_URL}/directory`,
-    description: `Browse ${directoryClubs.length} current pickleball club listings in the RallyHub directory. All 32 counties of Ireland are supported.`,
+    description: `Browse ${effectiveClubs.length} current pickleball club listings in the RallyHub directory. All 32 counties of Ireland are supported.`,
     inLanguage: 'en-IE',
     mainEntity: {
       '@type': 'ItemList',
-      numberOfItems: directoryClubs.length,
-      itemListElement: directoryClubs.map((club, index) => ({
+      numberOfItems: effectiveClubs.length,
+      itemListElement: effectiveClubs.map((club, index) => ({
         '@type': 'ListItem',
         position: index + 1,
         name: club.name,
@@ -114,7 +114,7 @@ export default function PublicDirectory() {
     <>
       <Seo
         title="Pickleball Clubs in Ireland | RallyHub Club Directory"
-        description={`Search ${directoryClubs.length} current pickleball club listings by county, club and venue. RallyHub supports directory listings across all 32 counties of Ireland.`}
+        description={`Search ${effectiveClubs.length} current pickleball club listings by county, club and venue. RallyHub supports directory listings across all 32 counties of Ireland.`}
         path="/directory"
         structuredData={directorySchema}
       />
@@ -129,7 +129,7 @@ export default function PublicDirectory() {
             </div>
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight">Find a club. Find a session. Get playing.</h1>
             <p className="mt-3 text-base text-muted-foreground max-w-2xl">
-              Search public sports clubs across the whole island of Ireland by county, location, day and venue. We currently have {directoryClubs.length} club listings across {listedCountyCount} counties, with all 32 counties available as the directory grows.
+              Search public sports clubs across the whole island of Ireland by county, location, day and venue. We currently have {effectiveClubs.length} club listings across {listedCountyCount} counties, with all 32 counties available as the directory grows.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Link to="/directory?manage=1" className="inline-flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/15 transition-colors">
@@ -242,7 +242,7 @@ export default function PublicDirectory() {
                     </div>
                     <div className="mt-5 pt-4 border-t border-border flex flex-wrap gap-3 justify-between items-center">
                       <div className="flex flex-wrap gap-2">
-                        {club.venues.map(venue => <span key={venue.id} className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground">{venue.shortName}</span>)}
+                        {club.venues.filter(venue => venue.shortName || venue.name).map(venue => <span key={venue.id} className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground">{venue.shortName || venue.name}</span>)}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         {club.verificationStatus === 'unclaimed' && (
@@ -283,7 +283,8 @@ export default function PublicDirectory() {
               <div className="glass rounded-2xl p-10 text-center">
                 <Search className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
                 <h3 className="font-semibold">No matching clubs yet</h3>
-                <p className="text-sm text-muted-foreground mt-1">Try removing a filter or searching a nearby county.</p>
+                <p className="text-sm text-muted-foreground mt-1">Try removing a filter or searching a nearby county. If the club is missing, you can add it for review.</p>
+                <Link to="/directory/add" className="inline-flex mt-4 h-10 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground">Add a missing club</Link>
               </div>
             )}
           </section>
