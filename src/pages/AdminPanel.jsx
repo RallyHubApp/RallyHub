@@ -346,6 +346,12 @@ export default function AdminPanel() {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="directory" className="text-xs gap-1.5">
+            <UserCheck className="w-3.5 h-3.5" /> Directory Claims
+            {pendingDirectoryClaims.length > 0 && (
+              <span className="ml-1 bg-amber-400 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{pendingDirectoryClaims.length}</span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="users" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Users & Roles</TabsTrigger>
           <TabsTrigger value="players" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Players</TabsTrigger>
           <TabsTrigger value="matches" className="text-xs gap-1.5"><Swords className="w-3.5 h-3.5" /> Matches</TabsTrigger>
@@ -359,7 +365,7 @@ export default function AdminPanel() {
             <div className="glass rounded-lg p-3 flex items-start gap-2">
               <Clock className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
               <p className="text-xs text-muted-foreground">
-                Users who sign up must be approved before accessing the app. Approve or reject accounts below.
+                Platform and club-app users must be approved before accessing protected RallyHub tools. Directory-only accounts do not need platform approval; their listing access is verified separately under Directory Claims.
               </p>
             </div>
             {['pending', 'approved', 'rejected'].map(section => {
@@ -419,6 +425,67 @@ export default function AdminPanel() {
             {allUsers.filter(u => u.role !== 'admin').length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-6">No users to review</p>
             )}
+          </div>
+        </TabsContent>
+
+        {/* ── DIRECTORY CLAIMS TAB ── */}
+        <TabsContent value="directory" className="mt-4">
+          <div className="space-y-5">
+            <div className="glass rounded-lg p-3 flex items-start gap-2">
+              <UserCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                Directory verification is separate from RallyHub Club membership and platform approval. An exact match to an authenticated account email can verify an unclaimed listing automatically; all other claims require administrator review.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Pending verification</p>
+              {pendingDirectoryClaims.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-4 px-1">No directory claims are waiting for review.</p>
+              ) : pendingDirectoryClaims.map(claim => (
+                <div key={claim.id} className="glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="min-w-0 space-y-1">
+                    <p className="font-semibold text-foreground">{claim.listing_name_snapshot}</p>
+                    <p className="text-sm text-foreground">{claim.claimant_name || '(no name)'} <span className="text-muted-foreground">· {claim.claimant_role || 'role not supplied'}</span></p>
+                    <p className="text-xs text-muted-foreground break-all">{claim.claimant_email}{claim.claimant_phone ? ` · ${claim.claimant_phone}` : ''}</p>
+                    {claim.claimant_message && <p className="text-xs text-muted-foreground mt-2">“{claim.claimant_message}”</p>}
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      <Badge variant="outline" className={claim.email_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Email match: {claim.email_match ? 'Yes' : 'No'}</Badge>
+                      <Badge variant="outline" className={claim.name_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Name match: {claim.name_match ? 'Yes' : 'No'}</Badge>
+                      <Badge variant="outline" className={claim.phone_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Phone match: {claim.phone_match ? 'Yes' : 'No'}</Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button size="sm" disabled={reviewingDirectoryClaim === claim.id} onClick={() => reviewDirectoryClaim(claim.id, 'approved')} className="gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> {reviewingDirectoryClaim === claim.id ? '…' : 'Approve'}
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={reviewingDirectoryClaim === claim.id} onClick={() => reviewDirectoryClaim(claim.id, 'rejected')} className="gap-1 text-destructive border-destructive/30">
+                      <XCircle className="w-3.5 h-3.5" /> {reviewingDirectoryClaim === claim.id ? '…' : 'Reject'}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Verified directory editors</p>
+              {activeDirectoryAccesses.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-4 px-1">No directory editor access has been granted yet.</p>
+              ) : activeDirectoryAccesses.map(access => {
+                const accessUser = allUsers.find(u => u.id === access.user_id);
+                return (
+                  <div key={access.id} className="glass rounded-lg p-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">{access.listing_name_snapshot || access.listing_slug}</p>
+                      <p className="text-xs text-muted-foreground truncate">{accessUser?.full_name || accessUser?.display_name || accessUser?.email || access.user_id}</p>
+                    </div>
+                    <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30" disabled={revokingDirectoryAccess === access.id} onClick={() => revokeDirectoryAccess(access.id)}>
+                      {revokingDirectoryAccess === access.id ? 'Revoking…' : 'Revoke directory access'}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </TabsContent>
 
