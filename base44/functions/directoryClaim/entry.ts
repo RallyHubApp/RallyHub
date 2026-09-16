@@ -147,8 +147,33 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
   });
 }
 
-async function sendAdminDirectoryEmail(base44, { subject, body }) {
+async function sendAdminDirectoryEmail(base44, { user, subject, body, kind, contextId }) {
   try {
+    const auditAction = 'credit_guard_directory_email';
+    const [userRows, globalRows] = await Promise.all([
+      base44.asServiceRole.entities.AuditLog.filter({ user_id: user.id, action: auditAction }, '-created_date', 20),
+      base44.asServiceRole.entities.AuditLog.filter({ action: auditAction }, '-created_date', 70),
+    ]);
+    if (recentCount(userRows || [], 24) >= 10 || recentCount(globalRows || [], 24) >= 50) {
+      console.warn('Directory notification email suppressed by usage protection', { kind, userId: user.id });
+      return { sent: 0, limited: true };
+    }
+
+    // Reserve the allowance before the credit-consuming email call. If the audit
+    // cannot be written, fail closed: the directory request remains in Admin review.
+    await base44.asServiceRole.entities.AuditLog.create({
+      tenant_id: String(user.active_tenant_id || 'platform'),
+      ...(user.active_club_id ? { club_id: user.active_club_id } : {}),
+      user_id: user.id,
+      action: auditAction,
+      entity_type: 'DirectoryNotification',
+      entity_id: String(contextId || user.id).slice(0, 220),
+      scope_type: 'CreditAction',
+      scope_id: String(kind || 'directory_review').slice(0, 120),
+      after_state: JSON.stringify({ perUserLimit: 10, globalLimit: 50, windowHours: 24 }),
+      reason: 'Reserved before a directory review email to protect Base44 usage credits.',
+    });
+
     // The review destination is stored in an admin-only settings entity so the real
     // mailbox is never exposed in public UI or bundled frontend code.
     const settings = await base44.asServiceRole.entities.DirectorySettings.filter({
