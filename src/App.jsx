@@ -39,6 +39,7 @@ import PublicDirectory from '@/pages/PublicDirectory';
 import PublicClubProfile from '@/pages/PublicClubProfile';
 import DirectoryClaim from '@/pages/DirectoryClaim';
 import AddDirectoryClub from '@/pages/AddDirectoryClub';
+import CountyDirectory from '@/pages/CountyDirectory';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -122,6 +123,7 @@ function App() {
             <Route path="/directory" element={<PublicDirectory />} />
             <Route path="/directory/:slug" element={<PublicClubProfile />} />
             <Route path="/directory/add" element={<AddDirectoryClub />} />
+            <Route path="/pickleball-clubs/:countySlug" element={<CountyDirectory />} />
             <Route path="/directory/:slug/claim" element={<DirectoryClaim />} />
 
             {/* Public utility routes — no auth required */}
