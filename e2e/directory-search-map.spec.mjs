@@ -5,7 +5,7 @@ test('directory search tolerates missing spaces and ranks Dublin 15', async ({ p
   const search = page.getByLabel('Search club directory');
   await search.fill('dublin15');
   await expect(page.getByText('Dublin 15 Pickleball', { exact: true })).toBeVisible();
-  await expect(page.getByText(/club found for “dublin15”/i)).toBeVisible();
+  await expect(page.getByText(/clubs? found for “dublin15”/i)).toBeVisible();
 });
 
 test('directory has an interactive all-Ireland map view linked to club profiles', async ({ page }) => {
