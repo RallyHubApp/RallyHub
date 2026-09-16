@@ -194,6 +194,6 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
     console.error('directoryListingProfile error', error);
-    return Response.json({ error: error?.message || 'Unexpected directory profile error' }, { status: 500 });
+    return Response.json({ error: 'Unable to process the directory profile request right now.' }, { status: 500 });
   }
 });
