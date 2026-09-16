@@ -25,6 +25,86 @@ const clubInitials = name => name
   .map(part => part[0]?.toUpperCase())
   .join('');
 
+const normaliseSearchText = value => String(value || '')
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/&/g, ' and ')
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim()
+  .replace(/\s+/g, ' ');
+
+const compactSearchText = value => normaliseSearchText(value).replace(/\s+/g, '');
+
+const editDistance = (a, b) => {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    let northwest = previous[0];
+    previous[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const old = previous[j];
+      previous[j] = Math.min(
+        previous[j] + 1,
+        previous[j - 1] + 1,
+        northwest + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+      northwest = old;
+    }
+  }
+  return previous[b.length];
+};
+
+const directorySearchScore = (club, rawQuery) => {
+  const query = normaliseSearchText(rawQuery);
+  if (!query) return 1;
+  const compactQuery = compactSearchText(query);
+  const queryTokens = query.split(' ').filter(Boolean);
+  const fields = [
+    [club.name, 120],
+    [club.town, 80],
+    [club.county, 70],
+    [club.sport, 25],
+    ...(club.venues || []).flatMap(venue => [
+      [venue.name, 75], [venue.shortName, 70], [venue.address, 60], [venue.eircode, 65]
+    ]),
+  ].filter(([value]) => value);
+
+  let score = 0;
+  for (const [value, weight] of fields) {
+    const field = normaliseSearchText(value);
+    const compactField = compactSearchText(value);
+    if (!field) continue;
+    if (field === query) score = Math.max(score, 300 + weight);
+    else if (field.startsWith(query)) score = Math.max(score, 240 + weight);
+    else if (field.includes(query)) score = Math.max(score, 210 + weight);
+    else if (compactQuery && compactField.includes(compactQuery)) score = Math.max(score, 200 + weight);
+  }
+
+  const searchable = fields.map(([value]) => normaliseSearchText(value)).join(' ');
+  const searchableCompact = searchable.replace(/\s+/g, '');
+  if (queryTokens.length > 1 && queryTokens.every(token => searchable.includes(token))) {
+    score = Math.max(score, 175);
+  }
+  if (compactQuery && searchableCompact.includes(compactQuery)) {
+    score = Math.max(score, 170);
+  }
+
+  // Small typo tolerance for ordinary words (e.g. "Dublni" → Dublin) without
+  // turning a broad directory search into a noisy fuzzy match.
+  if (!score && queryTokens.length === 1 && query.length >= 4) {
+    const words = searchable.split(' ').filter(word => word.length >= 4);
+    const tolerance = query.length >= 7 ? 2 : 1;
+    if (words.some(word => Math.abs(word.length - query.length) <= tolerance && editDistance(word, query) <= tolerance)) {
+      score = 90;
+    }
+  }
+
+  return score;
+};
+
 export default function PublicDirectory() {
   const [searchParams] = useSearchParams();
   const manageMode = searchParams.get('manage') === '1';
@@ -81,14 +161,16 @@ export default function PublicDirectory() {
   const listedCountyCount = useMemo(() => new Set(effectiveClubs.map(club => club.county)).size, [effectiveClubs]);
   const counties = ['All counties', ...irelandCounties];
 
-  const filteredClubs = useMemo(() => effectiveClubs.filter(club => {
-    const text = query.trim().toLowerCase();
-    const searchable = [club.name, club.sport, club.county, club.town, ...(club.venues || []).flatMap(v => [v.name, v.address, v.eircode])].filter(Boolean).join(' ').toLowerCase();
-    const queryMatch = !text || searchable.includes(text);
-    const countyMatch = county === 'All counties' || club.county === county;
-    const dayMatch = day === 'Any day' || (club.sessions || []).some(session => session.day === day);
-    return queryMatch && countyMatch && dayMatch;
-  }), [effectiveClubs, query, county, day]);
+  const filteredClubs = useMemo(() => effectiveClubs
+    .map(club => ({ club, searchScore: directorySearchScore(club, query) }))
+    .filter(({ club, searchScore }) => {
+      const queryMatch = !query.trim() || searchScore > 0;
+      const countyMatch = county === 'All counties' || club.county === county;
+      const dayMatch = day === 'Any day' || (club.sessions || []).some(session => session.day === day);
+      return queryMatch && countyMatch && dayMatch;
+    })
+    .sort((a, b) => query.trim() ? (b.searchScore - a.searchScore || a.club.name.localeCompare(b.club.name)) : a.club.name.localeCompare(b.club.name))
+    .map(({ club }) => club), [effectiveClubs, query, county, day]);
 
   const visibleVenueIds = new Set(filteredClubs.flatMap(club => (club.venues || []).map(v => `${club.id}:${v.id}`)));
   const directorySchema = {
@@ -158,7 +240,7 @@ export default function PublicDirectory() {
           <div className="mt-5 glass-strong rounded-2xl p-3 grid gap-3 lg:grid-cols-[minmax(260px,1fr)_200px_200px_auto]">
             <label className="relative">
               <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
-              <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Club, town, venue or Eircode" className="w-full h-11 rounded-xl border border-input bg-background/70 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/40" />
+              <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Club, town, venue or Eircode" aria-label="Search club directory" className="w-full h-11 rounded-xl border border-input bg-background/70 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/40" />
             </label>
             <select value={county} onChange={e => setCounty(e.target.value)} className="h-11 rounded-xl border border-input bg-background/70 px-3 text-sm">
               {counties.map(item => <option key={item}>{item}</option>)}
@@ -200,8 +282,8 @@ export default function PublicDirectory() {
           <section>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm text-muted-foreground">{filteredClubs.length} club{filteredClubs.length === 1 ? '' : 's'} found</p>
-                <h2 className="text-2xl font-bold">{view === 'clubs' ? 'Club directory' : 'Weekly sessions'}</h2>
+                <p className="text-sm text-muted-foreground">{filteredClubs.length} club{filteredClubs.length === 1 ? '' : 's'} found{query.trim() ? ` for “${query.trim()}”` : ''}</p>
+                <h2 className="text-2xl font-bold">{query.trim() ? 'Best matches' : view === 'clubs' ? 'Club directory' : 'Weekly sessions'}</h2>
               </div>
               <SlidersHorizontal className="w-5 h-5 text-muted-foreground" />
             </div>
