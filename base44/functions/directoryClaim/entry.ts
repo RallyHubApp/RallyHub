@@ -135,8 +135,10 @@ Deno.serve(async (req) => {
       const claimantRole = String(body.claimantRole || '').trim().slice(0, 160);
       const claimantPhone = String(body.claimantPhone || '').trim().slice(0, 80);
       const claimantMessage = String(body.claimantMessage || '').trim().slice(0, 1500);
+      const networkUpdatesOptIn = body.networkUpdatesOptIn === true;
       if (!claimantName) return Response.json({ error: 'Your name is required' }, { status: 400 });
       if (!claimantRole) return Response.json({ error: 'Your role or connection to the club is required' }, { status: 400 });
+      if (!claimantPhone) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
 
       const userEmail = normaliseEmail(user.email);
       const trustedContacts = listing.contacts || [];
@@ -146,10 +148,12 @@ Deno.serve(async (req) => {
         ? trustedContacts.some(c => c.phone && phoneLooksSame(c.phone, claimantPhone))
         : false;
 
-      // Only control of an already-known email address is strong enough for automatic approval.
-      // Name and phone are useful review signals but never self-grant editing rights.
+      // Normal users auto-verify only when their authenticated account email exactly matches a trusted club email.
+      // A RallyHub platform admin may also auto-verify when BOTH trusted name and trusted phone match the claim.
+      // This recognises a known platform identity without weakening the rule for external claimants.
       // Once a listing is already verified, additional editors always require manual review.
-      const autoVerified = emailMatch && listing.verificationStatus !== 'verified';
+      const adminIdentityMatch = user.role === 'admin' && nameMatch && phoneMatch;
+      const autoVerified = (emailMatch || adminIdentityMatch) && listing.verificationStatus !== 'verified';
       const now = new Date().toISOString();
       const claim = await base44.asServiceRole.entities.DirectoryClaim.create({
         listing_slug: listing.slug,
@@ -161,10 +165,12 @@ Deno.serve(async (req) => {
         claimant_phone: claimantPhone || null,
         claimant_message: claimantMessage || null,
         status: autoVerified ? 'auto_verified' : 'pending',
-        match_method: autoVerified ? 'authenticated_email' : 'manual_review',
+        match_method: autoVerified ? (emailMatch ? 'authenticated_email' : 'platform_admin_identity') : 'manual_review',
         email_match: emailMatch,
         phone_match: phoneMatch,
         name_match: nameMatch,
+        network_updates_opt_in: networkUpdatesOptIn,
+        network_updates_opted_in_at: networkUpdatesOptIn ? now : null,
         auto_verified_at: autoVerified ? now : null,
       });
 
@@ -174,7 +180,9 @@ Deno.serve(async (req) => {
           userId: user.id,
           claimId: claim.id,
           grantedByUserId: null,
-          notes: 'Automatically verified by exact match to authenticated account email.',
+          notes: emailMatch
+            ? 'Automatically verified by exact match to authenticated account email.'
+            : 'Automatically verified for a known RallyHub platform admin whose trusted name and phone both matched.',
         });
         return Response.json({
           success: true,
@@ -208,12 +216,14 @@ Deno.serve(async (req) => {
       const claimantName = String(body.claimantName || user.full_name || user.display_name || '').trim().slice(0, 160);
       const claimantRole = String(body.claimantRole || '').trim().slice(0, 160);
       const claimantPhone = String(body.claimantPhone || '').trim().slice(0, 80);
+      const networkUpdatesOptIn = body.networkUpdatesOptIn === true;
       const notes = String(body.notes || '').trim().slice(0, 1500);
 
       if (!clubName) return Response.json({ error: 'Club name is required' }, { status: 400 });
       if (!county) return Response.json({ error: 'County is required' }, { status: 400 });
       if (!claimantName) return Response.json({ error: 'Your name is required' }, { status: 400 });
       if (!claimantRole) return Response.json({ error: 'Your role or connection to the club is required' }, { status: 400 });
+      if (!claimantPhone) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
 
       const duplicate = directoryVerificationIndex.find(x =>
         normaliseName(x.name) === normaliseName(clubName) &&
@@ -246,7 +256,9 @@ Deno.serve(async (req) => {
         claimant_name: claimantName,
         claimant_role: claimantRole,
         claimant_email: user.email,
-        claimant_phone: claimantPhone || null,
+        claimant_phone: claimantPhone,
+        network_updates_opt_in: networkUpdatesOptIn,
+        network_updates_opted_in_at: networkUpdatesOptIn ? new Date().toISOString() : null,
         notes: notes || null,
         status: 'pending',
       });
