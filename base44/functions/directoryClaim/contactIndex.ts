@@ -291,7 +291,7 @@ export const directoryVerificationIndex = [
     "slug": "clare-pickleball",
     "name": "Clare Pickleball",
     "county": "Clare",
-    "verificationStatus": "verified",
+    "verificationStatus": "unclaimed",
     "contacts": [
       {
         "name": "Brian Moore",
