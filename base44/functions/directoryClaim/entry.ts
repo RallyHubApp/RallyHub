@@ -262,7 +262,7 @@ Deno.serve(async (req) => {
 
       await sendAdminDirectoryEmail(base44, {
         subject: `[RallyHub Directory] Verification needed — ${listing.name}`,
-        body: `A club representative needs manual verification.\n\nClub: ${listing.name}\nCounty: ${listing.county || '(not supplied)'}\nName: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\n\nVerification signals:\n• Trusted email match: ${emailMatch ? 'Yes' : 'No'}\n• Trusted name match: ${nameMatch ? 'Yes' : 'No'}\n• Trusted phone match: ${phoneMatch ? 'Yes' : 'No'}\n\nMessage: ${claimantMessage || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin`,
+        body: `A club representative needs manual verification.\n\nClub: ${listing.name}\nCounty: ${listing.county || '(not supplied)'}\nName: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\n\nVerification signals:\n• Trusted email match: ${emailMatch ? 'Yes' : 'No'}\n• Trusted name match: ${nameMatch ? 'Yes' : 'No'}\n• Trusted phone match: ${phoneMatch ? 'Yes' : 'No'}\n\nMessage: ${claimantMessage || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin?tab=directory`,
       });
 
       return Response.json({
@@ -340,7 +340,7 @@ Deno.serve(async (req) => {
 
       await sendAdminDirectoryEmail(base44, {
         subject: `[RallyHub Directory] New club submission — ${clubName}`,
-        body: `A new club has been submitted for the RallyHub Directory.\n\nClub: ${clubName}\nCounty: ${county}\nTown / area: ${town || '(not supplied)'}\nPrimary venue: ${primaryVenue || '(not supplied)'}\nAddress / Eircode: ${address || '(not supplied)'}\n\nSubmitted by: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\nNetwork updates: ${networkUpdatesOptIn ? 'Opted in' : 'No'}\n\nWebsite: ${website || '(none)'}\nFacebook: ${facebook || '(none)'}\nInstagram: ${instagram || '(none)'}\n\nNotes: ${notes || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin`,
+        body: `A new club has been submitted for the RallyHub Directory.\n\nClub: ${clubName}\nCounty: ${county}\nTown / area: ${town || '(not supplied)'}\nPrimary venue: ${primaryVenue || '(not supplied)'}\nAddress / Eircode: ${address || '(not supplied)'}\n\nSubmitted by: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\nNetwork updates: ${networkUpdatesOptIn ? 'Opted in' : 'No'}\n\nWebsite: ${website || '(none)'}\nFacebook: ${facebook || '(none)'}\nInstagram: ${instagram || '(none)'}\n\nNotes: ${notes || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin?tab=directory`,
       });
 
       return Response.json({ success: true, status: 'pending', request: publicListingRequest(request) });
