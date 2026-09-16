@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
     }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
-    return Response.json({ error:error?.message || 'Unexpected public display error' }, { status:500 });
+    console.error('getPublicClubChallengeDisplay failed', error);
+    return Response.json({ error:'Unable to load the public display right now.' }, { status:500 });
   }
 });
