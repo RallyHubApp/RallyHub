@@ -13,6 +13,8 @@ export default function PublicDirectoryHeader() {
   const returnTo = `${location.pathname}${location.search || ''}`;
   const directoryLoginHref = `/login?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
   const displayName = user?.full_name || user?.display_name || user?.email || 'Directory account';
+  const isSuperAdmin = user?.role === 'admin' && (!user?.kotc_role || user?.kotc_role === 'super_admin');
+  const canUseClubApp = user?.role === 'admin' || user?.approval_status === 'approved';
 
   return (
     <header className="sticky top-0 z-[1001] border-b border-border/80 bg-[#0a1628]/95 backdrop-blur-xl">
@@ -45,14 +47,16 @@ export default function PublicDirectoryHeader() {
               <Button size="sm" variant="outline" onClick={() => logout('/directory')} className="px-3 font-semibold">
                 Sign out
               </Button>
-              {user?.role === 'admin' && (
+              {isSuperAdmin && (
                 <Button size="sm" variant="outline" onClick={() => { window.location.href = '/app/admin?tab=directory'; }} className="hidden md:inline-flex font-semibold whitespace-nowrap">
                   Directory Admin
                 </Button>
               )}
-              <Button size="sm" variant="ghost" onClick={() => { window.location.href = '/app'; }} className="hidden lg:inline-flex gap-1.5">
-                RallyHub Club App
-              </Button>
+              {canUseClubApp && (
+                <Button size="sm" variant="ghost" onClick={() => { window.location.href = '/app'; }} className="hidden lg:inline-flex gap-1.5">
+                  Switch to RallyHub Club
+                </Button>
+              )}
             </>
           ) : (
             <>
