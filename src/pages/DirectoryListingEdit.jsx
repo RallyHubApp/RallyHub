@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Building2, CalendarDays, CheckCircle2, ExternalLink, Globe2,
-  Image as ImageIcon, Info, MapPin, Plus, Save, Trash2, UserRound
+  Image as ImageIcon, Info, Loader2, MapPin, Plus, Save, Trash2, Upload, UserRound
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -53,6 +53,7 @@ export default function DirectoryListingEdit() {
   const [loadingListing, setLoadingListing] = useState(true);
   const [loadingAccess, setLoadingAccess] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [validation, setValidation] = useState([]);
@@ -111,7 +112,7 @@ export default function DirectoryListingEdit() {
     if (!String(form?.description || '').trim()) issues.push('Add a short public club description.');
     if (!isValidEmail(form?.contact?.email)) issues.push('The club contact email is not valid.');
     [
-      ['Website', form?.website], ['Logo URL', form?.logoUrl], ['Facebook', form?.facebook], ['Instagram', form?.instagram],
+      ['Website', form?.website], ['Facebook', form?.facebook], ['Instagram', form?.instagram],
       ['Joining link', form?.waitingListUrl], ['WhatsApp link', form?.contact?.whatsapp]
     ].forEach(([label, value]) => { if (!isValidUrl(value)) issues.push(`${label} must be a full http:// or https:// link.`); });
     (form?.venues || []).forEach((venue, index) => {
@@ -148,6 +149,20 @@ export default function DirectoryListingEdit() {
       setError(err.message || 'Could not save listing changes.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally { setSaving(false); }
+  };
+
+  const uploadLogo = async file => {
+    if (!file) return;
+    if (!file.type?.startsWith('image/')) { setError('Please choose an image file for the club logo.'); return; }
+    if (file.size > 5 * 1024 * 1024) { setError('Club logo must be 5 MB or smaller.'); return; }
+    setUploadingLogo(true); setError(''); setSaved(false);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      if (!file_url) throw new Error('No file URL returned');
+      setField('logoUrl', file_url);
+    } catch (err) {
+      setError(err?.message || 'Could not upload the club logo.');
+    } finally { setUploadingLogo(false); }
   };
 
   const addVenue = () => { setSaved(false); setForm(prev => ({ ...prev, venues: [...(prev.venues || []), emptyVenue((prev.venues || []).length + 1)] })); };
@@ -241,9 +256,25 @@ export default function DirectoryListingEdit() {
                   <div className="space-y-2"><Label>Website</Label><Input value={form.website || ''} onChange={e => setField('website', e.target.value)} placeholder="https://…" /></div>
                   <div className="space-y-2"><Label>Joining / waiting-list link</Label><Input value={form.waitingListUrl || ''} onChange={e => setField('waitingListUrl', e.target.value)} placeholder="https://…" /></div>
                   <div className="space-y-2"><Label>Joining button label</Label><Input value={form.joiningCtaLabel || ''} onChange={e => setField('joiningCtaLabel', e.target.value)} placeholder="e.g. Join waiting list" /></div>
-                  <div className="space-y-2"><Label>Facebook</Label><Input value={form.facebook || ''} onChange={e => setField('facebook', e.target.value)} placeholder="https://…" /></div>
-                  <div className="space-y-2"><Label>Instagram</Label><Input value={form.instagram || ''} onChange={e => setField('instagram', e.target.value)} placeholder="https://…" /></div>
-                  <div className="space-y-2 sm:col-span-2"><Label>Logo URL</Label><div className="grid sm:grid-cols-[1fr_88px] gap-3 items-center"><Input value={form.logoUrl || ''} onChange={e => setField('logoUrl', e.target.value)} placeholder="https://…" />{form.logoUrl && isValidUrl(form.logoUrl) ? <img src={form.logoUrl} alt="Club logo preview" className="h-20 w-20 rounded-xl bg-white object-contain p-1" /> : <div className="h-20 w-20 rounded-xl border border-dashed border-border flex items-center justify-center"><ImageIcon className="w-5 h-5 text-muted-foreground" /></div>}</div><p className="text-xs text-muted-foreground">A direct image link works for now; image upload will be added as the directory media library expands.</p></div>
+                  <div className="space-y-2"><Label>Facebook page</Label><Input type="url" value={form.facebook || ''} onChange={e => setField('facebook', e.target.value)} placeholder="https://facebook.com/…" /><p className="text-xs text-muted-foreground">Only the Facebook button is shown publicly — not this full link as text.</p></div>
+                  <div className="space-y-2"><Label>Instagram page</Label><Input type="url" value={form.instagram || ''} onChange={e => setField('instagram', e.target.value)} placeholder="https://instagram.com/…" /><p className="text-xs text-muted-foreground">Only the Instagram button is shown publicly — not this full link as text.</p></div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>Club logo</Label>
+                    <div className="rounded-xl border border-border bg-background/30 p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                      {form.logoUrl && isValidUrl(form.logoUrl) ? <img src={form.logoUrl} alt="Club logo preview" className="h-24 w-24 rounded-xl bg-white object-contain p-1 shrink-0" /> : <div className="h-24 w-24 rounded-xl border border-dashed border-border flex items-center justify-center shrink-0"><ImageIcon className="w-6 h-6 text-muted-foreground" /></div>}
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+                            {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                            {uploadingLogo ? 'Uploading…' : form.logoUrl ? 'Replace logo' : 'Upload logo'}
+                            <input type="file" accept="image/*" className="hidden" disabled={uploadingLogo} onChange={e => { uploadLogo(e.target.files?.[0]); e.target.value = ''; }} />
+                          </label>
+                          {form.logoUrl && <Button type="button" variant="outline" onClick={() => setField('logoUrl', '')}>Remove logo</Button>}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Public visitors see the logo image, not a raw logo-link field. JPG, PNG or other common image formats up to 5 MB.</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
 
@@ -271,7 +302,7 @@ export default function DirectoryListingEdit() {
                       <div className="space-y-1"><Label>Eircode / postcode</Label><Input value={venue.eircode || ''} onChange={e => setVenue(index, 'eircode', e.target.value)} /></div>
                       <div className="space-y-1"><Label>Courts</Label><Input type="number" min="1" value={venue.courts ?? ''} onChange={e => setVenue(index, 'courts', e.target.value)} /></div>
                       <div className="space-y-1"><Label>Venue type</Label><select value={venue.indoor === true ? 'indoor' : venue.indoor === false ? 'outdoor' : 'unknown'} onChange={e => setVenue(index, 'indoor', e.target.value === 'indoor' ? true : e.target.value === 'outdoor' ? false : null)} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"><option value="unknown">Not specified</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option></select></div>
-                      <div className="space-y-1"><Label>Play / access type</Label><Input value={venue.playType || ''} onChange={e => setVenue(index, 'playType', e.target.value)} placeholder="e.g. Members only, pay to play" /></div>
+                      <div className="space-y-1"><Label>Who can play here?</Label><select value={venue.playType || ''} onChange={e => setVenue(index, 'playType', e.target.value)} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"><option value="">Not specified</option>{venue.playType && !['Members only','Members and invited guests','Guests welcome','Public / open play','Pay to play','Contact club'].includes(venue.playType) && <option value={venue.playType}>{venue.playType}</option>}<option value="Members only">Members only</option><option value="Members and invited guests">Members and invited guests</option><option value="Guests welcome">Guests welcome</option><option value="Public / open play">Public / open play</option><option value="Pay to play">Pay to play</option><option value="Contact club">Contact club</option></select><p className="text-xs text-muted-foreground">This is public and helps players know whether they may attend.</p></div>
                       <div className="space-y-1"><Label>Venue website</Label><Input value={venue.websiteUrl || ''} onChange={e => setVenue(index, 'websiteUrl', e.target.value)} placeholder="https://…" /></div>
                       <div className="space-y-1"><Label>Map link</Label><Input value={venue.mapUrl || ''} onChange={e => setVenue(index, 'mapUrl', e.target.value)} placeholder="https://maps…" /></div>
                     </div>
