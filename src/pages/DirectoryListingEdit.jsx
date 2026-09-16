@@ -155,7 +155,7 @@ export default function DirectoryListingEdit() {
     }
     setSaving(true); setSaved(false); setError('');
     try {
-      const res = await base44.functions.invoke('directoryListingProfile', { action: 'save', listingSlug: slug, profile: form });
+      const res = await base44.functions.invoke('directoryListingProfile', { action: 'save', listingSlug: slug, profile: form, town: baseClub?.town || '', county: baseClub?.county || '' });
       if (res.data?.error) throw new Error(res.data.error);
       const merged = mergeProfile(baseClub, res.data.profile || {});
       setForm(merged);
