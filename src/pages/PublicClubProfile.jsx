@@ -197,9 +197,15 @@ export default function PublicClubProfile() {
                             <div>
                               <p className="font-semibold">{session.level}</p>
                               <p className="text-sm text-muted-foreground">{venue?.name}</p>
+                              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                {session.meetTime && <span>Meet {session.meetTime}</span>}
+                                {session.price !== null && session.price !== undefined && session.price !== '' && <span>€{Number(session.price).toFixed(Number(session.price) % 1 ? 2 : 0)}</span>}
+                                {session.capacity && <span>Capacity {session.capacity}</span>}
+                                {session.host && <span>Host: {session.host}</span>}
+                              </div>
                             </div>
                             <div className="flex items-center gap-2 sm:justify-end">
-                              <p className="text-sm font-semibold">Contact club</p>
+                              {!session.showPublicJoinLink && <p className="text-sm font-semibold">Contact club</p>}
                               {session.showPublicJoinLink && session.publicJoinUrl && (
                                 <a
                                   href={session.publicJoinUrl}
@@ -261,7 +267,7 @@ export default function PublicClubProfile() {
                       <p className="text-sm">{venue.courts ? `${venue.courts} courts` : 'Court details pending'}{venue.playType ? ` · ${venue.playType}` : ''}</p>
                       <div className="flex items-center gap-3">
                         {venue.websiteUrl && <a href={venue.websiteUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Venue <ExternalLink className="w-3.5 h-3.5" /></a>}
-                        <a href={venue.mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Map <ExternalLink className="w-3.5 h-3.5" /></a>
+                        {venue.mapUrl && <a href={venue.mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Map <ExternalLink className="w-3.5 h-3.5" /></a>}
                       </div>
                     </div>
                   </article>
