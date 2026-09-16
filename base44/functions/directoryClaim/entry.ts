@@ -300,6 +300,7 @@ Deno.serve(async (req) => {
       const town = String(body.town || '').trim().slice(0, 120);
       const primaryVenue = String(body.primaryVenue || '').trim().slice(0, 220);
       const address = String(body.address || '').trim().slice(0, 320);
+      const venuePostcode = String(body.venuePostcode || '').trim().slice(0, 40);
       const website = String(body.website || '').trim().slice(0, 320);
       const facebook = String(body.facebook || '').trim().slice(0, 320);
       const instagram = String(body.instagram || '').trim().slice(0, 320);
@@ -345,6 +346,7 @@ Deno.serve(async (req) => {
         town: town || null,
         primary_venue: primaryVenue || null,
         address: address || null,
+        venue_postcode: venuePostcode || null,
         website: website || null,
         facebook: facebook || null,
         instagram: instagram || null,
@@ -361,7 +363,7 @@ Deno.serve(async (req) => {
 
       await sendAdminDirectoryEmail(base44, {
         subject: `[RallyHub Directory] New club submission — ${clubName}`,
-        body: `A new club has been submitted for the RallyHub Directory.\n\nClub: ${clubName}\nCounty: ${county}\nTown / area: ${town || '(not supplied)'}\nPrimary venue: ${primaryVenue || '(not supplied)'}\nAddress / Eircode: ${address || '(not supplied)'}\n\nSubmitted by: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\nNetwork updates: ${networkUpdatesOptIn ? 'Opted in' : 'No'}\n\nWebsite: ${website || '(none)'}\nFacebook: ${facebook || '(none)'}\nInstagram: ${instagram || '(none)'}\n\nNotes: ${notes || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin?tab=directory`,
+        body: `A new club has been submitted for the RallyHub Directory.\n\nClub: ${clubName}\nCounty: ${county}\nTown / area: ${town || '(not supplied)'}\nPrimary venue: ${primaryVenue || '(not supplied)'}\nAddress: ${address || '(not supplied)'}\nEircode / postcode: ${venuePostcode || '(not supplied)'}\n\nSubmitted by: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\nNetwork updates: ${networkUpdatesOptIn ? 'Opted in' : 'No'}\n\nWebsite: ${website || '(none)'}\nFacebook: ${facebook || '(none)'}\nInstagram: ${instagram || '(none)'}\n\nNotes: ${notes || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin?tab=directory`,
       });
 
       return Response.json({ success: true, status: 'pending', request: publicListingRequest(request) });
@@ -480,7 +482,7 @@ Deno.serve(async (req) => {
           name: request.primary_venue,
           shortName: request.primary_venue,
           address: request.address || request.town || null,
-          eircode: null,
+          eircode: request.venue_postcode || null,
           indoor: null,
           courts: null,
           latitude: null,
