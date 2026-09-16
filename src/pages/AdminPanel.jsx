@@ -44,6 +44,8 @@ export default function AdminPanel() {
   const [sendingReset, setSendingReset] = useState(false);
   const [deletingUser, setDeletingUser] = useState(null);
   const [confirmDeleteUser, setConfirmDeleteUser] = useState(null);
+  const [reviewingDirectoryClaim, setReviewingDirectoryClaim] = useState(null);
+  const [revokingDirectoryAccess, setRevokingDirectoryAccess] = useState(null);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -64,6 +66,16 @@ export default function AdminPanel() {
   const { data: matches = [] } = useQuery({
     queryKey: ['matches'],
     queryFn: () => base44.entities.Match.list('-created_date', 200),
+    enabled: canAccessAdmin
+  });
+
+  const { data: directoryVerification = { claims: [], accesses: [] } } = useQuery({
+    queryKey: ['directory-verification'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('directoryClaim', { action: 'list_admin' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return { claims: res.data?.claims || [], accesses: res.data?.accesses || [] };
+    },
     enabled: canAccessAdmin
   });
 
@@ -239,6 +251,34 @@ export default function AdminPanel() {
     setUpdatingRole(null);
   };
 
+  const reviewDirectoryClaim = async (claimId, decision) => {
+    setReviewingDirectoryClaim(claimId);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', { action: 'review', claimId, decision });
+      if (res.data?.error) throw new Error(res.data.error);
+      queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
+      toast.success(decision === 'approved' ? 'Directory claim approved' : 'Directory claim rejected');
+    } catch (error) {
+      toast.error(error.message || 'Could not update directory claim');
+    } finally {
+      setReviewingDirectoryClaim(null);
+    }
+  };
+
+  const revokeDirectoryAccess = async (accessId) => {
+    setRevokingDirectoryAccess(accessId);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', { action: 'revoke', accessId });
+      if (res.data?.error) throw new Error(res.data.error);
+      queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
+      toast.success('Directory editor access revoked');
+    } catch (error) {
+      toast.error(error.message || 'Could not revoke directory access');
+    } finally {
+      setRevokingDirectoryAccess(null);
+    }
+  };
+
   const setApprovalStatus = async (userId, status) => {
     setUpdatingApproval(userId);
     const approvalRes = await base44.functions.invoke('adminUserTools', { action: 'set_approval', userId, status });
@@ -269,6 +309,8 @@ export default function AdminPanel() {
 
   const linkedCount = players.filter(p => p.user_id).length;
   const unlinkedCount = players.length - linkedCount;
+  const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
+  const activeDirectoryAccesses = directoryVerification.accesses.filter(a => a.status === 'active');
 
   return (
     <div className="space-y-6">
