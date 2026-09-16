@@ -125,10 +125,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = (shouldRedirect = true) => {
+  const logout = (redirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
-    base44.auth.logout(shouldRedirect ? '/' : undefined);
+    const redirectUrl = typeof redirect === 'string' ? redirect : (redirect ? '/' : undefined);
+    base44.auth.logout(redirectUrl);
   };
 
   const navigateToLogin = () => {
