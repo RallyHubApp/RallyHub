@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { directoryClubs, weekDays } from '@/data/directorySeed';
-import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, CheckCircle2, PlusCircle, UserCheck } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -24,6 +24,8 @@ const clubInitials = name => name
   .join('');
 
 export default function PublicDirectory() {
+  const [searchParams] = useSearchParams();
+  const manageMode = searchParams.get('manage') === '1';
   const [query, setQuery] = useState('');
   const [county, setCounty] = useState('All counties');
   const [day, setDay] = useState('Any day');
@@ -56,7 +58,29 @@ export default function PublicDirectory() {
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
               Search public sports clubs by location, day and venue. One club can operate from several locations, each with its own map pin and timetable.
             </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link to="/directory?manage=1" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+                <UserCheck className="w-4 h-4" /> Manage a directory listing
+              </Link>
+              <Link to="/directory/add" className="inline-flex items-center gap-2 text-sm font-semibold text-amber-300 hover:underline">
+                <PlusCircle className="w-4 h-4" /> Can't find your club? Add it
+              </Link>
+            </div>
           </div>
+
+          {manageMode && (
+            <div className="mt-8 rounded-2xl border border-primary/30 bg-primary/10 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <p className="font-bold text-foreground">Manage an existing club listing</p>
+                <p className="text-sm text-muted-foreground mt-1">Search for your club below, open its profile and choose <strong className="text-foreground">Claim this listing</strong>. RallyHub verifies you before granting editing access.</p>
+              </div>
+              <Link to="/directory/add" className="shrink-0">
+                <button className="h-10 px-4 rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-sm font-semibold hover:bg-amber-400/15 transition-colors">
+                  Club not listed? Add it
+                </button>
+              </Link>
+            </div>
+          )}
 
           <div className="mt-8 glass-strong rounded-2xl p-3 sm:p-4 grid gap-3 lg:grid-cols-[minmax(260px,1fr)_200px_200px_auto]">
             <label className="relative">
