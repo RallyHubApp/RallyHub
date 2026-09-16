@@ -15,9 +15,9 @@ export const directoryClubs = [
     instagram: 'https://www.instagram.com/clarepickleball',
     facebook: 'https://www.facebook.com/profile.php?id=61576112630693',
     waitingListUrl: 'https://forms.gle/gWYZHHLBeUwyU3u17',
-    spondUrl: 'https://spond.com/invite/CRZPX',
     shopUrl: 'https://borusports.ie/product-category/club-shop/clare-pickleball/',
-    description: 'A welcoming, members-only pickleball club with indoor sessions across County Clare. Experienced visiting players can contact the club about guest availability.',
+    description: 'A welcoming, members-only pickleball club with indoor sessions across County Clare.',
+    guestPolicy: 'Experienced pickleball players from other clubs or visiting from abroad are most welcome. No beginner walk-in sessions.',
     contact: {
       name: 'Brian Moore',
       phone: '087 810 0333',
