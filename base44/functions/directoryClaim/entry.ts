@@ -96,40 +96,8 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
   });
 }
 
-async function notifyAdmins(base44, claim, signals) {
-  try {
-    const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
-    const admins = users.filter(u => u.role === 'admin' && u.email);
-    if (!admins.length) return;
-    const body = `A directory verification request needs manual review.\n\nClub: ${claim.listing_name_snapshot}\nClaimant: ${claim.claimant_name || '(not supplied)'}\nSigned-in email: ${claim.claimant_email}\nClaimant role: ${claim.claimant_role || '(not supplied)'}\nPhone supplied: ${claim.claimant_phone || '(not supplied)'}\n\nVerification signals (reference details are not disclosed to the claimant):\n• Authenticated email match: ${signals.emailMatch ? 'Yes' : 'No'}\n• Contact-name match: ${signals.nameMatch ? 'Yes' : 'No'}\n• Phone match: ${signals.phoneMatch ? 'Yes' : 'No'}\n\nClaim message:\n${claim.claimant_message || '(none)'}\n\nReview in RallyHub Admin:\nhttps://rallyhub.ie/app/admin\n`;
-    await Promise.all(admins.map(admin => base44.asServiceRole.integrations.Core.SendEmail({
-      to: admin.email,
-      from_name: 'RallyHub',
-      subject: `[RallyHub Directory] Verification request — ${claim.listing_name_snapshot}`,
-      body,
-    })));
-  } catch (error) {
-    console.warn('Directory claim admin notification failed', error?.message || error);
-  }
-}
-
-async function notifyClaimant(base44, claim, approved) {
-  try {
-    if (!claim?.claimant_email) return;
-    await base44.asServiceRole.integrations.Core.SendEmail({
-      to: claim.claimant_email,
-      from_name: 'RallyHub',
-      subject: approved
-        ? `[RallyHub Directory] You can now manage ${claim.listing_name_snapshot}`
-        : `[RallyHub Directory] Verification update for ${claim.listing_name_snapshot}`,
-      body: approved
-        ? `Hi ${claim.claimant_name || 'there'},\n\nYour connection to ${claim.listing_name_snapshot} has been verified. Your RallyHub account now has directory-editor access for this listing only.\n\nThis does not create a RallyHub Club membership or club-management account.\n\nRallyHub`
-        : `Hi ${claim.claimant_name || 'there'},\n\nWe could not approve your request to manage ${claim.listing_name_snapshot} at this time. If you believe this is an error, please submit a new verification request with additional information.\n\nRallyHub`,
-    });
-  } catch (error) {
-    console.warn('Directory claim claimant notification failed', error?.message || error);
-  }
-}
+// Directory verification notifications are intentionally kept inside RallyHub for now.
+// Email delivery will be added only after the dedicated RallyHub contact mailbox is configured.
 
 Deno.serve(async (req) => {
   try {
@@ -217,7 +185,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      await notifyAdmins(base44, claim, { emailMatch, phoneMatch, nameMatch });
       return Response.json({
         success: true,
         verified: false,
@@ -283,20 +250,6 @@ Deno.serve(async (req) => {
         notes: notes || null,
         status: 'pending',
       });
-
-      try {
-        const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
-        const admins = users.filter(u => u.role === 'admin' && u.email);
-        const message = `A new club has been submitted for the RallyHub Directory.\n\nClub: ${clubName}\nCounty: ${county}\nTown: ${town || '(not supplied)'}\nVenue: ${primaryVenue || '(not supplied)'}\nSubmitted by: ${claimantName} (${user.email})\nRole: ${claimantRole}\nPhone: ${claimantPhone || '(not supplied)'}\n\nReview in RallyHub Admin:\nhttps://rallyhub.ie/app/admin`;
-        await Promise.all(admins.map(admin => base44.asServiceRole.integrations.Core.SendEmail({
-          to: admin.email,
-          from_name: 'RallyHub',
-          subject: `[RallyHub Directory] New club request — ${clubName}`,
-          body: message,
-        })));
-      } catch (error) {
-        console.warn('Directory new-club notification failed', error?.message || error);
-      }
 
       return Response.json({ success: true, status: 'pending', request: publicListingRequest(request) });
     }
@@ -366,7 +319,6 @@ Deno.serve(async (req) => {
           notes: reviewNotes || 'Manually verified by RallyHub administrator.',
         });
       }
-      await notifyClaimant(base44, claim, decision === 'approved');
       return Response.json({ success: true, status: decision });
     }
 
