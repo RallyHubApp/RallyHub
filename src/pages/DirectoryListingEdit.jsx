@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import { CircleMarker, MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import {
   ArrowLeft, Building2, CalendarDays, CheckCircle2, Copy, ExternalLink, Globe2,
   Image as ImageIcon, Info, Loader2, MapPin, Plus, Save, Trash2, Upload, UserRound
@@ -37,6 +39,39 @@ function mergeProfile(base, override) {
   };
 }
 
+function PinClickCapture({ onPick }) {
+  useMapEvents({
+    click(event) {
+      onPick(event.latlng.lat, event.latlng.lng);
+    }
+  });
+  return null;
+}
+
+function VenuePinPicker({ venue, onPick }) {
+  const latitude = Number(venue?.latitude);
+  const longitude = Number(venue?.longitude);
+  const hasPin = Number.isFinite(latitude) && Number.isFinite(longitude);
+  const center = hasPin ? [latitude, longitude] : [53.4, -7.7];
+  return (
+    <div className="rounded-xl border border-border overflow-hidden bg-background/40">
+      <div className="px-3 py-2 border-b border-border flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold">Exact map pin</p>
+          <p className="text-xs text-muted-foreground">{hasPin ? 'A pin is set for this venue.' : 'No exact pin is set yet.'}</p>
+        </div>
+        {hasPin && <span className="text-xs text-primary font-medium">{latitude.toFixed(5)}, {longitude.toFixed(5)}</span>}
+      </div>
+      <MapContainer key={`${venue?.id}-${hasPin ? `${latitude}-${longitude}` : 'empty'}`} center={center} zoom={hasPin ? 14 : 6} scrollWheelZoom className="h-56 w-full">
+        <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <PinClickCapture onPick={onPick} />
+        {hasPin && <CircleMarker center={[latitude, longitude]} radius={9} pathOptions={{ fillOpacity: 0.85 }} />}
+      </MapContainer>
+      <p className="px-3 py-2 text-xs text-muted-foreground">RallyHub first tries to locate the venue from its address and Eircode/postcode when you save. If that is not exact, click the correct location on this map and save again.</p>
+    </div>
+  );
+}
+
 const isValidUrl = value => {
   if (!String(value || '').trim()) return true;
   try { return ['http:', 'https:'].includes(new URL(String(value).trim()).protocol); } catch { return false; }
@@ -58,6 +93,7 @@ export default function DirectoryListingEdit() {
   const [saved, setSaved] = useState(false);
   const [recentSessionId, setRecentSessionId] = useState('');
   const [sessionNotice, setSessionNotice] = useState('');
+  const [pinPickerVenueId, setPinPickerVenueId] = useState('');
   const [error, setError] = useState('');
   const [validation, setValidation] = useState([]);
   const returnTo = useMemo(() => `/directory/${slug}/edit`, [slug]);
@@ -365,6 +401,21 @@ export default function DirectoryListingEdit() {
                       <div className="space-y-1"><Label>Venue website</Label><Input value={venue.websiteUrl || ''} onChange={e => setVenue(index, 'websiteUrl', e.target.value)} placeholder="https://…" /></div>
                       <div className="space-y-1"><Label>Map link</Label><Input value={venue.mapUrl || ''} onChange={e => setVenue(index, 'mapUrl', e.target.value)} placeholder="https://maps…" /></div>
                     </div>
+                    <div className="rounded-xl border border-border bg-background/30 p-3 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">Map position</p>
+                        <p className="text-xs text-muted-foreground">{Number.isFinite(Number(venue.latitude)) && Number.isFinite(Number(venue.longitude)) ? 'This venue has a map pin.' : 'RallyHub will try to create a pin from the address when you save.'}</p>
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setPinPickerVenueId(current => current === venue.id ? '' : venue.id)}>
+                        <MapPin className="w-4 h-4 mr-1" /> {pinPickerVenueId === venue.id ? 'Hide pin map' : 'Set / adjust pin'}
+                      </Button>
+                    </div>
+                    {pinPickerVenueId === venue.id && (
+                      <VenuePinPicker venue={venue} onPick={(lat, lng) => {
+                        setSaved(false);
+                        setForm(prev => ({ ...prev, venues: prev.venues.map((v, i) => i === index ? { ...v, latitude: lat, longitude: lng } : v) }));
+                      }} />
+                    )}
                   </div>
                 ))}
               </section>
