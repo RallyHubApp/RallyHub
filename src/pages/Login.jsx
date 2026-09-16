@@ -11,7 +11,12 @@ import { safeReturnTo } from "@/lib/authReturnTo";
 
 export default function Login() {
   const returnTo = safeReturnTo();
-  const returnToQuery = returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : "";
+  const params = new URLSearchParams(window.location.search);
+  const directoryMode = params.get('mode') === 'directory' || returnTo.startsWith('/directory');
+  const authParams = new URLSearchParams();
+  if (returnTo !== '/') authParams.set('returnTo', returnTo);
+  if (directoryMode) authParams.set('mode', 'directory');
+  const returnToQuery = authParams.toString() ? `?${authParams.toString()}` : '';
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -38,17 +43,22 @@ export default function Login() {
   return (
     <AuthLayout
       icon={LogIn}
-      title="Welcome back"
-      subtitle="Log in to your account"
+      title={directoryMode ? "Directory sign in" : "Welcome back"}
+      subtitle={directoryMode ? "Sign in to claim, add or manage a public club listing" : "Log in to your account"}
       footer={
         <>
-          Don't have an account?{" "}
+          {directoryMode ? "Need a directory account?" : "Don't have an account?"}{" "}
           <Link to={`/register${returnToQuery}`} className="text-primary font-medium hover:underline">
-            Create one
+            {directoryMode ? 'Create directory account' : 'Create one'}
           </Link>
         </>
       }
     >
+      {directoryMode && (
+        <div className="mb-5 rounded-xl border border-primary/25 bg-primary/10 p-4 text-sm text-muted-foreground">
+          <strong className="text-foreground">Directory access only.</strong> This sign-in is for submitting, claiming or editing a public club listing. It does not make you a RallyHub player, club member or club administrator.
+        </div>
+      )}
       <Button
         variant="outline"
         className="w-full h-12 text-sm font-medium mb-6"
