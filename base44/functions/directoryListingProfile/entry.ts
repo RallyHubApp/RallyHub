@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
       if (!allowed) return Response.json({ error: 'Verified directory editor access required' }, { status: 403 });
 
       const publicProfile = sanitiseProfile(body.profile || {});
-      publicProfile.venues = await geocodeDirectoryVenues(publicProfile.venues || []);
+      publicProfile.venues = await geocodeDirectoryVenues(publicProfile.venues || [], { town: clean(body.town, 120), county: clean(body.county, 120) });
       const publicJson = JSON.stringify(publicProfile);
       const now = new Date().toISOString();
       const existing = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5);
