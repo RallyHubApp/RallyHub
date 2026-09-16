@@ -491,7 +491,7 @@ Deno.serve(async (req) => {
           websiteUrl: null,
           playType: null,
         } : null;
-        const geocodedVenue = submittedVenue ? await geocodeDirectoryVenue(submittedVenue) : null;
+        const geocodedVenue = submittedVenue ? await geocodeDirectoryVenue(submittedVenue, { town: request.town, county: request.county }) : null;
         const baseListing = {
           id: listingSlug,
           slug: listingSlug,
