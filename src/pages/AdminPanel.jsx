@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, KeyRound, Send, Clock, XCircle, CheckCircle, Trash2 } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, Send, Clock, XCircle, CheckCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
@@ -42,9 +42,6 @@ export default function AdminPanel() {
   const [editUserName, setEditUserName] = useState('');
   const [savingUserName, setSavingUserName] = useState(false);
   const [promotingPlayer, setPromotingPlayer] = useState(null);
-  const [setPassUser, setSetPassUser] = useState(null);
-  const [setPassPassword, setSetPassPassword] = useState('');
-  const [settingPass, setSettingPass] = useState(false);
   const [resetEmailUser, setResetEmailUser] = useState(null);
   const [sendingReset, setSendingReset] = useState(false);
   const [deletingUser, setDeletingUser] = useState(null);
@@ -203,28 +200,6 @@ export default function AdminPanel() {
     queryClient.invalidateQueries({ queryKey: ['all-users'] });
     toast.success(`${player.full_name} promoted to Admin`);
     setPromotingPlayer(null);
-  };
-
-  const handleSetPassword = async () => {
-    if (!setPassUser || !setPassPassword.trim()) return;
-    if (setPassPassword.length < 6) { toast.error('Password must be at least 6 characters'); return; }
-    setSettingPass(true);
-    try {
-      const res = await base44.functions.invoke('adminUserTools', { action: 'set_password', userEmail: setPassUser.email, password: setPassPassword });
-      if (res.data?.error) { 
-        toast.error(res.data.error); 
-        setSettingPass(false);
-        return; 
-      }
-      toast.success(`Password set for ${setPassUser.full_name || setPassUser.email}`);
-      setSetPassUser(null);
-      setSetPassPassword('');
-    } catch (error) {
-      toast.error('Failed to set password. Please try again.');
-      console.error('Error setting password:', error);
-    } finally {
-      setSettingPass(false);
-    }
   };
 
   const deleteUser = async (u) => {
@@ -587,10 +562,6 @@ export default function AdminPanel() {
                       </SelectContent>
                     </Select>
                     <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                      onClick={() => { setSetPassUser(u); setSetPassPassword(''); }}>
-                      <KeyRound className="w-3 h-3" /> Set Password
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
                       onClick={() => sendPasswordReset(u)}>
                       <Send className="w-3 h-3" /> {sendingReset && resetEmailUser?.email === u.email ? 'Sending…' : 'Reset Email'}
                     </Button>
@@ -930,40 +901,6 @@ export default function AdminPanel() {
               <Button variant="outline" onClick={() => setEditingUser(null)}>Cancel</Button>
               <Button onClick={saveUserName} disabled={savingUserName || !editUserName.trim()} className="bg-primary text-primary-foreground">
                 {savingUserName ? 'Saving…' : 'Save'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Set Password Dialog */}
-      <Dialog open={!!setPassUser} onOpenChange={(open) => { if (!open) { setSetPassUser(null); setSetPassPassword(''); } }}>
-        <DialogContent className="sm:max-w-sm bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-primary" /> Set Password
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Set a permanent password for <strong>{setPassUser?.full_name || setPassUser?.email}</strong>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label className="text-xs text-muted-foreground">Password</Label>
-              <Input
-                type="password"
-                value={setPassPassword}
-                onChange={e => setSetPassPassword(e.target.value)}
-                placeholder="Enter password…"
-                className="mt-1 bg-secondary border-border"
-                onKeyDown={e => e.key === 'Enter' && handleSetPassword()}
-              />
-              <p className="text-[10px] text-muted-foreground mt-1">Minimum 6 characters</p>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => { setSetPassUser(null); setSetPassPassword(''); }}>Cancel</Button>
-              <Button onClick={handleSetPassword} disabled={settingPass || !setPassPassword.trim()} className="bg-primary text-primary-foreground">
-                {settingPass ? 'Setting…' : 'Set Password'}
               </Button>
             </div>
           </div>
