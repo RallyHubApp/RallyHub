@@ -3,16 +3,12 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Building2, CheckCircle2, Clock3, PlusCircle, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { directoryClubs } from '@/data/directorySeed';
+import { directoryClubs, irelandCounties } from '@/data/directorySeed';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-
-const counties = [
-  'Antrim','Armagh','Carlow','Cavan','Clare','Cork','Derry','Donegal','Down','Dublin','Fermanagh','Galway','Kerry','Kildare','Kilkenny','Laois','Leitrim','Limerick','Longford','Louth','Mayo','Meath','Monaghan','Offaly','Roscommon','Sligo','Tipperary','Tyrone','Waterford','Westmeath','Wexford','Wicklow'
-];
 
 const normalise = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -168,7 +164,7 @@ export default function AddDirectoryClub() {
                     <Label htmlFor="county">County</Label>
                     <select id="county" value={county} onChange={e => setCounty(e.target.value)} required className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
                       <option value="">Select county</option>
-                      {counties.map(item => <option key={item} value={item}>{item}</option>)}
+                      {irelandCounties.map(item => <option key={item} value={item}>{item}</option>)}
                     </select>
                   </div>
                   <div className="space-y-2">
