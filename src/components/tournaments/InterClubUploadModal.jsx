@@ -35,29 +35,13 @@ export default function InterClubUploadModal({ open, onOpenChange, onPairsReady 
     setFile(selectedFile);
     setIsProcessing(true);
 
-    const { file_url } = await base44.integrations.Core.UploadFile({ file: selectedFile });
-
-    const result = /** @type {any} */ (await base44.integrations.Core.ExtractDataFromUploadedFile({
-      file_url,
-      json_schema: {
-        type: 'object',
-        properties: {
-          pairs: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                pair_name: { type: 'string' },
-                player1_name: { type: 'string' },
-                player2_name: { type: 'string' },
-                club: { type: 'string' },
-                seed: { type: 'number' }
-              }
-            }
-          }
-        }
-      }
-    }));
+    const extractionRes = await base44.functions.invoke('secureCreditAction', { action: 'extract_pairs', file: selectedFile });
+    if (extractionRes.data?.error) {
+      toast.error(extractionRes.data.error);
+      setIsProcessing(false);
+      return;
+    }
+    const result = /** @type {any} */ (extractionRes.data?.result || {});
 
     if (result.status === 'error') {
       toast.error('Failed to parse: ' + result.details);
