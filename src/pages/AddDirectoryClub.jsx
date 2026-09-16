@@ -145,7 +145,7 @@ export default function AddDirectoryClub() {
               <div className="mt-8 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-6">
                 <div className="flex items-center gap-2 text-amber-300"><Clock3 className="w-5 h-5" /><h2 className="font-bold">Club submitted for review</h2></div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Your request for <strong className="text-foreground">{request.club_name}</strong> is waiting for RallyHub review. We check for duplicates before adding a new public listing.
+                  Your request for <strong className="text-foreground">{request.club_name}</strong> is waiting for RallyHub review. We check for duplicates before adding a new public listing. If you need to contact us about the request, email <a href="mailto:rallyhubapp@gmail.com" className="text-primary hover:underline">rallyhubapp@gmail.com</a>.
                 </p>
               </div>
             ) : approved ? (
