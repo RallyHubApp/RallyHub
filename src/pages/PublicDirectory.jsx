@@ -109,6 +109,8 @@ export default function PublicDirectory() {
                           </div>
                           {club.verificationStatus === 'unclaimed' ? (
                             <span className="inline-flex items-center gap-1 text-xs text-amber-300"><CheckCircle2 className="w-3.5 h-3.5" /> Unclaimed listing</span>
+                          ) : club.verificationStatus === 'verified' ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Verified club listing</span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Active listing</span>
                           )}
