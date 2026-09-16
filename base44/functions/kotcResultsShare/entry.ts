@@ -107,4 +107,4 @@ Deno.serve(async req=>{try{
    return Response.json({success:true,token:share.token,link,sent,skipped,alreadySent,failed,resend,from:SHARED_GMAIL_ADDRESS,clubName,hostName:host,runtimeVersion:RUNTIME_VERSION});
  }
  return Response.json({error:'Unknown action',runtimeVersion:RUNTIME_VERSION},{status:400});
-}catch(error){return Response.json({error:(error as any)?.message||'Unexpected results-share error',runtimeVersion:RUNTIME_VERSION},{status:isRateLimit(error)?503:500});}});
+}catch(error){console.error('kotcResultsShare failed',error);return Response.json({error:isRateLimit(error)?'Results are temporarily busy. Please try again shortly.':'Unable to process the results request right now.',runtimeVersion:RUNTIME_VERSION},{status:isRateLimit(error)?503:500});}});
