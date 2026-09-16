@@ -246,7 +246,7 @@ export default function DirectoryListingEdit() {
             <div className="glass rounded-2xl p-7 max-w-xl mx-auto text-center">
               <h1 className="text-2xl font-black">Sign in to manage this listing</h1>
               <p className="text-sm text-muted-foreground mt-2">Only a verified directory editor can make changes.</p>
-              <Link to={`/login?returnTo=${encodeURIComponent(returnTo)}`}><Button className="mt-5">Sign in</Button></Link>
+              <Link to={`/login?mode=directory&returnTo=${encodeURIComponent(returnTo)}`}><Button className="mt-5">Sign in</Button></Link>
             </div>
           ) : loadingAccess ? (
             <div className="glass rounded-2xl p-6">Checking your directory access…</div>
