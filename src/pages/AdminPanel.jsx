@@ -49,6 +49,7 @@ export default function AdminPanel() {
   const [reviewingDirectoryClaim, setReviewingDirectoryClaim] = useState(null);
   const [reviewingNewDirectoryRequest, setReviewingNewDirectoryRequest] = useState(null);
   const [revokingDirectoryAccess, setRevokingDirectoryAccess] = useState(null);
+  const [removingDirectoryListing, setRemovingDirectoryListing] = useState(null);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -72,12 +73,12 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
-  const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [] } } = useQuery({
+  const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [], listingRecords: [] } } = useQuery({
     queryKey: ['directory-verification'],
     queryFn: async () => {
       const res = await base44.functions.invoke('directoryClaim', { action: 'list_admin' });
       if (res.data?.error) throw new Error(res.data.error);
-      return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [] }; 
+      return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [], listingRecords: res.data?.listingRecords || [] }; 
     },
     enabled: canAccessAdmin
   });
@@ -260,6 +261,23 @@ export default function AdminPanel() {
     }
   };
 
+  const removeDirectoryListing = async (listing) => {
+    if (!listing?.slug) return;
+    const confirmed = window.confirm(`Remove ${listing.name || listing.slug} from the public directory?\n\nThis will archive the listing, hide it from the public directory and revoke its directory-editor access. Curated RallyHub seed listings cannot be removed with this action.`);
+    if (!confirmed) return;
+    setRemovingDirectoryListing(listing.slug);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', { action: 'archive_listing', listingSlug: listing.slug });
+      if (res.data?.error) throw new Error(res.data.error);
+      queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
+      toast.success(`${listing.name || 'Directory listing'} removed from the public directory`);
+    } catch (error) {
+      toast.error(error.message || 'Could not remove directory listing');
+    } finally {
+      setRemovingDirectoryListing(null);
+    }
+  };
+
   const revokeDirectoryAccess = async (accessId) => {
     setRevokingDirectoryAccess(accessId);
     try {
@@ -307,6 +325,7 @@ export default function AdminPanel() {
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
   const activeDirectoryAccesses = directoryVerification.accesses.filter(a => a.status === 'active');
+  const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active');
 
   return (
     <div className="space-y-6">
