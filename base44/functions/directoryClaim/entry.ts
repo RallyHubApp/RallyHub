@@ -46,6 +46,20 @@ function publicClaim(claim) {
   };
 }
 
+function publicListingRequest(request) {
+  if (!request) return null;
+  return {
+    id: request.id,
+    club_name: request.club_name,
+    county: request.county,
+    town: request.town || null,
+    status: request.status,
+    created_date: request.created_date,
+    reviewed_at: request.reviewed_at || null,
+    review_notes: request.status === 'rejected' ? request.review_notes || null : null,
+  };
+}
+
 async function grantAccess(base44, { listing, userId, claimId, grantedByUserId = null, notes = '' }) {
   const existing = await base44.asServiceRole.entities.DirectoryListingAccess.filter({
     listing_slug: listing.slug,
@@ -213,6 +227,86 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'submit_new') {
+      if (!user.email) return Response.json({ error: 'A verified account email is required' }, { status: 400 });
+
+      const clubName = String(body.clubName || '').trim().slice(0, 180);
+      const county = String(body.county || '').trim().slice(0, 100);
+      const town = String(body.town || '').trim().slice(0, 120);
+      const primaryVenue = String(body.primaryVenue || '').trim().slice(0, 220);
+      const address = String(body.address || '').trim().slice(0, 320);
+      const website = String(body.website || '').trim().slice(0, 320);
+      const facebook = String(body.facebook || '').trim().slice(0, 320);
+      const instagram = String(body.instagram || '').trim().slice(0, 320);
+      const claimantName = String(body.claimantName || user.full_name || user.display_name || '').trim().slice(0, 160);
+      const claimantRole = String(body.claimantRole || '').trim().slice(0, 160);
+      const claimantPhone = String(body.claimantPhone || '').trim().slice(0, 80);
+      const notes = String(body.notes || '').trim().slice(0, 1500);
+
+      if (!clubName) return Response.json({ error: 'Club name is required' }, { status: 400 });
+      if (!county) return Response.json({ error: 'County is required' }, { status: 400 });
+      if (!claimantName) return Response.json({ error: 'Your name is required' }, { status: 400 });
+      if (!claimantRole) return Response.json({ error: 'Your role or connection to the club is required' }, { status: 400 });
+
+      const duplicate = directoryVerificationIndex.find(x =>
+        normaliseName(x.name) === normaliseName(clubName) &&
+        normaliseName(x.county || '') === normaliseName(county)
+      );
+      if (duplicate) {
+        return Response.json({
+          error: 'This club already appears to be in the RallyHub directory.',
+          existingSlug: duplicate.slug,
+          existingName: duplicate.name,
+        }, { status: 409 });
+      }
+
+      const existingRequests = await base44.asServiceRole.entities.DirectoryListingRequest.filter({ claimant_user_id: user.id });
+      const samePending = existingRequests.find(x => x.status === 'pending' && normaliseName(x.club_name) === normaliseName(clubName));
+      if (samePending) {
+        return Response.json({ success: true, status: 'pending', request: publicListingRequest(samePending) });
+      }
+
+      const request = await base44.asServiceRole.entities.DirectoryListingRequest.create({
+        club_name: clubName,
+        county,
+        town: town || null,
+        primary_venue: primaryVenue || null,
+        address: address || null,
+        website: website || null,
+        facebook: facebook || null,
+        instagram: instagram || null,
+        claimant_user_id: user.id,
+        claimant_name: claimantName,
+        claimant_role: claimantRole,
+        claimant_email: user.email,
+        claimant_phone: claimantPhone || null,
+        notes: notes || null,
+        status: 'pending',
+      });
+
+      try {
+        const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
+        const admins = users.filter(u => u.role === 'admin' && u.email);
+        const message = `A new club has been submitted for the RallyHub Directory.\n\nClub: ${clubName}\nCounty: ${county}\nTown: ${town || '(not supplied)'}\nVenue: ${primaryVenue || '(not supplied)'}\nSubmitted by: ${claimantName} (${user.email})\nRole: ${claimantRole}\nPhone: ${claimantPhone || '(not supplied)'}\n\nReview in RallyHub Admin:\nhttps://rallyhub.ie/app/admin`;
+        await Promise.all(admins.map(admin => base44.asServiceRole.integrations.Core.SendEmail({
+          to: admin.email,
+          from_name: 'RallyHub',
+          subject: `[RallyHub Directory] New club request — ${clubName}`,
+          body: message,
+        })));
+      } catch (error) {
+        console.warn('Directory new-club notification failed', error?.message || error);
+      }
+
+      return Response.json({ success: true, status: 'pending', request: publicListingRequest(request) });
+    }
+
+    if (action === 'new_status') {
+      const requests = await base44.asServiceRole.entities.DirectoryListingRequest.filter({ claimant_user_id: user.id });
+      const latest = [...requests].sort((a, b) => String(b.created_date || '').localeCompare(String(a.created_date || '')))[0] || null;
+      return Response.json({ success: true, request: publicListingRequest(latest) });
+    }
+
     if (action === 'status') {
       const listingSlug = String(body.listingSlug || '').trim();
       const listing = directoryVerificationIndex.find(x => x.slug === listingSlug);
@@ -233,11 +327,12 @@ Deno.serve(async (req) => {
 
     if (action === 'list_admin') {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
-      const [claims, accesses] = await Promise.all([
+      const [claims, accesses, listingRequests] = await Promise.all([
         base44.asServiceRole.entities.DirectoryClaim.list('-created_date', 300),
         base44.asServiceRole.entities.DirectoryListingAccess.list('-created_date', 300),
+        base44.asServiceRole.entities.DirectoryListingRequest.list('-created_date', 300),
       ]);
-      return Response.json({ success: true, claims, accesses });
+      return Response.json({ success: true, claims, accesses, listingRequests });
     }
 
     if (action === 'review') {
@@ -272,6 +367,26 @@ Deno.serve(async (req) => {
         });
       }
       await notifyClaimant(base44, claim, decision === 'approved');
+      return Response.json({ success: true, status: decision });
+    }
+
+    if (action === 'review_new') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const requestId = String(body.requestId || '').trim();
+      const decision = String(body.decision || '').trim();
+      const reviewNotes = String(body.reviewNotes || '').trim().slice(0, 1500);
+      if (!requestId || !['approved', 'rejected'].includes(decision)) {
+        return Response.json({ error: 'Valid requestId and decision required' }, { status: 400 });
+      }
+      const requests = await base44.asServiceRole.entities.DirectoryListingRequest.filter({ id: requestId });
+      const request = requests[0];
+      if (!request) return Response.json({ error: 'Directory listing request not found' }, { status: 404 });
+      await base44.asServiceRole.entities.DirectoryListingRequest.update(request.id, {
+        status: decision,
+        reviewed_by_user_id: user.id,
+        reviewed_at: new Date().toISOString(),
+        review_notes: reviewNotes || null,
+      });
       return Response.json({ success: true, status: decision });
     }
 

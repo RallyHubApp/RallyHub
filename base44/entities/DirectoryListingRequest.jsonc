@@ -1,0 +1,96 @@
+{
+  "name": "DirectoryListingRequest",
+  "type": "object",
+  "properties": {
+    "club_name": {
+      "type": "string"
+    },
+    "county": {
+      "type": "string"
+    },
+    "town": {
+      "type": "string"
+    },
+    "primary_venue": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "facebook": {
+      "type": "string"
+    },
+    "instagram": {
+      "type": "string"
+    },
+    "claimant_user_id": {
+      "type": "string"
+    },
+    "claimant_name": {
+      "type": "string"
+    },
+    "claimant_role": {
+      "type": "string"
+    },
+    "claimant_email": {
+      "type": "string"
+    },
+    "claimant_phone": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "reviewed_by_user_id": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "review_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "club_name",
+    "county",
+    "claimant_user_id",
+    "claimant_email",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
