@@ -12,23 +12,587 @@
 # Error details
 
 ```
-Error: browserType.launch: Target page, context or browser has been closed
-Browser logs:
+Error: expect(locator).toBeVisible() failed
 
-<launching> /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-FX7hWq --remote-debugging-pipe --no-startup-window
-<launched> pid=10043
-[pid=10043][err] /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libglib-2.0.so.0: cannot open shared object file: No such file or directory
+Locator: getByText(/club found for “dublin15”/i)
+Expected: visible
+Timeout: 3000ms
+Error: element(s) not found
+
 Call log:
-  - <launching> /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-FX7hWq --remote-debugging-pipe --no-startup-window
-  - <launched> pid=10043
-  - [pid=10043][err] /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libglib-2.0.so.0: cannot open shared object file: No such file or directory
-  - [pid=10043] <gracefully close start>
-  - [pid=10043] <kill>
-  - [pid=10043] <will force kill>
-  - [pid=10043] exception while trying to kill process: Error: kill ESRCH
-  - [pid=10043] <process did exit: exitCode=127, signal=null>
-  - [pid=10043] starting temporary directories cleanup
-  - [pid=10043] finished temporary directories cleanup
-  - [pid=10043] <gracefully close end>
+  - Expect "toBeVisible" getByText(/club found for “dublin15”/i) with timeout 3000ms
+  - waiting for getByText(/club found for “dublin15”/i)
 
+```
+
+```yaml
+- banner:
+  - link "RallyHub RallyHub":
+    - /url: /
+    - img "RallyHub"
+    - text: RallyHub
+  - navigation:
+    - link "Club Directory":
+      - /url: /directory
+    - link "Manage listing":
+      - /url: /directory?manage=1
+      - img
+      - text: Manage listing
+    - link "Add club":
+      - /url: /directory/add
+      - img
+      - text: Add club
+  - link "Directory Login":
+    - /url: /login?mode=directory&returnTo=%2Fdirectory
+    - button "Directory Login"
+  - button "RallyHub Club Login"
+- img
+- text: All-Ireland directory · all 32 counties supported
+- heading "Find a club. Find a session. Get playing." [level=1]
+- paragraph: Search public sports clubs across the whole island of Ireland by county, location, day and venue. We currently have 84 club listings across 26 counties, with all 32 counties available as the directory grows.
+- link "Manage a listing":
+  - /url: /directory?manage=1
+  - img
+  - text: Manage a listing
+- link "Add a missing club":
+  - /url: /directory/add
+  - img
+  - text: Add a missing club
+- img
+- textbox "Search club directory":
+  - /placeholder: Club, town, venue or Eircode
+  - text: dublin15
+- combobox:
+  - option "All counties" [selected]
+  - option "Antrim"
+  - option "Armagh"
+  - option "Carlow"
+  - option "Cavan"
+  - option "Clare"
+  - option "Cork"
+  - option "Derry"
+  - option "Donegal"
+  - option "Down"
+  - option "Dublin"
+  - option "Fermanagh"
+  - option "Galway"
+  - option "Kerry"
+  - option "Kildare"
+  - option "Kilkenny"
+  - option "Laois"
+  - option "Leitrim"
+  - option "Limerick"
+  - option "Longford"
+  - option "Louth"
+  - option "Mayo"
+  - option "Meath"
+  - option "Monaghan"
+  - option "Offaly"
+  - option "Roscommon"
+  - option "Sligo"
+  - option "Tipperary"
+  - option "Tyrone"
+  - option "Waterford"
+  - option "Westmeath"
+  - option "Wexford"
+  - option "Wicklow"
+- combobox:
+  - option "Any day" [selected]
+  - option "Monday"
+  - option "Tuesday"
+  - option "Wednesday"
+  - option "Thursday"
+  - option "Friday"
+  - option "Saturday"
+  - option "Sunday"
+- button "Clubs"
+- button "Sessions"
+- button "Map"
+- main:
+  - heading "Browse by county" [level=2]
+  - paragraph: All 32 counties · 26 currently have listings
+  - link "Missing club? Add it":
+    - /url: /directory/add
+  - link "Antrim · 4":
+    - /url: /pickleball-clubs/antrim
+  - link "Armagh · 2":
+    - /url: /pickleball-clubs/armagh
+  - link "Carlow · 1":
+    - /url: /pickleball-clubs/carlow
+  - link "Cavan · 5":
+    - /url: /pickleball-clubs/cavan
+  - link "Clare · 1":
+    - /url: /pickleball-clubs/clare
+  - link "Cork · 10":
+    - /url: /pickleball-clubs/cork
+  - link "Derry":
+    - /url: /pickleball-clubs/derry
+  - link "Donegal · 1":
+    - /url: /pickleball-clubs/donegal
+  - link "Down · 1":
+    - /url: /pickleball-clubs/down
+  - link "Dublin · 15":
+    - /url: /pickleball-clubs/dublin
+  - link "Fermanagh":
+    - /url: /pickleball-clubs/fermanagh
+  - link "Galway · 5":
+    - /url: /pickleball-clubs/galway
+  - link "Kerry · 4":
+    - /url: /pickleball-clubs/kerry
+  - link "Kildare · 4":
+    - /url: /pickleball-clubs/kildare
+  - link "Kilkenny · 1":
+    - /url: /pickleball-clubs/kilkenny
+  - link "Laois · 1":
+    - /url: /pickleball-clubs/laois
+  - link "Leitrim":
+    - /url: /pickleball-clubs/leitrim
+  - link "Limerick · 1":
+    - /url: /pickleball-clubs/limerick
+  - link "Longford · 1":
+    - /url: /pickleball-clubs/longford
+  - link "Louth · 2":
+    - /url: /pickleball-clubs/louth
+  - link "Mayo · 7":
+    - /url: /pickleball-clubs/mayo
+  - link "Meath · 3":
+    - /url: /pickleball-clubs/meath
+  - link "Monaghan · 1":
+    - /url: /pickleball-clubs/monaghan
+  - link "Offaly · 1":
+    - /url: /pickleball-clubs/offaly
+  - link "Roscommon":
+    - /url: /pickleball-clubs/roscommon
+  - link "Sligo · 2":
+    - /url: /pickleball-clubs/sligo
+  - link "Tipperary":
+    - /url: /pickleball-clubs/tipperary
+  - link "Tyrone":
+    - /url: /pickleball-clubs/tyrone
+  - link "Waterford · 1":
+    - /url: /pickleball-clubs/waterford
+  - link "Westmeath · 3":
+    - /url: /pickleball-clubs/westmeath
+  - link "Wexford · 2":
+    - /url: /pickleball-clubs/wexford
+  - link "Wicklow · 5":
+    - /url: /pickleball-clubs/wicklow
+  - paragraph: 17 clubs found for “dublin15”
+  - heading "Best matches" [level=2]
+  - img
+  - article:
+    - text: D1
+    - paragraph: Pickleball · County Dublin
+    - heading "Dublin 15 Pickleball" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Dublin 15 Pickleball is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 7 venues
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin Hartstown Coolmine Hollywoodrath Coolmine Castaheany Corduff Deanestown
+    - link "Claim this listing":
+      - /url: /directory/dublin-15-pickleball/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/dublin-15-pickleball
+      - text: View details
+      - img
+  - article:
+    - text: AP
+    - paragraph: Pickleball · County Meath
+    - heading "Ashbourne Pickleball" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Ashbourne Pickleball is listed in the public PickleBook club/group directory for Meath. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Meath Rolestown National School
+    - link "Claim this listing":
+      - /url: /directory/ashbourne-pickleball/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/ashbourne-pickleball
+      - text: View details
+      - img
+  - article:
+    - text: BP
+    - paragraph: Pickleball · County Dublin
+    - heading "Balbriggan Pickleball" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Balbriggan Pickleball is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin Flemington Community Centre
+    - link "Claim this listing":
+      - /url: /directory/balbriggan-pickleball/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/balbriggan-pickleball
+      - text: View details
+      - img
+  - article:
+    - text: BP
+    - paragraph: Pickleball · County Dublin
+    - heading "Ballyfermot Pickleballers" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Ballyfermot Pickleballers is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin Ballyfermot Main Street
+    - link "Claim this listing":
+      - /url: /directory/ballyfermot-pickleballers/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/ballyfermot-pickleballers
+      - text: View details
+      - img
+  - article:
+    - text: BP
+    - paragraph: Pickleball · County Dublin
+    - heading "Bayside Pickleball Club" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Bayside Pickleball Club is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin Bayside Junior School
+    - link "Claim this listing":
+      - /url: /directory/bayside-pickleball-club/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/bayside-pickleball-club
+      - text: View details
+      - img
+  - article:
+    - text: BP
+    - paragraph: Pickleball · County Dublin
+    - heading "Belmayne Pickleball" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Belmayne Pickleball is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin Belmayne main street
+    - link "Claim this listing":
+      - /url: /directory/belmayne-pickleball/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/belmayne-pickleball
+      - text: View details
+      - img
+  - article:
+    - text: BP
+    - paragraph: Pickleball · County Dublin
+    - heading "Blackrock Pickleball" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Blackrock Pickleball is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin Cabinteely Community School
+    - link "Claim this listing":
+      - /url: /directory/blackrock-pickleball/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/blackrock-pickleball
+      - text: View details
+      - img
+  - article:
+    - text: D7
+    - paragraph: Pickleball · County Dublin
+    - heading "Dublin 7 Pickleball Club" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Dublin 7 Pickleball Club is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: "Dublin 2 Locations: 1st is Parkside Communi"
+    - link "Claim this listing":
+      - /url: /directory/dublin-7-pickleball-club/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/dublin-7-pickleball-club
+      - text: View details
+      - img
+  - article:
+    - text: E
+    - paragraph: Pickleball · County Dublin
+    - heading "ezPICKLEBALL" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: ezPICKLEBALL is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin ezCOURTHIRE Dome
+    - link "Claim this listing":
+      - /url: /directory/ezpickleball/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/ezpickleball
+      - text: View details
+      - img
+  - article:
+    - img "Galway Pickleball logo"
+    - paragraph: Pickleball · County Galway
+    - heading "Galway Pickleball" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: An inclusive and friendly pickleball club founded in 2020, with more than 400 active members and sessions across Galway City and County Galway.
+    - img
+    - text: 9 venues
+    - img
+    - text: 30 weekly sessions
+    - img
+    - text: Galway Árus Maree Renmore Oranmore Knocknacarra Mervue Westside Dome Oughterard
+    - link "Claim this listing":
+      - /url: /directory/galway-pickleball/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/galway-pickleball
+      - text: View details
+      - img
+  - article:
+    - text: NS
+    - paragraph: Pickleball · County Dublin
+    - heading "North Star Pickleball Club" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: North Star Pickleball Club is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin Two Locations - PSLC
+    - link "Claim this listing":
+      - /url: /directory/north-star-pickleball-club/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/north-star-pickleball-club
+      - text: View details
+      - img
+  - article:
+    - text: PS
+    - paragraph: Pickleball · County Dublin
+    - heading "Pickleball South Dublin" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Pickleball South Dublin is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin Newpark Sports Centre
+    - link "Claim this listing":
+      - /url: /directory/pickleball-south-dublin/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/pickleball-south-dublin
+      - text: View details
+      - img
+  - article:
+    - text: PC
+    - paragraph: Pickleball · County Dublin
+    - heading "PicklePub Club" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: PicklePub Club is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin Dublin
+    - link "Claim this listing":
+      - /url: /directory/picklepub-club/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/picklepub-club
+      - text: View details
+      - img
+  - article:
+    - text: SP
+    - paragraph: Pickleball · County Dublin
+    - heading "Sandyford Pickleball Club" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Sandyford Pickleball Club is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin St Benildus College Kilmacud Rd Uppe
+    - link "Claim this listing":
+      - /url: /directory/sandyford-pickleball-club/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/sandyford-pickleball-club
+      - text: View details
+      - img
+  - article:
+    - text: SP
+    - paragraph: Pickleball · County Dublin
+    - heading "Southside Pickleball Club" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Southside Pickleball Club is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 3 venues
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin Blackthorn Kilmacud East Kilmacud East
+    - link "Claim this listing":
+      - /url: /directory/southside-pickleball-club/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/southside-pickleball-club
+      - text: View details
+      - img
+  - article:
+    - text: SP
+    - paragraph: Pickleball · County Dublin
+    - heading "Stepaside Pickleball" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Stepaside Pickleball is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin Murphystown
+    - link "Claim this listing":
+      - /url: /directory/stepaside-pickleball/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/stepaside-pickleball
+      - text: View details
+      - img
+  - article:
+    - text: TP
+    - paragraph: Pickleball · County Dublin
+    - heading "Terenure Pickleball Club" [level=3]
+    - img
+    - text: Unclaimed listing
+    - paragraph: Terenure Pickleball Club is listed in the public PickleBook club/group directory for Dublin. This RallyHub profile is unclaimed and can be updated by the club.
+    - img
+    - text: 1 venue
+    - img
+    - text: Schedule pending
+    - img
+    - text: Dublin The Dome
+    - link "Claim this listing":
+      - /url: /directory/terenure-pickleball-club/claim
+      - img
+      - text: Claim this listing
+    - link "View details":
+      - /url: /directory/terenure-pickleball-club
+      - text: View details
+      - img
+  - complementary:
+    - heading "Venue map" [level=2]
+    - paragraph: Every venue has its own pin, even when several venues belong to one club.
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Marker"
+    - button "Zoom in"
+    - button "Zoom out"
+    - link "Leaflet":
+      - /url: https://leafletjs.com
+    - text: © OpenStreetMap contributors
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@playwright/test';
+  2  | 
+  3  | test('directory search tolerates missing spaces and ranks Dublin 15', async ({ page }) => {
+  4  |   await page.goto('/directory');
+  5  |   const search = page.getByLabel('Search club directory');
+  6  |   await search.fill('dublin15');
+  7  |   await expect(page.getByText('Dublin 15 Pickleball', { exact: true })).toBeVisible();
+> 8  |   await expect(page.getByText(/club found for “dublin15”/i)).toBeVisible();
+     |                                                              ^ Error: expect(locator).toBeVisible() failed
+  9  | });
+  10 | 
+  11 | test('directory has an interactive all-Ireland map view linked to club profiles', async ({ page }) => {
+  12 |   await page.goto('/directory');
+  13 |   await page.getByRole('button', { name: 'Map', exact: true }).click();
+  14 |   await expect(page.getByRole('heading', { name: 'Club map' })).toBeVisible();
+  15 |   await expect(page.getByText('Explore clubs on the map')).toBeVisible();
+  16 |   await expect(page.locator('.leaflet-marker-icon').first()).toBeVisible();
+  17 | });
+  18 | 
 ```
