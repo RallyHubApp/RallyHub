@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Calendar, Users, MapPin, Trophy, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Calendar, Users, MapPin, Trophy, ArrowRight, CheckCircle2, UserCheck, PlusCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { directoryClubs } from '@/data/directorySeed';
 
@@ -74,26 +74,44 @@ export default function Landing() {
               Find clubs and places to play. RallyHub also gives clubs the tools to organise members, competitions and events.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link to="/directory">
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all">
+            <div className="grid sm:grid-cols-3 gap-3 max-w-4xl mx-auto">
+              <Link to="/directory" className="w-full">
+                <Button size="lg" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-base sm:text-lg px-5 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all">
                   Find a Club
                   <MapPin className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+              <Link to="/directory?manage=1" className="w-full">
+                <Button size="lg" variant="outline" className="w-full text-base sm:text-lg px-5 py-6 rounded-xl">
+                  Manage Directory Listing
+                  <UserCheck className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
               <Button
                 size="lg"
                 variant="outline"
                 onClick={handleOpenApp}
-                className="text-lg px-8 py-6 rounded-xl"
+                className="w-full text-base sm:text-lg px-5 py-6 rounded-xl"
               >
-                Club App Login
+                RallyHub Club Login
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
 
+            <div className="mt-5 max-w-2xl mx-auto rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+              <div>
+                <p className="font-semibold text-foreground">Can't find your club?</p>
+                <p className="text-sm text-muted-foreground">Add it to the RallyHub Directory for review. This does not create a RallyHub Club account.</p>
+              </div>
+              <Link to="/directory/add" className="shrink-0">
+                <Button variant="outline" className="border-amber-400/40 text-amber-200 hover:bg-amber-400/10">
+                  Add Your Club <PlusCircle className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+
             <p className="text-sm text-muted-foreground mt-4">
-              No account needed to browse the directory. Club representatives can claim their listing from the club profile.
+              Browse freely. Sign in only to manage a directory listing or use the full RallyHub Club platform.
             </p>
           </motion.div>
         </div>
@@ -197,15 +215,27 @@ export default function Landing() {
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Explore the RallyHub club directory without logging in. If you run a listed club, open its profile to request verified directory access.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3">
             <Link to="/directory">
               <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6 rounded-xl">
-                Explore Club Directory
+                Find a Club
                 <MapPin className="w-5 h-5 ml-2" />
               </Button>
             </Link>
+            <Link to="/directory?manage=1">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6 rounded-xl">
+                Manage Directory Listing
+                <UserCheck className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+            <Link to="/directory/add">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6 rounded-xl">
+                Add Your Club
+                <PlusCircle className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
             <Button size="lg" variant="outline" onClick={handleOpenApp} className="text-lg px-8 py-6 rounded-xl">
-              Club App Login
+              RallyHub Club Login
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
