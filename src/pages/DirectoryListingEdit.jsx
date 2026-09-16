@@ -49,9 +49,11 @@ function PinClickCapture({ onPick }) {
 }
 
 function VenuePinPicker({ venue, onPick }) {
+  const hasLat = venue?.latitude !== null && venue?.latitude !== undefined && String(venue.latitude).trim() !== '';
+  const hasLng = venue?.longitude !== null && venue?.longitude !== undefined && String(venue.longitude).trim() !== '';
   const latitude = Number(venue?.latitude);
   const longitude = Number(venue?.longitude);
-  const hasPin = Number.isFinite(latitude) && Number.isFinite(longitude);
+  const hasPin = hasLat && hasLng && Number.isFinite(latitude) && Number.isFinite(longitude);
   const center = hasPin ? [latitude, longitude] : [53.4, -7.7];
   return (
     <div className="rounded-xl border border-border overflow-hidden bg-background/40">
@@ -404,7 +406,7 @@ export default function DirectoryListingEdit() {
                     <div className="rounded-xl border border-border bg-background/30 p-3 flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">Map position</p>
-                        <p className="text-xs text-muted-foreground">{Number.isFinite(Number(venue.latitude)) && Number.isFinite(Number(venue.longitude)) ? 'This venue has a map pin.' : 'RallyHub will try to create a pin from the address when you save.'}</p>
+                        <p className="text-xs text-muted-foreground">{venue.latitude !== null && venue.latitude !== undefined && String(venue.latitude).trim() !== '' && venue.longitude !== null && venue.longitude !== undefined && String(venue.longitude).trim() !== '' && Number.isFinite(Number(venue.latitude)) && Number.isFinite(Number(venue.longitude)) ? 'This venue has a map pin.' : 'RallyHub will try to create a pin from the address when you save.'}</p>
                       </div>
                       <Button type="button" variant="outline" size="sm" onClick={() => setPinPickerVenueId(current => current === venue.id ? '' : venue.id)}>
                         <MapPin className="w-4 h-4 mr-1" /> {pinPickerVenueId === venue.id ? 'Hide pin map' : 'Set / adjust pin'}
