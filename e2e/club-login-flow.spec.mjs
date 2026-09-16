@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('landing RallyHub Club Login uses the local login flow and preserves /app return target', async ({ page }) => {
   await page.goto('/');
-  const login = page.getByRole('button', { name: 'RallyHub Club Login', exact: true });
+  const login = page.getByRole('button', { name: 'RallyHub Club Login', exact: true }).first();
   await expect(login).toBeVisible();
   await login.click();
   await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
