@@ -46,6 +46,8 @@ export default function PublicClubProfile() {
                   <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-3 py-1 text-xs font-semibold">{club.sport}</span>
                   {club.verificationStatus === 'unclaimed' ? (
                     <span className="inline-flex items-center gap-1 text-xs text-amber-300"><CheckCircle2 className="w-3.5 h-3.5" /> Unclaimed listing</span>
+                  ) : club.verificationStatus === 'verified' ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Verified club listing</span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Active listing</span>
                   )}
@@ -57,6 +59,11 @@ export default function PublicClubProfile() {
                   {club.waitingListUrl && <a href={club.waitingListUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold"><Users className="w-4 h-4" /> {club.joiningCtaLabel || 'Contact club'}</a>}
                   {!club.website && !club.waitingListUrl && club.contact?.phoneHref && <a href={club.contact.phoneHref} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Phone className="w-4 h-4" /> Contact club</a>}
                   {!club.website && !club.waitingListUrl && !club.contact?.phoneHref && club.contact?.email && <a href={`mailto:${club.contact.email}`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Mail className="w-4 h-4" /> Contact club</a>}
+                  {club.verificationStatus === 'unclaimed' && (
+                    <Link to={`/directory/${club.slug}/claim`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-sm font-semibold hover:bg-amber-400/15 transition-colors">
+                      Claim this listing
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
