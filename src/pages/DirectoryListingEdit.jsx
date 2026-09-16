@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
-  ArrowLeft, Building2, CalendarDays, CheckCircle2, ExternalLink, Globe2,
+  ArrowLeft, Building2, CalendarDays, CheckCircle2, Copy, ExternalLink, Globe2,
   Image as ImageIcon, Info, Loader2, MapPin, Plus, Save, Trash2, Upload, UserRound
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -19,9 +19,10 @@ const emptyVenue = index => ({
   id: `venue-${Date.now()}-${index}`, name: '', shortName: '', address: '', eircode: '', indoor: null,
   courts: '', latitude: '', longitude: '', mapUrl: '', websiteUrl: '', playType: ''
 });
+const newSessionId = () => `session-${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}`;
 const emptySession = venueId => ({
-  id: `session-${Date.now()}`, venueId: venueId || '', day: 'Monday', meetTime: '', start: '19:00', end: '',
-  level: 'Club Session', price: '', capacity: '', host: '', showPublicJoinLink: false, publicJoinUrl: ''
+  id: newSessionId(), venueId: venueId || '', day: 'Monday', meetTime: '', start: '19:00', end: '',
+  level: 'Club Session', price: '', paymentMethod: '', capacity: '', host: '', showPublicJoinLink: false, publicJoinUrl: ''
 });
 
 function mergeProfile(base, override) {
@@ -55,6 +56,8 @@ export default function DirectoryListingEdit() {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [recentSessionId, setRecentSessionId] = useState('');
+  const [sessionNotice, setSessionNotice] = useState('');
   const [error, setError] = useState('');
   const [validation, setValidation] = useState([]);
   const returnTo = useMemo(() => `/directory/${slug}/edit`, [slug]);
@@ -179,7 +182,32 @@ export default function DirectoryListingEdit() {
       return { ...prev, venues, sessions };
     });
   };
-  const addSession = () => { setSaved(false); setForm(prev => ({ ...prev, sessions: [...(prev.sessions || []), emptySession(prev.venues?.[0]?.id || '')] })); };
+  const revealSession = (id, message) => {
+    setRecentSessionId(id);
+    setSessionNotice(message);
+    window.setTimeout(() => document.getElementById(`session-card-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+    window.setTimeout(() => setRecentSessionId(current => current === id ? '' : current), 2200);
+    window.setTimeout(() => setSessionNotice(current => current === message ? '' : current), 3200);
+  };
+  const addSession = () => {
+    if (!form?.venues?.length) { setSessionNotice('Add a venue before adding a weekly session.'); return; }
+    const created = emptySession(form.venues[0]?.id || '');
+    setSaved(false);
+    setForm(prev => ({ ...prev, sessions: [...(prev.sessions || []), created] }));
+    revealSession(created.id, 'New blank session added — complete the details below.');
+  };
+  const cloneSession = index => {
+    const source = form?.sessions?.[index];
+    if (!source) return;
+    const duplicated = { ...clone(source), id: newSessionId() };
+    setSaved(false);
+    setForm(prev => {
+      const sessions = [...(prev.sessions || [])];
+      sessions.splice(index + 1, 0, duplicated);
+      return { ...prev, sessions };
+    });
+    revealSession(duplicated.id, 'Session duplicated — edit only the details that are different.');
+  };
   const removeSession = index => {
     if (!window.confirm('Remove this weekly session?')) return;
     setSaved(false);
@@ -311,11 +339,12 @@ export default function DirectoryListingEdit() {
               </section>
 
               <section id="sessions" className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
-                <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><CalendarDays className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Weekly sessions</h2></div><p className="text-sm text-muted-foreground mt-1">Keep recurring public sessions current. One-off events belong in RallyHub events, not here.</p></div><Button variant="outline" size="sm" onClick={addSession} disabled={!form.venues?.length} className="gap-1"><Plus className="w-4 h-4" /> Add session</Button></div>
+                <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><CalendarDays className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Weekly sessions</h2></div><p className="text-sm text-muted-foreground mt-1">Keep recurring public sessions current. Duplicate a similar session to save retyping the same venue, level, price and booking details.</p></div><Button type="button" variant="outline" size="sm" onClick={addSession} disabled={!form.venues?.length} className="gap-1" data-testid="directory-add-session"><Plus className="w-4 h-4" /> Add blank session</Button></div>
+                {sessionNotice && <div aria-live="polite" data-testid="directory-session-notice" className="rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm text-primary">{sessionNotice}</div>}
                 {!form.venues?.length && <div className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">Add a venue before adding weekly sessions.</div>}
                 {(form.sessions || []).map((session, index) => (
-                  <div key={session.id || index} className="rounded-xl border border-border bg-background/30 p-4 sm:p-5 space-y-4">
-                    <div className="flex items-center justify-between gap-3"><div><p className="font-semibold">{session.day} · {session.start || 'Time pending'} · {session.level || 'Club session'}</p><p className="text-xs text-muted-foreground">Weekly session {index + 1}</p></div><Button variant="ghost" size="sm" onClick={() => removeSession(index)} className="text-destructive gap-1"><Trash2 className="w-4 h-4" /> Remove</Button></div>
+                  <div id={`session-card-${session.id || index}`} data-testid="directory-session-card" key={session.id || index} className={`rounded-xl border bg-background/30 p-4 sm:p-5 space-y-4 transition-all ${recentSessionId === session.id ? 'border-primary ring-2 ring-primary/30' : 'border-border'}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="font-semibold">{session.day} · {session.start || 'Time pending'} · {session.level || 'Club session'}</p><p className="text-xs text-muted-foreground">Weekly session {index + 1}</p></div><div className="flex items-center gap-1"><Button type="button" variant="ghost" size="sm" onClick={() => cloneSession(index)} className="gap-1" data-testid="directory-clone-session"><Copy className="w-4 h-4" /> Duplicate</Button><Button type="button" variant="ghost" size="sm" onClick={() => removeSession(index)} className="text-destructive gap-1"><Trash2 className="w-4 h-4" /> Remove</Button></div></div>
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       <div className="space-y-1"><Label>Day</Label><select value={session.day || 'Monday'} onChange={e => setSession(index, 'day', e.target.value)} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">{weekDays.map(day => <option key={day}>{day}</option>)}</select></div>
                       <div className="space-y-1"><Label>Venue</Label><select value={session.venueId || ''} onChange={e => setSession(index, 'venueId', e.target.value)} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">{form.venues.map(v => <option key={v.id} value={v.id}>{v.shortName || v.name || 'Venue'}</option>)}</select></div>
@@ -324,6 +353,7 @@ export default function DirectoryListingEdit() {
                       <div className="space-y-1"><Label>End <span className="text-muted-foreground">(optional)</span></Label><Input type="time" value={session.end || ''} onChange={e => setSession(index, 'end', e.target.value)} /></div>
                       <div className="space-y-1 lg:col-span-2"><Label>Session / level</Label><Input value={session.level || ''} onChange={e => setSession(index, 'level', e.target.value)} placeholder="e.g. Social, Improver, Match Play" /></div>
                       <div className="space-y-1"><Label>Price (€)</Label><Input type="number" min="0" step="0.5" value={session.price ?? ''} onChange={e => setSession(index, 'price', e.target.value)} /></div>
+                      <div className="space-y-1"><Label>Payment</Label><select value={session.paymentMethod || ''} onChange={e => setSession(index, 'paymentMethod', e.target.value)} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"><option value="">Not specified</option><option value="Cash">Cash</option><option value="Online">Online</option><option value="Pay at venue">Pay at venue</option><option value="Included in membership">Included in membership</option><option value="Contact club">Contact club</option></select></div>
                       <div className="space-y-1"><Label>Capacity</Label><Input type="number" min="1" value={session.capacity ?? ''} onChange={e => setSession(index, 'capacity', e.target.value)} /></div>
                       <div className="space-y-1 lg:col-span-2"><Label>Host / organiser <span className="text-muted-foreground">(optional)</span></Label><Input value={session.host || ''} onChange={e => setSession(index, 'host', e.target.value)} /></div>
                       <div className="lg:col-span-4 rounded-xl border border-border bg-background/40 p-3">
