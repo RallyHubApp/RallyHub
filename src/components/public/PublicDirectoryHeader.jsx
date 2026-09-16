@@ -14,7 +14,7 @@ export default function PublicDirectoryHeader() {
   const directoryLoginHref = `/login?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
   const displayName = user?.full_name || user?.display_name || user?.email || 'Directory account';
   const isSuperAdmin = user?.role === 'admin' && (!user?.kotc_role || user?.kotc_role === 'super_admin');
-  const canUseClubApp = user?.role === 'admin' || user?.approval_status === 'approved';
+  const canUseClubApp = user?.role === 'admin' || (user?.approval_status === 'approved' && !!user?.active_tenant_id && !!user?.active_club_id);
 
   return (
     <header className="sticky top-0 z-[1001] border-b border-border/80 bg-[#0a1628]/95 backdrop-blur-xl">
