@@ -18,7 +18,7 @@ async function bodyFromRequest(req:Request) {
   return await req.json().catch(() => ({}));
 }
 
-async function consumeAllowance(base44:any, user:any, action:string, limit:number, windowHours:number, contextId:string) {
+async function consumeAllowance(base44:any, user:any, action:string, limit:number, windowHours:number, contextId:string, globalLimit:number|null = null) {
   const auditAction = `credit_guard_${action}`;
   const rows = await base44.asServiceRole.entities.AuditLog.filter({ user_id:user.id, action:auditAction }, '-created_date', Math.max(limit + 5, 20));
   const recent = (rows || []).filter((r:any) => ageMs(r.created_date) <= windowHours * HOUR);
