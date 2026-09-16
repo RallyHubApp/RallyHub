@@ -20,9 +20,13 @@ async function bodyFromRequest(req:Request) {
 
 async function consumeAllowance(base44:any, user:any, action:string, limit:number, windowHours:number, contextId:string, globalLimit:number|null = null) {
   const auditAction = `credit_guard_${action}`;
-  const rows = await base44.asServiceRole.entities.AuditLog.filter({ user_id:user.id, action:auditAction }, '-created_date', Math.max(limit + 5, 20));
-  const recent = (rows || []).filter((r:any) => ageMs(r.created_date) <= windowHours * HOUR);
-  if (recent.length >= limit) {
+  const [userRows, globalRows] = await Promise.all([
+    base44.asServiceRole.entities.AuditLog.filter({ user_id:user.id, action:auditAction }, '-created_date', Math.max(limit + 5, 20)),
+    globalLimit ? base44.asServiceRole.entities.AuditLog.filter({ action:auditAction }, '-created_date', Math.max(globalLimit + 10, 50)) : Promise.resolve([]),
+  ]);
+  const recentUser = (userRows || []).filter((r:any) => ageMs(r.created_date) <= windowHours * HOUR);
+  const recentGlobal = (globalRows || []).filter((r:any) => ageMs(r.created_date) <= windowHours * HOUR);
+  if (recentUser.length >= limit || (globalLimit && recentGlobal.length >= globalLimit)) {
     return { allowed:false, response:Response.json({ error:'This action has reached its temporary usage limit. Please try again later.' }, { status:429 }) };
   }
   try {
