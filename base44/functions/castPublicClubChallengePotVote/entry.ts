@@ -32,6 +32,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'pot_vote_cast', user_id:'public_qr', occurred_at:now, new_value_json:JSON.stringify({ voter_participant_id:voter.id, access_route:'qr' }), note:'Public QR vote recorded; nominee intentionally omitted from audit to preserve ballot privacy.' });
     return Response.json({ success:true, voteId:vote.id });
   } catch (error) {
-    return Response.json({ error:error?.message || 'Unexpected public POT vote error' }, { status:500 });
+    console.error('castPublicClubChallengePotVote failed', error);
+    return Response.json({ error:'Unable to record the vote right now.' }, { status:500 });
   }
 });
