@@ -20,6 +20,7 @@ export default function AddDirectoryClub() {
   const [town, setTown] = useState('');
   const [primaryVenue, setPrimaryVenue] = useState('');
   const [address, setAddress] = useState('');
+  const [venuePostcode, setVenuePostcode] = useState('');
   const [website, setWebsite] = useState('');
   const [facebook, setFacebook] = useState('');
   const [instagram, setInstagram] = useState('');
@@ -90,6 +91,7 @@ export default function AddDirectoryClub() {
         town,
         primaryVenue,
         address,
+        venuePostcode,
         website,
         facebook,
         instagram,
@@ -213,8 +215,13 @@ export default function AddDirectoryClub() {
                     <Input id="primaryVenue" value={primaryVenue} onChange={e => setPrimaryVenue(e.target.value)} maxLength={220} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="address">Venue address / Eircode <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                    <Input id="address" value={address} onChange={e => setAddress(e.target.value)} maxLength={320} />
+                    <Label htmlFor="address">Venue address <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                    <Input id="address" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street / venue address" maxLength={320} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="venuePostcode">Eircode / postcode <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                    <Input id="venuePostcode" value={venuePostcode} onChange={e => setVenuePostcode(e.target.value.toUpperCase())} placeholder="e.g. V95 PD96 or BT…" maxLength={40} autoComplete="postal-code" />
+                    <p className="text-xs text-muted-foreground">A full address or Eircode/postcode helps RallyHub place the venue accurately on the all-Ireland club map.</p>
                   </div>
                 </div>
 
@@ -230,7 +237,7 @@ export default function AddDirectoryClub() {
                     <div className="space-y-2"><Label htmlFor="claimantName">Your name</Label><Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} required maxLength={160} /></div>
                     <div className="space-y-2"><Label htmlFor="claimantRole">Your role / connection</Label><Input id="claimantRole" value={claimantRole} onChange={e => setClaimantRole(e.target.value)} placeholder="e.g. Chairperson, organiser" required maxLength={160} /></div>
                     <div className="space-y-2 sm:col-span-2"><Label htmlFor="claimantEmail">Email address</Label><Input id="claimantEmail" value={user?.email || ''} readOnly className="bg-background/40" /><p className="text-xs text-muted-foreground">This is your signed-in RallyHub email and will be used to contact you about the directory request.</p></div>
-                    <div className="space-y-2"><Label htmlFor="claimantPhone">Mobile number</Label><Input id="claimantPhone" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} required maxLength={80} /></div>
+                    <div className="space-y-2"><Label htmlFor="claimantPhone">Mobile number</Label><Input id="claimantPhone" type="tel" inputMode="tel" autoComplete="tel" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="e.g. 087 123 4567" required maxLength={80} /><p className="text-xs text-muted-foreground">Enter the number and continue to the next field; it is saved when you submit the form.</p></div>
                   </div>
                   <div className="space-y-2 mt-4"><Label htmlFor="notes">Anything else we should know <span className="text-muted-foreground font-normal">(optional)</span></Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4} maxLength={1500} /></div>
                   <label className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-background/30 p-4 cursor-pointer">
