@@ -29,6 +29,7 @@ export default function AddDirectoryClub() {
   const [networkUpdatesOptIn, setNetworkUpdatesOptIn] = useState(false);
   const [notes, setNotes] = useState('');
   const [request, setRequest] = useState(null);
+  const [dynamicClubs, setDynamicClubs] = useState([]);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -41,6 +42,18 @@ export default function AddDirectoryClub() {
     if (!user) return;
     setClaimantName(user.full_name || user.display_name || '');
   }, [user]);
+
+  useEffect(() => {
+    let active = true;
+    base44.functions.invoke('directoryListingProfile', { action: 'public_list' })
+      .then(res => {
+        if (!active || res.data?.error) return;
+        const known = Object.entries(res.data?.listings || {}).filter(([, state]) => state?.base).map(([slug, state]) => ({ ...state.base, slug }));
+        setDynamicClubs(known);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -61,8 +74,8 @@ export default function AddDirectoryClub() {
 
   const exactExisting = useMemo(() => {
     if (!clubName.trim() || !county) return null;
-    return directoryClubs.find(club => normalise(club.name) === normalise(clubName) && normalise(club.county) === normalise(county)) || null;
-  }, [clubName, county]);
+    return [...directoryClubs, ...dynamicClubs].find(club => normalise(club.name) === normalise(clubName) && normalise(club.county) === normalise(county)) || null;
+  }, [clubName, county, dynamicClubs]);
 
   const submit = async event => {
     event.preventDefault();
@@ -152,8 +165,9 @@ export default function AddDirectoryClub() {
               </div>
             ) : approved ? (
               <div className="mt-8 rounded-2xl border border-green-400/30 bg-green-400/10 p-6">
-                <div className="flex items-center gap-2 text-green-300"><CheckCircle2 className="w-5 h-5" /><h2 className="font-bold">Club request approved</h2></div>
-                <p className="text-sm text-muted-foreground mt-2">The club has been approved for addition to the RallyHub Directory. Directory publishing is completed by RallyHub during this preview phase.</p>
+                <div className="flex items-center gap-2 text-green-300"><CheckCircle2 className="w-5 h-5" /><h2 className="font-bold">Your club is now in the directory</h2></div>
+                <p className="text-sm text-muted-foreground mt-2">RallyHub approved the club and gave your account directory-editor access. Complete the public listing now so players see accurate contact, venue and session information.</p>
+                {request.approved_listing_slug && <div className="mt-5 flex flex-wrap gap-2"><Link to={`/directory/${request.approved_listing_slug}/edit`}><Button>Edit your listing</Button></Link><Link to={`/directory/${request.approved_listing_slug}`}><Button variant="outline">View public listing</Button></Link></div>}
               </div>
             ) : (
               <form onSubmit={submit} className="mt-8 space-y-5">
