@@ -42,9 +42,6 @@ export default function PublicClubProfile() {
                   <a href={club.waitingListUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold">
                     <Users className="w-4 h-4" /> Join waiting list
                   </a>
-                  <a href={club.spondUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold">
-                    Open Spond <ExternalLink className="w-4 h-4" />
-                  </a>
                 </div>
               </div>
             </div>
@@ -53,6 +50,12 @@ export default function PublicClubProfile() {
 
         <div className="container mx-auto px-4 py-8 grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6">
           <div className="space-y-6">
+            <section className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-5 sm:p-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">Guest policy</p>
+              <p className="mt-2 text-base font-semibold text-foreground">{club.guestPolicy}</p>
+              <p className="mt-2 text-sm text-muted-foreground">Please contact the club before attending any session.</p>
+            </section>
+
             <section className="glass rounded-2xl p-5 sm:p-6">
               <div className="flex items-center gap-2 mb-5">
                 <CalendarDays className="w-5 h-5 text-primary" />
@@ -72,7 +75,7 @@ export default function PublicClubProfile() {
                               <p className="font-semibold">{session.level}</p>
                               <p className="text-sm text-muted-foreground">{venue?.name}</p>
                             </div>
-                            <p className="text-sm font-semibold">{session.price == null ? 'Contact club' : `€${session.price.toFixed(2)}`}</p>
+                            <p className="text-sm font-semibold">Contact club</p>
                           </div>
                         );
                       })}
