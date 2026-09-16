@@ -455,6 +455,35 @@ export default function AdminPanel() {
             </div>
 
             <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">New club requests</p>
+              {pendingNewDirectoryRequests.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-4 px-1">No new clubs are waiting to be added.</p>
+              ) : pendingNewDirectoryRequests.map(request => (
+                <div key={request.id} className="glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2"><UserPlus className="w-4 h-4 text-primary" /><p className="font-semibold text-foreground">{request.club_name}</p></div>
+                    <p className="text-sm text-muted-foreground">{request.town ? `${request.town} · ` : ''}{request.county}</p>
+                    {request.primary_venue && <p className="text-xs text-muted-foreground">Venue: {request.primary_venue}{request.address ? ` · ${request.address}` : ''}</p>}
+                    <p className="text-xs text-muted-foreground break-all">Submitted by {request.claimant_name || '(no name)'} · {request.claimant_role || 'role not supplied'} · {request.claimant_email}</p>
+                    {request.claimant_phone && <p className="text-xs text-muted-foreground">Phone: {request.claimant_phone}</p>}
+                    {(request.website || request.facebook || request.instagram) && (
+                      <p className="text-xs text-muted-foreground break-all">Links: {[request.website, request.facebook, request.instagram].filter(Boolean).join(' · ')}</p>
+                    )}
+                    {request.notes && <p className="text-xs text-muted-foreground mt-2">“{request.notes}”</p>}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button size="sm" disabled={reviewingNewDirectoryRequest === request.id} onClick={() => reviewNewDirectoryRequest(request.id, 'approved')} className="gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> {reviewingNewDirectoryRequest === request.id ? '…' : 'Approve for addition'}
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={reviewingNewDirectoryRequest === request.id} onClick={() => reviewNewDirectoryRequest(request.id, 'rejected')} className="gap-1 text-destructive border-destructive/30">
+                      <XCircle className="w-3.5 h-3.5" /> {reviewingNewDirectoryRequest === request.id ? '…' : 'Reject'}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Pending verification</p>
               {pendingDirectoryClaims.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No directory claims are waiting for review.</p>
