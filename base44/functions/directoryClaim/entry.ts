@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
 
     if (action === 'submit') {
       const listingSlug = String(body.listingSlug || '').trim();
-      const listing = directoryVerificationIndex.find(x => x.slug === listingSlug);
+      const listing = await resolveListing(base44, listingSlug);
       if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
       if (!user.email) return Response.json({ error: 'A verified account email is required' }, { status: 400 });
 
@@ -218,7 +218,9 @@ Deno.serve(async (req) => {
       // This recognises a known platform identity without weakening the rule for external claimants.
       // Once a listing is already verified, additional editors always require manual review.
       const adminIdentityMatch = user.role === 'admin' && nameMatch && phoneMatch;
-      const autoVerified = (emailMatch || adminIdentityMatch) && listing.verificationStatus !== 'verified';
+      const anyExistingAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' });
+      const listingAlreadyVerified = listing.verificationStatus === 'verified' || !!anyExistingAccess?.length;
+      const autoVerified = (emailMatch || adminIdentityMatch) && !listingAlreadyVerified;
       const now = new Date().toISOString();
       const claim = await base44.asServiceRole.entities.DirectoryClaim.create({
         listing_slug: listing.slug,
