@@ -27,7 +27,7 @@ export default function PublicDirectoryHeader() {
             <Search className="w-5 h-5" />
           </Link>
           <Button size="sm" variant="outline" onClick={() => base44.auth.redirectToLogin('/app')} className="gap-1.5">
-            <LogIn className="w-4 h-4" /> <span className="hidden xs:inline">Club login</span>
+            <LogIn className="w-4 h-4" /> <span className="hidden xs:inline">Club app login</span>
           </Button>
         </div>
       </div>
