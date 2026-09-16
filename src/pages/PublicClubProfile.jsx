@@ -169,7 +169,7 @@ export default function PublicClubProfile() {
             </section>
 
             <section className="glass rounded-2xl p-5">
-              <h2 className="font-bold">Follow Clare Pickleball</h2>
+              <h2 className="font-bold">Follow {club.name}</h2>
               <div className="mt-3 flex flex-wrap gap-2">
                 <a href={club.facebook} target="_blank" rel="noreferrer" className="flex-1 inline-flex justify-center items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold"><Facebook className="w-4 h-4" /> Facebook</a>
                 <a href={club.instagram} target="_blank" rel="noreferrer" className="flex-1 inline-flex justify-center items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold">Instagram</a>
