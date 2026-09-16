@@ -200,6 +200,7 @@ export default function PublicClubProfile() {
                               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                 {session.meetTime && <span>Meet {session.meetTime}</span>}
                                 {session.price !== null && session.price !== undefined && session.price !== '' && <span>€{Number(session.price).toFixed(Number(session.price) % 1 ? 2 : 0)}</span>}
+                                {session.paymentMethod && <span>{session.paymentMethod}</span>}
                                 {session.capacity && <span>Capacity {session.capacity}</span>}
                                 {session.host && <span>Host: {session.host}</span>}
                               </div>
