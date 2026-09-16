@@ -1,0 +1,56 @@
+{
+  "name": "DirectoryListingProfile",
+  "type": "object",
+  "properties": {
+    "listing_slug": {
+      "type": "string"
+    },
+    "public_json": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "updated_by_user_id": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "listing_slug",
+    "public_json",
+    "status",
+    "updated_by_user_id",
+    "updated_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
