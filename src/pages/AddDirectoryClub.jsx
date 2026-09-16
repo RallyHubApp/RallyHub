@@ -27,6 +27,7 @@ export default function AddDirectoryClub() {
   const [claimantName, setClaimantName] = useState('');
   const [claimantRole, setClaimantRole] = useState('');
   const [claimantPhone, setClaimantPhone] = useState('');
+  const [publishContact, setPublishContact] = useState(true);
   const [networkUpdatesOptIn, setNetworkUpdatesOptIn] = useState(false);
   const [notes, setNotes] = useState('');
   const [request, setRequest] = useState(null);
@@ -98,6 +99,7 @@ export default function AddDirectoryClub() {
         claimantName,
         claimantRole,
         claimantPhone,
+        publishContact,
         networkUpdatesOptIn,
         notes,
       });
@@ -237,9 +239,13 @@ export default function AddDirectoryClub() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2"><Label htmlFor="claimantName">Your name</Label><Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} required maxLength={160} /></div>
                     <div className="space-y-2"><Label htmlFor="claimantRole">Your role / connection</Label><Input id="claimantRole" value={claimantRole} onChange={e => setClaimantRole(e.target.value)} placeholder="e.g. Chairperson, organiser" required maxLength={160} /></div>
-                    <div className="space-y-2 sm:col-span-2"><Label htmlFor="claimantEmail">Email address</Label><Input id="claimantEmail" value={user?.email || ''} readOnly className="bg-background/40" /><p className="text-xs text-muted-foreground">This is your signed-in RallyHub email and will be used to contact you about the directory request.</p></div>
+                    <div className="space-y-2 sm:col-span-2"><Label htmlFor="claimantEmail">Email address</Label><Input id="claimantEmail" value={user?.email || ''} readOnly className="bg-background/40" /><p className="text-xs text-muted-foreground">This is your signed-in RallyHub email. It is used for the review and, if you leave the public-contact option selected below, it will also appear on the approved club listing.</p></div>
                     <div className="space-y-2"><Label htmlFor="claimantPhone">Mobile number</Label><Input id="claimantPhone" type="tel" inputMode="tel" autoComplete="tel" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="e.g. 087 123 4567" required maxLength={80} /><p className="text-xs text-muted-foreground">Enter the number and continue to the next field; it is saved when you submit the form.</p></div>
                   </div>
+                  <label className="mt-4 flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4 cursor-pointer">
+                    <input type="checkbox" checked={publishContact} onChange={e => setPublishContact(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
+                    <span className="text-sm text-muted-foreground"><strong className="text-foreground">Use these as the public club contact details.</strong> If the listing is approved, show my submitted name, email and mobile on the club profile. Untick this if you want to add different public contact details later.</span>
+                  </label>
                   <div className="space-y-2 mt-4"><Label htmlFor="notes">Anything else we should know <span className="text-muted-foreground font-normal">(optional)</span></Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4} maxLength={1500} /></div>
                   <label className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-background/30 p-4 cursor-pointer">
                     <input type="checkbox" checked={networkUpdatesOptIn} onChange={e => setNetworkUpdatesOptIn(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
