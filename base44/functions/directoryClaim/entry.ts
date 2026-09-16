@@ -369,7 +369,12 @@ Deno.serve(async (req) => {
     if (action === 'new_status') {
       const requests = await base44.asServiceRole.entities.DirectoryListingRequest.filter({ claimant_user_id: user.id });
       const latest = [...requests].sort((a, b) => String(b.created_date || '').localeCompare(String(a.created_date || '')))[0] || null;
-      return Response.json({ success: true, request: publicListingRequest(latest) });
+      const publicRequest = publicListingRequest(latest);
+      if (latest?.status === 'approved' && latest?.approved_listing_slug) {
+        const stillPublished = await resolveListing(base44, latest.approved_listing_slug);
+        if (!stillPublished) return Response.json({ success: true, request: { ...publicRequest, status: 'removed' } });
+      }
+      return Response.json({ success: true, request: publicRequest });
     }
 
     if (action === 'status') {
@@ -392,12 +397,13 @@ Deno.serve(async (req) => {
 
     if (action === 'list_admin') {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
-      const [claims, accesses, listingRequests] = await Promise.all([
+      const [claims, accesses, listingRequests, listingRecords] = await Promise.all([
         base44.asServiceRole.entities.DirectoryClaim.list('-created_date', 300),
         base44.asServiceRole.entities.DirectoryListingAccess.list('-created_date', 300),
         base44.asServiceRole.entities.DirectoryListingRequest.list('-created_date', 300),
+        base44.asServiceRole.entities.DirectoryListingRecord.list('-published_at', 500),
       ]);
-      return Response.json({ success: true, claims, accesses, listingRequests });
+      return Response.json({ success: true, claims, accesses, listingRequests, listingRecords });
     }
 
     if (action === 'review') {
@@ -524,6 +530,49 @@ Deno.serve(async (req) => {
         review_notes: reviewNotes || null,
       });
       return Response.json({ success: true, status: 'approved', listingSlug, accessId: access?.id || null });
+    }
+
+    if (action === 'archive_listing') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const listingSlug = String(body.listingSlug || '').trim();
+      if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
+
+      // Only database-backed listings can be removed here. Curated seed listings are
+      // deliberately protected from accidental deletion through this admin workflow.
+      const records = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
+      const record = records?.[0];
+      if (!record) return Response.json({ error: 'Published directory listing not found or cannot be removed here' }, { status: 404 });
+
+      const now = new Date().toISOString();
+      await base44.asServiceRole.entities.DirectoryListingRecord.update(record.id, { status: 'archived' });
+
+      const profiles = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 20);
+      for (const profile of profiles || []) {
+        await base44.asServiceRole.entities.DirectoryListingProfile.update(profile.id, { status: 'archived', updated_at: now, updated_by_user_id: user.id });
+      }
+
+      const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' });
+      for (const access of accesses || []) {
+        await base44.asServiceRole.entities.DirectoryListingAccess.update(access.id, {
+          status: 'revoked', revoked_by_user_id: user.id, revoked_at: now,
+          notes: [access.notes, 'Directory listing removed by RallyHub administrator.'].filter(Boolean).join(' '),
+        });
+      }
+
+      try {
+        await base44.asServiceRole.entities.DirectoryListingAudit.create({
+          listing_slug: listingSlug,
+          user_id: user.id,
+          action: 'listing_archived',
+          occurred_at: now,
+          before_json: record.base_json || JSON.stringify({ name: record.name, county: record.county }),
+          after_json: JSON.stringify({ status: 'archived', removed_at: now }),
+        });
+      } catch (auditError) {
+        console.warn('Directory listing archive audit write failed', auditError?.message || auditError);
+      }
+
+      return Response.json({ success: true, status: 'archived', listingSlug });
     }
 
     if (action === 'revoke') {
