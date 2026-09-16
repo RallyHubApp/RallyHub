@@ -19,6 +19,7 @@ export default function DirectoryClaim() {
   const [claimantRole, setClaimantRole] = useState('');
   const [claimantPhone, setClaimantPhone] = useState('');
   const [claimantMessage, setClaimantMessage] = useState('');
+  const [networkUpdatesOptIn, setNetworkUpdatesOptIn] = useState(false);
   const [status, setStatus] = useState(null);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -66,6 +67,7 @@ export default function DirectoryClaim() {
         claimantRole,
         claimantPhone,
         claimantMessage,
+        networkUpdatesOptIn,
       });
       if (res.data?.error) throw new Error(res.data.error);
       const refreshed = await base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: club.slug });
@@ -167,13 +169,24 @@ export default function DirectoryClaim() {
                   <Input id="claimantRole" value={claimantRole} onChange={e => setClaimantRole(e.target.value)} placeholder="e.g. Chairperson, secretary, organiser" required maxLength={160} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="claimantPhone">Mobile number <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                  <Input id="claimantPhone" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="Your contact number" maxLength={80} />
+                  <Label htmlFor="claimantEmail">Email address</Label>
+                  <Input id="claimantEmail" value={user?.email || ''} readOnly className="bg-background/40" />
+                  <p className="text-xs text-muted-foreground">This is your signed-in RallyHub email. We use it for verification and contact about this listing.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="claimantPhone">Mobile number</Label>
+                  <Input id="claimantPhone" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="Your contact number" required maxLength={80} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="claimantMessage">Anything that will help us verify you <span className="text-muted-foreground font-normal">(optional)</span></Label>
                   <Textarea id="claimantMessage" value={claimantMessage} onChange={e => setClaimantMessage(e.target.value)} placeholder="For example: I manage the club sessions and am the current secretary." maxLength={1500} rows={4} />
                 </div>
+                <label className="flex items-start gap-3 rounded-xl border border-border bg-background/30 p-4 cursor-pointer">
+                  <input type="checkbox" checked={networkUpdatesOptIn} onChange={e => setNetworkUpdatesOptIn(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
+                  <span className="text-sm text-muted-foreground">
+                    <strong className="text-foreground">Keep me connected with RallyHub.</strong> I’m happy to receive occasional directory, club-network and RallyHub updates by email. I can opt out at any time.
+                  </span>
+                </label>
                 <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
                   {submitting ? 'Checking verification…' : 'Request directory access'}
                 </Button>
