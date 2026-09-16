@@ -108,7 +108,21 @@ export default function DirectoryListingEdit() {
   const setField = (key, value) => { setSaved(false); setFieldState(prev => ({ ...prev, [key]: value })); };
   const setFieldState = updater => setForm(prev => typeof updater === 'function' ? updater(prev) : updater);
   const setContact = (key, value) => { setSaved(false); setForm(prev => ({ ...prev, contact: { ...(prev.contact || {}), [key]: value } })); };
-  const setVenue = (index, key, value) => { setSaved(false); setForm(prev => ({ ...prev, venues: prev.venues.map((v, i) => i === index ? { ...v, [key]: value } : v) })); };
+  const setVenue = (index, key, value) => {
+    setSaved(false);
+    setForm(prev => ({
+      ...prev,
+      venues: prev.venues.map((v, i) => {
+        if (i !== index) return v;
+        const updated = { ...v, [key]: value };
+        if (['name', 'address', 'eircode'].includes(key)) {
+          updated.latitude = null;
+          updated.longitude = null;
+        }
+        return updated;
+      })
+    }));
+  };
   const setSession = (index, key, value) => { setSaved(false); setForm(prev => ({ ...prev, sessions: prev.sessions.map((s, i) => i === index ? { ...s, [key]: value } : s) })); };
 
   const validate = () => {
