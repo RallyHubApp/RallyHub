@@ -22,6 +22,7 @@ Deno.serve(async (req) => {
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
     return Response.json({ success:true, event:{ id:event.id, club_a_name:event.club_a_name, club_b_name:event.club_b_name, pot_status:event.pot_status, junior_display_mode:!!event.junior_display_mode }, participants:participants.filter((p:any)=>p.status !== 'replaced').map((p:any)=>({ id:p.id, side:p.side, status:p.status, display_name:maskName(p.display_name, !!event.junior_display_mode), can_vote:['active','late'].includes(p.status) })) });
   } catch (error) {
-    return Response.json({ error:error?.message || 'Unexpected public voting error' }, { status:500 });
+    console.error('getPublicClubChallengeVote failed', error);
+    return Response.json({ error:'Unable to load voting right now.' }, { status:500 });
   }
 });
