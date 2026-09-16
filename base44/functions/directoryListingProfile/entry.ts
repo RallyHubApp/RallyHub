@@ -20,6 +20,20 @@ const safeNumber = (value:any, min:number, max:number) => {
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : null;
 };
 const idSafe = (value:any, fallback:string) => clean(value, 120).replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || fallback;
+const phoneHref = (value:any) => {
+  const raw = clean(value, 80);
+  if (!raw) return null;
+  let digits = raw.replace(/\D/g, '');
+  if (!digits) return null;
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('0')) digits = `353${digits.slice(1)}`;
+  return `tel:+${digits}`;
+};
+
+function parseJson(value:any) {
+  if (!value) return null;
+  try { return JSON.parse(value); } catch { return null; }
+}
 
 function sanitiseProfile(input:any) {
   const venuesIn = Array.isArray(input?.venues) ? input.venues.slice(0, 20) : [];
@@ -69,6 +83,7 @@ function sanitiseProfile(input:any) {
     contact: {
       name: nullable(input?.contact?.name, 180),
       phone: nullable(input?.contact?.phone, 80),
+      phoneHref: phoneHref(input?.contact?.phone),
       email: safeEmail(input?.contact?.email),
       whatsapp: safeUrl(input?.contact?.whatsapp),
     },
@@ -91,30 +106,41 @@ Deno.serve(async (req) => {
     if (action === 'public_get') {
       const listingSlug = clean(body.listingSlug, 180);
       if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
-      const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5);
+      const [rows, dynamicRows] = await Promise.all([
+        base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5),
+        base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5),
+      ]);
       const row = rows?.[0] || null;
-      let profile = null;
-      if (row?.public_json) {
-        try { profile = JSON.parse(row.public_json); } catch { profile = null; }
+      const dynamic = dynamicRows?.[0] || null;
+      const profile = parseJson(row?.public_json);
+      const base = parseJson(dynamic?.base_json);
+      if (!base && !profile && !dynamic) {
+        return Response.json({ success: true, listingSlug, verificationStatus: await verifiedStatus(base44, listingSlug), profile: null, base: null });
       }
-      return Response.json({ success: true, listingSlug, verificationStatus: await verifiedStatus(base44, listingSlug), profile });
+      return Response.json({ success: true, listingSlug, verificationStatus: await verifiedStatus(base44, listingSlug), profile, base });
     }
 
     if (action === 'public_list') {
-      const [rows, accesses] = await Promise.all([
+      const [rows, accesses, dynamicRows] = await Promise.all([
         base44.asServiceRole.entities.DirectoryListingProfile.filter({ status: 'active' }, '-updated_at', 500),
         base44.asServiceRole.entities.DirectoryListingAccess.filter({ status: 'active' }, '-granted_at', 500),
+        base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500),
       ]);
       const verified = new Set((accesses || []).map((x:any) => x.listing_slug));
       const result:any = {};
+      for (const row of dynamicRows || []) {
+        if (!row.slug || result[row.slug]) continue;
+        result[row.slug] = { base: parseJson(row.base_json), profile: null, verificationStatus: verified.has(row.slug) ? 'verified' : 'unclaimed' };
+      }
       for (const row of rows || []) {
-        if (!row.listing_slug || result[row.listing_slug]) continue;
-        let profile = null;
-        try { profile = row.public_json ? JSON.parse(row.public_json) : null; } catch {}
-        result[row.listing_slug] = { profile, verificationStatus: verified.has(row.listing_slug) ? 'verified' : 'unclaimed' };
+        if (!row.listing_slug) continue;
+        const current = result[row.listing_slug] || { base: null, profile: null, verificationStatus: verified.has(row.listing_slug) ? 'verified' : 'unclaimed' };
+        if (!current.profile) current.profile = parseJson(row.public_json);
+        current.verificationStatus = verified.has(row.listing_slug) ? 'verified' : 'unclaimed';
+        result[row.listing_slug] = current;
       }
       for (const slug of verified) {
-        if (!result[slug]) result[slug] = { profile: null, verificationStatus: 'verified' };
+        if (!result[slug]) result[slug] = { base: null, profile: null, verificationStatus: 'verified' };
       }
       return Response.json({ success: true, listings: result });
     }
