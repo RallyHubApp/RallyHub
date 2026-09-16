@@ -98,22 +98,22 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
 
 async function sendAdminDirectoryEmail(base44, { subject, body }) {
   try {
-    // Recipient addresses are resolved server-side from RallyHub admins and are never
-    // disclosed to the claimant. This avoids exposing a personal/Gmail address publicly.
-    const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
-    const adminEmails = [...new Set((users || [])
-      .filter(u => u.role === 'admin' && u.email)
-      .map(u => String(u.email).trim().toLowerCase())
-      .filter(Boolean))];
-    if (!adminEmails.length) return { sent: 0 };
+    // The review destination is stored in an admin-only settings entity so the real
+    // mailbox is never exposed in public UI or bundled frontend code.
+    const settings = await base44.asServiceRole.entities.DirectorySettings.filter({
+      key: 'directory-review',
+      active: true,
+    });
+    const to = String(settings?.[0]?.review_email || '').trim().toLowerCase();
+    if (!to) return { sent: 0 };
 
-    await Promise.all(adminEmails.map(to => base44.asServiceRole.integrations.Core.SendEmail({
+    await base44.asServiceRole.integrations.Core.SendEmail({
       to,
       from_name: 'RallyHub Directory',
       subject,
       body,
-    })));
-    return { sent: adminEmails.length };
+    });
+    return { sent: 1 };
   } catch (error) {
     // A notification failure must never lose the underlying claim/request; it remains
     // visible in the RallyHub Admin panel for review.
