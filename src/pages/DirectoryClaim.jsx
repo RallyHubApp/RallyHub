@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import Seo from '@/components/public/Seo';
 
 export default function DirectoryClaim() {
   const { slug } = useParams();
@@ -82,7 +83,14 @@ export default function DirectoryClaim() {
   const rejected = claimStatus === 'rejected';
 
   return (
-    <div className="min-h-screen bg-[#0a1628] text-foreground">
+    <>
+      <Seo
+        title={`Claim ${club.name} Directory Listing | RallyHub`}
+        description={`Verification page for authorised representatives requesting access to manage the ${club.name} public RallyHub directory listing.`}
+        path={`/directory/${club.slug}/claim`}
+        robots="noindex,follow"
+      />
+      <div className="min-h-screen bg-[#0a1628] text-foreground">
       <PublicDirectoryHeader />
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <Link to={`/directory/${club.slug}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
@@ -197,6 +205,7 @@ export default function DirectoryClaim() {
           </aside>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }
