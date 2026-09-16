@@ -450,7 +450,7 @@ export default function AdminPanel() {
             <div className="glass rounded-lg p-3 flex items-start gap-2">
               <UserCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <p className="text-xs text-muted-foreground">
-                Directory verification is separate from RallyHub Club membership and platform approval. An exact match to an authenticated account email can verify an unclaimed listing automatically; all other claims require administrator review.
+                Directory verification is separate from RallyHub Club membership and platform approval. An exact match to an authenticated account email can verify an unclaimed listing automatically. A known RallyHub platform admin may also auto-verify where both the trusted name and trusted phone match; other claims require administrator review.
               </p>
             </div>
 
@@ -466,6 +466,7 @@ export default function AdminPanel() {
                     {request.primary_venue && <p className="text-xs text-muted-foreground">Venue: {request.primary_venue}{request.address ? ` · ${request.address}` : ''}</p>}
                     <p className="text-xs text-muted-foreground break-all">Submitted by {request.claimant_name || '(no name)'} · {request.claimant_role || 'role not supplied'} · {request.claimant_email}</p>
                     {request.claimant_phone && <p className="text-xs text-muted-foreground">Phone: {request.claimant_phone}</p>}
+                    <p className="text-xs text-muted-foreground">Network updates: {request.network_updates_opt_in ? 'Opted in' : 'No'}</p>
                     {(request.website || request.facebook || request.instagram) && (
                       <p className="text-xs text-muted-foreground break-all">Links: {[request.website, request.facebook, request.instagram].filter(Boolean).join(' · ')}</p>
                     )}
