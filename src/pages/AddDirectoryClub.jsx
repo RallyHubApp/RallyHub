@@ -111,6 +111,7 @@ export default function AddDirectoryClub() {
   const pending = request?.status === 'pending';
   const approved = request?.status === 'approved';
   const rejected = request?.status === 'rejected';
+  const removed = request?.status === 'removed';
 
   return (
     <>
@@ -171,9 +172,11 @@ export default function AddDirectoryClub() {
               </div>
             ) : (
               <form onSubmit={submit} className="mt-8 space-y-5">
-                {rejected && (
+                {(rejected || removed) && (
                   <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm">
-                    Your previous request was not added. You can submit again with corrected or clearer club information.
+                    {removed
+                      ? 'Your previous test/submitted listing is no longer published. You can submit another club if needed.'
+                      : 'Your previous request was not added. You can submit again with corrected or clearer club information.'}
                   </div>
                 )}
                 {error && <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
