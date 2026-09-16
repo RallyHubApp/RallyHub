@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,7 +18,11 @@ import { useAuth } from '@/lib/AuthContext';
 
 export default function AdminPanel() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
+  const allowedAdminTabs = ['approvals', 'directory', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const requestedTab = searchParams.get('tab');
+  const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
   const queryClient = useQueryClient();
   const [playerSearch, setPlayerSearch] = useState('');
   const [editingPlayer, setEditingPlayer] = useState(null);
@@ -272,7 +277,7 @@ export default function AdminPanel() {
       const res = await base44.functions.invoke('directoryClaim', { action: 'review_new', requestId, decision });
       if (res.data?.error) throw new Error(res.data.error);
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
-      toast.success(decision === 'approved' ? 'New club request approved for addition' : 'New club request rejected');
+      toast.success(decision === 'approved' ? 'New club published and editor access granted' : 'New club request rejected');
     } catch (error) {
       toast.error(error.message || 'Could not update new club request');
     } finally {
@@ -352,7 +357,7 @@ export default function AdminPanel() {
         </GlassCard>
       </div>
 
-      <Tabs defaultValue="approvals">
+      <Tabs value={activeAdminTab} onValueChange={value => setSearchParams(value === 'approvals' ? {} : { tab: value })}>
         <TabsList className="bg-secondary flex-wrap h-auto gap-1">
           <TabsTrigger value="approvals" className="text-xs gap-1.5">
             <Clock className="w-3.5 h-3.5" /> Approvals
@@ -474,7 +479,7 @@ export default function AdminPanel() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Button size="sm" disabled={reviewingNewDirectoryRequest === request.id} onClick={() => reviewNewDirectoryRequest(request.id, 'approved')} className="gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> {reviewingNewDirectoryRequest === request.id ? '…' : 'Approve for addition'}
+                      <CheckCircle className="w-3.5 h-3.5" /> {reviewingNewDirectoryRequest === request.id ? '…' : 'Approve & publish'}
                     </Button>
                     <Button size="sm" variant="outline" disabled={reviewingNewDirectoryRequest === request.id} onClick={() => reviewNewDirectoryRequest(request.id, 'rejected')} className="gap-1 text-destructive border-destructive/30">
                       <XCircle className="w-3.5 h-3.5" /> {reviewingNewDirectoryRequest === request.id ? '…' : 'Reject'}
