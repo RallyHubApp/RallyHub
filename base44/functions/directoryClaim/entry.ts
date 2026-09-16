@@ -96,8 +96,31 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
   });
 }
 
-// Directory verification notifications are intentionally kept inside RallyHub for now.
-// Email delivery will be added only after the dedicated RallyHub contact mailbox is configured.
+async function sendAdminDirectoryEmail(base44, { subject, body }) {
+  try {
+    // Recipient addresses are resolved server-side from RallyHub admins and are never
+    // disclosed to the claimant. This avoids exposing a personal/Gmail address publicly.
+    const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
+    const adminEmails = [...new Set((users || [])
+      .filter(u => u.role === 'admin' && u.email)
+      .map(u => String(u.email).trim().toLowerCase())
+      .filter(Boolean))];
+    if (!adminEmails.length) return { sent: 0 };
+
+    await Promise.all(adminEmails.map(to => base44.asServiceRole.integrations.Core.SendEmail({
+      to,
+      from_name: 'RallyHub Directory',
+      subject,
+      body,
+    })));
+    return { sent: adminEmails.length };
+  } catch (error) {
+    // A notification failure must never lose the underlying claim/request; it remains
+    // visible in the RallyHub Admin panel for review.
+    console.warn('Directory admin email notification failed', error?.message || error);
+    return { sent: 0, error: error?.message || String(error) };
+  }
+}
 
 Deno.serve(async (req) => {
   try {
@@ -193,12 +216,17 @@ Deno.serve(async (req) => {
         });
       }
 
+      await sendAdminDirectoryEmail(base44, {
+        subject: `[RallyHub Directory] Verification needed — ${listing.name}`,
+        body: `A club representative needs manual verification.\n\nClub: ${listing.name}\nCounty: ${listing.county || '(not supplied)'}\nName: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\n\nVerification signals:\n• Trusted email match: ${emailMatch ? 'Yes' : 'No'}\n• Trusted name match: ${nameMatch ? 'Yes' : 'No'}\n• Trusted phone match: ${phoneMatch ? 'Yes' : 'No'}\n\nMessage: ${claimantMessage || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin`,
+      });
+
       return Response.json({
         success: true,
         verified: false,
         status: 'pending',
         hasAccess: false,
-        message: 'We could not verify your connection automatically. Your request has been sent to RallyHub for review.',
+        message: 'We could not verify your connection automatically. A verification request has been sent to RallyHub for review.',
       });
     }
 
@@ -261,6 +289,11 @@ Deno.serve(async (req) => {
         network_updates_opted_in_at: networkUpdatesOptIn ? new Date().toISOString() : null,
         notes: notes || null,
         status: 'pending',
+      });
+
+      await sendAdminDirectoryEmail(base44, {
+        subject: `[RallyHub Directory] New club submission — ${clubName}`,
+        body: `A new club has been submitted for the RallyHub Directory.\n\nClub: ${clubName}\nCounty: ${county}\nTown / area: ${town || '(not supplied)'}\nPrimary venue: ${primaryVenue || '(not supplied)'}\nAddress / Eircode: ${address || '(not supplied)'}\n\nSubmitted by: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\nNetwork updates: ${networkUpdatesOptIn ? 'Opted in' : 'No'}\n\nWebsite: ${website || '(none)'}\nFacebook: ${facebook || '(none)'}\nInstagram: ${instagram || '(none)'}\n\nNotes: ${notes || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin`,
       });
 
       return Response.json({ success: true, status: 'pending', request: publicListingRequest(request) });
