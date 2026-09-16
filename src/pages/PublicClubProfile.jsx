@@ -4,10 +4,17 @@ import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { getClub } from '@/data/directorySeed';
 import { ArrowLeft, CalendarDays, CheckCircle2, ExternalLink, Facebook, Globe2, Mail, MapPin, MessageCircle, Phone, Users } from 'lucide-react';
 
-const groupByDay = sessions => sessions.reduce((groups, session) => {
+const groupByDay = sessions => (sessions || []).reduce((groups, session) => {
   (groups[session.day] ||= []).push(session);
   return groups;
 }, {});
+
+const clubInitials = name => name
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map(part => part[0]?.toUpperCase())
+  .join('');
 
 export default function PublicClubProfile() {
   const { slug } = useParams();
@@ -27,11 +34,21 @@ export default function PublicClubProfile() {
               <ArrowLeft className="w-4 h-4" /> Back to directory
             </Link>
             <div className="flex flex-col sm:flex-row gap-6 items-start">
-              <img src={club.logoUrl} alt={`${club.name} logo`} className="w-32 h-32 rounded-3xl bg-white object-contain p-2 shadow-2xl shrink-0" />
+              {club.logoUrl ? (
+                <img src={club.logoUrl} alt={`${club.name} logo`} className="w-32 h-32 rounded-3xl bg-white object-contain p-2 shadow-2xl shrink-0" />
+              ) : (
+                <div className="w-32 h-32 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center text-3xl font-black text-primary shadow-2xl shrink-0" aria-label={`${club.name} logo pending`}>
+                  {clubInitials(club.name)}
+                </div>
+              )}
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-3 py-1 text-xs font-semibold">{club.sport}</span>
-                  <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Active listing</span>
+                  {club.verificationStatus === 'unclaimed' ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-amber-300"><CheckCircle2 className="w-3.5 h-3.5" /> Unclaimed listing</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Active listing</span>
+                  )}
                 </div>
                 <h1 className="text-4xl sm:text-5xl font-black tracking-tight">{club.name}</h1>
                 <p className="mt-3 text-lg text-muted-foreground max-w-3xl">{club.description}</p>
@@ -39,6 +56,7 @@ export default function PublicClubProfile() {
                   {club.website && <a href={club.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Globe2 className="w-4 h-4" /> Website</a>}
                   {club.waitingListUrl && <a href={club.waitingListUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold"><Users className="w-4 h-4" /> {club.joiningCtaLabel || 'Contact club'}</a>}
                   {!club.website && !club.waitingListUrl && club.contact?.phoneHref && <a href={club.contact.phoneHref} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Phone className="w-4 h-4" /> Contact club</a>}
+                  {!club.website && !club.waitingListUrl && !club.contact?.phoneHref && club.contact?.email && <a href={`mailto:${club.contact.email}`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Mail className="w-4 h-4" /> Contact club</a>}
                 </div>
               </div>
             </div>
@@ -61,8 +79,9 @@ export default function PublicClubProfile() {
               {club.scheduleUpdatedAt && (
                 <p className="text-xs text-muted-foreground -mt-3 mb-5">Schedule supplied by the club · last updated {club.scheduleUpdatedAt}</p>
               )}
-              <div className="space-y-5">
-                {Object.entries(schedule).map(([day, sessions]) => (
+              {club.sessions?.length ? (
+                <div className="space-y-5">
+                  {Object.entries(schedule).map(([day, sessions]) => (
                   <div key={day}>
                     <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">{day}</h3>
                     <div className="space-y-2">
@@ -93,8 +112,14 @@ export default function PublicClubProfile() {
                       })}
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-border bg-background/40 p-5">
+                  <p className="font-semibold">Schedule details pending</p>
+                  <p className="text-sm text-muted-foreground mt-1">Weekly session times have not yet been supplied to RallyHub. Contact the club directly before travelling.</p>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground mt-5">Times and availability can change. Contact the club before travelling.</p>
             </section>
 
@@ -126,7 +151,7 @@ export default function PublicClubProfile() {
                         <h3 className="font-semibold">{venue.name}</h3>
                         <p className="text-sm text-muted-foreground mt-1">{venue.address}{venue.eircode ? ` · ${venue.eircode}` : ''}</p>
                       </div>
-                      <span className="rounded-full bg-accent/10 text-accent px-2 py-1 text-[10px] font-semibold">{venue.indoor ? 'INDOOR' : 'OUTDOOR'}</span>
+                      <span className="rounded-full bg-accent/10 text-accent px-2 py-1 text-[10px] font-semibold">{venue.indoor === true ? 'INDOOR' : venue.indoor === false ? 'OUTDOOR' : 'VENUE'}</span>
                     </div>
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                       <p className="text-sm">{venue.courts ? `${venue.courts} courts` : 'Court details pending'}{venue.playType ? ` · ${venue.playType}` : ''}</p>
@@ -144,11 +169,12 @@ export default function PublicClubProfile() {
           <aside className="space-y-5">
             <section className="glass rounded-2xl p-5">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Club contact</p>
-              <h2 className="text-xl font-bold mt-1">Contact {club.contact.name}</h2>
+              <h2 className="text-xl font-bold mt-1">{club.contact?.name ? `Contact ${club.contact.name}` : 'Contact details'}</h2>
               <div className="mt-4 space-y-2">
                 {club.contact.phoneHref && club.contact.phone && <a href={club.contact.phoneHref} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Phone className="w-4 h-4 text-primary" /><span className="text-sm font-medium">{club.contact.phone}</span></a>}
                 {club.contact.whatsapp && <a href={club.contact.whatsapp} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><MessageCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium">WhatsApp {club.contact.name}</span></a>}
                 {club.contact.email && <a href={`mailto:${club.contact.email}`} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Mail className="w-4 h-4 text-primary" /><span className="text-sm font-medium break-all">{club.contact.email}</span></a>}
+                {!club.contact?.phoneHref && !club.contact?.email && <p className="text-sm text-muted-foreground">No direct contact details have been supplied yet.</p>}
               </div>
             </section>
 
@@ -159,6 +185,8 @@ export default function PublicClubProfile() {
                 {club.founded && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Founded</dt><dd>{club.founded}</dd></div>}
                 {club.affiliation && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Affiliation</dt><dd>{club.affiliation}</dd></div>}
                 <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Membership</dt><dd className="text-right">{club.membershipStatus}</dd></div>
+                {club.source && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Source</dt><dd className="text-right">{club.source}</dd></div>}
+                {club.sourceCheckedAt && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Source checked</dt><dd>{club.sourceCheckedAt}</dd></div>}
               </dl>
             </section>
 
