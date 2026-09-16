@@ -43,19 +43,40 @@ export default function PublicDirectory() {
     return () => { active = false; };
   }, []);
 
-  const effectiveClubs = useMemo(() => directoryClubs.map(club => {
-    const state = directoryState[club.slug];
-    const profile = state?.profile;
-    if (!profile) return { ...club, verificationStatus: state?.verificationStatus || club.verificationStatus };
-    return {
-      ...club,
-      ...profile,
-      verificationStatus: state?.verificationStatus || club.verificationStatus,
-      contact: { ...(club.contact || {}), ...(profile.contact || {}) },
-      venues: Array.isArray(profile.venues) ? profile.venues : club.venues,
-      sessions: Array.isArray(profile.sessions) ? profile.sessions : club.sessions,
-    };
-  }), [directoryState]);
+  const effectiveClubs = useMemo(() => {
+    const staticClubs = directoryClubs.map(club => {
+      const state = directoryState[club.slug];
+      const profile = state?.profile;
+      if (!profile) return { ...club, verificationStatus: state?.verificationStatus || club.verificationStatus };
+      return {
+        ...club,
+        ...profile,
+        verificationStatus: state?.verificationStatus || club.verificationStatus,
+        contact: { ...(club.contact || {}), ...(profile.contact || {}) },
+        venues: Array.isArray(profile.venues) ? profile.venues : club.venues,
+        sessions: Array.isArray(profile.sessions) ? profile.sessions : club.sessions,
+      };
+    });
+    const staticSlugs = new Set(directoryClubs.map(club => club.slug));
+    const dynamicClubs = Object.entries(directoryState)
+      .filter(([slug, state]) => !staticSlugs.has(slug) && state?.base)
+      .map(([slug, state]) => {
+        const base = state.base || {};
+        const profile = state.profile || {};
+        return {
+          ...base,
+          ...profile,
+          id: base.id || slug,
+          slug,
+          sport: base.sport || 'Pickleball',
+          verificationStatus: state.verificationStatus || 'unclaimed',
+          contact: { ...(base.contact || {}), ...(profile.contact || {}) },
+          venues: Array.isArray(profile.venues) ? profile.venues : (base.venues || []),
+          sessions: Array.isArray(profile.sessions) ? profile.sessions : (base.sessions || []),
+        };
+      });
+    return [...staticClubs, ...dynamicClubs].sort((a, b) => a.name.localeCompare(b.name));
+  }, [directoryState]);
 
   const allSessions = useMemo(() => effectiveClubs.flatMap(club => (club.sessions || []).map(session => ({...session, club}))), [effectiveClubs]);
   const counties = ['All counties', ...irelandCounties];
