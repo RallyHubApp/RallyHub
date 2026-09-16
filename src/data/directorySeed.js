@@ -10,7 +10,7 @@ const curatedDirectoryClubs = [
     region: 'Munster',
     founded: 'May 2025',
     status: 'active',
-    verificationStatus: 'verified',
+    verificationStatus: 'unclaimed',
     membershipStatus: 'Full – waiting list open',
     affiliation: 'Pickleball Ireland',
     logoUrl: 'https://clarepickleball.ie/wp-content/uploads/2025/06/491439977_17843980809473841_8409446969161026129_n-removebg-preview.png',
