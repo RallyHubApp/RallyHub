@@ -41,6 +41,14 @@
     "claimant_phone": {
       "type": "string"
     },
+    "network_updates_opt_in": {
+      "type": "boolean",
+      "default": false
+    },
+    "network_updates_opted_in_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "notes": {
       "type": "string"
     },
@@ -69,6 +77,7 @@
     "county",
     "claimant_user_id",
     "claimant_email",
+    "claimant_phone",
     "status"
   ],
   "rls": {
