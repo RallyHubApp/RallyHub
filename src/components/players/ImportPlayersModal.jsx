@@ -83,36 +83,13 @@ export default function ImportPlayersModal({ open, onOpenChange, onImportComplet
     setFile(selectedFile);
     setIsProcessing(true);
 
-    const { file_url } = await base44.integrations.Core.UploadFile({ file: selectedFile });
-
-    const result = /** @type {any} */ (await base44.integrations.Core.ExtractDataFromUploadedFile({
-      file_url,
-      json_schema: {
-        type: "object",
-        properties: {
-          headers: { type: "array", items: { type: "string" } },
-          rows: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                full_name: { type: "string" },
-                email: { type: "string" },
-                phone: { type: "string" },
-                gender: { type: "string" },
-                skill_rating: { type: "number" },
-                age_group: { type: "string" },
-                club: { type: "string" },
-                preferred_position: { type: "string" },
-                partner_name: { type: "string" },
-                emergency_contact: { type: "string" },
-                notes: { type: "string" }
-              }
-            }
-          }
-        }
-      }
-    }));
+    const extractionRes = await base44.functions.invoke('secureCreditAction', { action: 'extract_players', file: selectedFile });
+    if (extractionRes.data?.error) {
+      toast.error(extractionRes.data.error);
+      setIsProcessing(false);
+      return;
+    }
+    const result = /** @type {any} */ (extractionRes.data?.result || {});
 
     if (result.status === 'error') {
       toast.error('Failed to parse file: ' + result.details);
