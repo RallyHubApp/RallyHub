@@ -71,14 +71,23 @@ export default function Landing() {
               Create matches, join games, and connect with players near you.
             </p>
 
-            <Button
-              size="lg"
-              onClick={handleOpenApp}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
-            >
-              Open App
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link to="/directory">
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all">
+                  Find a Club
+                  <MapPin className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handleOpenApp}
+                className="text-lg px-8 py-6 rounded-xl"
+              >
+                Open Club App
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </div>
 
             <p className="text-sm text-muted-foreground mt-4">
               Login or create an account to get started
@@ -200,6 +209,7 @@ export default function Landing() {
       <div className="container mx-auto px-4 py-8 border-t border-border">
         <div className="text-center text-sm text-muted-foreground">
           <div className="flex items-center justify-center gap-4 mb-3">
+            <Link to="/directory" className="hover:text-primary transition-colors">Club Directory</Link>
             <Link to="/about" className="hover:text-primary transition-colors">About</Link>
             <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
           </div>
