@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { directoryClubs, irelandCounties, weekDays } from '@/data/directorySeed';
 import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, CheckCircle2, PlusCircle, UserCheck } from 'lucide-react';
+import Seo, { SITE_URL } from '@/components/public/Seo';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -15,6 +16,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const allSessions = directoryClubs.flatMap(club => (club.sessions || []).map(session => ({...session, club})));
+const listedCountyCount = new Set(directoryClubs.map(club => club.county)).size;
 
 const clubInitials = name => name
   .split(/\s+/)
@@ -43,20 +45,45 @@ export default function PublicDirectory() {
   }), [query, county, day]);
 
   const visibleVenueIds = new Set(filteredClubs.flatMap(club => (club.venues || []).map(v => `${club.id}:${v.id}`)));
+  const directorySchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'RallyHub All-Ireland Pickleball Club Directory',
+    url: `${SITE_URL}/directory`,
+    description: `Browse ${directoryClubs.length} current pickleball club listings in the RallyHub directory. All 32 counties of Ireland are supported.`,
+    inLanguage: 'en-IE',
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: directoryClubs.length,
+      itemListElement: directoryClubs.map((club, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: club.name,
+        url: `${SITE_URL}/directory/${club.slug}`
+      }))
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#0a1628] text-foreground">
+    <>
+      <Seo
+        title="Pickleball Clubs in Ireland | RallyHub Club Directory"
+        description={`Search ${directoryClubs.length} current pickleball club listings by county, club and venue. RallyHub supports directory listings across all 32 counties of Ireland.`}
+        path="/directory"
+        structuredData={directorySchema}
+      />
+      <div className="min-h-screen bg-[#0a1628] text-foreground">
       <PublicDirectoryHeader />
 
       <section className="border-b border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,.13),transparent_42%)]">
         <div className="container mx-auto px-4 py-12 sm:py-16">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-5">
-              <MapPin className="w-3.5 h-3.5" /> Pickleball across all 32 counties of Ireland
+              <MapPin className="w-3.5 h-3.5" /> All-Ireland directory · all 32 counties supported
             </div>
             <h1 className="text-4xl sm:text-5xl font-black tracking-tight">Find a club. Find a session. Get playing.</h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
-              Search public sports clubs across the whole island of Ireland by county, location, day and venue. One club can operate from several locations, each with its own map pin and timetable.
+              Search public sports clubs across the whole island of Ireland by county, location, day and venue. We currently have {directoryClubs.length} club listings across {listedCountyCount} counties, with all 32 counties available as the directory grows.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link to="/directory?manage=1" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
@@ -216,6 +243,7 @@ export default function PublicDirectory() {
           </aside>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }
