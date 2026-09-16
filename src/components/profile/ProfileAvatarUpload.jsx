@@ -14,9 +14,17 @@ export default function ProfileAvatarUpload({ currentUrl, initials, onUploaded }
     setUploading(true);
     const localPreview = URL.createObjectURL(file);
     setPreview(localPreview);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setPreview(file_url);
-    await onUploaded?.(file_url);
+    try {
+      const uploadRes = await base44.functions.invoke('secureCreditAction', { action: 'upload_image', purpose: 'profile_avatar', file });
+      if (uploadRes.data?.error) throw new Error(uploadRes.data.error);
+      const fileUrl = uploadRes.data?.file_url;
+      if (!fileUrl) throw new Error('No file URL returned');
+      setPreview(fileUrl);
+      await onUploaded?.(fileUrl);
+    } catch (error) {
+      setPreview(currentUrl);
+      toast.error(error?.message || 'Could not upload avatar');
+    }
     setUploading(false);
   };
 
