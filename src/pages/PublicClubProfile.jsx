@@ -143,7 +143,12 @@ export default function PublicClubProfile() {
                   {club.waitingListUrl && <a href={club.waitingListUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold"><Users className="w-4 h-4" /> {club.joiningCtaLabel || 'Contact club'}</a>}
                   {!club.website && !club.waitingListUrl && club.contact?.phoneHref && <a href={club.contact.phoneHref} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Phone className="w-4 h-4" /> Contact club</a>}
                   {!club.website && !club.waitingListUrl && !club.contact?.phoneHref && club.contact?.email && <a href={`mailto:${club.contact.email}`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Mail className="w-4 h-4" /> Contact club</a>}
-                  {club.verificationStatus === 'unclaimed' && (
+                  {hasDirectoryAccess && (
+                    <Link to={`/directory/${club.slug}/edit`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm">
+                      <UserCheck className="w-4 h-4" /> Edit your listing
+                    </Link>
+                  )}
+                  {!hasDirectoryAccess && club.verificationStatus === 'unclaimed' && (
                     <Link to={`/directory/${club.slug}/claim`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-amber-300/60 bg-amber-300 text-slate-950 text-sm font-bold hover:bg-amber-200 transition-colors shadow-sm">
                       <UserCheck className="w-4 h-4" /> Claim this listing
                     </Link>
@@ -258,7 +263,19 @@ export default function PublicClubProfile() {
           </div>
 
           <aside className="space-y-5">
-            {club.verificationStatus === 'unclaimed' && (
+            {hasDirectoryAccess && (
+              <section className="rounded-2xl border border-primary/35 bg-primary/10 p-5">
+                <div className="flex items-center gap-2 text-primary">
+                  <UserCheck className="w-5 h-5" />
+                  <h2 className="font-bold">You manage this listing</h2>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">Update the club's public contact details, venues, sessions and joining information.</p>
+                <Link to={`/directory/${club.slug}/edit`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
+                  Edit your listing
+                </Link>
+              </section>
+            )}
+            {!hasDirectoryAccess && club.verificationStatus === 'unclaimed' && (
               <section className="rounded-2xl border border-amber-400/35 bg-amber-400/10 p-5">
                 <div className="flex items-center gap-2 text-amber-200">
                   <UserCheck className="w-5 h-5" />
