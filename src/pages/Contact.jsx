@@ -35,15 +35,15 @@ export default function Contact() {
             </div>
             <div className="flex-1">
               <h2 className="text-lg font-semibold">Email</h2>
-              <a href="mailto:hello@rallyhub.ie" className="text-primary hover:underline break-all">
-                hello@rallyhub.ie
+              <a href="mailto:rallyhubapp@gmail.com" className="text-primary hover:underline break-all">
+                rallyhubapp@gmail.com
               </a>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <a href="mailto:hello@rallyhub.ie">Email RallyHub</a>
+              <a href="mailto:rallyhubapp@gmail.com">Email RallyHub</a>
             </Button>
             <Button asChild variant="outline">
               <Link to="/about">Learn more about RallyHub</Link>
