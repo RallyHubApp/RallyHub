@@ -103,8 +103,8 @@ export const directoryClubs = [
       { name: 'Intermediate-Advanced', description: 'For experienced players who enjoy high-intensity, fast-paced and competitive play.' }
     ],
     contact: {
-      name: 'Galway Pickleball',
-      phone: '+353 85 162 8988',
+      name: 'Teo Cuiche',
+      phone: '085 162 8988',
       phoneHref: 'tel:+353851628988',
       whatsapp: 'https://wa.me/353851628988',
       email: 'galwaypickleball@gmail.com'
