@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { getClub } from '@/data/directorySeed';
 import { ArrowLeft, CalendarDays, CheckCircle2, ExternalLink, Facebook, Globe2, Mail, MapPin, MessageCircle, Phone, UserCheck, Users } from 'lucide-react';
@@ -21,6 +21,7 @@ const clubInitials = name => name
 
 export default function PublicClubProfile() {
   const { slug } = useParams();
+  const location = useLocation();
   const seedClub = getClub(slug);
   const { isAuthenticated } = useAuth();
   const [dynamicBase, setDynamicBase] = useState(null);
@@ -32,17 +33,29 @@ export default function PublicClubProfile() {
   useEffect(() => {
     let active = true;
     setLoadingListing(true);
-    base44.functions.invoke('directoryListingProfile', { action: 'public_get', listingSlug: slug })
+
+    // When an editor has just saved this listing, use the confirmed save response
+    // immediately while we fetch the canonical public record. This avoids showing
+    // the previous SPA-rendered profile until the visitor manually refreshes.
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(`rallyhub-directory-profile-${slug}`) || 'null');
+      if (cached?.profile && Date.now() - Number(cached.savedAt || 0) < 5 * 60 * 1000) {
+        setPublicProfile(cached.profile);
+      }
+    } catch {}
+
+    base44.functions.invoke('directoryListingProfile', { action: 'public_get', listingSlug: slug, refresh: Date.now() })
       .then(res => {
         if (!active || res.data?.error) return;
         setDynamicBase(res.data?.base || null);
         setPublicProfile(res.data?.profile || null);
         setVerificationStatus(res.data?.verificationStatus || seedClub?.verificationStatus || 'unclaimed');
+        try { sessionStorage.removeItem(`rallyhub-directory-profile-${slug}`); } catch {}
       })
       .catch(() => {})
       .finally(() => { if (active) setLoadingListing(false); });
     return () => { active = false; };
-  }, [slug, seedClub]);
+  }, [slug, seedClub, location.search]);
 
   useEffect(() => {
     if (!isAuthenticated) { setHasDirectoryAccess(false); return; }
