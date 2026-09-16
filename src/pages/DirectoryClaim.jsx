@@ -28,8 +28,8 @@ export default function DirectoryClaim() {
   const [error, setError] = useState('');
 
   const returnTo = useMemo(() => `/directory/${slug}/claim`, [slug]);
-  const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`;
-  const registerHref = `/register?returnTo=${encodeURIComponent(returnTo)}`;
+  const loginHref = `/login?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
+  const registerHref = `/register?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
 
   const club = seedClub || dynamicClub;
 
