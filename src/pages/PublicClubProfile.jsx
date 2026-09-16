@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { getClub } from '@/data/directorySeed';
 import { ArrowLeft, CalendarDays, CheckCircle2, ExternalLink, Facebook, Globe2, Mail, MapPin, MessageCircle, Phone, Users } from 'lucide-react';
+import Seo, { SITE_URL, absoluteUrl } from '@/components/public/Seo';
 
 const groupByDay = sessions => (sessions || []).reduce((groups, session) => {
   (groups[session.day] ||= []).push(session);
@@ -22,9 +23,55 @@ export default function PublicClubProfile() {
   if (!club) return <Navigate to="/directory" replace />;
 
   const schedule = groupByDay(club.sessions);
+  const profileUrl = `${SITE_URL}/directory/${club.slug}`;
+  const socialLinks = [club.website, club.facebook, club.instagram].filter(Boolean);
+  const clubSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsOrganization',
+    name: club.name,
+    url: profileUrl,
+    sport: club.sport || 'Pickleball',
+    description: club.description,
+    areaServed: { '@type': 'AdministrativeArea', name: `County ${club.county}` },
+    ...(club.logoUrl ? { logo: absoluteUrl(club.logoUrl) } : {}),
+    ...(socialLinks.length ? { sameAs: socialLinks } : {}),
+    ...(club.contact?.email || club.contact?.phone ? {
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'club contact',
+        ...(club.contact?.email ? { email: club.contact.email } : {}),
+        ...(club.contact?.phone ? { telephone: club.contact.phone } : {})
+      }
+    } : {}),
+    location: (club.venues || []).map(venue => ({
+      '@type': 'SportsActivityLocation',
+      name: venue.name,
+      ...(venue.address || venue.eircode ? {
+        address: {
+          '@type': 'PostalAddress',
+          ...(venue.address ? { streetAddress: venue.address } : {}),
+          addressRegion: club.county,
+          ...(venue.eircode ? { postalCode: venue.eircode } : {})
+        }
+      } : {}),
+      ...(Number.isFinite(venue.latitude) && Number.isFinite(venue.longitude) ? {
+        geo: { '@type': 'GeoCoordinates', latitude: venue.latitude, longitude: venue.longitude }
+      } : {})
+    }))
+  };
+  const seoDescription = `${club.name} in County ${club.county}: venues, club information${club.sessions?.length ? ', weekly sessions' : ''} and contact details on the RallyHub all-Ireland pickleball directory.`;
 
   return (
-    <div className="min-h-screen bg-[#0a1628] text-foreground">
+    <>
+      <Seo
+        title={`${club.name} | Pickleball in ${club.county} | RallyHub`}
+        description={seoDescription}
+        path={`/directory/${club.slug}`}
+        image={club.logoUrl ? absoluteUrl(club.logoUrl) : undefined}
+        type="profile"
+        structuredData={clubSchema}
+      />
+      <div className="min-h-screen bg-[#0a1628] text-foreground">
       <PublicDirectoryHeader />
 
       <main>
@@ -210,6 +257,7 @@ export default function PublicClubProfile() {
           </aside>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }
