@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { getClub } from '@/data/directorySeed';
-import { ArrowLeft, CalendarDays, CheckCircle2, ExternalLink, Facebook, Globe2, Mail, MapPin, MessageCircle, Phone, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckCircle2, ExternalLink, Facebook, Globe2, Mail, MapPin, MessageCircle, Phone, UserCheck, Users } from 'lucide-react';
 import Seo, { SITE_URL, absoluteUrl } from '@/components/public/Seo';
 
 const groupByDay = sessions => (sessions || []).reduce((groups, session) => {
@@ -107,8 +107,8 @@ export default function PublicClubProfile() {
                   {!club.website && !club.waitingListUrl && club.contact?.phoneHref && <a href={club.contact.phoneHref} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Phone className="w-4 h-4" /> Contact club</a>}
                   {!club.website && !club.waitingListUrl && !club.contact?.phoneHref && club.contact?.email && <a href={`mailto:${club.contact.email}`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Mail className="w-4 h-4" /> Contact club</a>}
                   {club.verificationStatus === 'unclaimed' && (
-                    <Link to={`/directory/${club.slug}/claim`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-sm font-semibold hover:bg-amber-400/15 transition-colors">
-                      Claim this listing
+                    <Link to={`/directory/${club.slug}/claim`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-amber-300/60 bg-amber-300 text-slate-950 text-sm font-bold hover:bg-amber-200 transition-colors shadow-sm">
+                      <UserCheck className="w-4 h-4" /> Claim this listing
                     </Link>
                   )}
                 </div>
@@ -221,6 +221,18 @@ export default function PublicClubProfile() {
           </div>
 
           <aside className="space-y-5">
+            {club.verificationStatus === 'unclaimed' && (
+              <section className="rounded-2xl border border-amber-400/35 bg-amber-400/10 p-5">
+                <div className="flex items-center gap-2 text-amber-200">
+                  <UserCheck className="w-5 h-5" />
+                  <h2 className="font-bold">Is this your club?</h2>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">Claim the listing to verify your connection and manage the club's public directory details.</p>
+                <Link to={`/directory/${club.slug}/claim`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-amber-200 transition-colors">
+                  Claim this listing
+                </Link>
+              </section>
+            )}
             <section className="glass rounded-2xl p-5">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Club contact</p>
               <h2 className="text-xl font-bold mt-1">{club.contact?.name ? `Contact ${club.contact.name}` : 'Contact details'}</h2>
