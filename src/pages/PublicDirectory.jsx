@@ -14,7 +14,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
 });
 
-const allSessions = directoryClubs.flatMap(club => club.sessions.map(session => ({...session, club})));
+const allSessions = directoryClubs.flatMap(club => (club.sessions || []).map(session => ({...session, club})));
+
+const clubInitials = name => name
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map(part => part[0]?.toUpperCase())
+  .join('');
 
 export default function PublicDirectory() {
   const [query, setQuery] = useState('');
@@ -22,18 +29,18 @@ export default function PublicDirectory() {
   const [day, setDay] = useState('Any day');
   const [view, setView] = useState('clubs');
 
-  const counties = ['All counties', ...new Set(directoryClubs.map(club => club.county))];
+  const counties = ['All counties', ...[...new Set(directoryClubs.map(club => club.county))].sort((a, b) => a.localeCompare(b))];
 
   const filteredClubs = useMemo(() => directoryClubs.filter(club => {
     const text = query.trim().toLowerCase();
-    const searchable = [club.name, club.sport, club.county, ...club.venues.flatMap(v => [v.name, v.address, v.eircode])].join(' ').toLowerCase();
+    const searchable = [club.name, club.sport, club.county, ...(club.venues || []).flatMap(v => [v.name, v.address, v.eircode])].join(' ').toLowerCase();
     const queryMatch = !text || searchable.includes(text);
     const countyMatch = county === 'All counties' || club.county === county;
-    const dayMatch = day === 'Any day' || club.sessions.some(session => session.day === day);
+    const dayMatch = day === 'Any day' || (club.sessions || []).some(session => session.day === day);
     return queryMatch && countyMatch && dayMatch;
   }), [query, county, day]);
 
-  const visibleVenueIds = new Set(filteredClubs.flatMap(club => club.venues.map(v => `${club.id}:${v.id}`)));
+  const visibleVenueIds = new Set(filteredClubs.flatMap(club => (club.venues || []).map(v => `${club.id}:${v.id}`)));
 
   return (
     <div className="min-h-screen bg-[#0a1628] text-foreground">
@@ -87,19 +94,29 @@ export default function PublicDirectory() {
                 {filteredClubs.map(club => (
                   <article key={club.id} className="glass rounded-2xl p-5 sm:p-6 hover:border-primary/30 transition-colors">
                     <div className="flex gap-4">
-                      <img src={club.logoUrl} alt={`${club.name} logo`} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white object-contain p-1 shrink-0" />
+                      {club.logoUrl ? (
+                        <img src={club.logoUrl} alt={`${club.name} logo`} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white object-contain p-1 shrink-0" />
+                      ) : (
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-xl sm:text-2xl font-black text-primary shrink-0" aria-label={`${club.name} logo pending`}>
+                          {clubInitials(club.name)}
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-wider text-primary">{club.sport} · County {club.county}</p>
                             <h3 className="text-xl sm:text-2xl font-bold mt-1">{club.name}</h3>
                           </div>
-                          <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Active listing</span>
+                          {club.verificationStatus === 'unclaimed' ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-amber-300"><CheckCircle2 className="w-3.5 h-3.5" /> Unclaimed listing</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Active listing</span>
+                          )}
                         </div>
                         <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{club.description}</p>
                         <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1.5"><Building2 className="w-4 h-4 text-primary" /> {club.venues.length} venues</span>
-                          <span className="flex items-center gap-1.5"><CalendarDays className="w-4 h-4 text-primary" /> {club.sessions.length} weekly sessions</span>
+                          <span className="flex items-center gap-1.5"><Building2 className="w-4 h-4 text-primary" /> {club.venues.length} venue{club.venues.length === 1 ? '' : 's'}</span>
+                          <span className="flex items-center gap-1.5"><CalendarDays className="w-4 h-4 text-primary" /> {club.sessions.length ? `${club.sessions.length} weekly session${club.sessions.length === 1 ? '' : 's'}` : 'Schedule pending'}</span>
                           <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-primary" /> {club.county}</span>
                         </div>
                       </div>
@@ -151,9 +168,12 @@ export default function PublicDirectory() {
                 <h2 className="font-bold">Venue map</h2>
                 <p className="text-xs text-muted-foreground mt-1">Every venue has its own pin, even when several venues belong to one club.</p>
               </div>
-              <MapContainer center={[52.88, -9.02]} zoom={9} scrollWheelZoom={false} className="h-[460px] w-full">
+              <MapContainer center={[53.35, -7.75]} zoom={6} scrollWheelZoom={false} className="h-[460px] w-full">
                 <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                {directoryClubs.flatMap(club => club.venues.map(venue => ({club, venue}))).filter(({club, venue}) => visibleVenueIds.has(`${club.id}:${venue.id}`)).map(({club, venue}) => (
+                {directoryClubs
+                  .flatMap(club => (club.venues || []).map(venue => ({club, venue})))
+                  .filter(({club, venue}) => visibleVenueIds.has(`${club.id}:${venue.id}`) && Number.isFinite(venue.latitude) && Number.isFinite(venue.longitude))
+                  .map(({club, venue}) => (
                   <Marker key={`${club.id}-${venue.id}`} position={[venue.latitude, venue.longitude]}>
                     <Popup>
                       <div className="min-w-[190px]">
