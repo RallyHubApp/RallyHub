@@ -3,15 +3,18 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Calendar, Users, MapPin, Trophy, ArrowRight, CheckCircle2, UserCheck, PlusCircle } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { directoryClubs } from '@/data/directorySeed';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 
 export default function Landing() {
+  const { user, isAuthenticated, isLoadingAuth } = useAuth();
+  const clubLoginHref = '/login?returnTo=%2Fapp';
+
   const handleOpenApp = () => {
-    base44.auth.redirectToLogin('/app');
+    window.location.href = isAuthenticated ? '/app' : clubLoginHref;
   };
 
   const features = [
@@ -138,7 +141,7 @@ export default function Landing() {
                 onClick={handleOpenApp}
                 className="w-full text-base sm:text-lg px-5 py-6 rounded-xl"
               >
-                RallyHub Club Login
+                {isLoadingAuth ? 'Checking account…' : isAuthenticated ? 'Open RallyHub Club' : 'RallyHub Club Login'}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
@@ -156,7 +159,9 @@ export default function Landing() {
             </div>
 
             <p className="text-sm text-muted-foreground mt-4">
-              Browse freely. Sign in only to manage a directory listing or use the full RallyHub Club platform.
+              {isAuthenticated
+                ? `Signed in${user?.full_name ? ` as ${user.full_name}` : ''}. Browse freely or open RallyHub Club.`
+                : 'Browse freely. Sign in only to manage a directory listing or use the full RallyHub Club platform.'}
             </p>
           </motion.div>
         </div>
@@ -298,7 +303,7 @@ export default function Landing() {
               </Button>
             </Link>
             <Button size="lg" variant="outline" onClick={handleOpenApp} className="text-lg px-8 py-6 rounded-xl">
-              RallyHub Club Login
+              {isLoadingAuth ? 'Checking account…' : isAuthenticated ? 'Open RallyHub Club' : 'RallyHub Club Login'}
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
