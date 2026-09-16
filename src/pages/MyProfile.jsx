@@ -119,20 +119,9 @@ export default function MyProfile() {
     if (!linkedPlayer) { toast.error('Save your profile first'); return; }
     setSyncingDupr(true);
     try {
-      const res = /** @type {any} */ (await base44.integrations.Core.InvokeLLM({
-        prompt: `Look up the DUPR pickleball rating for player with DUPR ID: ${form.dupr_id}. 
-Go to https://mydupr.com or the DUPR API to find their current rating. 
-Return ONLY the numeric rating value (e.g. 4.123). If you cannot find a rating for this ID, return null.`,
-        add_context_from_internet: true,
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            rating: { type: 'number' },
-            found: { type: 'boolean' }
-          }
-        }
-      }));
-      const { rating, found } = res;
+      const lookupRes = await base44.functions.invoke('secureCreditAction', { action: 'dupr_lookup', playerId: linkedPlayer.id, duprId: form.dupr_id });
+      if (lookupRes.data?.error) throw new Error(lookupRes.data.error);
+      const { rating, found } = /** @type {any} */ (lookupRes.data?.result || {});
       const updateData = {
         dupr_id: form.dupr_id,
         dupr_last_synced: new Date().toISOString().split('T')[0]
