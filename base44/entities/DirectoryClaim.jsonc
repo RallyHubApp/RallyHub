@@ -26,6 +26,14 @@
     "claimant_message": {
       "type": "string"
     },
+    "network_updates_opt_in": {
+      "type": "boolean",
+      "default": false
+    },
+    "network_updates_opted_in_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -41,6 +49,7 @@
       "type": "string",
       "enum": [
         "authenticated_email",
+        "platform_admin_identity",
         "manual_review",
         "admin_approved"
       ]
@@ -77,6 +86,7 @@
     "listing_name_snapshot",
     "claimant_user_id",
     "claimant_email",
+    "claimant_phone",
     "status"
   ],
   "rls": {
