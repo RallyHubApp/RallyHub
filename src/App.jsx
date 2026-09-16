@@ -29,7 +29,6 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
-import IsolationTest from '@/pages/IsolationTest';
 import PublicClubChallengeDisplay from '@/pages/PublicClubChallengeDisplay';
 import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
 import KotcHostSession from '@/pages/KotcHostSession';
@@ -99,7 +98,6 @@ const AuthenticatedRoutes = () => (
       <Route path="analytics" element={<Analytics />} />
       <Route path="my-profile" element={<MyProfile />} />
       <Route path="admin" element={<AdminPanel />} />
-      <Route path="isolation-test" element={<IsolationTest />} />
     </Route>
     <Route path="*" element={<Navigate to="/app" replace />} />
   </Routes>
