@@ -23,41 +23,49 @@ export default function PublicClubProfile() {
   const { slug } = useParams();
   const seedClub = getClub(slug);
   const { isAuthenticated } = useAuth();
+  const [dynamicBase, setDynamicBase] = useState(null);
   const [publicProfile, setPublicProfile] = useState(null);
   const [verificationStatus, setVerificationStatus] = useState(seedClub?.verificationStatus || 'unclaimed');
   const [hasDirectoryAccess, setHasDirectoryAccess] = useState(false);
+  const [loadingListing, setLoadingListing] = useState(true);
 
   useEffect(() => {
-    if (!seedClub) return;
     let active = true;
-    base44.functions.invoke('directoryListingProfile', { action: 'public_get', listingSlug: seedClub.slug })
+    setLoadingListing(true);
+    base44.functions.invoke('directoryListingProfile', { action: 'public_get', listingSlug: slug })
       .then(res => {
         if (!active || res.data?.error) return;
+        setDynamicBase(res.data?.base || null);
         setPublicProfile(res.data?.profile || null);
-        setVerificationStatus(res.data?.verificationStatus || seedClub.verificationStatus || 'unclaimed');
+        setVerificationStatus(res.data?.verificationStatus || seedClub?.verificationStatus || 'unclaimed');
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (active) setLoadingListing(false); });
     return () => { active = false; };
-  }, [seedClub]);
+  }, [slug, seedClub]);
 
   useEffect(() => {
-    if (!seedClub || !isAuthenticated) { setHasDirectoryAccess(false); return; }
+    if (!isAuthenticated) { setHasDirectoryAccess(false); return; }
     let active = true;
-    base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: seedClub.slug })
+    base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: slug })
       .then(res => { if (active && !res.data?.error) setHasDirectoryAccess(!!res.data?.hasAccess); })
       .catch(() => {});
     return () => { active = false; };
-  }, [seedClub, isAuthenticated]);
+  }, [slug, isAuthenticated]);
 
-  if (!seedClub) return <Navigate to="/directory" replace />;
+  const baseClub = seedClub || dynamicBase;
+  if (loadingListing && !baseClub) {
+    return <div className="min-h-screen bg-[#0a1628] text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
+  }
+  if (!baseClub) return <Navigate to="/directory" replace />;
   const club = publicProfile ? {
-    ...seedClub,
+    ...baseClub,
     ...publicProfile,
     verificationStatus,
-    contact: { ...(seedClub.contact || {}), ...(publicProfile.contact || {}) },
-    venues: Array.isArray(publicProfile.venues) ? publicProfile.venues : seedClub.venues,
-    sessions: Array.isArray(publicProfile.sessions) ? publicProfile.sessions : seedClub.sessions,
-  } : { ...seedClub, verificationStatus };
+    contact: { ...(baseClub.contact || {}), ...(publicProfile.contact || {}) },
+    venues: Array.isArray(publicProfile.venues) ? publicProfile.venues : (baseClub.venues || []),
+    sessions: Array.isArray(publicProfile.sessions) ? publicProfile.sessions : (baseClub.sessions || []),
+  } : { ...baseClub, verificationStatus, venues: baseClub.venues || [], sessions: baseClub.sessions || [], contact: baseClub.contact || {} };
 
   const schedule = groupByDay(club.sessions);
   const profileUrl = `${SITE_URL}/directory/${club.slug}`;
