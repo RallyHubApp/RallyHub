@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Search, LogIn, LogOut, PlusCircle, UserCheck } from 'lucide-react';
+import { Search, LogIn, PlusCircle, UserCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -42,8 +42,8 @@ export default function PublicDirectoryHeader() {
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Signed in</p>
                 <p className="text-xs font-semibold text-foreground truncate" title={user?.email || displayName}>{displayName}</p>
               </div>
-              <Button size="sm" variant="outline" onClick={() => logout('/directory')} className="gap-1.5">
-                <LogOut className="w-4 h-4" /> <span className="hidden xs:inline">Sign out</span>
+              <Button size="sm" variant="outline" onClick={() => logout('/directory')} className="px-3 font-semibold">
+                Sign out
               </Button>
               <Button size="sm" variant="ghost" onClick={() => { window.location.href = '/app'; }} className="hidden lg:inline-flex gap-1.5">
                 RallyHub Club App
