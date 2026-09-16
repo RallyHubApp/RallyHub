@@ -26,6 +26,7 @@ export default function AddDirectoryClub() {
   const [claimantName, setClaimantName] = useState('');
   const [claimantRole, setClaimantRole] = useState('');
   const [claimantPhone, setClaimantPhone] = useState('');
+  const [networkUpdatesOptIn, setNetworkUpdatesOptIn] = useState(false);
   const [notes, setNotes] = useState('');
   const [request, setRequest] = useState(null);
   const [loadingStatus, setLoadingStatus] = useState(false);
@@ -82,6 +83,7 @@ export default function AddDirectoryClub() {
         claimantName,
         claimantRole,
         claimantPhone,
+        networkUpdatesOptIn,
         notes,
       });
       if (res.data?.error) throw new Error(res.data.error);
@@ -210,9 +212,14 @@ export default function AddDirectoryClub() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2"><Label htmlFor="claimantName">Your name</Label><Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} required maxLength={160} /></div>
                     <div className="space-y-2"><Label htmlFor="claimantRole">Your role / connection</Label><Input id="claimantRole" value={claimantRole} onChange={e => setClaimantRole(e.target.value)} placeholder="e.g. Chairperson, organiser" required maxLength={160} /></div>
-                    <div className="space-y-2"><Label htmlFor="claimantPhone">Mobile number <span className="text-muted-foreground font-normal">(optional)</span></Label><Input id="claimantPhone" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} maxLength={80} /></div>
+                    <div className="space-y-2 sm:col-span-2"><Label htmlFor="claimantEmail">Email address</Label><Input id="claimantEmail" value={user?.email || ''} readOnly className="bg-background/40" /><p className="text-xs text-muted-foreground">This is your signed-in RallyHub email and will be used to contact you about the directory request.</p></div>
+                    <div className="space-y-2"><Label htmlFor="claimantPhone">Mobile number</Label><Input id="claimantPhone" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} required maxLength={80} /></div>
                   </div>
                   <div className="space-y-2 mt-4"><Label htmlFor="notes">Anything else we should know <span className="text-muted-foreground font-normal">(optional)</span></Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4} maxLength={1500} /></div>
+                  <label className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-background/30 p-4 cursor-pointer">
+                    <input type="checkbox" checked={networkUpdatesOptIn} onChange={e => setNetworkUpdatesOptIn(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
+                    <span className="text-sm text-muted-foreground"><strong className="text-foreground">Keep me connected with RallyHub.</strong> I’m happy to receive occasional directory, club-network and RallyHub updates by email. I can opt out at any time.</span>
+                  </label>
                 </div>
 
                 <Button type="submit" disabled={submitting || !!exactExisting} className="w-full sm:w-auto">
