@@ -484,6 +484,24 @@ export default function AdminPanel() {
             </div>
 
             <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Published submitted listings</p>
+              {activeDynamicDirectoryListings.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-4 px-1">No submitted directory listings are currently published.</p>
+              ) : activeDynamicDirectoryListings.map(listing => (
+                <div key={listing.id || listing.slug} className="glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground">{listing.name}</p>
+                    <p className="text-sm text-muted-foreground">County {listing.county} · /directory/{listing.slug}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Submitted listings can be removed here without affecting RallyHub's curated seed directory records.</p>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-1 text-destructive border-destructive/30" disabled={removingDirectoryListing === listing.slug} onClick={() => removeDirectoryListing(listing)}>
+                    <Trash2 className="w-3.5 h-3.5" /> {removingDirectoryListing === listing.slug ? 'Removing…' : 'Remove listing'}
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Pending verification</p>
               {pendingDirectoryClaims.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No directory claims are waiting for review.</p>
