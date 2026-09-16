@@ -10,10 +10,13 @@ function maskName(name:string, junior:boolean) {
 
 Deno.serve(async (req) => {
   try {
+    const contentLength = Number(req.headers.get('content-length') || 0);
+    if (contentLength > 2048) return Response.json({ error:'Request too large.' }, { status:413 });
     const base44 = createClientFromRequest(req);
     const { token } = await req.json().catch(() => ({}));
-    if (!token) return Response.json({ error:'Display token required' }, { status:400 });
-    const rows = await base44.asServiceRole.entities.ClubChallengeDisplayToken.filter({ token, active:true }, '-created_at', 5);
+    const displayToken = String(token || '').trim();
+    if (!/^ccd_[0-9a-f]{32}$/i.test(displayToken)) return Response.json({ error:'Display link is invalid or inactive.' }, { status:404 });
+    const rows = await base44.asServiceRole.entities.ClubChallengeDisplayToken.filter({ token:displayToken, active:true }, '-created_at', 5);
     const link = rows?.[0];
     if (!link) return Response.json({ error:'Display link is invalid or inactive.' }, { status:404 });
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:link.challenge_event_id });
