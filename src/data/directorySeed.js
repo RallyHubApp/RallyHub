@@ -73,6 +73,7 @@ const curatedDirectoryClubs = [
       { id: 'db-mon-advanced', venueId: 'doora-barefield', day: 'Monday', start: '20:30', end: '22:00', level: 'Improver & Advanced', price: 5.50 },
       { id: 'db-thu-social', venueId: 'doora-barefield', day: 'Thursday', start: '19:00', end: '20:30', level: 'Social & Recreational', price: 5.50 },
       { id: 'db-thu-advanced', venueId: 'doora-barefield', day: 'Thursday', start: '20:30', end: '22:00', level: 'Improver & Advanced', price: 5.50 },
+      { id: 'corofin-wed-daytime', venueId: 'corofin', day: 'Wednesday', start: '11:30', end: '13:30', level: 'Club Session', price: 5, paymentMethod: 'Cash' },
       { id: 'ennistymon-1', venueId: 'ennistymon', day: 'Wednesday', start: '19:00', end: '20:00', level: 'Club Session', price: null },
       { id: 'ennistymon-2', venueId: 'ennistymon', day: 'Wednesday', start: '20:00', end: '21:00', level: 'Club Session', price: null }
     ]
