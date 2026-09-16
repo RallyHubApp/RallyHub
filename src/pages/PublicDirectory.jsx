@@ -129,7 +129,7 @@ export default function PublicDirectory() {
                         <p className="font-semibold">{session.level}</p>
                         <p className="text-sm text-muted-foreground truncate">{session.club.name} · {venue?.shortName}</p>
                       </div>
-                      <p className="text-sm font-semibold">{session.price == null ? 'Contact club' : `€${session.price.toFixed(2)}`}</p>
+                      <p className="text-sm font-semibold">Contact club</p>
                     </Link>
                   );
                 })}
