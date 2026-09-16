@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { getClub } from '@/data/directorySeed';
 import { ArrowLeft, CalendarDays, CheckCircle2, ExternalLink, Facebook, Globe2, Mail, MapPin, MessageCircle, Phone, UserCheck, Users } from 'lucide-react';
 import Seo, { SITE_URL, absoluteUrl } from '@/components/public/Seo';
+import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 
 const groupByDay = sessions => (sessions || []).reduce((groups, session) => {
   (groups[session.day] ||= []).push(session);
@@ -19,8 +21,43 @@ const clubInitials = name => name
 
 export default function PublicClubProfile() {
   const { slug } = useParams();
-  const club = getClub(slug);
-  if (!club) return <Navigate to="/directory" replace />;
+  const seedClub = getClub(slug);
+  const { isAuthenticated } = useAuth();
+  const [publicProfile, setPublicProfile] = useState(null);
+  const [verificationStatus, setVerificationStatus] = useState(seedClub?.verificationStatus || 'unclaimed');
+  const [hasDirectoryAccess, setHasDirectoryAccess] = useState(false);
+
+  useEffect(() => {
+    if (!seedClub) return;
+    let active = true;
+    base44.functions.invoke('directoryListingProfile', { action: 'public_get', listingSlug: seedClub.slug })
+      .then(res => {
+        if (!active || res.data?.error) return;
+        setPublicProfile(res.data?.profile || null);
+        setVerificationStatus(res.data?.verificationStatus || seedClub.verificationStatus || 'unclaimed');
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [seedClub]);
+
+  useEffect(() => {
+    if (!seedClub || !isAuthenticated) { setHasDirectoryAccess(false); return; }
+    let active = true;
+    base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: seedClub.slug })
+      .then(res => { if (active && !res.data?.error) setHasDirectoryAccess(!!res.data?.hasAccess); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [seedClub, isAuthenticated]);
+
+  if (!seedClub) return <Navigate to="/directory" replace />;
+  const club = publicProfile ? {
+    ...seedClub,
+    ...publicProfile,
+    verificationStatus,
+    contact: { ...(seedClub.contact || {}), ...(publicProfile.contact || {}) },
+    venues: Array.isArray(publicProfile.venues) ? publicProfile.venues : seedClub.venues,
+    sessions: Array.isArray(publicProfile.sessions) ? publicProfile.sessions : seedClub.sessions,
+  } : { ...seedClub, verificationStatus };
 
   const schedule = groupByDay(club.sessions);
   const profileUrl = `${SITE_URL}/directory/${club.slug}`;
