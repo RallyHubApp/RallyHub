@@ -131,8 +131,8 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
     user_id: userId,
     role: 'editor',
     status: 'active',
-    verification_claim_id: claimId,
-    granted_by_user_id: grantedByUserId,
+    ...(claimId ? { verification_claim_id: claimId } : {}),
+    ...(grantedByUserId ? { granted_by_user_id: grantedByUserId } : {}),
     granted_at: new Date().toISOString(),
     notes,
   });
