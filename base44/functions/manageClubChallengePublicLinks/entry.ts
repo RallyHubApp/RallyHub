@@ -13,7 +13,10 @@ function validClubChallengeGrant(a:any, tenantId:string) {
 }
 
 function token(prefix:string) { return `${prefix}_${crypto.randomUUID().replaceAll('-','')}`; }
-function voterCode() { return crypto.randomUUID().replaceAll('-','').slice(0,8).toUpperCase(); }
+// New participant voting codes use 64 bits of random entropy. Existing issued
+// codes remain valid until links/codes are regenerated, avoiding disruption to
+// an event already in progress.
+function voterCode() { return crypto.randomUUID().replaceAll('-','').slice(0,16).toUpperCase(); }
 
 Deno.serve(async (req) => {
   try {
