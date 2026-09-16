@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">Limerick City Pickleball temporary badge</title>
+<desc id="desc">Temporary green, white and blue club badge</desc>
+<circle cx="256" cy="256" r="238" fill="#087f5b" stroke="#ffffff" stroke-width="18"/>
+<circle cx="256" cy="256" r="198" fill="none" stroke="#79c7ff" stroke-width="10"/>
+<path d="M135 315 Q256 245 377 315" fill="none" stroke="#79c7ff" stroke-width="18"/>
+<path d="M174 235h164v72H174zM205 195h102v40H205z" fill="#ffffff"/>
+<circle cx="256" cy="142" r="38" fill="#f4d03f"/>
+<circle cx="244" cy="130" r="5" fill="#087f5b"/><circle cx="268" cy="130" r="5" fill="#087f5b"/><circle cx="244" cy="154" r="5" fill="#087f5b"/><circle cx="268" cy="154" r="5" fill="#087f5b"/>
+<text x="256" y="78" text-anchor="middle" fill="#ffffff" font-family="Arial,sans-serif" font-size="36" font-weight="700">LIMERICK CITY</text>
+<text x="256" y="410" text-anchor="middle" fill="#ffffff" font-family="Arial,sans-serif" font-size="48" font-weight="800">PICKLEBALL</text>
+</svg>
