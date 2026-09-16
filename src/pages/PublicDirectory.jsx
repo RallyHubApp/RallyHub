@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
-import { directoryClubs, weekDays } from '@/data/directorySeed';
+import { directoryClubs, irelandCounties, weekDays } from '@/data/directorySeed';
 import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, CheckCircle2, PlusCircle, UserCheck } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -31,7 +31,7 @@ export default function PublicDirectory() {
   const [day, setDay] = useState('Any day');
   const [view, setView] = useState('clubs');
 
-  const counties = ['All counties', ...[...new Set(directoryClubs.map(club => club.county))].sort((a, b) => a.localeCompare(b))];
+  const counties = ['All counties', ...irelandCounties];
 
   const filteredClubs = useMemo(() => directoryClubs.filter(club => {
     const text = query.trim().toLowerCase();
@@ -52,11 +52,11 @@ export default function PublicDirectory() {
         <div className="container mx-auto px-4 py-12 sm:py-16">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-5">
-              <MapPin className="w-3.5 h-3.5" /> Starting with pickleball across Ireland
+              <MapPin className="w-3.5 h-3.5" /> Pickleball across all 32 counties of Ireland
             </div>
             <h1 className="text-4xl sm:text-5xl font-black tracking-tight">Find a club. Find a session. Get playing.</h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
-              Search public sports clubs by location, day and venue. One club can operate from several locations, each with its own map pin and timetable.
+              Search public sports clubs across the whole island of Ireland by county, location, day and venue. One club can operate from several locations, each with its own map pin and timetable.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link to="/directory?manage=1" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
