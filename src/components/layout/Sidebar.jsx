@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, Trophy, Swords, Crown, 
-  BarChart3, X, ChevronRight, UserCircle, Shield
+  BarChart3, X, ChevronRight, UserCircle, Shield, MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -93,6 +93,8 @@ export default function Sidebar({ isOpen, onToggle }) {
         {/* Bottom links */}
         <div className="px-3 pb-2 space-y-1">
           {[
+            { path: '/directory', label: 'Club Directory', icon: MapPin },
+            ...(canAccessAdmin ? [{ path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield }] : []),
             { path: '/app/my-profile', label: 'My Profile', icon: UserCircle },
             ...(canAccessAdmin ? [{ path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
           ].map(item => {
