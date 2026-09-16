@@ -45,6 +45,11 @@ export default function PublicDirectoryHeader() {
               <Button size="sm" variant="outline" onClick={() => logout('/directory')} className="px-3 font-semibold">
                 Sign out
               </Button>
+              {user?.role === 'admin' && (
+                <Button size="sm" variant="outline" onClick={() => { window.location.href = '/app/admin?tab=directory'; }} className="hidden md:inline-flex font-semibold whitespace-nowrap">
+                  Directory Admin
+                </Button>
+              )}
               <Button size="sm" variant="ghost" onClick={() => { window.location.href = '/app'; }} className="hidden lg:inline-flex gap-1.5">
                 RallyHub Club App
               </Button>
