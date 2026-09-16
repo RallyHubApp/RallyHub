@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
@@ -56,6 +56,54 @@ const editDistance = (a, b) => {
   }
   return previous[b.length];
 };
+
+function MapAutoFit({ points }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!points.length) return;
+    if (points.length === 1) {
+      map.setView([points[0].venue.latitude, points[0].venue.longitude], 11, { animate: true });
+      return;
+    }
+    const bounds = L.latLngBounds(points.map(({ venue }) => [venue.latitude, venue.longitude]));
+    map.fitBounds(bounds, { padding: [36, 36], maxZoom: 11, animate: true });
+  }, [map, points]);
+  return null;
+}
+
+function DirectoryMap({ clubs, heightClass = 'h-[560px]' }) {
+  const points = useMemo(() => clubs
+    .flatMap(club => (club.venues || []).map(venue => ({ club, venue })))
+    .filter(({ venue }) => Number.isFinite(venue.latitude) && Number.isFinite(venue.longitude)), [clubs]);
+
+  return (
+    <div className="rounded-2xl border border-border overflow-hidden bg-card">
+      <div className="p-4 border-b border-border flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-bold">Explore clubs on the map</h2>
+          <p className="text-xs text-muted-foreground mt-1">{points.length} mapped venue{points.length === 1 ? '' : 's'} shown. Click a marker to open the club listing.</p>
+        </div>
+        <span className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Ireland</span>
+      </div>
+      <MapContainer center={[53.35, -7.75]} zoom={6} scrollWheelZoom className={`${heightClass} w-full`}>
+        <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <MapAutoFit points={points} />
+        {points.map(({ club, venue }) => (
+          <Marker key={`${club.id}-${venue.id}`} position={[venue.latitude, venue.longitude]}>
+            <Popup>
+              <div className="min-w-[200px]">
+                <strong>{club.name}</strong><br />
+                <span>{venue.name}</span><br />
+                {venue.eircode && <><span>{venue.eircode}</span><br /></>}
+                <a href={`/directory/${club.slug}`} className="font-semibold">View club listing</a>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
+  );
+}
 
 const directorySearchScore = (club, rawQuery) => {
   const query = normaliseSearchText(rawQuery);
@@ -252,6 +300,7 @@ export default function PublicDirectory() {
             <div className="flex rounded-xl border border-input p-1 bg-background/70">
               <button onClick={() => setView('clubs')} className={`flex-1 lg:px-4 rounded-lg text-sm font-medium ${view === 'clubs' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Clubs</button>
               <button onClick={() => setView('sessions')} className={`flex-1 lg:px-4 rounded-lg text-sm font-medium ${view === 'sessions' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Sessions</button>
+              <button onClick={() => setView('map')} className={`flex-1 lg:px-4 rounded-lg text-sm font-medium ${view === 'map' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Map</button>
             </div>
           </div>
         </div>
@@ -278,12 +327,32 @@ export default function PublicDirectory() {
           </div>
         </section>
 
+        {view === 'map' ? (
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm text-muted-foreground">{filteredClubs.length} matching club{filteredClubs.length === 1 ? '' : 's'}</p>
+                <h2 className="text-2xl font-bold">Club map</h2>
+              </div>
+              <p className="hidden sm:block text-xs text-muted-foreground">Search and county/day filters also update the map</p>
+            </div>
+            {filteredClubs.length ? (
+              <DirectoryMap clubs={filteredClubs} />
+            ) : (
+              <div className="glass rounded-2xl p-10 text-center">
+                <MapPin className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                <h3 className="font-semibold">No clubs to show on the map</h3>
+                <p className="text-sm text-muted-foreground mt-1">Try changing your search or filters.</p>
+              </div>
+            )}
+          </section>
+        ) : (
         <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(380px,.8fr)] gap-6">
           <section>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-sm text-muted-foreground">{filteredClubs.length} club{filteredClubs.length === 1 ? '' : 's'} found{query.trim() ? ` for “${query.trim()}”` : ''}</p>
-                <h2 className="text-2xl font-bold">{query.trim() ? 'Best matches' : view === 'clubs' ? 'Club directory' : 'Weekly sessions'}</h2>
+                <h2 className="text-2xl font-bold">{view === 'sessions' ? 'Weekly sessions' : query.trim() ? 'Best matches' : 'Club directory'}</h2>
               </div>
               <SlidersHorizontal className="w-5 h-5 text-muted-foreground" />
             </div>
@@ -398,6 +467,7 @@ export default function PublicDirectory() {
             </div>
           </aside>
         </div>
+        )}
       </main>
       </div>
     </>
