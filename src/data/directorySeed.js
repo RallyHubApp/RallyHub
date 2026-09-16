@@ -1,4 +1,6 @@
-export const directoryClubs = [
+import { importedDirectoryClubs } from './directoryImported';
+
+const curatedDirectoryClubs = [
   {
     id: 'clare-pickleball',
     slug: 'clare-pickleball',
@@ -285,6 +287,9 @@ export const directoryClubs = [
     ]
   }
 ];
+
+export const directoryClubs = [...curatedDirectoryClubs, ...importedDirectoryClubs]
+  .sort((a, b) => a.name.localeCompare(b.name));
 
 export const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
