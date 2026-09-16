@@ -63,6 +63,7 @@ function sanitiseProfile(input:any) {
     meetTime: nullable(s?.meetTime, 10),
     level: clean(s?.level, 180) || 'Club Session',
     price: safeNumber(s?.price, 0, 10000),
+    paymentMethod: ['Cash','Online','Pay at venue','Included in membership','Contact club'].includes(clean(s?.paymentMethod, 80)) ? clean(s?.paymentMethod, 80) : null,
     capacity: safeNumber(s?.capacity, 1, 10000),
     host: nullable(s?.host, 180),
     showPublicJoinLink: s?.showPublicJoinLink === true,
