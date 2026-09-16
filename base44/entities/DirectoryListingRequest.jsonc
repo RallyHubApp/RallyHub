@@ -17,6 +17,9 @@
     "address": {
       "type": "string"
     },
+    "venue_postcode": {
+      "type": "string"
+    },
     "website": {
       "type": "string"
     },
