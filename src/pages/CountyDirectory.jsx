@@ -12,7 +12,6 @@ export default function CountyDirectory() {
   const { countySlug: slug } = useParams();
   const county = irelandCounties.find(item => countySlug(item) === slug);
   const [directoryState, setDirectoryState] = useState({});
-  if (!county) return <Navigate to="/directory" replace />;
 
   useEffect(() => {
     let active = true;
@@ -51,6 +50,8 @@ export default function CountyDirectory() {
       }));
     return [...staticClubs, ...dynamicClubs];
   }, [directoryState]);
+
+  if (!county) return <Navigate to="/directory" replace />;
 
   const clubs = allClubs.filter(club => club.county === county);
   const venueCount = clubs.reduce((sum, club) => sum + (club.venues?.length || 0), 0);
