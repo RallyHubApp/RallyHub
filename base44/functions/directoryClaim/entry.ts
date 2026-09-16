@@ -31,6 +31,14 @@ function phoneLooksSame(a = '', b = '') {
   return tail >= 8 && aa.slice(-tail) === bb.slice(-tail);
 }
 
+function recentCount(rows:any[] = [], hours = 24) {
+  const cutoff = Date.now() - (hours * 60 * 60 * 1000);
+  return rows.filter(row => {
+    const t = Date.parse(String(row?.created_date || ''));
+    return Number.isFinite(t) && t >= cutoff;
+  }).length;
+}
+
 function publicClaim(claim) {
   if (!claim) return null;
   return {
@@ -196,6 +204,15 @@ Deno.serve(async (req) => {
         return Response.json({ success: true, verified: false, status: 'pending', claim: publicClaim(pending), hasAccess: false });
       }
 
+      // Prevent a signed-in account from using the verification workflow as a
+      // high-volume email/database spam surface. Platform admins are exempt for testing/support.
+      if (user.role !== 'admin') {
+        const recentClaims = await base44.asServiceRole.entities.DirectoryClaim.filter({ claimant_user_id: user.id }, '-created_date', 100);
+        if (recentCount(recentClaims, 24) >= 10) {
+          return Response.json({ error: 'Too many directory verification requests. Please try again later.' }, { status: 429 });
+        }
+      }
+
       const claimantName = String(body.claimantName || user.full_name || user.display_name || '').trim().slice(0, 160);
       const claimantRole = String(body.claimantRole || '').trim().slice(0, 160);
       const claimantPhone = String(body.claimantPhone || '').trim().slice(0, 80);
@@ -316,6 +333,9 @@ Deno.serve(async (req) => {
       const samePending = existingRequests.find(x => x.status === 'pending' && normaliseName(x.club_name) === normaliseName(clubName));
       if (samePending) {
         return Response.json({ success: true, status: 'pending', request: publicListingRequest(samePending) });
+      }
+      if (user.role !== 'admin' && recentCount(existingRequests, 24) >= 5) {
+        return Response.json({ error: 'Too many new-club submissions. Please try again later.' }, { status: 429 });
       }
 
       const request = await base44.asServiceRole.entities.DirectoryListingRequest.create({
