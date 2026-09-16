@@ -1,0 +1,54 @@
+{
+  "name": "DirectoryListingAudit",
+  "type": "object",
+  "properties": {
+    "listing_slug": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "profile_created",
+        "profile_updated"
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "before_json": {
+      "type": "string"
+    },
+    "after_json": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "listing_slug",
+    "user_id",
+    "action",
+    "occurred_at",
+    "after_json"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": false,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

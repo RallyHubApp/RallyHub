@@ -159,17 +159,31 @@ Deno.serve(async (req) => {
       if (!allowed) return Response.json({ error: 'Verified directory editor access required' }, { status: 403 });
 
       const publicProfile = sanitiseProfile(body.profile || {});
+      const publicJson = JSON.stringify(publicProfile);
       const now = new Date().toISOString();
       const existing = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5);
+      const beforeJson = existing?.[0]?.public_json || null;
       let record;
       if (existing?.[0]) {
         record = await base44.asServiceRole.entities.DirectoryListingProfile.update(existing[0].id, {
-          public_json: JSON.stringify(publicProfile), updated_by_user_id: user.id, updated_at: now,
+          public_json: publicJson, updated_by_user_id: user.id, updated_at: now,
         });
       } else {
         record = await base44.asServiceRole.entities.DirectoryListingProfile.create({
-          listing_slug: listingSlug, public_json: JSON.stringify(publicProfile), status: 'active', updated_by_user_id: user.id, updated_at: now,
+          listing_slug: listingSlug, public_json: publicJson, status: 'active', updated_by_user_id: user.id, updated_at: now,
         });
+      }
+      try {
+        await base44.asServiceRole.entities.DirectoryListingAudit.create({
+          listing_slug: listingSlug,
+          user_id: user.id,
+          action: beforeJson ? 'profile_updated' : 'profile_created',
+          occurred_at: now,
+          ...(beforeJson ? { before_json: beforeJson } : {}),
+          after_json: publicJson,
+        });
+      } catch (auditError) {
+        console.warn('Directory listing audit write failed', auditError?.message || auditError);
       }
       return Response.json({ success: true, profile: publicProfile, updatedAt: now, id: record?.id || existing?.[0]?.id || null });
     }
