@@ -54,16 +54,6 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, userId: targetUser.id, userName: targetUser.full_name });
     }
 
-    if (action === 'send_password_reset') {
-      const userId = String(body.userId || '').trim();
-      if (!userId) return Response.json({ error: 'Missing userId' }, { status: 400 });
-      const users = await base44.asServiceRole.entities.User.filter({ id: userId });
-      const targetUser = users?.[0];
-      if (!targetUser?.email) return Response.json({ error: 'User with email not found' }, { status: 404 });
-      await base44.asServiceRole.auth.resetPassword(targetUser.email);
-      return Response.json({ success: true, userId: targetUser.id });
-    }
-
     // Direct admin password-setting is deliberately retired. Password recovery is
     // handled by the platform reset flow so administrators never receive or choose
     // another user's password.
