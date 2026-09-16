@@ -75,7 +75,19 @@ export default function PublicClubProfile() {
                               <p className="font-semibold">{session.level}</p>
                               <p className="text-sm text-muted-foreground">{venue?.name}</p>
                             </div>
-                            <p className="text-sm font-semibold">Contact club</p>
+                            <div className="flex items-center gap-2 sm:justify-end">
+                              <p className="text-sm font-semibold">Contact club</p>
+                              {session.showPublicJoinLink && session.publicJoinUrl && (
+                                <a
+                                  href={session.publicJoinUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground"
+                                >
+                                  Join session <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
