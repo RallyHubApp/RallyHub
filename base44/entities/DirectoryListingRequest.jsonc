@@ -44,6 +44,11 @@
     "claimant_phone": {
       "type": "string"
     },
+    "publish_contact": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the submitter explicitly agreed to use their submitted name/email/mobile as the public club contact if the listing is approved"
+    },
     "network_updates_opt_in": {
       "type": "boolean",
       "default": false
