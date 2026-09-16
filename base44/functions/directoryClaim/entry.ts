@@ -307,6 +307,7 @@ Deno.serve(async (req) => {
       const claimantName = String(body.claimantName || user.full_name || user.display_name || '').trim().slice(0, 160);
       const claimantRole = String(body.claimantRole || '').trim().slice(0, 160);
       const claimantPhone = String(body.claimantPhone || '').trim().slice(0, 80);
+      const publishContact = body.publishContact !== false;
       const networkUpdatesOptIn = body.networkUpdatesOptIn === true;
       const notes = String(body.notes || '').trim().slice(0, 1500);
 
@@ -355,6 +356,7 @@ Deno.serve(async (req) => {
         claimant_role: claimantRole,
         claimant_email: user.email,
         claimant_phone: claimantPhone,
+        publish_contact: publishContact,
         network_updates_opt_in: networkUpdatesOptIn,
         network_updates_opted_in_at: networkUpdatesOptIn ? new Date().toISOString() : null,
         notes: notes || null,
@@ -363,7 +365,7 @@ Deno.serve(async (req) => {
 
       await sendAdminDirectoryEmail(base44, {
         subject: `[RallyHub Directory] New club submission — ${clubName}`,
-        body: `A new club has been submitted for the RallyHub Directory.\n\nClub: ${clubName}\nCounty: ${county}\nTown / area: ${town || '(not supplied)'}\nPrimary venue: ${primaryVenue || '(not supplied)'}\nAddress: ${address || '(not supplied)'}\nEircode / postcode: ${venuePostcode || '(not supplied)'}\n\nSubmitted by: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\nNetwork updates: ${networkUpdatesOptIn ? 'Opted in' : 'No'}\n\nWebsite: ${website || '(none)'}\nFacebook: ${facebook || '(none)'}\nInstagram: ${instagram || '(none)'}\n\nNotes: ${notes || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin?tab=directory`,
+        body: `A new club has been submitted for the RallyHub Directory.\n\nClub: ${clubName}\nCounty: ${county}\nTown / area: ${town || '(not supplied)'}\nPrimary venue: ${primaryVenue || '(not supplied)'}\nAddress: ${address || '(not supplied)'}\nEircode / postcode: ${venuePostcode || '(not supplied)'}\n\nSubmitted by: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\nUse submitted details as public club contact: ${publishContact ? 'Yes' : 'No'}\nNetwork updates: ${networkUpdatesOptIn ? 'Opted in' : 'No'}\n\nWebsite: ${website || '(none)'}\nFacebook: ${facebook || '(none)'}\nInstagram: ${instagram || '(none)'}\n\nNotes: ${notes || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin?tab=directory`,
       });
 
       return Response.json({ success: true, status: 'pending', request: publicListingRequest(request) });
@@ -512,7 +514,13 @@ Deno.serve(async (req) => {
           policyLabel: 'Club information',
           description: `${request.club_name} is a pickleball club or group in County ${request.county}. The verified club representative is completing this listing.`,
           guestPolicy: 'Contact the club before attending a session.',
-          contact: { name: null, phone: null, phoneHref: null, whatsapp: null, email: null },
+          contact: request.publish_contact === true ? {
+            name: request.claimant_name || null,
+            phone: request.claimant_phone || null,
+            phoneHref: request.claimant_phone ? `tel:${String(request.claimant_phone).replace(/[^+\d]/g, '')}` : null,
+            whatsapp: null,
+            email: request.claimant_email || null,
+          } : { name: null, phone: null, phoneHref: null, whatsapp: null, email: null },
           venues: submittedVenue ? [{
             ...submittedVenue,
             latitude: geocodedVenue?.latitude ?? null,
