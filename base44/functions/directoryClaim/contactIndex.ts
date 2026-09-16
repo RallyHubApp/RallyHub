@@ -5,6 +5,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "abc-pickleball-club",
     "name": "ABC Pickleball Club",
+    "county": "Armagh",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -17,6 +18,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "achill-pickleball",
     "name": "Achill Pickleball",
+    "county": "Mayo",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -29,6 +31,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "annascaul-picklers",
     "name": "Annascaul Picklers",
+    "county": "Kerry",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -41,6 +44,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "ards-blair-mayne-pickleball-club",
     "name": "Ards Blair Mayne Pickleball Club",
+    "county": "Down",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -58,6 +62,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "ashbourne-pickleball",
     "name": "Ashbourne Pickleball",
+    "county": "Meath",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -70,6 +75,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "athboy-pickleball",
     "name": "Athboy Pickleball",
+    "county": "Meath",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -82,6 +88,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "balbriggan-pickleball",
     "name": "Balbriggan Pickleball",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -94,6 +101,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "ballyfermot-pickleballers",
     "name": "Ballyfermot Pickleballers",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -111,6 +119,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "bayside-pickleball-club",
     "name": "Bayside Pickleball Club",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -123,6 +132,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "belfast-pickleball-club",
     "name": "Belfast Pickleball Club",
+    "county": "Antrim",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -135,6 +145,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "belmayne-pickleball",
     "name": "Belmayne Pickleball",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -147,6 +158,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "better-pickleball-club",
     "name": "Better Pickleball Club",
+    "county": "Antrim",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -159,6 +171,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "blackrock-pickleball",
     "name": "Blackrock Pickleball",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -176,6 +189,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "blessington-pickleball-club",
     "name": "Blessington Pickleball Club",
+    "county": "Wicklow",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -188,6 +202,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "bluestack-pickleball-club",
     "name": "Bluestack Pickleball Club",
+    "county": "Donegal",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -200,6 +215,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "breffni-pickleball-club",
     "name": "Breffni Pickleball Club",
+    "county": "Cavan",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -217,6 +233,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "carlingford-pickleball-club",
     "name": "Carlingford Pickleball Club",
+    "county": "Louth",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -229,6 +246,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "carlow-tullow-pickleball-club",
     "name": "Carlow/Tullow Pickleball Club",
+    "county": "Carlow",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -241,6 +259,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "carrickmacross-pickleball-club",
     "name": "Carrickmacross Pickleball Club",
+    "county": "Monaghan",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -258,6 +277,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "castlerahan-pickleball-club",
     "name": "Castlerahan Pickleball Club",
+    "county": "Cavan",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -270,6 +290,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "clare-pickleball",
     "name": "Clare Pickleball",
+    "county": "Clare",
     "verificationStatus": "verified",
     "contacts": [
       {
@@ -282,6 +303,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "clonakilty-pickleball-club",
     "name": "Clonakilty Pickleball Club",
+    "county": "Cork",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -299,6 +321,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "cobh-pickleball",
     "name": "Cobh Pickleball",
+    "county": "Cork",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -311,6 +334,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "connemara-pickleball-club",
     "name": "Connemara Pickleball Club",
+    "county": "Galway",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -323,6 +347,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "cork-pickleballers",
     "name": "Cork Pickleballers",
+    "county": "Cork",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -335,6 +360,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "cumann-pickleball-a-chorrain",
     "name": "Cumann Pickleball A Chorráin",
+    "county": "Mayo",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -347,6 +373,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "deise-pickleball",
     "name": "Déise Pickleball",
+    "county": "Waterford",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -364,6 +391,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "drogheda-pickleball",
     "name": "Drogheda Pickleball",
+    "county": "Louth",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -376,6 +404,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "dublin-15-pickleball",
     "name": "Dublin 15 Pickleball",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -388,6 +417,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "dublin-7-pickleball-club",
     "name": "Dublin 7 Pickleball Club",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -400,6 +430,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "duhallow-pickleball",
     "name": "Duhallow Pickleball",
+    "county": "Cork",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -412,6 +443,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "east-cavan-pickleball",
     "name": "East Cavan Pickleball",
+    "county": "Cavan",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -429,6 +461,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "east-cork-pickleball",
     "name": "East Cork Pickleball",
+    "county": "Cork",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -441,6 +474,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "east-meath-pickleball-club",
     "name": "East Meath Pickleball Club",
+    "county": "Meath",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -453,6 +487,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "edenderry-pickleball-club",
     "name": "Edenderry Pickleball Club",
+    "county": "Offaly",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -470,6 +505,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "ezpickleball",
     "name": "ezPICKLEBALL",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -482,6 +518,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "fenside-pickleball",
     "name": "Fenside Pickleball",
+    "county": "Kilkenny",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -494,6 +531,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "galway-county-pickleball",
     "name": "Galway County Pickleball Club",
+    "county": "Galway",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -506,6 +544,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "galway-pickleball",
     "name": "Galway Pickleball",
+    "county": "Galway",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -518,6 +557,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "hook-pickleball",
     "name": "Hook Pickleball",
+    "county": "Wexford",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -530,6 +570,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "iveragh-pickleball-club",
     "name": "Iveragh Pickleball Club",
+    "county": "Kerry",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -547,6 +588,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "kilcullen-pickleball-panthers",
     "name": "Kilcullen Pickleball Panthers",
+    "county": "Kildare",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -559,6 +601,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "kildare-pickleball-assoc",
     "name": "Kildare Pickleball Assoc.",
+    "county": "Kildare",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -571,6 +614,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "killarney-pickleball-club",
     "name": "Killarney Pickleball Club",
+    "county": "Kerry",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -583,6 +627,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "killeshandra-pickleball-club",
     "name": "Killeshandra Pickleball Club",
+    "county": "Cavan",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -595,6 +640,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "kingdom-pickleball-club",
     "name": "Kingdom Pickleball Club",
+    "county": "Kerry",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -607,6 +653,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "kinsale-pickleball",
     "name": "Kinsale Pickleball",
+    "county": "Cork",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -619,6 +666,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "kinvara-pickleball",
     "name": "Kinvara Pickleball",
+    "county": "Galway",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -631,6 +679,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "lecanvey-pickleball-club",
     "name": "Lecanvey Pickleball Club",
+    "county": "Mayo",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -643,6 +692,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "leeside-pickleball",
     "name": "Leeside Pickleball",
+    "county": "Cork",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -655,6 +705,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "limerick-city-pickleball",
     "name": "Limerick City Pickleball",
+    "county": "Limerick",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -667,6 +718,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "lisburn-pickleball-club",
     "name": "Lisburn Pickleball Club",
+    "county": "Antrim",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -679,6 +731,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "midleton-pickleball",
     "name": "Midleton Pickleball",
+    "county": "Cork",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -691,6 +744,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "milltown-emper-moyvore-pickleball-club",
     "name": "Milltown Emper Moyvore Pickleball Club",
+    "county": "Westmeath",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -703,6 +757,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "moate-pickleball-club",
     "name": "Moate Pickleball Club",
+    "county": "Westmeath",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -715,6 +770,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "mostrim-pickleball",
     "name": "Mostrim Pickleball",
+    "county": "Longford",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -732,6 +788,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "mullahoran-pickleball-club",
     "name": "Mullahoran Pickleball Club",
+    "county": "Cavan",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -749,6 +806,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "multyfarnham-pickleball-club",
     "name": "Multyfarnham Pickleball Club",
+    "county": "Westmeath",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -766,6 +824,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "naas-pickleball",
     "name": "Naas Pickleball",
+    "county": "Kildare",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -778,6 +837,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "newport-pickleball",
     "name": "Newport Pickleball",
+    "county": "Mayo",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -795,6 +855,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "north-star-pickleball-club",
     "name": "North Star Pickleball Club",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -807,6 +868,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "pickleball-arklow",
     "name": "Pickleball Arklow",
+    "county": "Wicklow",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -819,6 +881,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "pickleball-iorrais",
     "name": "Pickleball Iorrais",
+    "county": "Mayo",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -831,6 +894,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "pickleball-south-dublin",
     "name": "Pickleball South Dublin",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -843,6 +907,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "pickleball-wexford",
     "name": "Pickleball Wexford",
+    "county": "Wexford",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -860,6 +925,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "picklepub-club",
     "name": "PicklePub Club",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -877,6 +943,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "portarlington-pickleball",
     "name": "Portarlington Pickleball",
+    "county": "Laois",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -894,6 +961,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "rathdrum-pickleball",
     "name": "Rathdrum Pickleball",
+    "county": "Wicklow",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -906,6 +974,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "rebel-pickleball",
     "name": "Rebel Pickleball",
+    "county": "Cork",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -918,6 +987,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "roundwood-pickleball-group",
     "name": "Roundwood Pickleball Group",
+    "county": "Wicklow",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -945,6 +1015,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "sandyford-pickleball-club",
     "name": "Sandyford Pickleball Club",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -957,6 +1028,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "sligo-pickleball-club",
     "name": "Sligo Pickleball Club",
+    "county": "Sligo",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -969,6 +1041,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "sligo-tennis-pickleball-club",
     "name": "Sligo Tennis Pickleball Club",
+    "county": "Sligo",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -981,6 +1054,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "south-kildare-pickleball",
     "name": "South Kildare Pickleball",
+    "county": "Kildare",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -993,6 +1067,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "southside-pickleball-club",
     "name": "Southside Pickleball Club",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -1020,6 +1095,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "sports-lab-pickleball",
     "name": "Sports Lab Pickleball",
+    "county": "Armagh",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -1032,6 +1108,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "stepaside-pickleball",
     "name": "Stepaside Pickleball",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -1044,6 +1121,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "terenure-pickleball-club",
     "name": "Terenure Pickleball Club",
+    "county": "Dublin",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -1056,6 +1134,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "tourmakeady-pickleball-club",
     "name": "Tourmakeady Pickleball Club",
+    "county": "Mayo",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -1068,6 +1147,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "wallace-park-pickleball-club",
     "name": "Wallace Park Pickleball Club",
+    "county": "Antrim",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -1080,6 +1160,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "west-connemara-pickleball-club",
     "name": "West Connemara Pickleball Club",
+    "county": "Galway",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -1092,6 +1173,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "west-cork-pickleball-club",
     "name": "West Cork Pickleball Club",
+    "county": "Cork",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -1114,6 +1196,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "westport-pickleball-club",
     "name": "Westport Pickleball Club",
+    "county": "Mayo",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
@@ -1131,6 +1214,7 @@ export const directoryVerificationIndex = [
   {
     "slug": "wicklow-pickleball",
     "name": "Wicklow Pickleball",
+    "county": "Wicklow",
     "verificationStatus": "unclaimed",
     "contacts": [
       {
