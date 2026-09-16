@@ -13,7 +13,12 @@ import { safeReturnTo } from "@/lib/authReturnTo";
 
 export default function Register() {
   const returnTo = safeReturnTo();
-  const returnToQuery = returnTo !== "/" ? `?returnTo=${encodeURIComponent(returnTo)}` : "";
+  const params = new URLSearchParams(window.location.search);
+  const directoryMode = params.get('mode') === 'directory' || returnTo.startsWith('/directory');
+  const authParams = new URLSearchParams();
+  if (returnTo !== '/') authParams.set('returnTo', returnTo);
+  if (directoryMode) authParams.set('mode', 'directory');
+  const returnToQuery = authParams.toString() ? `?${authParams.toString()}` : '';
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -77,7 +82,7 @@ export default function Register() {
     return (
       <AuthLayout
         icon={Mail}
-        title="Verify your email"
+        title={directoryMode ? "Verify your directory account" : "Verify your email"}
         subtitle={`We sent a code to ${email}`}
       >
         {error && (
@@ -130,17 +135,22 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Create your account"
-      subtitle="Sign up to get started"
+      title={directoryMode ? "Create a directory account" : "Create your account"}
+      subtitle={directoryMode ? "For claiming, adding or maintaining a public club listing" : "Sign up to get started"}
       footer={
         <>
-          Already have an account?{" "}
+          {directoryMode ? "Already have a RallyHub or directory account?" : "Already have an account?"}{" "}
           <Link to={`/login${returnToQuery}`} className="text-primary font-medium hover:underline">
-            Log in
+            {directoryMode ? 'Directory sign in' : 'Log in'}
           </Link>
         </>
       }
     >
+      {directoryMode && (
+        <div className="mb-5 rounded-xl border border-primary/25 bg-primary/10 p-4 text-sm text-muted-foreground">
+          <strong className="text-foreground">This creates a directory identity, not a player profile.</strong> You can use it to submit a missing club, claim an existing listing and edit listings you are verified to manage. It does not make you a RallyHub player, member, host or club administrator.
+        </div>
+      )}
       <Button
         variant="outline"
         className="w-full h-12 text-sm font-medium mb-6"
@@ -219,10 +229,10 @@ export default function Register() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
+              {directoryMode ? 'Creating directory account...' : 'Creating account...'}
             </>
           ) : (
-            "Create account"
+            directoryMode ? "Create directory account" : "Create account"
           )}
         </Button>
       </form>
