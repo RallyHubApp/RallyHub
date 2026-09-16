@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { directoryVerificationIndex } from './contactIndex.ts';
+import { geocodeDirectoryVenue } from '../_shared/directoryGeocode.ts';
 
 function normaliseEmail(value = '') {
   return String(value || '').trim().toLowerCase();
@@ -474,6 +475,21 @@ Deno.serve(async (req) => {
 
       if (!duplicate) {
         const venueId = request.primary_venue ? `venue-${slugify(request.primary_venue)}` : null;
+        const submittedVenue = venueId ? {
+          id: venueId,
+          name: request.primary_venue,
+          shortName: request.primary_venue,
+          address: request.address || request.town || null,
+          eircode: null,
+          indoor: null,
+          courts: null,
+          latitude: null,
+          longitude: null,
+          mapUrl: null,
+          websiteUrl: null,
+          playType: null,
+        } : null;
+        const geocodedVenue = submittedVenue ? await geocodeDirectoryVenue(submittedVenue) : null;
         const baseListing = {
           id: listingSlug,
           slug: listingSlug,
@@ -495,7 +511,11 @@ Deno.serve(async (req) => {
           description: `${request.club_name} is a pickleball club or group in County ${request.county}. The verified club representative is completing this listing.`,
           guestPolicy: 'Contact the club before attending a session.',
           contact: { name: null, phone: null, phoneHref: null, whatsapp: null, email: null },
-          venues: venueId ? [{ id: venueId, name: request.primary_venue, shortName: request.primary_venue, address: request.address || request.town || null, eircode: null, indoor: null, courts: null, latitude: null, longitude: null, mapUrl: null, websiteUrl: null, playType: null }] : [],
+          venues: submittedVenue ? [{
+            ...submittedVenue,
+            latitude: geocodedVenue?.latitude ?? null,
+            longitude: geocodedVenue?.longitude ?? null,
+          }] : [],
           sessions: [],
           source: 'Submitted to RallyHub Directory',
           sourceCheckedAt: now.slice(0, 10),
