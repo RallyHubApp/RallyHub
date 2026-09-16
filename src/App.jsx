@@ -38,6 +38,7 @@ import PublicKotcScorer from '@/pages/PublicKotcScorer';
 import PublicDirectory from '@/pages/PublicDirectory';
 import PublicClubProfile from '@/pages/PublicClubProfile';
 import DirectoryClaim from '@/pages/DirectoryClaim';
+import AddDirectoryClub from '@/pages/AddDirectoryClub';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -120,6 +121,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/directory" element={<PublicDirectory />} />
             <Route path="/directory/:slug" element={<PublicClubProfile />} />
+            <Route path="/directory/add" element={<AddDirectoryClub />} />
             <Route path="/directory/:slug/claim" element={<DirectoryClaim />} />
 
             {/* Public utility routes — no auth required */}
