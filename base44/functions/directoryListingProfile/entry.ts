@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
+import { geocodeDirectoryVenues } from './geocode.ts';
 
 const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
 const nullable = (value:any, max=500) => { const v = clean(value, max); return v || null; };
@@ -160,6 +161,7 @@ Deno.serve(async (req) => {
       if (!allowed) return Response.json({ error: 'Verified directory editor access required' }, { status: 403 });
 
       const publicProfile = sanitiseProfile(body.profile || {});
+      publicProfile.venues = await geocodeDirectoryVenues(publicProfile.venues || []);
       const publicJson = JSON.stringify(publicProfile);
       const now = new Date().toISOString();
       const existing = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5);
