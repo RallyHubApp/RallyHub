@@ -48,9 +48,11 @@ async function lookup(query:string) {
 }
 
 export async function geocodeDirectoryVenue(venue:any, context:any = {}) {
+  const hasLat = venue?.latitude !== null && venue?.latitude !== undefined && String(venue.latitude).trim() !== '';
+  const hasLng = venue?.longitude !== null && venue?.longitude !== undefined && String(venue.longitude).trim() !== '';
   const existingLat = Number(venue?.latitude);
   const existingLng = Number(venue?.longitude);
-  if (Number.isFinite(existingLat) && Number.isFinite(existingLng)) {
+  if (hasLat && hasLng && Number.isFinite(existingLat) && Number.isFinite(existingLng)) {
     return { latitude: existingLat, longitude: existingLng, geocoded: false };
   }
 
