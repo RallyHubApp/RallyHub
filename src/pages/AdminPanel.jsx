@@ -773,32 +773,6 @@ export default function AdminPanel() {
                 </Button>
               </div>
             </GlassCard>
-
-            {/* Quick-invite known admins */}
-            <GlassCard>
-              <h3 className="text-sm font-semibold text-foreground mb-3">Quick Invite Admins</h3>
-              <div className="space-y-2">
-                {['Conall.moore@icloud.com', 'Brian.moore007@gmail.com'].map(email => (
-                  <div key={email} className="flex items-center justify-between p-2 rounded-lg bg-secondary">
-                    <div>
-                      <p className="text-xs font-medium text-foreground">{email}</p>
-                      <p className="text-[10px] text-primary">Admin</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={async () => {
-                        await (/** @type {any} */ (base44)).users.inviteUser(email, 'admin');
-                        toast.success(`Admin invitation sent to ${email}`);
-                      }}
-                    >
-                      <Mail className="w-3 h-3 mr-1" /> Invite
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </GlassCard>
           </div>
         </TabsContent>
 
