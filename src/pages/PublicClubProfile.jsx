@@ -40,7 +40,7 @@ export default function PublicClubProfile() {
                     <Globe2 className="w-4 h-4" /> Website
                   </a>
                   <a href={club.waitingListUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold">
-                    <Users className="w-4 h-4" /> Join waiting list
+                    <Users className="w-4 h-4" /> {club.joiningCtaLabel || 'Contact club'}
                   </a>
                 </div>
               </div>
@@ -51,7 +51,7 @@ export default function PublicClubProfile() {
         <div className="container mx-auto px-4 py-8 grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6">
           <div className="space-y-6">
             <section className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-5 sm:p-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">Guest policy</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">{club.policyLabel || 'Club policy'}</p>
               <p className="mt-2 text-base font-semibold text-foreground">{club.guestPolicy}</p>
               <p className="mt-2 text-sm text-muted-foreground">Please contact the club before attending any session.</p>
             </section>
@@ -61,6 +61,9 @@ export default function PublicClubProfile() {
                 <CalendarDays className="w-5 h-5 text-primary" />
                 <h2 className="text-xl font-bold">Weekly sessions</h2>
               </div>
+              {club.scheduleUpdatedAt && (
+                <p className="text-xs text-muted-foreground -mt-3 mb-5">Schedule supplied by the club · last updated {club.scheduleUpdatedAt}</p>
+              )}
               <div className="space-y-5">
                 {Object.entries(schedule).map(([day, sessions]) => (
                   <div key={day}>
@@ -70,7 +73,7 @@ export default function PublicClubProfile() {
                         const venue = club.venues.find(v => v.id === session.venueId);
                         return (
                           <div key={session.id} className="rounded-xl border border-border bg-background/40 p-4 grid sm:grid-cols-[110px_1fr_auto] gap-2 sm:gap-4 items-center">
-                            <p className="font-bold text-primary">{session.start}–{session.end}</p>
+                            <p className="font-bold text-primary">{session.end ? `${session.start}–${session.end}` : session.start}</p>
                             <div>
                               <p className="font-semibold">{session.level}</p>
                               <p className="text-sm text-muted-foreground">{venue?.name}</p>
@@ -97,6 +100,21 @@ export default function PublicClubProfile() {
               </div>
               <p className="text-xs text-muted-foreground mt-5">Times and availability can change. Contact the club before travelling.</p>
             </section>
+
+            {club.levelGuide?.length > 0 && (
+              <section className="glass rounded-2xl p-5 sm:p-6">
+                <h2 className="text-xl font-bold">Which session should I attend?</h2>
+                <p className="text-sm text-muted-foreground mt-1 mb-4">Unless stated otherwise, sessions use doubles format.</p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {club.levelGuide.map(level => (
+                    <div key={level.name} className="rounded-xl border border-border bg-background/40 p-4">
+                      <h3 className="font-semibold text-primary">{level.name}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{level.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section className="glass rounded-2xl p-5 sm:p-6">
               <div className="flex items-center gap-2 mb-5">
@@ -132,7 +150,7 @@ export default function PublicClubProfile() {
                   <Phone className="w-4 h-4 text-primary" /><span className="text-sm font-medium">{club.contact.phone}</span>
                 </a>
                 <a href={club.contact.whatsapp} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40">
-                  <MessageCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium">WhatsApp Brian</span>
+                  <MessageCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium">WhatsApp {club.contact.name}</span>
                 </a>
                 <a href={`mailto:${club.contact.email}`} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40">
                   <Mail className="w-4 h-4 text-primary" /><span className="text-sm font-medium break-all">{club.contact.email}</span>
@@ -152,9 +170,14 @@ export default function PublicClubProfile() {
 
             <section className="glass rounded-2xl p-5">
               <h2 className="font-bold">Follow Clare Pickleball</h2>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <a href={club.facebook} target="_blank" rel="noreferrer" className="flex-1 inline-flex justify-center items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold"><Facebook className="w-4 h-4" /> Facebook</a>
                 <a href={club.instagram} target="_blank" rel="noreferrer" className="flex-1 inline-flex justify-center items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold">Instagram</a>
+                {club.waiverUrl && (
+                  <a href={club.waiverUrl} target="_blank" rel="noreferrer" className="w-full inline-flex justify-center items-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold">
+                    Club waiver <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
               </div>
             </section>
           </aside>
