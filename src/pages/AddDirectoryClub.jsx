@@ -35,8 +35,8 @@ export default function AddDirectoryClub() {
   const [error, setError] = useState('');
 
   const returnTo = '/directory/add';
-  const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`;
-  const registerHref = `/register?returnTo=${encodeURIComponent(returnTo)}`;
+  const loginHref = `/login?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
+  const registerHref = `/register?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
 
   useEffect(() => {
     if (!user) return;
