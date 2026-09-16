@@ -61,6 +61,9 @@
       ],
       "default": "pending"
     },
+    "approved_listing_slug": {
+      "type": "string"
+    },
     "reviewed_by_user_id": {
       "type": "string"
     },

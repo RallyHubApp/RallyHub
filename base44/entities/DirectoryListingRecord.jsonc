@@ -1,0 +1,76 @@
+{
+  "name": "DirectoryListingRecord",
+  "type": "object",
+  "properties": {
+    "slug": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "county": {
+      "type": "string"
+    },
+    "sport": {
+      "type": "string",
+      "default": "Pickleball"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "base_json": {
+      "type": "string"
+    },
+    "trusted_contacts_json": {
+      "type": "string"
+    },
+    "source_request_id": {
+      "type": "string"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "slug",
+    "name",
+    "county",
+    "sport",
+    "status",
+    "base_json",
+    "trusted_contacts_json",
+    "created_by_user_id",
+    "published_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
