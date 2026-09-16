@@ -58,6 +58,9 @@ export default function Landing() {
             transition={{ duration: 0.6 }}
             className="text-center max-w-4xl mx-auto"
           >
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-200 mb-5">
+              Club Directory Preview · {directoryClubs.length} clubs currently listed · details are being verified
+            </div>
             <div className="flex items-center justify-center gap-3 mb-6">
               <img 
                 src={LOGO_URL} 
@@ -68,8 +71,7 @@ export default function Landing() {
             </div>
             
             <p className="text-xl sm:text-2xl text-muted-foreground mb-8 leading-relaxed">
-              The community platform for Padel, Pickleball, Tennis & Badminton.
-              Create matches, join games, and connect with players near you.
+              Find clubs and places to play. RallyHub also gives clubs the tools to organise members, competitions and events.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -85,13 +87,13 @@ export default function Landing() {
                 onClick={handleOpenApp}
                 className="text-lg px-8 py-6 rounded-xl"
               >
-                Open Club App
+                Club App Login
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
 
             <p className="text-sm text-muted-foreground mt-4">
-              Login or create an account to get started
+              No account needed to browse the directory. Club representatives can claim their listing from the club profile.
             </p>
           </motion.div>
         </div>
@@ -107,10 +109,10 @@ export default function Landing() {
           className="text-center mb-12"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Everything You Need to Connect & Organise
+            Discover, Organise & Grow Your Club
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Whether you're organising friendly matches or competitive tournaments, RallyHub streamlines every aspect of community sport management.
+            Start with the public club directory, then use RallyHub's competition and club-management tools when your club is ready.
           </p>
         </motion.div>
 
@@ -146,10 +148,10 @@ export default function Landing() {
           <div className="grid lg:grid-cols-2 gap-8 items-center">
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-6">
-                Why Choose RallyHub?
+                One Public Directory. Separate Club Tools.
               </h2>
               <p className="text-muted-foreground mb-6">
-                Built by racket sports enthusiasts for racket sports communities. We understand the unique challenges of organising matches and events, and have created tools to solve them.
+                Anyone can browse the directory. A verified club representative can manage their listing without becoming a RallyHub player or joining the full RallyHub Club platform.
               </p>
               <div className="space-y-3">
                 {benefits.map((benefit, index) => (
@@ -190,19 +192,23 @@ export default function Landing() {
           className="text-center"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Ready to Get Started?
+            Looking for Somewhere to Play?
           </h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join the growing community of racket sports players and organisers using RallyHub to connect and manage events.
+            Explore the RallyHub club directory without logging in. If you run a listed club, open its profile to request verified directory access.
           </p>
-          <Button
-            size="lg"
-            onClick={handleOpenApp}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6 rounded-xl"
-          >
-            Open App
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link to="/directory">
+              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6 rounded-xl">
+                Explore Club Directory
+                <MapPin className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+            <Button size="lg" variant="outline" onClick={handleOpenApp} className="text-lg px-8 py-6 rounded-xl">
+              Club App Login
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </div>
         </motion.div>
       </div>
 
