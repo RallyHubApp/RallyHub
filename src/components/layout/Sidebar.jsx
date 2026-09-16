@@ -25,6 +25,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   const { user } = useAuth();
   const { role } = useKotcRole();
   const canAccessAdmin = user?.role === 'admin';
+  const isSuperAdmin = role === 'super_admin';
 
   return (
     <>
@@ -93,8 +94,10 @@ export default function Sidebar({ isOpen, onToggle }) {
         {/* Bottom links */}
         <div className="px-3 pb-2 space-y-1">
           {[
-            { path: '/directory', label: 'Club Directory', icon: MapPin },
-            ...(canAccessAdmin ? [{ path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield }] : []),
+            ...(isSuperAdmin ? [
+              { path: '/directory', label: 'Switch to Directory', icon: MapPin },
+              { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield }
+            ] : []),
             { path: '/app/my-profile', label: 'My Profile', icon: UserCircle },
             ...(canAccessAdmin ? [{ path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
           ].map(item => {
