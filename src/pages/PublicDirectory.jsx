@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -7,6 +7,7 @@ import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { directoryClubs, irelandCounties, weekDays } from '@/data/directorySeed';
 import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, CheckCircle2, PlusCircle, UserCheck } from 'lucide-react';
 import Seo, { SITE_URL } from '@/components/public/Seo';
+import { base44 } from '@/api/base44Client';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -15,7 +16,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
 });
 
-const allSessions = directoryClubs.flatMap(club => (club.sessions || []).map(session => ({...session, club})));
 const listedCountyCount = new Set(directoryClubs.map(club => club.county)).size;
 const countySlug = county => county.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -33,17 +33,41 @@ export default function PublicDirectory() {
   const [county, setCounty] = useState('All counties');
   const [day, setDay] = useState('Any day');
   const [view, setView] = useState('clubs');
+  const [directoryState, setDirectoryState] = useState({});
 
+  useEffect(() => {
+    let active = true;
+    base44.functions.invoke('directoryListingProfile', { action: 'public_list' })
+      .then(res => { if (active && !res.data?.error) setDirectoryState(res.data?.listings || {}); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const effectiveClubs = useMemo(() => directoryClubs.map(club => {
+    const state = directoryState[club.slug];
+    const profile = state?.profile;
+    if (!profile) return { ...club, verificationStatus: state?.verificationStatus || club.verificationStatus };
+    return {
+      ...club,
+      ...profile,
+      verificationStatus: state?.verificationStatus || club.verificationStatus,
+      contact: { ...(club.contact || {}), ...(profile.contact || {}) },
+      venues: Array.isArray(profile.venues) ? profile.venues : club.venues,
+      sessions: Array.isArray(profile.sessions) ? profile.sessions : club.sessions,
+    };
+  }), [directoryState]);
+
+  const allSessions = useMemo(() => effectiveClubs.flatMap(club => (club.sessions || []).map(session => ({...session, club}))), [effectiveClubs]);
   const counties = ['All counties', ...irelandCounties];
 
-  const filteredClubs = useMemo(() => directoryClubs.filter(club => {
+  const filteredClubs = useMemo(() => effectiveClubs.filter(club => {
     const text = query.trim().toLowerCase();
     const searchable = [club.name, club.sport, club.county, ...(club.venues || []).flatMap(v => [v.name, v.address, v.eircode])].join(' ').toLowerCase();
     const queryMatch = !text || searchable.includes(text);
     const countyMatch = county === 'All counties' || club.county === county;
     const dayMatch = day === 'Any day' || (club.sessions || []).some(session => session.day === day);
     return queryMatch && countyMatch && dayMatch;
-  }), [query, county, day]);
+  }), [effectiveClubs, query, county, day]);
 
   const visibleVenueIds = new Set(filteredClubs.flatMap(club => (club.venues || []).map(v => `${club.id}:${v.id}`)));
   const directorySchema = {
@@ -141,7 +165,7 @@ export default function PublicDirectory() {
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
             {irelandCounties.map(item => {
-              const count = directoryClubs.filter(club => club.county === item).length;
+              const count = effectiveClubs.filter(club => club.county === item).length;
               return (
                 <Link key={item} to={`/pickleball-clubs/${countySlug(item)}`} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${count ? 'border-primary/25 bg-primary/10 text-primary hover:bg-primary/15' : 'border-border text-muted-foreground hover:text-foreground'}`}>
                   {item}{count ? ` · ${count}` : ''}
@@ -251,7 +275,7 @@ export default function PublicDirectory() {
               </div>
               <MapContainer center={[53.35, -7.75]} zoom={6} scrollWheelZoom={false} className="h-[390px] w-full">
                 <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                {directoryClubs
+                {effectiveClubs
                   .flatMap(club => (club.venues || []).map(venue => ({club, venue})))
                   .filter(({club, venue}) => visibleVenueIds.has(`${club.id}:${venue.id}`) && Number.isFinite(venue.latitude) && Number.isFinite(venue.longitude))
                   .map(({club, venue}) => (
