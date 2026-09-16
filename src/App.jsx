@@ -139,7 +139,7 @@ function App() {
             <Route path="/kotc-score/:token" element={<PublicKotcScorer />} />
 
             {/* Protected app routes */}
-            <Route element={<ProtectedRoute fallback={<LoadingScreen />} unauthenticatedElement={<Navigate to="/login" replace />} />}>
+            <Route element={<ProtectedRoute fallback={<LoadingScreen />} />}>
               <Route path="/kotc-host/:sessionId" element={<KotcHostSession />} />
               <Route path="/app/*" element={<AppAccessGate />} />
               <Route path="/players" element={<Navigate to="/app/players" replace />} />
