@@ -297,10 +297,13 @@ Deno.serve(async (req) => {
       if (!claimantRole) return Response.json({ error: 'Your role or connection to the club is required' }, { status: 400 });
       if (!claimantPhone) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
 
-      const duplicate = directoryVerificationIndex.find(x =>
+      const staticDuplicate = directoryVerificationIndex.find(x =>
         normaliseName(x.name) === normaliseName(clubName) &&
         normaliseName(x.county || '') === normaliseName(county)
       );
+      const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500);
+      const dynamicDuplicate = (dynamicRows || []).find(x => normaliseName(x.name) === normaliseName(clubName) && normaliseName(x.county || '') === normaliseName(county));
+      const duplicate = staticDuplicate || dynamicDuplicate;
       if (duplicate) {
         return Response.json({
           error: 'This club already appears to be in the RallyHub directory.',
@@ -351,7 +354,7 @@ Deno.serve(async (req) => {
 
     if (action === 'status') {
       const listingSlug = String(body.listingSlug || '').trim();
-      const listing = directoryVerificationIndex.find(x => x.slug === listingSlug);
+      const listing = await resolveListing(base44, listingSlug);
       if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
       const [claims, accesses] = await Promise.all([
         base44.asServiceRole.entities.DirectoryClaim.filter({ listing_slug: listingSlug, claimant_user_id: user.id }),
@@ -388,7 +391,7 @@ Deno.serve(async (req) => {
       const claims = await base44.asServiceRole.entities.DirectoryClaim.filter({ id: claimId });
       const claim = claims[0];
       if (!claim) return Response.json({ error: 'Claim not found' }, { status: 404 });
-      const listing = directoryVerificationIndex.find(x => x.slug === claim.listing_slug);
+      const listing = await resolveListing(base44, claim.listing_slug);
       if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
 
       await base44.asServiceRole.entities.DirectoryClaim.update(claim.id, {
