@@ -45,6 +45,7 @@ export default function AdminPanel() {
   const [deletingUser, setDeletingUser] = useState(null);
   const [confirmDeleteUser, setConfirmDeleteUser] = useState(null);
   const [reviewingDirectoryClaim, setReviewingDirectoryClaim] = useState(null);
+  const [reviewingNewDirectoryRequest, setReviewingNewDirectoryRequest] = useState(null);
   const [revokingDirectoryAccess, setRevokingDirectoryAccess] = useState(null);
 
   const { data: players = [] } = useQuery({
@@ -69,12 +70,12 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
-  const { data: directoryVerification = { claims: [], accesses: [] } } = useQuery({
+  const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [] } } = useQuery({
     queryKey: ['directory-verification'],
     queryFn: async () => {
       const res = await base44.functions.invoke('directoryClaim', { action: 'list_admin' });
       if (res.data?.error) throw new Error(res.data.error);
-      return { claims: res.data?.claims || [], accesses: res.data?.accesses || [] };
+      return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [] }; 
     },
     enabled: canAccessAdmin
   });
@@ -265,6 +266,20 @@ export default function AdminPanel() {
     }
   };
 
+  const reviewNewDirectoryRequest = async (requestId, decision) => {
+    setReviewingNewDirectoryRequest(requestId);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', { action: 'review_new', requestId, decision });
+      if (res.data?.error) throw new Error(res.data.error);
+      queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
+      toast.success(decision === 'approved' ? 'New club request approved for addition' : 'New club request rejected');
+    } catch (error) {
+      toast.error(error.message || 'Could not update new club request');
+    } finally {
+      setReviewingNewDirectoryRequest(null);
+    }
+  };
+
   const revokeDirectoryAccess = async (accessId) => {
     setRevokingDirectoryAccess(accessId);
     try {
@@ -310,6 +325,7 @@ export default function AdminPanel() {
   const linkedCount = players.filter(p => p.user_id).length;
   const unlinkedCount = players.length - linkedCount;
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
+  const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
   const activeDirectoryAccesses = directoryVerification.accesses.filter(a => a.status === 'active');
 
   return (
@@ -348,8 +364,8 @@ export default function AdminPanel() {
           </TabsTrigger>
           <TabsTrigger value="directory" className="text-xs gap-1.5">
             <UserCheck className="w-3.5 h-3.5" /> Directory Claims
-            {pendingDirectoryClaims.length > 0 && (
-              <span className="ml-1 bg-amber-400 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{pendingDirectoryClaims.length}</span>
+            {(pendingDirectoryClaims.length + pendingNewDirectoryRequests.length) > 0 && (
+              <span className="ml-1 bg-amber-400 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{pendingDirectoryClaims.length + pendingNewDirectoryRequests.length}</span>
             )}
           </TabsTrigger>
           <TabsTrigger value="users" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Users & Roles</TabsTrigger>
