@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Search, PlusCircle, UserCheck } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
@@ -65,9 +64,11 @@ export default function PublicDirectoryHeader() {
                   Directory Login
                 </Button>
               </Link>
-              <Button size="sm" variant="ghost" onClick={() => base44.auth.redirectToLogin('/app')} className="hidden md:inline-flex font-semibold whitespace-nowrap">
-                RallyHub Club Login
-              </Button>
+              <Link to="/login?returnTo=%2Fapp">
+                <Button size="sm" variant="ghost" className="hidden md:inline-flex font-semibold whitespace-nowrap">
+                  RallyHub Club Login
+                </Button>
+              </Link>
             </>
           )}
         </div>
