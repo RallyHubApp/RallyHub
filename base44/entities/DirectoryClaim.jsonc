@@ -1,0 +1,104 @@
+{
+  "name": "DirectoryClaim",
+  "type": "object",
+  "properties": {
+    "listing_slug": {
+      "type": "string"
+    },
+    "listing_name_snapshot": {
+      "type": "string"
+    },
+    "claimant_user_id": {
+      "type": "string"
+    },
+    "claimant_name": {
+      "type": "string"
+    },
+    "claimant_role": {
+      "type": "string"
+    },
+    "claimant_email": {
+      "type": "string"
+    },
+    "claimant_phone": {
+      "type": "string"
+    },
+    "claimant_message": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "auto_verified",
+        "approved",
+        "rejected",
+        "revoked"
+      ],
+      "default": "pending"
+    },
+    "match_method": {
+      "type": "string",
+      "enum": [
+        "authenticated_email",
+        "manual_review",
+        "admin_approved"
+      ]
+    },
+    "email_match": {
+      "type": "boolean",
+      "default": false
+    },
+    "phone_match": {
+      "type": "boolean",
+      "default": false
+    },
+    "name_match": {
+      "type": "boolean",
+      "default": false
+    },
+    "auto_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reviewed_by_user_id": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "review_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "listing_slug",
+    "listing_name_snapshot",
+    "claimant_user_id",
+    "claimant_email",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
