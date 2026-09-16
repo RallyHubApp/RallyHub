@@ -145,7 +145,7 @@ export default function DirectoryClaim() {
                   <h2 className="font-bold">Verification requested</h2>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  We could not automatically confirm your connection to this club. Your request is waiting for RallyHub review. We have not disclosed the contact information used for verification.
+                  We could not automatically confirm your connection to this club. Your request is waiting for RallyHub review. We have not disclosed the contact information used for verification. If you need to contact us about the request, email <a href="mailto:rallyhubapp@gmail.com" className="text-primary hover:underline">rallyhubapp@gmail.com</a>.
                 </p>
               </div>
             ) : (
