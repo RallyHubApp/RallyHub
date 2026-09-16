@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Search, LogIn } from 'lucide-react';
+import { Search, LogIn, PlusCircle, UserCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
@@ -18,8 +18,11 @@ export default function PublicDirectoryHeader() {
           <NavLink to="/directory" className={({isActive}) => `px-3 py-2 rounded-lg transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
             Club Directory
           </NavLink>
-          <NavLink to="/events" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-            Events
+          <NavLink to="/directory?manage=1" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5">
+            <UserCheck className="w-3.5 h-3.5" /> Manage listing
+          </NavLink>
+          <NavLink to="/directory/add" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5">
+            <PlusCircle className="w-3.5 h-3.5" /> Add club
           </NavLink>
         </nav>
         <div className="ml-auto flex items-center gap-2">
@@ -27,7 +30,7 @@ export default function PublicDirectoryHeader() {
             <Search className="w-5 h-5" />
           </Link>
           <Button size="sm" variant="outline" onClick={() => base44.auth.redirectToLogin('/app')} className="gap-1.5">
-            <LogIn className="w-4 h-4" /> <span className="hidden xs:inline">Club app login</span>
+            <LogIn className="w-4 h-4" /> <span className="hidden xs:inline">RallyHub Club Login</span>
           </Button>
         </div>
       </div>
