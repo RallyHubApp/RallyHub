@@ -54,10 +54,52 @@ function publicListingRequest(request) {
     county: request.county,
     town: request.town || null,
     status: request.status,
+    approved_listing_slug: request.approved_listing_slug || null,
     created_date: request.created_date,
     reviewed_at: request.reviewed_at || null,
     review_notes: request.status === 'rejected' ? request.review_notes || null : null,
   };
+}
+
+function slugify(value = '') {
+  return normaliseName(value).replace(/\s+/g, '-').replace(/^-+|-+$/g, '') || 'club';
+}
+
+function safePublicUrl(value = '') {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    return ['http:', 'https:'].includes(url.protocol) ? url.toString() : null;
+  } catch { return null; }
+}
+
+async function resolveListing(base44, listingSlug) {
+  const staticListing = directoryVerificationIndex.find(x => x.slug === listingSlug);
+  if (staticListing) return staticListing;
+  const rows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
+  const row = rows?.[0];
+  if (!row) return null;
+  let contacts = [];
+  try { contacts = row.trusted_contacts_json ? JSON.parse(row.trusted_contacts_json) : []; } catch { contacts = []; }
+  return {
+    slug: row.slug,
+    name: row.name,
+    county: row.county,
+    verificationStatus: 'unclaimed',
+    contacts: Array.isArray(contacts) ? contacts : [],
+  };
+}
+
+async function uniqueListingSlug(base44, clubName) {
+  const base = slugify(clubName);
+  const staticSlugs = new Set(directoryVerificationIndex.map(x => x.slug));
+  const rows = await base44.asServiceRole.entities.DirectoryListingRecord.list('-published_at', 500);
+  const used = new Set([...(rows || []).map(x => x.slug), ...staticSlugs]);
+  if (!used.has(base)) return base;
+  let n = 2;
+  while (used.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
 }
 
 async function grantAccess(base44, { listing, userId, claimId, grantedByUserId = null, notes = '' }) {
