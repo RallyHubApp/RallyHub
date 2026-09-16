@@ -462,7 +462,7 @@ export default function AdminPanel() {
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2"><UserPlus className="w-4 h-4 text-primary" /><p className="font-semibold text-foreground">{request.club_name}</p></div>
                     <p className="text-sm text-muted-foreground">{request.town ? `${request.town} · ` : ''}{request.county}</p>
-                    {request.primary_venue && <p className="text-xs text-muted-foreground">Venue: {request.primary_venue}{request.address ? ` · ${request.address}` : ''}</p>}
+                    {request.primary_venue && <p className="text-xs text-muted-foreground">Venue: {request.primary_venue}{request.address ? ` · ${request.address}` : ''}{request.venue_postcode ? ` · ${request.venue_postcode}` : ''}</p>}
                     <p className="text-xs text-muted-foreground break-all">Submitted by {request.claimant_name || '(no name)'} · {request.claimant_role || 'role not supplied'} · {request.claimant_email}</p>
                     {request.claimant_phone && <p className="text-xs text-muted-foreground">Phone: {request.claimant_phone}</p>}
                     <p className="text-xs text-muted-foreground">Network updates: {request.network_updates_opt_in ? 'Opted in' : 'No'}</p>
