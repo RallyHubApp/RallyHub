@@ -35,6 +35,8 @@ import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
 import KotcHostSession from '@/pages/KotcHostSession';
 import PublicKotcResults from '@/pages/PublicKotcResults';
 import PublicKotcScorer from '@/pages/PublicKotcScorer';
+import PublicDirectory from '@/pages/PublicDirectory';
+import PublicClubProfile from '@/pages/PublicClubProfile';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -115,6 +117,8 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/directory" element={<PublicDirectory />} />
+            <Route path="/directory/:slug" element={<PublicClubProfile />} />
 
             {/* Public utility routes — no auth required */}
             <Route path="/register/:id" element={<PublicRegister />} />
