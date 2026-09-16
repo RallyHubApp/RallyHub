@@ -160,9 +160,11 @@ export default function DirectoryListingEdit() {
     if (file.size > 5 * 1024 * 1024) { setError('Club logo must be 5 MB or smaller.'); return; }
     setUploadingLogo(true); setError(''); setSaved(false);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      if (!file_url) throw new Error('No file URL returned');
-      setField('logoUrl', file_url);
+      const uploadRes = await base44.functions.invoke('secureCreditAction', { action: 'upload_image', purpose: 'directory_logo', listingSlug: slug, file });
+      if (uploadRes.data?.error) throw new Error(uploadRes.data.error);
+      const fileUrl = uploadRes.data?.file_url;
+      if (!fileUrl) throw new Error('No file URL returned');
+      setField('logoUrl', fileUrl);
     } catch (err) {
       setError(err?.message || 'Could not upload the club logo.');
     } finally { setUploadingLogo(false); }
