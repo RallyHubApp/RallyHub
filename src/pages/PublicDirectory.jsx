@@ -77,21 +77,21 @@ export default function PublicDirectory() {
       <PublicDirectoryHeader />
 
       <section className="border-b border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,.13),transparent_42%)]">
-        <div className="container mx-auto px-4 py-12 sm:py-16">
+        <div className="container mx-auto px-4 py-7 sm:py-9">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-5">
               <MapPin className="w-3.5 h-3.5" /> All-Ireland directory · all 32 counties supported
             </div>
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tight">Find a club. Find a session. Get playing.</h1>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight">Find a club. Find a session. Get playing.</h1>
+            <p className="mt-3 text-base text-muted-foreground max-w-2xl">
               Search public sports clubs across the whole island of Ireland by county, location, day and venue. We currently have {directoryClubs.length} club listings across {listedCountyCount} counties, with all 32 counties available as the directory grows.
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link to="/directory?manage=1" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
-                <UserCheck className="w-4 h-4" /> Manage a directory listing
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link to="/directory?manage=1" className="inline-flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/15 transition-colors">
+                <UserCheck className="w-4 h-4" /> Manage a listing
               </Link>
-              <Link to="/directory/add" className="inline-flex items-center gap-2 text-sm font-semibold text-amber-300 hover:underline">
-                <PlusCircle className="w-4 h-4" /> Can't find your club? Add it
+              <Link to="/directory/add" className="inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-400/15 transition-colors">
+                <PlusCircle className="w-4 h-4" /> Add a missing club
               </Link>
             </div>
           </div>
@@ -110,7 +110,7 @@ export default function PublicDirectory() {
             </div>
           )}
 
-          <div className="mt-8 glass-strong rounded-2xl p-3 sm:p-4 grid gap-3 lg:grid-cols-[minmax(260px,1fr)_200px_200px_auto]">
+          <div className="mt-5 glass-strong rounded-2xl p-3 grid gap-3 lg:grid-cols-[minmax(260px,1fr)_200px_200px_auto]">
             <label className="relative">
               <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
               <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Club, town, venue or Eircode" className="w-full h-11 rounded-xl border border-input bg-background/70 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/40" />
@@ -130,20 +130,20 @@ export default function PublicDirectory() {
         </div>
       </section>
 
-      <main className="container mx-auto px-4 py-8">
-        <section className="mb-8 glass rounded-2xl p-5 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-4">
-            <div>
-              <h2 className="text-xl font-bold">Browse pickleball clubs by county</h2>
-              <p className="text-sm text-muted-foreground mt-1">All 32 counties are included. Counties without a listing yet invite clubs to submit their details.</p>
+      <main className="container mx-auto px-4 py-6">
+        <section className="mb-6 rounded-xl border border-border/70 bg-card/40 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 mb-2.5">
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold">Browse by county</h2>
+              <p className="text-xs text-muted-foreground">All 32 counties · {listedCountyCount} currently have listings</p>
             </div>
-            <span className="text-xs text-muted-foreground">{listedCountyCount} counties currently have listings</span>
+            <Link to="/directory/add" className="shrink-0 text-xs font-semibold text-amber-300 hover:underline">Missing club? Add it</Link>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
             {irelandCounties.map(item => {
               const count = directoryClubs.filter(club => club.county === item).length;
               return (
-                <Link key={item} to={`/pickleball-clubs/${countySlug(item)}`} className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${count ? 'border-primary/25 bg-primary/10 text-primary hover:bg-primary/15' : 'border-border text-muted-foreground hover:text-foreground'}`}>
+                <Link key={item} to={`/pickleball-clubs/${countySlug(item)}`} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${count ? 'border-primary/25 bg-primary/10 text-primary hover:bg-primary/15' : 'border-border text-muted-foreground hover:text-foreground'}`}>
                   {item}{count ? ` · ${count}` : ''}
                 </Link>
               );
@@ -195,13 +195,20 @@ export default function PublicDirectory() {
                         </div>
                       </div>
                     </div>
-                    <div className="mt-5 pt-4 border-t border-border flex flex-wrap gap-2 justify-between items-center">
+                    <div className="mt-5 pt-4 border-t border-border flex flex-wrap gap-3 justify-between items-center">
                       <div className="flex flex-wrap gap-2">
                         {club.venues.map(venue => <span key={venue.id} className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground">{venue.shortName}</span>)}
                       </div>
-                      <Link to={`/directory/${club.slug}`} className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
-                        View club <ArrowRight className="w-4 h-4" />
-                      </Link>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {club.verificationStatus === 'unclaimed' && (
+                          <Link to={`/directory/${club.slug}/claim`} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-400/15 transition-colors">
+                            <UserCheck className="w-4 h-4" /> Claim this listing
+                          </Link>
+                        )}
+                        <Link to={`/directory/${club.slug}`} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/40 px-3 py-2 text-sm font-semibold text-primary hover:border-primary/40 transition-colors">
+                          View details <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      </div>
                     </div>
                   </article>
                 ))}
@@ -242,7 +249,7 @@ export default function PublicDirectory() {
                 <h2 className="font-bold">Venue map</h2>
                 <p className="text-xs text-muted-foreground mt-1">Every venue has its own pin, even when several venues belong to one club.</p>
               </div>
-              <MapContainer center={[53.35, -7.75]} zoom={6} scrollWheelZoom={false} className="h-[460px] w-full">
+              <MapContainer center={[53.35, -7.75]} zoom={6} scrollWheelZoom={false} className="h-[390px] w-full">
                 <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 {directoryClubs
                   .flatMap(club => (club.venues || []).map(venue => ({club, venue})))
