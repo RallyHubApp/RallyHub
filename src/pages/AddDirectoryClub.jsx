@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import Seo from '@/components/public/Seo';
 
 const normalise = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -97,7 +98,13 @@ export default function AddDirectoryClub() {
   const rejected = request?.status === 'rejected';
 
   return (
-    <div className="min-h-screen bg-[#0a1628] text-foreground">
+    <>
+      <Seo
+        title="Add Your Pickleball Club to the RallyHub Ireland Directory"
+        description="Can't find your pickleball club in RallyHub? Submit a club from anywhere on the island of Ireland for review and inclusion in the public RallyHub Club Directory."
+        path="/directory/add"
+      />
+      <div className="min-h-screen bg-[#0a1628] text-foreground">
       <PublicDirectoryHeader />
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         <Link to="/directory" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
@@ -228,6 +235,7 @@ export default function AddDirectoryClub() {
           </aside>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }
