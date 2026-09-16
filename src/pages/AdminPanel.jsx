@@ -498,6 +498,7 @@ export default function AdminPanel() {
                       <Badge variant="outline" className={claim.email_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Email match: {claim.email_match ? 'Yes' : 'No'}</Badge>
                       <Badge variant="outline" className={claim.name_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Name match: {claim.name_match ? 'Yes' : 'No'}</Badge>
                       <Badge variant="outline" className={claim.phone_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Phone match: {claim.phone_match ? 'Yes' : 'No'}</Badge>
+                      <Badge variant="outline" className={claim.network_updates_opt_in ? 'border-primary/40 text-primary' : 'border-border text-muted-foreground'}>Network updates: {claim.network_updates_opt_in ? 'Opted in' : 'No'}</Badge>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
