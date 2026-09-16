@@ -62,6 +62,7 @@ export default function DirectoryListingEdit() {
   const [validation, setValidation] = useState([]);
   const returnTo = useMemo(() => `/directory/${slug}/edit`, [slug]);
   const dirty = !!form && !!baseline && JSON.stringify(form) !== baseline;
+  const publicListingUrl = useMemo(() => `/directory/${slug}`, [slug]);
 
   useEffect(() => {
     let active = true;
@@ -147,11 +148,19 @@ export default function DirectoryListingEdit() {
       setBaseline(JSON.stringify(merged));
       setValidation([]);
       setSaved(true);
-      window.setTimeout(() => setSaved(false), 5000);
+      try {
+        sessionStorage.setItem(`rallyhub-directory-profile-${slug}`, JSON.stringify({ profile: merged, savedAt: Date.now() }));
+      } catch {}
     } catch (err) {
       setError(err.message || 'Could not save listing changes.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally { setSaving(false); }
+  };
+
+  const viewPublicListing = () => {
+    if (saving) return;
+    if (dirty && !window.confirm('You have unsaved changes. View the public listing without saving them?')) return;
+    window.location.assign(`${publicListingUrl}?refresh=${Date.now()}`);
   };
 
   const uploadLogo = async file => {
@@ -225,8 +234,10 @@ export default function DirectoryListingEdit() {
         <PublicDirectoryHeader />
         <main className="container mx-auto px-4 py-7 max-w-6xl">
           <div className="flex items-center justify-between gap-3 mb-5">
-            <Link to={`/directory/${slug}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" /> Back to public listing</Link>
-            {dirty && <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-200">Unsaved changes</span>}
+            <button type="button" onClick={viewPublicListing} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" /> Back to public listing</button>
+            <div aria-live="polite">
+              {saving ? <span className="inline-flex items-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving changes…</span> : dirty ? <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-200">Unsaved changes</span> : saved ? <span className="inline-flex items-center gap-1.5 rounded-full border border-green-400/30 bg-green-400/10 px-3 py-1 text-xs font-semibold text-green-300"><CheckCircle2 className="w-3.5 h-3.5" /> Saved</span> : null}
+            </div>
           </div>
 
           {isLoadingAuth || !authChecked || loadingListing ? (
@@ -261,8 +272,11 @@ export default function DirectoryListingEdit() {
                     <p className="text-sm text-muted-foreground mt-3 max-w-2xl">Keep the public listing accurate. Club name and county are locked to protect the directory identity.</p>
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
-                    <Link to={`/directory/${slug}`}><Button variant="outline" className="gap-2"><ExternalLink className="w-4 h-4" /> View public listing</Button></Link>
-                    <Button onClick={save} disabled={saving || !dirty} className="gap-2"><Save className="w-4 h-4" /> {saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}</Button>
+                    <Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><ExternalLink className="w-4 h-4" /> View public listing</Button>
+                    <Button onClick={save} disabled={saving || !dirty} className="gap-2 min-w-36">
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : !dirty && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                      {saving ? 'Saving changes…' : dirty ? 'Save changes' : saved ? 'Saved ✓' : 'All saved'}
+                    </Button>
                   </div>
                 </div>
                 <nav className="mt-5 flex gap-2 overflow-x-auto pb-1 text-sm">
@@ -271,7 +285,8 @@ export default function DirectoryListingEdit() {
                   <a href="#venues" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Venues</a>
                   <a href="#sessions" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Sessions</a>
                 </nav>
-                {saved && <div className="mt-4 rounded-xl border border-green-400/30 bg-green-400/10 p-3 text-sm text-green-300 flex flex-wrap items-center justify-between gap-2"><span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Changes are live in the public directory.</span><Link to={`/directory/${slug}`} className="font-semibold hover:underline">View updated listing</Link></div>}
+                {saving && <div aria-live="polite" className="mt-4 rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm text-primary flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin shrink-0" /><span><strong>Saving your changes…</strong> Please wait for confirmation before leaving this page.</span></div>}
+                {!saving && saved && !dirty && <div aria-live="polite" className="mt-4 rounded-xl border border-green-400/30 bg-green-400/10 p-3 text-sm text-green-300 flex flex-wrap items-center justify-between gap-2"><span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /><strong>Saved successfully.</strong> Changes are live in the public directory.</span><button type="button" onClick={viewPublicListing} className="font-semibold hover:underline">View updated listing</button></div>}
                 {error && <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
                 {validation.length > 0 && <div className="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm"><p className="font-semibold text-amber-200">Please fix these before saving:</p><ul className="mt-2 list-disc pl-5 space-y-1 text-muted-foreground">{validation.map(item => <li key={item}>{item}</li>)}</ul></div>}
               </section>
@@ -367,9 +382,12 @@ export default function DirectoryListingEdit() {
                 ))}
               </section>
 
-              <div className="sticky bottom-3 z-20 rounded-2xl border border-border bg-[#0d1b2d]/95 backdrop-blur-xl p-3 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="text-sm"><p className="font-semibold">{dirty ? 'You have unsaved changes' : 'All changes saved'}</p><p className="text-xs text-muted-foreground">Changes become public as soon as you save.</p></div>
-                <div className="flex gap-2"><Link to={`/directory/${slug}`}><Button variant="outline" className="gap-2"><Globe2 className="w-4 h-4" /> View listing</Button></Link><Button onClick={save} disabled={saving || !dirty} size="lg" className="gap-2"><Save className="w-4 h-4" /> {saving ? 'Saving…' : 'Save changes'}</Button></div>
+              <div className={`sticky bottom-3 z-20 rounded-2xl border backdrop-blur-xl p-3 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${saving ? 'border-primary/40 bg-[#0d1b2d]/98' : saved && !dirty ? 'border-green-400/30 bg-[#0d1b2d]/98' : 'border-border bg-[#0d1b2d]/95'}`}>
+                <div className="text-sm" aria-live="polite">
+                  <p className="font-semibold flex items-center gap-2">{saving ? <><Loader2 className="w-4 h-4 animate-spin text-primary" /> Saving your changes…</> : dirty ? 'You have unsaved changes' : saved ? <><CheckCircle2 className="w-4 h-4 text-green-400" /> Saved successfully</> : 'All changes saved'}</p>
+                  <p className="text-xs text-muted-foreground">{saving ? 'Keep this page open until the save is confirmed.' : saved && !dirty ? 'Your public club listing has been updated.' : 'Changes become public as soon as the save completes.'}</p>
+                </div>
+                <div className="flex gap-2"><Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><Globe2 className="w-4 h-4" /> View listing</Button><Button onClick={save} disabled={saving || !dirty} size="lg" className="gap-2 min-w-40">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : !dirty && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />} {saving ? 'Saving changes…' : dirty ? 'Save changes' : saved ? 'Saved ✓' : 'All saved'}</Button></div>
               </div>
             </div>
           ) : null}
