@@ -1,12 +1,19 @@
 import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Search, LogIn, PlusCircle, UserCheck } from 'lucide-react';
+import { Search, LogIn, LogOut, PlusCircle, UserCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 
 export default function PublicDirectoryHeader() {
+  const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
+  const returnTo = `${location.pathname}${location.search || ''}`;
+  const directoryLoginHref = `/login?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
+  const displayName = user?.full_name || user?.display_name || user?.email || 'Directory account';
+
   return (
     <header className="sticky top-0 z-[1001] border-b border-border/80 bg-[#0a1628]/95 backdrop-blur-xl">
       <div className="container mx-auto h-16 px-4 flex items-center gap-5">
@@ -29,9 +36,31 @@ export default function PublicDirectoryHeader() {
           <Link to="/directory" className="sm:hidden w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground">
             <Search className="w-5 h-5" />
           </Link>
-          <Button size="sm" variant="outline" onClick={() => base44.auth.redirectToLogin('/app')} className="gap-1.5">
-            <LogIn className="w-4 h-4" /> <span className="hidden xs:inline">RallyHub Club Login</span>
-          </Button>
+          {isAuthenticated ? (
+            <>
+              <div className="hidden md:block max-w-[190px] text-right leading-tight">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Signed in</p>
+                <p className="text-xs font-semibold text-foreground truncate" title={user?.email || displayName}>{displayName}</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => logout('/directory')} className="gap-1.5">
+                <LogOut className="w-4 h-4" /> <span className="hidden xs:inline">Sign out</span>
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => { window.location.href = '/app'; }} className="hidden lg:inline-flex gap-1.5">
+                RallyHub Club App
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link to={directoryLoginHref}>
+                <Button size="sm" variant="outline" className="gap-1.5">
+                  <LogIn className="w-4 h-4" /> <span className="hidden xs:inline">Directory sign in</span>
+                </Button>
+              </Link>
+              <Button size="sm" variant="ghost" onClick={() => base44.auth.redirectToLogin('/app')} className="hidden lg:inline-flex gap-1.5">
+                RallyHub Club Login
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>
