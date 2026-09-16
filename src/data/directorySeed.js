@@ -199,6 +199,90 @@ export const directoryClubs = [
       { id: 'gc-sat-maree-1600', venueId: 'maree', day: 'Saturday', start: '16:00', end: null, level: 'Club Session', price: null },
       { id: 'gc-sun-kilcornan-1100', venueId: 'kilcornan', day: 'Sunday', start: '11:00', end: null, level: 'Club Session', price: null }
     ]
+  },
+  {
+    id: 'limerick-city-pickleball',
+    slug: 'limerick-city-pickleball',
+    name: 'Limerick City Pickleball',
+    sport: 'Pickleball',
+    county: 'Limerick',
+    region: 'Munster',
+    founded: null,
+    status: 'active',
+    membershipStatus: 'Contact the club before attending',
+    affiliation: null,
+    logoUrl: '/limerick-city-pickleball.svg',
+    website: null,
+    instagram: null,
+    facebook: null,
+    waitingListUrl: null,
+    joiningCtaLabel: 'Contact club',
+    policyLabel: 'Attendance information',
+    description: 'Weekly indoor pickleball match play in Limerick City at St. Munchin’s College and the UL Sport Arena.',
+    guestPolicy: 'Contact Mick before attending. Session places are managed by the club through Spond.',
+    scheduleUpdatedAt: '16 September 2026',
+    contact: {
+      name: 'Mick Kelliher',
+      phone: '087 240 0424',
+      phoneHref: 'tel:+353872400424',
+      whatsapp: 'https://wa.me/353872400424',
+      email: null
+    },
+    venues: [
+      {
+        id: 'st-munchins',
+        name: 'St. Munchin’s College',
+        shortName: 'St. Munchin’s',
+        address: 'Corbally Road, Corbally, Limerick',
+        eircode: 'V94 HXW5',
+        indoor: true,
+        courts: null,
+        latitude: 52.6768,
+        longitude: -8.6134,
+        mapUrl: 'https://maps.google.com/?q=V94+HXW5',
+        websiteUrl: 'https://stmunchinscollege.com/'
+      },
+      {
+        id: 'ul-arena',
+        name: 'UL Sport Arena',
+        shortName: 'UL Arena',
+        address: 'University of Limerick, Castletroy, Limerick',
+        eircode: 'V94 XT66',
+        indoor: true,
+        courts: null,
+        latitude: 52.6744,
+        longitude: -8.5708,
+        mapUrl: 'https://maps.google.com/?q=V94+XT66',
+        websiteUrl: 'https://www.ulsport.ie/'
+      }
+    ],
+    sessions: [
+      {
+        id: 'lc-mon-st-munchins-1930',
+        venueId: 'st-munchins',
+        day: 'Monday',
+        start: '19:30',
+        end: null,
+        level: 'Match Play',
+        price: 5,
+        capacity: 20,
+        host: 'Sarah Carey and two co-hosts',
+        source: 'Spond'
+      },
+      {
+        id: 'lc-wed-ul-2000',
+        venueId: 'ul-arena',
+        day: 'Wednesday',
+        meetTime: '19:45',
+        start: '20:00',
+        end: null,
+        level: 'Match Play',
+        price: 5,
+        capacity: 20,
+        host: 'Sarah Carey and two co-hosts',
+        source: 'Spond'
+      }
+    ]
   }
 ];
 
