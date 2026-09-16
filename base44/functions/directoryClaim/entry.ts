@@ -425,13 +425,85 @@ Deno.serve(async (req) => {
       const requests = await base44.asServiceRole.entities.DirectoryListingRequest.filter({ id: requestId });
       const request = requests[0];
       if (!request) return Response.json({ error: 'Directory listing request not found' }, { status: 404 });
+      const now = new Date().toISOString();
+
+      if (decision === 'rejected') {
+        await base44.asServiceRole.entities.DirectoryListingRequest.update(request.id, {
+          status: 'rejected',
+          reviewed_by_user_id: user.id,
+          reviewed_at: now,
+          review_notes: reviewNotes || null,
+        });
+        return Response.json({ success: true, status: 'rejected' });
+      }
+
+      if (request.status === 'approved' && request.approved_listing_slug) {
+        return Response.json({ success: true, status: 'approved', listingSlug: request.approved_listing_slug });
+      }
+
+      const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500);
+      const duplicate = (dynamicRows || []).find(x => normaliseName(x.name) === normaliseName(request.club_name) && normaliseName(x.county || '') === normaliseName(request.county || ''));
+      const listingSlug = duplicate?.slug || await uniqueListingSlug(base44, request.club_name);
+      const listing = { slug: listingSlug, name: request.club_name, county: request.county };
+
+      if (!duplicate) {
+        const venueId = request.primary_venue ? `venue-${slugify(request.primary_venue)}` : null;
+        const baseListing = {
+          id: listingSlug,
+          slug: listingSlug,
+          name: request.club_name,
+          sport: 'Pickleball',
+          county: request.county,
+          town: request.town || null,
+          region: null,
+          status: 'active',
+          membershipStatus: 'Contact the club for joining information',
+          affiliation: null,
+          logoUrl: null,
+          website: safePublicUrl(request.website),
+          facebook: safePublicUrl(request.facebook),
+          instagram: safePublicUrl(request.instagram),
+          waitingListUrl: null,
+          joiningCtaLabel: 'Contact club',
+          policyLabel: 'Club information',
+          description: `${request.club_name} is a pickleball club or group in County ${request.county}. The verified club representative is completing this listing.`,
+          guestPolicy: 'Contact the club before attending a session.',
+          contact: { name: null, phone: null, phoneHref: null, whatsapp: null, email: null },
+          venues: venueId ? [{ id: venueId, name: request.primary_venue, shortName: request.primary_venue, address: request.address || request.town || null, eircode: null, indoor: null, courts: null, latitude: null, longitude: null, mapUrl: null, websiteUrl: null, playType: null }] : [],
+          sessions: [],
+          source: 'Submitted to RallyHub Directory',
+          sourceCheckedAt: now.slice(0, 10),
+        };
+        await base44.asServiceRole.entities.DirectoryListingRecord.create({
+          slug: listingSlug,
+          name: request.club_name,
+          county: request.county,
+          sport: 'Pickleball',
+          status: 'active',
+          base_json: JSON.stringify(baseListing),
+          trusted_contacts_json: JSON.stringify([{ name: request.claimant_name, email: request.claimant_email, phone: request.claimant_phone }]),
+          source_request_id: request.id,
+          created_by_user_id: request.claimant_user_id,
+          published_at: now,
+        });
+      }
+
+      const access = await grantAccess(base44, {
+        listing,
+        userId: request.claimant_user_id,
+        claimId: null,
+        grantedByUserId: user.id,
+        notes: reviewNotes || 'New directory listing approved and submitter verified as initial directory editor.',
+      });
+
       await base44.asServiceRole.entities.DirectoryListingRequest.update(request.id, {
-        status: decision,
+        status: 'approved',
+        approved_listing_slug: listingSlug,
         reviewed_by_user_id: user.id,
-        reviewed_at: new Date().toISOString(),
+        reviewed_at: now,
         review_notes: reviewNotes || null,
       });
-      return Response.json({ success: true, status: decision });
+      return Response.json({ success: true, status: 'approved', listingSlug, accessId: access?.id || null });
     }
 
     if (action === 'revoke') {
