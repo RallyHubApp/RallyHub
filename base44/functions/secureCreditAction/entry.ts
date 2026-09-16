@@ -39,7 +39,7 @@ async function consumeAllowance(base44:any, user:any, action:string, limit:numbe
       entity_id: clean(contextId || user.id, 220),
       scope_type: 'CreditAction',
       scope_id: clean(action, 120),
-      after_state: JSON.stringify({ action, limit, windowHours }),
+      after_state: JSON.stringify({ action, perUserLimit:limit, globalLimit, windowHours }),
       reason: 'Reserved before a Base44 credit-consuming integration call to prevent automated abuse.'
     });
   } catch (error) {
@@ -141,7 +141,9 @@ Deno.serve(async (req) => {
       }
       if (!allowed) return Response.json({ error:'You do not have permission to upload this image.' }, { status:403 });
 
-      const guard = await consumeAllowance(base44, user, `upload_${purpose}`, 12, 24, contextId);
+      const perUserLimit = purpose === 'directory_logo' ? 5 : 12;
+      const globalLimitForAction = purpose === 'directory_logo' ? 40 : 100;
+      const guard = await consumeAllowance(base44, user, `upload_${purpose}`, perUserLimit, 24, contextId, globalLimitForAction);
       if (!guard.allowed) return guard.response;
       const result = await base44.asServiceRole.integrations.Core.UploadFile({ file });
       return Response.json({ success:true, file_url:result?.file_url || null });
@@ -152,7 +154,7 @@ Deno.serve(async (req) => {
       const file = body.file;
       const fileError = validateImport(file);
       if (fileError) return Response.json({ error:fileError }, { status:400 });
-      const guard = await consumeAllowance(base44, user, action, 8, 24, user.id);
+      const guard = await consumeAllowance(base44, user, action, 8, 24, user.id, 20);
       if (!guard.allowed) return guard.response;
       const uploaded = await base44.asServiceRole.integrations.Core.UploadFile({ file });
       if (!uploaded?.file_url) return Response.json({ error:'File upload failed.' }, { status:502 });
@@ -171,7 +173,7 @@ Deno.serve(async (req) => {
       const player = players?.[0];
       const ownsPlayer = player && (String(player.user_id || '') === String(user.id) || String(player.linked_user_email || '').toLowerCase() === String(user.email || '').toLowerCase());
       if (user.role !== 'admin' && (!ownsPlayer || user.approval_status !== 'approved')) return Response.json({ error:'You may only sync your own linked player profile.' }, { status:403 });
-      const guard = await consumeAllowance(base44, user, 'dupr_lookup', 5, 24, playerId);
+      const guard = await consumeAllowance(base44, user, 'dupr_lookup', 5, 24, playerId, 20);
       if (!guard.allowed) return guard.response;
       const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt:`Look up the current DUPR pickleball rating for DUPR ID: ${duprId}. Use reliable current public information. Return whether a rating was found and the numeric rating only.`,
