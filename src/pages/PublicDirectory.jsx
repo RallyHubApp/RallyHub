@@ -17,6 +17,7 @@ L.Icon.Default.mergeOptions({
 
 const allSessions = directoryClubs.flatMap(club => (club.sessions || []).map(session => ({...session, club})));
 const listedCountyCount = new Set(directoryClubs.map(club => club.county)).size;
+const countySlug = county => county.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const clubInitials = name => name
   .split(/\s+/)
@@ -130,6 +131,26 @@ export default function PublicDirectory() {
       </section>
 
       <main className="container mx-auto px-4 py-8">
+        <section className="mb-8 glass rounded-2xl p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-4">
+            <div>
+              <h2 className="text-xl font-bold">Browse pickleball clubs by county</h2>
+              <p className="text-sm text-muted-foreground mt-1">All 32 counties are included. Counties without a listing yet invite clubs to submit their details.</p>
+            </div>
+            <span className="text-xs text-muted-foreground">{listedCountyCount} counties currently have listings</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {irelandCounties.map(item => {
+              const count = directoryClubs.filter(club => club.county === item).length;
+              return (
+                <Link key={item} to={`/pickleball-clubs/${countySlug(item)}`} className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${count ? 'border-primary/25 bg-primary/10 text-primary hover:bg-primary/15' : 'border-border text-muted-foreground hover:text-foreground'}`}>
+                  {item}{count ? ` · ${count}` : ''}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
         <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(380px,.8fr)] gap-6">
           <section>
             <div className="flex items-center justify-between mb-4">
