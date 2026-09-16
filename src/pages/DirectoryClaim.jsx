@@ -13,8 +13,10 @@ import Seo from '@/components/public/Seo';
 
 export default function DirectoryClaim() {
   const { slug } = useParams();
-  const club = getClub(slug);
+  const seedClub = getClub(slug);
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
+  const [dynamicClub, setDynamicClub] = useState(null);
+  const [loadingClub, setLoadingClub] = useState(!seedClub);
   const [claimantName, setClaimantName] = useState('');
   const [claimantRole, setClaimantRole] = useState('');
   const [claimantPhone, setClaimantPhone] = useState('');
@@ -28,6 +30,22 @@ export default function DirectoryClaim() {
   const returnTo = useMemo(() => `/directory/${slug}/claim`, [slug]);
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`;
   const registerHref = `/register?returnTo=${encodeURIComponent(returnTo)}`;
+
+  const club = seedClub || dynamicClub;
+
+  useEffect(() => {
+    if (seedClub) return;
+    let active = true;
+    setLoadingClub(true);
+    base44.functions.invoke('directoryListingProfile', { action: 'public_get', listingSlug: slug })
+      .then(res => {
+        if (!active || res.data?.error) return;
+        if (res.data?.base) setDynamicClub(res.data.base);
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setLoadingClub(false); });
+    return () => { active = false; };
+  }, [seedClub, slug]);
 
   useEffect(() => {
     if (!user) return;
@@ -53,6 +71,7 @@ export default function DirectoryClaim() {
     return () => { active = false; };
   }, [isAuthenticated, club]);
 
+  if (loadingClub && !club) return <div className="min-h-screen bg-[#0a1628] text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10 max-w-4xl"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
   if (!club) return <Navigate to="/directory" replace />;
 
   const submitClaim = async (event) => {
