@@ -152,6 +152,53 @@ export const directoryClubs = [
       { id: 'g-sun-dome-1200', venueId: 'dome', day: 'Sunday', start: '12:00', end: null, level: 'Mixed', price: null },
       { id: 'g-sun-dome-1300', venueId: 'dome', day: 'Sunday', start: '13:00', end: null, level: 'Intermediate', price: null }
     ]
+  },
+  {
+    id: 'galway-county-pickleball',
+    slug: 'galway-county-pickleball',
+    name: 'Galway County Pickleball Club',
+    sport: 'Pickleball',
+    county: 'Galway',
+    region: 'Connacht',
+    founded: null,
+    status: 'active',
+    membershipStatus: 'Contact the club before attending',
+    affiliation: 'Pickleball Ireland',
+    logoUrl: '/galway-county-pickleball.svg',
+    website: null,
+    instagram: null,
+    facebook: 'https://www.facebook.com/profile.php?id=100090662990217',
+    waitingListUrl: null,
+    joiningCtaLabel: 'Contact club',
+    policyLabel: 'Attendance information',
+    description: 'A community pickleball club with more than 150 members and weekly sessions across County Galway.',
+    guestPolicy: 'Session availability and suitability vary by venue. Contact the club before attending your first session.',
+    scheduleUpdatedAt: '6 September 2026',
+    contact: {
+      name: 'Caitrina Lawless',
+      phone: '086 234 0632',
+      phoneHref: 'tel:+353862340632',
+      whatsapp: 'https://wa.me/353862340632',
+      email: 'galwaycountypickleball@gmail.com'
+    },
+    venues: [
+      { id: 'eyrecourt', name: 'Eyrecourt Hall & Event Centre', shortName: 'Eyrecourt', alternativeNames: ['Eyrecourt Community Centre', 'Eyrecourt Parish Hall'], address: 'The Mall, Eyrecourt, Co. Galway', eircode: 'H53 DY84', indoor: true, courts: null, latitude: 53.1974, longitude: -8.1327, mapUrl: 'https://maps.google.com/?q=H53+DY84', websiteUrl: 'https://www.eyrecourt.com/about-4' },
+      { id: 'kilcornan', name: 'Kilcornan Leisure Complex', shortName: 'Kilcornan', address: 'Kilcornan, Clarinbridge, Co. Galway', eircode: 'H91 K2E9', indoor: true, courts: null, latitude: 53.2143, longitude: -8.8664, mapUrl: 'https://maps.google.com/?q=H91+K2E9', websiteUrl: 'https://kilcornanleisurecomplex.com/' },
+      { id: 'loughrea', name: 'Temperance Hall', shortName: 'Loughrea', address: 'Barrack Street, Loughrea, Co. Galway', eircode: 'H62 XY20', indoor: true, courts: null, latitude: 53.197481, longitude: -8.568638, mapUrl: 'https://maps.google.com/?q=53.197481,-8.568638', websiteUrl: 'https://galwayaa.com/loughrea-temperance-hall/' },
+      { id: 'maree', name: 'Maree Community Centre', shortName: 'Maree', address: 'Garraun Upper, Co. Galway', eircode: 'H91 V12C', indoor: true, courts: 3, playType: 'Pay to play', latitude: 53.2350, longitude: -8.9910, mapUrl: 'https://maps.google.com/?q=H91+V12C' },
+      { id: 'gort', name: 'Gort Community Centre', shortName: 'Gort', address: 'Ennis Road, Lavally, Gort, Co. Galway', eircode: 'H91 K7YA', indoor: true, courts: null, latitude: 53.0669, longitude: -8.8188, mapUrl: 'https://maps.google.com/?q=H91+K7YA', websiteUrl: 'https://gortcommunitycentre.wixsite.com/website' }
+    ],
+    sessions: [
+      { id: 'gc-mon-eyrecourt-2000', venueId: 'eyrecourt', day: 'Monday', start: '20:00', end: null, level: 'Club Session', price: null },
+      { id: 'gc-mon-kilcornan-1900', venueId: 'kilcornan', day: 'Monday', start: '19:00', end: null, level: 'Club Session', price: null },
+      { id: 'gc-tue-loughrea-1700', venueId: 'loughrea', day: 'Tuesday', start: '17:00', end: null, level: 'Club Session', price: null },
+      { id: 'gc-tue-kilcornan-1900', venueId: 'kilcornan', day: 'Tuesday', start: '19:00', end: null, level: 'Club Session', price: null },
+      { id: 'gc-wed-loughrea-1830', venueId: 'loughrea', day: 'Wednesday', start: '18:30', end: null, level: 'Club Session', price: null },
+      { id: 'gc-thu-kilcornan-1900', venueId: 'kilcornan', day: 'Thursday', start: '19:00', end: null, level: 'Club Session', price: null },
+      { id: 'gc-fri-kilcornan-1800', venueId: 'kilcornan', day: 'Friday', start: '18:00', end: null, level: 'Club Session', price: null },
+      { id: 'gc-sat-maree-1600', venueId: 'maree', day: 'Saturday', start: '16:00', end: null, level: 'Club Session', price: null },
+      { id: 'gc-sun-kilcornan-1100', venueId: 'kilcornan', day: 'Sunday', start: '11:00', end: null, level: 'Club Session', price: null }
+    ]
   }
 ];
 
