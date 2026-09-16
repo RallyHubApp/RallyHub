@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Calendar, Users, MapPin, Trophy, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { directoryClubs } from '@/data/directorySeed';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 
@@ -14,34 +15,34 @@ export default function Landing() {
 
   const features = [
     {
-      icon: Calendar,
-      title: 'Event Management',
-      description: 'Create and manage matches, leagues, and tournaments across all racket sports.'
-    },
-    {
-      icon: Users,
-      title: 'Community Connection',
-      description: 'Find players, connect with the community, and grow your network.'
-    },
-    {
       icon: MapPin,
-      title: 'Court & Venue Management',
-      description: 'Efficiently schedule facilities and manage venue logistics for any event.'
+      title: 'Find Clubs & Places to Play',
+      description: 'Browse public club listings, venues and contact details without creating an account.'
     },
     {
       icon: Trophy,
-      title: 'Multiple Sport Support',
-      description: 'Seamlessly manage Padel, Pickleball, Tennis, Badminton, and more.'
+      title: 'Competitions & Events',
+      description: 'Run King of the Court, interclub challenges, tournaments and other club events.'
+    },
+    {
+      icon: Users,
+      title: 'Club & Member Management',
+      description: 'Manage club people, venues, communications and day-to-day operations in one place.'
+    },
+    {
+      icon: Calendar,
+      title: 'Multi-Sport Platform',
+      description: 'Built for Pickleball first, with Padel, Tennis, Badminton and other racket sports supported.'
     }
   ];
 
   const benefits = [
-    'Match creation and player coordination',
-    'Real-time scoring and leaderboards',
-    'Multi-sport player profiles',
-    'Event and tournament management',
-    'Mobile-friendly interface for active use',
-    'Community dashboard for complete control'
+    'Public club directory with no login required',
+    'Verified directory access for club representatives',
+    'King of the Court and interclub competition tools',
+    'Event, tournament and venue management',
+    'Club and member administration',
+    'Mobile-friendly tools for courtside use'
   ];
 
   return (
