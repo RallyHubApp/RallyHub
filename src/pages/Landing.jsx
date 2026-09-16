@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Calendar, Users, MapPin, Trophy, ArrowRight, CheckCircle2, UserCheck, PlusCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { directoryClubs } from '@/data/directorySeed';
+import Seo, { SITE_URL } from '@/components/public/Seo';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 
@@ -45,8 +46,52 @@ export default function Landing() {
     'Mobile-friendly tools for courtside use'
   ];
 
+  const faq = [
+    { question: 'Do I need an account to use the RallyHub Club Directory?', answer: 'No. Anyone can browse public club listings, venues and contact information without creating a RallyHub account.' },
+    { question: 'How do I add a club that is missing from the directory?', answer: 'Choose Add Your Club, sign in so RallyHub can identify the submitter, and send the club details for review. Adding a directory listing does not create a RallyHub Club tenant.' },
+    { question: 'How can a club update its directory listing?', answer: 'Find the club, open its profile and choose Claim this listing. RallyHub verifies the representative before granting permission to edit that public listing.' },
+    { question: 'Does RallyHub cover the whole island of Ireland?', answer: 'Yes. The directory is designed around all 32 counties of Ireland and supports club listings throughout the island.' }
+  ];
+
+  const seoData = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'RallyHub',
+      url: SITE_URL,
+      logo: LOGO_URL,
+      email: 'hello@rallyhub.ie',
+      areaServed: { '@type': 'Place', name: 'Ireland' },
+      description: 'RallyHub is an all-Ireland racket-sports directory and club management platform, starting with pickleball.'
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'RallyHub',
+      url: SITE_URL,
+      inLanguage: 'en-IE',
+      description: 'Find pickleball clubs and places to play across the island of Ireland and access RallyHub club and competition tools.'
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faq.map(item => ({
+        '@type': 'Question',
+        name: item.question,
+        acceptedAnswer: { '@type': 'Answer', text: item.answer }
+      }))
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-[#0a1628]">
+    <>
+      <Seo
+        title="RallyHub Ireland | Pickleball Club Directory & Club Management"
+        description="Find pickleball clubs and places to play across the island of Ireland. RallyHub also provides club, competition, King of the Court, interclub and tournament management tools."
+        path="/"
+        structuredData={seoData}
+      />
+      <div className="min-h-screen bg-[#0a1628]">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
@@ -200,6 +245,24 @@ export default function Landing() {
         </motion.div>
       </div>
 
+      {/* FAQ / answer-first content for people and search */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground">RallyHub Directory FAQ</h2>
+            <p className="text-muted-foreground mt-3">Straight answers about finding, adding and managing club listings.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {faq.map(item => (
+              <article key={item.question} className="glass rounded-xl p-5">
+                <h3 className="font-bold text-foreground">{item.question}</h3>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{item.answer}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* CTA Section */}
       <div className="container mx-auto px-4 py-16">
         <motion.div
@@ -254,6 +317,7 @@ export default function Landing() {
           <p className="mt-2">Built for the racket sports community</p>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
