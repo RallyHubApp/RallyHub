@@ -23,7 +23,7 @@ export default function PublicClubProfile() {
   const { slug } = useParams();
   const location = useLocation();
   const seedClub = getClub(slug);
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [dynamicBase, setDynamicBase] = useState(null);
   const [publicProfile, setPublicProfile] = useState(null);
   const [verificationStatus, setVerificationStatus] = useState(seedClub?.verificationStatus || 'unclaimed');
@@ -58,13 +58,20 @@ export default function PublicClubProfile() {
   }, [slug, seedClub, location.search]);
 
   useEffect(() => {
-    if (!isAuthenticated) { setHasDirectoryAccess(false); return; }
+    if (!isAuthenticated || !user?.id) { setHasDirectoryAccess(false); return; }
+    if (user.role === 'admin') { setHasDirectoryAccess(true); return; }
     let active = true;
-    base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: slug })
-      .then(res => { if (active && !res.data?.error) setHasDirectoryAccess(!!res.data?.hasAccess); })
-      .catch(() => {});
+    Promise.allSettled([
+      base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: slug }),
+      base44.entities.DirectoryListingAccess.filter({ listing_slug: slug, user_id: user.id, status: 'active' }),
+    ]).then(([statusResult, accessResult]) => {
+      if (!active) return;
+      const functionAccess = statusResult.status === 'fulfilled' && !statusResult.value?.data?.error && !!statusResult.value?.data?.hasAccess;
+      const directAccess = accessResult.status === 'fulfilled' && Array.isArray(accessResult.value) && accessResult.value.some(row => row.status === 'active');
+      setHasDirectoryAccess(functionAccess || directAccess);
+    }).catch(() => {});
     return () => { active = false; };
-  }, [slug, isAuthenticated]);
+  }, [slug, isAuthenticated, user?.id, user?.role]);
 
   const baseClub = seedClub || dynamicBase;
   if (loadingListing && !baseClub) {
@@ -185,7 +192,7 @@ export default function PublicClubProfile() {
             <section className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-5 sm:p-6">
               <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">{club.policyLabel || 'Club policy'}</p>
               <p className="mt-2 text-base font-semibold text-foreground">{club.guestPolicy}</p>
-              <p className="mt-2 text-sm text-muted-foreground">Please contact the club before attending any session.</p>
+              {String(club.guestPolicy || '').trim().toLowerCase() !== 'contact the club before attending a session.' && <p className="mt-2 text-sm text-muted-foreground">Please contact the club before attending any session.</p>}
             </section>
 
             <section className="glass rounded-2xl p-5 sm:p-6">
@@ -301,6 +308,9 @@ export default function PublicClubProfile() {
                 <Link to={`/directory/${club.slug}/edit`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
                   Edit your listing
                 </Link>
+                <button type="button" onClick={() => window.alert('RallyHub Club upgrade is not available at this time. Your free directory listing remains active.')} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background/40 px-4 py-3 text-sm font-semibold text-foreground hover:border-primary/40 transition-colors">
+                  Upgrade to RallyHub Club
+                </button>
               </section>
             )}
             {!hasDirectoryAccess && club.verificationStatus === 'unclaimed' && (
@@ -322,7 +332,7 @@ export default function PublicClubProfile() {
                 {club.contact.phoneHref && club.contact.phone && <a href={club.contact.phoneHref} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Phone className="w-4 h-4 text-primary" /><span className="text-sm font-medium">{club.contact.phone}</span></a>}
                 {club.contact.whatsapp && <a href={club.contact.whatsapp} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><MessageCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium">WhatsApp {club.contact.name}</span></a>}
                 {club.contact.email && <a href={`mailto:${club.contact.email}`} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Mail className="w-4 h-4 text-primary" /><span className="text-sm font-medium break-all">{club.contact.email}</span></a>}
-                {!club.contact?.phoneHref && !club.contact?.email && <p className="text-sm text-muted-foreground">No direct contact details have been supplied yet.</p>}
+                {!club.contact?.phoneHref && !club.contact?.email && <><p className="text-sm text-muted-foreground">No direct contact details have been supplied yet.</p>{hasDirectoryAccess && <Link to={`/directory/${club.slug}/edit#contact`} className="inline-flex mt-2 text-sm font-semibold text-primary hover:underline">Add public contact details</Link>}</>}
               </div>
             </section>
 
@@ -330,11 +340,11 @@ export default function PublicClubProfile() {
               <h2 className="font-bold">Club details</h2>
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex justify-between gap-4"><dt className="text-muted-foreground">County</dt><dd>{club.county}</dd></div>
+                {club.town && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Town / area</dt><dd className="text-right">{club.town}</dd></div>}
                 {club.founded && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Founded</dt><dd>{club.founded}</dd></div>}
                 {club.affiliation && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Affiliation</dt><dd>{club.affiliation}</dd></div>}
                 <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Membership</dt><dd className="text-right">{club.membershipStatus}</dd></div>
-                {club.source && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Source</dt><dd className="text-right">{club.source}</dd></div>}
-                {club.sourceCheckedAt && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Source checked</dt><dd>{club.sourceCheckedAt}</dd></div>}
+                <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Listing</dt><dd className="text-right">{club.verificationStatus === 'verified' ? 'Verified club representative' : 'RallyHub directory listing'}</dd></div>
               </dl>
             </section>
 
