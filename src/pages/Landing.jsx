@@ -60,7 +60,7 @@ export default function Landing() {
       name: 'RallyHub',
       url: SITE_URL,
       logo: LOGO_URL,
-      email: 'hello@rallyhub.ie',
+      email: 'rallyhubapp@gmail.com',
       areaServed: { '@type': 'Place', name: 'Ireland' },
       description: 'RallyHub is an all-Ireland racket-sports directory and club management platform, starting with pickleball.'
     },
