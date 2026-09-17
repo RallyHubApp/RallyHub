@@ -52,9 +52,16 @@ Deno.serve(async (req) => {
       if (event.status !== 'draw_approved') return Response.json({ error:'Interclub Challenge draw must be approved before starting.' }, { status:409 });
       const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300);
       if (!matches.length) return Response.json({ error:'No approved fixtures found.' }, { status:409 });
-      const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'in_progress', current_round:1 });
+      const initialTimer = { phase:'ready', running:false, remaining_seconds:Number(event.play_minutes || 10) * 60, started_at:null, round:1 };
+      const initialTimerRevision = Number(event.timer_revision || 0) + 1;
+      const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
+        status:'in_progress',
+        current_round:1,
+        timer_state_json:JSON.stringify(initialTimer),
+        timer_revision:initialTimerRevision,
+      });
       await base44.asServiceRole.entities.Tournament.update(event.tournament_id, { status:'In Progress' });
-      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'event_started', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({current_round:1,match_count:matches.length}) });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'event_started', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({current_round:1,match_count:matches.length,timer_state:initialTimer,timer_revision:initialTimerRevision}) });
       return Response.json({ success:true, event:updated });
     }
 
