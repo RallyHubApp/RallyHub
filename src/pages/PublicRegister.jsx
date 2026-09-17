@@ -1,32 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CheckCircle2, UserPlus, Trophy, Users, Calendar, MapPin } from 'lucide-react';
+import { CheckCircle2, UserPlus, Trophy, Users, Calendar, MapPin, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function PublicRegister() {
   const tournamentId = window.location.pathname.split('/register/')[1];
+  const { user, isAuthenticated, isLoadingAuth, navigateToLogin } = useAuth();
   const [tournament, setTournament] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [playerCount, setPlayerCount] = useState(0);
-  const [form, setForm] = useState({ full_name: '', email: '', phone: '' });
+  const [form, setForm] = useState({ phone: '' });
 
   const callPublicRegister = async (payload) => {
-    const baseUrl = (import.meta.env.VITE_BASE44_APP_BASE_URL || '').replace(/\/$/, '');
-    const res = await fetch(`${baseUrl}/api/functions/publicRegister`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    return res.json();
+    try {
+      const res = await base44.functions.invoke('publicRegister', payload);
+      return res.data || {};
+    } catch (error) {
+      return { error: error?.response?.data?.error || error?.message || 'Registration request failed' };
+    }
   };
 
   useEffect(() => {
-    if (!tournamentId) return;
+    if (isLoadingAuth) return;
+    if (!tournamentId || !isAuthenticated) {
+      setLoading(false);
+      return;
+    }
     callPublicRegister({ tournamentId, _probe: true })
       .then(data => {
         if (data?.tournament) {
@@ -38,17 +44,14 @@ export default function PublicRegister() {
       })
       .catch(() => setTournament(null))
       .finally(() => setLoading(false));
-  }, [tournamentId]);
+  }, [tournamentId, isAuthenticated, isLoadingAuth]);
 
   const handle = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const submit = async () => {
-    if (!form.full_name.trim()) { toast.error('Please enter your name'); return; }
     setSubmitting(true);
     const data = await callPublicRegister({
       tournamentId,
-      full_name: form.full_name.trim(),
-      email: form.email.trim(),
       phone: form.phone.trim(),
     });
     setSubmitting(false);
@@ -60,10 +63,27 @@ export default function PublicRegister() {
     }
   };
 
-  if (loading) {
+  if (loading || isLoadingAuth) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-secondary border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="glass rounded-2xl p-6 max-w-sm w-full text-center space-y-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center mx-auto">
+            <LogIn className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-foreground font-bold">Sign in to register</p>
+            <p className="text-sm text-muted-foreground mt-1">For security, tournament registration is linked to your RallyHub account.</p>
+          </div>
+          <Button onClick={navigateToLogin} className="w-full bg-primary text-primary-foreground">Sign in or create an account</Button>
+        </div>
       </div>
     );
   }
@@ -147,24 +167,10 @@ export default function PublicRegister() {
                 Register to play
               </h2>
               <div className="space-y-3">
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">Full Name *</label>
-                  <Input
-                    placeholder="Your full name"
-                    value={form.full_name}
-                    onChange={handle('full_name')}
-                    className="bg-secondary border-input"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-1">Email (optional)</label>
-                  <Input
-                    type="email"
-                    placeholder="your@email.com"
-                    value={form.email}
-                    onChange={handle('email')}
-                    className="bg-secondary border-input"
-                  />
+                <div className="rounded-lg border border-border bg-secondary/60 p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Registering as</p>
+                  <p className="text-sm font-semibold text-foreground mt-0.5">{user?.full_name || user?.display_name || user?.email}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{user?.email}</p>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Phone (optional)</label>
@@ -178,7 +184,7 @@ export default function PublicRegister() {
                 </div>
                 <Button
                   onClick={submit}
-                  disabled={submitting || !form.full_name.trim()}
+                  disabled={submitting}
                   className="w-full bg-primary text-primary-foreground mt-2"
                 >
                   {submitting
