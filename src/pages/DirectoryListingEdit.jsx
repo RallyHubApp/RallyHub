@@ -413,13 +413,64 @@ export default function DirectoryListingEdit() {
                           <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
                             {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                             {uploadingLogo ? 'Uploading…' : form.logoUrl ? 'Replace logo' : 'Upload logo'}
-                            <input type="file" accept="image/*" className="hidden" disabled={uploadingLogo} onChange={e => { uploadLogo(e.target.files?.[0]); e.target.value = ''; }} />
+                            <input type="file" accept="image/*" className="hidden" disabled={uploadingLogo} onChange={e => { chooseLogo(e.target.files?.[0]); e.target.value = ''; }} />
                           </label>
                           {form.logoUrl && <Button type="button" variant="outline" onClick={() => setField('logoUrl', '')}>Remove logo</Button>}
                         </div>
-                        <p className="text-xs text-muted-foreground">Public visitors see the logo image, not a raw logo-link field. JPG, PNG or other common image formats up to 5 MB.</p>
+                        <p className="text-xs text-muted-foreground">Public visitors see the logo image, not a raw logo-link field. JPG, PNG or WebP up to 5 MB. RallyHub prepares it as a centred square without distorting the club crest.</p>
                       </div>
                     </div>
+                    {logoDraft && (
+                      <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-4" data-testid="directory-logo-editor">
+                        <div className="flex flex-col lg:flex-row gap-5">
+                          <div className="shrink-0">
+                            <p className="text-sm font-semibold mb-2">Logo preview</p>
+                            <div className="relative h-48 w-48 overflow-hidden rounded-2xl border-2 border-border bg-white shadow-inner" data-testid="directory-logo-preview">
+                              <img
+                                src={logoDraft.url}
+                                alt="Positioned club logo preview"
+                                draggable="false"
+                                className="absolute max-w-none select-none pointer-events-none"
+                                style={{
+                                  width: `${Math.max(1, logoDraft.width) * Math.min((192 * 0.88) / Math.max(1, logoDraft.width), (192 * 0.88) / Math.max(1, logoDraft.height)) * logoDraft.zoom}px`,
+                                  height: `${Math.max(1, logoDraft.height) * Math.min((192 * 0.88) / Math.max(1, logoDraft.width), (192 * 0.88) / Math.max(1, logoDraft.height)) * logoDraft.zoom}px`,
+                                  left: '50%',
+                                  top: '50%',
+                                  transform: `translate(calc(-50% + ${logoDraft.offsetX * 0.96}px), calc(-50% + ${logoDraft.offsetY * 0.96}px))`,
+                                }}
+                              />
+                            </div>
+                            <p className="mt-2 max-w-48 text-xs text-muted-foreground">The white square matches how logos appear in the directory.</p>
+                          </div>
+                          <div className="flex-1 space-y-4">
+                            <div>
+                              <div className="flex items-center justify-between gap-3"><Label htmlFor="directory-logo-zoom">Size</Label><span className="text-xs text-muted-foreground">{Math.round(logoDraft.zoom * 100)}%</span></div>
+                              <input id="directory-logo-zoom" aria-label="Logo size" type="range" min="0.7" max="2" step="0.02" value={logoDraft.zoom} onChange={e => setLogoDraft(prev => ({ ...prev, zoom: Number(e.target.value) }))} className="mt-2 w-full accent-primary" />
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between gap-3"><Label htmlFor="directory-logo-x">Move left / right</Label><span className="text-xs text-muted-foreground">{logoDraft.offsetX}</span></div>
+                              <input id="directory-logo-x" aria-label="Logo horizontal position" type="range" min="-100" max="100" step="1" value={logoDraft.offsetX} onChange={e => setLogoDraft(prev => ({ ...prev, offsetX: Number(e.target.value) }))} className="mt-2 w-full accent-primary" />
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between gap-3"><Label htmlFor="directory-logo-y">Move up / down</Label><span className="text-xs text-muted-foreground">{logoDraft.offsetY}</span></div>
+                              <input id="directory-logo-y" aria-label="Logo vertical position" type="range" min="-100" max="100" step="1" value={logoDraft.offsetY} onChange={e => setLogoDraft(prev => ({ ...prev, offsetY: Number(e.target.value) }))} className="mt-2 w-full accent-primary" />
+                            </div>
+                            <div className="rounded-lg border border-border bg-background/50 p-3 text-xs text-muted-foreground">
+                              Keep the whole crest visible where possible. RallyHub preserves the logo's proportions — resizing and positioning will not stretch or squash it.
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button type="button" variant="outline" onClick={resetLogoEdit}>Reset position</Button>
+                              <Button type="button" variant="ghost" onClick={cancelLogoEdit}>Cancel</Button>
+                              <Button type="button" onClick={uploadPositionedLogo} disabled={uploadingLogo} className="gap-2" data-testid="directory-logo-apply">
+                                {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                                {uploadingLogo ? 'Preparing logo…' : 'Use this logo'}
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">After choosing <strong>Use this logo</strong>, press <strong>Save changes</strong> to publish it to the directory.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>
