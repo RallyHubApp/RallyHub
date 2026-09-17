@@ -140,6 +140,13 @@ function createClubChallengeModel() {
       return { success:true, event:model.event, state:next, server_now:now() };
     }
 
+    if (name === 'updateClubChallengeRound') {
+      await sleep(260);
+      const round=Number(body.nextRound);const nextTimer={phase:'ready',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round};
+      Object.assign(model.event,{current_round:round,status:'in_progress',timer_state_json:JSON.stringify(nextTimer),timer_revision:Number(model.event.timer_revision||0)+1});
+      return {success:true,event:model.event,timer_state:nextTimer,timer_revision:model.event.timer_revision};
+    }
+
     if (name === 'saveClubChallengeScore') {
       await sleep(260);
       const match=model.matches.find(m=>m.id===body.matchId); if(!match)return {error:'Match not found'};
