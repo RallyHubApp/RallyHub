@@ -80,7 +80,7 @@ const isValidUrl = value => {
 };
 const isValidEmail = value => !String(value || '').trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
 
-async function prepareLogoDraft(file) {
+export async function prepareLogoDraft(file) {
   const originalUrl = URL.createObjectURL(file);
   try {
     const image = new Image();
@@ -493,7 +493,7 @@ export default function DirectoryListingEdit() {
                           </label>
                           {form.logoUrl && <Button type="button" variant="outline" onClick={() => setField('logoUrl', '')}>Remove logo</Button>}
                         </div>
-                        <p className="text-xs text-muted-foreground">Public visitors see the logo image, not a raw logo-link field. JPG, PNG or WebP up to 5 MB. RallyHub prepares it as a centred square without distorting the club crest.</p>
+                        <p className="text-xs text-muted-foreground">JPG, PNG or WebP up to 5 MB. RallyHub automatically removes common transparent/white padding, centres the crest, then lets you resize and reposition it before upload.</p>
                       </div>
                     </div>
                     {logoDraft && (
@@ -532,7 +532,7 @@ export default function DirectoryListingEdit() {
                               <input id="directory-logo-y" aria-label="Logo vertical position" type="range" min="-100" max="100" step="1" value={logoDraft.offsetY} onChange={e => setLogoDraft(prev => ({ ...prev, offsetY: Number(e.target.value) }))} className="mt-2 w-full accent-primary" />
                             </div>
                             <div className="rounded-lg border border-border bg-background/50 p-3 text-xs text-muted-foreground">
-                              Keep the whole crest visible where possible. RallyHub preserves the logo's proportions — resizing and positioning will not stretch or squash it.
+                              Keep the whole crest visible where possible. Use Size and the position controls to fill the square cleanly. RallyHub preserves the logo's proportions so it will not stretch or squash the crest.
                             </div>
                             <div className="flex flex-wrap gap-2">
                               <Button type="button" variant="outline" onClick={resetLogoEdit}>Reset position</Button>
