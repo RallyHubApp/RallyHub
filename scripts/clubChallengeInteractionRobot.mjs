@@ -11,6 +11,8 @@ const ui = fs.readFileSync('src/components/clubchallenge/ClubChallengeView.jsx',
 const publicDisplay = fs.readFileSync('src/pages/PublicClubChallengeDisplay.jsx','utf8');
 const publicVote = fs.readFileSync('src/pages/PublicClubChallengeVote.jsx','utf8');
 const timerFn = fs.readFileSync('base44/functions/updateClubChallengeTimer/entry.ts','utf8');
+const roundFn = fs.readFileSync('base44/functions/updateClubChallengeRound/entry.ts','utf8');
+const eventFn = fs.readFileSync('base44/functions/manageClubChallengeEvent/entry.ts','utf8');
 const scoreFn = fs.readFileSync('base44/functions/saveClubChallengeScore/entry.ts','utf8');
 const voteFn = fs.readFileSync('base44/functions/castPublicClubChallengePotVote/entry.ts','utf8');
 const participantFn = fs.readFileSync('base44/functions/manageClubChallengeParticipant/entry.ts','utf8');
@@ -91,9 +93,14 @@ check('timer: prepared duration is server-side and revision protected', contains
 check('timer: duration cannot be changed while running', contains(timerFn,'Pause the timer before changing the round duration.'));
 check('timer: prepared current-round duration is used when play starts', contains(timerFn,'preparedPlaySeconds'));
 check('timer: ordinary later rounds retain event default', contains(ui,"Number(event?.play_minutes || 10)"));
+check('timer: reset returns the current round to ready at the configured duration', contains(timerFn,"phase: 'ready'") && contains(timerFn,"action === 'reset'") && contains(timerFn,'Number(event.play_minutes || 10) * 60'));
+check('timer: starting the event prepares Round 1 at the configured duration', contains(eventFn,"initialTimer = { phase:'ready'") && contains(eventFn,"remaining_seconds:Number(event.play_minutes || 10) * 60"));
+check('timer: advancing a round clears the previous paused/running state', contains(roundFn,"nextTimer = { phase:'ready'") && contains(roundFn,"status: 'in_progress'") && contains(roundFn,'timer_revision'));
 check('sound: hall cue uses local Web Audio rather than a Base44 call', contains(hallAudio,'createOscillator') && !contains(hallAudio,'base44'));
 check('sound: hall volume is explicit and persisted', contains(ui,"cc-hall-volume") && contains(ui,'RallyHub live sound volume'));
 check('sound: Test Sound is available before live play', contains(ui,'Test Sound'));
+check('sound: external mic selection uses direct capture compatibility mode', contains(hallAudio,'explicitExternalMic') && contains(hallAudio,'echoCancellation: false') && contains(hallAudio,'noiseSuppression: false'));
+check('sound: live PA and RallyHub-generated audio volumes are clearly distinguished', contains(ui,'Live PA mic volume') && contains(ui,'RallyHub alerts & voice volume'));
 check('sound: mobile audio is unlocked from the host play gesture', contains(ui,'await unlockHallAudio()'));
 check('sound: wake lock is requested during the authoritative timer', contains(ui,"navigator.wakeLock.request('screen')"));
 check('sound: one-minute, 30-second, 10-second and five-second countdown cues exist', contains(ui,'One minute remaining.') && contains(ui,'Thirty seconds.') && contains(ui,'Ten seconds.') && contains(ui,'timerRemaining <= 5'));
@@ -115,6 +122,8 @@ check('scorer: score entry is capped to two digits in UI and backend', contains(
 
 // 7. What-if / disruption controls.
 check('what-if: replacement remains future-only', contains(participantFn,'effectiveRound'));
+check('what-if: replacement tap gives immediate visible acknowledgement', contains(ui,'Applying player replacement from Round') && contains(ui,'data-testid="cc-player-control-status"'));
+check('what-if: player-control changes are protected from duplicate taps', contains(ui,'playerControlBusy') && contains(ui,'sportingActionRef.current || playerControlBusy'));
 check('busy-hall UX: sticky host bar keeps round, timer and scores visible', contains(ui,'data-testid="cc-sticky-host-bar"') && contains(ui,"data-pinned={hostBarPinned ? 'true' : 'false'}") && contains(ui,"hostBarPinned && 'fixed z-20'") && contains(ui,'scores saved'));
 check('busy-hall UX: PA is collapsible during normal scoring', contains(ui,'id="cc-pa-panel"') && contains(ui,'Open only when you need the microphone or an announcement.'));
 check('busy-hall UX: player controls are separate and discoverable', contains(ui,'id="cc-player-controls"') && contains(ui,'Player Controls'));
