@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Search, PlusCircle, UserCheck } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 
@@ -34,6 +35,7 @@ export default function PublicDirectoryHeader() {
           </NavLink>
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <AppearanceQuickButton showLabel={false} />
           <Link to="/directory" className="sm:hidden w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground">
             <Search className="w-5 h-5" />
           </Link>
