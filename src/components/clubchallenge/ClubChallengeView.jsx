@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
-import { listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
+import { getRallyHubPaLevel, listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
 import { INTERCLUB_EVENT_LABEL, INTERCLUB_INTERNAL_FORMAT, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
 import {
   analyseClubChallengeFairness,
@@ -166,6 +166,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [audioReady, setAudioReady] = useState(false);
   const [paActive, setPaActive] = useState(false);
   const [paStarting, setPaStarting] = useState(false);
+  const [paInputLevel, setPaInputLevel] = useState(0);
   const [paGain, setPaGain] = useState(() => { const saved = localStorage.getItem('cc-pa-gain'); const v = saved === null ? NaN : Number(saved); return Number.isFinite(v) ? Math.min(1.5, Math.max(0, v)) : 0.55; });
   const [paMicLabel, setPaMicLabel] = useState('');
   const [microphones, setMicrophones] = useState([]);
@@ -566,7 +567,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const ctx = await unlockRallyHubAudio();
       setAudioReady(!!ctx && ctx.state === 'running');
       if (test) {
-        playRallyHubSignal(ctx, 'start', Math.max(0.8, hallVolume));
+        playRallyHubSignal(ctx, 'start', hallVolume);
         window.setTimeout(() => speakRallyHub('Sound check. RallyHub Interclub ready.', { volume: hallVolume, voiceMode, voices }), 450);
         if ('vibrate' in navigator) navigator.vibrate(120);
       }
@@ -591,6 +592,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setPaStarting(true);
     setPaError('');
     try {
+      const available = await refreshMicrophones();
+      if (selectedMicId !== 'default' && !available.some(mic => mic.deviceId === selectedMicId)) {
+        throw new Error('The selected microphone is no longer available. Re-select it and try again.');
+      }
       const info = await startRallyHubPA({ volume: paGain, deviceId: selectedMicId });
       setAudioReady(true);
       setPaMicLabel(info.micLabel || 'Default microphone');
@@ -611,11 +616,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
   const stopPA = () => {
     stopRallyHubPA();
+    setPaInputLevel(0);
     setPaActive(false);
     toast.success('Live PA off.');
   };
   const silenceAudio = () => {
     stopAllRallyHubAudio();
+    setPaInputLevel(0);
     setPaActive(false);
     toast.info('Live PA and spoken RallyHub audio stopped.');
   };
@@ -648,7 +655,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           toast.error('The device voice did not start. Your announcement text has been kept.');
         }, 4500);
         const ok = speakRallyHub(text, {
-          volume: 1,
+          volume: hallVolume,
           voiceMode: 'rallyhub_default',
           voices,
           onStart: () => {
@@ -683,7 +690,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           setAnnouncementStatus('Text-to-speech is unavailable — text kept for retry.');
           toast.error('Text-to-speech is unavailable in this browser.');
         }
-      }, 4100);
+      }, 2450);
     } catch (error) {
       setAnnouncementSpeaking(false);
       setAnnouncementStatus('Announcement could not start — text kept for retry.');
