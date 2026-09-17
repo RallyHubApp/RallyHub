@@ -240,6 +240,33 @@ html {
   accent-color: hsl(var(--primary));
 }
 
+[data-theme="hall"] [data-rally-control="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-width: 2px;
+  border-color: hsl(var(--foreground) / 0.72);
+  background: hsl(var(--card));
+}
+
+[data-theme="hall"] [data-rally-control="checkbox"][data-state="checked"] {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary));
+}
+
+[data-theme="hall"] [data-rally-slider-track] {
+  height: 0.5rem;
+  background: hsl(var(--foreground) / 0.22);
+}
+
+[data-theme="hall"] [data-rally-slider-thumb] {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-width: 3px;
+  border-color: hsl(var(--primary));
+  background: hsl(var(--card));
+  box-shadow: 0 0 0 2px hsl(var(--card));
+}
+
 [data-theme="hall"] [data-rally-control="slider"] {
   min-height: 2rem;
 }
