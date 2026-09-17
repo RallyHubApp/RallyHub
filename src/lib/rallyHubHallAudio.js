@@ -243,13 +243,25 @@ export async function startRallyHubPA({ volume = 1, deviceId = '' } = {}) {
 
   window.speechSynthesis?.cancel?.();
 
-  const audioConstraints = {
-    echoCancellation: { ideal: true },
-    noiseSuppression: { ideal: true },
-    autoGainControl: { ideal: true },
-    channelCount: { ideal: 1 },
-  };
-  if (deviceId && deviceId !== 'default') audioConstraints.deviceId = { exact: deviceId };
+  const explicitExternalMic = !!deviceId && deviceId !== 'default';
+  // Chrome's capture processing can aggressively suppress a deliberately monitored
+  // external mic because the browser interprets the speaker return as echo. Keep
+  // processing for the system-default mic, but use a direct capture path when the
+  // host explicitly selects a USB/webcam microphone.
+  const audioConstraints = explicitExternalMic
+    ? {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        channelCount: { ideal: 1 },
+        deviceId: { exact: deviceId },
+      }
+    : {
+        echoCancellation: { ideal: true },
+        noiseSuppression: { ideal: true },
+        autoGainControl: { ideal: true },
+        channelCount: { ideal: 1 },
+      };
 
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: audioConstraints,
