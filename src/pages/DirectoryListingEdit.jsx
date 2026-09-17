@@ -288,7 +288,7 @@ export default function DirectoryListingEdit() {
           <div className="flex items-center justify-between gap-3 mb-5">
             <button type="button" onClick={viewPublicListing} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" /> Back to public listing</button>
             <div aria-live="polite">
-              {saving ? <span className="inline-flex items-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving changes…</span> : dirty ? <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-200">Unsaved changes</span> : saved ? <span className="inline-flex items-center gap-1.5 rounded-full border border-green-400/30 bg-green-400/10 px-3 py-1 text-xs font-semibold text-green-300"><CheckCircle2 className="w-3.5 h-3.5" /> Saved</span> : null}
+              {saving ? <span className="inline-flex items-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving changes…</span> : dirty ? <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-200">Unsaved changes</span> : saved ? <span className="inline-flex items-center gap-1.5 rounded-full border border-green-500/40 bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-700 dark:text-green-300"><CheckCircle2 className="w-3.5 h-3.5" /> Saved</span> : null}
             </div>
           </div>
 
@@ -338,9 +338,9 @@ export default function DirectoryListingEdit() {
                   <a href="#sessions" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Sessions</a>
                 </nav>
                 {saving && <div aria-live="polite" className="mt-4 rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm text-primary flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin shrink-0" /><span><strong>Saving your changes…</strong> Please wait for confirmation before leaving this page.</span></div>}
-                {!saving && saved && !dirty && <div aria-live="polite" className="mt-4 rounded-xl border border-green-400/30 bg-green-400/10 p-3 text-sm text-green-300 flex flex-wrap items-center justify-between gap-2"><span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /><strong>Saved successfully.</strong> Changes are live in the public directory.</span><button type="button" onClick={viewPublicListing} className="font-semibold hover:underline">View updated listing</button></div>}
+                {!saving && saved && !dirty && <div aria-live="polite" className="mt-4 rounded-xl border border-green-500/40 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300 flex flex-wrap items-center justify-between gap-2"><span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /><strong>Saved successfully.</strong> Changes are live in the public directory.</span><button type="button" onClick={viewPublicListing} className="font-semibold hover:underline">View updated listing</button></div>}
                 {error && <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-                {validation.length > 0 && <div className="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm"><p className="font-semibold text-amber-200">Please fix these before saving:</p><ul className="mt-2 list-disc pl-5 space-y-1 text-muted-foreground">{validation.map(item => <li key={item}>{item}</li>)}</ul></div>}
+                {validation.length > 0 && <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm"><p className="font-semibold text-amber-700 dark:text-amber-200">Please fix these before saving:</p><ul className="mt-2 list-disc pl-5 space-y-1 text-muted-foreground">{validation.map(item => <li key={item}>{item}</li>)}</ul></div>}
               </section>
 
               <section id="basics" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
@@ -449,7 +449,7 @@ export default function DirectoryListingEdit() {
                 ))}
               </section>
 
-              <div className={`sticky bottom-3 z-20 rounded-2xl border backdrop-blur-xl p-3 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${saving ? 'border-primary/40 bg-[#0d1b2d]/98' : saved && !dirty ? 'border-green-400/30 bg-[#0d1b2d]/98' : 'border-border bg-[#0d1b2d]/95'}`}>
+              <div className={`sticky bottom-3 z-20 rounded-2xl border backdrop-blur-xl p-3 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${saving ? 'border-primary/40 bg-card/98' : saved && !dirty ? 'border-green-500/40 bg-card/98' : 'border-border bg-card/95'}`}>
                 <div className="text-sm" aria-live="polite">
                   <p className="font-semibold flex items-center gap-2">{saving ? <><Loader2 className="w-4 h-4 animate-spin text-primary" /> Saving your changes…</> : dirty ? 'You have unsaved changes' : saved ? <><CheckCircle2 className="w-4 h-4 text-green-400" /> Saved successfully</> : 'All changes saved'}</p>
                   <p className="text-xs text-muted-foreground">{saving ? 'Keep this page open until the save is confirmed.' : saved && !dirty ? 'Your public club listing has been updated.' : 'Changes become public as soon as the save completes.'}</p>
