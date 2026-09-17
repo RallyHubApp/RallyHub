@@ -265,7 +265,7 @@ export default function PublicDirectory() {
               <Link to="/directory?manage=1" className="inline-flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/15 transition-colors">
                 <UserCheck className="w-4 h-4" /> Manage a listing
               </Link>
-              <Link to="/directory/add" className="inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-400/15 transition-colors">
+              <Link to="/directory/add" className="inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-700 dark:text-amber-200 hover:bg-amber-400/15 transition-colors">
                 <PlusCircle className="w-4 h-4" /> Add a missing club
               </Link>
             </div>
@@ -278,7 +278,7 @@ export default function PublicDirectory() {
                 <p className="text-sm text-muted-foreground mt-1">Search for your club below, open its profile and choose <strong className="text-foreground">Claim this listing</strong>. RallyHub verifies you before granting editing access.</p>
               </div>
               <Link to="/directory/add" className="shrink-0">
-                <button className="h-10 px-4 rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-sm font-semibold hover:bg-amber-400/15 transition-colors">
+                <button className="h-10 px-4 rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-700 dark:text-amber-200 text-sm font-semibold hover:bg-amber-400/15 transition-colors">
                   Club not listed? Add it
                 </button>
               </Link>
@@ -397,7 +397,7 @@ export default function PublicDirectory() {
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         {club.verificationStatus === 'unclaimed' && (
-                          <Link to={`/directory/${club.slug}/claim`} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-400/15 transition-colors">
+                          <Link to={`/directory/${club.slug}/claim`} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-700 dark:text-amber-200 hover:bg-amber-400/15 transition-colors">
                             <UserCheck className="w-4 h-4" /> Claim this listing
                           </Link>
                         )}
