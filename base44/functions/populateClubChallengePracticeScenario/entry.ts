@@ -31,8 +31,19 @@ Deno.serve(async (req) => {
     if (!allowed) return Response.json({ error:'Event manager permission required' }, { status:403 });
 
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
-    if (participants.length < 8 || !participants.every((p:any)=>String(p.unique_identity_key || '').startsWith('gate3-'))) {
-      return Response.json({ error:'Full practice population is restricted to the RallyHub dummy roster.' }, { status:409 });
+    const byId = new Map(participants.map((p:any) => [String(p.id), p]));
+    const descendsFromGate3 = (participant:any) => {
+      let current:any = participant;
+      const seen = new Set<string>();
+      while (current && !seen.has(String(current.id))) {
+        seen.add(String(current.id));
+        if (String(current.unique_identity_key || '').startsWith('gate3-')) return true;
+        current = current.replacement_for_participant_id ? byId.get(String(current.replacement_for_participant_id)) : null;
+      }
+      return false;
+    };
+    if (participants.length < 8 || !participants.every((p:any)=>descendsFromGate3(p))) {
+      return Response.json({ error:'Full practice population is restricted to the RallyHub dummy roster and replacements made from that roster.' }, { status:409 });
     }
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200);
     const normal = matches.filter((m:any)=>!m.is_showcase).sort((a:any,b:any)=>Number(a.round_number)-Number(b.round_number)||Number(a.court_number)-Number(b.court_number));
