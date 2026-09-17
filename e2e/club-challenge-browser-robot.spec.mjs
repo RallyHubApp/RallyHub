@@ -79,6 +79,17 @@ function createClubChallengeModel() {
         const p={id:id('cc-player'),tenant_id:model.event.tenant_id,challenge_event_id:model.event.id,tournament_id:model.event.tournament_id,side:body.side,display_name:body.displayName,event_rank:sidePlayers.length+1,status:'active',available_from_round:1,unique_identity_key:`manual-${id('key')}`};
         model.participants.push(p); return {success:true,participant:p};
       }
+      if (body.action === 'replacement_candidates') return { success:true, candidates:[] };
+      if (body.action === 'replace') {
+        const outgoing=model.participants.find(p=>p.id===body.outgoingParticipantId);if(!outgoing)return {error:'Outgoing participant is required.'};
+        const incoming={id:id('cc-replacement'),tenant_id:model.event.tenant_id,challenge_event_id:model.event.id,tournament_id:model.event.tournament_id,side:outgoing.side,display_name:body.incomingName,event_rank:outgoing.event_rank,gender:body.incomingGender||outgoing.gender,status:'active',available_from_round:Number(model.event.current_round||1),replacement_for_participant_id:outgoing.id,replacement_effective_round:Number(model.event.current_round||1),unique_identity_key:`replacement-${id('key')}`};
+        model.participants.push(incoming);Object.assign(outgoing,{status:body.withdrawalStatus==='injured'?'injured':'withdrawn',replaced_by_participant_id:incoming.id});
+        const terminal=new Set(['completed','draw','retired','forfeit','abandoned','not_played']);let affected=0;
+        model.matches.forEach(m=>{if(Number(m.round_number)<Number(model.event.current_round||1)||terminal.has(m.status))return;const side=outgoing.side==='club_a'?'club_a':'club_b';const idsKey=`${side}_participant_ids`,namesKey=`${side}_names`;const index=(m[idsKey]||[]).indexOf(outgoing.id);if(index<0)return;const ids=[...(m[idsKey]||[])],names=[...(m[namesKey]||[])];ids[index]=incoming.id;names[index]=incoming.display_name;Object.assign(m,{[idsKey]:ids,[namesKey]:names,revision:Number(m.revision||0)+1});affected++;});
+        model.event.event_pack_stale=true;return {success:true,outgoingName:outgoing.display_name,incomingName:incoming.display_name,effectiveRound:Number(model.event.current_round||1),affected};
+      }
+      if (body.action === 'continue_short') return { success:true, outgoingName:'Test Player', effectiveRound:Number(model.event.current_round||1), affected:1 };
+      if (body.action === 'late_arrival') return { success:true, participantName:model.participants.find(p=>p.id===body.participantId)?.display_name||'Player', fromRound:Number(body.fromRound||model.event.current_round||1) };
       return { success:true };
     }
 
@@ -95,7 +106,8 @@ function createClubChallengeModel() {
         const next=Number(model.event.draw_version||0)+1;
         Object.assign(model.event,{status:'draw_approved',draw_version:next,draw_approved_at:now(),draw_approved_by:model.user.id,event_pack_stale:false,event_pack_version:next,event_pack_generated_at:now()});
       } else if (body.action === 'start') {
-        Object.assign(model.event,{status:'in_progress',current_round:1}); model.tournament.status='In Progress';
+        const initialTimer={phase:'ready',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round:1};
+        Object.assign(model.event,{status:'in_progress',current_round:1,timer_state_json:JSON.stringify(initialTimer),timer_revision:Number(model.event.timer_revision||0)+1}); model.tournament.status='In Progress';
       } else if (body.action === 'set_round_label') {
         let labels={};try{labels=model.event.round_labels_json?JSON.parse(model.event.round_labels_json):{};}catch{}
         if(body.label)labels[String(body.round)]=body.label;else delete labels[String(body.round)];model.event.round_labels_json=JSON.stringify(labels);
@@ -110,16 +122,16 @@ function createClubChallengeModel() {
       if (Number(body.expectedRevision||0)!==Number(model.event.timer_revision||0)) return { conflict:true, error:'Timer revision conflict' };
       let next=current;
       if (body.action === 'start') {
-        const seconds = body.phase === 'changeover' ? Number(model.event.changeover_minutes||2)*60 : body.phase === 'break' ? Number(model.event.break_minutes||20)*60 : Number(current.remaining_seconds||0)>0&&current.phase==='play'&&!current.running?Number(current.remaining_seconds):Number(model.event.play_minutes||10)*60;
+        const seconds = body.phase === 'changeover' ? Number(model.event.changeover_minutes||2)*60 : body.phase === 'break' ? Number(model.event.break_minutes||20)*60 : Number(current.remaining_seconds||0)>0&&['ready','play'].includes(current.phase)&&!current.running?Number(current.remaining_seconds):Number(model.event.play_minutes||10)*60;
         next={phase:body.phase||'play',running:true,remaining_seconds:seconds,started_at:now(),round:Number(model.event.current_round||1)};
       } else if (body.action === 'pause') {
         next={...current,running:false,started_at:null};
       } else if (body.action === 'resume') {
         next={...current,running:true,started_at:now()};
       } else if (body.action === 'reset') {
-        next={phase:'play',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round:Number(model.event.current_round||1)};
+        next={phase:'ready',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round:Number(model.event.current_round||1)};
       } else if (body.action === 'set_round_minutes') {
-        next={phase:'play',running:false,remaining_seconds:Number(body.minutes)*60,started_at:null,round:Number(model.event.current_round||1)};
+        next={phase:'ready',running:false,remaining_seconds:Number(body.minutes)*60,started_at:null,round:Number(model.event.current_round||1)};
       } else if (body.action === 'add_minute') {
         next={...current,remaining_seconds:Number(current.remaining_seconds||0)+60};
       }
