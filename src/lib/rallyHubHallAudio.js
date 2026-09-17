@@ -65,12 +65,12 @@ export function playRallyHubSignal(ctx, type = 'warning', volume = 1) {
     return;
   }
   if (type === 'announcement') {
-    // Commercial PA-style pre-announcement cue: four ascending resonant tones.
-    // The tones overlap slightly so they ring like a paging chime rather than UI beeps.
-    bell(ctx, 523.25, now, 1.10, 0.52);
-    bell(ctx, 659.25, now + 0.82, 1.15, 0.66);
-    bell(ctx, 783.99, now + 1.68, 1.25, 0.82);
-    bell(ctx, 1046.50, now + 2.58, 1.40, 1.0);
+    // Commercial PA-style pre-announcement cue. The host volume control scales the
+    // whole chime instead of leaving the paging tones at a fixed loudness.
+    bell(ctx, 523.25, now, 0.72, v * 0.52);
+    bell(ctx, 659.25, now + 0.46, 0.78, v * 0.66);
+    bell(ctx, 783.99, now + 0.94, 0.84, v * 0.82);
+    bell(ctx, 1046.50, now + 1.46, 0.92, v);
     return;
   }
   beep(ctx, 740, now, 0.14, v * 0.9);
@@ -156,9 +156,14 @@ export function speakRallyHub(text, options = {}) {
     if (window.__rallyhubUtterance === utterance) window.__rallyhubUtterance = null;
     onError?.(event);
   };
+  // Chrome can occasionally drop an utterance when speak() follows cancel() in the
+  // same task. Queue the new utterance on the next task to make repeated hall
+  // announcements more reliable.
   window.speechSynthesis.cancel();
-  window.speechSynthesis.resume?.();
-  window.speechSynthesis.speak(utterance);
+  window.setTimeout(() => {
+    window.speechSynthesis.resume?.();
+    window.speechSynthesis.speak(utterance);
+  }, 0);
   return true;
 }
 
@@ -273,9 +278,14 @@ export async function startRallyHubPA({ volume = 1, deviceId = '' } = {}) {
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(Math.max(0, Math.min(1.5, Number(volume) || 0)), ctx.currentTime);
 
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 256;
+  analyser.smoothingTimeConstant = 0.7;
+
   source.connect(highPass);
   highPass.connect(compressor);
   compressor.connect(gain);
+  compressor.connect(analyser);
   gain.connect(ctx.destination);
 
   const settings = track.getSettings?.() || null;
@@ -287,6 +297,7 @@ export async function startRallyHubPA({ volume = 1, deviceId = '' } = {}) {
     highPass,
     compressor,
     gain,
+    analyser,
     track,
     micLabel: track.label || 'Default microphone',
     settings,
@@ -295,12 +306,27 @@ export async function startRallyHubPA({ volume = 1, deviceId = '' } = {}) {
   return getRallyHubPaInfo();
 }
 
+export function getRallyHubPaLevel() {
+  const state = getPaState();
+  if (!state?.active || !state?.analyser) return 0;
+  const data = new Uint8Array(state.analyser.fftSize);
+  state.analyser.getByteTimeDomainData(data);
+  let sum = 0;
+  for (let i = 0; i < data.length; i += 1) {
+    const sample = (data[i] - 128) / 128;
+    sum += sample * sample;
+  }
+  const rms = Math.sqrt(sum / data.length);
+  return Math.max(0, Math.min(1, rms * 5));
+}
+
 export function stopRallyHubPA() {
   const state = getPaState();
   if (!state) return false;
   try { state.source?.disconnect?.(); } catch {}
   try { state.highPass?.disconnect?.(); } catch {}
   try { state.compressor?.disconnect?.(); } catch {}
+  try { state.analyser?.disconnect?.(); } catch {}
   try { state.gain?.disconnect?.(); } catch {}
   try { state.stream?.getTracks?.().forEach(track => track.stop()); } catch {}
   window.__rallyhubPaState = null;
