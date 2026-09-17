@@ -176,6 +176,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [announcementSpeaking, setAnnouncementSpeaking] = useState(false);
   const [announcementStatus, setAnnouncementStatus] = useState('');
   const [hostAction, setHostAction] = useState('');
+  const hostBarAnchorRef = React.useRef(null);
+  const hostBarInnerRef = React.useRef(null);
+  const [hostBarPinned, setHostBarPinned] = useState(false);
+  const [hostBarGeometry, setHostBarGeometry] = useState({ left: 0, width: 0, height: 0, top: 64 });
   const timerCommandRef = React.useRef(false);
   const sportingActionRef = React.useRef(false);
   const lastTimerAnnouncementRef = React.useRef(new Set());
@@ -339,6 +343,26 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   React.useEffect(() => { localStorage.setItem('cc-hall-volume', String(hallVolume)); }, [hallVolume]);
   React.useEffect(() => { localStorage.setItem('cc-pa-gain', String(paGain)); if (paActive) setRallyHubPaGain(paGain); }, [paGain, paActive]);
   React.useEffect(() => { localStorage.setItem('cc-pa-mic-id', selectedMicId); }, [selectedMicId]);
+  React.useEffect(() => {
+    if (tab !== 'live') { setHostBarPinned(false); return undefined; }
+    const updateHostBar = () => {
+      const anchor = hostBarAnchorRef.current;
+      const inner = hostBarInnerRef.current;
+      if (!anchor || !inner) return;
+      const rect = anchor.getBoundingClientRect();
+      const innerRect = inner.getBoundingClientRect();
+      const top = window.innerWidth >= 640 ? 72 : 64;
+      setHostBarPinned(rect.top <= top);
+      setHostBarGeometry({ left: rect.left, width: rect.width, height: innerRect.height, top });
+    };
+    updateHostBar();
+    window.addEventListener('scroll', updateHostBar, { passive: true });
+    window.addEventListener('resize', updateHostBar);
+    return () => {
+      window.removeEventListener('scroll', updateHostBar);
+      window.removeEventListener('resize', updateHostBar);
+    };
+  }, [tab, event?.id, currentRound, currentRoundSavedCount]);
   React.useEffect(() => {
     if (!paActive) { setPaInputLevel(0); return undefined; }
     const id = window.setInterval(() => setPaInputLevel(getRallyHubPaLevel()), 120);
@@ -1306,7 +1330,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       {tab === 'live' && (
         <div className="space-y-4">
           {!event || !['in_progress','paused','completed','archived'].includes(event.status) ? <div className="rounded-xl border border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">Approve the draw and start the {INTERCLUB_EVENT_LABEL} first.</div> : <>
-            <div data-testid="cc-sticky-host-bar" className="sticky top-16 sm:top-[4.5rem] z-20 rounded-xl border border-primary/30 bg-background/95 backdrop-blur px-3 py-2 shadow-lg">
+            <div ref={hostBarAnchorRef} style={hostBarPinned ? { height: hostBarGeometry.height } : undefined}>
+              <div
+                ref={hostBarInnerRef}
+                data-testid="cc-sticky-host-bar"
+                data-pinned={hostBarPinned ? 'true' : 'false'}
+                className={cn('rounded-xl border border-primary/30 bg-background/95 backdrop-blur px-3 py-2 shadow-lg', hostBarPinned && 'fixed z-20')}
+                style={hostBarPinned ? { top: hostBarGeometry.top, left: hostBarGeometry.left, width: hostBarGeometry.width } : undefined}
+              >
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <Badge className="bg-primary/10 text-primary">Round {currentRound}/{Math.max(...rounds)}</Badge>
                 <div className="font-bold tabular-nums text-lg sm:text-xl">{fmtTimer(timerRemaining)}</div>
@@ -1316,6 +1347,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                   <Button size="sm" variant="outline" onClick={() => document.getElementById('cc-player-controls')?.scrollIntoView({ behavior:'smooth', block:'center' })}><Users className="w-4 h-4 mr-1" />Players</Button>
                   {!['completed','archived'].includes(event.status) && <Button size="sm" disabled={!canManageEvent || !currentRoundComplete} onClick={advanceRound}>{currentRoundComplete ? (currentRound < Math.max(...rounds) ? `Complete Round ${currentRound}` : 'Finalise') : `${Math.max(0,currentMatches.length-currentRoundSavedCount)} score${Math.max(0,currentMatches.length-currentRoundSavedCount)===1?'':'s'} to save`}</Button>}
                 </div>
+              </div>
               </div>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 sm:p-5"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary">Live Event</p><p className="text-sm text-muted-foreground mt-1">Round {currentRound} of {Math.max(...rounds)}</p><p className="text-xl sm:text-2xl font-bold break-words mt-1">{event.club_a_name} {score.clubA} <span className="text-muted-foreground font-normal">–</span> {score.clubB} {event.club_b_name}</p></div><div className="flex gap-2 text-xs"><Badge variant="outline">{score.matchesWonA}W</Badge><Badge variant="outline">{score.draws}D</Badge><Badge variant="outline">{score.matchesWonB}W</Badge></div></div>{event.include_break && currentRound === event.break_after_round && <div className="mt-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-xs text-yellow-400"><Clock className="inline w-4 h-4 mr-1" />Scheduled {event.break_minutes}-minute break after this round.</div>}</div>
