@@ -14,5 +14,6 @@ test('directory appearance control cycles Light, Hall and Dark and persists the 
 
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'hall');
-  await expect(page.evaluate(() => localStorage.getItem('rallyhub-appearance'))).resolves.toBe('hall');
+  const saved = await page.evaluate(() => localStorage.getItem('rallyhub-appearance'));
+  expect(saved).toBe('hall');
 });
