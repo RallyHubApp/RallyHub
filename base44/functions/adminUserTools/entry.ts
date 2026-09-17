@@ -16,6 +16,13 @@ Deno.serve(async (req) => {
       const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
       return Response.json({ users });
     }
+    if (body.action === 'pending_approval_count') {
+      const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
+      const pendingCount = users.filter(u =>
+        u.role !== 'admin' && (!u.approval_status || u.approval_status === 'pending')
+      ).length;
+      return Response.json({ pendingCount });
+    }
     if (body.action === 'set_approval') {
       const { userId, status } = body;
       if (!userId || !['pending', 'approved', 'rejected'].includes(status)) {
