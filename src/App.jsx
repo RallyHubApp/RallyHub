@@ -1,9 +1,11 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { AppearanceProvider } from '@/lib/AppearanceContext';
+import { HostAppearanceControl } from '@/components/appearance/AppearanceControls';
 import { base44 } from '@/api/base44Client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -103,8 +105,15 @@ const AuthenticatedRoutes = () => (
   </Routes>
 );
 
+function RouteAwareAppearanceControl() {
+  const location = useLocation();
+  const isDedicatedHostRoute = location.pathname.startsWith('/kotc-host/');
+  return isDedicatedHostRoute ? <HostAppearanceControl /> : null;
+}
+
 function App() {
   return (
+    <AppearanceProvider>
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
@@ -156,11 +165,13 @@ function App() {
 
             <Route path="*" element={<PageNotFound />} />
           </Routes>
+          <RouteAwareAppearanceControl />
         </Router>
         <Toaster />
         <AndroidInstallPrompt />
       </QueryClientProvider>
     </AuthProvider>
+    </AppearanceProvider>
   )
 }
 
