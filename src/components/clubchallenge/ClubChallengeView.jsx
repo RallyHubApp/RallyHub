@@ -1306,7 +1306,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       {tab === 'live' && (
         <div className="space-y-4">
           {!event || !['in_progress','paused','completed','archived'].includes(event.status) ? <div className="rounded-xl border border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">Approve the draw and start the {INTERCLUB_EVENT_LABEL} first.</div> : <>
-            <div className="sticky top-2 z-30 rounded-xl border border-primary/30 bg-background/95 backdrop-blur px-3 py-2 shadow-lg">
+            <div data-testid="cc-sticky-host-bar" className="sticky top-2 z-30 rounded-xl border border-primary/30 bg-background/95 backdrop-blur px-3 py-2 shadow-lg">
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <Badge className="bg-primary/10 text-primary">Round {currentRound}/{Math.max(...rounds)}</Badge>
                 <div className="font-bold tabular-nums text-lg sm:text-xl">{fmtTimer(timerRemaining)}</div>
