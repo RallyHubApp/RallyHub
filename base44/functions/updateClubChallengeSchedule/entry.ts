@@ -44,10 +44,23 @@ Deno.serve(async (req) => {
     const normal = matches.filter((m:any) => !m.is_showcase);
     const byId = new Map(normal.map((m:any) => [m.id, m]));
     const currentRound = Math.max(1, Number(event.current_round || 1));
+    const changeList = Array.isArray(changes) ? changes : [];
     const changeIds = new Set<string>();
     const dropSet = new Set((dropIds || []).map(String));
 
-    for (const c of changes || []) {
+    // A repeated request after a successful apply must be harmless. The live host UI
+    // also locks duplicate taps, but this server-side check protects retries/replays.
+    const sameEventSettings = Number(event.courts) === nextCourts && Number(event.available_minutes) === nextMinutes && event.event_pack_stale === true;
+    const changesAlreadyApplied = changeList.every((c:any) => {
+      const m:any = byId.get(String(c?.id || ''));
+      return !!m && Number(m.round_number) === Number(c?.newRound) && Number(m.court_number) === Number(c?.newCourt);
+    });
+    const dropsAlreadyApplied = [...dropSet].every(id => (byId.get(id) as any)?.status === 'not_played');
+    if (sameEventSettings && changesAlreadyApplied && dropsAlreadyApplied) {
+      return Response.json({ success:true, event, changed:0, dropped:0, alreadyApplied:true });
+    }
+
+    for (const c of changeList) {
       const id = String(c?.id || '');
       const m:any = byId.get(id);
       if (!m) return Response.json({ error: 'Proposal contains a match outside this event.' }, { status: 400 });
@@ -85,7 +98,7 @@ Deno.serve(async (req) => {
       playersByRound.set(Number(m.round_number), seen);
     }
 
-    for (const c of changes || []) {
+    for (const c of changeList) {
       const m:any = byId.get(String(c.id));
       await base44.asServiceRole.entities.ClubChallengeMatch.update(m.id, {
         round_number: Number(c.newRound), court_number: Number(c.newCourt), revision: Number(m.revision || 0) + 1,
@@ -105,10 +118,10 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.ClubChallengeAudit.create({
       tenant_id: event.tenant_id, challenge_event_id: event.id, action: 'event_day_schedule_adjusted', user_id: user.id, occurred_at: now,
       old_value_json: JSON.stringify({ courts: event.courts, available_minutes: event.available_minutes }),
-      new_value_json: JSON.stringify({ courts: nextCourts, available_minutes: nextMinutes, changes, dropIds: [...dropSet] }),
+      new_value_json: JSON.stringify({ courts: nextCourts, available_minutes: nextMinutes, changes:changeList, dropIds: [...dropSet] }),
       note: 'Organiser confirmed court/time disruption proposal; completed fixtures preserved.',
     });
-    return Response.json({ success: true, event: updated, changed: (changes || []).length, dropped: dropSet.size });
+    return Response.json({ success: true, event: updated, changed: changeList.length, dropped: dropSet.size, alreadyApplied:false });
   } catch (error) {
     return Response.json({ error: error?.message || 'Unexpected schedule adjustment error' }, { status: 500 });
   }
