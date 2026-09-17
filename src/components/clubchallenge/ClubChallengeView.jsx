@@ -175,6 +175,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [announcementDraft, setAnnouncementDraft] = useState('');
   const [announcementSpeaking, setAnnouncementSpeaking] = useState(false);
   const [announcementStatus, setAnnouncementStatus] = useState('');
+  const [playerControlBusy, setPlayerControlBusy] = useState(false);
+  const [playerControlStatus, setPlayerControlStatus] = useState(null);
   const [hostAction, setHostAction] = useState('');
   const hostBarAnchorRef = React.useRef(null);
   const hostBarInnerRef = React.useRef(null);
@@ -765,7 +767,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const pauseTimer = async () => { if (await timerAction('pause')) { speak('Event paused.'); wakeLockRef.current?.release?.(); } };
   const resumeTimer = async () => { await unlockHallAudio(); if (await timerAction('resume')) { speak(`${roundLabel(currentRound)}. Resume play.`, { signal:'start' }); requestWakeLock(); } };
   const resetTimer = () => timerAction('reset');
-  const preparedRoundMinutes = timerState?.phase === 'play' && Number(timerState?.round || 0) === Number(currentRound) && !timerState?.running && Number(timerState?.remaining_seconds || 0) > 0
+  const preparedRoundMinutes = ['ready','play'].includes(String(timerState?.phase || '')) && Number(timerState?.round || 0) === Number(currentRound) && !timerState?.running && Number(timerState?.remaining_seconds || 0) > 0
     ? Math.max(1, Math.round(Number(timerState.remaining_seconds) / 60))
     : Number(event?.play_minutes || 10);
   const setRoundMinutes = async value => {
@@ -1027,7 +1029,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const currentRoundComplete = currentMatches.length > 0 && currentRoundSavedCount === currentMatches.length;
   const timerPhase = String(timerState?.phase || 'idle');
   const timerRunning = !!timerState?.running && timerRemaining > 0;
-  const timerPaused = !!timerState && !timerState?.running && timerRemaining > 0 && timerPhase !== 'idle';
+  const timerPaused = !!timerState && !timerState?.running && timerRemaining > 0 && timerPhase === 'play';
   const playFinished = timerPhase === 'play' && timerRemaining <= 0;
   const changeoverAvailable = timerPhase === 'play' && (!timerState?.running || timerRemaining <= 0);
   const outgoingPlayer = participants.find(p => p.id === replacement.outgoingId) || null;
