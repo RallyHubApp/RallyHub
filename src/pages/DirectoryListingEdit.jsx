@@ -282,7 +282,7 @@ export default function DirectoryListingEdit() {
   return (
     <>
       <Seo title={`Edit ${baseClub?.name || 'Directory Listing'} | RallyHub`} description="Manage a verified RallyHub public directory listing." path={`/directory/${slug}/edit`} robots="noindex,nofollow" />
-      <div className="min-h-screen bg-[#0a1628] text-foreground">
+      <div className="min-h-screen bg-background text-foreground">
         <PublicDirectoryHeader />
         <main className="container mx-auto px-4 py-7 max-w-6xl">
           <div className="flex items-center justify-between gap-3 mb-5">

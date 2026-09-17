@@ -248,7 +248,7 @@ export default function PublicDirectory() {
         path="/directory"
         structuredData={directorySchema}
       />
-      <div className="min-h-screen bg-[#0a1628] text-foreground">
+      <div className="min-h-screen bg-background text-foreground">
       <PublicDirectoryHeader />
 
       <section className="border-b border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,.13),transparent_42%)]">

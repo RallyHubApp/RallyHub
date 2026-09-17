@@ -12,7 +12,7 @@ export default function About() {
         description="Learn about RallyHub, the community-focused racket sports platform for club directories, pickleball competitions, King of the Court, interclub events, tournaments and club management."
         path="/about"
       />
-      <div className="min-h-screen bg-[#0a1628] text-foreground">
+      <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-12 sm:py-16 max-w-4xl">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-8">
           <ArrowLeft className="w-4 h-4" /> Back to RallyHub

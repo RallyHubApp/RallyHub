@@ -86,7 +86,7 @@ export default function CountyDirectory() {
         robots={hasListings ? 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1' : 'noindex,follow'}
         structuredData={schema}
       />
-      <div className="min-h-screen bg-[#0a1628] text-foreground">
+      <div className="min-h-screen bg-background text-foreground">
         <PublicDirectoryHeader />
         <main className="container mx-auto px-4 py-8 max-w-5xl">
           <Link to="/directory" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">

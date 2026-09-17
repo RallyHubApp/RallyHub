@@ -75,7 +75,7 @@ export default function PublicClubProfile() {
 
   const baseClub = seedClub || dynamicBase;
   if (loadingListing && !baseClub) {
-    return <div className="min-h-screen bg-[#0a1628] text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
+    return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
   }
   if (!baseClub) return <Navigate to="/directory" replace />;
   const club = publicProfile ? {
@@ -136,7 +136,7 @@ export default function PublicClubProfile() {
         type="profile"
         structuredData={clubSchema}
       />
-      <div className="min-h-screen bg-[#0a1628] text-foreground">
+      <div className="min-h-screen bg-background text-foreground">
       <PublicDirectoryHeader />
 
       <main>

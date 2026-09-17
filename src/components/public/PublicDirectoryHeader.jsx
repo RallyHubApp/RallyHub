@@ -16,7 +16,7 @@ export default function PublicDirectoryHeader() {
   const canUseClubApp = user?.role === 'admin' || (user?.approval_status === 'approved' && !!user?.active_tenant_id && !!user?.active_club_id);
 
   return (
-    <header className="sticky top-0 z-[1001] border-b border-border/80 bg-[#0a1628]/95 backdrop-blur-xl">
+    <header className="sticky top-0 z-[1001] border-b border-border/80 bg-background/95 backdrop-blur-xl">
       <div className="container mx-auto h-16 px-4 flex items-center gap-5">
         <Link to="/" className="flex items-center gap-2.5 shrink-0">
           <img src={LOGO_URL} alt="RallyHub" className="h-9 w-9" />

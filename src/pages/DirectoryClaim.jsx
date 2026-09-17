@@ -71,7 +71,7 @@ export default function DirectoryClaim() {
     return () => { active = false; };
   }, [isAuthenticated, club]);
 
-  if (loadingClub && !club) return <div className="min-h-screen bg-[#0a1628] text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10 max-w-4xl"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
+  if (loadingClub && !club) return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10 max-w-4xl"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
   if (!club) return <Navigate to="/directory" replace />;
 
   const submitClaim = async (event) => {
@@ -111,7 +111,7 @@ export default function DirectoryClaim() {
         path={`/directory/${club.slug}/claim`}
         robots="noindex,follow"
       />
-      <div className="min-h-screen bg-[#0a1628] text-foreground">
+      <div className="min-h-screen bg-background text-foreground">
       <PublicDirectoryHeader />
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <Link to={`/directory/${club.slug}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
