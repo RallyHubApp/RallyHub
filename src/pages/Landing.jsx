@@ -106,7 +106,7 @@ export default function Landing() {
             transition={{ duration: 0.6 }}
             className="text-center max-w-4xl mx-auto"
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-200 mb-5">
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-200 mb-5">
               Club Directory Preview · {directoryClubs.length} clubs currently listed · details are being verified
             </div>
             <div className="flex items-center justify-center gap-3 mb-6">
@@ -152,7 +152,7 @@ export default function Landing() {
                 <p className="text-sm text-muted-foreground">Add it to the RallyHub Directory for review. This does not create a RallyHub Club account.</p>
               </div>
               <Link to="/directory/add" className="shrink-0">
-                <Button variant="outline" className="border-amber-400/40 text-amber-200 hover:bg-amber-400/10">
+                <Button variant="outline" className="border-amber-400/40 text-amber-700 dark:text-amber-200 hover:bg-amber-400/10">
                   Add Your Club <PlusCircle className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
