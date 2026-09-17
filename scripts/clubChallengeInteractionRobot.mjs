@@ -115,7 +115,7 @@ check('scorer: score entry is capped to two digits in UI and backend', contains(
 
 // 7. What-if / disruption controls.
 check('what-if: replacement remains future-only', contains(participantFn,'effectiveRound'));
-check('busy-hall UX: sticky host bar keeps round, timer and scores visible', contains(ui,'sticky top-2 z-30') && contains(ui,'scores saved'));
+check('busy-hall UX: sticky host bar keeps round, timer and scores visible', contains(ui,'data-testid="cc-sticky-host-bar"') && contains(ui,'sticky top-16 sm:top-[4.5rem] z-20') && contains(ui,'scores saved'));
 check('busy-hall UX: PA is collapsible during normal scoring', contains(ui,'id="cc-pa-panel"') && contains(ui,'Open only when you need the microphone or an announcement.'));
 check('busy-hall UX: player controls are separate and discoverable', contains(ui,'id="cc-player-controls"') && contains(ui,'Player Controls'));
 check('what-if: registered replacement candidates can be offered before manual entry', contains(participantFn,"'replacement_candidates'") && contains(ui,'Registered reserve / available player'));
