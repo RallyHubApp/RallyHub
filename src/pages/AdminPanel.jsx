@@ -227,10 +227,16 @@ export default function AdminPanel() {
 
   const setKotcRole = async (userId, kotcRole) => {
     setUpdatingRole(userId);
-    await base44.entities.User.update(userId, { kotc_role: kotcRole });
-    queryClient.invalidateQueries({ queryKey: ['all-users'] });
-    toast.success('KOTC role updated');
-    setUpdatingRole(null);
+    try {
+      const res = await base44.functions.invoke('adminUserTools', { action: 'set_kotc_role', userId, kotcRole });
+      if (res.data?.error) throw new Error(res.data.error);
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
+      toast.success('KOTC role updated');
+    } catch (error) {
+      toast.error(error?.message || 'Could not update KOTC role');
+    } finally {
+      setUpdatingRole(null);
+    }
   };
 
   const reviewDirectoryClaim = async (claimId, decision) => {
