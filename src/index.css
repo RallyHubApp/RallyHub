@@ -172,7 +172,7 @@
 
 /* Accessible scrollbar: wider and higher contrast for desktop/full-screen use. */
 html {
-  scrollbar-color: hsl(220 10% 46%) hsl(220 18% 8%);
+  scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--card));
   scrollbar-width: auto;
   overflow-y: scroll;
   scrollbar-gutter: stable;
@@ -184,30 +184,69 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(220 18% 8%);
+  background: hsl(var(--card));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(220 10% 46%);
-  border: 2px solid hsl(220 18% 8%);
+  background: hsl(var(--muted-foreground));
+  border: 2px solid hsl(var(--card));
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(220 10% 62%);
+  background: hsl(var(--foreground) / 0.7);
 }
 
-/* Glassmorphism utility */
+/* Theme-aware glass surfaces */
 .glass {
-  background: rgba(255, 255, 255, 0.03);
+  background: hsl(var(--card) / 0.72);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid hsl(var(--border) / 0.72);
 }
 
 .glass-strong {
-  background: rgba(255, 255, 255, 0.06);
+  background: hsl(var(--card) / 0.9);
   backdrop-filter: blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid hsl(var(--border) / 0.9);
+}
+
+[data-theme="hall"] .glass,
+[data-theme="hall"] .glass-strong {
+  background: hsl(var(--card));
+  backdrop-filter: none;
+  border-width: 2px;
+}
+
+/* Hall mode prioritises instant visibility in bright sports halls. */
+[data-theme="hall"] button,
+[data-theme="hall"] [role="button"],
+[data-theme="hall"] input,
+[data-theme="hall"] select,
+[data-theme="hall"] textarea {
+  border-width: 2px;
+}
+
+[data-theme="hall"] input,
+[data-theme="hall"] select,
+[data-theme="hall"] textarea {
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+}
+
+[data-theme="hall"] input[type="checkbox"],
+[data-theme="hall"] input[type="radio"] {
+  min-width: 1.15rem;
+  min-height: 1.15rem;
+  accent-color: hsl(var(--primary));
+}
+
+[data-theme="hall"] button:focus-visible,
+[data-theme="hall"] [role="button"]:focus-visible,
+[data-theme="hall"] input:focus-visible,
+[data-theme="hall"] select:focus-visible,
+[data-theme="hall"] textarea:focus-visible {
+  outline: 3px solid hsl(var(--ring));
+  outline-offset: 2px;
 }
 
 /* Glow effects */
