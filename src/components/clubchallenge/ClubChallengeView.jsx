@@ -1084,7 +1084,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const changeoverAvailable = timerPhase === 'play' && (!timerState?.running || timerRemaining <= 0);
   const outgoingPlayer = participants.find(p => p.id === replacement.outgoingId) || null;
   const availableReplacementCandidates = replacementCandidates.filter(c => !outgoingPlayer || c.side === outgoingPlayer.side);
-  const isGate3TestEvent = participants.length >= 8 && participants.every(p => String(p.unique_identity_key || '').startsWith('gate3-'));
+  const gate3ParticipantIds = new Set(participants.filter(p => String(p.unique_identity_key || '').startsWith('gate3-')).map(p => p.id));
+  const isGate3TestEvent = gate3ParticipantIds.size >= 8 && participants.every(p => String(p.unique_identity_key || '').startsWith('gate3-') || (p.replacement_for_participant_id && gate3ParticipantIds.has(p.replacement_for_participant_id)));
   const addSimLog = (message, status = 'info') => setSimLog(log => [{ at: new Date().toLocaleTimeString('en-IE'), message, status }, ...log].slice(0, 12));
   const scoreForSimulation = (match, index = 0, mode = 'mixed') => {
     const pointsFormat = event?.normal_match_type === 'points';
