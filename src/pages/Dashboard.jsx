@@ -2,7 +2,7 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Users, Trophy, Swords, Crown, ArrowRight, Plus, Upload, BellRing } from 'lucide-react';
+import { Users, Trophy, Crown, ArrowRight, Plus, Upload, BellRing } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
@@ -34,9 +34,14 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Tournament.list('-created_date', 50)
   });
 
-  const { data: matches = [] } = useQuery({
-    queryKey: ['matches'],
-    queryFn: () => base44.entities.Match.list('-created_date', 50)
+  const { data: kotcLeaderboard = { rows: [] } } = useQuery({
+    queryKey: ['kotc-club-leaderboard'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('getKotcLeaderboard', {});
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data;
+    },
+    enabled: !!currentUser
   });
 
   const { data: pendingApprovalCount = 0 } = useQuery({
@@ -52,11 +57,6 @@ export default function Dashboard() {
   });
 
   const activeTournaments = tournaments.filter(t => t.status === 'In Progress' || t.status === 'Registration Open');
-  const todayMatches = matches.filter(m => {
-    if (!m.scheduled_time) return false;
-    const d = new Date(m.scheduled_time).toDateString();
-    return d === new Date().toDateString();
-  });
   // Do not manufacture a 3.0 skill rating for unrated members. Until RallyHub has
   // verified DUPR data, the dashboard shows a neutral club roster preview rather
   // than presenting legacy/default skill values as a ranking.
@@ -107,7 +107,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Players" value={players.length} icon={Users} trend={`${players.filter(p => p.status === 'Active').length} active`} trendUp delay={0} accentColor="primary" />
         <StatCard title="Active Tournaments" value={activeTournaments.length} icon={Trophy} delay={0.1} accentColor="accent" />
-        <StatCard title="Matches Today" value={todayMatches.length} icon={Swords} delay={0.2} accentColor="chart-3" />
+        <StatCard title="KOTC Players" value={(kotcLeaderboard.rows || []).length} icon={Crown} delay={0.2} accentColor="chart-3" />
         <StatCard title="DUPR Rated" value={players.filter(p => p.dupr_rating != null).length} icon={Crown} delay={0.3} accentColor="chart-4" />
       </div>
 
