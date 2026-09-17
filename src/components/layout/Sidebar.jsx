@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { 
   LayoutDashboard, Users, Trophy, Swords, Crown, 
   BarChart3, X, ChevronRight, UserCircle, Shield, MapPin
@@ -7,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
+import { base44 } from '@/api/base44Client';
 import useKotcRole from '@/hooks/useKotcRole';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
@@ -26,6 +28,18 @@ export default function Sidebar({ isOpen, onToggle }) {
   const { role } = useKotcRole();
   const canAccessAdmin = user?.role === 'admin';
   const isSuperAdmin = role === 'super_admin';
+
+  const { data: pendingApprovalCount = 0 } = useQuery({
+    queryKey: ['pending-approval-count'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('adminUserTools', { action: 'pending_approval_count' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return Number(res.data?.pendingCount || 0);
+    },
+    enabled: canAccessAdmin,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true
+  });
 
   return (
     <>
@@ -116,6 +130,15 @@ export default function Sidebar({ isOpen, onToggle }) {
               >
                 <item.icon className="w-4 h-4" />
                 {item.label}
+                {item.admin && pendingApprovalCount > 0 && (
+                  <span
+                    className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-black text-[11px] font-black flex items-center justify-center"
+                    aria-label={`${pendingApprovalCount} pending approvals`}
+                    title={`${pendingApprovalCount} pending approvals`}
+                  >
+                    {pendingApprovalCount}
+                  </span>
+                )}
               </Link>
             );
           })}
