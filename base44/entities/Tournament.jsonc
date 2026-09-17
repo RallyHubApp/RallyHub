@@ -220,57 +220,9 @@
   ],
   "rls": {
     "create": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "user"
-              }
-            },
-            {
-              "data.tenant_id": "{{user.data.active_tenant_id}}"
-            },
-            {
-              "user_condition": {
-                "data.approval_status": "approved"
-              }
-            },
-            {
-              "user_condition": {
-                "data.kotc_role": "super_admin"
-              }
-            }
-          ]
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "user"
-              }
-            },
-            {
-              "data.tenant_id": "{{user.data.active_tenant_id}}"
-            },
-            {
-              "user_condition": {
-                "data.approval_status": "approved"
-              }
-            },
-            {
-              "user_condition": {
-                "data.kotc_role": "admin"
-              }
-            }
-          ]
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "read": {
       "$or": [
@@ -299,132 +251,14 @@
       ]
     },
     "update": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "user"
-              }
-            },
-            {
-              "data.tenant_id": "{{user.data.active_tenant_id}}"
-            },
-            {
-              "user_condition": {
-                "data.approval_status": "approved"
-              }
-            },
-            {
-              "user_condition": {
-                "data.kotc_role": "super_admin"
-              }
-            }
-          ]
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "user"
-              }
-            },
-            {
-              "data.tenant_id": "{{user.data.active_tenant_id}}"
-            },
-            {
-              "user_condition": {
-                "data.approval_status": "approved"
-              }
-            },
-            {
-              "user_condition": {
-                "data.kotc_role": "admin"
-              }
-            }
-          ]
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "user"
-              }
-            },
-            {
-              "data.tenant_id": "{{user.data.active_tenant_id}}"
-            },
-            {
-              "user_condition": {
-                "data.approval_status": "approved"
-              }
-            },
-            {
-              "user_condition": {
-                "data.kotc_role": "host"
-              }
-            }
-          ]
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "user"
-              }
-            },
-            {
-              "data.tenant_id": "{{user.data.active_tenant_id}}"
-            },
-            {
-              "user_condition": {
-                "data.approval_status": "approved"
-              }
-            },
-            {
-              "user_condition": {
-                "data.kotc_role": "super_admin"
-              }
-            }
-          ]
-        },
-        {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "user"
-              }
-            },
-            {
-              "data.tenant_id": "{{user.data.active_tenant_id}}"
-            },
-            {
-              "user_condition": {
-                "data.approval_status": "approved"
-              }
-            },
-            {
-              "user_condition": {
-                "data.kotc_role": "admin"
-              }
-            }
-          ]
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
