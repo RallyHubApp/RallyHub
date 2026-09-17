@@ -132,6 +132,9 @@ check('what-if: changeover is state-gated so it cannot replace the initial play 
 check('what-if: late arrival remains explicit', contains(participantFn,"'late_arrival'"));
 check('what-if: continue-short remains supported', contains(participantFn,"'continue_short'"));
 check('what-if: court/time change remains authoritative', contains(scheduleFn,'event_pack_stale'));
+check('what-if: court/time confirm gives immediate visible acknowledgement', contains(ui,'Applying court & time changes… command sent') && contains(ui,'data-testid="cc-schedule-change-status"'));
+check('what-if: court/time confirm blocks duplicate host taps', contains(ui,'eventDayAdjustmentBusy') && contains(ui,'sportingActionRef.current'));
+check('what-if: repeated schedule apply is server-idempotent after success', contains(scheduleFn,'alreadyApplied:true') && contains(scheduleFn,'sameEventSettings') && contains(scheduleFn,'changesAlreadyApplied'));
 check('what-if: finalisation blocks unresolved matches', contains(finaliseFn,'unresolved'));
 check('what-if: finalisation checks POT open state', contains(finaliseFn,'pot_status'));
 
