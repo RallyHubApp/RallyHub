@@ -92,6 +92,7 @@ export default function DirectoryListingEdit() {
   const [loadingAccess, setLoadingAccess] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoDraft, setLogoDraft] = useState(null);
   const [saved, setSaved] = useState(false);
   const [recentSessionId, setRecentSessionId] = useState('');
   const [sessionNotice, setSessionNotice] = useState('');
@@ -215,17 +216,65 @@ export default function DirectoryListingEdit() {
     window.location.assign(`${publicListingUrl}?refresh=${Date.now()}`);
   };
 
-  const uploadLogo = async file => {
+  useEffect(() => {
+    return () => {
+      if (logoDraft?.url) URL.revokeObjectURL(logoDraft.url);
+    };
+  }, [logoDraft?.url]);
+
+  const chooseLogo = file => {
     if (!file) return;
     if (!file.type?.startsWith('image/')) { setError('Please choose an image file for the club logo.'); return; }
     if (file.size > 5 * 1024 * 1024) { setError('Club logo must be 5 MB or smaller.'); return; }
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      setError('');
+      setLogoDraft({ file, url, width: image.naturalWidth, height: image.naturalHeight, zoom: 1, offsetX: 0, offsetY: 0 });
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      setError('RallyHub could not read that image. Please try a JPG, PNG or WebP file.');
+    };
+    image.src = url;
+  };
+
+  const cancelLogoEdit = () => setLogoDraft(null);
+  const resetLogoEdit = () => setLogoDraft(prev => prev ? { ...prev, zoom: 1, offsetX: 0, offsetY: 0 } : prev);
+
+  const uploadPositionedLogo = async () => {
+    if (!logoDraft) return;
     setUploadingLogo(true); setError(''); setSaved(false);
     try {
-      const uploadRes = await base44.functions.invoke('secureCreditAction', { action: 'upload_image', purpose: 'directory_logo', listingSlug: slug, file });
+      const image = new Image();
+      image.src = logoDraft.url;
+      await new Promise((resolve, reject) => {
+        if (image.complete && image.naturalWidth) return resolve();
+        image.onload = resolve;
+        image.onerror = () => reject(new Error('Could not prepare the logo image.'));
+      });
+      const size = 800;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+      const baseScale = Math.min((size * 0.88) / image.naturalWidth, (size * 0.88) / image.naturalHeight);
+      const scale = baseScale * logoDraft.zoom;
+      const drawWidth = image.naturalWidth * scale;
+      const drawHeight = image.naturalHeight * scale;
+      const drawX = (size - drawWidth) / 2 + (logoDraft.offsetX / 100) * (size / 2);
+      const drawY = (size - drawHeight) / 2 + (logoDraft.offsetY / 100) * (size / 2);
+      ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+      const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Could not prepare the logo image.')), 'image/webp', 0.9));
+      const positionedFile = new File([blob], `${slug}-logo.webp`, { type: blob.type || 'image/webp' });
+      const uploadRes = await base44.functions.invoke('secureCreditAction', { action: 'upload_image', purpose: 'directory_logo', listingSlug: slug, file: positionedFile });
       if (uploadRes.data?.error) throw new Error(uploadRes.data.error);
       const fileUrl = uploadRes.data?.file_url;
       if (!fileUrl) throw new Error('No file URL returned');
       setField('logoUrl', fileUrl);
+      setLogoDraft(null);
     } catch (err) {
       setError(err?.message || 'Could not upload the club logo.');
     } finally { setUploadingLogo(false); }
