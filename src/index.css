@@ -240,6 +240,23 @@ html {
   accent-color: hsl(var(--primary));
 }
 
+[data-theme="hall"] [data-rally-control="slider"] {
+  min-height: 2rem;
+}
+
+[data-theme="hall"] [data-rally-slider-track] {
+  height: 0.55rem;
+  background: hsl(var(--muted-foreground) / 0.32);
+}
+
+[data-theme="hall"] [data-rally-slider-thumb] {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-width: 3px;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--card));
+}
+
 [data-theme="hall"] button:focus-visible,
 [data-theme="hall"] [role="button"]:focus-visible,
 [data-theme="hall"] input:focus-visible,
