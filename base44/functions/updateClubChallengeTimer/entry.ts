@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
 
     if (action === 'start') {
       const currentRound = Number(event.current_round || 1);
-      const preparedPlaySeconds = phase === 'play' && current.phase === 'play' && Number(current.round || 0) === currentRound && !current.running && Number(current.remaining_seconds || 0) > 0
+      const preparedPlaySeconds = phase === 'play' && ['ready','play'].includes(String(current.phase || '')) && Number(current.round || 0) === currentRound && !current.running && Number(current.remaining_seconds || 0) > 0
         ? Number(current.remaining_seconds)
         : 0;
       const seconds = preparedPlaySeconds || (phase === 'play' ? Number(event.play_minutes || 10) * 60 : phase === 'changeover' ? Number(event.changeover_minutes || 2) * 60 : phase === 'break' ? Number(event.break_minutes || 20) * 60 : 0);
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       const value = Number(minutes);
       if (!Number.isInteger(value) || value < 1 || value > 60) return Response.json({ error: 'Round duration must be between 1 and 60 minutes.' }, { status: 400 });
       if (current.running) return Response.json({ error: 'Pause the timer before changing the round duration.' }, { status: 400 });
-      next = { phase: 'play', running: false, remaining_seconds: value * 60, started_at: null, round: Number(event.current_round || 1) };
+      next = { phase: 'ready', running: false, remaining_seconds: value * 60, started_at: null, round: Number(event.current_round || 1) };
     } else if (action === 'pause') {
       next = { ...current, running: false, remaining_seconds: remainingNow, started_at: null };
     } else if (action === 'resume') {
@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
     } else if (action === 'add_minute') {
       next = { ...current, running: !!current.running, remaining_seconds: remainingNow + 60, started_at: current.running ? now.toISOString() : null, phase: current.phase || 'play', round: Number(event.current_round || 1) };
     } else if (action === 'reset') {
-      next = { phase: 'idle', running: false, remaining_seconds: 0, started_at: null, round: Number(event.current_round || 1) };
+      next = { phase: 'ready', running: false, remaining_seconds: Number(event.play_minutes || 10) * 60, started_at: null, round: Number(event.current_round || 1) };
     } else {
       return Response.json({ error: 'Unknown timer action' }, { status: 400 });
     }
