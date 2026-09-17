@@ -30,6 +30,17 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.User.update(userId, { approval_status: status });
       return Response.json({ success: true, userId, status });
     }
+    if (body.action === 'set_kotc_role') {
+      const { userId, kotcRole } = body;
+      if (!userId || !['super_admin', 'admin', 'host', 'player'].includes(kotcRole)) {
+        return Response.json({ error: 'Valid userId and KOTC role required' }, { status: 400 });
+      }
+      const users = await base44.asServiceRole.entities.User.filter({ id: userId });
+      const target = users?.[0];
+      if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
+      await base44.asServiceRole.entities.User.update(userId, { kotc_role: kotcRole });
+      return Response.json({ success: true, userId, kotcRole });
+    }
     const { action } = body;
 
     // ── PROMOTE TO ADMIN ───────────────────────────────────────────────────────
