@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Menu, LogOut, UserCircle, LogIn } from 'lucide-react';
+import { Menu, LogOut, UserCircle, LogIn, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/AuthContext';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { AppearanceQuickButton, AppearanceSelector } from '@/components/appearance/AppearanceControls';
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -32,6 +33,9 @@ export default function AppLayout() {
 
           <div className="flex-1" />
 
+          <div className="flex items-center gap-2">
+            <AppearanceQuickButton />
+
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -52,6 +56,13 @@ export default function AppLayout() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-border" />
+                <div className="px-2 py-2" onClick={(event) => event.stopPropagation()}>
+                  <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+                    <Palette className="w-3.5 h-3.5" /> Appearance
+                  </p>
+                  <AppearanceSelector compact />
+                </div>
+                <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive flex items-center gap-2 cursor-pointer"
                   onClick={() => logout()}
@@ -65,6 +76,7 @@ export default function AppLayout() {
               <LogIn className="w-3.5 h-3.5" /> Sign In
             </Button>
           )}
+          </div>
         </header>
 
         <main className="p-3 sm:p-4 lg:p-6 min-w-0 overflow-x-hidden">
