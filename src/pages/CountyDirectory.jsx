@@ -124,7 +124,7 @@ export default function CountyDirectory() {
                   </div>
                   <div className="mt-auto pt-5 flex flex-wrap gap-2">
                     <Link to={`/directory/${club.slug}`} className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground">View club</Link>
-                    {club.verificationStatus !== 'verified' && <Link to={`/directory/${club.slug}/claim`} className="inline-flex h-9 items-center rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 text-sm font-semibold text-amber-200">Claim listing</Link>}
+                    {club.verificationStatus !== 'verified' && <Link to={`/directory/${club.slug}/claim`} className="inline-flex h-9 items-center rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 text-sm font-semibold text-amber-700 dark:text-amber-200">Claim listing</Link>}
                   </div>
                 </article>
               ))}
