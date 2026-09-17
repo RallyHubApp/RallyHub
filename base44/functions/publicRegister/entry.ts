@@ -1,31 +1,29 @@
-// publicRegister — handles both public registration AND public tournament management
-// (start round, save results, next round) via service role so no login required
+// Authenticated self-registration for legacy tournament registration links.
+// Privileged tournament management has been moved to legacyTournamentManager.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
+
+function clean(value:any, max = 200) {
+  return String(value ?? '').trim().slice(0, max);
+}
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized', auth_required: true }, { status: 401 });
 
-    let body;
-    try {
-      body = await req.json();
-    } catch {
-      return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const body = await req.json().catch(() => ({}));
+    const tournamentId = clean(body.tournamentId, 100);
+    if (!tournamentId) return Response.json({ error: 'Missing tournamentId' }, { status: 400 });
+
+    // Legacy privileged actions are intentionally unavailable from this endpoint.
+    if (body._managerProbe || ['update_kotc', 'start_kotc'].includes(body.action)) {
+      return Response.json({ error: 'Tournament management is not available from the registration endpoint.' }, { status: 410 });
     }
 
-    const { tournamentId, full_name, email, phone, _probe, _managerProbe, action, kotc_state, kotc_current_round, status, player_ids,
-            kotc_num_courts, kotc_num_rounds, kotc_score_format } = body;
-
-    if (!tournamentId) {
-      return Response.json({ error: 'Missing tournamentId' }, { status: 400 });
-    }
-
-    // Fetch tournament using service role (bypasses RLS for public access)
     const tournaments = await base44.asServiceRole.entities.Tournament.filter({ id: tournamentId });
-    const tournament = tournaments[0];
-    if (!tournament) {
-      return Response.json({ error: 'Tournament not found' }, { status: 404 });
-    }
+    const tournament = tournaments?.[0];
+    if (!tournament) return Response.json({ error: 'Tournament not found' }, { status: 404 });
 
     const tournamentInfo = {
       id: tournament.id,
@@ -33,96 +31,60 @@ Deno.serve(async (req) => {
       format: tournament.format,
       start_date: tournament.start_date,
       location: tournament.location,
-      player_count: tournament.player_ids?.length || 0,
+      player_count: Array.isArray(tournament.player_ids) ? tournament.player_ids.length : 0,
+      status: tournament.status,
     };
 
-    // Public probe may expose only the safe tournament summary above.
-    // Never return the raw tournament record or Player records here because this route is unauthenticated.
-    if (_probe) {
+    if (body._probe) {
       return Response.json({ success: true, tournament: tournamentInfo });
     }
 
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (tournament.status !== 'Registration Open') {
+      return Response.json({ error: 'Registration is not open for this event.' }, { status: 409 });
     }
 
-    if (user.role !== 'admin' && user.approval_status !== 'approved') {
-      return Response.json({ error: 'Forbidden: Approved account required' }, { status: 403 });
+    const currentIds = Array.isArray(tournament.player_ids) ? tournament.player_ids : [];
+    if (tournament.max_players && currentIds.length >= Number(tournament.max_players)) {
+      return Response.json({ error: 'This event is full.' }, { status: 409 });
     }
 
-    const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
-    const isKotcManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole);
-    const sameTenant = user.role === 'admin' || (!!tournament.tenant_id && tournament.tenant_id === user.active_tenant_id);
+    const authEmail = clean(user.email, 200).toLowerCase();
+    const authName = clean(user.full_name || user.display_name || authEmail.split('@')[0] || 'Player', 120);
+    if (!authEmail) return Response.json({ error: 'Your RallyHub account needs an email address to register.' }, { status: 400 });
 
-    // Every authenticated mutation is tenant-bound. The service role below may bypass
-    // entity RLS, so this explicit ownership check must happen before registration or management.
-    if (!sameTenant) {
-      return Response.json({ error: 'Forbidden: Tournament belongs to another tenant' }, { status: 403 });
-    }
+    let player:any = null;
+    const linked = await base44.asServiceRole.entities.Player.filter({
+      tenant_id: tournament.tenant_id,
+      user_id: user.id,
+    });
+    player = linked?.[0] || null;
 
-    if (_managerProbe) {
-      if (!isKotcManager || !sameTenant) {
-        return Response.json({ error: 'Forbidden: Host access required' }, { status: 403 });
-      }
-      const playerIds = tournament.player_ids || [];
-      let players = [];
-      if (playerIds.length > 0) {
-        const tenantPlayers = await base44.asServiceRole.entities.Player.filter({ tenant_id: tournament.tenant_id });
-        players = tenantPlayers
-          .filter(p => playerIds.includes(p.id))
-          .map(p => ({ id: p.id, full_name: p.full_name, skill_rating: p.skill_rating, avatar_url: p.avatar_url }));
-      }
-      return Response.json({ success: true, tournament, players });
-    }
-
-    // Update tournament state (KOTC manager roles only)
-    if (action === 'update_kotc' || action === 'start_kotc') {
-      if (!isKotcManager || !sameTenant) {
-        return Response.json({ error: 'Forbidden: Host access required' }, { status: 403 });
-      }
-
-      const updateData = {};
-      if (kotc_state !== undefined) updateData.kotc_state = kotc_state;
-      if (kotc_current_round !== undefined) updateData.kotc_current_round = kotc_current_round;
-      if (status !== undefined) updateData.status = status;
-      if (player_ids !== undefined) updateData.player_ids = player_ids;
-      if (kotc_num_courts !== undefined) updateData.kotc_num_courts = kotc_num_courts;
-      if (kotc_num_rounds !== undefined) updateData.kotc_num_rounds = kotc_num_rounds;
-      if (kotc_score_format !== undefined) updateData.kotc_score_format = kotc_score_format;
-      await base44.asServiceRole.entities.Tournament.update(tournamentId, updateData);
-      return Response.json({ success: true });
-    }
-
-    if (!full_name?.trim()) {
-      return Response.json({ error: 'Missing full_name' }, { status: 400 });
-    }
-
-    // Find or create player
-    let player = null;
-    if (email?.trim()) {
-      const existing = await base44.asServiceRole.entities.Player.filter({
-        email: email.trim().toLowerCase(),
+    if (!player) {
+      const exactEmail = await base44.asServiceRole.entities.Player.filter({
         tenant_id: tournament.tenant_id,
+        email: authEmail,
       });
-      player = existing[0] || null;
+      player = exactEmail?.[0] || null;
     }
 
     if (!player) {
       player = await base44.asServiceRole.entities.Player.create({
-        full_name: full_name.trim(),
-        email: email?.trim().toLowerCase() || undefined,
-        phone: phone?.trim() || undefined,
+        full_name: authName,
+        email: authEmail,
+        phone: clean(body.phone, 50) || undefined,
+        user_id: user.id,
+        linked_user_email: authEmail,
         status: 'Active',
         tenant_id: tournament.tenant_id,
         club_id: tournament.host_club_id || undefined,
+        relationship_type: 'guest',
+        relationship_status: 'active',
       });
     }
 
-    // Add to tournament if not already registered
-    const alreadyIn = tournament.player_ids?.includes(player.id);
+    const alreadyIn = currentIds.includes(player.id);
     if (!alreadyIn) {
-      const newIds = [...(tournament.player_ids || []), player.id];
+      const newIds = [...currentIds, player.id];
       await base44.asServiceRole.entities.Tournament.update(tournament.id, { player_ids: newIds });
     }
 
@@ -131,9 +93,8 @@ Deno.serve(async (req) => {
       alreadyRegistered: alreadyIn,
       tournament: { ...tournamentInfo, player_count: tournamentInfo.player_count + (alreadyIn ? 0 : 1) },
     });
-
   } catch (error) {
-    console.error('publicRegister error:', error?.message, error?.stack);
-    return Response.json({ error: error.message || 'Internal error' }, { status: 500 });
+    console.error('publicRegister error', error?.message || error);
+    return Response.json({ error: 'Unable to register for this event right now.' }, { status: 500 });
   }
 });
