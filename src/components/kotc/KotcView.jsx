@@ -73,7 +73,12 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
               {tournament.location ? ` · ${tournament.location}` : ''}
             </p>
           </div>
-          {hasSession && <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">CURRENT SESSION</span>}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {!hasSession && canManagePlayers && !isSandbox && <Button data-testid="kotc-setup-roster" variant="outline" size="sm" onClick={() => setRosterOpen(v => !v)}>
+              <Users className="w-3.5 h-3.5 mr-1" /> Roster
+            </Button>}
+            {hasSession && <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">CURRENT SESSION</span>}
+          </div>
         </div>
       </GlassCard>
 
@@ -94,7 +99,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
               </Button>}
               {canManagePlayers && !isSandbox && <Button variant="outline" size="sm" onClick={() => setRosterOpen(v => !v)}>
                 {rosterOpen ? <ChevronUp className="w-3 h-3 mr-1" /> : <ChevronDown className="w-3 h-3 mr-1" />}
-                Roster tools
+                Roster
               </Button>}
             </div>
           </div>
