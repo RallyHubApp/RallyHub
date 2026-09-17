@@ -41,9 +41,24 @@ Deno.serve(async (req) => {
     const unresolved = normal.filter((m:any) => Number(m.round_number) === previousRound && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status));
     if (round > Number(event.current_round || 0) && unresolved.length) return Response.json({ error: `${unresolved.length} result(s) still unresolved in Round ${previousRound}` }, { status: 409 });
 
-    const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { current_round: round });
-    await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'round_advanced', user_id:user.id, occurred_at:new Date().toISOString(), old_value_json:JSON.stringify({current_round:event.current_round}), new_value_json:JSON.stringify({current_round:round}) });
-    return Response.json({ success:true, event:updated });
+    const nextTimer = { phase:'ready', running:false, remaining_seconds:Number(event.play_minutes || 10) * 60, started_at:null, round };
+    const nextTimerRevision = Number(event.timer_revision || 0) + 1;
+    const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
+      current_round: round,
+      status: 'in_progress',
+      timer_state_json: JSON.stringify(nextTimer),
+      timer_revision: nextTimerRevision,
+    });
+    await base44.asServiceRole.entities.ClubChallengeAudit.create({
+      tenant_id:event.tenant_id,
+      challenge_event_id:event.id,
+      action:'round_advanced',
+      user_id:user.id,
+      occurred_at:new Date().toISOString(),
+      old_value_json:JSON.stringify({current_round:event.current_round,status:event.status,timer_state_json:event.timer_state_json || ''}),
+      new_value_json:JSON.stringify({current_round:round,status:'in_progress',timer_state:nextTimer,timer_revision:nextTimerRevision}),
+    });
+    return Response.json({ success:true, event:updated, timer_state:nextTimer, timer_revision:nextTimerRevision });
   } catch (error) {
     return Response.json({ error:error?.message || 'Unexpected round update error' }, { status:500 });
   }
