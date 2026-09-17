@@ -157,6 +157,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [lateArrival, setLateArrival] = useState({ participantId: '', round: 1 });
   const [eventDayAdjust, setEventDayAdjust] = useState({ courts: 0, availableMinutes: 0 });
   const [eventDayProposal, setEventDayProposal] = useState(null);
+  const [eventDayAdjustmentBusy, setEventDayAdjustmentBusy] = useState(false);
+  const [eventDayAdjustmentStatus, setEventDayAdjustmentStatus] = useState(null);
   const [networkOnline, setNetworkOnline] = useState(() => navigator.onLine);
   const [pendingScores, setPendingScores] = useState(() => { try { return JSON.parse(localStorage.getItem(`cc-pending-${tournament.id}`) || '[]'); } catch { return []; } });
   const [timerNow, setTimerNow] = useState(Date.now());
@@ -961,6 +963,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     }
   };
   const proposeEventDayAdjustment = () => {
+    setEventDayAdjustmentStatus(null);
     const courts = Number(eventDayAdjust.courts || event?.courts || 0), minutes = Number(eventDayAdjust.availableMinutes || event?.available_minutes || 0);
     if (!courts || !minutes || !rounds.length) { toast.error('Enter available courts and remaining event minutes.'); return; }
     const unresolved = normalMatches.filter(m => m.round_number >= currentRound && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status)).sort((a,b)=>(a.round_number-b.round_number)||(a.court_number-b.court_number));
@@ -972,21 +975,38 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     toast.info(`${keep.length} future matches fit; ${drop.length} would be marked Not Played. Review before confirming.`);
   };
   const confirmEventDayAdjustment = async () => {
-    if (!eventDayProposal || !canManageEvent) return;
+    if (!eventDayProposal || !canManageEvent || eventDayAdjustmentBusy || sportingActionRef.current) return;
+    const proposal = eventDayProposal;
+    sportingActionRef.current = true;
+    setEventDayAdjustmentBusy(true);
+    setEventDayAdjustmentStatus({ state:'working', text:`Applying court & time changes… ${proposal.changes.length} fixture move${proposal.changes.length === 1 ? '' : 's'}, ${proposal.dropIds.length} Not Played.` });
+    setHostAction('Applying court & time changes… command sent');
     try {
       const res = await base44.functions.invoke('updateClubChallengeSchedule', {
         eventId: event.id,
-        courts: eventDayProposal.courts,
-        availableMinutes: eventDayProposal.minutes,
-        changes: eventDayProposal.changes,
-        dropIds: eventDayProposal.dropIds,
+        courts: proposal.courts,
+        availableMinutes: proposal.minutes,
+        changes: proposal.changes,
+        dropIds: proposal.dropIds,
       });
-      if (res.data?.error) { toast.error(res.data.error); return; }
-      toast.success(`Schedule adjusted: ${eventDayProposal.changes.length} future fixture positions changed; ${eventDayProposal.dropIds.length} marked Not Played.`);
+      if (res.data?.error) throw new Error(res.data.error);
+      const changed = Number(res.data?.changed ?? proposal.changes.length);
+      const dropped = Number(res.data?.dropped ?? proposal.dropIds.length);
+      const message = res.data?.alreadyApplied
+        ? 'These court & time changes were already applied. No duplicate schedule change was made.'
+        : `Schedule updated: ${changed} future fixture position${changed === 1 ? '' : 's'} changed; ${dropped} marked Not Played. Event Pack marked out of date.`;
+      setEventDayAdjustmentStatus({ state:'success', text:message });
+      toast.success(message);
       setEventDayProposal(null);
       await sync();
     } catch (e) {
-      toast.error(e?.response?.data?.error || e?.message || 'Could not confirm schedule adjustment');
+      const message = e?.response?.data?.error || e?.message || 'Could not confirm schedule adjustment';
+      setEventDayAdjustmentStatus({ state:'error', text:message });
+      toast.error(message);
+    } finally {
+      sportingActionRef.current = false;
+      setEventDayAdjustmentBusy(false);
+      setHostAction('');
     }
   };
 
