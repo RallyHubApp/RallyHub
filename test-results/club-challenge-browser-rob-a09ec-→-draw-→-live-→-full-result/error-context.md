@@ -12,108 +12,210 @@
 # Error details
 
 ```
-Test timeout of 45000ms exceeded.
-```
+Error: expect(locator).toBeVisible() failed
 
-```
-Error: locator.click: Test timeout of 45000ms exceeded.
+Locator: getByText('On Court Now')
+Expected: visible
+Timeout: 3000ms
+Error: element(s) not found
+
 Call log:
-  - waiting for getByTestId('cc-tab-simulator')
+  - Expect "toBeVisible" getByText('On Court Now') with timeout 3000ms
+  - waiting for getByText('On Court Now')
 
 ```
-
-# Page snapshot
 
 ```yaml
-- generic [ref=e2]:
-  - main [ref=e3]:
-    - generic [ref=e4]:
-      - generic [ref=e5]:
-        - generic [ref=e6]:
-          - paragraph [ref=e7]: RallyHub Interclub · Hall Display
-          - heading "Clare Pickleball Club 8 – 0 Galway Pickleball" [level=1] [ref=e8]:
-            - text: Clare Pickleball Club
-            - generic [ref=e9]: 8 – 0
-            - text: Galway Pickleball
-        - button "Exit Display" [ref=e10] [cursor=pointer]
-      - generic [ref=e11]:
-        - paragraph [ref=e12]: Round 2 · ready
-        - paragraph [ref=e13]: 10:00
-      - generic [ref=e14]:
-        - heading "On Court Now" [level=2] [ref=e15]
-        - generic [ref=e16]:
-          - generic [ref=e17]:
-            - paragraph [ref=e18]: Court 1
-            - paragraph [ref=e19]: Club A Test 09 & Club A Test 10
-            - paragraph [ref=e20]: vs
-            - paragraph [ref=e21]: Club B Test 09 & Club B Test 10
-          - generic [ref=e22]:
-            - paragraph [ref=e23]: Court 2
-            - paragraph [ref=e24]: Club A Test 11 & Club A Test 12
-            - paragraph [ref=e25]: vs
-            - paragraph [ref=e26]: Club B Test 11 & Club B Test 12
-          - generic [ref=e27]:
-            - paragraph [ref=e28]: Court 3
-            - paragraph [ref=e29]: Club A Test 13 & Club A Test 14
-            - paragraph [ref=e30]: vs
-            - paragraph [ref=e31]: Club B Test 13 & Club B Test 14
-      - generic [ref=e32]:
-        - heading "Resting This Round" [level=2] [ref=e33]
-        - generic [ref=e34]:
-          - generic [ref=e35]: Club B Test 01
-          - generic [ref=e36]: Replacement Test
-          - generic [ref=e37]: Club A Test 01
-          - generic [ref=e38]: Club B Test 02
-          - generic [ref=e39]: Club A Test 03
-          - generic [ref=e40]: Club B Test 03
-          - generic [ref=e41]: Club A Test 04
-          - generic [ref=e42]: Club B Test 04
-          - generic [ref=e43]: Club A Test 05
-          - generic [ref=e44]: Club B Test 05
-          - generic [ref=e45]: Club A Test 06
-          - generic [ref=e46]: Club B Test 06
-          - generic [ref=e47]: Club A Test 07
-          - generic [ref=e48]: Club B Test 07
-          - generic [ref=e49]: Club A Test 08
-          - generic [ref=e50]: Club B Test 08
-          - generic [ref=e51]: Club A Test 15
-          - generic [ref=e52]: Club B Test 15
-          - generic [ref=e53]: Club A Test 16
-          - generic [ref=e54]: Club B Test 16
-      - generic [ref=e55]:
-        - heading "Up Next" [level=2] [ref=e56]
-        - generic [ref=e57]:
-          - generic [ref=e58]:
-            - paragraph [ref=e59]: Court 1
-            - paragraph [ref=e60]: Club A Test 15 & Club A Test 16 vs Club B Test 15 & Club B Test 16
-          - generic [ref=e61]:
-            - paragraph [ref=e62]: Court 2
-            - paragraph [ref=e63]: Replacement Test & Club A Test 03 vs Club B Test 05 & Club B Test 07
-          - generic [ref=e64]:
-            - paragraph [ref=e65]: Court 3
-            - paragraph [ref=e66]: Club A Test 01 & Club A Test 04 vs Club B Test 06 & Club B Test 08
-      - paragraph [ref=e67]: Read-only display · no email, phone or private participant information
-  - region "Notifications alt+T":
-    - list:
-      - listitem [active] [ref=e68]:
-        - generic [ref=e72]: "Schedule updated: 41 future fixture positions changed; 0 marked Not Played. Event Pack marked out of date."
-      - listitem [ref=e74]:
-        - generic [ref=e78]: 44 future matches fit; 0 would be marked Not Played. Review before confirming.
-      - listitem [ref=e80]:
-        - generic [ref=e84]: Round 2 ready · 4 courts · 16 players resting
-      - listitem:
-        - generic: Score saved
-      - listitem:
-        - generic: Score saved
-      - listitem:
-        - generic: Score saved
-      - listitem:
-        - generic: Club A Test 02 replaced by Replacement Test from Round 1. 5 future fixtures updated; completed results unchanged.
+- main:
+  - img
+  - paragraph: RallyHub Interclub
+  - paragraph: "Interclub Challenge · Status: in progress"
+  - text: CL Clare Pickleball Club vs GA Galway Pickleball
+  - button "Hall Display"
+  - button "Public Links / QR"
+  - button "Print Event Pack · OUT OF DATE"
+  - button "Setup":
+    - img
+    - text: Setup
+  - button "Teams":
+    - img
+    - text: Teams
+  - button "Draw":
+    - img
+    - text: Draw
+  - button "4 Live Event"
+  - button "5 Simulator"
+  - button "6 Results"
+  - text: Round 2/16 10:00
+  - strong: 0/3
+  - text: scores saved
+  - button "PA":
+    - img
+    - text: PA
+  - button "Players":
+    - img
+    - text: Players
+  - button "3 scores to save" [disabled]
+  - paragraph: Live Event
+  - paragraph: Round 2 of 16
+  - paragraph: Clare Pickleball Club 8 – 0 Galway Pickleball
+  - text: 4W 0D 0W
+  - paragraph: Round at a Glance
+  - paragraph: On court, resting and up next — all in one place.
+  - text: R2
+  - paragraph: Court 1 · NOW
+  - paragraph: Club A Test 09 & Club A Test 10
+  - paragraph: vs
+  - paragraph: Club B Test 09 & Club B Test 10
+  - paragraph: Court 2 · NOW
+  - paragraph: Club A Test 11 & Club A Test 12
+  - paragraph: vs
+  - paragraph: Club B Test 11 & Club B Test 12
+  - paragraph: Court 3 · NOW
+  - paragraph: Club A Test 13 & Club A Test 14
+  - paragraph: vs
+  - paragraph: Club B Test 13 & Club B Test 14
+  - paragraph: Resting this round
+  - paragraph: Clare Pickleball Club
+  - text: Replacement Test Club A Test 01 Club A Test 03 Club A Test 04 Club A Test 05 Club A Test 06 Club A Test 07 Club A Test 08 Club A Test 15 Club A Test 16
+  - paragraph: Galway Pickleball
+  - text: Club B Test 01 Club B Test 02 Club B Test 03 Club B Test 04 Club B Test 05 Club B Test 06 Club B Test 07 Club B Test 08 Club B Test 15 Club B Test 16
+  - paragraph: Up next · Round 3
+  - paragraph: Court 1 · NEXT
+  - paragraph: Club A Test 15 & Club A Test 16
+  - paragraph: vs
+  - paragraph: Club B Test 15 & Club B Test 16
+  - paragraph: Court 2 · NEXT
+  - paragraph: Replacement Test & Club A Test 03
+  - paragraph: vs
+  - paragraph: Club B Test 05 & Club B Test 07
+  - paragraph: Court 3 · NEXT
+  - paragraph: Club A Test 01 & Club A Test 04
+  - paragraph: vs
+  - paragraph: Club B Test 06 & Club B Test 08
+  - paragraph: Round Timer
+  - paragraph: Round 2 of 16
+  - text: ready
+  - paragraph: 10:00
+  - paragraph: This round
+  - paragraph: Adjust before play or while paused.
+  - button "Reduce this round by one minute":
+    - img
+  - paragraph: 10:00
+  - button "Add one minute to this round":
+    - img
+  - button "Start Play":
+    - img
+    - text: Start Play
+  - button "Changeover" [disabled]
+  - button "+1 minute" [disabled]
+  - group: Round options
+  - paragraph: Round 2 Scores
+  - paragraph: Enter each court result as it comes in — you do not need to wait for the timer to finish.
+  - text: 0/3 saved Court 1 R2
+  - paragraph: Clare Pickleball Club
+  - paragraph: Club A Test 09 & Club A Test 10
+  - textbox "Clare Pickleball Club score"
+  - paragraph: Galway Pickleball
+  - paragraph: Club B Test 09 & Club B Test 10
+  - textbox "Galway Pickleball score"
+  - button "Save Result" [disabled]
+  - text: Court 2 R2
+  - paragraph: Clare Pickleball Club
+  - paragraph: Club A Test 11 & Club A Test 12
+  - textbox "Clare Pickleball Club score"
+  - paragraph: Galway Pickleball
+  - paragraph: Club B Test 11 & Club B Test 12
+  - textbox "Galway Pickleball score"
+  - button "Save Result" [disabled]
+  - text: Court 3 R2
+  - paragraph: Clare Pickleball Club
+  - paragraph: Club A Test 13 & Club A Test 14
+  - textbox "Clare Pickleball Club score"
+  - paragraph: Galway Pickleball
+  - paragraph: Club B Test 13 & Club B Test 14
+  - textbox "Galway Pickleball score"
+  - button "Save Result" [disabled]
+  - button "Save all 3 results to complete Round 2" [disabled]
+  - group:
+    - paragraph: PA & Announcements
+    - paragraph: Open only when you need the microphone or an announcement.
+    - text: AUDIO READY
+    - img
+  - group:
+    - paragraph: Player Controls
+    - paragraph: Injury, withdrawal, replacement or late arrival.
+    - img
+    - paragraph: Replace / Withdraw a Player
+    - paragraph: Completed results stay unchanged. RallyHub updates future unplayed fixtures only.
+    - text: Player leaving
+    - combobox: Choose player
+    - text: Registered reserve / available player
+    - combobox [disabled]: Type a replacement manually
+    - text: Replacement name
+    - textbox "Name"
+    - text: Reason
+    - combobox: Withdrawn / unavailable
+    - text: Gender
+    - combobox: Inherit outgoing player
+    - text: Note
+    - textbox "Optional note"
+    - button "Replace from Round 2" [disabled]
+    - button "Continue Short · No Replacement" [disabled]
+    - text: Club A Test 02 replaced by Replacement Test from Round 1. 5 future fixtures updated; completed results unchanged.
+    - paragraph: Late Arrival
+    - paragraph: Set the first round a player is available. RallyHub will flag that the remaining draw may need review.
+    - combobox: Player
+    - spinbutton: "1"
+    - button "Set Round" [disabled]
+  - group:
+    - paragraph: Court & Time Changes
+    - paragraph: Use this if you lose or gain a court, or if less event time remains than planned.
+    - img
+    - paragraph: Preview the impact before changing anything
+    - paragraph: Enter the courts actually available now and the minutes remaining. RallyHub will show how many future matches still fit, which matches would move, and whether any would have to be marked Not Played. Completed results are never changed.
+    - text: Courts available now
+    - spinbutton "3"
+    - text: Minutes remaining
+    - spinbutton "e.g. 60": "180"
+    - button "Preview Impact"
+    - text: "Schedule updated: 41 future fixture positions changed; 0 marked Not Played. Event Pack marked out of date."
+- region "Notifications alt+T":
+  - list:
+    - listitem:
+      - img
+      - text: "Schedule updated: 41 future fixture positions changed; 0 marked Not Played. Event Pack marked out of date."
+    - listitem:
+      - img
+      - text: 44 future matches fit; 0 would be marked Not Played. Review before confirming.
+    - listitem:
+      - img
+      - text: Round 2 ready · 4 courts · 16 players resting
+    - listitem:
+      - img
+      - text: Score saved
+    - listitem:
+      - img
+      - text: Score saved
+    - listitem:
+      - img
+      - text: Score saved
+    - listitem:
+      - img
+      - text: Club A Test 02 replaced by Replacement Test from Round 1. 5 future fixtures updated; completed results unchanged.
+    - listitem:
+      - img
+      - text: Score saved
+    - listitem:
+      - img
+      - text: Interclub Challenge started
 ```
 
 # Test source
 
 ```ts
+  178 |     }
+  179 |     if (name === 'castClubChallengePotVote') {
   180 |       await sleep(180); if(body.voterParticipantId===body.nomineeParticipantId)return {error:'Players cannot vote for themselves.'};if(model.votes.some(v=>v.voter_participant_id===body.voterParticipantId&&v.valid!==false))return {error:'This player has already voted.'};const v={id:id('vote'),tenant_id:model.event.tenant_id,challenge_event_id:model.event.id,voter_identity_key:`participant:${body.voterParticipantId}`,voter_participant_id:body.voterParticipantId,nominee_participant_id:body.nomineeParticipantId,access_route:'logged_in',cast_at:now(),valid:true};model.votes.push(v);return {success:true,vote:v};
   181 |     }
   182 | 
@@ -212,10 +314,10 @@ Call log:
   275 | 
   276 |   await page.locator('#cc-court-time-controls > summary').click();await page.getByTestId('cc-courts-now').fill('3');await page.getByTestId('cc-minutes-remaining').fill('180');await page.getByTestId('cc-preview-schedule-change').click();await expect(page.getByText(/Proposed change:.*0 would be marked Not Played/)).toBeVisible();const scheduleBefore=model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length;started=Date.now();await page.getByTestId('cc-confirm-schedule-change').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Applying court & time changes… command sent')).toBeVisible({timeout:300});metric(report,'schedule_change_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-schedule-change-status')).toContainText('Schedule updated:',{timeout:1800});expect(model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length-scheduleBefore).toBe(1);expect(model.event.courts).toBe(3);expect(model.event.event_pack_stale).toBe(true);report.schedule_change_double_tap_calls=1;
   277 | 
-  278 |   await page.getByRole('button',{name:'Hall Display'}).click({force:true});await expect(page.getByText('On Court Now')).toBeVisible();await expect(page.getByText('Resting This Round')).toBeVisible();await expect(page.getByText('Up Next')).toBeVisible();await expect(page.getByRole('button',{name:'Exit Display'})).toBeVisible();report.internal_hall_display=true;await page.getByRole('button',{name:'Exit Display'}).click({force:true});
+> 278 |   await page.getByRole('button',{name:'Hall Display'}).click({force:true});await expect(page.getByText('On Court Now')).toBeVisible();await expect(page.getByText('Resting This Round')).toBeVisible();await expect(page.getByText('Up Next')).toBeVisible();await expect(page.getByRole('button',{name:'Exit Display'})).toBeVisible();report.internal_hall_display=true;await page.getByRole('button',{name:'Exit Display'}).evaluate(el=>el.click());await expect(page.getByTestId('cc-tab-simulator')).toBeVisible({timeout:1500});
+      |                                                                                                                         ^ Error: expect(locator).toBeVisible() failed
   279 | 
-> 280 |   await page.getByTestId('cc-tab-simulator').click();await expect(page.getByTestId('cc-populate-full')).toBeVisible();
-      |                                              ^ Error: locator.click: Test timeout of 45000ms exceeded.
+  280 |   await page.getByTestId('cc-tab-simulator').click();await expect(page.getByTestId('cc-populate-full')).toBeVisible();
   281 |   const populateBefore=model.calls.filter(c=>c.name==='populateClubChallengePracticeScenario').length;started=Date.now();await page.getByTestId('cc-populate-full').click();await expect(page.getByText('Populating full TEST MODE event… one server command sent')).toBeVisible({timeout:300});metric(report,'full_test_ack_ms',Date.now()-started,250);await expect(page.getByText('Final Result')).toBeVisible({timeout:2200});metric(report,'full_test_to_results_ms',Date.now()-started,2000);expect(model.calls.filter(c=>c.name==='populateClubChallengePracticeScenario').length-populateBefore).toBe(1);expect(model.matches.filter(m=>!m.is_showcase&&m.status==='completed').length).toBe(48);expect(model.matches.filter(m=>m.is_showcase&&m.status==='completed').length).toBe(1);expect(model.votes.length).toBe(8);report.full_population_browser_calls=1;
   282 |   await expect(page.getByText('Player of the Tournament',{exact:true}).first()).toBeVisible();await expect(page.getByText('Club A Test 01',{exact:true}).first()).toBeVisible();await expectNoHorizontalOverflow(page);
   283 | 
