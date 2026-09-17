@@ -57,7 +57,6 @@ export default function Dashboard() {
     const d = new Date(m.scheduled_time).toDateString();
     return d === new Date().toDateString();
   });
-  const recentMatches = matches.filter(m => m.status === 'Completed').slice(0, 5);
   // Do not manufacture a 3.0 skill rating for unrated members. Until RallyHub has
   // verified DUPR data, the dashboard shows a neutral club roster preview rather
   // than presenting legacy/default skill values as a ranking.
@@ -112,7 +111,7 @@ export default function Dashboard() {
         <StatCard title="DUPR Rated" value={players.filter(p => p.dupr_rating != null).length} icon={Crown} delay={0.3} accentColor="chart-4" />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6">
         {/* Club roster preview — not a rating leaderboard until genuine DUPR is connected */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
@@ -135,37 +134,6 @@ export default function Dashboard() {
                 </div>
                 {player.dupr_rating != null && <span className="text-sm font-bold font-mono text-primary">DUPR {Number(player.dupr_rating).toFixed(2)}</span>}
               </Link>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Recent Results */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-foreground">Recent Results</h3>
-            <Link to="/app/matches" className="text-xs text-primary hover:underline flex items-center gap-1">
-              View all <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {recentMatches.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No matches yet</p>}
-            {recentMatches.map(match => (
-              <div key={match.id} className="glass rounded-lg p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-foreground truncate">{match.team1_names || 'Team 1'}</p>
-                    <p className="text-xs text-muted-foreground truncate">vs {match.team2_names || 'Team 2'}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-mono font-bold text-foreground">
-                      {match.scores?.map(s => `${s.team1}-${s.team2}`).join(', ') || '—'}
-                    </p>
-                    <Badge className="text-[10px] bg-primary/20 text-primary mt-1">
-                      {match.winner_team === 'team1' ? match.team1_names : match.team2_names}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
             ))}
           </div>
         </motion.div>
