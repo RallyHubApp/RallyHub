@@ -22,6 +22,42 @@ Call log:
 
 ```
 
+# Page snapshot
+
+```yaml
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - heading "RallyHub appearance test" [level=1] [ref=e6]
+      - button "Current appearance Dark. Change appearance." [ref=e7] [cursor=pointer]:
+        - generic [ref=e8]: Dark
+    - generic [ref=e9]:
+      - button "Auto" [ref=e10] [cursor=pointer]
+      - button "Light" [ref=e22] [cursor=pointer]
+      - button "Hall" [ref=e29] [cursor=pointer]
+      - button "Dark" [pressed] [ref=e33] [cursor=pointer]
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - text: Score / number control
+          - spinbutton "Score / number control" [ref=e39]: "11"
+        - generic [ref=e40]:
+          - text: Dropdown
+          - combobox "Test dropdown" [ref=e41] [cursor=pointer]:
+            - generic: Court one
+      - generic [ref=e44]:
+        - checkbox "Test checkbox" [checked] [ref=e45] [cursor=pointer]
+        - generic [ref=e46]: Visible checkbox
+      - generic [ref=e47]:
+        - text: Hall volume slider
+        - generic "Test slider" [ref=e48]:
+          - slider [ref=e52]
+      - generic [ref=e53]:
+        - button "Primary action" [ref=e54] [cursor=pointer]
+        - button "Secondary action" [ref=e55] [cursor=pointer]
+        - button "Destructive action" [ref=e56] [cursor=pointer]
+```
+
 # Test source
 
 ```ts
