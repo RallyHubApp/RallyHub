@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  LayoutDashboard, Users, Trophy, Swords, Crown, 
+  LayoutDashboard, Users, Trophy, Crown, 
   BarChart3, X, ChevronRight, UserCircle, Shield, MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,8 +17,7 @@ const navItems = [
   { path: '/app', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/app/players', label: 'Players', icon: Users },
   { path: '/app/tournaments', label: 'Tournaments', icon: Trophy },
-  { path: '/app/matches', label: 'Match Center', icon: Swords },
-  { path: '/app/leaderboard', label: 'Leaderboard', icon: Crown },
+  { path: '/app/leaderboard', label: 'KOTC Leaderboard', icon: Crown },
   { path: '/app/analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
