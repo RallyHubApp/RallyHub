@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 import { generateNextRound, generateRound1, createKotcState, computeKotcLeaderboard } from '@/lib/kingOfCourtEngine';
 import KotcRotationSummary from '@/components/kotc/KotcRotationSummary';
 import RoundTimer from '@/components/kotc/RoundTimer';
+import { base44 } from '@/api/base44Client';
 
 const SCORE_FORMATS = [
   { value: 'timed_8', label: '8-min rounds', icon: Clock, desc: '8 min play + 2 min rest' },
@@ -367,13 +368,19 @@ export default function PublicTournament() {
   const lastRoundRef = useRef(null);
 
   const callPublicRegister = useCallback(async (payload) => {
-    const baseUrl = (import.meta.env.VITE_BASE44_APP_BASE_URL || '').replace(/\/$/, '');
-    const res = await fetch(`${baseUrl}/api/functions/publicRegister`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    return res.json();
+    try {
+      const managerPayload = { ...payload };
+      if (managerPayload._managerProbe) {
+        delete managerPayload._managerProbe;
+        managerPayload.action = 'get_state';
+      } else if (!managerPayload.action && managerPayload.full_name) {
+        managerPayload.action = 'register_player';
+      }
+      const res = await base44.functions.invoke('legacyTournamentManager', managerPayload);
+      return res.data || {};
+    } catch (error) {
+      return { error: error?.response?.data?.error || error?.message || 'Tournament request failed' };
+    }
   }, []);
 
   const fetchTournament = useCallback(async (silent = false) => {
