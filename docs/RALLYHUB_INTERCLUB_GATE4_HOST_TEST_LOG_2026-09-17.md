@@ -38,7 +38,7 @@ Every issue found during the manual Gate 4 host test is recorded here. A finding
 | Replacement control feedback | Clicking Replace from Round 3 appeared to do nothing | Immediate command acknowledgement, Applying state, duplicate-tap protection and persistent success/error message added | FIXED — PHYSICAL RETEST REQUIRED |
 | Replacement sporting action | Manual injury replacement of Club A Test 01 with Brian Moore | Backend data check confirmed the action actually succeeded: outgoing player marked injured; replacement effective from Round 3; completed Round 1 stayed unchanged; future Round 3/5/7/9/11 fixtures changed | BACKEND VERIFIED |
 | Replacement future-only rule | Completed history must not be rewritten | Backend implementation filters terminal matches and changes future unresolved fixtures only; browser journey assertion added | VERIFIED IN DATA + AUTOMATED TEST |
-| Practice/Test Mode after a replacement | Replacing a dummy player could make the event stop being recognised as a Gate 3 practice event | Practice-event detection now accepts replacement descendants of the original dummy roster, client and server side | FIXED — automated retest required |
+| Practice/Test Mode after a replacement | Replacing a dummy player could make the event stop being recognised as a Gate 3 practice event | Practice-event detection now accepts replacement descendants of the original dummy roster, client and server side | FIXED — browser host robot PASS |
 | Player Controls discoverability | Injury/replacement controls were hidden under vague Event Changes wording | Separate Player Controls panel created | FIXED + retested |
 | Reserve replacement | Prefer registered reserve/available player before manual typing | Same-club unused registered candidates offered first; manual replacement remains fallback | IMPLEMENTED; real reserve case still to test |
 | Continue Short | Host can withdraw/injure player with no replacement | Existing server path retained; now has visible working/success/error feedback and duplicate-tap protection | PHYSICAL TEST PENDING |
@@ -52,7 +52,8 @@ Every issue found during the manual Gate 4 host test is recorded here. A finding
 
 - Interaction robot covers sporting baseline, host/scorer permissions, two-digit scores, pinned host bar, PA, replacement/withdrawal/late-arrival presence, finalisation and public voting.
 - Browser host robot now explicitly checks the pinned Host Bar by scrolling the page.
-- Browser host journey is being extended to check replacement acknowledgement/future-only behaviour and fresh Ready timer state on round transition.
+- Browser host journey now checks replacement acknowledgement, future-only replacement behaviour, initial Ready timer state and fresh Ready timer state after advancing a round.
+- Current automated result after the latest Gate 4 fixes: lint PASS, build PASS, interaction robot **88 assertions PASS**, browser host/voter/Hall Display robot **3/3 PASS**.
 - Public voter and public Hall Display robots remain part of the suite.
 
 ## Gate 4 exit rule
