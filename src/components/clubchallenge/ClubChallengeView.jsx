@@ -362,7 +362,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       window.removeEventListener('scroll', updateHostBar);
       window.removeEventListener('resize', updateHostBar);
     };
-  }, [tab, event?.id, currentRound, currentRoundSavedCount]);
+  }, [tab, event?.id]);
   React.useEffect(() => {
     if (!paActive) { setPaInputLevel(0); return undefined; }
     const id = window.setInterval(() => setPaInputLevel(getRallyHubPaLevel()), 120);
