@@ -76,6 +76,38 @@
     },
     "notes": {
       "type": "string"
+    },
+    "membership_id": {
+      "type": "string",
+      "description": "Club membership identifier for the relevant season, e.g. CP26-0179"
+    },
+    "membership_type": {
+      "type": "string",
+      "description": "Renewal/new member classification from the club membership master"
+    },
+    "membership_season": {
+      "type": "string",
+      "description": "Membership season label, e.g. 2026-27"
+    },
+    "payment_status": {
+      "type": "string"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "membership_amount": {
+      "type": "number"
+    },
+    "source_row_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
