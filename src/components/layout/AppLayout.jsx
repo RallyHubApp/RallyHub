@@ -79,7 +79,7 @@ export default function AppLayout() {
           </div>
         </header>
 
-        <main className="p-3 sm:p-4 lg:p-6 min-w-0 overflow-x-hidden">
+        <main className="p-3 sm:p-4 lg:p-6 min-w-0 overflow-x-clip">
           <Outlet />
         </main>
       </div>
