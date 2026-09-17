@@ -96,8 +96,8 @@ export default function Analytics() {
           <h3 className="text-sm font-semibold text-foreground mb-4">Rating Distribution</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={ratingData}>
-              <XAxis dataKey="range" tick={{ fontSize: 10, fill: 'hsl(215 14% 50%)' }} />
-              <YAxis tick={{ fontSize: 10, fill: 'hsl(215 14% 50%)' }} />
+              <XAxis dataKey="range" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+              <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
               <Tooltip {...tooltipStyle} />
               <Bar dataKey="count" fill="hsl(142, 76%, 50%)" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -109,8 +109,8 @@ export default function Analytics() {
           <h3 className="text-sm font-semibold text-foreground mb-4">Players by Club</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={clubData} layout="vertical">
-              <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(215 14% 50%)' }} />
-              <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 10, fill: 'hsl(215 14% 50%)' }} />
+              <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+              <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
               <Tooltip {...tooltipStyle} />
               <Bar dataKey="value" fill="hsl(210, 100%, 56%)" radius={[0, 4, 4, 0]} />
             </BarChart>
