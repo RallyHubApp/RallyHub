@@ -905,27 +905,60 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const withdrawWithoutReplacement = async () => {
     if (!event || !canManageEvent || !replacement.outgoingId) { toast.error('Choose the player who is withdrawing.'); return; }
+    if (sportingActionRef.current || playerControlBusy) return;
+    const outgoingName = participants.find(p => p.id === replacement.outgoingId)?.display_name || 'Player';
+    sportingActionRef.current = true;
+    setPlayerControlBusy(true);
+    setPlayerControlStatus({ state:'working', text:`Withdrawing ${outgoingName} from Round ${currentRound} and continuing short…` });
+    setHostAction(`Applying withdrawal from Round ${currentRound}… command sent`);
     try {
       const res = await base44.functions.invoke('manageClubChallengeParticipant', {
         eventId:event.id, action:'continue_short', outgoingParticipantId:replacement.outgoingId,
         reason:replacement.reason, withdrawalStatus:replacement.status,
       });
-      if (res.data?.error) { toast.error(res.data.error); return; }
+      if (res.data?.error) throw new Error(res.data.error);
+      const message = `${res.data.outgoingName} withdrawn from Round ${res.data.effectiveRound}; ${res.data.affected} future match${res.data.affected === 1 ? '' : 'es'} marked Not Played.`;
       setReplacement({ outgoingId:'', candidateId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
-      toast.success(`${res.data.outgoingName} withdrawn; ${res.data.affected} future match${res.data.affected === 1 ? '' : 'es'} marked Not Played.`);
+      setPlayerControlStatus({ state:'success', text:message });
+      toast.success(message);
       await sync();
-    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not continue short'); }
+    } catch (e) {
+      const message = e?.response?.data?.error || e?.message || 'Could not continue short';
+      setPlayerControlStatus({ state:'error', text:message });
+      toast.error(message);
+    } finally {
+      sportingActionRef.current = false;
+      setPlayerControlBusy(false);
+      setHostAction('');
+    }
   };
   const applyLateArrival = async () => {
     if (!event || !canManageEvent || !lateArrival.participantId) return;
+    if (sportingActionRef.current || playerControlBusy) return;
+    const participantName = participants.find(p => p.id === lateArrival.participantId)?.display_name || 'Player';
+    const fromRound = Number(lateArrival.round || currentRound || 1);
+    sportingActionRef.current = true;
+    setPlayerControlBusy(true);
+    setPlayerControlStatus({ state:'working', text:`Marking ${participantName} available from Round ${fromRound}…` });
+    setHostAction(`Applying late arrival from Round ${fromRound}… command sent`);
     try {
       const res = await base44.functions.invoke('manageClubChallengeParticipant', {
-        eventId:event.id, action:'late_arrival', participantId:lateArrival.participantId, fromRound:Number(lateArrival.round || currentRound || 1),
+        eventId:event.id, action:'late_arrival', participantId:lateArrival.participantId, fromRound,
       });
-      if (res.data?.error) { toast.error(res.data.error); return; }
-      toast.success(`${res.data.participantName} marked available from Round ${res.data.fromRound}. Draw consequences require organiser review.`);
+      if (res.data?.error) throw new Error(res.data.error);
+      const message = `${res.data.participantName} marked available from Round ${res.data.fromRound}. Future draw impact still requires organiser review.`;
+      setPlayerControlStatus({ state:'success', text:message });
+      toast.success(message);
       await sync();
-    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not set late arrival'); }
+    } catch (e) {
+      const message = e?.response?.data?.error || e?.message || 'Could not set late arrival';
+      setPlayerControlStatus({ state:'error', text:message });
+      toast.error(message);
+    } finally {
+      sportingActionRef.current = false;
+      setPlayerControlBusy(false);
+      setHostAction('');
+    }
   };
   const proposeEventDayAdjustment = () => {
     const courts = Number(eventDayAdjust.courts || event?.courts || 0), minutes = Number(eventDayAdjust.availableMinutes || event?.available_minutes || 0);
