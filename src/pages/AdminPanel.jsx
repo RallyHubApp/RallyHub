@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, Send, Clock, XCircle, CheckCircle, Trash2 } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, Send, Clock, XCircle, CheckCircle, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
@@ -20,7 +20,7 @@ export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
-  const allowedAdminTabs = ['approvals', 'directory', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['approvals', 'membership', 'directory', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
   const queryClient = useQueryClient();
@@ -34,6 +34,8 @@ export default function AdminPanel() {
   const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState('user');
   const [inviting, setInviting] = useState(false);
+  const [membershipSyncing, setMembershipSyncing] = useState(false);
+  const [membershipSyncResult, setMembershipSyncResult] = useState(null);
 
   const [userSearch, setUserSearch] = useState('');
   const [updatingRole, setUpdatingRole] = useState(null);
@@ -155,6 +157,25 @@ export default function AdminPanel() {
     await base44.entities.Match.update(matchId, update);
     queryClient.invalidateQueries({ queryKey: ['matches'] });
     toast.success('Player assigned to match!');
+  };
+
+  const syncMembership = async () => {
+    if (membershipSyncing) return;
+    setMembershipSyncing(true);
+    setMembershipSyncResult(null);
+    try {
+      const res = await base44.functions.invoke('syncClareMembershipGoogleSheet', { mode: 'sync' });
+      if (res.data?.error) throw new Error(res.data.error);
+      setMembershipSyncResult(res.data);
+      queryClient.invalidateQueries({ queryKey: ['players'] });
+      toast.success(res.data?.message || 'Membership sync complete');
+    } catch (error) {
+      const message = error?.response?.data?.error || error?.message || 'Membership sync failed';
+      setMembershipSyncResult({ error: message });
+      toast.error(message);
+    } finally {
+      setMembershipSyncing(false);
+    }
   };
 
   const sendInvite = async () => {
@@ -367,6 +388,9 @@ export default function AdminPanel() {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="membership" className="text-xs gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5" /> Membership Sync
+          </TabsTrigger>
           <TabsTrigger value="directory" className="text-xs gap-1.5">
             <UserCheck className="w-3.5 h-3.5" /> Directory Claims
             {(pendingDirectoryClaims.length + pendingNewDirectoryRequests.length) > 0 && (
@@ -446,6 +470,65 @@ export default function AdminPanel() {
             {allUsers.filter(u => u.role !== 'admin').length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-6">No users to review</p>
             )}
+          </div>
+        </TabsContent>
+
+        {/* ── MEMBERSHIP SYNC TAB ── */}
+        <TabsContent value="membership" className="mt-4">
+          <div className="space-y-4">
+            <div className="glass rounded-xl p-4 sm:p-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <RefreshCw className="w-5 h-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-foreground">Clare Pickleball 2026–27 Membership</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Sync paid active members from the Clare Pickleball Google membership spreadsheet into RallyHub.
+                    RallyHub reads <strong>Form Responses 1</strong> and <strong>2026-27 Member Master</strong>, matches existing people first, and only creates a new member when no safe match exists.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-secondary/30 p-3 text-xs text-muted-foreground space-y-1">
+                <p><span className="font-semibold text-foreground">Safe to press more than once.</span> Existing members are matched by membership ID, email, mobile, or name + DOB.</p>
+                <p>Blank Google cells do not remove existing RallyHub data. Ambiguous matches are held for review rather than guessed.</p>
+              </div>
+
+              <Button
+                data-testid="admin-membership-sync"
+                className="w-full sm:w-auto min-h-11 gap-2"
+                onClick={syncMembership}
+                disabled={membershipSyncing}
+                aria-busy={membershipSyncing}
+              >
+                <RefreshCw className={`w-4 h-4 ${membershipSyncing ? 'animate-spin' : ''}`} />
+                {membershipSyncing ? 'Syncing Membership…' : 'Sync Membership Now'}
+              </Button>
+
+              {membershipSyncResult && !membershipSyncResult.error && (
+                <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 space-y-2">
+                  <p className="text-sm font-semibold text-green-600">{membershipSyncResult.message}</p>
+                  {membershipSyncResult.addedMembers?.length > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">Added:</span>{' '}
+                      {membershipSyncResult.addedMembers.map(m => `${m.name}${m.membershipId ? ` (${m.membershipId})` : ''}`).join(', ')}
+                    </div>
+                  )}
+                  {membershipSyncResult.needsReview?.length > 0 && (
+                    <div className="text-xs text-amber-600">
+                      {membershipSyncResult.needsReview.length} record{membershipSyncResult.needsReview.length === 1 ? '' : 's'} need manual review.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {membershipSyncResult?.error && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  {membershipSyncResult.error}
+                </div>
+              )}
+            </div>
           </div>
         </TabsContent>
 
