@@ -12,17 +12,78 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Test timeout of 45000ms exceeded.
+```
 
-Locator: getByText(/0 would be marked Not Played/)
-Expected: visible
-Error: strict mode violation: getByText(/0 would be marked Not Played/) resolved to 2 elements:
-    1) <p data-dynamic-content="true" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1502:105">…</p> aka getByText('Proposed change: 44 future')
-    2) <div class="" data-title="">44 future matches fit; 0 would be marked Not Play…</div> aka getByText('44 future matches fit; 0')
-
+```
+Error: locator.click: Test timeout of 45000ms exceeded.
 Call log:
-  - Expect "toBeVisible" getByText(/0 would be marked Not Played/) with timeout 3000ms
-  - waiting for getByText(/0 would be marked Not Played/)
+  - waiting for getByRole('button', { name: 'Exit Display' })
+    - locator resolved to <button data-dynamic-content="true" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:1281:368" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foregro…>Exit Display</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="" data-title="">Schedule updated: 41 future fixture positions cha…</div> from <section tabindex="-1" aria-live="polite" aria-atomic="false" aria-relevant="additions text" aria-label="Notifications alt+T">…</section> subtree intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <div class="" data-title="">Schedule updated: 41 future fixture positions cha…</div> from <section tabindex="-1" aria-live="polite" aria-atomic="false" aria-relevant="additions text" aria-label="Notifications alt+T">…</section> subtree intercepts pointer events
+  2 × retrying click action
+      - waiting 100ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <li class="" tabindex="0" data-index="0" data-front="true" data-styled="true" data-mounted="true" data-swiped="false" data-visible="true" data-type="success" data-sonner-toast="" data-promise="false" data-removed="false" data-swiping="false" data-y-position="top" data-expanded="false" data-swipe-out="false" data-rich-colors="true" data-dismissible="true" data-x-position="center">…</li> from <section tabindex="-1" aria-live="polite" aria-atomic="false" aria-relevant="additions text" aria-label="Notifications alt+T">…</section> subtree intercepts pointer events
+  2 × retrying click action
+      - waiting 500ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="" data-title="">Schedule updated: 41 future fixture positions cha…</div> from <section tabindex="-1" aria-live="polite" aria-atomic="false" aria-relevant="additions text" aria-label="Notifications alt+T">…</section> subtree intercepts pointer events
+  2 × retrying click action
+      - waiting 500ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <li class="" tabindex="0" data-index="0" data-front="true" data-styled="true" data-mounted="true" data-swiped="false" data-visible="true" data-type="success" data-sonner-toast="" data-promise="false" data-removed="false" data-swiping="false" data-y-position="top" data-expanded="false" data-swipe-out="false" data-rich-colors="true" data-dismissible="true" data-x-position="center">…</li> from <section tabindex="-1" aria-live="polite" aria-atomic="false" aria-relevant="additions text" aria-label="Notifications alt+T">…</section> subtree intercepts pointer events
+  15 × retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="" data-title="">Schedule updated: 41 future fixture positions cha…</div> from <section tabindex="-1" aria-live="polite" aria-atomic="false" aria-relevant="additions text" aria-label="Notifications alt+T">…</section> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <div class="" data-title="">Schedule updated: 41 future fixture positions cha…</div> from <section tabindex="-1" aria-live="polite" aria-atomic="false" aria-relevant="additions text" aria-label="Notifications alt+T">…</section> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <li class="" tabindex="0" data-index="0" data-front="true" data-styled="true" data-mounted="true" data-swiped="false" data-visible="true" data-type="success" data-sonner-toast="" data-promise="false" data-removed="false" data-swiping="false" data-expanded="true" data-y-position="top" data-swipe-out="false" data-rich-colors="true" data-dismissible="true" data-x-position="center">…</li> from <section tabindex="-1" aria-live="polite" aria-atomic="false" aria-relevant="additions text" aria-label="Notifications alt+T">…</section> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <li class="" tabindex="0" data-index="0" data-front="true" data-styled="true" data-mounted="true" data-swiped="false" data-visible="true" data-type="success" data-sonner-toast="" data-promise="false" data-removed="false" data-swiping="false" data-expanded="true" data-y-position="top" data-swipe-out="false" data-rich-colors="true" data-dismissible="true" data-x-position="center">…</li> from <section tabindex="-1" aria-live="polite" aria-atomic="false" aria-relevant="additions text" aria-label="Notifications alt+T">…</section> subtree intercepts pointer events
+  - retrying click action
+    - waiting 500ms
 
 ```
 
@@ -33,320 +94,81 @@ Call log:
   - main [ref=e3]:
     - generic [ref=e4]:
       - generic [ref=e5]:
-        - generic [ref=e11]:
-          - paragraph [ref=e12]: RallyHub Interclub
-          - paragraph [ref=e13]: "Interclub Challenge · Status: in progress"
-        - generic [ref=e14]:
-          - generic [ref=e15]:
-            - generic [ref=e16]:
-              - generic [ref=e17]: CL
-              - generic [ref=e18]: Clare Pickleball Club
-            - generic [ref=e19]: vs
-            - generic [ref=e20]:
-              - generic [ref=e21]: GA
-              - generic [ref=e22]: Galway Pickleball
-          - button "Hall Display" [ref=e23] [cursor=pointer]
-          - button "Public Links / QR" [ref=e24] [cursor=pointer]
-          - button "Print Event Pack · OUT OF DATE" [ref=e25] [cursor=pointer]
-      - generic [ref=e27]:
-        - button [ref=e28] [cursor=pointer]
-        - button [ref=e33] [cursor=pointer]
-        - button [ref=e38] [cursor=pointer]
-        - button "4 Live Event" [ref=e43] [cursor=pointer]:
-          - generic [ref=e44]: "4"
-          - text: Live Event
-        - button "5 Simulator" [ref=e45] [cursor=pointer]:
-          - generic [ref=e46]: "5"
-          - text: Simulator
-        - button "6 Results" [ref=e47] [cursor=pointer]:
-          - generic [ref=e48]: "6"
-          - text: Results
-      - generic [ref=e50]:
-        - generic [ref=e53]:
-          - generic [ref=e54]: Round 2/12
-          - generic [ref=e55]: 10:00
-          - generic [ref=e56]:
-            - strong [ref=e57]: 0/4
-            - text: scores saved
+        - generic [ref=e6]:
+          - paragraph [ref=e7]: RallyHub Interclub · Hall Display
+          - heading "Clare Pickleball Club 8 – 0 Galway Pickleball" [level=1] [ref=e8]:
+            - text: Clare Pickleball Club
+            - generic [ref=e9]: 8 – 0
+            - text: Galway Pickleball
+        - button "Exit Display" [ref=e10] [cursor=pointer]
+      - generic [ref=e11]:
+        - paragraph [ref=e12]: Round 2 · ready
+        - paragraph [ref=e13]: 10:00
+      - generic [ref=e14]:
+        - heading "On Court Now" [level=2] [ref=e15]
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - paragraph [ref=e18]: Court 1
+            - paragraph [ref=e19]: Club A Test 09 & Club A Test 10
+            - paragraph [ref=e20]: vs
+            - paragraph [ref=e21]: Club B Test 09 & Club B Test 10
+          - generic [ref=e22]:
+            - paragraph [ref=e23]: Court 2
+            - paragraph [ref=e24]: Club A Test 11 & Club A Test 12
+            - paragraph [ref=e25]: vs
+            - paragraph [ref=e26]: Club B Test 11 & Club B Test 12
+          - generic [ref=e27]:
+            - paragraph [ref=e28]: Court 3
+            - paragraph [ref=e29]: Club A Test 13 & Club A Test 14
+            - paragraph [ref=e30]: vs
+            - paragraph [ref=e31]: Club B Test 13 & Club B Test 14
+      - generic [ref=e32]:
+        - heading "Resting This Round" [level=2] [ref=e33]
+        - generic [ref=e34]:
+          - generic [ref=e35]: Club B Test 01
+          - generic [ref=e36]: Replacement Test
+          - generic [ref=e37]: Club A Test 01
+          - generic [ref=e38]: Club B Test 02
+          - generic [ref=e39]: Club A Test 03
+          - generic [ref=e40]: Club B Test 03
+          - generic [ref=e41]: Club A Test 04
+          - generic [ref=e42]: Club B Test 04
+          - generic [ref=e43]: Club A Test 05
+          - generic [ref=e44]: Club B Test 05
+          - generic [ref=e45]: Club A Test 06
+          - generic [ref=e46]: Club B Test 06
+          - generic [ref=e47]: Club A Test 07
+          - generic [ref=e48]: Club B Test 07
+          - generic [ref=e49]: Club A Test 08
+          - generic [ref=e50]: Club B Test 08
+          - generic [ref=e51]: Club A Test 15
+          - generic [ref=e52]: Club B Test 15
+          - generic [ref=e53]: Club A Test 16
+          - generic [ref=e54]: Club B Test 16
+      - generic [ref=e55]:
+        - heading "Up Next" [level=2] [ref=e56]
+        - generic [ref=e57]:
           - generic [ref=e58]:
-            - button "PA" [ref=e59] [cursor=pointer]
-            - button "Players" [ref=e60] [cursor=pointer]
-            - button "4 scores to save" [disabled]
-        - generic [ref=e62]:
-          - generic [ref=e63]:
-            - paragraph [ref=e64]: Live Event
-            - paragraph [ref=e65]: Round 2 of 12
-            - paragraph [ref=e66]: Clare Pickleball Club 8 – 0 Galway Pickleball
-          - generic [ref=e67]:
-            - generic [ref=e68]: 4W
-            - generic [ref=e69]: 0D
-            - generic [ref=e70]: 0W
-        - generic [ref=e71]:
-          - generic [ref=e72]:
-            - generic [ref=e73]:
-              - paragraph [ref=e74]: Round at a Glance
-              - paragraph [ref=e75]: On court, resting and up next — all in one place.
-            - generic [ref=e76]: R2
-          - generic [ref=e77]:
-            - generic [ref=e78]:
-              - paragraph [ref=e79]: Court 1 · NOW
-              - paragraph [ref=e80]: Club A Test 09 & Club A Test 10
-              - paragraph [ref=e81]: vs
-              - paragraph [ref=e82]: Club B Test 09 & Club B Test 10
-            - generic [ref=e83]:
-              - paragraph [ref=e84]: Court 2 · NOW
-              - paragraph [ref=e85]: Club A Test 11 & Club A Test 12
-              - paragraph [ref=e86]: vs
-              - paragraph [ref=e87]: Club B Test 11 & Club B Test 12
-            - generic [ref=e88]:
-              - paragraph [ref=e89]: Court 3 · NOW
-              - paragraph [ref=e90]: Club A Test 13 & Club A Test 14
-              - paragraph [ref=e91]: vs
-              - paragraph [ref=e92]: Club B Test 13 & Club B Test 14
-            - generic [ref=e93]:
-              - paragraph [ref=e94]: Court 4 · NOW
-              - paragraph [ref=e95]: Club A Test 15 & Club A Test 16
-              - paragraph [ref=e96]: vs
-              - paragraph [ref=e97]: Club B Test 15 & Club B Test 16
-          - generic [ref=e98]:
-            - paragraph [ref=e99]: Resting this round
-            - generic [ref=e100]:
-              - generic [ref=e101]:
-                - paragraph [ref=e102]: Clare Pickleball Club
-                - generic [ref=e103]:
-                  - generic [ref=e104]: Replacement Test
-                  - generic [ref=e105]: Club A Test 01
-                  - generic [ref=e106]: Club A Test 03
-                  - generic [ref=e107]: Club A Test 04
-                  - generic [ref=e108]: Club A Test 05
-                  - generic [ref=e109]: Club A Test 06
-                  - generic [ref=e110]: Club A Test 07
-                  - generic [ref=e111]: Club A Test 08
-              - generic [ref=e112]:
-                - paragraph [ref=e113]: Galway Pickleball
-                - generic [ref=e114]:
-                  - generic [ref=e115]: Club B Test 01
-                  - generic [ref=e116]: Club B Test 02
-                  - generic [ref=e117]: Club B Test 03
-                  - generic [ref=e118]: Club B Test 04
-                  - generic [ref=e119]: Club B Test 05
-                  - generic [ref=e120]: Club B Test 06
-                  - generic [ref=e121]: Club B Test 07
-                  - generic [ref=e122]: Club B Test 08
-          - generic [ref=e123]:
-            - paragraph [ref=e124]: Up next · Round 3
-            - generic [ref=e125]:
-              - generic [ref=e126]:
-                - paragraph [ref=e127]: Court 1 · NEXT
-                - paragraph [ref=e128]: Replacement Test & Club A Test 03
-                - paragraph [ref=e129]: vs
-                - paragraph [ref=e130]: Club B Test 05 & Club B Test 07
-              - generic [ref=e131]:
-                - paragraph [ref=e132]: Court 2 · NEXT
-                - paragraph [ref=e133]: Club A Test 01 & Club A Test 04
-                - paragraph [ref=e134]: vs
-                - paragraph [ref=e135]: Club B Test 06 & Club B Test 08
-              - generic [ref=e136]:
-                - paragraph [ref=e137]: Court 3 · NEXT
-                - paragraph [ref=e138]: Club A Test 05 & Club A Test 07
-                - paragraph [ref=e139]: vs
-                - paragraph [ref=e140]: Club B Test 01 & Club B Test 03
-              - generic [ref=e141]:
-                - paragraph [ref=e142]: Court 4 · NEXT
-                - paragraph [ref=e143]: Club A Test 06 & Club A Test 08
-                - paragraph [ref=e144]: vs
-                - paragraph [ref=e145]: Club B Test 02 & Club B Test 04
-        - generic [ref=e146]:
-          - generic [ref=e147]:
-            - generic [ref=e148]:
-              - paragraph [ref=e149]: Round Timer
-              - paragraph [ref=e150]: Round 2 of 12
-            - generic [ref=e151]: ready
-          - paragraph [ref=e153]: 10:00
-          - generic [ref=e154]:
-            - generic [ref=e155]:
-              - paragraph [ref=e156]: This round
-              - paragraph [ref=e157]: Adjust before play or while paused.
-            - generic [ref=e158]:
-              - button "Reduce this round by one minute" [ref=e159] [cursor=pointer]
-              - paragraph [ref=e160]: 10:00
-              - button "Add one minute to this round" [ref=e161] [cursor=pointer]
-          - generic [ref=e162]:
-            - button "Start Play" [ref=e163] [cursor=pointer]
-            - button "Changeover" [disabled]
-            - button "+1 minute" [disabled]
-            - group [ref=e164]:
-              - generic "Round options" [ref=e165] [cursor=pointer]
-        - generic [ref=e166]:
-          - generic [ref=e167]:
-            - generic [ref=e168]:
-              - paragraph [ref=e169]: Round 2 Scores
-              - paragraph [ref=e170]: Enter each court result as it comes in — you do not need to wait for the timer to finish.
-            - generic [ref=e171]: 0/4 saved
-          - generic [ref=e172]:
-            - generic [ref=e173]:
-              - generic [ref=e174]:
-                - generic [ref=e175]: Court 1
-                - generic [ref=e176]: R2
-              - generic [ref=e177]:
-                - generic [ref=e178]:
-                  - generic [ref=e179]:
-                    - paragraph [ref=e180]: Clare Pickleball Club
-                    - paragraph [ref=e181]: Club A Test 09 & Club A Test 10
-                  - textbox "Clare Pickleball Club score" [ref=e182]
-                - generic [ref=e183]:
-                  - generic [ref=e184]:
-                    - paragraph [ref=e185]: Galway Pickleball
-                    - paragraph [ref=e186]: Club B Test 09 & Club B Test 10
-                  - textbox "Galway Pickleball score" [ref=e187]
-              - button "Save Result" [disabled]
-            - generic [ref=e188]:
-              - generic [ref=e189]:
-                - generic [ref=e190]: Court 2
-                - generic [ref=e191]: R2
-              - generic [ref=e192]:
-                - generic [ref=e193]:
-                  - generic [ref=e194]:
-                    - paragraph [ref=e195]: Clare Pickleball Club
-                    - paragraph [ref=e196]: Club A Test 11 & Club A Test 12
-                  - textbox "Clare Pickleball Club score" [ref=e197]
-                - generic [ref=e198]:
-                  - generic [ref=e199]:
-                    - paragraph [ref=e200]: Galway Pickleball
-                    - paragraph [ref=e201]: Club B Test 11 & Club B Test 12
-                  - textbox "Galway Pickleball score" [ref=e202]
-              - button "Save Result" [disabled]
-            - generic [ref=e203]:
-              - generic [ref=e204]:
-                - generic [ref=e205]: Court 3
-                - generic [ref=e206]: R2
-              - generic [ref=e207]:
-                - generic [ref=e208]:
-                  - generic [ref=e209]:
-                    - paragraph [ref=e210]: Clare Pickleball Club
-                    - paragraph [ref=e211]: Club A Test 13 & Club A Test 14
-                  - textbox "Clare Pickleball Club score" [ref=e212]
-                - generic [ref=e213]:
-                  - generic [ref=e214]:
-                    - paragraph [ref=e215]: Galway Pickleball
-                    - paragraph [ref=e216]: Club B Test 13 & Club B Test 14
-                  - textbox "Galway Pickleball score" [ref=e217]
-              - button "Save Result" [disabled]
-            - generic [ref=e218]:
-              - generic [ref=e219]:
-                - generic [ref=e220]: Court 4
-                - generic [ref=e221]: R2
-              - generic [ref=e222]:
-                - generic [ref=e223]:
-                  - generic [ref=e224]:
-                    - paragraph [ref=e225]: Clare Pickleball Club
-                    - paragraph [ref=e226]: Club A Test 15 & Club A Test 16
-                  - textbox "Clare Pickleball Club score" [ref=e227]
-                - generic [ref=e228]:
-                  - generic [ref=e229]:
-                    - paragraph [ref=e230]: Galway Pickleball
-                    - paragraph [ref=e231]: Club B Test 15 & Club B Test 16
-                  - textbox "Galway Pickleball score" [ref=e232]
-              - button "Save Result" [disabled]
-          - button "Save all 4 results to complete Round 2" [disabled]
-        - group [ref=e233]:
-          - generic "PA & Announcements Open only when you need the microphone or an announcement. AUDIO READY" [ref=e234] [cursor=pointer]:
-            - generic [ref=e235]:
-              - paragraph [ref=e236]: PA & Announcements
-              - paragraph [ref=e237]: Open only when you need the microphone or an announcement.
-            - generic [ref=e238]: AUDIO READY
-        - group [ref=e242]:
-          - generic [ref=e244] [cursor=pointer]:
-            - paragraph [ref=e245]: Player Controls
-            - paragraph [ref=e246]: Injury, withdrawal, replacement or late arrival.
-          - generic [ref=e249]:
-            - generic [ref=e250]:
-              - generic [ref=e251]:
-                - paragraph [ref=e252]: Replace / Withdraw a Player
-                - paragraph [ref=e253]: Completed results stay unchanged. RallyHub updates future unplayed fixtures only.
-              - generic [ref=e254]:
-                - generic [ref=e255]:
-                  - text: Player leaving
-                  - combobox [ref=e256] [cursor=pointer]:
-                    - generic: Choose player
-                - generic [ref=e259]:
-                  - text: Registered reserve / available player
-                  - combobox [disabled] [ref=e260]:
-                    - generic: Type a replacement manually
-                - generic [ref=e263]:
-                  - text: Replacement name
-                  - textbox "Name" [ref=e264]
-                - generic [ref=e265]:
-                  - text: Reason
-                  - combobox [ref=e266] [cursor=pointer]:
-                    - generic: Withdrawn / unavailable
-                - generic [ref=e269]:
-                  - text: Gender
-                  - combobox [ref=e270] [cursor=pointer]:
-                    - generic: Inherit outgoing player
-                - generic [ref=e273]:
-                  - text: Note
-                  - textbox "Optional note" [ref=e274]
-              - generic [ref=e275]:
-                - button "Replace from Round 2" [disabled]
-                - button "Continue Short · No Replacement" [disabled]
-              - generic [ref=e276]: Club A Test 02 replaced by Replacement Test from Round 1. 5 future fixtures updated; completed results unchanged.
-            - generic [ref=e277]:
-              - generic [ref=e278]:
-                - paragraph [ref=e279]: Late Arrival
-                - paragraph [ref=e280]: Set the first round a player is available. RallyHub will flag that the remaining draw may need review.
-              - generic [ref=e281]:
-                - combobox [ref=e282] [cursor=pointer]:
-                  - generic: Player
-                - spinbutton [ref=e285]: "1"
-                - button "Set Round" [disabled]
-        - group [ref=e286]:
-          - generic [ref=e288] [cursor=pointer]:
-            - paragraph [ref=e289]: Court & Time Changes
-            - paragraph [ref=e290]: Use this if you lose or gain a court, or if less event time remains than planned.
-          - generic [ref=e294]:
-            - generic [ref=e295]:
-              - paragraph [ref=e296]: Preview the impact before changing anything
-              - paragraph [ref=e297]: Enter the courts actually available now and the minutes remaining. RallyHub will show how many future matches still fit, which matches would move, and whether any would have to be marked Not Played. Completed results are never changed.
-            - generic [ref=e298]:
-              - generic [ref=e299]:
-                - text: Courts available now
-                - spinbutton "4" [ref=e300]: "3"
-              - generic [ref=e301]:
-                - text: Minutes remaining
-                - spinbutton "e.g. 60" [ref=e302]: "180"
-              - button "Preview Impact" [active] [ref=e303] [cursor=pointer]
-            - generic [ref=e304]:
-              - paragraph [ref=e305]:
-                - strong [ref=e306]: "Proposed change:"
-                - text: 44 future matches can still be played · 41 move to a different round/court · 0 would be marked Not Played.
-              - paragraph [ref=e307]: Nothing changes until you press Confirm Changes. Completed results remain locked, and the existing Event Pack will be marked out of date.
-              - generic [ref=e308]:
-                - button "Confirm Changes" [ref=e309] [cursor=pointer]
-                - button "Cancel" [ref=e310] [cursor=pointer]
+            - paragraph [ref=e59]: Court 1
+            - paragraph [ref=e60]: Club A Test 15 & Club A Test 16 vs Club B Test 15 & Club B Test 16
+          - generic [ref=e61]:
+            - paragraph [ref=e62]: Court 2
+            - paragraph [ref=e63]: Replacement Test & Club A Test 03 vs Club B Test 05 & Club B Test 07
+          - generic [ref=e64]:
+            - paragraph [ref=e65]: Court 3
+            - paragraph [ref=e66]: Club A Test 01 & Club A Test 04 vs Club B Test 06 & Club B Test 08
+      - paragraph [ref=e67]: Read-only display · no email, phone or private participant information
   - region "Notifications alt+T":
     - list:
-      - listitem [ref=e311]:
-        - generic [ref=e315]: 44 future matches fit; 0 would be marked Not Played. Review before confirming.
-      - listitem [ref=e317]:
-        - generic [ref=e321]: Round 2 ready · 4 courts · 16 players resting
-      - listitem [ref=e323]:
-        - generic [ref=e327]: Score saved
-      - listitem:
-        - generic: Score saved
-      - listitem:
-        - generic: Score saved
-      - listitem:
-        - generic: Club A Test 02 replaced by Replacement Test from Round 1. 5 future fixtures updated; completed results unchanged.
-      - listitem:
-        - generic: Score saved
+      - listitem [ref=e68]:
+        - generic [ref=e72]: "Schedule updated: 41 future fixture positions changed; 0 marked Not Played. Event Pack marked out of date."
+      - listitem [ref=e74]:
+        - generic [ref=e78]: 44 future matches fit; 0 would be marked Not Played. Review before confirming.
 ```
 
 # Test source
 
 ```ts
-  176 |     if (name === 'updateClubChallengePot') {
-  177 |       await sleep(180); if(body.action==='open')model.event.pot_status='open';if(body.action==='close')model.event.pot_status='closed';return {success:true,event:model.event};
   178 |     }
   179 |     if (name === 'castClubChallengePotVote') {
   180 |       await sleep(180); if(body.voterParticipantId===body.nomineeParticipantId)return {error:'Players cannot vote for themselves.'};if(model.votes.some(v=>v.voter_participant_id===body.voterParticipantId&&v.valid!==false))return {error:'This player has already voted.'};const v={id:id('vote'),tenant_id:model.event.tenant_id,challenge_event_id:model.event.id,voter_identity_key:`participant:${body.voterParticipantId}`,voter_participant_id:body.voterParticipantId,nominee_participant_id:body.nomineeParticipantId,access_route:'logged_in',cast_at:now(),valid:true};model.votes.push(v);return {success:true,vote:v};
@@ -445,10 +267,10 @@ Call log:
   273 |   for(const court of [2,3,4]){await page.getByTestId(`cc-score-r1-c${court}-a`).fill('11');await page.getByTestId(`cc-score-r1-c${court}-b`).fill('7');await page.getByTestId(`cc-save-score-r1-c${court}`).click();await expect(page.getByTestId(`cc-score-card-r1-c${court}`)).toContainText('Saved ·',{timeout:1500});}
   274 |   started=Date.now();await page.getByRole('button',{name:'Complete Round 1 & Go to Round 2'}).click();await expect(page.getByText('Preparing Round 2… command sent')).toBeVisible({timeout:300});metric(report,'round_advance_ack_ms',Date.now()-started,350);await expect(page.getByText('Round 2/12',{exact:true})).toBeVisible({timeout:1800});await expect(page.getByText('ready',{exact:true})).toBeVisible();await expect(page.getByText('10:00').first()).toBeVisible();await expect(page.getByText('0/4').first()).toBeVisible();report.round_transition_timer_reset=true;
   275 | 
-> 276 |   await page.locator('#cc-court-time-controls > summary').click();await page.getByTestId('cc-courts-now').fill('3');await page.getByTestId('cc-minutes-remaining').fill('180');await page.getByTestId('cc-preview-schedule-change').click();await expect(page.getByText(/0 would be marked Not Played/)).toBeVisible();const scheduleBefore=model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length;started=Date.now();await page.getByTestId('cc-confirm-schedule-change').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Applying court & time changes… command sent')).toBeVisible({timeout:300});metric(report,'schedule_change_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-schedule-change-status')).toContainText('Schedule updated:',{timeout:1800});expect(model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length-scheduleBefore).toBe(1);expect(model.event.courts).toBe(3);expect(model.event.event_pack_stale).toBe(true);report.schedule_change_double_tap_calls=1;
-      |                                                                                                                                                                                                                                                                                                          ^ Error: expect(locator).toBeVisible() failed
+  276 |   await page.locator('#cc-court-time-controls > summary').click();await page.getByTestId('cc-courts-now').fill('3');await page.getByTestId('cc-minutes-remaining').fill('180');await page.getByTestId('cc-preview-schedule-change').click();await expect(page.getByText(/Proposed change:.*0 would be marked Not Played/)).toBeVisible();const scheduleBefore=model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length;started=Date.now();await page.getByTestId('cc-confirm-schedule-change').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Applying court & time changes… command sent')).toBeVisible({timeout:300});metric(report,'schedule_change_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-schedule-change-status')).toContainText('Schedule updated:',{timeout:1800});expect(model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length-scheduleBefore).toBe(1);expect(model.event.courts).toBe(3);expect(model.event.event_pack_stale).toBe(true);report.schedule_change_double_tap_calls=1;
   277 | 
-  278 |   await page.getByRole('button',{name:'Hall Display'}).click();await expect(page.getByText('On Court Now')).toBeVisible();await expect(page.getByText('Resting This Round')).toBeVisible();await expect(page.getByText('Up Next')).toBeVisible();await expect(page.getByRole('button',{name:'Exit Display'})).toBeVisible();report.internal_hall_display=true;await page.getByRole('button',{name:'Exit Display'}).click();
+> 278 |   await page.getByRole('button',{name:'Hall Display'}).click();await expect(page.getByText('On Court Now')).toBeVisible();await expect(page.getByText('Resting This Round')).toBeVisible();await expect(page.getByText('Up Next')).toBeVisible();await expect(page.getByRole('button',{name:'Exit Display'})).toBeVisible();report.internal_hall_display=true;await page.getByRole('button',{name:'Exit Display'}).click();
+      |                                                                                                                                                                                                                                                                                                                                                                                                                    ^ Error: locator.click: Test timeout of 45000ms exceeded.
   279 | 
   280 |   await page.getByTestId('cc-tab-simulator').click();await expect(page.getByTestId('cc-populate-full')).toBeVisible();
   281 |   const populateBefore=model.calls.filter(c=>c.name==='populateClubChallengePracticeScenario').length;started=Date.now();await page.getByTestId('cc-populate-full').click();await expect(page.getByText('Populating full TEST MODE event… one server command sent')).toBeVisible({timeout:300});metric(report,'full_test_ack_ms',Date.now()-started,250);await expect(page.getByText('Final Result')).toBeVisible({timeout:2200});metric(report,'full_test_to_results_ms',Date.now()-started,2000);expect(model.calls.filter(c=>c.name==='populateClubChallengePracticeScenario').length-populateBefore).toBe(1);expect(model.matches.filter(m=>!m.is_showcase&&m.status==='completed').length).toBe(48);expect(model.matches.filter(m=>m.is_showcase&&m.status==='completed').length).toBe(1);expect(model.votes.length).toBe(8);report.full_population_browser_calls=1;
