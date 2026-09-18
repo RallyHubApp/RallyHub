@@ -37,7 +37,7 @@ const PARTNERSHIP_TYPES = [
 const initialForm = {
   name: '', format: '', partnership_type: 'Singles', start_date: '', end_date: '',
   location: '', max_players: '', description: '', prize_info: '',
-  skill_range_min: '', skill_range_max: '',
+  skill_range_min: '', skill_range_max: '', counts_toward_leaderboard: false,
 };
 
 export default function CreateTournamentModal({ open, onOpenChange, onCreated, initialFormat = '' }) {
@@ -251,6 +251,19 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated, i
                   <div><Label className="text-foreground text-sm">Max rating</Label><Input type="number" step="0.1" value={form.skill_range_max} onChange={e => update('skill_range_max', e.target.value)} className="bg-secondary border-border mt-1" /></div>
                 </div>
               )}
+
+              <label className="flex items-start gap-3 rounded-xl border border-border bg-secondary/20 p-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 accent-primary"
+                  checked={form.counts_toward_leaderboard === true}
+                  onChange={e => update('counts_toward_leaderboard', e.target.checked)}
+                />
+                <span>
+                  <span className="text-sm font-semibold text-foreground">Counts toward club leaderboard</span>
+                  <span className="block text-[11px] text-muted-foreground mt-0.5">Leave this off for practice, testing or events that should not affect club standings.</span>
+                </span>
+              </label>
 
               <div>
                 <Label className="text-foreground text-sm">Description</Label>
