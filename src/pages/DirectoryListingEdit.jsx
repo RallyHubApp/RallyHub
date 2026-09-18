@@ -17,7 +17,6 @@ import { Textarea } from '@/components/ui/textarea';
 import Seo from '@/components/public/Seo';
 import DirectorySpondPanel from '@/components/directory/DirectorySpondPanel';
 import DirectoryAccessPanel from '@/components/directory/DirectoryAccessPanel';
-import DirectoryAccessPanel from '@/components/directory/DirectoryAccessPanel';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const emptyVenue = index => ({
@@ -644,7 +643,6 @@ export default function DirectoryListingEdit() {
                   <a href="#venues" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Venues</a>
                   <a href="#sessions" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Sessions</a>
                   {isClaimed && <a href="#access" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Access</a>}
-                  {isClaimed && <a href="#access" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Access</a>}
                   <button type="button" onClick={() => setShowEnhancements(true)} className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Enhance listing</button>
                   <Link to="/directory/help" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40 inline-flex items-center gap-1.5"><HelpCircle className="w-3.5 h-3.5" /> Help</Link>
                 </nav>
@@ -664,8 +662,6 @@ export default function DirectoryListingEdit() {
                   <Link to="/directory/help"><Button type="button" variant="outline" className="gap-2"><HelpCircle className="w-4 h-4" /> Open help guide</Button></Link>
                 </div>
               </section>
-
-              {isClaimed && <DirectoryAccessPanel listingSlug={slug} clubName={baseClub?.name || 'this club'} />}
 
               {isClaimed && <DirectoryAccessPanel listingSlug={slug} clubName={baseClub?.name || 'this club'} />}
 
