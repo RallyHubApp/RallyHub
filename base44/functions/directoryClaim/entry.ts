@@ -45,7 +45,7 @@ async function hashInviteToken(token = '') {
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function createTrustedClaimInvitation(base44, { listing, user, contactName = '', contactEmail = '', contactPhone = '', channel = 'email' }) {
+async function createTrustedClaimInvitation(base44, { listing, user, contactName = '', contactEmail = '', contactPhone = '', channel = 'email', accessRole = 'owner' }) {
   const token = randomInviteToken();
   const tokenHash = await hashInviteToken(token);
   const expiresAt = new Date(Date.now() + (72 * 60 * 60 * 1000)).toISOString();
@@ -56,6 +56,7 @@ async function createTrustedClaimInvitation(base44, { listing, user, contactName
     contact_email: normaliseEmail(contactEmail || '').slice(0, 240) || null,
     contact_phone: String(contactPhone || '').trim().slice(0, 80) || null,
     channel,
+    access_role: accessRole === 'editor' ? 'editor' : 'owner',
     token_hash: tokenHash,
     status: 'pending',
     created_by_user_id: user.id,
@@ -147,18 +148,26 @@ async function uniqueListingSlug(base44, clubName) {
   return `${base}-${n}`;
 }
 
-async function grantAccess(base44, { listing, userId, claimId, grantedByUserId = null, notes = '' }) {
+async function grantAccess(base44, { listing, userId, claimId, grantedByUserId = null, notes = '', role = 'editor' }) {
   const existing = await base44.asServiceRole.entities.DirectoryListingAccess.filter({
     listing_slug: listing.slug,
     user_id: userId,
   });
   const active = existing.find(x => x.status === 'active');
-  if (active) return active;
+  if (active) {
+    if (role === 'owner' && active.role !== 'owner') {
+      await base44.asServiceRole.entities.DirectoryListingAccess.update(active.id, { role: 'owner' });
+      const refreshed = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ id: active.id });
+      return refreshed[0] || { ...active, role: 'owner' };
+    }
+    return active;
+  }
 
   const revoked = existing.find(x => x.status === 'revoked');
   if (revoked) {
     await base44.asServiceRole.entities.DirectoryListingAccess.update(revoked.id, {
       status: 'active',
+      role: role === 'owner' ? 'owner' : 'editor',
       verification_claim_id: claimId,
       granted_by_user_id: grantedByUserId,
       granted_at: new Date().toISOString(),
@@ -174,7 +183,7 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
     listing_slug: listing.slug,
     listing_name_snapshot: listing.name,
     user_id: userId,
-    role: 'editor',
+    role: role === 'owner' ? 'owner' : 'editor',
     status: 'active',
     ...(claimId ? { verification_claim_id: claimId } : {}),
     ...(grantedByUserId ? { granted_by_user_id: grantedByUserId } : {}),
@@ -183,7 +192,7 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
   });
 }
 
-async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl }) {
+async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl, accessRole = 'owner' }) {
   const to = normaliseEmail(contactEmail);
   if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
     return { sent: 0, error: 'A valid club contact email is required.' };
@@ -208,11 +217,14 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
     after_state: JSON.stringify({ listingSlug: listing.slug, recipient: to, windowHours: 24 }),
     reason: 'Reserved before sending a RallyHub Directory claim invitation.',
   });
+  const delegated = accessRole === 'editor';
   await base44.asServiceRole.integrations.Core.SendEmail({
     to,
     from_name: 'RallyHub Directory',
-    subject: `Claim and review ${listing.name} on RallyHub`,
-    body: `Hi ${String(contactName || '').trim() || 'there'},\n\nRallyHub has created a Directory listing for ${listing.name}.\n\nUse the secure one-time claim link below. If you need to create a Directory account, RallyHub will send a six-digit email verification code first. Once that is verified, this trusted invitation can give you access to the listing without waiting for a separate administrator approval.\n\n${claimUrl}\n\nFor security, this invitation expires after 72 hours and can only be used once.\n\nRallyHub Directory`,
+    subject: delegated ? `You have been invited to help manage ${listing.name} on RallyHub` : `Claim and review ${listing.name} on RallyHub`,
+    body: delegated
+      ? `Hi ${String(contactName || '').trim() || 'there'},\n\nAn authorised representative of ${listing.name} has invited you to help maintain its RallyHub Directory listing.\n\nUse the secure one-time link below. If you need a Directory account, RallyHub will first verify your email with a six-digit code. This invitation gives Directory Editor access only; it does not let you transfer ownership or manage other editors.\n\n${claimUrl}\n\nFor security, this invitation expires after 72 hours and can only be used once.\n\nRallyHub Directory`
+      : `Hi ${String(contactName || '').trim() || 'there'},\n\nRallyHub has created a Directory listing for ${listing.name}.\n\nUse the secure one-time claim link below. If you need to create a Directory account, RallyHub will send a six-digit email verification code first. Once that is verified, this trusted invitation can give you access to the listing without waiting for a separate administrator approval.\n\n${claimUrl}\n\nFor security, this invitation expires after 72 hours and can only be used once.\n\nRallyHub Directory`,
   });
   return { sent: 1, to, claimUrl };
 }
