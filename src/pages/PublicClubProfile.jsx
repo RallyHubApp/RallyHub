@@ -7,10 +7,13 @@ import Seo, { SITE_URL, absoluteUrl } from '@/components/public/Seo';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 
-const groupByDay = sessions => (sessions || []).reduce((groups, session) => {
-  (groups[session.day] ||= []).push(session);
-  return groups;
-}, {});
+const weekOrder = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const groupByDay = sessions => [...(sessions || [])]
+  .sort((a, b) => weekOrder.indexOf(a.day) - weekOrder.indexOf(b.day) || String(a.start || '').localeCompare(String(b.start || '')))
+  .reduce((groups, session) => {
+    (groups[session.day] ||= []).push(session);
+    return groups;
+  }, {});
 
 const clubInitials = name => name
   .split(/\s+/)
