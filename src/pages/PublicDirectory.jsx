@@ -7,7 +7,7 @@ import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { directoryClubs, irelandCounties, weekDays } from '@/data/directorySeed';
 import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, Check, CheckCircle2, PlusCircle, Share2, UserCheck } from 'lucide-react';
 import Seo, { SITE_URL } from '@/components/public/Seo';
-import { base44 } from '@/api/base44Client';
+import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 import PublicDirectoryLogo from '@/components/directory/PublicDirectoryLogo';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -167,8 +167,8 @@ export default function PublicDirectory() {
 
   useEffect(() => {
     let active = true;
-    base44.functions.invoke('directoryListingProfile', { action: 'public_list' })
-      .then(res => { if (active && !res.data?.error) setDirectoryState(res.data?.listings || {}); })
+    loadPublicDirectoryState()
+      .then(listings => { if (active) setDirectoryState(listings || {}); })
       .catch(() => {});
     return () => { active = false; };
   }, []);
