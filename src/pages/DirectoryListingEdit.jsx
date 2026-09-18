@@ -663,7 +663,7 @@ export default function DirectoryListingEdit() {
                 </div>
               </section>
 
-              {isClaimed && <DirectoryAccessPanel listingSlug={slug} clubName={baseClub?.name || 'this club'} />}
+              {isClaimed && <DirectoryAccessPanel listingSlug={slug} clubName={baseClub?.name || 'this club'} county={baseClub?.county || ''} />}
 
               <section id="basics" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><Info className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Public club information</h2></div>
