@@ -36,9 +36,9 @@ const initials = name => String(name || '')
 export default function PublicDirectoryLogo({
   src,
   name,
-  alt,
-  imageClassName,
-  fallbackClassName,
+  alt = null,
+  imageClassName = '',
+  fallbackClassName = '',
 }) {
   const normalised = normaliseDirectoryAssetUrl(src);
   const [currentSrc, setCurrentSrc] = useState(normalised);
