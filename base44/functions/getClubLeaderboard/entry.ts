@@ -35,9 +35,9 @@ Deno.serve(async (req) => {
     if (!tenantId || !clubId) return Response.json({ error: 'No active RallyHub club context.' }, { status: 400 });
 
     const [players, kotcAggregates, tournaments] = await Promise.all([
-      base44.asServiceRole.entities.Player.filter({ tenant_id: tenantId, club_id: clubId }),
-      base44.asServiceRole.entities.KotcPlayerAggregate.filter({ tenant_id: tenantId, club_id: clubId }),
-      base44.asServiceRole.entities.Tournament.filter({ tenant_id: tenantId }),
+      base44.asServiceRole.entities.Player.filter({ tenant_id: tenantId, club_id: clubId }, 'full_name', 500),
+      base44.asServiceRole.entities.KotcPlayerAggregate.filter({ tenant_id: tenantId, club_id: clubId }, '-updated_at', 500),
+      base44.asServiceRole.entities.Tournament.filter({ tenant_id: tenantId }, '-created_date', 500),
     ]);
 
     const activePlayers = (players || []).filter((p:any) => String(p.status || 'Active').toLowerCase() === 'active');
@@ -97,11 +97,11 @@ Deno.serve(async (req) => {
 
     if (eligibleIds.size) {
       const [clubEvents, clubParticipants, clubMatches, tournamentParticipants, matches] = await Promise.all([
-        base44.asServiceRole.entities.ClubChallengeEvent.filter({ tenant_id: tenantId }),
-        base44.asServiceRole.entities.ClubChallengeParticipant.filter({ tenant_id: tenantId }),
-        base44.asServiceRole.entities.ClubChallengeMatch.filter({ tenant_id: tenantId }),
-        base44.asServiceRole.entities.TournamentParticipant.filter({ tenant_id: tenantId }),
-        base44.asServiceRole.entities.Match.filter({ tenant_id: tenantId, status: 'Completed' }),
+        base44.asServiceRole.entities.ClubChallengeEvent.filter({ tenant_id: tenantId }, '-created_date', 500),
+        base44.asServiceRole.entities.ClubChallengeParticipant.filter({ tenant_id: tenantId }, 'display_name', 500),
+        base44.asServiceRole.entities.ClubChallengeMatch.filter({ tenant_id: tenantId }, 'round_number', 500),
+        base44.asServiceRole.entities.TournamentParticipant.filter({ tenant_id: tenantId }, 'display_name', 500),
+        base44.asServiceRole.entities.Match.filter({ tenant_id: tenantId, status: 'Completed' }, '-created_date', 500),
       ]);
 
       const challengeEvents = (clubEvents || []).filter((e:any) => eligibleIds.has(String(e.tournament_id)) && e.status === 'completed');
