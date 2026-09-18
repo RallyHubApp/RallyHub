@@ -309,7 +309,11 @@ export default function DirectoryListingEdit() {
     const rawPhone = String(form?.contact?.phone || '').trim();
     let digits = rawPhone.replace(/\D/g, '');
     if (digits.startsWith('00')) digits = digits.slice(2);
-    if (digits.startsWith('0')) digits = `353${digits.slice(1)}`;
+    if (digits.startsWith('0')) {
+      const northernIrelandCounties = new Set(['Antrim', 'Armagh', 'Down', 'Fermanagh', 'Londonderry', 'Derry', 'Tyrone']);
+      const countryCode = northernIrelandCounties.has(String(baseClub?.county || '').trim()) ? '44' : '353';
+      digits = `${countryCode}${digits.slice(1)}`;
+    }
     if (!digits) {
       setError('Add the club representative’s mobile number before opening WhatsApp.');
       return;
