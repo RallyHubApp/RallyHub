@@ -707,13 +707,23 @@ Deno.serve(async (req) => {
       }
 
       try {
+        const contactPhone = String(body.contactPhone || '').trim().slice(0, 80);
+        const previousInvites = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ listing_slug: listingSlug, status: 'pending' }, '-created_date', 50);
+        for (const row of previousInvites || []) {
+          const sameEmail = contactEmail && normaliseEmail(row.contact_email) === contactEmail;
+          const samePhone = contactPhone && row.contact_phone && phoneLooksSame(row.contact_phone, contactPhone);
+          if (row.access_role === 'owner' && (sameEmail || samePhone)) {
+            await base44.asServiceRole.entities.DirectoryClaimInvitation.update(row.id, { status: 'revoked' });
+          }
+        }
         const invitation = await createTrustedClaimInvitation(base44, {
           listing,
           user,
           contactName,
           contactEmail,
-          contactPhone: String(body.contactPhone || '').trim().slice(0, 80),
+          contactPhone,
           channel: 'email',
+          accessRole: 'owner',
         });
         const result = await sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl: invitation.claimUrl });
         if (!result.sent) return Response.json({ error: result.error || 'Could not send claim invitation.' }, { status: result.limited ? 429 : 502 });
