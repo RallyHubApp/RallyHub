@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CalendarDays, CheckCircle2, ChevronRight, CircleUserRound, Trophy, Users, UserRound, Shield, MapPin } from 'lucide-react';
+import { CalendarDays, ChevronRight, CircleUserRound, Crown, Trophy, Users, UserRound, Shield, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,8 @@ export default function MemberDashboardView({ snapshot, preview = false }) {
   }, [playerDirectory, playerSearch]);
   if (!snapshot) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">No member data available.</div>;
 
-  const { user, player, person, member, club, myCompetitions = [], clubCalendar = [] } = snapshot;
+  const { user, player, person, member, club, myCompetitions = [], clubCalendar = [], clubLeaderboard = [] } = snapshot;
+  const myLeaderboardRow = clubLeaderboard.find(row => String(row.player_id) === String(player?.id || '')) || null;
   const name = person?.preferred_name || person?.full_name || player?.full_name || user?.full_name || user?.email || 'Member';
 
   const profileGroups = [
@@ -181,6 +182,29 @@ export default function MemberDashboardView({ snapshot, preview = false }) {
           </div>
         </GlassCard>
       </div>
+
+      <GlassCard>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <h3 className="font-bold flex items-center gap-2"><Crown className="w-4 h-4 text-primary" /> Club leaderboard</h3>
+            <p className="text-xs text-muted-foreground mt-1">Competition performance across RallyHub events that count toward the club leaderboard.</p>
+          </div>
+          {myLeaderboardRow && <Badge className="bg-primary/15 text-primary">Your rank #{myLeaderboardRow.rank}</Badge>}
+        </div>
+        <div className="space-y-2">
+          {clubLeaderboard.length === 0 && <p className="text-sm text-muted-foreground py-5 text-center">No eligible competition results yet.</p>}
+          {clubLeaderboard.slice(0, 8).map(row => (
+            <div key={row.player_id} className={`rounded-lg border p-3 flex items-center gap-3 ${String(row.player_id) === String(player?.id || '') ? 'border-primary/40 bg-primary/5' : 'border-border bg-secondary/20'}`}>
+              <span className="w-7 text-center text-sm font-black text-muted-foreground">{row.rank}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">{row.full_name}</p>
+                <p className="text-xs text-muted-foreground">{row.wins}W · {row.draws || 0}D · {row.losses}L · {row.matches_played} matches</p>
+              </div>
+              <span className="text-sm font-black text-primary">{row.leaderboard_points} pts</span>
+            </div>
+          ))}
+        </div>
+      </GlassCard>
 
       <GlassCard>
         <div className="flex items-start justify-between gap-3 mb-4">
