@@ -807,8 +807,10 @@ Deno.serve(async (req) => {
       const contactName = String(body.contactName || '').trim().slice(0, 160);
       const contactEmail = normaliseEmail(body.contactEmail || '').slice(0, 240);
       const contactPhone = String(body.contactPhone || '').trim().slice(0, 80);
+      const inviteChannel = String(body.channel || 'email') === 'whatsapp' ? 'whatsapp' : 'email';
       if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
-      if (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return Response.json({ error: 'A valid email address is required for the delegated editor.' }, { status: 400 });
+      if (inviteChannel === 'email' && (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail))) return Response.json({ error: 'A valid email address is required for an email invitation.' }, { status: 400 });
+      if (inviteChannel === 'whatsapp' && !contactPhone) return Response.json({ error: 'A mobile number is required for a WhatsApp invitation.' }, { status: 400 });
 
       const ownerAccess = user.role === 'admin' ? null : (await base44.asServiceRole.entities.DirectoryListingAccess.filter({
         listing_slug: listingSlug, user_id: user.id, status: 'active'
@@ -818,36 +820,42 @@ Deno.serve(async (req) => {
       const listing = await resolveListing(base44, listingSlug);
       if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
 
-      const users = await base44.asServiceRole.entities.User.filter({ email: contactEmail });
-      const targetUser = users?.[0] || null;
-      if (targetUser) {
-        const existing = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, user_id: targetUser.id, status: 'active' });
-        if (existing?.length) return Response.json({ error: 'That person already has access to this listing.' }, { status: 409 });
+      if (contactEmail) {
+        const users = await base44.asServiceRole.entities.User.filter({ email: contactEmail });
+        const targetUser = users?.[0] || null;
+        if (targetUser) {
+          const existing = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, user_id: targetUser.id, status: 'active' });
+          if (existing?.length) return Response.json({ error: 'That person already has access to this listing.' }, { status: 409 });
+        }
       }
 
       const previousInvites = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ listing_slug: listingSlug, status: 'pending' }, '-created_date', 50);
       for (const row of previousInvites || []) {
-        if (row.access_role === 'editor' && normaliseEmail(row.contact_email) === contactEmail) {
+        const sameEmail = contactEmail && normaliseEmail(row.contact_email) === contactEmail;
+        const samePhone = contactPhone && row.contact_phone && phoneLooksSame(row.contact_phone, contactPhone);
+        if (row.access_role === 'editor' && (sameEmail || samePhone)) {
           await base44.asServiceRole.entities.DirectoryClaimInvitation.update(row.id, { status: 'revoked' });
         }
       }
 
       const invitation = await createTrustedClaimInvitation(base44, {
-        listing, user, contactName, contactEmail, contactPhone, channel: 'email', accessRole: 'editor'
+        listing, user, contactName, contactEmail, contactPhone, channel: inviteChannel, accessRole: 'editor'
       });
-      const result = await sendClaimInviteEmail(base44, {
-        user, listing, contactEmail, contactName, claimUrl: invitation.claimUrl, accessRole: 'editor'
-      });
-      if (!result.sent) return Response.json({ error: result.error || 'Could not send editor invitation.' }, { status: result.limited ? 429 : 502 });
+      if (inviteChannel === 'email') {
+        const result = await sendClaimInviteEmail(base44, {
+          user, listing, contactEmail, contactName, claimUrl: invitation.claimUrl, accessRole: 'editor'
+        });
+        if (!result.sent) return Response.json({ error: result.error || 'Could not send editor invitation.' }, { status: result.limited ? 429 : 502 });
+      }
 
       await base44.asServiceRole.entities.DirectoryListingAudit.create({
         listing_slug: listingSlug,
         user_id: user.id,
         action: 'access_invited',
         occurred_at: new Date().toISOString(),
-        after_json: JSON.stringify({ role: 'editor', email: contactEmail, expiresAt: invitation.expiresAt }),
+        after_json: JSON.stringify({ role: 'editor', channel: inviteChannel, email: contactEmail || null, phone: contactPhone || null, expiresAt: invitation.expiresAt }),
       });
-      return Response.json({ success: true, email: contactEmail, expiresAt: invitation.expiresAt });
+      return Response.json({ success: true, channel: inviteChannel, email: contactEmail || null, phone: contactPhone || null, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
     }
 
     if (action === 'revoke_editor') {
