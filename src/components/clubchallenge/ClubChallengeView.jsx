@@ -8,11 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import { getRallyHubPaLevel, listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
 import { INTERCLUB_EVENT_LABEL, INTERCLUB_INTERNAL_FORMAT, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
+import InterclubSpondImportModal from '@/components/clubchallenge/InterclubSpondImportModal';
 import {
   analyseClubChallengeFairness,
   applyShowcasePoints,
@@ -195,6 +196,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [potVoterId, setPotVoterId] = useState('');
   const [potNomineeId, setPotNomineeId] = useState('');
   const [publicLinks, setPublicLinks] = useState(null);
+  const [spondImportSide, setSpondImportSide] = useState('');
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: hostClub } = useQuery({
@@ -1380,7 +1382,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <Button data-testid="cc-load-practice" variant="outline" className="w-full sm:w-auto min-h-11" onClick={loadTestRoster} disabled={locked || saving || !canManageEvent}><Users className="w-4 h-4 mr-2" />Practice with 32 Test Players</Button>
             </div>
             <div className="grid lg:grid-cols-2 gap-4">
-              {['club_a','club_b'].map(side => <div key={side} className="glass rounded-xl p-4"><div className="grid grid-cols-[1fr_auto] gap-2"><Input placeholder={`Add ${side === 'club_a' ? setup.clubAName : setup.clubBName} player`} value={manual[side]} onChange={e => setManual(m => ({ ...m, [side]: e.target.value }))} className="bg-secondary" /><Button className="w-11 h-11 p-0" onClick={() => addManual(side)} disabled={locked || !manual[side].trim()}><Plus className="w-4 h-4" /></Button></div></div>)}
+              {['club_a','club_b'].map(side => {
+                const clubName = side === 'club_a' ? setup.clubAName : setup.clubBName;
+                return <div key={side} className="glass rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">{clubName}</p><p className="text-[10px] text-muted-foreground">Add manually or import confirmed attendees from Spond.</p></div><Button type="button" variant="outline" size="sm" onClick={() => setSpondImportSide(side)} disabled={locked || !canManageEvent}><Download className="w-3.5 h-3.5 mr-1" />Import Spond</Button></div>
+                  <div className="grid grid-cols-[1fr_auto] gap-2"><Input placeholder={`Add ${clubName} player`} value={manual[side]} onChange={e => setManual(m => ({ ...m, [side]: e.target.value }))} className="bg-secondary" /><Button className="w-11 h-11 p-0" onClick={() => addManual(side)} disabled={locked || !manual[side].trim()}><Plus className="w-4 h-4" /></Button></div>
+                </div>;
+              })}
             </div>
             <div className="grid lg:grid-cols-2 gap-4"><RankingList side="club_a" title={setup.clubAName} participants={aPlayers} locked={locked} onReorder={reorder} /><RankingList side="club_b" title={setup.clubBName} participants={bPlayers} locked={locked} onReorder={reorder} /></div>
             {formatInfo && <div className="glass rounded-xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-center"><div><p className="text-xl font-bold">{formatInfo.recommendedRounds}</p><p className="text-[10px] text-muted-foreground">Rounds</p></div><div><p className="text-xl font-bold">{formatInfo.totalMatches}</p><p className="text-[10px] text-muted-foreground">Matches</p></div><div><p className="text-xl font-bold">{formatInfo.gamesRangeClubA.join('–')}</p><p className="text-[10px] text-muted-foreground">Games/player</p></div><div><p className="text-xl font-bold">{formatInfo.structuredMinutes}</p><p className="text-[10px] text-muted-foreground">Structured min</p></div><div><p className="text-xl font-bold">{formatInfo.remainingMinutes}</p><p className="text-[10px] text-muted-foreground">Contingency min</p></div></div>}
@@ -1664,6 +1672,17 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           )}
         </div>
       )}
+      <InterclubSpondImportModal
+        open={!!spondImportSide}
+        onOpenChange={open => { if (!open) setSpondImportSide(''); }}
+        tournament={tournament}
+        event={event}
+        side={spondImportSide}
+        onImported={async result => {
+          await sync();
+          toast.success(`${result?.created || 0} Spond player${Number(result?.created || 0) === 1 ? '' : 's'} added to the Interclub roster`);
+        }}
+      />
       </div>
     </div>
   );
