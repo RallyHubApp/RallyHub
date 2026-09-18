@@ -3,12 +3,13 @@ import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import PasswordInput from '@/components/ui/password-input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
   LogIn, Users, CalendarDays, ArrowRight, CheckCircle2,
-  UserPlus, RefreshCw, ChevronRight, Loader2, AlertCircle, Eye, EyeOff
+  UserPlus, RefreshCw, ChevronRight, Loader2, AlertCircle
 } from 'lucide-react';
 
 const STEPS = ['login', 'select_event', 'preview', 'done'];
@@ -26,7 +27,6 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
   // Login
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [token, setToken] = useState(() => sessionStorage.getItem('rallyhub_spond_token') || '');
 
   // Groups + events
@@ -271,24 +271,14 @@ export default function SpondImportModal({ open, onOpenChange, tournament, onImp
               </div>
               <div>
                 <label className="text-xs text-muted-foreground block mb-1">Spond Password</label>
-                <div className="relative">
-                  <Input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="bg-secondary border-input pr-9"
-                    onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(v => !v)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+                <PasswordInput
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="bg-secondary border-input"
+                  autoComplete="current-password"
+                  onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                />
               </div>
             </div>
             <div className="flex justify-end gap-2">
