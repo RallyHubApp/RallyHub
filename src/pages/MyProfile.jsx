@@ -295,80 +295,115 @@ export default function MyProfile() {
         </TabsList>
 
         {/* ── PROFILE TAB ── */}
-        <TabsContent value="profile" className="mt-4">
+        <TabsContent value="profile" className="mt-4 space-y-4">
           <GlassCard>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-foreground">Player Details</h3>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">My member record</h3>
+                <p className="text-xs text-muted-foreground mt-1">This is your own RallyHub member information, regardless of whether you also hold an admin role.</p>
+              </div>
               {!editing ? (
-                <Button variant="outline" size="sm" onClick={() => setEditing(true)}>Edit</Button>
+                <Button variant="outline" size="sm" onClick={() => setEditing(true)}>Edit my details</Button>
               ) : (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
+                  <Button variant="outline" size="sm" onClick={() => setEditing(false)} disabled={saving}>Cancel</Button>
                   <Button size="sm" className="bg-primary text-primary-foreground" onClick={saveProfile} disabled={saving}>
-                    {saving ? <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Saving…</> : 'Save'}
+                    {saving ? <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Saving…</> : 'Save changes'}
                   </Button>
                 </div>
               )}
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              {[
-                { label: 'Full Name', field: 'full_name', type: 'text' },
-                { label: 'Email', field: 'email', type: 'email' },
-                { label: 'Phone', field: 'phone', type: 'tel' },
-                { label: 'Club', field: 'club', type: 'text' },
-              ].map(({ label, field, type }) => (
-                <div key={field}>
-                  <Label className="text-xs text-muted-foreground">{label}</Label>
-                  {editing ? (
-                    <Input
-                      type={type}
-                      value={form[field] || ''}
-                      onChange={e => setForm(prev => ({ ...prev, [field]: e.target.value }))}
-                      className="mt-1 bg-secondary border-border text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm text-foreground mt-1">{form[field] || '—'}</p>
+            <div className="rounded-lg border border-border bg-secondary/25 p-3 mb-5">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">RallyHub sign-in email</p>
+              <p className="text-sm font-medium mt-1">{user?.email || '—'}</p>
+              <p className="text-[11px] text-muted-foreground mt-1">Changing your contact email below does not change the email you use to sign in.</p>
+            </div>
+
+            <div className="space-y-6">
+              {profileSections.map(section => (
+                <section key={section.title} className="pt-5 first:pt-0 border-t first:border-t-0 border-border">
+                  <div className="mb-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{section.title}</h4>
+                    <p className="text-xs text-muted-foreground mt-1 normal-case tracking-normal">{section.description}</p>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {section.fields.map(({ label, field, type, options, mono }) => (
+                      <div key={field}>
+                        <Label className="text-xs text-muted-foreground">{label}</Label>
+                        {editing ? (
+                          options ? (
+                            <Select value={form[field] || ''} onValueChange={value => setForm(prev => ({ ...prev, [field]: value }))}>
+                              <SelectTrigger className="mt-1 bg-secondary border-border text-sm">
+                                <SelectValue placeholder="Select" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {options.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              type={type || 'text'}
+                              value={form[field] || ''}
+                              onChange={e => setForm(prev => ({ ...prev, [field]: e.target.value }))}
+                              className={`mt-1 bg-secondary border-border text-sm ${mono ? 'font-mono' : ''}`}
+                            />
+                          )
+                        ) : (
+                          <p className={`text-sm text-foreground mt-1 break-words ${mono ? 'font-mono' : ''}`}>{form[field] || '—'}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {section.title === 'Playing profile' && (
+                    <div className="mt-4 rounded-lg border border-border bg-secondary/20 p-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold">Ratings</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Official DUPR {activePlayer?.dupr_rating != null ? Number(activePlayer.dupr_rating).toFixed(3) : '—'} · Club rating {activePlayer?.skill_rating != null ? Number(activePlayer.skill_rating).toFixed(1) : '—'}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={syncDupr}
+                          disabled={!activePlayer}
+                          className="shrink-0 gap-1.5"
+                          title="Live DUPR rating sync will be enabled when the official DUPR API integration is available."
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Sync DUPR
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-2">Your DUPR ID is member-editable. Live DUPR rating sync is not connected yet.</p>
+                    </div>
                   )}
+                </section>
+              ))}
+            </div>
+          </GlassCard>
+
+          <GlassCard>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Membership</h3>
+                <p className="text-xs text-muted-foreground mt-1">Club-managed information is shown here for you to verify, but members cannot change payment or membership status themselves.</p>
+              </div>
+              <Badge variant="outline" className="text-[10px]">Club managed</Badge>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-x-5 gap-y-3">
+              {membershipRows.map(([label, value]) => (
+                <div key={label}>
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <p className="text-sm text-foreground mt-0.5 capitalize break-words">{value}</p>
                 </div>
               ))}
             </div>
-
-            {/* DUPR section */}
-            <div className="mt-5 pt-4 border-t border-border">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">DUPR Integration</h4>
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <Label className="text-xs text-muted-foreground">DUPR ID</Label>
-                  {editing ? (
-                    <Input
-                      value={form.dupr_id || ''}
-                      onChange={e => setForm(prev => ({ ...prev, dupr_id: e.target.value }))}
-                      placeholder="e.g. 12345678"
-                      className="mt-1 bg-secondary border-border text-sm font-mono"
-                    />
-                  ) : (
-                    <p className="text-sm font-mono text-foreground mt-1">{form.dupr_id || '—'}</p>
-                  )}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={syncDupr}
-                  disabled={!linkedPlayer}
-                  className="shrink-0 gap-1.5"
-                  title="Live DUPR rating sync will be enabled when the official DUPR API integration is available."
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  Sync DUPR
-                </Button>
-              </div>
-              {!linkedPlayer ? (
-                <p className="text-xs text-muted-foreground mt-2">Save your profile first to store your DUPR ID.</p>
-              ) : (
-                <p className="text-xs text-muted-foreground mt-2">Live DUPR rating sync is not connected yet. Your DUPR ID can still be saved in RallyHub.</p>
-              )}
-            </div>
+            {!memberSnapshot?.member && (
+              <p className="mt-4 text-xs text-amber-600">A separate club membership record is not currently linked to this account. Your personal and playing records are still connected and editable above.</p>
+            )}
           </GlassCard>
         </TabsContent>
 
