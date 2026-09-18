@@ -25,7 +25,7 @@ export default function MyProfile() {
   const [linkOpen, setLinkOpen] = useState(false);
 
   // Find the player record linked to the current user
-  const { data: linkedPlayer, isLoading: loadingPlayer } = useQuery({
+  const { data: linkedPlayer } = useQuery({
     queryKey: ['my-player', user?.email],
     queryFn: async () => {
       if (!user?.email) return null;
@@ -234,9 +234,13 @@ export default function MyProfile() {
             currentUrl={activePlayer?.avatar_url}
             initials={initials}
             onUploaded={async (url) => {
-              if (linkedPlayer) {
-                await base44.entities.Player.update(linkedPlayer.id, { avatar_url: url });
-                queryClient.invalidateQueries({ queryKey: ['my-player'] });
+              if (activePlayer) {
+                await base44.entities.Player.update(activePlayer.id, { avatar_url: url });
+                await Promise.all([
+                  queryClient.invalidateQueries({ queryKey: ['my-player'] }),
+                  queryClient.invalidateQueries({ queryKey: ['member-profile-self'] }),
+                  queryClient.invalidateQueries({ queryKey: ['member-portal-self'] }),
+                ]);
                 toast.success('Avatar updated!');
               }
             }}
