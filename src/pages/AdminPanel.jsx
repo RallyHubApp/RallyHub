@@ -75,9 +75,13 @@ export default function AdminPanel() {
   const { data: memberPreview = null, isLoading: loadingMemberPreview, error: memberPreviewError } = useQuery({
     queryKey: ['admin-member-preview', previewTargetUserId],
     queryFn: async () => {
-      const res = await base44.functions.invoke('memberPortal', { action: 'admin_preview', userId: previewTargetUserId });
+      const [res, leaderboardRes] = await Promise.all([
+        base44.functions.invoke('memberPortal', { action: 'admin_preview', userId: previewTargetUserId }),
+        base44.functions.invoke('getClubLeaderboard', {}),
+      ]);
       if (res.data?.error) throw new Error(res.data.error);
-      return res.data?.snapshot || null;
+      const snapshot = res.data?.snapshot || null;
+      return snapshot ? { ...snapshot, clubLeaderboard: leaderboardRes.data?.rows || [] } : null;
     },
     enabled: canAccessAdmin && activeAdminTab === 'preview' && !!previewTargetUserId
   });
