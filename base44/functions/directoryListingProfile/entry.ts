@@ -176,6 +176,26 @@ Deno.serve(async (req) => {
           listing_slug: listingSlug, public_json: publicJson, status: 'active', updated_by_user_id: user.id, updated_at: now,
         });
       }
+
+      // For database-backed listings curated by a RallyHub Super Admin, keep the
+      // trusted claim contact aligned with the contact shown in the editor. This is
+      // what allows an invited representative to auto-verify with the same email.
+      if (user.role === 'admin' && publicProfile?.contact?.email) {
+        try {
+          const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
+          const dynamic = dynamicRows?.[0];
+          if (dynamic) {
+            const trusted = [{
+              name: publicProfile.contact?.name || null,
+              email: publicProfile.contact?.email || null,
+              phone: publicProfile.contact?.phone || null,
+            }];
+            await base44.asServiceRole.entities.DirectoryListingRecord.update(dynamic.id, { trusted_contacts_json: JSON.stringify(trusted) });
+          }
+        } catch (contactSyncError) {
+          console.warn('Directory trusted-contact sync failed', contactSyncError?.message || contactSyncError);
+        }
+      }
       try {
         await base44.asServiceRole.entities.DirectoryListingAudit.create({
           listing_slug: listingSlug,
