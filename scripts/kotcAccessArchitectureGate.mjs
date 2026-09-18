@@ -145,6 +145,8 @@ includes(create,"KotcRoundSlot.bulkCreate(slotPayload)",'Round 1 slot creation m
 includes(create,"KotcMatch.bulkCreate(matchPayload)",'Round 1 match creation must be batched rather than one write per court');
 includes(create,"retry('session create'",'KOTC session creation must internally retry Base44 provider rate limits');
 includes(create,"retry('round1 slots bulk create'",'Round 1 slot batch must internally retry Base44 provider rate limits');
+assert(!hostUi.includes("base44.entities.Tournament.update(tournament.id,{counts_toward_leaderboard"),'KOTC creation must not depend on a separate client-side tournament write');
+includes(create,'counts_toward_leaderboard:countsTowardLeaderboard','authoritative KOTC create command must persist the leaderboard inclusion choice itself');
 includes(hostUi,"'pageshow'",'host UI must reconcile authoritative state when a mobile browser restores the page');
 includes(hostUi,'kotc-quick-links','host UI must expose scoring/public links without backwards navigation');
 includes(mobileHostTest,'PageTransitionEvent','mobile host robot must exercise back-forward-cache restoration');
