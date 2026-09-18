@@ -637,17 +637,28 @@ export default function DirectoryListingEdit() {
                   </div>
                 </div>
                 <nav className="mt-5 flex gap-2 overflow-x-auto pb-1 text-sm">
-                  <a href="#basics" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Club info</a>
+                  <a href="#basics" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Basics</a>
                   <a href="#contact" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Contact</a>
-                  <a href="#spond" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Spond</a>
                   <a href="#venues" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Venues</a>
                   <a href="#sessions" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Sessions</a>
+                  <button type="button" onClick={() => setShowEnhancements(true)} className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Enhance listing</button>
+                  <Link to="/directory/help" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40 inline-flex items-center gap-1.5"><HelpCircle className="w-3.5 h-3.5" /> Help</Link>
                 </nav>
                 {saving && <div aria-live="polite" className="mt-4 rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm text-primary flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin shrink-0" /><span><strong>Saving your changes…</strong> Please wait for confirmation before leaving this page.</span></div>}
                 {!saving && saved && !dirty && <div aria-live="polite" className="mt-4 rounded-xl border border-green-500/40 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300 flex flex-wrap items-center justify-between gap-2"><span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /><strong>Saved successfully.</strong> Changes are live in the public directory.</span><button type="button" onClick={viewPublicListing} className="font-semibold hover:underline">View updated listing</button></div>}
                 {inviteMessage && <div aria-live="polite" className="mt-4 rounded-xl border border-green-500/40 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 shrink-0" /><span>{inviteMessage}</span></div>}
                 {error && <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
                 {validation.length > 0 && <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm"><p className="font-semibold text-amber-700 dark:text-amber-200">Please fix these before saving:</p><ul className="mt-2 list-disc pl-5 space-y-1 text-muted-foreground">{validation.map(item => <li key={item}>{item}</li>)}</ul></div>}
+              </section>
+
+              <section className="rounded-2xl border border-primary/25 bg-primary/10 p-5 sm:p-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-primary" /><h2 className="font-bold">Start with four things</h2></div>
+                    <p className="text-sm text-muted-foreground mt-2">1. Check the club description · 2. Check the public contact · 3. Check the main venue · 4. Check the regular sessions. That is enough for a useful listing. Everything else is optional.</p>
+                  </div>
+                  <Link to="/directory/help"><Button type="button" variant="outline" className="gap-2"><HelpCircle className="w-4 h-4" /> Open help guide</Button></Link>
+                </div>
               </section>
 
               <section id="basics" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
