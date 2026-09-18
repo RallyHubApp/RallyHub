@@ -678,13 +678,58 @@ Deno.serve(async (req) => {
       }
 
       try {
-        const result = await sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName });
+        const invitation = await createTrustedClaimInvitation(base44, {
+          listing,
+          user,
+          contactName,
+          contactEmail,
+          contactPhone: String(body.contactPhone || '').trim().slice(0, 80),
+          channel: 'email',
+        });
+        const result = await sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl: invitation.claimUrl });
         if (!result.sent) return Response.json({ error: result.error || 'Could not send claim invitation.' }, { status: result.limited ? 429 : 502 });
-        return Response.json({ success: true, sent: true, email: result.to, claimUrl: result.claimUrl });
+        return Response.json({ success: true, sent: true, email: result.to, claimUrl: result.claimUrl, expiresAt: invitation.expiresAt });
       } catch (emailError) {
         console.warn('Directory claim invitation failed', emailError?.message || emailError);
         return Response.json({ error: 'Could not send the claim invitation right now.' }, { status: 502 });
       }
+    }
+
+    if (action === 'create_claim_invite') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const listingSlug = String(body.listingSlug || '').trim();
+      const contactName = String(body.contactName || '').trim().slice(0, 160);
+      const contactEmail = normaliseEmail(body.contactEmail || '').slice(0, 240);
+      const contactPhone = String(body.contactPhone || '').trim().slice(0, 80);
+      if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
+      if (!contactPhone && !contactEmail) return Response.json({ error: 'A trusted email or mobile number is required' }, { status: 400 });
+      const listing = await resolveListing(base44, listingSlug);
+      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+      const anyAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' });
+      if (anyAccess?.length) return Response.json({ error: 'This listing has already been claimed.' }, { status: 409 });
+
+      const records = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
+      const record = records?.[0];
+      if (record) {
+        let trusted:any[] = [];
+        try { trusted = record.trusted_contacts_json ? JSON.parse(record.trusted_contacts_json) : []; } catch { trusted = []; }
+        const retained = (Array.isArray(trusted) ? trusted : []).filter((item:any) =>
+          !(contactEmail && normaliseEmail(item?.email) === contactEmail) &&
+          !(contactPhone && item?.phone && phoneLooksSame(item.phone, contactPhone))
+        );
+        retained.unshift({ name: contactName || null, email: contactEmail || null, phone: contactPhone || null });
+        await base44.asServiceRole.entities.DirectoryListingRecord.update(record.id, { trusted_contacts_json: JSON.stringify(retained.slice(0, 10)) });
+      }
+
+      const invitation = await createTrustedClaimInvitation(base44, {
+        listing,
+        user,
+        contactName,
+        contactEmail,
+        contactPhone,
+        channel: String(body.channel || 'whatsapp') === 'email' ? 'email' : 'whatsapp',
+      });
+      return Response.json({ success: true, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
     }
 
     if (action === 'list_admin') {
