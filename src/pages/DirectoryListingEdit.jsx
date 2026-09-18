@@ -336,7 +336,7 @@ export default function DirectoryListingEdit() {
     window.location.assign(`${publicListingUrl}?refresh=${Date.now()}`);
   };
 
-  const openWhatsAppClaimInvite = () => {
+  const openWhatsAppClaimInvite = async () => {
     setInviteMessage('');
     setError('');
     if (dirty) {
