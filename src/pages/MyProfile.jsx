@@ -56,25 +56,37 @@ export default function MyProfile() {
   const [form, setForm] = useState(/** @type {any} */ ({}));
 
   useEffect(() => {
-    if (linkedPlayer) {
+    const person = memberSnapshot?.person;
+    const player = memberSnapshot?.player || linkedPlayer;
+    if (person || player || user) {
       setForm({
-        full_name: linkedPlayer.full_name || user?.full_name || '',
-        email: linkedPlayer.email || user?.email || '',
-        phone: linkedPlayer.phone || '',
-        club: linkedPlayer.club || '',
-        age_group: linkedPlayer.age_group || '',
-        preferred_position: linkedPlayer.preferred_position || '',
-        dupr_id: linkedPlayer.dupr_id || '',
-        notes: linkedPlayer.notes || ''
-      });
-    } else if (user) {
-      setForm({
-        full_name: user.full_name || '',
-        email: user.email || '',
-        phone: '', club: '', age_group: '', preferred_position: '', dupr_id: '', notes: ''
+        full_name: person?.full_name || player?.full_name || user?.full_name || '',
+        preferred_name: person?.preferred_name || '',
+        primary_email: person?.primary_email || player?.email || user?.email || '',
+        mobile: person?.mobile || player?.phone || '',
+        date_of_birth: person?.date_of_birth || '',
+        gender: person?.gender || player?.gender || '',
+        address_line1: person?.address_line1 || person?.full_postal_address || '',
+        address_line2: person?.address_line2 || '',
+        town_city: person?.town_city || '',
+        county_region: person?.county_region || '',
+        postal_code: person?.postal_code || '',
+        country: person?.country || '',
+        preferred_language: person?.preferred_language || '',
+        communication_preference: person?.communication_preference || '',
+        emergency_contact_name: person?.emergency_contact_name || memberSnapshot?.member?.emergency_contact || '',
+        emergency_contact_relationship: person?.emergency_contact_relationship || '',
+        emergency_mobile: person?.emergency_mobile || memberSnapshot?.member?.emergency_mobile || '',
+        secondary_emergency_contact_name: person?.secondary_emergency_contact_name || '',
+        secondary_emergency_contact_mobile: person?.secondary_emergency_contact_mobile || '',
+        profile_visibility: person?.profile_visibility || 'club',
+        photo_visibility: person?.photo_visibility || 'club',
+        age_group: player?.age_group || '',
+        preferred_position: player?.preferred_position || '',
+        dupr_id: player?.dupr_id || ''
       });
     }
-  }, [linkedPlayer, user]);
+  }, [memberSnapshot, linkedPlayer, user]);
 
   const playerId = linkedPlayer?.id;
 
