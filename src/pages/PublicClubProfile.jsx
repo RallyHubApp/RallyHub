@@ -16,13 +16,6 @@ const groupByDay = sessions => [...(sessions || [])]
     return groups;
   }, {});
 
-const clubInitials = name => name
-  .split(/\s+/)
-  .filter(Boolean)
-  .slice(0, 2)
-  .map(part => part[0]?.toUpperCase())
-  .join('');
-
 const publicDescription = club => {
   const description = String(club?.description || '').trim();
   if (club?.verificationStatus === 'verified' && /has not yet been claimed|listing is currently unclaimed|unclaimed listing/i.test(description)) {
