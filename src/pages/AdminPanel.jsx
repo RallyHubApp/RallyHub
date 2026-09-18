@@ -61,6 +61,16 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
+  const { data: clubMembershipRelationships = [] } = useQuery({
+    queryKey: ['club-membership-relationships', user?.active_tenant_id, user?.active_club_id],
+    queryFn: () => base44.entities.ClubRelationship.filter({
+      tenant_id: user?.active_tenant_id,
+      club_id: user?.active_club_id,
+      relationship_type: 'member'
+    }, '-updated_date', 500),
+    enabled: canAccessAdmin && !!user?.active_tenant_id && !!user?.active_club_id
+  });
+
   const { data: allUsers = [] } = useQuery({
     queryKey: ['all-users'],
     queryFn: async () => {
@@ -185,6 +195,7 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       setMembershipSyncResult(res.data);
       queryClient.invalidateQueries({ queryKey: ['players'] });
+      queryClient.invalidateQueries({ queryKey: ['club-membership-relationships'] });
       toast.success(res.data?.message || 'Membership sync complete');
     } catch (error) {
       const message = error?.response?.data?.error || error?.message || 'Membership sync failed';
@@ -367,8 +378,12 @@ export default function AdminPanel() {
   const activeClubId = user?.active_club_id || '';
   const activeTenantId = user?.active_tenant_id || '';
   const clubPlayers = players.filter(p => (!activeClubId || p.club_id === activeClubId) && (!activeTenantId || p.tenant_id === activeTenantId));
-  const linkedCount = clubPlayers.filter(p => p.user_id).length;
-  const clubPlayerCount = clubPlayers.length;
+  const currentClubPlayers = clubPlayers.filter(p => p.relationship_type === 'member' && p.status === 'Active');
+  const linkedCount = currentClubPlayers.filter(p => p.user_id).length;
+  const clubPlayerCount = currentClubPlayers.length;
+  const paidActiveCount = clubMembershipRelationships.filter(r => r.status === 'active' && r.membership_category === 'paid').length;
+  const complimentaryActiveCount = clubMembershipRelationships.filter(r => r.status === 'active' && r.membership_category === 'complimentary').length;
+  const pendingMemberCount = clubMembershipRelationships.filter(r => r.status === 'pending').length;
   const unlinkedCount = Math.max(0, clubPlayerCount - linkedCount);
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
@@ -387,8 +402,8 @@ export default function AdminPanel() {
       <div className="grid grid-cols-3 gap-4">
         <GlassCard delay={0} className="text-center">
           <p className="text-2xl font-bold text-foreground">{clubPlayerCount}</p>
-          <p className="text-xs text-muted-foreground">Clare Player Records</p>
-          <p className="text-[10px] text-muted-foreground/70 mt-1">152 paid + 1 pending + 2 agreed player records</p>
+          <p className="text-xs text-muted-foreground">Current Clare Members</p>
+          <p className="text-[10px] text-muted-foreground/70 mt-1">{paidActiveCount} paid · {complimentaryActiveCount} complimentary · {pendingMemberCount} pending</p>
         </GlassCard>
         <GlassCard delay={0.05} className="text-center">
           <p className="text-2xl font-bold text-primary">{linkedCount}</p>
@@ -397,8 +412,8 @@ export default function AdminPanel() {
         </GlassCard>
         <GlassCard delay={0.1} className="text-center">
           <p className="text-2xl font-bold text-yellow-400">{unlinkedCount}</p>
-          <p className="text-xs text-muted-foreground">Player Records Not Yet Linked</p>
-          <p className="text-[10px] text-muted-foreground/70 mt-1">Current Clare club only</p>
+          <p className="text-xs text-muted-foreground">Members Not Yet Linked</p>
+          <p className="text-[10px] text-muted-foreground/70 mt-1">Current Clare members only</p>
         </GlassCard>
       </div>
 
