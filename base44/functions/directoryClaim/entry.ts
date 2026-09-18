@@ -147,6 +147,41 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
   });
 }
 
+async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName }) {
+  const to = normaliseEmail(contactEmail);
+  if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+    return { sent: 0, error: 'A valid club contact email is required.' };
+  }
+  const auditAction = 'credit_guard_directory_claim_invite';
+  const [userRows, globalRows] = await Promise.all([
+    base44.asServiceRole.entities.AuditLog.filter({ user_id: user.id, action: auditAction }, '-created_date', 30),
+    base44.asServiceRole.entities.AuditLog.filter({ action: auditAction }, '-created_date', 120),
+  ]);
+  if (recentCount(userRows || [], 24) >= 20 || recentCount(globalRows || [], 24) >= 100) {
+    return { sent: 0, limited: true, error: 'Claim-invitation email limit reached for today.' };
+  }
+  await base44.asServiceRole.entities.AuditLog.create({
+    tenant_id: String(user.active_tenant_id || 'platform'),
+    ...(user.active_club_id ? { club_id: user.active_club_id } : {}),
+    user_id: user.id,
+    action: auditAction,
+    entity_type: 'DirectoryClaimInvitation',
+    entity_id: String(listing.slug).slice(0, 220),
+    scope_type: 'CreditAction',
+    scope_id: to.slice(0, 120),
+    after_state: JSON.stringify({ listingSlug: listing.slug, recipient: to, windowHours: 24 }),
+    reason: 'Reserved before sending a RallyHub Directory claim invitation.',
+  });
+  const claimUrl = `https://rallyhub.ie/directory/${encodeURIComponent(listing.slug)}/claim`;
+  await base44.asServiceRole.integrations.Core.SendEmail({
+    to,
+    from_name: 'RallyHub Directory',
+    subject: `Claim and review ${listing.name} on RallyHub`,
+    body: `Hi ${String(contactName || '').trim() || 'there'},\n\nRallyHub has created a draft Directory listing for ${listing.name}. The listing is currently unclaimed.\n\nPlease open the link below, sign in or create your RallyHub account using this email address, and claim the listing. Once claimed, you can review and update the club information yourself.\n\n${claimUrl}\n\nThe listing will remain marked Unclaimed until you complete the claim.\n\nRallyHub Directory`,
+  });
+  return { sent: 1, to, claimUrl };
+}
+
 async function sendAdminDirectoryEmail(base44, { user, subject, body, kind, contextId }) {
   try {
     const auditAction = 'credit_guard_directory_email';
@@ -320,6 +355,126 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'admin_create_unclaimed') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+
+      const clubName = String(body.clubName || '').trim().slice(0, 180);
+      const county = String(body.county || '').trim().slice(0, 100);
+      const town = String(body.town || '').trim().slice(0, 120);
+      const primaryVenue = String(body.primaryVenue || '').trim().slice(0, 220);
+      const address = String(body.address || '').trim().slice(0, 320);
+      const venuePostcode = String(body.venuePostcode || '').trim().slice(0, 40);
+      const website = String(body.website || '').trim().slice(0, 320);
+      const facebook = String(body.facebook || '').trim().slice(0, 320);
+      const instagram = String(body.instagram || '').trim().slice(0, 320);
+      const contactName = String(body.contactName || '').trim().slice(0, 160);
+      const contactRole = String(body.contactRole || '').trim().slice(0, 160);
+      const contactEmail = normaliseEmail(body.contactEmail || '').slice(0, 240);
+      const contactPhone = String(body.contactPhone || '').trim().slice(0, 80);
+      const publishContact = body.publishContact !== false;
+      const notes = String(body.notes || '').trim().slice(0, 1500);
+
+      if (!clubName) return Response.json({ error: 'Club name is required' }, { status: 400 });
+      if (!county) return Response.json({ error: 'County is required' }, { status: 400 });
+      if (!contactName) return Response.json({ error: 'Club contact name is required' }, { status: 400 });
+      if (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return Response.json({ error: 'A valid club contact email is required' }, { status: 400 });
+      if (!contactPhone) return Response.json({ error: 'Club contact mobile number is required' }, { status: 400 });
+
+      const staticDuplicate = directoryVerificationIndex.find(x =>
+        normaliseName(x.name) === normaliseName(clubName) &&
+        normaliseName(x.county || '') === normaliseName(county)
+      );
+      const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500);
+      const dynamicDuplicate = (dynamicRows || []).find(x => normaliseName(x.name) === normaliseName(clubName) && normaliseName(x.county || '') === normaliseName(county));
+      const duplicate = staticDuplicate || dynamicDuplicate;
+      if (duplicate) {
+        return Response.json({ error: 'This club already appears to be in the RallyHub directory.', existingSlug: duplicate.slug, existingName: duplicate.name }, { status: 409 });
+      }
+
+      const now = new Date().toISOString();
+      const listingSlug = await uniqueListingSlug(base44, clubName);
+      const venueId = primaryVenue ? `venue-${slugify(primaryVenue)}` : null;
+      const submittedVenue = venueId ? {
+        id: venueId,
+        name: primaryVenue,
+        shortName: primaryVenue,
+        address: address || town || null,
+        eircode: venuePostcode || null,
+        indoor: null,
+        courts: null,
+        latitude: null,
+        longitude: null,
+        mapUrl: null,
+        websiteUrl: null,
+        playType: null,
+      } : null;
+      const geocodedVenue = submittedVenue ? await geocodeDirectoryVenue(submittedVenue, { town, county }) : null;
+      const publicContact = publishContact ? {
+        name: contactName || null,
+        phone: contactPhone || null,
+        phoneHref: contactPhone ? `tel:${String(contactPhone).replace(/[^+\d]/g, '')}` : null,
+        whatsapp: null,
+        email: contactEmail || null,
+      } : { name: null, phone: null, phoneHref: null, whatsapp: null, email: null };
+      const baseListing = {
+        id: listingSlug,
+        slug: listingSlug,
+        name: clubName,
+        sport: 'Pickleball',
+        county,
+        town: town || null,
+        region: null,
+        status: 'active',
+        membershipStatus: 'Contact the club for joining information',
+        affiliation: null,
+        logoUrl: null,
+        website: safePublicUrl(website),
+        facebook: safePublicUrl(facebook),
+        instagram: safePublicUrl(instagram),
+        waitingListUrl: null,
+        joiningCtaLabel: 'Contact club',
+        policyLabel: 'Club information',
+        description: `${clubName} is listed in the RallyHub Club Directory for County ${county}. This listing has not yet been claimed and can be updated by an authorised club representative.`,
+        guestPolicy: 'Contact the club before attending a session.',
+        contact: publicContact,
+        venues: submittedVenue ? [{ ...submittedVenue, latitude: geocodedVenue?.latitude ?? null, longitude: geocodedVenue?.longitude ?? null }] : [],
+        sessions: [],
+        source: 'RallyHub admin-curated directory listing',
+        sourceCheckedAt: now.slice(0, 10),
+      };
+
+      await base44.asServiceRole.entities.DirectoryListingRecord.create({
+        slug: listingSlug,
+        name: clubName,
+        county,
+        sport: 'Pickleball',
+        status: 'active',
+        base_json: JSON.stringify(baseListing),
+        trusted_contacts_json: JSON.stringify([{ name: contactName, role: contactRole || null, email: contactEmail, phone: contactPhone }]),
+        created_by_user_id: user.id,
+        published_at: now,
+      });
+
+      try {
+        await base44.asServiceRole.entities.AuditLog.create({
+          tenant_id: String(user.active_tenant_id || 'platform'),
+          ...(user.active_club_id ? { club_id: user.active_club_id } : {}),
+          user_id: user.id,
+          action: 'directory_admin_created_unclaimed',
+          entity_type: 'DirectoryListingRecord',
+          entity_id: listingSlug,
+          scope_type: 'Directory',
+          scope_id: listingSlug,
+          after_state: JSON.stringify({ clubName, county, contactEmail, contactPhone, notes: notes || null }),
+          reason: 'Super Admin pre-populated an unclaimed directory listing for later club representative claim.',
+        });
+      } catch (auditError) {
+        console.warn('Directory admin-create audit failed', auditError?.message || auditError);
+      }
+
+      return Response.json({ success: true, status: 'unclaimed', listingSlug });
+    }
+
     if (action === 'submit_new') {
       if (!user.email) return Response.json({ error: 'A verified account email is required' }, { status: 400 });
 
@@ -417,18 +572,52 @@ Deno.serve(async (req) => {
       const listingSlug = String(body.listingSlug || '').trim();
       const listing = await resolveListing(base44, listingSlug);
       if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
-      const [claims, accesses] = await Promise.all([
+      const [claims, accesses, allListingAccesses] = await Promise.all([
         base44.asServiceRole.entities.DirectoryClaim.filter({ listing_slug: listingSlug, claimant_user_id: user.id }),
         base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, user_id: user.id }),
+        base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' }),
       ]);
       const latest = [...claims].sort((a, b) => String(b.created_date || '').localeCompare(String(a.created_date || '')))[0] || null;
       const access = accesses.find(x => x.status === 'active') || null;
       return Response.json({
         success: true,
-        listing: { slug: listing.slug, name: listing.name, verificationStatus: listing.verificationStatus },
+        listing: { slug: listing.slug, name: listing.name, verificationStatus: allListingAccesses?.length ? 'verified' : 'unclaimed' },
         claim: publicClaim(latest),
         hasAccess: !!access,
       });
+    }
+
+    if (action === 'send_claim_invite') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const listingSlug = String(body.listingSlug || '').trim();
+      const contactEmail = normaliseEmail(body.contactEmail || '').slice(0, 240);
+      const contactName = String(body.contactName || '').trim().slice(0, 160);
+      if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
+      const listing = await resolveListing(base44, listingSlug);
+      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+      const anyAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' });
+      if (anyAccess?.length) return Response.json({ error: 'This listing has already been claimed.' }, { status: 409 });
+      if (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return Response.json({ error: 'A valid club contact email is required' }, { status: 400 });
+
+      const records = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
+      const record = records?.[0];
+      if (record) {
+        let trusted:any[] = [];
+        try { trusted = record.trusted_contacts_json ? JSON.parse(record.trusted_contacts_json) : []; } catch { trusted = []; }
+        const currentPhone = String(body.contactPhone || '').trim().slice(0, 80);
+        const retained = (Array.isArray(trusted) ? trusted : []).filter((item:any) => normaliseEmail(item?.email) !== contactEmail);
+        retained.unshift({ name: contactName || null, email: contactEmail, phone: currentPhone || null });
+        await base44.asServiceRole.entities.DirectoryListingRecord.update(record.id, { trusted_contacts_json: JSON.stringify(retained.slice(0, 10)) });
+      }
+
+      try {
+        const result = await sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName });
+        if (!result.sent) return Response.json({ error: result.error || 'Could not send claim invitation.' }, { status: result.limited ? 429 : 502 });
+        return Response.json({ success: true, sent: true, email: result.to, claimUrl: result.claimUrl });
+      } catch (emailError) {
+        console.warn('Directory claim invitation failed', emailError?.message || emailError);
+        return Response.json({ error: 'Could not send the claim invitation right now.' }, { status: 502 });
+      }
     }
 
     if (action === 'list_admin') {
