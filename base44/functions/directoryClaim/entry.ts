@@ -907,11 +907,13 @@ Deno.serve(async (req) => {
       });
 
       if (decision === 'approved') {
+        const existingListingAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: claim.listing_slug, status: 'active' });
         await grantAccess(base44, {
           listing,
           userId: claim.claimant_user_id,
           claimId: claim.id,
           grantedByUserId: user.id,
+          role: existingListingAccess?.length ? 'editor' : 'owner',
           notes: reviewNotes || 'Manually verified by RallyHub administrator.',
         });
       }
@@ -1022,7 +1024,8 @@ Deno.serve(async (req) => {
         userId: request.claimant_user_id,
         claimId: null,
         grantedByUserId: user.id,
-        notes: reviewNotes || 'New directory listing approved and submitter verified as initial directory editor.',
+        role: 'owner',
+        notes: reviewNotes || 'New directory listing approved and submitter verified as Primary Directory Owner.',
       });
 
       await base44.asServiceRole.entities.DirectoryListingRequest.update(request.id, {
