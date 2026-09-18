@@ -749,15 +749,37 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.DirectoryListingRecord.update(record.id, { trusted_contacts_json: JSON.stringify(retained.slice(0, 10)) });
       }
 
+      const inviteChannel = String(body.channel || 'whatsapp') === 'email' ? 'email' : 'whatsapp';
+      const previousInvites = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ listing_slug: listingSlug, status: 'pending' }, '-created_date', 50);
+      for (const row of previousInvites || []) {
+        const sameEmail = contactEmail && normaliseEmail(row.contact_email) === contactEmail;
+        const samePhone = contactPhone && row.contact_phone && phoneLooksSame(row.contact_phone, contactPhone);
+        if (row.access_role === 'owner' && (sameEmail || samePhone)) {
+          await base44.asServiceRole.entities.DirectoryClaimInvitation.update(row.id, { status: 'revoked' });
+        }
+      }
+
       const invitation = await createTrustedClaimInvitation(base44, {
         listing,
         user,
         contactName,
         contactEmail,
         contactPhone,
-        channel: String(body.channel || 'whatsapp') === 'email' ? 'email' : 'whatsapp',
+        channel: inviteChannel,
+        accessRole: 'owner',
       });
-      return Response.json({ success: true, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
+      try {
+        await base44.asServiceRole.entities.DirectoryListingAudit.create({
+          listing_slug: listingSlug,
+          user_id: user.id,
+          action: 'access_invited',
+          occurred_at: new Date().toISOString(),
+          after_json: JSON.stringify({ role: 'owner', channel: inviteChannel, email: contactEmail || null, phone: contactPhone || null, expiresAt: invitation.expiresAt }),
+        });
+      } catch (auditError) {
+        console.warn('Directory owner invitation audit write failed', auditError?.message || auditError);
+      }
+      return Response.json({ success: true, channel: inviteChannel, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
     }
 
 
