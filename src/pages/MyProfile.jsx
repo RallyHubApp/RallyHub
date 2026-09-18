@@ -38,6 +38,16 @@ export default function MyProfile() {
     enabled: !!user
   });
 
+  const { data: memberSnapshot } = useQuery({
+    queryKey: ['member-profile-self', user?.id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('memberPortal', { action: 'self' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.snapshot || null;
+    },
+    enabled: !!user
+  });
+
   const { data: allMatches = [] } = useQuery({
     queryKey: ['all-matches'],
     queryFn: () => base44.entities.Match.list('-created_date', 200)
