@@ -36,6 +36,27 @@ const normaliseSearchText = value => String(value || '')
 
 const compactSearchText = value => normaliseSearchText(value).replace(/\s+/g, '');
 
+const publicAssetUrl = value => {
+  const raw = String(value || '').trim();
+  const marker = '/files/mp/public/';
+  try {
+    const url = new URL(raw);
+    if (url.hostname === 'base44.app' && url.pathname.includes(marker)) {
+      const tail = url.pathname.split(marker)[1];
+      if (tail) return `https://media.base44.com/images/public/${tail}`;
+    }
+  } catch {}
+  return raw;
+};
+
+const publicDescription = club => {
+  const description = String(club?.description || '').trim();
+  if (club?.verificationStatus === 'verified' && /has not yet been claimed|listing is currently unclaimed|unclaimed listing/i.test(description)) {
+    return `${club.name} is listed in the RallyHub Club Directory for County ${club.county}.`;
+  }
+  return description;
+};
+
 const editDistance = (a, b) => {
   if (a === b) return 0;
   if (!a.length) return b.length;
@@ -362,8 +383,8 @@ export default function PublicDirectory() {
                 {filteredClubs.map(club => (
                   <article key={club.id} className="glass rounded-2xl p-5 sm:p-6 hover:border-primary/30 transition-colors">
                     <div className="flex gap-4">
-                      {club.logoUrl ? (
-                        <img src={club.logoUrl} alt={`${club.name} logo`} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white object-contain p-1 shrink-0" />
+                      {publicAssetUrl(club.logoUrl) ? (
+                        <img src={publicAssetUrl(club.logoUrl)} alt={`${club.name} logo`} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white object-contain p-1 shrink-0" />
                       ) : (
                         <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-xl sm:text-2xl font-black text-primary shrink-0" aria-label={`${club.name} logo pending`}>
                           {clubInitials(club.name)}
@@ -383,7 +404,7 @@ export default function PublicDirectory() {
                             <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Active listing</span>
                           )}
                         </div>
-                        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{club.description}</p>
+                        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{publicDescription(club)}</p>
                         <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1.5"><Building2 className="w-4 h-4 text-primary" /> {club.venues.length} venue{club.venues.length === 1 ? '' : 's'}</span>
                           <span className="flex items-center gap-1.5"><CalendarDays className="w-4 h-4 text-primary" /> {club.sessions.length ? `${club.sessions.length} weekly session${club.sessions.length === 1 ? '' : 's'}` : 'Schedule pending'}</span>
