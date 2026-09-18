@@ -88,7 +88,8 @@ export default function MyProfile() {
     }
   }, [memberSnapshot, linkedPlayer, user]);
 
-  const playerId = linkedPlayer?.id;
+  const activePlayer = memberSnapshot?.player || linkedPlayer;
+  const playerId = activePlayer?.id;
 
   // My matches — where this player appears as a participant
   const myMatches = allMatches.filter(m => {
@@ -149,7 +150,7 @@ export default function MyProfile() {
 
   const syncDupr = () => {
     if (!form.dupr_id) { toast.error('Enter your DUPR ID first'); return; }
-    if (!linkedPlayer) { toast.error('Save your profile first'); return; }
+    if (!activePlayer) { toast.error('Save your profile first'); return; }
     toast.info('Live DUPR rating sync is not connected yet. Your DUPR ID can be saved in RallyHub, but ratings will not update automatically until the official DUPR API integration is enabled.');
   };
 
@@ -163,13 +164,13 @@ export default function MyProfile() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="My Profile" description="Your player profile and match history" />
+      <PageHeader title="My Profile" description="Review and update the personal and playing information RallyHub holds for you" />
 
       {/* Hero card */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-6 glow-green">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <ProfileAvatarUpload
-            currentUrl={linkedPlayer?.avatar_url}
+            currentUrl={activePlayer?.avatar_url}
             initials={initials}
             onUploaded={async (url) => {
               if (linkedPlayer) {
@@ -183,8 +184,8 @@ export default function MyProfile() {
             <h2 className="text-xl font-bold text-foreground">{user?.full_name || user?.email}</h2>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              {linkedPlayer?.club && <Badge className="bg-secondary text-secondary-foreground text-xs">{linkedPlayer.club}</Badge>}
-              {linkedPlayer ? (
+              {(memberSnapshot?.club?.name || activePlayer?.club) && <Badge className="bg-secondary text-secondary-foreground text-xs">{memberSnapshot?.club?.name || activePlayer?.club}</Badge>}
+              {activePlayer ? (
                 <Badge className="bg-primary/20 text-primary text-xs"><CheckCircle2 className="w-3 h-3 mr-1" />Player linked</Badge>
               ) : (
                 <Button variant="outline" size="sm" className="h-6 text-xs gap-1" onClick={() => setLinkOpen(true)}>
@@ -195,14 +196,14 @@ export default function MyProfile() {
           </div>
           <div className="text-center shrink-0">
             <p className="text-3xl font-black font-mono text-primary">
-              {linkedPlayer?.dupr_rating != null ? Number(linkedPlayer.dupr_rating).toFixed(3) : '—'}
+              {activePlayer?.dupr_rating != null ? Number(activePlayer.dupr_rating).toFixed(3) : '—'}
             </p>
             <p className="text-xs text-muted-foreground">DUPR Rating</p>
-            {linkedPlayer?.dupr_last_synced && (
-              <p className="text-[10px] text-muted-foreground mt-0.5">Synced {linkedPlayer.dupr_last_synced}</p>
+            {activePlayer?.dupr_last_synced && (
+              <p className="text-[10px] text-muted-foreground mt-0.5">Synced {activePlayer.dupr_last_synced}</p>
             )}
-            {linkedPlayer?.skill_rating != null && (
-              <p className="text-[10px] text-muted-foreground mt-1">Club rating {Number(linkedPlayer.skill_rating).toFixed(1)}</p>
+            {activePlayer?.skill_rating != null && (
+              <p className="text-[10px] text-muted-foreground mt-1">Club rating {Number(activePlayer.skill_rating).toFixed(1)}</p>
             )}
           </div>
         </div>
