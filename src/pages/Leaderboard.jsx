@@ -14,9 +14,9 @@ export default function Leaderboard() {
   const [search, setSearch] = useState('');
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['kotc-club-leaderboard'],
+    queryKey: ['club-leaderboard'],
     queryFn: async () => {
-      const res = await base44.functions.invoke('getKotcLeaderboard', {});
+      const res = await base44.functions.invoke('getClubLeaderboard', {});
       if (res.data?.error) throw new Error(res.data.error);
       return res.data;
     },
@@ -33,15 +33,15 @@ export default function Leaderboard() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="King of the Court Leaderboard"
-        description="Completed live KOTC sessions · member results only · test sessions and guests excluded"
+        title="Club Leaderboard"
+        description="Eligible completed club competitions · members only · test and excluded events do not count"
       />
 
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
           <Crown className="w-4 h-4 text-primary" />
           <span>
-            Ranking uses KOTC win rate, then wins, score difference, Court 1 rounds and best session finish as tie-breaks.
+            Simple club points: 2 for a win, 1 for a draw, 0 for a loss. Ties are separated by wins, then score difference.
           </span>
         </div>
       </div>
@@ -49,21 +49,21 @@ export default function Leaderboard() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Search KOTC players..."
+          placeholder="Search club leaderboard..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="pl-9 bg-secondary border-border"
         />
       </div>
 
-      {isLoading && <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading KOTC leaderboard…</div>}
+      {isLoading && <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading club leaderboard…</div>}
       {error && <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">Could not load the leaderboard: {error.message}</div>}
 
       {!isLoading && !error && rows.length === 0 && (
         <div className="glass rounded-xl p-8 text-center">
           <Crown className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="font-semibold">No KOTC results yet</p>
-          <p className="text-xs text-muted-foreground mt-1">Completed live King of the Court sessions will appear here automatically.</p>
+          <p className="font-semibold">No eligible club results yet</p>
+          <p className="text-xs text-muted-foreground mt-1">Finish a competition marked “Counts toward club leaderboard” to start the standings.</p>
         </div>
       )}
 
@@ -87,7 +87,7 @@ export default function Leaderboard() {
                     <span className="text-lg font-bold text-primary">{(row.full_name || 'P')[0]}</span>
                   </div>
                   <p className="text-xs font-semibold text-foreground text-center group-hover:text-primary transition-colors max-w-28">{row.full_name}</p>
-                  <p className="text-sm font-black font-mono text-primary">{Math.round(row.win_rate * 100)}% wins</p>
+                  <p className="text-sm font-black font-mono text-primary">{row.leaderboard_points} pts</p>
                 </Link>
                 <div className={cn('w-20 rounded-t-lg bg-primary/10 mt-2', height)} />
               </motion.div>
@@ -98,15 +98,15 @@ export default function Leaderboard() {
 
       {rows.length > 0 && (
         <div className="glass rounded-xl overflow-hidden">
-          <div className="grid grid-cols-[2.5rem_1fr_3.5rem_3.5rem_4.5rem] sm:grid-cols-[3rem_1fr_4.5rem_4rem_4rem_5rem_5rem_5rem] items-center px-3 sm:px-4 py-2.5 bg-secondary text-[10px] sm:text-xs font-medium text-muted-foreground">
+          <div className="grid grid-cols-[2.5rem_1fr_3.5rem_3.5rem_4.5rem] sm:grid-cols-[3rem_1fr_4.5rem_4rem_4rem_4rem_5rem_5rem] items-center px-3 sm:px-4 py-2.5 bg-secondary text-[10px] sm:text-xs font-medium text-muted-foreground">
             <span>#</span>
             <span>Player</span>
-            <span className="text-right hidden sm:block">Sessions</span>
+            <span className="text-right hidden sm:block">Events</span>
             <span className="text-right">W</span>
+            <span className="text-right hidden sm:block">D</span>
             <span className="text-right">L</span>
-            <span className="text-right">Win %</span>
+            <span className="text-right">Points</span>
             <span className="text-right hidden sm:block">Diff</span>
-            <span className="text-right hidden sm:block">Court 1</span>
           </div>
           {rest.map((row, i) => (
             <motion.div
@@ -117,19 +117,19 @@ export default function Leaderboard() {
             >
               <Link
                 to={`/app/players/${row.player_id}`}
-                className="grid grid-cols-[2.5rem_1fr_3.5rem_3.5rem_4.5rem] sm:grid-cols-[3rem_1fr_4.5rem_4rem_4rem_5rem_5rem_5rem] items-center px-3 sm:px-4 py-3 border-t border-border hover:bg-secondary/50 transition-colors"
+                className="grid grid-cols-[2.5rem_1fr_3.5rem_3.5rem_4.5rem] sm:grid-cols-[3rem_1fr_4.5rem_4rem_4rem_4rem_5rem_5rem] items-center px-3 sm:px-4 py-3 border-t border-border hover:bg-secondary/50 transition-colors"
               >
                 <span className="text-sm font-bold text-muted-foreground">{row.rank}</span>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{row.full_name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{row.matches_played} games</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{row.matches_played} matches · {Math.round(row.win_rate * 100)}% wins</p>
                 </div>
-                <span className="text-sm text-right hidden sm:block">{row.sessions_played}</span>
+                <span className="text-sm text-right hidden sm:block">{row.events_played}</span>
                 <span className="text-sm text-right">{row.wins}</span>
+                <span className="text-sm text-right hidden sm:block">{row.draws}</span>
                 <span className="text-sm text-right">{row.losses}</span>
-                <span className="text-sm font-semibold text-primary text-right">{Math.round(row.win_rate * 100)}%</span>
+                <span className="text-sm font-bold text-primary text-right">{row.leaderboard_points}</span>
                 <span className="text-sm text-right hidden sm:block">{row.score_difference > 0 ? '+' : ''}{row.score_difference}</span>
-                <span className="text-sm text-right hidden sm:block">{row.court1_rounds}</span>
               </Link>
             </motion.div>
           ))}
