@@ -4,7 +4,7 @@ import { CircleMarker, MapContainer, TileLayer, useMapEvents } from 'react-leafl
 import 'leaflet/dist/leaflet.css';
 import {
   ArrowLeft, Building2, CalendarDays, CheckCircle2, Copy, ExternalLink, Globe2,
-  Image as ImageIcon, Info, Loader2, Mail, MapPin, MessageCircle, Plus, Save, Trash2, Upload, UserRound
+  HelpCircle, Image as ImageIcon, Info, Loader2, Mail, MapPin, MessageCircle, Plus, Save, Sparkles, Trash2, Upload, UserRound
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
