@@ -394,7 +394,7 @@ export default function AdminPanel() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Admin Panel" description="Site owner control panel">
+      <PageHeader title={activeAdminTab === 'directory' ? 'Directory Admin' : 'Admin Panel'} description={activeAdminTab === 'directory' ? 'Directory ownership, invitations, claims and listing access' : 'Site owner control panel'}>
         <Badge className="bg-destructive/20 text-destructive gap-1.5">
           <Shield className="w-3 h-3" /> Admin Only
         </Badge>
