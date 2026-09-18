@@ -294,6 +294,7 @@ Deno.serve(async (req) => {
       const listing = await resolveListing(base44, listingSlug);
       if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
       if (!user.email) return Response.json({ error: 'A verified account email is required' }, { status: 400 });
+      const inviteToken = String(body.inviteToken || '').trim().slice(0, 200);
 
       const existingAccess = (await base44.asServiceRole.entities.DirectoryListingAccess.filter({
         listing_slug: listingSlug,
@@ -308,7 +309,7 @@ Deno.serve(async (req) => {
         claimant_user_id: user.id,
       });
       const pending = existingClaims.find(x => x.status === 'pending');
-      if (pending) {
+      if (pending && !inviteToken) {
         return Response.json({ success: true, verified: false, status: 'pending', claim: publicClaim(pending), hasAccess: false });
       }
 
@@ -326,7 +327,6 @@ Deno.serve(async (req) => {
       const claimantPhone = String(body.claimantPhone || '').trim().slice(0, 80);
       const claimantMessage = String(body.claimantMessage || '').trim().slice(0, 1500);
       const networkUpdatesOptIn = body.networkUpdatesOptIn === true;
-      const inviteToken = String(body.inviteToken || '').trim().slice(0, 200);
       if (!claimantName) return Response.json({ error: 'Your name is required' }, { status: 400 });
       if (!claimantRole) return Response.json({ error: 'Your role or connection to the club is required' }, { status: 400 });
       if (!claimantPhone) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
@@ -415,6 +415,13 @@ Deno.serve(async (req) => {
             used_at: now,
           });
         }
+        await base44.asServiceRole.entities.DirectoryListingAudit.create({
+          listing_slug: listingSlug,
+          user_id: user.id,
+          action: grantedRole === 'owner' ? 'owner_assigned' : 'access_granted',
+          occurred_at: now,
+          after_json: JSON.stringify({ role: grantedRole, source: trustedInvitation ? 'trusted_invitation' : 'claim_verification' }),
+        });
         return Response.json({
           success: true,
           verified: true,
