@@ -93,9 +93,14 @@ function safeMember(member:any) {
   };
 }
 
-async function buildSnapshot(base44:any, targetUser:any) {
+async function buildSnapshot(base44:any, targetUser:any, forcedContext:any = {}) {
   const email = lower(targetUser?.email);
+  const tenantHint = clean(forcedContext?.tenant_id || targetUser?.active_tenant_id, 180);
+  const clubHint = clean(forcedContext?.club_id || targetUser?.active_club_id, 180);
   let player = await firstBy(base44, 'Player', [
+    { user_id: targetUser?.id, tenant_id: tenantHint, club_id: clubHint },
+    { linked_user_email: email, tenant_id: tenantHint, club_id: clubHint },
+    { email, tenant_id: tenantHint, club_id: clubHint },
     { user_id: targetUser?.id },
     { linked_user_email: email },
     { email },
@@ -108,6 +113,8 @@ async function buildSnapshot(base44:any, targetUser:any) {
   ]);
 
   let member = await firstBy(base44, 'Member', [
+    { player_id: player?.id, tenant_id: tenantHint, club_id: clubHint },
+    { primary_email: email, tenant_id: tenantHint, club_id: clubHint },
     { player_id: player?.id },
     { primary_email: email },
   ]);
@@ -119,8 +126,8 @@ async function buildSnapshot(base44:any, targetUser:any) {
     person = await firstBy(base44, 'Person', [{ id: player.person_id }]);
   }
 
-  const tenantId = clean(targetUser?.active_tenant_id || player?.tenant_id || member?.tenant_id, 180);
-  const clubId = clean(targetUser?.active_club_id || player?.club_id || member?.club_id, 180);
+  const tenantId = clean(tenantHint || player?.tenant_id || member?.tenant_id, 180);
+  const clubId = clean(clubHint || player?.club_id || member?.club_id, 180);
 
   let club:any = null;
   if (clubId) club = await firstBy(base44, 'Club', [{ id: clubId }]);
@@ -234,7 +241,11 @@ Deno.serve(async (req) => {
       if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
       // Preview is read-only and does not change authentication or permissions, so an
       // administrator may also preview their own linked member identity as a normal member.
-      return Response.json({ success: true, preview: true, snapshot: await buildSnapshot(base44, target) });
+      const previewContext = {
+        tenant_id: clean(body.tenantId || user.active_tenant_id, 180),
+        club_id: clean(body.clubId || user.active_club_id, 180),
+      };
+      return Response.json({ success: true, preview: true, snapshot: await buildSnapshot(base44, target, previewContext) });
     }
 
     return Response.json({ error: 'Unknown action' }, { status: 400 });
