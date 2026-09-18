@@ -79,6 +79,17 @@ const isValidUrl = value => {
   try { return ['http:', 'https:'].includes(new URL(String(value).trim()).protocol); } catch { return false; }
 };
 const isValidEmail = value => !String(value || '').trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+const buildWhatsAppUrl = (phone, county = '') => {
+  let digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('0')) {
+    const northernIrelandCounties = new Set(['Antrim', 'Armagh', 'Down', 'Fermanagh', 'Londonderry', 'Derry', 'Tyrone']);
+    const countryCode = northernIrelandCounties.has(String(county || '').trim()) ? '44' : '353';
+    digits = `${countryCode}${digits.slice(1)}`;
+  }
+  return `https://wa.me/${digits}`;
+};
 
 export async function prepareLogoDraft(file) {
   const originalUrl = URL.createObjectURL(file);
@@ -175,6 +186,7 @@ export default function DirectoryListingEdit() {
   const [logoDraft, setLogoDraft] = useState(null);
   const [inviting, setInviting] = useState(false);
   const [inviteMessage, setInviteMessage] = useState('');
+  const [autoWhatsApp, setAutoWhatsApp] = useState(false);
   const [saved, setSaved] = useState(false);
   const [recentSessionId, setRecentSessionId] = useState('');
   const [sessionNotice, setSessionNotice] = useState('');
@@ -198,6 +210,8 @@ export default function DirectoryListingEdit() {
           const merged = mergeProfile(resolvedBase, res.data?.profile || null);
           setForm(merged);
           setBaseline(JSON.stringify(merged));
+          const generatedWhatsApp = buildWhatsAppUrl(merged?.contact?.phone, resolvedBase?.county);
+          setAutoWhatsApp(Boolean(generatedWhatsApp && merged?.contact?.whatsapp === generatedWhatsApp));
         }
       })
       .catch(err => { if (active) setError(err.message || 'Could not load this listing.'); })
@@ -230,6 +244,28 @@ export default function DirectoryListingEdit() {
   const setField = (key, value) => { setSaved(false); setFieldState(prev => ({ ...prev, [key]: value })); };
   const setFieldState = updater => setForm(prev => typeof updater === 'function' ? updater(prev) : updater);
   const setContact = (key, value) => { setSaved(false); setForm(prev => ({ ...prev, contact: { ...(prev.contact || {}), [key]: value } })); };
+  const setContactPhone = value => {
+    setSaved(false);
+    setForm(prev => ({
+      ...prev,
+      contact: {
+        ...(prev.contact || {}),
+        phone: value,
+        ...(autoWhatsApp ? { whatsapp: buildWhatsAppUrl(value, baseClub?.county) } : {}),
+      }
+    }));
+  };
+  const toggleAutoWhatsApp = checked => {
+    setAutoWhatsApp(checked);
+    setSaved(false);
+    setForm(prev => ({
+      ...prev,
+      contact: {
+        ...(prev.contact || {}),
+        whatsapp: checked ? buildWhatsAppUrl(prev?.contact?.phone, baseClub?.county) : '',
+      }
+    }));
+  };
   const setVenue = (index, key, value) => {
     setSaved(false);
     setForm(prev => ({
@@ -627,8 +663,19 @@ export default function DirectoryListingEdit() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2"><Label>Contact name</Label><Input value={form.contact?.name || ''} onChange={e => setContact('name', e.target.value)} /></div>
                   <div className="space-y-2"><Label>Contact email</Label><Input type="email" value={form.contact?.email || ''} onChange={e => setContact('email', e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Contact phone</Label><Input value={form.contact?.phone || ''} onChange={e => setContact('phone', e.target.value)} placeholder="e.g. 087 123 4567" /></div>
-                  <div className="space-y-2"><Label>WhatsApp link</Label><Input value={form.contact?.whatsapp || ''} onChange={e => setContact('whatsapp', e.target.value)} placeholder="https://wa.me/353…" /></div>
+                  <div className="space-y-2"><Label>Contact phone</Label><Input value={form.contact?.phone || ''} onChange={e => setContactPhone(e.target.value)} placeholder="e.g. 087 123 4567" /></div>
+                  <div className="space-y-2">
+                    <Label>WhatsApp</Label>
+                    <label className="flex items-start gap-3 rounded-lg border border-border bg-background/30 px-3 py-2.5 cursor-pointer">
+                      <input type="checkbox" checked={autoWhatsApp} onChange={e => toggleAutoWhatsApp(e.target.checked)} className="mt-0.5 h-4 w-4 accent-primary" />
+                      <span className="text-sm"><strong>Use this mobile for WhatsApp</strong><span className="block text-xs text-muted-foreground mt-0.5">RallyHub will create the WhatsApp link automatically from the contact number.</span></span>
+                    </label>
+                    {autoWhatsApp ? (
+                      <Input value={form.contact?.whatsapp || ''} readOnly className="bg-background/40 text-muted-foreground" aria-label="Generated WhatsApp link" />
+                    ) : (
+                      <Input value={form.contact?.whatsapp || ''} onChange={e => setContact('whatsapp', e.target.value)} placeholder="Optional custom https://wa.me/… link" />
+                    )}
+                  </div>
                 </div>
               </section>
 

@@ -1,0 +1,71 @@
+{
+  "name": "DirectorySpondConnection",
+  "type": "object",
+  "properties": {
+    "listing_slug": {
+      "type": "string"
+    },
+    "spond_group_id": {
+      "type": "string"
+    },
+    "spond_group_name": {
+      "type": "string"
+    },
+    "connected_by_user_id": {
+      "type": "string"
+    },
+    "connection_mode": {
+      "type": "string",
+      "enum": [
+        "platform_admin",
+        "club_account"
+      ],
+      "default": "platform_admin"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_sync_summary": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "disconnected"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "listing_slug",
+    "spond_group_id",
+    "spond_group_name",
+    "connected_by_user_id",
+    "connection_mode",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
