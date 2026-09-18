@@ -314,11 +314,34 @@ Deno.serve(async (req) => {
       const claimantPhone = String(body.claimantPhone || '').trim().slice(0, 80);
       const claimantMessage = String(body.claimantMessage || '').trim().slice(0, 1500);
       const networkUpdatesOptIn = body.networkUpdatesOptIn === true;
+      const inviteToken = String(body.inviteToken || '').trim().slice(0, 200);
       if (!claimantName) return Response.json({ error: 'Your name is required' }, { status: 400 });
       if (!claimantRole) return Response.json({ error: 'Your role or connection to the club is required' }, { status: 400 });
       if (!claimantPhone) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
 
       const userEmail = normaliseEmail(user.email);
+      let trustedInvitation:any = null;
+      if (inviteToken) {
+        const tokenHash = await hashInviteToken(inviteToken);
+        const invitations = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({
+          listing_slug: listingSlug,
+          token_hash: tokenHash,
+          status: 'pending',
+        });
+        const invitation = invitations?.[0] || null;
+        if (!invitation) return Response.json({ error: 'This claim invitation is invalid or has already been used.' }, { status: 403 });
+        if (!invitation.expires_at || Date.parse(invitation.expires_at) < Date.now()) {
+          await base44.asServiceRole.entities.DirectoryClaimInvitation.update(invitation.id, { status: 'expired' });
+          return Response.json({ error: 'This claim invitation has expired. Ask the club administrator for a new invitation.' }, { status: 403 });
+        }
+        const inviteEmailMatch = invitation.contact_email && normaliseEmail(invitation.contact_email) === userEmail;
+        const invitePhoneMatch = invitation.contact_phone && phoneLooksSame(invitation.contact_phone, claimantPhone);
+        if (!inviteEmailMatch && !invitePhoneMatch) {
+          return Response.json({ error: 'This secure invitation was issued to a different email or mobile number.' }, { status: 403 });
+        }
+        trustedInvitation = invitation;
+      }
+
       const trustedContacts = listing.contacts || [];
       const emailMatch = trustedContacts.some(c => normaliseEmail(c.email) && normaliseEmail(c.email) === userEmail);
       const nameMatch = trustedContacts.some(c => normaliseName(c.name) && normaliseName(c.name) === normaliseName(claimantName));
@@ -333,7 +356,7 @@ Deno.serve(async (req) => {
       const adminIdentityMatch = user.role === 'admin' && nameMatch && phoneMatch;
       const anyExistingAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' });
       const listingAlreadyVerified = listing.verificationStatus === 'verified' || !!anyExistingAccess?.length;
-      const autoVerified = (emailMatch || adminIdentityMatch) && !listingAlreadyVerified;
+      const autoVerified = (!!trustedInvitation || emailMatch || adminIdentityMatch) && !listingAlreadyVerified;
       const now = new Date().toISOString();
       const claim = await base44.asServiceRole.entities.DirectoryClaim.create({
         listing_slug: listing.slug,
@@ -345,7 +368,7 @@ Deno.serve(async (req) => {
         claimant_phone: claimantPhone || null,
         claimant_message: claimantMessage || null,
         status: autoVerified ? 'auto_verified' : 'pending',
-        match_method: autoVerified ? (emailMatch ? 'authenticated_email' : 'platform_admin_identity') : 'manual_review',
+        match_method: autoVerified ? (trustedInvitation ? 'trusted_invitation' : emailMatch ? 'authenticated_email' : 'platform_admin_identity') : 'manual_review',
         email_match: emailMatch,
         phone_match: phoneMatch,
         name_match: nameMatch,
@@ -360,10 +383,19 @@ Deno.serve(async (req) => {
           userId: user.id,
           claimId: claim.id,
           grantedByUserId: null,
-          notes: emailMatch
-            ? 'Automatically verified by exact match to authenticated account email.'
-            : 'Automatically verified for a known RallyHub platform admin whose trusted name and phone both matched.',
+          notes: trustedInvitation
+            ? 'Automatically verified using a one-time trusted claim invitation issued by a RallyHub administrator.'
+            : emailMatch
+              ? 'Automatically verified by exact match to authenticated account email.'
+              : 'Automatically verified for a known RallyHub platform admin whose trusted name and phone both matched.',
         });
+        if (trustedInvitation) {
+          await base44.asServiceRole.entities.DirectoryClaimInvitation.update(trustedInvitation.id, {
+            status: 'used',
+            used_by_user_id: user.id,
+            used_at: now,
+          });
+        }
         return Response.json({
           success: true,
           verified: true,
