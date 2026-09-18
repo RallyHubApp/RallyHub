@@ -108,6 +108,16 @@
     "last_synced_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "membership_category": {
+      "type": "string",
+      "enum": [
+        "paid",
+        "complimentary",
+        "honorary",
+        "other"
+      ],
+      "description": "Commercial/membership category, separate from renewal/new-member classification. Paid includes members whose payment may still be pending."
     }
   },
   "required": [
