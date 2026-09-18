@@ -4,6 +4,25 @@ const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
 const lower = (value:any) => clean(value, 240).toLowerCase();
 const dateKey = (value:any) => clean(value, 40);
 
+function ageFromDob(value:any, onDate = new Date()) {
+  const s = clean(value, 20);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const [y,m,d] = s.split('-').map(Number);
+  let age = onDate.getFullYear() - y;
+  const beforeBirthday = (onDate.getMonth() + 1 < m) || ((onDate.getMonth() + 1 === m) && onDate.getDate() < d);
+  if (beforeBirthday) age -= 1;
+  return age >= 0 && age < 130 ? age : null;
+}
+
+function ageGroupFromAge(age:any) {
+  if (age == null) return null;
+  if (age < 18) return 'Junior (U18)';
+  if (age < 35) return 'Open (18-34)';
+  if (age < 50) return 'Adult (35-49)';
+  if (age < 65) return 'Senior (50-64)';
+  return 'Super Senior (65+)';
+}
+
 async function firstBy(base44:any, entity:string, filters:Array<Record<string, any>>) {
   for (const filter of filters) {
     const usable = Object.fromEntries(Object.entries(filter).filter(([,v]) => v !== undefined && v !== null && String(v).trim() !== ''));
@@ -48,6 +67,8 @@ function safePerson(person:any) {
     primary_email: person.primary_email || null,
     mobile: person.mobile || null,
     date_of_birth: person.date_of_birth || null,
+    age: ageFromDob(person.date_of_birth),
+    derived_age_group: ageGroupFromAge(ageFromDob(person.date_of_birth)),
     gender: person.gender || null,
     profile_photo_url: person.profile_photo_url || null,
     full_postal_address: person.full_postal_address || null,
@@ -326,7 +347,9 @@ Deno.serve(async (req) => {
         const duprId = trim(profile.dupr_id, 120);
         if (duprId) playerData.dupr_id = duprId;
 
-        const ageGroup = trim(profile.age_group, 80);
+        const derivedAge = ageFromDob(personData.date_of_birth || snapshot.person?.date_of_birth);
+        const derivedAgeGroup = ageGroupFromAge(derivedAge);
+        const ageGroup = derivedAgeGroup || trim(profile.age_group, 80);
         if (['Junior (U18)','Open (18-34)','Adult (35-49)','Senior (50-64)','Super Senior (65+)'].includes(ageGroup)) {
           playerData.age_group = ageGroup;
         }
