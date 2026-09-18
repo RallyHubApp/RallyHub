@@ -756,7 +756,7 @@ export default function AdminPanel() {
                     <option value="">Choose a club…</option>
                     {directoryAdminListings.map(listing => {
                       const claimed = activeDirectoryAccesses.some(access => access.listing_slug === listing.slug && access.status === 'active');
-                      return <option key={listing.slug} value={listing.slug}>{listing.name}{listing.county ? ` · ${listing.county}` : ''}{claimed ? ' · already claimed' : ''}</option>;
+                      return <option key={listing.slug} value={listing.slug} disabled={claimed}>{listing.name}{listing.county ? ` · ${listing.county}` : ''}{claimed ? ' · already claimed' : ''}</option>;
                     })}
                   </select>
                 </div>
