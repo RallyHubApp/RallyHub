@@ -15,7 +15,7 @@ const faqs = [
   },
   {
     q: 'Can more than one person manage a club listing?',
-    a: 'Yes. A claimed listing has one Primary Owner and can have multiple Directory Editors. The Primary Owner can invite or remove editors. Editors can update the public listing but cannot transfer ownership or manage other editors. Secure editor invitations are single-use, expire after 72 hours and are tied to the invited email address.'
+    a: 'Yes. A claimed listing has one Primary Owner and can have multiple Directory Editors. The Primary Owner can invite or remove editors by email or WhatsApp. Editors can update the public listing but cannot transfer ownership or manage other editors. Secure editor invitations are single-use, expire after 72 hours and are tied to the invited email address or mobile number.'
   },
   {
     q: 'Do I have to complete every field?',
