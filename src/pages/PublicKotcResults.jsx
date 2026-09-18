@@ -11,6 +11,34 @@ function message(e){return e?.response?.data?.error||e?.data?.error||e?.message|
 function fmt(v){const n=Math.max(0,Number(v||0));return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(Math.floor(n%60)).padStart(2,'0')}`;}
 function hasScore(match){return match.team_a_score!=null&&match.team_b_score!=null;}
 
+function KotcPodium({podium=[],large=false}){
+  const ranked=(podium||[]).slice(0,3).map((player,index)=>({...player,place:index+1}));
+  const display=[ranked[1],ranked[0],ranked[2]].filter(Boolean);
+  const cardClass=place=>{
+    if(large){
+      if(place===1)return 'min-h-[300px] sm:min-h-[360px] border-yellow-400/70 shadow-[0_0_45px_rgba(250,204,21,.18)]';
+      if(place===2)return 'min-h-[250px] sm:min-h-[305px] border-slate-300/45';
+      return 'min-h-[220px] sm:min-h-[270px] border-amber-700/55';
+    }
+    if(place===1)return 'min-h-[190px] sm:min-h-[220px] border-yellow-400/60 shadow-[0_0_30px_rgba(250,204,21,.12)]';
+    if(place===2)return 'min-h-[165px] sm:min-h-[195px] border-slate-300/40';
+    return 'min-h-[150px] sm:min-h-[180px] border-amber-700/45';
+  };
+  const medal=place=>place===1?'🥇':place===2?'🥈':'🥉';
+  const label=place=>place===1?'1st':place===2?'2nd':'3rd';
+  return <div className={`grid grid-cols-3 ${large?'gap-3 sm:gap-5 max-w-6xl':'gap-2 sm:gap-3 max-w-3xl'} mx-auto items-end`} role="list" aria-label="Final podium">
+    {display.map(p=><div key={p.id} role="listitem" aria-label={`${label(p.place)} place: ${p.name}`} className={`rounded-t-2xl rounded-b-lg border bg-card text-center flex flex-col justify-end ${large?'p-4 sm:p-7':'p-3 sm:p-4'} ${cardClass(p.place)}`}>
+      <div className={`${large?'text-4xl sm:text-6xl':'text-3xl sm:text-4xl'}`}>{medal(p.place)}</div>
+      <p className={`${large?'text-sm sm:text-base':'text-xs'} uppercase tracking-[.16em] font-black mt-2 ${p.place===1?'text-yellow-400':'text-muted-foreground'}`}>{label(p.place)} place</p>
+      <p className={`${large?'text-lg sm:text-3xl':'text-sm sm:text-lg'} font-bold mt-2 leading-tight break-words`}>{p.name}</p>
+      <p className={`${large?'text-xs sm:text-base':'text-[11px] sm:text-xs'} text-muted-foreground mt-2`}>{p.wins}W · {p.losses}L · {p.differential>0?'+':''}{p.differential}</p>
+      <div className={`${p.place===1?(large?'h-14 sm:h-20':'h-9 sm:h-12'):p.place===2?(large?'h-9 sm:h-12':'h-6 sm:h-8'):(large?'h-5 sm:h-7':'h-3 sm:h-5')} mt-3 rounded-t-lg ${p.place===1?'bg-yellow-400/15 border border-yellow-400/30':p.place===2?'bg-slate-300/10 border border-slate-300/20':'bg-amber-700/10 border border-amber-700/20'} flex items-center justify-center`}>
+        <span className={`${large?'text-2xl sm:text-4xl':'text-lg sm:text-2xl'} font-black`}>{p.place}</span>
+      </div>
+    </div>)}
+  </div>;
+}
+
 function CourtCard({match,large=false,roundStatus=''}){
   const scored=hasScore(match);
   return <div className={`rounded-xl border bg-card ${large?'p-5':'p-4'}`} data-testid={`public-kotc-court-${match.court}`}>
@@ -75,7 +103,7 @@ export default function PublicKotcResults(){
 
         {!finished&&current.length>0&&<section data-testid="hall-current-courts"><div className="flex items-center justify-between mb-2"><h2 className="text-lg sm:text-xl font-bold">{data.current_round?.status==='proposed'?'Round Ready':'On Court Now'}</h2><p className="text-sm text-muted-foreground">Scores appear as they are saved</p></div><div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">{current.map(m=><CourtCard key={`${m.round_number}-${m.court}`} match={m} large roundStatus={roundStatus}/>)}</div></section>}
 
-        {finished&&podium.length>0&&<section data-testid="public-kotc-podium" className="space-y-5"><div className="text-center"><Trophy className="w-10 h-10 text-yellow-400 mx-auto"/><p className="text-xs uppercase tracking-[.25em] text-primary font-bold mt-2">Final Podium</p></div><div className="grid grid-cols-3 gap-4 max-w-5xl mx-auto">{podium.map((p,i)=><div key={p.id} className={`rounded-2xl border bg-card p-5 sm:p-7 text-center ${i===0?'border-yellow-400/60':i===1?'border-slate-300/40':'border-amber-700/50'}`}><div className="text-4xl sm:text-6xl">{i===0?'🥇':i===1?'🥈':'🥉'}</div><p className="text-xl sm:text-3xl font-bold mt-3 leading-tight">{p.name}</p><p className="text-sm sm:text-lg text-muted-foreground mt-2">{p.wins}W · {p.losses}L · {p.differential>0?'+':''}{p.differential}</p></div>)}</div></section>}
+        {finished&&podium.length>0&&<section data-testid="public-kotc-podium" className="space-y-5"><div className="text-center"><Trophy className="w-10 h-10 text-yellow-400 mx-auto"/><p className="text-xs uppercase tracking-[.25em] text-primary font-bold mt-2">Final Podium</p></div><KotcPodium podium={podium} large/></section>}
 
         {finished&&<section className="rounded-xl border bg-card p-3 max-w-5xl mx-auto"><div className="grid grid-cols-[42px_1fr_55px_55px_70px] text-xs uppercase text-muted-foreground p-2 border-b"><span>#</span><span>Player</span><span>W</span><span>L</span><span>Diff</span></div>{(data.standings||[]).slice(0,10).map(s=><div key={s.id} className="grid grid-cols-[42px_1fr_55px_55px_70px] p-2 border-b last:border-b-0 text-base"><span>{s.rank}</span><span className="font-semibold">{s.name}</span><span>{s.wins}</span><span>{s.losses}</span><span>{s.differential>0?'+':''}{s.differential}</span></div>)}</section>}
       </main>
@@ -119,7 +147,7 @@ export default function PublicKotcResults(){
       <p className="text-xs text-muted-foreground mt-3">{finished?'These are the final saved results. This link remains available after the session.':'This page updates automatically as the host starts rounds and scores are saved.'}</p>
     </header>
 
-    {finished&&podium.length>0&&<section className="space-y-3" data-testid="public-kotc-podium"><div className="flex items-center gap-2"><Trophy className="w-5 h-5 text-yellow-400"/><h2 className="font-bold">Podium</h2></div><div className="grid grid-cols-2 sm:grid-cols-3 gap-2">{podium.map((p,i)=><div key={p.id} className={`glass rounded-xl p-3 text-center border ${i===0?'col-span-2 sm:col-span-1 border-yellow-400/50':i===1?'border-slate-300/40':'border-amber-700/40'}`}><div className="text-2xl">{i===0?'🥇':i===1?'🥈':'🥉'}</div><p className="font-bold text-sm mt-1">{p.name}</p><p className="text-xs text-muted-foreground">{p.wins}W · {p.losses}L · {p.differential>0?'+':''}{p.differential}</p></div>)}</div></section>}
+    {finished&&podium.length>0&&<section className="space-y-3" data-testid="public-kotc-podium"><div className="flex items-center gap-2"><Trophy className="w-5 h-5 text-yellow-400"/><h2 className="font-bold">Podium</h2></div><KotcPodium podium={podium}/></section>}
 
     {current.length>0&&<section className="space-y-3" data-testid="public-kotc-current-round"><div className="flex items-center justify-between gap-3"><h2 className="font-bold">{finished?'Final Round':data.current_round?.status==='proposed'?'Round Ready':'On Court Now'} · Round {data.current_round?.round_number}</h2><Badge variant="outline">{roundStatus}</Badge></div>{(data.bench||[]).length>0&&<div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3"><p className="text-[10px] uppercase tracking-wider text-amber-500 font-bold">Bench This Round</p><p className="text-sm font-semibold mt-1">{data.bench.join(' · ')}</p></div>}<div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">{current.map(m=><CourtCard key={`${m.round_number}-${m.court}`} match={m} roundStatus={roundStatus}/>)}</div></section>}
 
