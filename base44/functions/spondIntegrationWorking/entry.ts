@@ -165,6 +165,7 @@ function directoryEventPreview(events) {
         mapUrl:null,
         websiteUrl:null,
         playType:'Contact club',
+        source:'Spond',
       });
     }
     const venue = venues.get(venueKey);
