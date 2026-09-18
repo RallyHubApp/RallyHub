@@ -1,0 +1,178 @@
+{
+  "name": "MembershipSourceResponse",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "source_system": {
+      "type": "string"
+    },
+    "source_sheet": {
+      "type": "string"
+    },
+    "source_row": {
+      "type": "string"
+    },
+    "response_kind": {
+      "type": "string",
+      "enum": [
+        "full_application",
+        "renewal",
+        "workflow",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
+    "submitted_at": {
+      "type": "string"
+    },
+    "submitted_name": {
+      "type": "string"
+    },
+    "submitted_email": {
+      "type": "string"
+    },
+    "full_postal_address": {
+      "type": "string"
+    },
+    "postal_code": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "date_of_birth_raw": {
+      "type": "string"
+    },
+    "emergency_contact_raw": {
+      "type": "string"
+    },
+    "gdpr_response": {
+      "type": "string"
+    },
+    "declaration_waiver_response": {
+      "type": "string"
+    },
+    "etiquette_code_response": {
+      "type": "string"
+    },
+    "payment_method": {
+      "type": "string"
+    },
+    "membership_conditions_response": {
+      "type": "string"
+    },
+    "health_declaration_response": {
+      "type": "string"
+    },
+    "renewal_response": {
+      "type": "string"
+    },
+    "details_changed_response": {
+      "type": "string"
+    },
+    "nonrenewal_reason": {
+      "type": "string"
+    },
+    "nonrenewal_feedback": {
+      "type": "string"
+    },
+    "club_rules_response": {
+      "type": "string"
+    },
+    "changed_fields": {
+      "type": "string"
+    },
+    "changed_details_text": {
+      "type": "string"
+    },
+    "photography_video_response": {
+      "type": "string"
+    },
+    "membership_id": {
+      "type": "string"
+    },
+    "membership_type": {
+      "type": "string"
+    },
+    "payment_amount": {
+      "type": "number"
+    },
+    "sumup_checkout_id": {
+      "type": "string"
+    },
+    "sumup_payment_link": {
+      "type": "string"
+    },
+    "payment_status": {
+      "type": "string"
+    },
+    "payment_date_raw": {
+      "type": "string"
+    },
+    "membership_status": {
+      "type": "string"
+    },
+    "confirmation_email_sent": {
+      "type": "string"
+    },
+    "follow_up_status": {
+      "type": "string"
+    },
+    "reminder_sent": {
+      "type": "string"
+    },
+    "second_reminder_sent": {
+      "type": "string"
+    },
+    "payment_reminder_count": {
+      "type": "number"
+    },
+    "payment_follow_up": {
+      "type": "string"
+    },
+    "final_no_response_reminder_sent": {
+      "type": "string"
+    },
+    "raw_response_json": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "person_id",
+    "source_system",
+    "source_sheet",
+    "source_row"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
