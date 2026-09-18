@@ -49,6 +49,7 @@
       "type": "string",
       "enum": [
         "authenticated_email",
+        "trusted_invitation",
         "platform_admin_identity",
         "manual_review",
         "admin_approved"

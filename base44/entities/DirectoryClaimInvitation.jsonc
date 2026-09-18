@@ -1,0 +1,85 @@
+{
+  "name": "DirectoryClaimInvitation",
+  "type": "object",
+  "properties": {
+    "listing_slug": {
+      "type": "string"
+    },
+    "listing_name_snapshot": {
+      "type": "string"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "email",
+        "whatsapp"
+      ]
+    },
+    "token_hash": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "used",
+        "revoked",
+        "expired"
+      ],
+      "default": "pending"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "used_by_user_id": {
+      "type": "string"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "listing_slug",
+    "channel",
+    "token_hash",
+    "status",
+    "created_by_user_id",
+    "expires_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
