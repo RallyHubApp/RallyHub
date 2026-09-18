@@ -132,10 +132,10 @@ Deno.serve(async (req) => {
     if (action === 'public_get') {
       const listingSlug = clean(body.listingSlug, 180);
       if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
-      const [rows, dynamicRows] = await Promise.all([
-        base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5),
-        base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5),
-      ]);
+      // Keep public discovery reads sequential. Base44 has practical burst limits and
+      // parallel provider calls multiply load when many visitors arrive together.
+      const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5);
+      const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
       const row = rows?.[0] || null;
       const dynamic = dynamicRows?.[0] || null;
       const profile = parseJson(row?.public_json);
@@ -147,11 +147,11 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'public_list') {
-      const [rows, accesses, dynamicRows] = await Promise.all([
-        base44.asServiceRole.entities.DirectoryListingProfile.filter({ status: 'active' }, '-updated_at', 500),
-        base44.asServiceRole.entities.DirectoryListingAccess.filter({ status: 'active' }, '-granted_at', 500),
-        base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500),
-      ]);
+      // Public Directory traffic is open-ended. Avoid turning each visitor into a
+      // three-call provider burst; the client also keeps a short-lived read cache.
+      const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ status: 'active' }, '-updated_at', 500);
+      const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ status: 'active' }, '-granted_at', 500);
+      const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500);
       const verified = new Set((accesses || []).map((x:any) => x.listing_slug));
       const result:any = {};
       for (const row of dynamicRows || []) {
