@@ -61,6 +61,17 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
+  const { data: activeClubMembers = [] } = useQuery({
+    queryKey: ['active-club-members', user?.active_tenant_id, user?.active_club_id],
+    queryFn: () => base44.entities.ClubRelationship.filter({
+      tenant_id: user?.active_tenant_id,
+      club_id: user?.active_club_id,
+      relationship_type: 'member',
+      status: 'active'
+    }, '-created_date', 500),
+    enabled: canAccessAdmin && !!user?.active_tenant_id && !!user?.active_club_id
+  });
+
   const { data: allUsers = [] } = useQuery({
     queryKey: ['all-users'],
     queryFn: async () => {
@@ -185,6 +196,7 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       setMembershipSyncResult(res.data);
       queryClient.invalidateQueries({ queryKey: ['players'] });
+      queryClient.invalidateQueries({ queryKey: ['active-club-members'] });
       toast.success(res.data?.message || 'Membership sync complete');
     } catch (error) {
       const message = error?.response?.data?.error || error?.message || 'Membership sync failed';
@@ -364,8 +376,12 @@ export default function AdminPanel() {
     return u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
   });
 
-  const linkedCount = players.filter(p => p.user_id).length;
-  const unlinkedCount = players.length - linkedCount;
+  const activeClubId = user?.active_club_id || '';
+  const activeTenantId = user?.active_tenant_id || '';
+  const clubPlayers = players.filter(p => (!activeClubId || p.club_id === activeClubId) && (!activeTenantId || p.tenant_id === activeTenantId));
+  const linkedCount = clubPlayers.filter(p => p.user_id).length;
+  const activeMemberCount = activeClubMembers.length;
+  const unlinkedCount = Math.max(0, activeMemberCount - linkedCount);
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
   const activeDirectoryAccesses = directoryVerification.accesses.filter(a => a.status === 'active');
@@ -382,16 +398,19 @@ export default function AdminPanel() {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         <GlassCard delay={0} className="text-center">
-          <p className="text-2xl font-bold text-foreground">{players.length}</p>
-          <p className="text-xs text-muted-foreground">Total Players</p>
+          <p className="text-2xl font-bold text-foreground">{activeMemberCount}</p>
+          <p className="text-xs text-muted-foreground">Active Club Members</p>
+          <p className="text-[10px] text-muted-foreground/70 mt-1">Membership records, not test/guest players</p>
         </GlassCard>
         <GlassCard delay={0.05} className="text-center">
           <p className="text-2xl font-bold text-primary">{linkedCount}</p>
-          <p className="text-xs text-muted-foreground">Linked to Accounts</p>
+          <p className="text-xs text-muted-foreground">Linked RallyHub Accounts</p>
+          <p className="text-[10px] text-muted-foreground/70 mt-1">Current club only</p>
         </GlassCard>
         <GlassCard delay={0.1} className="text-center">
           <p className="text-2xl font-bold text-yellow-400">{unlinkedCount}</p>
-          <p className="text-xs text-muted-foreground">Unlinked</p>
+          <p className="text-xs text-muted-foreground">Members Not Yet Linked</p>
+          <p className="text-[10px] text-muted-foreground/70 mt-1">Account activation outstanding</p>
         </GlassCard>
       </div>
 
