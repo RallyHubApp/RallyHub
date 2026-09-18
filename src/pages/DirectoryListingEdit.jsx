@@ -27,6 +27,12 @@ const emptySession = venueId => ({
   id: newSessionId(), venueId: venueId || '', day: 'Monday', meetTime: '', start: '19:00', end: '',
   level: 'Club Session', price: '', paymentMethod: '', capacity: '', host: '', showPublicJoinLink: false, publicJoinUrl: ''
 });
+const dayOrder = new Map(weekDays.map((day, index) => [day, index]));
+const sortSessions = sessions => [...(sessions || [])].sort((a, b) =>
+  (dayOrder.get(a.day) ?? 99) - (dayOrder.get(b.day) ?? 99) ||
+  String(a.start || '').localeCompare(String(b.start || '')) ||
+  String(a.level || '').localeCompare(String(b.level || ''))
+);
 
 function mergeProfile(base, override) {
   if (!base) return null;
@@ -192,6 +198,7 @@ export default function DirectoryListingEdit() {
   const [recentSessionId, setRecentSessionId] = useState('');
   const [sessionNotice, setSessionNotice] = useState('');
   const [pinPickerVenueId, setPinPickerVenueId] = useState('');
+  const [showEnhancements, setShowEnhancements] = useState(false);
   const [error, setError] = useState('');
   const [validation, setValidation] = useState([]);
   const returnTo = useMemo(() => `/directory/${slug}/edit`, [slug]);
@@ -282,7 +289,7 @@ export default function DirectoryListingEdit() {
       })
     }));
   };
-  const setSession = (index, key, value) => { setSaved(false); setForm(prev => ({ ...prev, sessions: prev.sessions.map((s, i) => i === index ? { ...s, [key]: value } : s) })); };
+  const setSession = (index, key, value) => { setSaved(false); setForm(prev => ({ ...prev, sessions: sortSessions(prev.sessions.map((s, i) => i === index ? { ...s, [key]: value } : s)) })); };
 
   const validate = () => {
     const issues = [];
@@ -494,7 +501,7 @@ export default function DirectoryListingEdit() {
     if (!form?.venues?.length) { setSessionNotice('Add a venue before adding a weekly session.'); return; }
     const created = emptySession(form.venues[0]?.id || '');
     setSaved(false);
-    setForm(prev => ({ ...prev, sessions: [...(prev.sessions || []), created] }));
+    setForm(prev => ({ ...prev, sessions: sortSessions([...(prev.sessions || []), created]) }));
     revealSession(created.id, 'New blank session added — complete the details below.');
   };
   const cloneSession = index => {
@@ -505,7 +512,7 @@ export default function DirectoryListingEdit() {
     setForm(prev => {
       const sessions = [...(prev.sessions || [])];
       sessions.splice(index + 1, 0, duplicated);
-      return { ...prev, sessions };
+      return { ...prev, sessions: sortSessions(sessions) };
     });
     revealSession(duplicated.id, 'Session duplicated — edit only the details that are different.');
   };
@@ -560,7 +567,7 @@ export default function DirectoryListingEdit() {
         }
       }
 
-      return { ...prev, venues: existingVenues, sessions: existingSessions };
+      return { ...prev, venues: existingVenues, sessions: sortSessions(existingSessions) };
     });
     setSessionNotice('Spond venues and sessions imported into the form. Review them below, then press Save changes to publish.');
   };
