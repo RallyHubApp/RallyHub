@@ -122,9 +122,15 @@ export default function PlayerProfile() {
               <Badge className="bg-primary/20 text-primary">{player.status || 'Active'}</Badge>
             </div>
           </div>
-          <div className="text-center">
-            <p className="text-4xl font-black font-mono text-primary">{(player.skill_rating || 3.0).toFixed(1)}</p>
-            <p className="text-xs text-muted-foreground">DUPR Rating</p>
+          <div className="grid grid-cols-2 gap-4 text-center shrink-0">
+            <div>
+              <p className="text-3xl font-black font-mono text-primary">{player.dupr_rating != null ? Number(player.dupr_rating).toFixed(3) : '—'}</p>
+              <p className="text-xs text-muted-foreground">DUPR Rating</p>
+            </div>
+            <div>
+              <p className="text-3xl font-black font-mono text-foreground">{player.skill_rating != null ? Number(player.skill_rating).toFixed(1) : '—'}</p>
+              <p className="text-xs text-muted-foreground">Club Rating</p>
+            </div>
           </div>
         </div>
       </motion.div>
