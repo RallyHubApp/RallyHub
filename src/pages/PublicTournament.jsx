@@ -364,6 +364,7 @@ export default function PublicTournament() {
   const [removingId, setRemovingId] = useState(null);
   const [liveIndicator, setLiveIndicator] = useState(false);
   const pollRef = useRef(null);
+  const pollCancelledRef = useRef(false);
   // Track last known round to detect remote advances
   const lastRoundRef = useRef(null);
 
@@ -439,12 +440,22 @@ export default function PublicTournament() {
     setMeta('twitter:card', 'summary');
   }, [tournament]);
 
-  // Poll every 5 seconds for live updates
+  // Legacy live view: stagger refreshes so many viewers do not synchronize into a burst.
   useEffect(() => {
-    pollRef.current = setInterval(() => {
-      fetchTournament(true);
-    }, 5000);
-    return () => clearInterval(pollRef.current);
+    pollCancelledRef.current = false;
+    const schedule = () => {
+      if (pollCancelledRef.current) return;
+      const delay = 5000 + Math.floor(Math.random() * 1500);
+      pollRef.current = setTimeout(async () => {
+        if (document.visibilityState === 'visible') await fetchTournament(true);
+        schedule();
+      }, delay);
+    };
+    schedule();
+    return () => {
+      pollCancelledRef.current = true;
+      if (pollRef.current) clearTimeout(pollRef.current);
+    };
   }, [fetchTournament]);
 
   if (loading) {
