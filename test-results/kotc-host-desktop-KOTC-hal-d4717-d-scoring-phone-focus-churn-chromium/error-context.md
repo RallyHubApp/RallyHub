@@ -20,13 +20,13 @@ Error: expect(locator).toContainText(expected) failed
 
 Locator: getByTestId('kotc-score-card-2')
 Expected substring: "Saved"
-Received string:    "Court 2LIVETeam APlayer 03 & Player 05Team BPlayer 11 & Player 16Saving…Saving…"
+Received string:    "Court 2LIVETeam APlayer 02 & Player 06Team BPlayer 10 & Player 14Saving…Saving…"
 
 Call log:
   - Expect "toContainText" getByTestId('kotc-score-card-2') with timeout 3000ms
   - waiting for getByTestId('kotc-score-card-2')
-    3 × locator resolved to <div data-dynamic-content="true" data-testid="kotc-score-card-2" data-source-location="src/components/kotc/KotcV2SessionView.jsx:80:9" class="glass rounded-xl p-3 sm:p-4 space-y-3 border border-amber-400/60">…</div>
-      - unexpected value "Court 2LIVETeam APlayer 03 & Player 05Team BPlayer 11 & Player 16Saving…Saving…"
+    5 × locator resolved to <div data-dynamic-content="true" data-testid="kotc-score-card-2" data-source-location="src/components/kotc/KotcV2SessionView.jsx:80:9" class="glass rounded-xl p-3 sm:p-4 space-y-3 border border-amber-400/60">…</div>
+      - unexpected value "Court 2LIVETeam APlayer 02 & Player 06Team BPlayer 10 & Player 14Saving…Saving…"
   - Target page, context or browser has been closed
 
 ```
@@ -34,11 +34,11 @@ Call log:
 ```yaml
 - text: Court 2 LIVE
 - paragraph: Team A
-- paragraph: Player 03 & Player 05
-- textbox [disabled]: "8"
+- paragraph: Player 02 & Player 06
+- textbox [disabled]: "11"
 - paragraph: Team B
-- paragraph: Player 11 & Player 16
-- textbox [disabled]: "2"
+- paragraph: Player 10 & Player 14
+- textbox [disabled]: "3"
 - text: Saving…
 - button "Saving…" [disabled]
 ```
