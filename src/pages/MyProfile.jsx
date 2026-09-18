@@ -110,30 +110,41 @@ export default function MyProfile() {
 
   const saveProfile = async () => {
     setSaving(true);
-    if (linkedPlayer) {
-      await base44.entities.Player.update(linkedPlayer.id, {
-        ...form,
-        user_id: user.id,
-        linked_user_email: user.email
-      });
-      await base44.auth.updateMe({ full_name: form.full_name });
-      queryClient.invalidateQueries({ queryKey: ['my-player'] });
-      toast.success('Profile saved!');
-    } else {
-      // Create a new player record linked to this user
-      await base44.entities.Player.create({
-        ...form,
-        user_id: user.id,
-        linked_user_email: user.email,
-        wins: 0, losses: 0, matches_played: 0, status: 'Active',
-        rating_history: []
-      });
-      await base44.auth.updateMe({ full_name: form.full_name });
-      queryClient.invalidateQueries({ queryKey: ['my-player'] });
-      toast.success('Profile created!');
+    try {
+      if (linkedPlayer || memberSnapshot?.player || memberSnapshot?.person) {
+        const res = await base44.functions.invoke('memberPortal', { action: 'self_update', profile: form });
+        if (res.data?.error) throw new Error(res.data.error);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['my-player'] }),
+          queryClient.invalidateQueries({ queryKey: ['member-profile-self'] }),
+          queryClient.invalidateQueries({ queryKey: ['member-portal-self'] }),
+        ]);
+        toast.success('Member profile updated');
+      } else {
+        await base44.entities.Player.create({
+          full_name: form.full_name || user?.full_name || 'Member',
+          email: form.primary_email || user?.email || '',
+          phone: form.mobile || '',
+          gender: form.gender || undefined,
+          dupr_id: form.dupr_id || undefined,
+          age_group: form.age_group || undefined,
+          preferred_position: form.preferred_position || undefined,
+          user_id: user.id,
+          linked_user_email: user.email,
+          wins: 0, losses: 0, matches_played: 0, status: 'Active',
+          rating_history: []
+        });
+        await base44.auth.updateMe({ full_name: form.full_name || user?.full_name });
+        await queryClient.invalidateQueries({ queryKey: ['my-player'] });
+        await queryClient.invalidateQueries({ queryKey: ['member-profile-self'] });
+        toast.success('Player profile created');
+      }
+      setEditing(false);
+    } catch (e) {
+      toast.error(e?.message || 'Could not update your profile.');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    setEditing(false);
   };
 
   const syncDupr = () => {
