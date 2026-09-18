@@ -51,6 +51,7 @@ function sanitiseProfile(input:any) {
     mapUrl: safeUrl(v?.mapUrl),
     websiteUrl: safeUrl(v?.websiteUrl),
     playType: nullable(v?.playType, 120),
+    source: clean(v?.source, 40) === 'Spond' ? 'Spond' : null,
   })).filter((v:any) => v.name);
 
   const venueIds = new Set(venues.map((v:any) => v.id));
@@ -69,6 +70,7 @@ function sanitiseProfile(input:any) {
     host: nullable(s?.host, 180),
     showPublicJoinLink: s?.showPublicJoinLink === true,
     publicJoinUrl: safeUrl(s?.publicJoinUrl),
+    source: clean(s?.source, 40) === 'Spond' ? 'Spond' : null,
   })).filter((s:any) => s.venueId && s.start);
 
   return {
