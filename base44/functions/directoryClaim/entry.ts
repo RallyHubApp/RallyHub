@@ -373,7 +373,7 @@ Deno.serve(async (req) => {
       const adminIdentityMatch = user.role === 'admin' && nameMatch && phoneMatch;
       const anyExistingAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' });
       const listingAlreadyVerified = listing.verificationStatus === 'verified' || !!anyExistingAccess?.length;
-      const autoVerified = (!!trustedInvitation || emailMatch || adminIdentityMatch) && !listingAlreadyVerified;
+      const autoVerified = !!trustedInvitation || ((emailMatch || adminIdentityMatch) && !listingAlreadyVerified);
       const now = new Date().toISOString();
       const claim = await base44.asServiceRole.entities.DirectoryClaim.create({
         listing_slug: listing.slug,
@@ -395,13 +395,15 @@ Deno.serve(async (req) => {
       });
 
       if (autoVerified) {
+        const grantedRole = trustedInvitation?.access_role === 'editor' ? 'editor' : (listingAlreadyVerified ? 'editor' : 'owner');
         await grantAccess(base44, {
           listing,
           userId: user.id,
           claimId: claim.id,
-          grantedByUserId: null,
+          grantedByUserId: trustedInvitation?.created_by_user_id || null,
+          role: grantedRole,
           notes: trustedInvitation
-            ? 'Automatically verified using a one-time trusted claim invitation issued by a RallyHub administrator.'
+            ? `Automatically verified using a one-time trusted ${grantedRole === 'owner' ? 'owner' : 'editor'} invitation.`
             : emailMatch
               ? 'Automatically verified by exact match to authenticated account email.'
               : 'Automatically verified for a known RallyHub platform admin whose trusted name and phone both matched.',
@@ -418,7 +420,7 @@ Deno.serve(async (req) => {
           verified: true,
           status: 'auto_verified',
           hasAccess: true,
-          message: 'Your connection to this club has been verified.',
+          message: trustedInvitation?.access_role === 'editor' ? 'Your Directory Editor access has been verified.' : 'Your connection to this club has been verified.',
         });
       }
 
@@ -668,6 +670,8 @@ Deno.serve(async (req) => {
         listing: { slug: listing.slug, name: listing.name, verificationStatus: allListingAccesses?.length ? 'verified' : 'unclaimed' },
         claim: publicClaim(latest),
         hasAccess: !!access,
+        accessRole: access?.role || null,
+        canManageAccess: user.role === 'admin' || access?.role === 'owner',
       });
     }
 
