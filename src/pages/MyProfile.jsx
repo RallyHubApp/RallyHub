@@ -58,6 +58,16 @@ export default function MyProfile() {
     enabled: !!user?.active_tenant_id && !!user?.active_club_id
   });
 
+  const { data: fullMemberRecord } = useQuery({
+    queryKey: ['membership-record-self', user?.id, user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('membershipRecord', { action: 'self_record' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.record || null;
+    },
+    enabled: !!user
+  });
+
   const { data: allMatches = [] } = useQuery({
     queryKey: ['all-matches'],
     queryFn: () => base44.entities.Match.list('-created_date', 200)
@@ -89,9 +99,7 @@ export default function MyProfile() {
         emergency_mobile: person?.emergency_mobile || memberSnapshot?.member?.emergency_mobile || '',
         secondary_emergency_contact_name: person?.secondary_emergency_contact_name || '',
         secondary_emergency_contact_mobile: person?.secondary_emergency_contact_mobile || '',
-        profile_visibility: person?.profile_visibility || 'club',
-        photo_visibility: person?.photo_visibility || 'club',
-        age_group: player?.age_group || '',
+        age_group: person?.derived_age_group || player?.age_group || '',
         preferred_position: player?.preferred_position || '',
         dupr_id: player?.dupr_id || ''
       });
@@ -142,6 +150,8 @@ export default function MyProfile() {
           queryClient.invalidateQueries({ queryKey: ['my-player'] }),
           queryClient.invalidateQueries({ queryKey: ['member-profile-self'] }),
           queryClient.invalidateQueries({ queryKey: ['member-portal-self'] }),
+          queryClient.invalidateQueries({ queryKey: ['membership-record-self'] }),
+          queryClient.invalidateQueries({ queryKey: ['club-leaderboard'] }),
         ]);
         toast.success('Member profile updated');
       } else {
@@ -183,7 +193,17 @@ export default function MyProfile() {
   };
 
   const initials = (user?.full_name || user?.email || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  const winRate = completed.length > 0 ? Math.round((wins / completed.length) * 100) : 0;
+  const sportingHistory = fullMemberRecord?.sportingHistory || [];
+  const consentRows = fullMemberRecord?.consents || [];
+  const paymentRows = fullMemberRecord?.payments || [];
+  const winsTotal = Number(clubStats?.wins || 0);
+  const lossesTotal = Number(clubStats?.losses || 0);
+  const drawsTotal = Number(clubStats?.draws || 0);
+  const matchesTotal = Number(clubStats?.matches_played || 0);
+  const winRate = Math.round(Number(clubStats?.win_rate || 0) * 100);
+  const leaderboardRank = clubStats?.rank ?? null;
+  const leaderboardPoints = Number(clubStats?.leaderboard_points || 0);
+  const eventsPlayed = Number(clubStats?.events_played || 0);
 
   const profileSections = [
     {
@@ -210,8 +230,6 @@ export default function MyProfile() {
         { label: 'Country', field: 'country', type: 'text' },
         { label: 'Preferred language', field: 'preferred_language', type: 'text' },
         { label: 'Communication preference', field: 'communication_preference', type: 'text' },
-        { label: 'Profile visibility', field: 'profile_visibility', options: ['private','club','public'] },
-        { label: 'Photo visibility', field: 'photo_visibility', options: ['private','club','public'] },
       ]
     },
     {
