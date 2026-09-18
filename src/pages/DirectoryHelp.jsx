@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, HelpCircle, KeyRound, MapPin, ShieldCheck, Upload, CalendarDays, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, HelpCircle, ShieldCheck, Upload, CalendarDays, ArrowLeft } from 'lucide-react';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import Seo from '@/components/public/Seo';
 
