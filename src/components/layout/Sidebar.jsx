@@ -17,7 +17,7 @@ const navItems = [
   { path: '/app', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/app/players', label: 'Players', icon: Users },
   { path: '/app/tournaments', label: 'Tournaments', icon: Trophy },
-  { path: '/app/leaderboard', label: 'KOTC Leaderboard', icon: Crown },
+  { path: '/app/leaderboard', label: 'Club Leaderboard', icon: Crown },
   { path: '/app/analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
