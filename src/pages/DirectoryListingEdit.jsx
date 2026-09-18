@@ -4,7 +4,7 @@ import { CircleMarker, MapContainer, TileLayer, useMapEvents } from 'react-leafl
 import 'leaflet/dist/leaflet.css';
 import {
   ArrowLeft, Building2, CalendarDays, CheckCircle2, Copy, ExternalLink, Globe2,
-  Image as ImageIcon, Info, Loader2, Mail, MapPin, Plus, Save, Trash2, Upload, UserRound
+  Image as ImageIcon, Info, Loader2, Mail, MapPin, MessageCircle, Plus, Save, Trash2, Upload, UserRound
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -299,6 +299,28 @@ export default function DirectoryListingEdit() {
     window.location.assign(`${publicListingUrl}?refresh=${Date.now()}`);
   };
 
+  const openWhatsAppClaimInvite = () => {
+    setInviteMessage('');
+    setError('');
+    if (dirty) {
+      setError('Save the club details first, then send the claim invitation so the representative receives the correct contact information.');
+      return;
+    }
+    const rawPhone = String(form?.contact?.phone || '').trim();
+    let digits = rawPhone.replace(/\D/g, '');
+    if (digits.startsWith('00')) digits = digits.slice(2);
+    if (digits.startsWith('0')) digits = `353${digits.slice(1)}`;
+    if (!digits) {
+      setError('Add the club representative’s mobile number before opening WhatsApp.');
+      return;
+    }
+    const claimUrl = `${window.location.origin}/directory/${slug}/claim`;
+    const contactName = String(form?.contact?.name || '').trim();
+    const message = `Hi ${contactName || 'there'}, RallyHub has created an unclaimed Directory listing for ${baseClub?.name || 'your club'}. Please use this link to review and claim it: ${claimUrl}`;
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+    setInviteMessage(`WhatsApp opened for ${rawPhone}. The listing remains Unclaimed until the representative completes the claim.`);
+  };
+
   const sendClaimInvite = async () => {
     setInviteMessage('');
     setError('');
@@ -483,10 +505,16 @@ export default function DirectoryListingEdit() {
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
                     <Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><ExternalLink className="w-4 h-4" /> View public listing</Button>
-                    {user?.role === 'admin' && !isClaimed && <Button type="button" variant="outline" className="gap-2" onClick={sendClaimInvite} disabled={saving || inviting || dirty || !form?.contact?.email} title={dirty ? 'Save changes before sending the claim invitation' : undefined}>
-                      {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-                      {inviting ? 'Sending invitation…' : dirty ? 'Save before invite' : 'Send claim invitation'}
-                    </Button>}
+                    {user?.role === 'admin' && !isClaimed && <>
+                      <Button type="button" variant="outline" className="gap-2" onClick={sendClaimInvite} disabled={saving || inviting || dirty || !form?.contact?.email} title={dirty ? 'Save changes before sending the claim invitation' : undefined}>
+                        {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                        {inviting ? 'Sending email…' : dirty ? 'Save before email' : 'Email claim link'}
+                      </Button>
+                      <Button type="button" variant="outline" className="gap-2" onClick={openWhatsAppClaimInvite} disabled={saving || dirty || !form?.contact?.phone} title={dirty ? 'Save changes before opening WhatsApp' : undefined}>
+                        <MessageCircle className="w-4 h-4" />
+                        {dirty ? 'Save before WhatsApp' : 'WhatsApp claim link'}
+                      </Button>
+                    </>}
                     <Button onClick={save} disabled={saving || !dirty} className="gap-2 min-w-36">
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : !dirty && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                       {saving ? 'Saving changes…' : dirty ? 'Save changes' : saved ? 'Saved ✓' : 'All saved'}
