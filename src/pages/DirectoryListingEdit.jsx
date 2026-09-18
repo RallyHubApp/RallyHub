@@ -643,6 +643,7 @@ export default function DirectoryListingEdit() {
                   <a href="#venues" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Venues</a>
                   <a href="#sessions" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Sessions</a>
                   {isClaimed && <a href="#access" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Access</a>}
+                  {isClaimed && <button type="button" onClick={() => { setShowEnhancements(true); window.setTimeout(() => document.getElementById('spond')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); }} className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Spond</button>}
                   <button type="button" onClick={() => setShowEnhancements(true)} className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Enhance listing</button>
                   <Link to="/directory/help" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40 inline-flex items-center gap-1.5"><HelpCircle className="w-3.5 h-3.5" /> Help</Link>
                 </nav>
