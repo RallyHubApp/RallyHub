@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { invalidatePublicDirectoryCache } from '@/lib/public-directory-cache';
 import { getClub, weekDays } from '@/data/directorySeed';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { Button } from '@/components/ui/button';
@@ -329,6 +330,7 @@ export default function DirectoryListingEdit() {
       setBaseline(JSON.stringify(merged));
       setValidation([]);
       setSaved(true);
+      invalidatePublicDirectoryCache();
       try {
         sessionStorage.setItem(`rallyhub-directory-profile-${slug}`, JSON.stringify({ profile: merged, savedAt: Date.now() }));
       } catch {}
