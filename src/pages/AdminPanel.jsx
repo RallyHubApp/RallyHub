@@ -380,8 +380,8 @@ export default function AdminPanel() {
   const activeTenantId = user?.active_tenant_id || '';
   const clubPlayers = players.filter(p => (!activeClubId || p.club_id === activeClubId) && (!activeTenantId || p.tenant_id === activeTenantId));
   const linkedCount = clubPlayers.filter(p => p.user_id).length;
-  const activeMemberCount = activeClubMembers.length;
-  const unlinkedCount = Math.max(0, activeMemberCount - linkedCount);
+  const clubPlayerCount = clubPlayers.length;
+  const unlinkedCount = Math.max(0, clubPlayerCount - linkedCount);
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
   const activeDirectoryAccesses = directoryVerification.accesses.filter(a => a.status === 'active');
@@ -398,9 +398,9 @@ export default function AdminPanel() {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         <GlassCard delay={0} className="text-center">
-          <p className="text-2xl font-bold text-foreground">{activeMemberCount}</p>
-          <p className="text-xs text-muted-foreground">Active Club Members</p>
-          <p className="text-[10px] text-muted-foreground/70 mt-1">Membership records, not test/guest players</p>
+          <p className="text-2xl font-bold text-foreground">{clubPlayerCount}</p>
+          <p className="text-xs text-muted-foreground">Clare Player Records</p>
+          <p className="text-[10px] text-muted-foreground/70 mt-1">152 paid + 1 pending + 2 agreed player records</p>
         </GlassCard>
         <GlassCard delay={0.05} className="text-center">
           <p className="text-2xl font-bold text-primary">{linkedCount}</p>
@@ -409,8 +409,8 @@ export default function AdminPanel() {
         </GlassCard>
         <GlassCard delay={0.1} className="text-center">
           <p className="text-2xl font-bold text-yellow-400">{unlinkedCount}</p>
-          <p className="text-xs text-muted-foreground">Members Not Yet Linked</p>
-          <p className="text-[10px] text-muted-foreground/70 mt-1">Account activation outstanding</p>
+          <p className="text-xs text-muted-foreground">Player Records Not Yet Linked</p>
+          <p className="text-[10px] text-muted-foreground/70 mt-1">Current Clare club only</p>
         </GlassCard>
       </div>
 
