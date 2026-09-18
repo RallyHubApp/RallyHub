@@ -8,6 +8,7 @@ import { directoryClubs, irelandCounties, weekDays } from '@/data/directorySeed'
 import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, Check, CheckCircle2, PlusCircle, Share2, UserCheck } from 'lucide-react';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 import { base44 } from '@/api/base44Client';
+import PublicDirectoryLogo from '@/components/directory/PublicDirectoryLogo';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -35,19 +36,6 @@ const normaliseSearchText = value => String(value || '')
   .replace(/\s+/g, ' ');
 
 const compactSearchText = value => normaliseSearchText(value).replace(/\s+/g, '');
-
-const publicAssetUrl = value => {
-  const raw = String(value || '').trim();
-  const marker = '/files/mp/public/';
-  try {
-    const url = new URL(raw);
-    if (url.hostname === 'base44.app' && url.pathname.includes(marker)) {
-      const tail = url.pathname.split(marker)[1];
-      if (tail) return `https://media.base44.com/images/public/${tail}`;
-    }
-  } catch {}
-  return raw;
-};
 
 const publicDescription = club => {
   const description = String(club?.description || '').trim();
@@ -404,13 +392,12 @@ export default function PublicDirectory() {
                 {filteredClubs.map(club => (
                   <article key={club.id} className="glass rounded-2xl p-5 sm:p-6 hover:border-primary/30 transition-colors">
                     <div className="flex gap-4">
-                      {publicAssetUrl(club.logoUrl) ? (
-                        <img src={publicAssetUrl(club.logoUrl)} alt={`${club.name} logo`} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white object-contain p-1 shrink-0" />
-                      ) : (
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-xl sm:text-2xl font-black text-primary shrink-0" aria-label={`${club.name} logo pending`}>
-                          {clubInitials(club.name)}
-                        </div>
-                      )}
+                      <PublicDirectoryLogo
+                        src={club.logoUrl}
+                        name={club.name}
+                        imageClassName="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white object-contain p-1 shrink-0"
+                        fallbackClassName="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-xl sm:text-2xl font-black text-primary shrink-0"
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div>
