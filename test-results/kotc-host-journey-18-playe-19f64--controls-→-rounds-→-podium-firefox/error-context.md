@@ -14,21 +14,21 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('Round 1 — LIVE')
+Locator: getByTestId('kotc-timer-pause')
 Expected: visible
-Timeout: 2000ms
+Timeout: 3000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('Round 1 — LIVE') with timeout 2000ms
-  - waiting for getByText('Round 1 — LIVE')
+  - Expect "toBeVisible" getByTestId('kotc-timer-pause') with timeout 3000ms
+  - waiting for getByTestId('kotc-timer-pause')
 
 ```
 
 ```yaml
 - main:
-  - paragraph: Round 1 — ROUND READY
-  - paragraph: 4 courts · 2 bench
+  - paragraph: Round 1 — LIVE
+  - paragraph: 4 courts · 2 bench · 0/4 scores saved
   - button "Roster":
     - img
     - text: Roster
@@ -39,138 +39,69 @@ Call log:
     - img
     - text: Menu
   - paragraph: What happens next
-  - paragraph: Round 1 ready
-  - paragraph: "Next: check the 4 court assignments and bench, then Start Round 1."
-  - paragraph: Bench This Round
-  - button "Player 01"
-  - button "Player 18"
-  - paragraph: Tap a court player, then a bench player, to swap them.
-  - heading "Host Round Editor" [level=4]
-  - paragraph: Tap one player then another to swap. Only one pending selection is allowed.
-  - img
-  - text: Court 1
-  - paragraph: Team A
-  - button "Locked ✓ · Unlock" [disabled]:
+  - paragraph: Round 1 live · 0/4 scores saved
+  - paragraph: "Next: collect Court 1, Court 2, Court 3, Court 4 results. You can correct any saved score before advancing."
+  - paragraph: Play Time
+  - paragraph: 8 min round timer
+  - button "Test speaker and spoken announcement":
     - img
-    - text: Locked ✓ · Unlock
-  - button "Player 17":
+  - button "Float and move timer":
     - img
-    - text: Player 17
-  - button "Player 07":
+  - button "Full screen timer":
     - img
-    - text: Player 07
-  - paragraph: Team B
-  - button "Lock pair" [disabled]:
-    - img
-    - text: Lock pair
-  - button "Player 12":
-    - img
-    - text: Player 12
-  - button "Player 14":
-    - img
-    - text: Player 14
-  - text: Court 2
-  - paragraph: Team A
-  - button "Lock pair" [disabled]:
-    - img
-    - text: Lock pair
-  - button "Player 03":
-    - img
-    - text: Player 03
-  - button "Player 05":
-    - img
-    - text: Player 05
-  - paragraph: Team B
-  - button "Lock pair" [disabled]:
-    - img
-    - text: Lock pair
-  - button "Player 10":
-    - img
-    - text: Player 10
-  - button "Player 13":
-    - img
-    - text: Player 13
-  - text: Court 3
-  - paragraph: Team A
-  - button "Lock pair" [disabled]:
-    - img
-    - text: Lock pair
-  - button "Player 02":
-    - img
-    - text: Player 02
-  - button "Player 06":
-    - img
-    - text: Player 06
-  - paragraph: Team B
-  - button "Lock pair" [disabled]:
-    - img
-    - text: Lock pair
-  - button "Player 09":
-    - img
-    - text: Player 09
-  - button "Player 15":
-    - img
-    - text: Player 15
-  - text: Court 4
-  - paragraph: Team A
-  - button "Lock pair" [disabled]:
-    - img
-    - text: Lock pair
-  - button "Player 04":
-    - img
-    - text: Player 04
-  - button "Player 08":
-    - img
-    - text: Player 08
-  - paragraph: Team B
-  - button "Lock pair" [disabled]:
-    - img
-    - text: Lock pair
-  - button "Player 11":
-    - img
-    - text: Player 11
-  - button "Player 16":
-    - img
-    - text: Player 16
-  - paragraph: Pre-Round Check
-  - paragraph: Confirm the round time and hall sound before players begin.
-  - img
-  - paragraph: Round timer
-  - paragraph: Adjust now if tonight needs a shorter or longer round.
   - text: 08:00
-  - button "− 1 min" [disabled]
-  - button "+ 1 min" [disabled]
-  - paragraph: Hall sound check
-  - paragraph: Test the real cue and spoken voice before play. This uses your device/speaker only — no Base44 call.
-  - button "Test Sound":
+  - paragraph: Cue and announcements play at full RallyHub volume using this device’s default voice. Set the actual hall loudness with the device media-volume buttons before play.
+  - button "Start Timer":
     - img
-    - text: Test Sound
-  - button "Starting…" [disabled]:
+    - text: Start Timer
+  - button "Reset":
     - img
-    - text: Starting…
-  - button "Back to Setup" [disabled]:
+    - text: Reset
+  - paragraph: Tap the speaker once before play to enable sound. The timer itself starts automatically when the sporting round starts.
+  - paragraph: Need to finish early? Pause the timer and enter the final scores now — you do not need to wait for 00:00.
+  - button "Undo Start / Back to Round Setup":
     - img
-    - text: Back to Setup
-  - button "Restore Original Draw" [disabled]:
-    - img
-    - text: Restore Original Draw
+    - text: Undo Start / Back to Round Setup
+  - paragraph: Bench This Round
+  - paragraph: Player 02 · Player 18
+  - img
+  - text: Court 1 LIVE
+  - paragraph: Team A
+  - paragraph: Player 17 & Player 06
+  - textbox
+  - paragraph: Team B
+  - paragraph: Player 10 & Player 15
+  - textbox
+  - button "Complete Match" [disabled]
+  - text: Court 2 LIVE
+  - paragraph: Team A
+  - paragraph: Player 01 & Player 08
+  - textbox
+  - paragraph: Team B
+  - paragraph: Player 12 & Player 14
+  - textbox
+  - button "Complete Match" [disabled]
+  - text: Court 3 LIVE
+  - paragraph: Team A
+  - paragraph: Player 03 & Player 05
+  - textbox
+  - paragraph: Team B
+  - paragraph: Player 09 & Player 13
+  - textbox
+  - button "Complete Match" [disabled]
+  - text: Court 4 LIVE
+  - paragraph: Team A
+  - paragraph: Player 04 & Player 07
+  - textbox
+  - paragraph: Team B
+  - paragraph: Player 11 & Player 16
+  - textbox
+  - button "Complete Match" [disabled]
 ```
 
 # Test source
 
 ```ts
-  316 |       try { body = request.postDataJSON() || {}; } catch { body = {}; }
-  317 |       const payload = await model.handleFunction(name, body);
-  318 |       return json(route, payload);
-  319 |     }
-  320 |     return json(route, []);
-  321 |   });
-  322 | }
-  323 | 
-  324 | async function dismissTimerFullscreen(page) {
-  325 |   // The normal host flow must never manufacture a full-screen timer state. If a prior
-  326 |   // explicit test/user action left it full-screen, return it to the docked in-page state.
-  327 |   const exit = page.getByTitle('Exit full screen timer');
   328 |   if (await exit.count()) await exit.first().click();
   329 |   const dock = page.getByTitle('Dock timer back in page');
   330 |   if (await dock.count()) await dock.first().click();
@@ -259,8 +190,7 @@ Call log:
   413 |   await startRound.click();
   414 |   await expect(startRound).toContainText('Starting…');
   415 |   metric(report, 'start_ack_ms', Date.now() - started, 250);
-> 416 |   await expect(page.getByText('Round 1 — LIVE')).toBeVisible({ timeout: 2000 });
-      |                                                  ^ Error: expect(locator).toBeVisible() failed
+  416 |   await expect(page.getByText('Round 1 — LIVE')).toBeVisible({ timeout: 2000 });
   417 |   metric(report, 'start_to_live_ms', Date.now() - started, 1500);
   418 |   await expect(page.getByTestId('kotc-timer-pause')).toBeVisible({ timeout: 1000 });
   419 |   metric(report, 'start_to_timer_running_ms', Date.now() - started, 1700);
@@ -272,7 +202,8 @@ Call log:
   425 |   await expect(page.getByTestId('kotc-timer-value')).toHaveText('08:00');
   426 |   await expect(page.getByTestId('kotc-timer-start')).toContainText('Start Timer');
   427 |   await page.getByTestId('kotc-timer-start').click();
-  428 |   await expect(page.getByTestId('kotc-timer-pause')).toBeVisible();
+> 428 |   await expect(page.getByTestId('kotc-timer-pause')).toBeVisible();
+      |                                                      ^ Error: expect(locator).toBeVisible() failed
   429 |   await dismissTimerFullscreen(page);
   430 | 
   431 |   // Undo must keep accepted feedback visible for the entire backend delay.
@@ -361,4 +292,16 @@ Call log:
   514 |   await reviewCard.getByTestId('kotc-score-1-a').fill('2');
   515 |   await reviewCard.getByTestId('kotc-score-1-b').fill('12');
   516 |   await reviewCard.getByRole('button',{name:'Save Correction'}).click();
+  517 |   await expect(reviewCard).toContainText('Saved 2–12',{timeout:1800});
+  518 |   const corrected=model.matches.find(m=>m.id==='match-r1-c1');
+  519 |   expect(corrected.correction_count).toBe(1);
+  520 |   expect(corrected.winner_side).toBe('B');
+  521 |   expect(JSON.stringify(model.slots.filter(s=>s.round_id==='round-2'))).toBe(preCorrectionRound2);
+  522 |   report.post_event_score_correction=true;
+  523 | 
+  524 |   report.rounds_created = model.rounds.length;
+  525 |   report.function_calls = model.calls.length;
+  526 |   console.log(`KOTC HOST JOURNEY REPORT\n${JSON.stringify(report, null, 2)}`);
+  527 |   await testInfo.attach('kotc-host-journey-report.json', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
+  528 | });
 ```
