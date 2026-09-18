@@ -14,6 +14,10 @@ const faqs = [
     a: 'Open the secure invitation link. If you need a new Directory account, RallyHub sends a six-digit code to verify your email. The trusted invitation is single-use and expires after 72 hours. If your verified email or mobile matches the invitation, you can continue without waiting for a second manual approval.'
   },
   {
+    q: 'Can more than one person manage a club listing?',
+    a: 'Yes. A claimed listing has one Primary Owner and can have multiple Directory Editors. The Primary Owner can invite or remove editors. Editors can update the public listing but cannot transfer ownership or manage other editors. Secure editor invitations are single-use, expire after 72 hours and are tied to the invited email address.'
+  },
+  {
     q: 'Do I have to complete every field?',
     a: 'No. Start with the basics: check the club description, public contact, main venue and regular sessions. Your listing can be useful without prices, social links, extra venues or integrations. Optional details can be added later.'
   },
