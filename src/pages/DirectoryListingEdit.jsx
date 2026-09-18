@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Seo from '@/components/public/Seo';
 import DirectorySpondPanel from '@/components/directory/DirectorySpondPanel';
+import DirectoryAccessPanel from '@/components/directory/DirectoryAccessPanel';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const emptyVenue = index => ({
@@ -609,7 +610,7 @@ export default function DirectoryListingEdit() {
                 <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
                   <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-wider text-primary font-semibold">{user?.role === 'admin' && !isClaimed ? 'Super Admin · Unclaimed listing' : 'Verified directory editor'}</p>
+                    <p className="text-xs uppercase tracking-wider text-primary font-semibold">{user?.role === 'admin' && !isClaimed ? 'Super Admin · Unclaimed listing' : access?.accessRole === 'owner' ? 'Primary Directory Owner' : 'Verified Directory Editor'}</p>
                     <h1 className="text-3xl sm:text-4xl font-black mt-1 truncate">{baseClub.name}</h1>
                     <div className="flex flex-wrap gap-2 mt-3 text-xs text-muted-foreground">
                       <span className="rounded-full border border-border px-2.5 py-1">County {baseClub.county}</span>
@@ -641,6 +642,7 @@ export default function DirectoryListingEdit() {
                   <a href="#contact" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Contact</a>
                   <a href="#venues" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Venues</a>
                   <a href="#sessions" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Sessions</a>
+                  {isClaimed && <a href="#access" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Access</a>}
                   <button type="button" onClick={() => setShowEnhancements(true)} className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Enhance listing</button>
                   <Link to="/directory/help" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40 inline-flex items-center gap-1.5"><HelpCircle className="w-3.5 h-3.5" /> Help</Link>
                 </nav>
@@ -660,6 +662,8 @@ export default function DirectoryListingEdit() {
                   <Link to="/directory/help"><Button type="button" variant="outline" className="gap-2"><HelpCircle className="w-4 h-4" /> Open help guide</Button></Link>
                 </div>
               </section>
+
+              {isClaimed && <DirectoryAccessPanel listingSlug={slug} clubName={baseClub?.name || 'this club'} />}
 
               <section id="basics" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><Info className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Public club information</h2></div>
