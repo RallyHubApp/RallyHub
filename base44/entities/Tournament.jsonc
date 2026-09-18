@@ -34,6 +34,11 @@
       "type": "boolean",
       "default": false
     },
+    "counts_toward_leaderboard": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, completed results from this competition contribute to the host club leaderboard"
+    },
     "clubs_involved": {
       "type": "array",
       "items": {
