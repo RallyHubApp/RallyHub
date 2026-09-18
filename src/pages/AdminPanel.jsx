@@ -739,6 +739,73 @@ export default function AdminPanel() {
               </p>
             </div>
 
+            <div className="glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/25">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary">Invite a club owner / tester</p>
+                  <h3 className="text-lg font-bold text-foreground mt-1">Create a secure claim invitation</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Choose a club, add the authorised representative and send a single-use 72-hour invitation by WhatsApp or email.</p>
+                </div>
+                <UserPlus className="w-5 h-5 text-primary shrink-0 mt-1" />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="directory-owner-club">Club</Label>
+                  <select id="directory-owner-club" value={ownerInvite.listingSlug} onChange={e => { setOwnerInvite(v => ({ ...v, listingSlug: e.target.value })); setOwnerInviteResult(null); }} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="">Choose a club…</option>
+                    {directoryAdminListings.map(listing => {
+                      const claimed = activeDirectoryAccesses.some(access => access.listing_slug === listing.slug && access.status === 'active');
+                      return <option key={listing.slug} value={listing.slug}>{listing.name}{listing.county ? ` · ${listing.county}` : ''}{claimed ? ' · already claimed' : ''}</option>;
+                    })}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="directory-owner-name">Contact name</Label>
+                  <Input id="directory-owner-name" value={ownerInvite.contactName} onChange={e => { setOwnerInvite(v => ({ ...v, contactName: e.target.value })); setOwnerInviteResult(null); }} placeholder="e.g. Mick Kelliher" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="directory-owner-phone">Mobile / WhatsApp</Label>
+                  <Input id="directory-owner-phone" value={ownerInvite.contactPhone} onChange={e => { setOwnerInvite(v => ({ ...v, contactPhone: e.target.value })); setOwnerInviteResult(null); }} placeholder="e.g. 087 123 4567" />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="directory-owner-email">Email <span className="text-muted-foreground">(required only for email invitation)</span></Label>
+                  <Input id="directory-owner-email" type="email" value={ownerInvite.contactEmail} onChange={e => { setOwnerInvite(v => ({ ...v, contactEmail: e.target.value })); setOwnerInviteResult(null); }} placeholder="name@example.com" />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" onClick={createOwnerWhatsAppInvite} disabled={!!ownerInviteBusy || !ownerInvite.listingSlug || !ownerInvite.contactName.trim() || !ownerInvite.contactPhone.trim()} className="gap-2">
+                  <MessageCircle className="w-4 h-4" /> {ownerInviteBusy === 'whatsapp' ? 'Creating secure link…' : 'Create WhatsApp invitation'}
+                </Button>
+                <Button type="button" variant="outline" onClick={sendOwnerEmailInvite} disabled={!!ownerInviteBusy || !ownerInvite.listingSlug || !ownerInvite.contactName.trim() || !ownerInvite.contactEmail.trim()} className="gap-2">
+                  <Mail className="w-4 h-4" /> {ownerInviteBusy === 'email' ? 'Sending email…' : 'Send email invitation'}
+                </Button>
+              </div>
+
+              {ownerInviteResult?.channel === 'whatsapp' && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+                  <div>
+                    <p className="font-semibold text-foreground">WhatsApp message ready</p>
+                    <p className="text-xs text-muted-foreground mt-1">Review or edit the wording before opening WhatsApp. WhatsApp bold formatting uses *asterisks* and will render correctly in the chat.</p>
+                  </div>
+                  <textarea value={ownerInviteResult.message} onChange={e => setOwnerInviteResult(v => ({ ...v, message: e.target.value }))} rows={15} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-6 font-sans" />
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" onClick={openOwnerInviteWhatsApp} className="gap-2"><MessageCircle className="w-4 h-4" /> Open WhatsApp app</Button>
+                    <Button type="button" variant="outline" onClick={copyOwnerInviteMessage} className="gap-2"><Copy className="w-4 h-4" /> Copy message</Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Secure link expires {ownerInviteResult.expiresAt ? new Date(ownerInviteResult.expiresAt).toLocaleString('en-IE') : 'after 72 hours'} and can only be used once.</p>
+                </div>
+              )}
+
+              {ownerInviteResult?.channel === 'email' && (
+                <div className="rounded-xl border border-green-400/25 bg-green-400/5 p-4">
+                  <p className="font-semibold text-green-300">Email invitation sent</p>
+                  <p className="text-sm text-muted-foreground mt-1">The secure claim link was sent with the RallyHub Directory wording and your Brian Moore / RallyHub signature block. It expires after 72 hours and can only be used once.</p>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">New club requests</p>
               {pendingNewDirectoryRequests.length === 0 ? (
