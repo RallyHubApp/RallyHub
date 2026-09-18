@@ -232,7 +232,8 @@ Deno.serve(async (req) => {
       const users = await base44.asServiceRole.entities.User.filter({ id: userId });
       const target = users?.[0];
       if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
-      if (target.role === 'admin') return Response.json({ error: 'Choose a normal member account for member preview.' }, { status: 400 });
+      // Preview is read-only and does not change authentication or permissions, so an
+      // administrator may also preview their own linked member identity as a normal member.
       return Response.json({ success: true, preview: true, snapshot: await buildSnapshot(base44, target) });
     }
 
