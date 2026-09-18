@@ -336,8 +336,13 @@ Deno.serve(async (req) => {
         }
         const inviteEmailMatch = invitation.contact_email && normaliseEmail(invitation.contact_email) === userEmail;
         const invitePhoneMatch = invitation.contact_phone && phoneLooksSame(invitation.contact_phone, claimantPhone);
-        if (!inviteEmailMatch && !invitePhoneMatch) {
-          return Response.json({ error: 'This secure invitation was issued to a different email or mobile number.' }, { status: 403 });
+        const invitationIdentityMatch = invitation.channel === 'email'
+          ? !!inviteEmailMatch
+          : invitation.channel === 'whatsapp'
+            ? !!invitePhoneMatch
+            : !!(inviteEmailMatch || invitePhoneMatch);
+        if (!invitationIdentityMatch) {
+          return Response.json({ error: invitation.channel === 'email' ? 'This secure invitation was issued to a different email address.' : 'This secure invitation was issued to a different mobile number.' }, { status: 403 });
         }
         trustedInvitation = invitation;
       }
