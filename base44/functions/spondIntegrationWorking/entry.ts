@@ -111,6 +111,92 @@ function matchAttendee(attendee,players){
   return {status:'matched',matched:top.player,candidates:[{id:top.player.id,name:top.player.full_name,email:top.player.email||'',phone:top.player.phone||''}]};
 }
 
+const clean = (value, max=500) => String(value ?? '').trim().slice(0, max);
+const slugPart = value => clean(value, 180).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'spond';
+
+async function directoryAccessAllowed(base44, user, listingSlug) {
+  if (user.role === 'admin') return true;
+  if (!listingSlug) return false;
+  const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, user_id: user.id, status: 'active' });
+  return !!access?.length;
+}
+
+async function directorySpondToken(user, body) {
+  if (body.spondToken) return body.spondToken;
+  if (user.role !== 'admin') return null;
+  const email = Deno.env.get('SPOND_EMAIL');
+  const password = Deno.env.get('SPOND_PASSWORD');
+  if (!email || !password) return null;
+  return await spondLogin(email, password);
+}
+
+function dublinParts(value) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  const parts = new Intl.DateTimeFormat('en-IE', {
+    timeZone: 'Europe/Dublin', weekday:'long', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+  }).formatToParts(date);
+  const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+  return { day:p.weekday, date:`${p.year}-${p.month}-${p.day}`, time:`${p.hour}:${p.minute}` };
+}
+
+function directoryEventPreview(events) {
+  const patterns = new Map();
+  const venues = new Map();
+  for (const event of events || []) {
+    const startRaw = eventStart(event);
+    const start = dublinParts(startRaw);
+    if (!start) continue;
+    const end = dublinParts(event?.endTimestamp || '');
+    const locationName = clean(event?.location?.feature || event?.location?.name || event?.location?.address || 'Spond venue', 220);
+    const address = clean(event?.location?.address || '', 320);
+    const venueKey = normaliseName(`${locationName}|${address}`);
+    if (!venues.has(venueKey)) {
+      venues.set(venueKey, {
+        id:`spond-${slugPart(locationName)}-${venues.size+1}`,
+        name:locationName,
+        shortName:locationName,
+        address:address || null,
+        eircode:null,
+        indoor:null,
+        courts:null,
+        latitude:null,
+        longitude:null,
+        mapUrl:null,
+        websiteUrl:null,
+        playType:'Contact club',
+      });
+    }
+    const venue = venues.get(venueKey);
+    const heading = clean(event?.heading || 'Club Session', 180);
+    const key = [heading,start.day,start.time,end?.time||'',venue.id].join('|');
+    if (!patterns.has(key)) {
+      patterns.set(key, {
+        id:`spond-session-${patterns.size+1}`,
+        venueId:venue.id,
+        day:start.day,
+        meetTime:'',
+        start:start.time,
+        end:end?.time || null,
+        level:heading,
+        price:null,
+        paymentMethod:null,
+        capacity:Number(event?.maxAccepted || event?.maxParticipants || 0) || null,
+        host:null,
+        showPublicJoinLink:false,
+        publicJoinUrl:null,
+        occurrences:0,
+        nextDate:start.date,
+        source:'Spond',
+      });
+    }
+    const row = patterns.get(key);
+    row.occurrences += 1;
+    if (!row.nextDate || start.date < row.nextDate) row.nextDate = start.date;
+  }
+  return { venues:[...venues.values()], sessions:[...patterns.values()].sort((a,b)=>`${a.nextDate}${a.start}`.localeCompare(`${b.nextDate}${b.start}`)) };
+}
+
 Deno.serve(async (req) => {
   try {
   const base44 = createClientFromRequest(req);
@@ -118,7 +204,64 @@ Deno.serve(async (req) => {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { action, spondEmail, spondPassword, spondToken, groupId, eventId, targetDate, selectedStartTimestamp, selectedHeading } = body;
+  const { action, spondEmail, spondPassword, spondToken, groupId, eventId, targetDate, selectedStartTimestamp, selectedHeading, listingSlug } = body;
+
+  if (String(action || '').startsWith('directory_')) {
+    const slug = clean(listingSlug, 180);
+    if (!slug) return Response.json({ error:'listingSlug required' }, { status:400 });
+    if (!await directoryAccessAllowed(base44, user, slug)) return Response.json({ error:'Forbidden: directory editor access required' }, { status:403 });
+
+    if (action === 'directory_connection_status') {
+      const rows = await base44.asServiceRole.entities.DirectorySpondConnection.filter({ listing_slug: slug, status:'active' }, '-last_synced_at', 5);
+      return Response.json({ connection: rows?.[0] || null });
+    }
+
+    let token = null;
+    try { token = await directorySpondToken(user, body); } catch (error) {
+      return Response.json({ error:`Could not connect to Spond: ${error?.message || 'login failed'}` }, { status:502 });
+    }
+    if (!token) return Response.json({ error:'Connect a Spond account first.' }, { status:401 });
+
+    if (action === 'directory_get_groups') {
+      const groups = await spondRequest('/groups', token);
+      const simplified = (Array.isArray(groups) ? groups : []).map(g => ({ id:g.id, name:g.name, memberCount:g.members?.length || 0 })).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+      return Response.json({ groups:simplified, connectionMode:user.role === 'admin' && !spondToken ? 'platform_admin' : 'club_account' });
+    }
+
+    if (action === 'directory_get_events') {
+      if (!groupId) return Response.json({ error:'groupId required' }, { status:400 });
+      const now = new Date();
+      const minStart = new Date(now.getTime() - 7*24*60*60*1000).toISOString();
+      const maxStart = new Date(now.getTime() + 120*24*60*60*1000).toISOString();
+      const params = new URLSearchParams({ groupId:String(groupId), minStartTimestamp:minStart, maxStartTimestamp:maxStart, max:'300', scheduled:'true', includeComments:'false', includeHidden:'false', addProfileInfo:'false' });
+      const raw = await spondRequest(`/sponds?${params.toString()}`, token);
+      const minMs=new Date(minStart).getTime(),maxMs=new Date(maxStart).getTime();
+      const bounded=(Array.isArray(raw)?raw:[]).map(e=>({...e,_resolvedStartTimestamp:occurrenceStartInWindow(e,minMs,maxMs)})).filter(e=>e._resolvedStartTimestamp);
+      const preview = directoryEventPreview(bounded);
+      const events = bounded.sort((a,b)=>new Date(eventStart(a)).getTime()-new Date(eventStart(b)).getTime()).map(e=>({ id:e.id, heading:e.heading||'Club Session', startTimestamp:eventStart(e), endTimestamp:e.endTimestamp||null, location:e.location?.feature||e.location?.address||'', address:e.location?.address||'' }));
+      return Response.json({ events, preview, rawCount:bounded.length, windowStart:minStart, windowEnd:maxStart });
+    }
+
+    if (action === 'directory_save_connection') {
+      if (!groupId) return Response.json({ error:'groupId required' }, { status:400 });
+      const groups = await spondRequest('/groups', token);
+      const group = (Array.isArray(groups)?groups:[]).find(g=>String(g.id)===String(groupId));
+      if (!group) return Response.json({ error:'Spond group not found' }, { status:404 });
+      const existing = await base44.asServiceRole.entities.DirectorySpondConnection.filter({ listing_slug:slug }, '-last_synced_at', 5);
+      const now = new Date().toISOString();
+      const data = { listing_slug:slug, spond_group_id:String(group.id), spond_group_name:String(group.name||'Spond group'), connected_by_user_id:user.id, connection_mode:user.role === 'admin' && !spondToken ? 'platform_admin' : 'club_account', last_synced_at:now, last_sync_summary:clean(body.summary || 'Spond directory connection updated.', 500), status:'active' };
+      const saved = existing?.[0] ? await base44.asServiceRole.entities.DirectorySpondConnection.update(existing[0].id, data) : await base44.asServiceRole.entities.DirectorySpondConnection.create(data);
+      return Response.json({ success:true, connection:saved });
+    }
+
+    if (action === 'directory_disconnect') {
+      const existing = await base44.asServiceRole.entities.DirectorySpondConnection.filter({ listing_slug:slug, status:'active' }, '-last_synced_at', 5);
+      if (existing?.[0]) await base44.asServiceRole.entities.DirectorySpondConnection.update(existing[0].id, { status:'disconnected', last_synced_at:new Date().toISOString(), last_sync_summary:'Spond directory connection disconnected.' });
+      return Response.json({ success:true });
+    }
+
+    return Response.json({ error:`Unknown directory Spond action: ${action}` }, { status:400 });
+  }
 
   const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
   const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole);
