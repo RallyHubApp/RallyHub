@@ -51,7 +51,6 @@ Deno.serve(async (req) => {
       const pid = String(a.player_id || '');
       if (!byPlayer.has(pid) || Number(a.matches_played || 0) <= 0) continue;
       const row = ensure(stats, pid);
-      row.events.add(...[]);
       row.wins += Number(a.wins || 0);
       row.losses += Number(a.losses || 0);
       row.matches_played += Number(a.matches_played || 0);
