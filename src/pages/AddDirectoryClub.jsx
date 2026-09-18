@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Building2, CheckCircle2, Clock3, PlusCircle, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -15,6 +15,8 @@ const normalise = value => String(value || '').trim().toLowerCase().replace(/[^a
 
 export default function AddDirectoryClub() {
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
+  const navigate = useNavigate();
+  const isSuperAdmin = user?.role === 'admin';
   const [clubName, setClubName] = useState('');
   const [county, setCounty] = useState('');
   const [town, setTown] = useState('');
@@ -26,6 +28,7 @@ export default function AddDirectoryClub() {
   const [instagram, setInstagram] = useState('');
   const [claimantName, setClaimantName] = useState('');
   const [claimantRole, setClaimantRole] = useState('');
+  const [claimantEmail, setClaimantEmail] = useState('');
   const [claimantPhone, setClaimantPhone] = useState('');
   const [publishContact, setPublishContact] = useState(true);
   const [networkUpdatesOptIn, setNetworkUpdatesOptIn] = useState(false);
@@ -41,7 +44,7 @@ export default function AddDirectoryClub() {
   const registerHref = `/register?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || user.role === 'admin') return;
     setClaimantName(user.full_name || user.display_name || '');
   }, [user]);
 
@@ -58,7 +61,7 @@ export default function AddDirectoryClub() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || user?.role === 'admin') return;
     let active = true;
     setLoadingStatus(true);
     base44.functions.invoke('directoryClaim', { action: 'new_status' })
@@ -72,7 +75,7 @@ export default function AddDirectoryClub() {
       })
       .finally(() => { if (active) setLoadingStatus(false); });
     return () => { active = false; };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.role]);
 
   const exactExisting = useMemo(() => {
     if (!clubName.trim() || !county) return null;
@@ -85,6 +88,31 @@ export default function AddDirectoryClub() {
     if (exactExisting) return;
     setSubmitting(true);
     try {
+      if (isSuperAdmin) {
+        const res = await base44.functions.invoke('directoryClaim', {
+          action: 'admin_create_unclaimed',
+          clubName,
+          county,
+          town,
+          primaryVenue,
+          address,
+          venuePostcode,
+          website,
+          facebook,
+          instagram,
+          contactName: claimantName,
+          contactRole: claimantRole,
+          contactEmail: claimantEmail,
+          contactPhone: claimantPhone,
+          publishContact,
+          notes,
+        });
+        if (res.data?.error) throw new Error(res.data.error);
+        if (!res.data?.listingSlug) throw new Error('The club was created but RallyHub did not return the listing address.');
+        navigate(`/directory/${res.data.listingSlug}/edit?created=1`);
+        return;
+      }
+
       const res = await base44.functions.invoke('directoryClaim', {
         action: 'submit_new',
         clubName,
@@ -139,9 +167,11 @@ export default function AddDirectoryClub() {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">RallyHub Directory</p>
-                <h1 className="text-3xl font-black mt-1">Add your club</h1>
+                <h1 className="text-3xl font-black mt-1">{isSuperAdmin ? 'Add an unclaimed club' : 'Add your club'}</h1>
                 <p className="text-muted-foreground mt-2">
-                  Can't find your club in the directory? Send us the basic details and RallyHub will review the listing before it is added.
+                  {isSuperAdmin
+                    ? 'Create and pre-populate a public club listing without claiming it. Add the club contact now, then continue to the editor to upload the logo and complete any other details before sending the claim invitation.'
+                    : "Can't find your club in the directory? Send us the basic details and RallyHub will review the listing before it is added."}
                 </p>
               </div>
             </div>
@@ -161,7 +191,7 @@ export default function AddDirectoryClub() {
               </div>
             ) : loadingStatus ? (
               <div className="mt-8 rounded-xl border border-border bg-background/40 p-5 text-sm text-muted-foreground">Loading your request status…</div>
-            ) : pending ? (
+            ) : !isSuperAdmin && pending ? (
               <div className="mt-8 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-6">
                 <div className="flex items-center gap-2 text-amber-300"><Clock3 className="w-5 h-5" /><h2 className="font-bold">Club submitted for review</h2></div>
                 <p className="text-sm text-muted-foreground mt-2">
@@ -169,7 +199,7 @@ export default function AddDirectoryClub() {
                 </p>
                 <p className="text-xs text-muted-foreground mt-3">After approval, this page will change to show <strong className="text-foreground">Edit your listing</strong> and <strong className="text-foreground">View public listing</strong>.</p>
               </div>
-            ) : approved ? (
+            ) : !isSuperAdmin && approved ? (
               <div className="mt-8 rounded-2xl border border-green-400/30 bg-green-400/10 p-6">
                 <div className="flex items-center gap-2 text-green-300"><CheckCircle2 className="w-5 h-5" /><h2 className="font-bold">Your club is now in the directory</h2></div>
                 <p className="text-sm text-muted-foreground mt-2">RallyHub approved the club and gave your account directory-editor access. Complete the public listing now so players see accurate contact, venue and session information.</p>
@@ -177,7 +207,7 @@ export default function AddDirectoryClub() {
               </div>
             ) : (
               <form onSubmit={submit} className="mt-8 space-y-5">
-                {(rejected || removed) && (
+                {!isSuperAdmin && (rejected || removed) && (
                   <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm">
                     {removed
                       ? 'Your previous test/submitted listing is no longer published. You can submit another club if needed.'
@@ -235,26 +265,26 @@ export default function AddDirectoryClub() {
                 </div>
 
                 <div className="border-t border-border pt-5">
-                  <h2 className="font-bold mb-4">About you</h2>
+                  <h2 className="font-bold mb-4">{isSuperAdmin ? 'Club contact' : 'About you'}</h2>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label htmlFor="claimantName">Your name</Label><Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} required maxLength={160} /></div>
-                    <div className="space-y-2"><Label htmlFor="claimantRole">Your role / connection</Label><Input id="claimantRole" value={claimantRole} onChange={e => setClaimantRole(e.target.value)} placeholder="e.g. Chairperson, organiser" required maxLength={160} /></div>
-                    <div className="space-y-2 sm:col-span-2"><Label htmlFor="claimantEmail">Email address</Label><Input id="claimantEmail" value={user?.email || ''} readOnly className="bg-background/40" /><p className="text-xs text-muted-foreground">This is your signed-in RallyHub email. It is used for the review and, if you leave the public-contact option selected below, it will also appear on the approved club listing.</p></div>
-                    <div className="space-y-2"><Label htmlFor="claimantPhone">Mobile number</Label><Input id="claimantPhone" type="tel" inputMode="tel" autoComplete="tel" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="e.g. 087 123 4567" required maxLength={80} /><p className="text-xs text-muted-foreground">Enter the number and continue to the next field; it is saved when you submit the form.</p></div>
+                    <div className="space-y-2"><Label htmlFor="claimantName">{isSuperAdmin ? 'Contact name' : 'Your name'}</Label><Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} required maxLength={160} /></div>
+                    <div className="space-y-2"><Label htmlFor="claimantRole">{isSuperAdmin ? 'Role / connection' : 'Your role / connection'}</Label><Input id="claimantRole" value={claimantRole} onChange={e => setClaimantRole(e.target.value)} placeholder="e.g. Chairperson, organiser" required={!isSuperAdmin} maxLength={160} /></div>
+                    <div className="space-y-2 sm:col-span-2"><Label htmlFor="claimantEmail">Email address</Label>{isSuperAdmin ? <Input id="claimantEmail" type="email" value={claimantEmail} onChange={e => setClaimantEmail(e.target.value)} required placeholder="Club contact email" /> : <Input id="claimantEmail" value={user?.email || ''} readOnly className="bg-background/40" />}<p className="text-xs text-muted-foreground">{isSuperAdmin ? 'This is the club representative’s email, not your Super Admin email. RallyHub will use it for the claim invitation and verification.' : 'This is your signed-in RallyHub email. It is used for the review and, if you leave the public-contact option selected below, it will also appear on the approved club listing.'}</p></div>
+                    <div className="space-y-2"><Label htmlFor="claimantPhone">{isSuperAdmin ? 'Mobile / WhatsApp number' : 'Mobile number'}</Label><Input id="claimantPhone" type="tel" inputMode="tel" autoComplete="tel" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="e.g. 087 123 4567" required maxLength={80} /><p className="text-xs text-muted-foreground">Enter the number and continue to the next field; it is saved when you submit the form.</p></div>
                   </div>
                   <label className="mt-4 flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4 cursor-pointer">
                     <input type="checkbox" checked={publishContact} onChange={e => setPublishContact(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
-                    <span className="text-sm text-muted-foreground"><strong className="text-foreground">Use these as the public club contact details.</strong> If the listing is approved, show my submitted name, email and mobile on the club profile. Untick this if you want to add different public contact details later.</span>
+                    <span className="text-sm text-muted-foreground"><strong className="text-foreground">Use these as the public club contact details.</strong> {isSuperAdmin ? 'They will appear on the club profile, while the email is also retained as the trusted contact for the future claim.' : 'If the listing is approved, show my submitted name, email and mobile on the club profile. Untick this if you want to add different public contact details later.'}</span>
                   </label>
                   <div className="space-y-2 mt-4"><Label htmlFor="notes">Anything else we should know <span className="text-muted-foreground font-normal">(optional)</span></Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4} maxLength={1500} /></div>
-                  <label className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-background/30 p-4 cursor-pointer">
+                  {!isSuperAdmin && <label className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-background/30 p-4 cursor-pointer">
                     <input type="checkbox" checked={networkUpdatesOptIn} onChange={e => setNetworkUpdatesOptIn(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
                     <span className="text-sm text-muted-foreground"><strong className="text-foreground">Keep me connected with RallyHub.</strong> I’m happy to receive occasional directory, club-network and RallyHub updates by email. I can opt out at any time.</span>
-                  </label>
+                  </label>}
                 </div>
 
                 <Button type="submit" disabled={submitting || !!exactExisting} className="w-full sm:w-auto">
-                  {submitting ? 'Submitting…' : 'Submit club for review'}
+                  {submitting ? (isSuperAdmin ? 'Creating…' : 'Submitting…') : (isSuperAdmin ? 'Create unclaimed listing & continue' : 'Submit club for review')}
                 </Button>
               </form>
             )}
@@ -263,7 +293,7 @@ export default function AddDirectoryClub() {
           <aside className="space-y-4">
             <div className="glass rounded-2xl p-5">
               <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" /><h2 className="font-bold">Directory only</h2></div>
-              <p className="text-sm text-muted-foreground mt-3">Adding a club here creates a request for a public directory listing. It does not create a RallyHub tenant, RallyHub Club or player account.</p>
+              <p className="text-sm text-muted-foreground mt-3">{isSuperAdmin ? 'This creates a public Directory listing only. It remains unclaimed until the club representative signs in and claims it. It does not create a RallyHub tenant, RallyHub Club or player account.' : 'Adding a club here creates a request for a public directory listing. It does not create a RallyHub tenant, RallyHub Club or player account.'}</p>
             </div>
             <div className="glass rounded-2xl p-5">
               <div className="flex items-center gap-2"><Building2 className="w-4 h-4 text-primary" /><h2 className="font-bold">Already listed?</h2></div>
