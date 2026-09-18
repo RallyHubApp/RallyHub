@@ -218,13 +218,14 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
     reason: 'Reserved before sending a RallyHub Directory claim invitation.',
   });
   const delegated = accessRole === 'editor';
+  const recipientName = String(contactName || '').trim() || 'there';
+  const ownerBody = `Hi ${recipientName},\n\nRALLYHUB CLUB DIRECTORY\n\nI’ve set up the listing for ${listing.name} on RallyHub and I’d really appreciate it if you could have a look and give me some feedback.\n\nUse this secure link to claim and review the listing:\n${claimUrl}\n\nOnce signed in, you’ll become the Primary Directory Owner and can correct or update the club information.\n\nThe link is single-use and expires after 72 hours.\n\nIf anything is unclear or doesn’t work as you’d expect, please let me know — that feedback is exactly what I’m looking for.\n\nYours in sport,\nBrian Moore\nRallyHub\n087 810 0333`;
+  const editorBody = `Hi ${recipientName},\n\nRALLYHUB CLUB DIRECTORY\n\nAn authorised representative of ${listing.name} has invited you to help maintain its RallyHub Directory listing.\n\nUse this secure one-time link to accept Directory Editor access:\n${claimUrl}\n\nIf you need a Directory account, RallyHub will first verify your email with a six-digit code. Directory Editor access lets you update the listing but does not let you transfer ownership or manage other editors.\n\nThe link is single-use and expires after 72 hours.\n\nYours in sport,\nBrian Moore\nRallyHub\n087 810 0333`;
   await base44.asServiceRole.integrations.Core.SendEmail({
     to,
     from_name: 'RallyHub Directory',
-    subject: delegated ? `You have been invited to help manage ${listing.name} on RallyHub` : `Claim and review ${listing.name} on RallyHub`,
-    body: delegated
-      ? `Hi ${String(contactName || '').trim() || 'there'},\n\nAn authorised representative of ${listing.name} has invited you to help maintain its RallyHub Directory listing.\n\nUse the secure one-time link below. If you need a Directory account, RallyHub will first verify your email with a six-digit code. This invitation gives Directory Editor access only; it does not let you transfer ownership or manage other editors.\n\n${claimUrl}\n\nFor security, this invitation expires after 72 hours and can only be used once.\n\nRallyHub Directory`
-      : `Hi ${String(contactName || '').trim() || 'there'},\n\nRallyHub has created a Directory listing for ${listing.name}.\n\nUse the secure one-time claim link below. If you need to create a Directory account, RallyHub will send a six-digit email verification code first. Once that is verified, this trusted invitation can give you access to the listing without waiting for a separate administrator approval.\n\n${claimUrl}\n\nFor security, this invitation expires after 72 hours and can only be used once.\n\nRallyHub Directory`,
+    subject: delegated ? `RallyHub Directory — help manage ${listing.name}` : `RallyHub Directory — claim & review ${listing.name}`,
+    body: delegated ? editorBody : ownerBody,
   });
   return { sent: 1, to, claimUrl };
 }
