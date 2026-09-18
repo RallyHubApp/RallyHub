@@ -61,17 +61,6 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
-  const { data: activeClubMembers = [] } = useQuery({
-    queryKey: ['active-club-members', user?.active_tenant_id, user?.active_club_id],
-    queryFn: () => base44.entities.ClubRelationship.filter({
-      tenant_id: user?.active_tenant_id,
-      club_id: user?.active_club_id,
-      relationship_type: 'member',
-      status: 'active'
-    }, '-created_date', 500),
-    enabled: canAccessAdmin && !!user?.active_tenant_id && !!user?.active_club_id
-  });
-
   const { data: allUsers = [] } = useQuery({
     queryKey: ['all-users'],
     queryFn: async () => {
@@ -196,7 +185,6 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       setMembershipSyncResult(res.data);
       queryClient.invalidateQueries({ queryKey: ['players'] });
-      queryClient.invalidateQueries({ queryKey: ['active-club-members'] });
       toast.success(res.data?.message || 'Membership sync complete');
     } catch (error) {
       const message = error?.response?.data?.error || error?.message || 'Membership sync failed';
