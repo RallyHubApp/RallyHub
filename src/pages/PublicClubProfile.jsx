@@ -6,6 +6,7 @@ import { ArrowLeft, CalendarDays, Check, CheckCircle2, ExternalLink, Facebook, G
 import Seo, { SITE_URL, absoluteUrl } from '@/components/public/Seo';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import PublicDirectoryLogo, { normaliseDirectoryAssetUrl } from '@/components/directory/PublicDirectoryLogo';
 
 const weekOrder = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const groupByDay = sessions => [...(sessions || [])]
@@ -21,19 +22,6 @@ const clubInitials = name => name
   .slice(0, 2)
   .map(part => part[0]?.toUpperCase())
   .join('');
-
-const publicAssetUrl = value => {
-  const raw = String(value || '').trim();
-  const marker = '/files/mp/public/';
-  try {
-    const url = new URL(raw);
-    if (url.hostname === 'base44.app' && url.pathname.includes(marker)) {
-      const tail = url.pathname.split(marker)[1];
-      if (tail) return `https://media.base44.com/images/public/${tail}`;
-    }
-  } catch {}
-  return raw;
-};
 
 const publicDescription = club => {
   const description = String(club?.description || '').trim();
@@ -122,7 +110,7 @@ export default function PublicClubProfile() {
   const schedule = groupByDay(club.sessions);
   const displayDescription = publicDescription(club);
   const displayMembershipStatus = publicMembershipStatus(club);
-  const displayLogoUrl = publicAssetUrl(club.logoUrl);
+  const displayLogoUrl = normaliseDirectoryAssetUrl(club.logoUrl);
   const profileUrl = `${SITE_URL}/directory/${club.slug}`;
   const socialLinks = [club.website, club.facebook, club.instagram].filter(Boolean);
   const clubSchema = {
@@ -211,13 +199,12 @@ export default function PublicClubProfile() {
               <ArrowLeft className="w-4 h-4" /> Back to directory
             </Link>
             <div className="flex flex-col sm:flex-row gap-6 items-start">
-              {displayLogoUrl ? (
-                <img src={displayLogoUrl} alt={`${club.name} logo`} className="w-32 h-32 rounded-3xl bg-white object-contain p-2 shadow-2xl shrink-0" />
-              ) : (
-                <div className="w-32 h-32 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center text-3xl font-black text-primary shadow-2xl shrink-0" aria-label={`${club.name} logo pending`}>
-                  {clubInitials(club.name)}
-                </div>
-              )}
+              <PublicDirectoryLogo
+                src={club.logoUrl}
+                name={club.name}
+                imageClassName="w-32 h-32 rounded-3xl bg-white object-contain p-2 shadow-2xl shrink-0"
+                fallbackClassName="w-32 h-32 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center text-3xl font-black text-primary shadow-2xl shrink-0"
+              />
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-3 py-1 text-xs font-semibold">{club.sport}</span>
