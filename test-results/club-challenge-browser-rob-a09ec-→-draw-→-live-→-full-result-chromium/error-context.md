@@ -12,12 +12,12 @@
 # Error details
 
 ```
-Error: ranking_ack_ms should be <= 350ms but was 372ms
+Error: ranking_ack_ms should be <= 350ms but was 366ms
 
 expect(received).toBeLessThanOrEqual(expected)
 
 Expected: <= 350
-Received:    372
+Received:    366
 ```
 
 # Page snapshot
@@ -485,7 +485,7 @@ Received:    372
   226 | }
   227 | 
 > 228 | function metric(report,name,value,max){report[name]=value;expect(value,`${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);}
-      |                                                                                                                            ^ Error: ranking_ack_ms should be <= 350ms but was 372ms
+      |                                                                                                                            ^ Error: ranking_ack_ms should be <= 350ms but was 366ms
   229 | async function expectNoHorizontalOverflow(page){const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);expect(overflow,'mobile page should not require horizontal body scrolling').toBeLessThanOrEqual(1);}
   230 | 
   231 | test.use({ viewport:{width:390,height:844} });
