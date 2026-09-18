@@ -55,6 +55,14 @@ test('public KOTC link: assignments → live scores → permanent final results 
   await expect(page.getByText('Final Standings')).toBeVisible();
   await expect(page.getByText('These are the final saved results. This link remains available after the session.')).toBeVisible();
   await expect(page.getByTestId('public-kotc-podium').getByText('Guest One')).toBeVisible();
+  const podiumItems=page.getByTestId('public-kotc-podium').locator('[role="listitem"]');
+  await expect(podiumItems).toHaveCount(3);
+  await expect(podiumItems.nth(0)).toHaveAttribute('aria-label',/2nd place/);
+  await expect(podiumItems.nth(1)).toHaveAttribute('aria-label',/1st place/);
+  await expect(podiumItems.nth(2)).toHaveAttribute('aria-label',/3rd place/);
+  const podiumBoxes=await Promise.all([0,1,2].map(i=>podiumItems.nth(i).boundingBox()));
+  expect(podiumBoxes[1]?.height||0,'winner podium must be tallest').toBeGreaterThan(podiumBoxes[0]?.height||0);
+  expect(podiumBoxes[0]?.height||0,'second-place podium must be taller than third').toBeGreaterThan(podiumBoxes[2]?.height||0);
   const callsAtFinish=publicCalls;await new Promise(resolve=>setTimeout(resolve,500));expect(publicCalls,'completed public results must stop polling Base44').toBe(callsAtFinish);
 });
 
