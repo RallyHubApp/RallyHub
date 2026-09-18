@@ -1,0 +1,98 @@
+{
+  "name": "ExternalRatingSnapshot",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "sport_id": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "dupr",
+        "other"
+      ]
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "external_person_id": {
+      "type": "string"
+    },
+    "rating_type": {
+      "type": "string",
+      "enum": [
+        "doubles",
+        "singles",
+        "mixed",
+        "other"
+      ]
+    },
+    "rating": {
+      "type": "number"
+    },
+    "reliability": {
+      "type": "number"
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "csv_import",
+        "api",
+        "manual"
+      ],
+      "default": "manual"
+    },
+    "source_ref": {
+      "type": "string"
+    },
+    "is_current": {
+      "type": "boolean",
+      "default": true
+    },
+    "raw_json": {
+      "type": "string",
+      "description": "Optional provider payload snapshot; must exclude secrets/tokens"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "sport_id",
+    "provider",
+    "external_person_id",
+    "rating_type",
+    "observed_at",
+    "source"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "name": "SportProviderMembershipLink",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "sport_id": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "dupr",
+        "other"
+      ]
+    },
+    "external_club_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "external_person_id": {
+      "type": "string"
+    },
+    "membership_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "invited",
+        "requested",
+        "removed",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
+    "external_role": {
+      "type": "string",
+      "enum": [
+        "member",
+        "director",
+        "organizer",
+        "unknown"
+      ],
+      "default": "member"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "csv_import",
+        "api",
+        "manual"
+      ],
+      "default": "manual"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "sport_id",
+    "provider",
+    "external_club_id",
+    "membership_status",
+    "external_role",
+    "source"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

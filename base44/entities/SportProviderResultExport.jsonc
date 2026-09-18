@@ -1,0 +1,110 @@
+{
+  "name": "SportProviderResultExport",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "sport_id": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "dupr",
+        "other"
+      ]
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "kotc",
+        "club_challenge",
+        "tournament",
+        "tournival",
+        "other"
+      ]
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "export_format": {
+      "type": "string",
+      "enum": [
+        "dupr_match_csv"
+      ],
+      "default": "dupr_match_csv"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "generated",
+        "downloaded",
+        "import_confirmed",
+        "superseded",
+        "failed"
+      ],
+      "default": "generated"
+    },
+    "row_count": {
+      "type": "number"
+    },
+    "excluded_count": {
+      "type": "number"
+    },
+    "content_hash": {
+      "type": "string"
+    },
+    "generated_by_user_id": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "sport_id",
+    "provider",
+    "source_type",
+    "source_id",
+    "export_format",
+    "status",
+    "generated_by_user_id",
+    "generated_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
