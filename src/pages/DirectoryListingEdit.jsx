@@ -303,7 +303,7 @@ export default function DirectoryListingEdit() {
     setInviteMessage('');
     setError('');
     if (dirty) {
-      setError('Save the club details first, then send the claim invitation so JP receives the correct contact information.');
+      setError('Save the club details first, then send the claim invitation so the representative receives the correct contact information.');
       return;
     }
     const contactEmail = String(form?.contact?.email || '').trim();
