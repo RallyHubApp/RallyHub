@@ -162,6 +162,67 @@ export default function MyProfile() {
   const initials = (user?.full_name || user?.email || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   const winRate = completed.length > 0 ? Math.round((wins / completed.length) * 100) : 0;
 
+  const profileSections = [
+    {
+      title: 'Personal details',
+      description: 'Your contact and identity information.',
+      fields: [
+        { label: 'Full name', field: 'full_name', type: 'text' },
+        { label: 'Preferred name', field: 'preferred_name', type: 'text' },
+        { label: 'Contact email', field: 'primary_email', type: 'email' },
+        { label: 'Mobile', field: 'mobile', type: 'tel' },
+        { label: 'Date of birth', field: 'date_of_birth', type: 'date' },
+        { label: 'Gender', field: 'gender', options: ['Male','Female','Non-binary','Prefer not to say'] },
+      ]
+    },
+    {
+      title: 'Address & communication',
+      description: 'Used for club administration and your communication preferences.',
+      fields: [
+        { label: 'Address line 1', field: 'address_line1', type: 'text' },
+        { label: 'Address line 2', field: 'address_line2', type: 'text' },
+        { label: 'Town / city', field: 'town_city', type: 'text' },
+        { label: 'County / region', field: 'county_region', type: 'text' },
+        { label: 'Eircode / postcode', field: 'postal_code', type: 'text' },
+        { label: 'Country', field: 'country', type: 'text' },
+        { label: 'Preferred language', field: 'preferred_language', type: 'text' },
+        { label: 'Communication preference', field: 'communication_preference', type: 'text' },
+        { label: 'Profile visibility', field: 'profile_visibility', options: ['private','club','public'] },
+        { label: 'Photo visibility', field: 'photo_visibility', options: ['private','club','public'] },
+      ]
+    },
+    {
+      title: 'Emergency contacts',
+      description: 'Kept with your member record for club use when needed.',
+      fields: [
+        { label: 'Primary contact', field: 'emergency_contact_name', type: 'text' },
+        { label: 'Relationship', field: 'emergency_contact_relationship', type: 'text' },
+        { label: 'Primary mobile', field: 'emergency_mobile', type: 'tel' },
+        { label: 'Secondary contact', field: 'secondary_emergency_contact_name', type: 'text' },
+        { label: 'Secondary mobile', field: 'secondary_emergency_contact_mobile', type: 'tel' },
+      ]
+    },
+    {
+      title: 'Playing profile',
+      description: 'Your own playing details. Club and official ratings remain separately controlled.',
+      fields: [
+        { label: 'DUPR ID', field: 'dupr_id', type: 'text', mono: true },
+        { label: 'Age group', field: 'age_group', options: ['Junior (U18)','Open (18-34)','Adult (35-49)','Senior (50-64)','Super Senior (65+)'] },
+        { label: 'Preferred side', field: 'preferred_position', options: ['Left Side','Right Side','No Preference'] },
+      ]
+    }
+  ];
+
+  const membershipRows = [
+    ['Club', memberSnapshot?.club?.name || activePlayer?.club || '—'],
+    ['Relationship', activePlayer?.relationship_type ? String(activePlayer.relationship_type).replaceAll('_',' ') : '—'],
+    ['Membership season', memberSnapshot?.member?.membership_season || '—'],
+    ['Membership status', memberSnapshot?.member?.membership_status ? String(memberSnapshot.member.membership_status).replaceAll('_',' ') : '—'],
+    ['Membership type', memberSnapshot?.member?.membership_type || '—'],
+    ['Payment status', memberSnapshot?.member?.payment_status ? String(memberSnapshot.member.payment_status).replaceAll('_',' ') : '—'],
+    ['Membership ID', memberSnapshot?.member?.club_membership_id || '—'],
+  ];
+
   return (
     <div className="space-y-6">
       <PageHeader title="My Profile" description="Review and update the personal and playing information RallyHub holds for you" />
