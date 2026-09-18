@@ -24,6 +24,14 @@
         "whatsapp"
       ]
     },
+    "access_role": {
+      "type": "string",
+      "enum": [
+        "owner",
+        "editor"
+      ],
+      "default": "owner"
+    },
     "token_hash": {
       "type": "string"
     },
@@ -55,6 +63,7 @@
   "required": [
     "listing_slug",
     "channel",
+    "access_role",
     "token_hash",
     "status",
     "created_by_user_id",
