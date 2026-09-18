@@ -355,11 +355,28 @@ export default function DirectoryListingEdit() {
       setError('Add the club representative’s mobile number before opening WhatsApp.');
       return;
     }
-    const claimUrl = `${window.location.origin}/directory/${slug}/claim`;
     const contactName = String(form?.contact?.name || '').trim();
-    const message = `Hi ${contactName || 'there'}, RallyHub has created an unclaimed Directory listing for ${baseClub?.name || 'your club'}. Please use this link to review and claim it: ${claimUrl}`;
-    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
-    setInviteMessage(`WhatsApp opened for ${rawPhone}. The listing remains Unclaimed until the representative completes the claim.`);
+    setInviting(true);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', {
+        action: 'create_claim_invite',
+        listingSlug: slug,
+        contactName,
+        contactEmail: form?.contact?.email || '',
+        contactPhone: rawPhone,
+        channel: 'whatsapp',
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      const claimUrl = res.data?.claimUrl;
+      if (!claimUrl) throw new Error('Could not create the secure claim link.');
+      const message = `Hi ${contactName || 'there'}, RallyHub has created a Directory listing for ${baseClub?.name || 'your club'}. This secure one-time claim link expires in 72 hours. Please use it to verify your details and manage the listing: ${claimUrl}`;
+      window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+      setInviteMessage(`Secure WhatsApp claim invitation opened for ${rawPhone}. The link expires in 72 hours and can only be used once.`);
+    } catch (err) {
+      setError(err.message || 'Could not create the WhatsApp claim invitation.');
+    } finally {
+      setInviting(false);
+    }
   };
 
   const sendClaimInvite = async () => {
