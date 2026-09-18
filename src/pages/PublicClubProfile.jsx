@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { getClub } from '@/data/directorySeed';
-import { ArrowLeft, CalendarDays, CheckCircle2, ExternalLink, Facebook, Globe2, Mail, MapPin, MessageCircle, Phone, UserCheck, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Check, CheckCircle2, ExternalLink, Facebook, Globe2, Link2, Mail, MapPin, MessageCircle, Phone, Share2, UserCheck, Users } from 'lucide-react';
 import Seo, { SITE_URL, absoluteUrl } from '@/components/public/Seo';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -59,6 +59,8 @@ export default function PublicClubProfile() {
   const [verificationStatus, setVerificationStatus] = useState(seedClub?.verificationStatus || 'unclaimed');
   const [hasDirectoryAccess, setHasDirectoryAccess] = useState(false);
   const [loadingListing, setLoadingListing] = useState(true);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -158,6 +160,36 @@ export default function PublicClubProfile() {
     }))
   };
   const seoDescription = `${club.name} in County ${club.county}: venues, club information${club.sessions?.length ? ', weekly sessions' : ''} and contact details on the RallyHub all-Ireland pickleball directory.`;
+  const shareText = `${club.name} on the RallyHub Club Directory`;
+  const shareClub = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: club.name, text: shareText, url: profileUrl });
+        return;
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
+      }
+    }
+    setShareOpen(value => !value);
+  };
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(profileUrl);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = profileUrl;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    setShareCopied(true);
+    window.setTimeout(() => setShareCopied(false), 2200);
+  };
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${profileUrl}`)}`;
+  const emailShareUrl = `mailto:?subject=${encodeURIComponent(club.name)}&body=${encodeURIComponent(`${shareText}\n\n${profileUrl}`)}`;
 
   return (
     <>
@@ -204,6 +236,22 @@ export default function PublicClubProfile() {
                   {club.waitingListUrl && <a href={club.waitingListUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold"><Users className="w-4 h-4" /> {club.joiningCtaLabel || 'Contact club'}</a>}
                   {!club.website && !club.waitingListUrl && club.contact?.phoneHref && <a href={club.contact.phoneHref} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Phone className="w-4 h-4" /> Contact club</a>}
                   {!club.website && !club.waitingListUrl && !club.contact?.phoneHref && club.contact?.email && <a href={`mailto:${club.contact.email}`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Mail className="w-4 h-4" /> Contact club</a>}
+                  <div className="relative">
+                    <button type="button" onClick={shareClub} aria-expanded={shareOpen} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold hover:border-primary/50 hover:bg-primary/5 transition-colors">
+                      <Share2 className="w-4 h-4" /> Share club
+                    </button>
+                    {shareOpen && (
+                      <div className="absolute left-0 sm:right-0 sm:left-auto top-12 z-30 w-64 rounded-2xl border border-border bg-card p-3 shadow-2xl" role="menu" aria-label={`Share ${club.name}`}>
+                        <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Share this club</p>
+                        <a href={whatsappShareUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold hover:bg-primary/10" role="menuitem"><MessageCircle className="w-4 h-4 text-primary" /> WhatsApp</a>
+                        <a href={emailShareUrl} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold hover:bg-primary/10" role="menuitem"><Mail className="w-4 h-4 text-primary" /> Email</a>
+                        <button type="button" onClick={copyShareLink} className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold hover:bg-primary/10" role="menuitem">
+                          {shareCopied ? <Check className="w-4 h-4 text-green-500" /> : <Link2 className="w-4 h-4 text-primary" />} {shareCopied ? 'Link copied' : 'Copy link'}
+                        </button>
+                        <p className="px-1 pt-2 text-[11px] text-muted-foreground">On supported phones and browsers, Share opens your device share sheet with your usual apps.</p>
+                      </div>
+                    )}
+                  </div>
                   {hasDirectoryAccess && (
                     <Link to={`/directory/${club.slug}/edit`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm">
                       <UserCheck className="w-4 h-4" /> Edit your listing
