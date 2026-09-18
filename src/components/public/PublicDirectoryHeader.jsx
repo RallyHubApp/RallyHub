@@ -39,8 +39,11 @@ export default function PublicDirectoryHeader() {
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <AppearanceQuickButton showLabel={false} />
-          <Link to="/directory" className="sm:hidden w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground">
+          <Link to="/directory" className="sm:hidden w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground" aria-label="Search directory">
             <Search className="w-5 h-5" />
+          </Link>
+          <Link to="/directory/help" className="sm:hidden w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground" aria-label="Directory help">
+            <HelpCircle className="w-5 h-5" />
           </Link>
           {isAuthenticated ? (
             <>
