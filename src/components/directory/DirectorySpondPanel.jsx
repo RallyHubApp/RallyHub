@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import PasswordInput from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -196,7 +197,7 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
           <p className="text-xs text-muted-foreground">The password is used only to establish a temporary Spond session in this browser and is not saved by RallyHub.</p>
           <div className="grid sm:grid-cols-2 gap-3">
             <div><Label className="text-xs">Spond email</Label><Input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1" /></div>
-            <div><Label className="text-xs">Spond password</Label><Input type="password" value={password} onChange={e=>setPassword(e.target.value)} className="mt-1" onKeyDown={e=>e.key==='Enter'&&login()} /></div>
+            <div><Label className="text-xs">Spond password</Label><PasswordInput value={password} onChange={e=>setPassword(e.target.value)} className="mt-1" autoComplete="current-password" placeholder="••••••••" onKeyDown={e=>e.key==='Enter'&&login()} /></div>
           </div>
           <Button type="button" onClick={login} disabled={loggingIn} className="gap-2">{loggingIn ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}{loggingIn ? 'Connecting…' : 'Connect Spond'}</Button>
         </div>
