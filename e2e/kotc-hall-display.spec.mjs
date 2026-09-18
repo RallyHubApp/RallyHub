@@ -58,6 +58,14 @@ test('hall display: current round, big timer, four courts and podium remain glan
   await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
   await expect(page.getByTestId('public-kotc-podium')).toContainText('Guest One');
+  const podiumItems=page.getByTestId('public-kotc-podium').locator('[role="listitem"]');
+  await expect(podiumItems).toHaveCount(3);
+  await expect(podiumItems.nth(0)).toHaveAttribute('aria-label',/2nd place/);
+  await expect(podiumItems.nth(1)).toHaveAttribute('aria-label',/1st place/);
+  await expect(podiumItems.nth(2)).toHaveAttribute('aria-label',/3rd place/);
+  const podiumBoxes=await Promise.all([0,1,2].map(i=>podiumItems.nth(i).boundingBox()));
+  expect(podiumBoxes[1]?.height||0).toBeGreaterThan(podiumBoxes[0]?.height||0);
+  expect(podiumBoxes[0]?.height||0).toBeGreaterThan(podiumBoxes[2]?.height||0);
   const podiumBox=await page.getByTestId('public-kotc-podium').boundingBox();
   expect((podiumBox?.y||0)+(podiumBox?.height||0)).toBeLessThanOrEqual(768+5);
   await context.close();
