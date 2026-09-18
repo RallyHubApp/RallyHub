@@ -42,7 +42,7 @@ Call log:
   - paragraph: Round 1 ready
   - paragraph: "Next: check the 4 court assignments and bench, then Start Round 1."
   - paragraph: Bench This Round
-  - button "Player 02"
+  - button "Player 01"
   - button "Player 18"
   - paragraph: Tap a court player, then a bench player, to swap them.
   - heading "Host Round Editor" [level=4]
@@ -56,9 +56,51 @@ Call log:
   - button "Player 17":
     - img
     - text: Player 17
-  - button "Player 08":
+  - button "Player 07":
     - img
-    - text: Player 08
+    - text: Player 07
+  - paragraph: Team B
+  - button "Lock pair" [disabled]:
+    - img
+    - text: Lock pair
+  - button "Player 12":
+    - img
+    - text: Player 12
+  - button "Player 14":
+    - img
+    - text: Player 14
+  - text: Court 2
+  - paragraph: Team A
+  - button "Lock pair" [disabled]:
+    - img
+    - text: Lock pair
+  - button "Player 03":
+    - img
+    - text: Player 03
+  - button "Player 05":
+    - img
+    - text: Player 05
+  - paragraph: Team B
+  - button "Lock pair" [disabled]:
+    - img
+    - text: Lock pair
+  - button "Player 10":
+    - img
+    - text: Player 10
+  - button "Player 13":
+    - img
+    - text: Player 13
+  - text: Court 3
+  - paragraph: Team A
+  - button "Lock pair" [disabled]:
+    - img
+    - text: Lock pair
+  - button "Player 02":
+    - img
+    - text: Player 02
+  - button "Player 06":
+    - img
+    - text: Player 06
   - paragraph: Team B
   - button "Lock pair" [disabled]:
     - img
@@ -69,48 +111,6 @@ Call log:
   - button "Player 15":
     - img
     - text: Player 15
-  - text: Court 2
-  - paragraph: Team A
-  - button "Lock pair" [disabled]:
-    - img
-    - text: Lock pair
-  - button "Player 03":
-    - img
-    - text: Player 03
-  - button "Player 07":
-    - img
-    - text: Player 07
-  - paragraph: Team B
-  - button "Lock pair" [disabled]:
-    - img
-    - text: Lock pair
-  - button "Player 11":
-    - img
-    - text: Player 11
-  - button "Player 14":
-    - img
-    - text: Player 14
-  - text: Court 3
-  - paragraph: Team A
-  - button "Lock pair" [disabled]:
-    - img
-    - text: Lock pair
-  - button "Player 01":
-    - img
-    - text: Player 01
-  - button "Player 06":
-    - img
-    - text: Player 06
-  - paragraph: Team B
-  - button "Lock pair" [disabled]:
-    - img
-    - text: Lock pair
-  - button "Player 10":
-    - img
-    - text: Player 10
-  - button "Player 16":
-    - img
-    - text: Player 16
   - text: Court 4
   - paragraph: Team A
   - button "Lock pair" [disabled]:
@@ -119,19 +119,19 @@ Call log:
   - button "Player 04":
     - img
     - text: Player 04
-  - button "Player 05":
+  - button "Player 08":
     - img
-    - text: Player 05
+    - text: Player 08
   - paragraph: Team B
   - button "Lock pair" [disabled]:
     - img
     - text: Lock pair
-  - button "Player 12":
+  - button "Player 11":
     - img
-    - text: Player 12
-  - button "Player 13":
+    - text: Player 11
+  - button "Player 16":
     - img
-    - text: Player 13
+    - text: Player 16
   - paragraph: Pre-Round Check
   - paragraph: Confirm the round time and hall sound before players begin.
   - img
