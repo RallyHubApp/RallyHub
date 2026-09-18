@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: _password-visibility.spec.mjs >> reset password fields can be shown and hidden independently
-- Location: e2e/_password-visibility.spec.mjs:28:1
+- Name: directory-search-map.spec.mjs >> directory has an interactive all-Ireland map view linked to club profiles
+- Location: e2e/directory-search-map.spec.mjs:11:1
 
 # Error details
 

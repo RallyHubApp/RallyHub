@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: _password-visibility.spec.mjs >> register password fields can be shown and hidden independently
-- Location: e2e/_password-visibility.spec.mjs:22:1
+- Name: directory-logo.spec.mjs >> seeded Galway and Limerick directory logos are square and visually centred with useful fill
+- Location: e2e/directory-logo.spec.mjs:25:1
 
 # Error details
 

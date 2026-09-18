@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: _password-visibility.spec.mjs >> login password can be shown and hidden
-- Location: e2e/_password-visibility.spec.mjs:17:1
+- Name: directory-search-map.spec.mjs >> directory search tolerates missing spaces and ranks Dublin 15
+- Location: e2e/directory-search-map.spec.mjs:3:1
 
 # Error details
 
