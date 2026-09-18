@@ -27,9 +27,45 @@ function phoneLooksSame(a = '', b = '') {
   const bb = phoneDigits(b);
   if (!aa || !bb) return false;
   if (aa === bb) return true;
-  // Country-code tolerant comparison is evidence only; phone matches never auto-grant access.
   const tail = Math.min(9, aa.length, bb.length);
   return tail >= 8 && aa.slice(-tail) === bb.slice(-tail);
+}
+
+function randomInviteToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+async function hashInviteToken(token = '') {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(token || '')));
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function createTrustedClaimInvitation(base44, { listing, user, contactName = '', contactEmail = '', contactPhone = '', channel = 'email' }) {
+  const token = randomInviteToken();
+  const tokenHash = await hashInviteToken(token);
+  const expiresAt = new Date(Date.now() + (72 * 60 * 60 * 1000)).toISOString();
+  await base44.asServiceRole.entities.DirectoryClaimInvitation.create({
+    listing_slug: listing.slug,
+    listing_name_snapshot: listing.name,
+    contact_name: String(contactName || '').trim().slice(0, 160) || null,
+    contact_email: normaliseEmail(contactEmail || '').slice(0, 240) || null,
+    contact_phone: String(contactPhone || '').trim().slice(0, 80) || null,
+    channel,
+    token_hash: tokenHash,
+    status: 'pending',
+    created_by_user_id: user.id,
+    expires_at: expiresAt,
+  });
+  return {
+    token,
+    expiresAt,
+    claimUrl: `https://rallyhub.ie/directory/${encodeURIComponent(listing.slug)}/claim?invite=${encodeURIComponent(token)}`,
+  };
 }
 
 function recentCount(rows:any[] = [], hours = 24) {
@@ -147,7 +183,7 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
   });
 }
 
-async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName }) {
+async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl }) {
   const to = normaliseEmail(contactEmail);
   if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
     return { sent: 0, error: 'A valid club contact email is required.' };
@@ -172,12 +208,11 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
     after_state: JSON.stringify({ listingSlug: listing.slug, recipient: to, windowHours: 24 }),
     reason: 'Reserved before sending a RallyHub Directory claim invitation.',
   });
-  const claimUrl = `https://rallyhub.ie/directory/${encodeURIComponent(listing.slug)}/claim`;
   await base44.asServiceRole.integrations.Core.SendEmail({
     to,
     from_name: 'RallyHub Directory',
     subject: `Claim and review ${listing.name} on RallyHub`,
-    body: `Hi ${String(contactName || '').trim() || 'there'},\n\nRallyHub has created a draft Directory listing for ${listing.name}. The listing is currently unclaimed.\n\nPlease open the link below, sign in or create your RallyHub account using this email address, and claim the listing. Once claimed, you can review and update the club information yourself.\n\n${claimUrl}\n\nThe listing will remain marked Unclaimed until you complete the claim.\n\nRallyHub Directory`,
+    body: `Hi ${String(contactName || '').trim() || 'there'},\n\nRallyHub has created a Directory listing for ${listing.name}.\n\nUse the secure one-time claim link below. If you need to create a Directory account, RallyHub will send a six-digit email verification code first. Once that is verified, this trusted invitation can give you access to the listing without waiting for a separate administrator approval.\n\n${claimUrl}\n\nFor security, this invitation expires after 72 hours and can only be used once.\n\nRallyHub Directory`,
   });
   return { sent: 1, to, claimUrl };
 }
