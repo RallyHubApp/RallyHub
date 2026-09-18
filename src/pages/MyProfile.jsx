@@ -48,6 +48,16 @@ export default function MyProfile() {
     enabled: !!user
   });
 
+  const { data: clubLeaderboard = [] } = useQuery({
+    queryKey: ['club-leaderboard', user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('getClubLeaderboard', {});
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.rows || [];
+    },
+    enabled: !!user?.active_tenant_id && !!user?.active_club_id
+  });
+
   const { data: allMatches = [] } = useQuery({
     queryKey: ['all-matches'],
     queryFn: () => base44.entities.Match.list('-created_date', 200)
