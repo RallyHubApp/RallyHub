@@ -232,6 +232,108 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, snapshot: await buildSnapshot(base44, user) });
     }
 
+    if (action === 'self_update') {
+      if (user.role !== 'admin' && user.approval_status !== 'approved') {
+        return Response.json({ error: 'Approved RallyHub member access required' }, { status: 403 });
+      }
+
+      const snapshot = await buildSnapshot(base44, user);
+      const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
+      const trim = (value:any, max=300) => String(value ?? '').trim().slice(0, max);
+
+      const visibility = (value:any) => {
+        const v = trim(value, 20);
+        return ['private','club','public'].includes(v) ? v : undefined;
+      };
+
+      const personData:any = {
+        full_name: trim(profile.full_name, 180),
+        preferred_name: trim(profile.preferred_name, 120),
+        primary_email: trim(profile.primary_email, 240),
+        mobile: trim(profile.mobile, 80),
+        gender: trim(profile.gender, 80),
+        address_line1: trim(profile.address_line1, 240),
+        address_line2: trim(profile.address_line2, 240),
+        town_city: trim(profile.town_city, 160),
+        county_region: trim(profile.county_region, 160),
+        postal_code: trim(profile.postal_code, 40),
+        country: trim(profile.country, 120),
+        preferred_language: trim(profile.preferred_language, 80),
+        communication_preference: trim(profile.communication_preference, 120),
+        emergency_contact_name: trim(profile.emergency_contact_name, 180),
+        emergency_contact_relationship: trim(profile.emergency_contact_relationship, 120),
+        emergency_mobile: trim(profile.emergency_mobile, 80),
+        secondary_emergency_contact_name: trim(profile.secondary_emergency_contact_name, 180),
+        secondary_emergency_contact_mobile: trim(profile.secondary_emergency_contact_mobile, 80),
+        profile_visibility: visibility(profile.profile_visibility),
+        photo_visibility: visibility(profile.photo_visibility),
+      };
+
+      if (profile.date_of_birth) {
+        const dob = trim(profile.date_of_birth, 20);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+          return Response.json({ error: 'Date of birth must use YYYY-MM-DD.' }, { status: 400 });
+        }
+        personData.date_of_birth = dob;
+      }
+
+      for (const key of Object.keys(personData)) {
+        if (personData[key] === undefined) delete personData[key];
+      }
+
+      let personId = snapshot.person?.id || null;
+      if (personId) {
+        await base44.asServiceRole.entities.Person.update(personId, personData);
+      } else if (snapshot.player?.tenant_id && personData.full_name) {
+        const created = await base44.asServiceRole.entities.Person.create({
+          tenant_id: snapshot.player.tenant_id,
+          linked_user_id: user.id,
+          ...personData,
+          source_system: 'member_self_service',
+          source_rows: [],
+          data_quality_flags: [],
+        });
+        personId = created?.id || null;
+      }
+
+      if (snapshot.player?.id) {
+        const playerData:any = {};
+        if (personId && !snapshot.player.person_id) playerData.person_id = personId;
+        if (personData.full_name) playerData.full_name = personData.full_name;
+        if (personData.primary_email) {
+          playerData.email = personData.primary_email;
+          playerData.linked_user_email = String(user.email || personData.primary_email).toLowerCase();
+        }
+        if (personData.mobile) playerData.phone = personData.mobile;
+        if (['Male','Female','Non-binary','Prefer not to say'].includes(personData.gender)) playerData.gender = personData.gender;
+
+        const duprId = trim(profile.dupr_id, 120);
+        if (duprId) playerData.dupr_id = duprId;
+
+        const ageGroup = trim(profile.age_group, 80);
+        if (['Junior (U18)','Open (18-34)','Adult (35-49)','Senior (50-64)','Super Senior (65+)'].includes(ageGroup)) {
+          playerData.age_group = ageGroup;
+        }
+
+        const preferredPosition = trim(profile.preferred_position, 80);
+        if (['Left Side','Right Side','No Preference'].includes(preferredPosition)) {
+          playerData.preferred_position = preferredPosition;
+        }
+
+        await base44.asServiceRole.entities.Player.update(snapshot.player.id, playerData);
+      }
+
+      if (personData.full_name && personData.full_name !== user.full_name) {
+        await base44.auth.updateMe({ full_name: personData.full_name });
+      }
+
+      return Response.json({
+        success: true,
+        message: 'Profile updated.',
+        snapshot: await buildSnapshot(base44, user),
+      });
+    }
+
     if (action === 'admin_preview') {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
       const userId = clean(body.userId, 180);
