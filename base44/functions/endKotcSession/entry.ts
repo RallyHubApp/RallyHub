@@ -9,7 +9,12 @@ function standings(matches:any[],participants:any[]){const s:any=Object.fromEntr
 
 async function rebuildClubLeaderboard(base44:any,session:any){
  if(session.exclude_from_aggregates===true)return{updated:0,skipped:true};
- const sessions=(await retry('leaderboard sessions',()=>base44.asServiceRole.entities.KotcSession.filter({tenant_id:session.tenant_id,club_id:session.club_id}))).filter((s:any)=>['completed','finalised'].includes(s.status)&&s.exclude_from_aggregates!==true);
+ const [allSessions,allTournaments]=await Promise.all([
+   retry('leaderboard sessions',()=>base44.asServiceRole.entities.KotcSession.filter({tenant_id:session.tenant_id,club_id:session.club_id})),
+   retry('leaderboard tournaments',()=>base44.asServiceRole.entities.Tournament.filter({tenant_id:session.tenant_id}))
+ ]);
+ const tournamentById=new Map((allTournaments||[]).map((t:any)=>[String(t.id),t]));
+ const sessions=(allSessions||[]).filter((s:any)=>['completed','finalised'].includes(s.status)&&s.exclude_from_aggregates!==true&&tournamentById.get(String(s.tournament_id))?.counts_toward_leaderboard!==false);
  const validIds=new Set(sessions.map((s:any)=>String(s.id)));
  if(!validIds.size)return{updated:0};
  const participants=(await retry('leaderboard participants',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({tenant_id:session.tenant_id,club_id:session.club_id}))).filter((p:any)=>validIds.has(String(p.session_id))&&p.player_id&&(!p.participant_type||p.participant_type==='member'));
