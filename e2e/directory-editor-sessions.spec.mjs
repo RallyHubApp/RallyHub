@@ -42,7 +42,7 @@ test('directory editor: Add session is visible, adds a card, and Duplicate clone
   await expect(cards).toHaveCount(8);
   await expect(page.getByTestId('directory-session-notice')).toContainText('New blank session added');
 
-  const newCard=page.locator('[data-testid="directory-session-card"].ring-primary');
+  const newCard=page.locator('[data-testid="directory-session-card"].ring-2.border-primary');
   await expect(newCard).toHaveCount(1);
   await expect(newCard).toBeVisible();
 
