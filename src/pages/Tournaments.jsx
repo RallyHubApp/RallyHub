@@ -138,6 +138,7 @@ export default function Tournaments() {
               name: `King of the Court — ${new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}`,
               format: 'King of the Court', partnership_type: 'Singles', status: 'Draft', start_date: todayIreland(),
               tenant_id: user?.active_tenant_id || undefined, host_club_id: user?.active_club_id || undefined,
+              counts_toward_leaderboard: false,
               kotc_num_courts: 4, kotc_num_rounds: 9, kotc_score_format: 'first_11', player_ids: [], partner_pairs: [],
             });
             queryClient.invalidateQueries({ queryKey: ['tournaments'] });
