@@ -14,6 +14,7 @@ export default function KotcSetupPanel({
   venueCourts,setVenueCourts,duration,setDuration,
   scoringMode,setScoringMode,playMinutes,setPlayMinutes,scoreTarget,setScoreTarget,winByTwo,setWinByTwo,
   testMode,setTestMode,canUseTestMode=false,sandboxMode=false,
+  countsTowardLeaderboard,setCountsTowardLeaderboard,
   seedingSource,applySeedingSource,drawMethod,setDrawMethod,kotcAggregates,
   rankingOpen,setRankingOpen,orderedPlayers,setPlayerOrder,setSeedingSource,
   benchIds,toggleBench,creating,createSession,
@@ -43,6 +44,10 @@ export default function KotcSetupPanel({
             <input data-testid="kotc-test-mode" type="checkbox" className="mt-1" checked={testMode} onChange={e=>setTestMode(e.target.checked)} />
             <span><span className="text-sm font-semibold">Super Admin Test mode</span><span className="block text-[11px] text-muted-foreground mt-0.5">Diagnostic only. Excludes this session from KOTC history and enables local Fill Test Scores controls. Session hosts never see this option.</span></span>
           </label>}
+          <label className={`mt-4 flex items-start gap-3 rounded-xl border p-3 ${testMode||sandboxMode?'opacity-60':'cursor-pointer'} ${countsTowardLeaderboard&&!testMode&&!sandboxMode?'border-primary/30 bg-primary/5':'border-border bg-secondary/20'}`}>
+            <input data-testid="kotc-counts-leaderboard" type="checkbox" className="mt-1 h-4 w-4 accent-primary" checked={!testMode&&!sandboxMode&&countsTowardLeaderboard===true} disabled={testMode||sandboxMode} onChange={e=>setCountsTowardLeaderboard(e.target.checked)} />
+            <span><span className="text-sm font-semibold">Counts toward club leaderboard</span><span className="block text-[11px] text-muted-foreground mt-0.5">Turn this on only for an official club competition. Test mode is always excluded.</span></span>
+          </label>
         </section>
 
         <section className="glass rounded-2xl p-4 sm:p-5" data-testid="kotc-setup-round1">
