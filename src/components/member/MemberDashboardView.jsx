@@ -29,17 +29,71 @@ export default function MemberDashboardView({ snapshot, preview = false }) {
   const { user, player, person, member, club, myCompetitions = [], clubCalendar = [] } = snapshot;
   const name = person?.preferred_name || person?.full_name || player?.full_name || user?.full_name || user?.email || 'Member';
 
-  const profileRows = [
-    labelValue('Full name', person?.full_name || player?.full_name || user?.full_name),
-    labelValue('Email', person?.primary_email || player?.email || user?.email),
-    labelValue('Mobile', person?.mobile || player?.phone || member?.mobile),
-    labelValue('Date of birth', person?.date_of_birth || member?.date_of_birth),
-    labelValue('Address', person?.full_postal_address || [person?.address_line1, person?.address_line2, person?.town_city, person?.county_region, person?.postal_code].filter(Boolean).join(', ')),
-    labelValue('Emergency contact', person?.emergency_contact_name || member?.emergency_contact),
-    labelValue('Membership', member?.membership_status ? String(member.membership_status).replaceAll('_', ' ') : null),
-    labelValue('Membership ID', member?.club_membership_id),
-    labelValue('DUPR ID', player?.dupr_id),
-    labelValue('DUPR rating', player?.dupr_rating != null ? Number(player.dupr_rating).toFixed(3) : null),
+  const profileGroups = [
+    {
+      title: 'Personal details',
+      editable: true,
+      rows: [
+        labelValue('Full name', person?.full_name || player?.full_name || user?.full_name),
+        labelValue('Preferred name', person?.preferred_name),
+        labelValue('Email', person?.primary_email || player?.email || user?.email),
+        labelValue('Mobile', person?.mobile || player?.phone || member?.mobile),
+        labelValue('Date of birth', person?.date_of_birth || member?.date_of_birth),
+        labelValue('Gender', person?.gender || player?.gender),
+      ],
+    },
+    {
+      title: 'Address & communication',
+      editable: true,
+      rows: [
+        labelValue('Address line 1', person?.address_line1 || person?.full_postal_address),
+        labelValue('Address line 2', person?.address_line2),
+        labelValue('Town / city', person?.town_city),
+        labelValue('County / region', person?.county_region),
+        labelValue('Eircode / postcode', person?.postal_code),
+        labelValue('Country', person?.country),
+        labelValue('Preferred language', person?.preferred_language),
+        labelValue('Communication preference', person?.communication_preference),
+        labelValue('Profile visibility', person?.profile_visibility),
+        labelValue('Photo visibility', person?.photo_visibility),
+      ],
+    },
+    {
+      title: 'Emergency contacts',
+      editable: true,
+      rows: [
+        labelValue('Primary contact', person?.emergency_contact_name || member?.emergency_contact),
+        labelValue('Relationship', person?.emergency_contact_relationship),
+        labelValue('Primary mobile', person?.emergency_mobile || member?.emergency_mobile),
+        labelValue('Secondary contact', person?.secondary_emergency_contact_name),
+        labelValue('Secondary mobile', person?.secondary_emergency_contact_mobile),
+      ],
+    },
+    {
+      title: 'Playing profile',
+      editable: true,
+      rows: [
+        labelValue('DUPR ID', player?.dupr_id),
+        labelValue('DUPR rating', player?.dupr_rating != null ? Number(player.dupr_rating).toFixed(3) : null),
+        labelValue('Club rating', player?.skill_rating != null ? Number(player.skill_rating).toFixed(1) : null),
+        labelValue('Age group', player?.age_group),
+        labelValue('Preferred side', player?.preferred_position),
+        labelValue('Player status', player?.status),
+      ],
+    },
+    {
+      title: 'Membership',
+      editable: false,
+      rows: [
+        labelValue('Season', member?.membership_season),
+        labelValue('Membership status', member?.membership_status ? String(member.membership_status).replaceAll('_', ' ') : null),
+        labelValue('Membership ID', member?.club_membership_id),
+        labelValue('Membership type', member?.membership_type),
+        labelValue('Payment status', member?.payment_status ? String(member.payment_status).replaceAll('_', ' ') : null),
+        labelValue('Payment date', member?.payment_date),
+        labelValue('Membership amount', member?.membership_amount != null ? `€${Number(member.membership_amount).toFixed(2)}` : null),
+      ],
+    },
   ];
 
   return (
@@ -84,19 +138,26 @@ export default function MemberDashboardView({ snapshot, preview = false }) {
             </div>
             {!preview && <Link to="/app/my-profile"><Button size="sm" variant="outline">Update profile</Button></Link>}
           </div>
-          <div className="grid sm:grid-cols-2 gap-x-5 gap-y-3">
-            {profileRows.map(row => (
-              <div key={row.label} className="min-w-0">
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{row.label}</p>
-                <p className="text-sm text-foreground mt-0.5 break-words capitalize">{row.value}</p>
+          <div className="space-y-5">
+            {profileGroups.map(group => (
+              <div key={group.title} className="pt-4 first:pt-0 border-t first:border-t-0 border-border">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group.title}</h4>
+                  <Badge variant="outline" className={group.editable ? 'text-[10px] border-primary/30 text-primary' : 'text-[10px]'}>
+                    {group.editable ? 'Member editable' : 'Club managed'}
+                  </Badge>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-x-5 gap-y-3">
+                  {group.rows.map(row => (
+                    <div key={`${group.title}-${row.label}`} className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{row.label}</p>
+                      <p className="text-sm text-foreground mt-0.5 break-words capitalize">{row.value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
-          {member?.payment_status && (
-            <div className="mt-4 pt-4 border-t border-border flex items-center gap-2 text-xs text-muted-foreground">
-              <CheckCircle2 className="w-4 h-4 text-primary" /> Membership payment status: <strong className="text-foreground capitalize">{String(member.payment_status).replaceAll('_',' ')}</strong>
-            </div>
-          )}
         </GlassCard>
 
         <GlassCard>
