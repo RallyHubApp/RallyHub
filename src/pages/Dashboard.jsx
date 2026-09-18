@@ -34,10 +34,10 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Tournament.list('-created_date', 50)
   });
 
-  const { data: kotcLeaderboard = { rows: [] } } = useQuery({
-    queryKey: ['kotc-club-leaderboard'],
+  const { data: clubLeaderboard = { rows: [] } } = useQuery({
+    queryKey: ['club-leaderboard'],
     queryFn: async () => {
-      const res = await base44.functions.invoke('getKotcLeaderboard', {});
+      const res = await base44.functions.invoke('getClubLeaderboard', {});
       if (res.data?.error) throw new Error(res.data.error);
       return res.data;
     },
@@ -57,10 +57,7 @@ export default function Dashboard() {
   });
 
   const activeTournaments = tournaments.filter(t => t.status === 'In Progress' || t.status === 'Registration Open');
-  // Do not manufacture a 3.0 skill rating for unrated members. Until RallyHub has
-  // verified DUPR data, the dashboard shows a neutral club roster preview rather
-  // than presenting legacy/default skill values as a ranking.
-  const topPlayers = [...players].filter(p => p.status === 'Active').sort((a, b) => String(a.full_name || '').localeCompare(String(b.full_name || ''))).slice(0, 5);
+  const topPlayers = (clubLeaderboard.rows || []).slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -107,32 +104,32 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Players" value={players.length} icon={Users} trend={`${players.filter(p => p.status === 'Active').length} active`} trendUp delay={0} accentColor="primary" />
         <StatCard title="Active Tournaments" value={activeTournaments.length} icon={Trophy} delay={0.1} accentColor="accent" />
-        <StatCard title="KOTC Players" value={(kotcLeaderboard.rows || []).length} icon={Crown} delay={0.2} accentColor="chart-3" />
+        <StatCard title="Leaderboard Players" value={(clubLeaderboard.rows || []).length} icon={Crown} delay={0.2} accentColor="chart-3" />
         <StatCard title="DUPR Rated" value={players.filter(p => p.dupr_rating != null).length} icon={Crown} delay={0.3} accentColor="chart-4" />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Club roster preview — not a rating leaderboard until genuine DUPR is connected */}
+        {/* Club leaderboard preview */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-foreground">Club Players</h3>
-            <Link to="/app/players" className="text-xs text-primary hover:underline flex items-center gap-1">
-              View all <ArrowRight className="w-3 h-3" />
+            <h3 className="text-sm font-semibold text-foreground">Club Leaderboard</h3>
+            <Link to="/app/leaderboard" className="text-xs text-primary hover:underline flex items-center gap-1">
+              View leaderboard <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="space-y-3">
-            {topPlayers.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No players yet</p>}
+            {topPlayers.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No eligible competition results yet</p>}
             {topPlayers.map((player, i) => (
-              <Link key={player.id} to={`/app/players/${player.id}`} className="flex items-center gap-3 group">
-                <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}</span>
+              <Link key={player.player_id} to={`/app/players/${player.player_id}`} className="flex items-center gap-3 group">
+                <span className="text-xs font-bold text-muted-foreground w-5">{player.rank || i + 1}</span>
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                   <span className="text-xs font-bold text-primary">{(player.full_name || 'P')[0]}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{player.full_name}</p>
-                  <p className="text-xs text-muted-foreground">{player.club || 'No club'}</p>
+                  <p className="text-xs text-muted-foreground">{player.wins}W · {player.draws || 0}D · {player.losses}L · {player.matches_played} matches</p>
                 </div>
-                {player.dupr_rating != null && <span className="text-sm font-bold font-mono text-primary">DUPR {Number(player.dupr_rating).toFixed(2)}</span>}
+                <span className="text-sm font-black font-mono text-primary">{player.leaderboard_points} pts</span>
               </Link>
             ))}
           </div>
