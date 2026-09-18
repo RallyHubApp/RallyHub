@@ -184,11 +184,14 @@ export default function MyProfile() {
           </div>
           <div className="text-center shrink-0">
             <p className="text-3xl font-black font-mono text-primary">
-              {linkedPlayer?.dupr_rating?.toFixed(1) || linkedPlayer?.skill_rating?.toFixed(1) || '—'}
+              {linkedPlayer?.dupr_rating != null ? Number(linkedPlayer.dupr_rating).toFixed(3) : '—'}
             </p>
             <p className="text-xs text-muted-foreground">DUPR Rating</p>
             {linkedPlayer?.dupr_last_synced && (
               <p className="text-[10px] text-muted-foreground mt-0.5">Synced {linkedPlayer.dupr_last_synced}</p>
+            )}
+            {linkedPlayer?.skill_rating != null && (
+              <p className="text-[10px] text-muted-foreground mt-1">Club rating {Number(linkedPlayer.skill_rating).toFixed(1)}</p>
             )}
           </div>
         </div>
