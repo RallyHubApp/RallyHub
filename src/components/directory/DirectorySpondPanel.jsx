@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const sessionKey = s => [s.day, s.start, s.end || '', s.level || '', s.venueId || ''].join('|');
+const normaliseClubName = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-export default function DirectorySpondPanel({ listingSlug, onImport }) {
+export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport }) {
   const { user } = useAuth();
   const [connection, setConnection] = useState(null);
   const [groups, setGroups] = useState([]);
@@ -62,11 +63,25 @@ export default function DirectorySpondPanel({ listingSlug, onImport }) {
       const data = await invokeDirectory('directory_get_groups');
       setGroups(data.groups || []);
       setNeedsLogin(false);
+      const available = data.groups || [];
       const remembered = connection?.spond_group_id || selectedGroupId;
-      if (remembered && (data.groups || []).some(g => String(g.id) === String(remembered))) setSelectedGroupId(String(remembered));
-      setMessage((data.groups || []).length ? 'Spond connected. Choose the club group to scan.' : 'Spond connected, but no groups were returned for this account.');
+      if (remembered && available.some(g => String(g.id) === String(remembered))) {
+        setSelectedGroupId(String(remembered));
+        setMessage('Spond connected. The previously linked club group is selected.');
+      } else {
+        const wanted = normaliseClubName(clubName);
+        const exact = available.find(g => normaliseClubName(g.name) === wanted);
+        const close = !exact && wanted ? available.find(g => normaliseClubName(g.name).includes(wanted) || wanted.includes(normaliseClubName(g.name))) : null;
+        const suggested = exact || close;
+        if (suggested) {
+          setSelectedGroupId(String(suggested.id));
+          setMessage(`Spond connected. RallyHub matched this listing to “${suggested.name}”; scan the upcoming events to confirm.`);
+        } else {
+          setMessage(available.length ? 'Spond connected. Choose the club group to scan.' : 'Spond connected, but no groups were returned for this account.');
+        }
+      }
     } catch (err) {
-      if (user?.role !== 'admin' && !token) setNeedsLogin(true);
+      setNeedsLogin(true);
       setError(err.message || 'Could not load Spond groups.');
     } finally { setLoadingGroups(false); }
   };
@@ -84,8 +99,18 @@ export default function DirectorySpondPanel({ listingSlug, onImport }) {
       setNeedsLogin(false);
       const groupsRes = await base44.functions.invoke('spondIntegrationWorking', { action:'directory_get_groups', listingSlug, spondToken:res.data.token });
       if (groupsRes.data?.error) throw new Error(groupsRes.data.error);
-      setGroups(groupsRes.data?.groups || []);
-      setMessage((groupsRes.data?.groups || []).length ? 'Spond connected. Choose the club group to scan.' : 'Spond connected, but no groups were returned for this account.');
+      const available = groupsRes.data?.groups || [];
+      setGroups(available);
+      const wanted = normaliseClubName(clubName);
+      const exact = available.find(g => normaliseClubName(g.name) === wanted);
+      const close = !exact && wanted ? available.find(g => normaliseClubName(g.name).includes(wanted) || wanted.includes(normaliseClubName(g.name))) : null;
+      const suggested = exact || close;
+      if (suggested) {
+        setSelectedGroupId(String(suggested.id));
+        setMessage(`Spond connected. RallyHub matched this listing to “${suggested.name}”; scan the upcoming events to confirm.`);
+      } else {
+        setMessage(available.length ? 'Spond connected. Choose the club group to scan.' : 'Spond connected, but no groups were returned for this account.');
+      }
     } catch (err) {
       setError(err.message || 'Could not connect to Spond.');
     } finally { setLoggingIn(false); }
@@ -114,13 +139,14 @@ export default function DirectorySpondPanel({ listingSlug, onImport }) {
     try {
       const usedVenueIds = new Set(sessions.map(s => s.venueId));
       const venues = (preview.venues || []).filter(v => usedVenueIds.has(v.id));
-      onImport?.({ venues, sessions, group:selectedGroup });
+      const eventSync = await invokeDirectory('directory_sync_events', { groupId:selectedGroupId });
       const data = await invokeDirectory('directory_save_connection', {
         groupId:selectedGroupId,
-        summary:`Imported ${sessions.length} directory session pattern${sessions.length === 1 ? '' : 's'} from Spond.`
+        summary:`Imported ${sessions.length} directory session pattern${sessions.length === 1 ? '' : 's'} from Spond; ${eventSync.active || 0} upcoming event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} retained for RallyHub calendar use.`
       });
+      onImport?.({ venues, sessions, group:selectedGroup });
       setConnection(data.connection || connection);
-      setMessage(`Imported ${sessions.length} Spond session pattern${sessions.length === 1 ? '' : 's'} into the Directory form. Press Save changes to publish them.`);
+      setMessage(`Imported ${sessions.length} Spond session pattern${sessions.length === 1 ? '' : 's'} into the Directory form and synced ${eventSync.active || 0} upcoming Spond event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} for the RallyHub calendar. Press Save changes to publish the Directory sessions.`);
     } catch (err) {
       setError(err.message || 'Could not import the Spond sessions.');
     } finally { setSavingConnection(false); }
@@ -164,10 +190,10 @@ export default function DirectorySpondPanel({ listingSlug, onImport }) {
       {message && <div aria-live="polite" className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300">{message}</div>}
       {error && <div aria-live="polite" className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-      {needsLogin && user?.role !== 'admin' && (
+      {needsLogin && (
         <div className="rounded-xl border border-border bg-background/30 p-4 space-y-3">
-          <p className="text-sm font-semibold">Connect the club’s Spond account</p>
-          <p className="text-xs text-muted-foreground">The password is used only to establish a temporary Spond session and is not saved by RallyHub.</p>
+          <p className="text-sm font-semibold">{user?.role === 'admin' ? 'Use a Spond account for this connection' : 'Connect the club’s Spond account'}</p>
+          <p className="text-xs text-muted-foreground">The password is used only to establish a temporary Spond session in this browser and is not saved by RallyHub.</p>
           <div className="grid sm:grid-cols-2 gap-3">
             <div><Label className="text-xs">Spond email</Label><Input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1" /></div>
             <div><Label className="text-xs">Spond password</Label><Input type="password" value={password} onChange={e=>setPassword(e.target.value)} className="mt-1" onKeyDown={e=>e.key==='Enter'&&login()} /></div>
