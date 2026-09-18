@@ -377,7 +377,7 @@ Deno.serve(async (req) => {
       if (!clubName) return Response.json({ error: 'Club name is required' }, { status: 400 });
       if (!county) return Response.json({ error: 'County is required' }, { status: 400 });
       if (!contactName) return Response.json({ error: 'Club contact name is required' }, { status: 400 });
-      if (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return Response.json({ error: 'A valid club contact email is required' }, { status: 400 });
+      if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return Response.json({ error: 'The club contact email is not valid' }, { status: 400 });
       if (!contactPhone) return Response.json({ error: 'Club contact mobile number is required' }, { status: 400 });
 
       const staticDuplicate = directoryVerificationIndex.find(x =>
@@ -450,7 +450,7 @@ Deno.serve(async (req) => {
         sport: 'Pickleball',
         status: 'active',
         base_json: JSON.stringify(baseListing),
-        trusted_contacts_json: JSON.stringify([{ name: contactName, role: contactRole || null, email: contactEmail, phone: contactPhone }]),
+        trusted_contacts_json: JSON.stringify([{ name: contactName, role: contactRole || null, email: contactEmail || null, phone: contactPhone }]),
         created_by_user_id: user.id,
         published_at: now,
       });
