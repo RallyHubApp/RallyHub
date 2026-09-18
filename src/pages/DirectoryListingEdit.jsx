@@ -4,7 +4,7 @@ import { CircleMarker, MapContainer, TileLayer, useMapEvents } from 'react-leafl
 import 'leaflet/dist/leaflet.css';
 import {
   ArrowLeft, Building2, CalendarDays, CheckCircle2, Copy, ExternalLink, Globe2,
-  Image as ImageIcon, Info, Loader2, MapPin, Plus, Save, Trash2, Upload, UserRound
+  Image as ImageIcon, Info, Loader2, Mail, MapPin, Plus, Save, Trash2, Upload, UserRound
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -173,6 +173,8 @@ export default function DirectoryListingEdit() {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoDraft, setLogoDraft] = useState(null);
+  const [inviting, setInviting] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState('');
   const [saved, setSaved] = useState(false);
   const [recentSessionId, setRecentSessionId] = useState('');
   const [sessionNotice, setSessionNotice] = useState('');
@@ -182,6 +184,7 @@ export default function DirectoryListingEdit() {
   const returnTo = useMemo(() => `/directory/${slug}/edit`, [slug]);
   const dirty = !!form && !!baseline && JSON.stringify(form) !== baseline;
   const publicListingUrl = useMemo(() => `/directory/${slug}`, [slug]);
+  const isClaimed = access?.listing?.verificationStatus === 'verified';
 
   useEffect(() => {
     let active = true;
@@ -294,6 +297,36 @@ export default function DirectoryListingEdit() {
     if (saving) return;
     if (dirty && !window.confirm('You have unsaved changes. View the public listing without saving them?')) return;
     window.location.assign(`${publicListingUrl}?refresh=${Date.now()}`);
+  };
+
+  const sendClaimInvite = async () => {
+    setInviteMessage('');
+    setError('');
+    if (dirty) {
+      setError('Save the club details first, then send the claim invitation so JP receives the correct contact information.');
+      return;
+    }
+    const contactEmail = String(form?.contact?.email || '').trim();
+    if (!contactEmail) {
+      setError('Add the club representative’s email address before sending the claim invitation.');
+      return;
+    }
+    setInviting(true);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', {
+        action: 'send_claim_invite',
+        listingSlug: slug,
+        contactName: form?.contact?.name || '',
+        contactEmail,
+        contactPhone: form?.contact?.phone || '',
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      setInviteMessage(`Claim invitation sent to ${res.data?.email || contactEmail}. The listing remains Unclaimed until the representative accepts it.`);
+    } catch (err) {
+      setError(err.message || 'Could not send the claim invitation.');
+    } finally {
+      setInviting(false);
+    }
   };
 
   useEffect(() => {
@@ -439,7 +472,7 @@ export default function DirectoryListingEdit() {
                 <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
                   <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-wider text-primary font-semibold">Verified directory editor</p>
+                    <p className="text-xs uppercase tracking-wider text-primary font-semibold">{user?.role === 'admin' && !isClaimed ? 'Super Admin · Unclaimed listing' : 'Verified directory editor'}</p>
                     <h1 className="text-3xl sm:text-4xl font-black mt-1 truncate">{baseClub.name}</h1>
                     <div className="flex flex-wrap gap-2 mt-3 text-xs text-muted-foreground">
                       <span className="rounded-full border border-border px-2.5 py-1">County {baseClub.county}</span>
@@ -450,6 +483,10 @@ export default function DirectoryListingEdit() {
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
                     <Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><ExternalLink className="w-4 h-4" /> View public listing</Button>
+                    {user?.role === 'admin' && !isClaimed && <Button type="button" variant="outline" className="gap-2" onClick={sendClaimInvite} disabled={saving || inviting || dirty || !form?.contact?.email} title={dirty ? 'Save changes before sending the claim invitation' : undefined}>
+                      {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                      {inviting ? 'Sending invitation…' : dirty ? 'Save before invite' : 'Send claim invitation'}
+                    </Button>}
                     <Button onClick={save} disabled={saving || !dirty} className="gap-2 min-w-36">
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : !dirty && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                       {saving ? 'Saving changes…' : dirty ? 'Save changes' : saved ? 'Saved ✓' : 'All saved'}
@@ -464,6 +501,7 @@ export default function DirectoryListingEdit() {
                 </nav>
                 {saving && <div aria-live="polite" className="mt-4 rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm text-primary flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin shrink-0" /><span><strong>Saving your changes…</strong> Please wait for confirmation before leaving this page.</span></div>}
                 {!saving && saved && !dirty && <div aria-live="polite" className="mt-4 rounded-xl border border-green-500/40 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300 flex flex-wrap items-center justify-between gap-2"><span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /><strong>Saved successfully.</strong> Changes are live in the public directory.</span><button type="button" onClick={viewPublicListing} className="font-semibold hover:underline">View updated listing</button></div>}
+                {inviteMessage && <div aria-live="polite" className="mt-4 rounded-xl border border-green-500/40 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 shrink-0" /><span>{inviteMessage}</span></div>}
                 {error && <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
                 {validation.length > 0 && <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm"><p className="font-semibold text-amber-700 dark:text-amber-200">Please fix these before saving:</p><ul className="mt-2 list-disc pl-5 space-y-1 text-muted-foreground">{validation.map(item => <li key={item}>{item}</li>)}</ul></div>}
               </section>
@@ -553,7 +591,7 @@ export default function DirectoryListingEdit() {
 
               <section id="contact" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Public club contact</h2></div>
-                <p className="text-sm text-muted-foreground">These details are shown publicly. They can be different from the private contact details used to verify your account.</p>
+                <p className="text-sm text-muted-foreground">These details are shown publicly. For an unclaimed admin-curated listing, the contact email is also the trusted email used to verify the representative when you send the claim invitation.</p>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2"><Label>Contact name</Label><Input value={form.contact?.name || ''} onChange={e => setContact('name', e.target.value)} /></div>
                   <div className="space-y-2"><Label>Contact email</Label><Input type="email" value={form.contact?.email || ''} onChange={e => setContact('email', e.target.value)} /></div>
