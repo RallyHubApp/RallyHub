@@ -13,7 +13,11 @@
       "enum": [
         "profile_created",
         "profile_updated",
-        "listing_archived"
+        "listing_archived",
+        "access_invited",
+        "access_granted",
+        "access_revoked",
+        "owner_assigned"
       ]
     },
     "occurred_at": {
