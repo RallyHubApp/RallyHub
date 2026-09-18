@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
-import { User, Calendar, Trophy, RefreshCw, Link2, CheckCircle2, Loader2 } from 'lucide-react';
+import { User, Calendar, Trophy, RefreshCw, Link2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
@@ -22,7 +22,6 @@ export default function MyProfile() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
-  const [syncingDupr, setSyncingDupr] = useState(false);
 
   // Find the player record linked to the current user
   const { data: linkedPlayer, isLoading: loadingPlayer } = useQuery({
@@ -114,32 +113,10 @@ export default function MyProfile() {
     setEditing(false);
   };
 
-  const syncDupr = async () => {
+  const syncDupr = () => {
     if (!form.dupr_id) { toast.error('Enter your DUPR ID first'); return; }
     if (!linkedPlayer) { toast.error('Save your profile first'); return; }
-    setSyncingDupr(true);
-    try {
-      const lookupRes = await base44.functions.invoke('secureCreditAction', { action: 'dupr_lookup', playerId: linkedPlayer.id, duprId: form.dupr_id });
-      if (lookupRes.data?.error) throw new Error(lookupRes.data.error);
-      const { rating, found } = /** @type {any} */ (lookupRes.data?.result || {});
-      const updateData = {
-        dupr_id: form.dupr_id,
-        dupr_last_synced: new Date().toISOString().split('T')[0]
-      };
-      if (found && rating) {
-        updateData.dupr_rating = rating;
-        await base44.entities.Player.update(linkedPlayer.id, updateData);
-        queryClient.invalidateQueries({ queryKey: ['my-player'] });
-        toast.success(`DUPR rating updated to ${rating.toFixed(3)}`);
-      } else {
-        await base44.entities.Player.update(linkedPlayer.id, updateData);
-        queryClient.invalidateQueries({ queryKey: ['my-player'] });
-        toast.warning('Could not find a rating for this DUPR ID. ID saved.');
-      }
-    } catch (e) {
-      toast.error('Sync failed. Please try again.');
-    }
-    setSyncingDupr(false);
+    toast.info('Live DUPR rating sync is not connected yet. Your DUPR ID can be saved in RallyHub, but ratings will not update automatically until the official DUPR API integration is enabled.');
   };
 
   const handleLinked = () => {
@@ -282,15 +259,18 @@ export default function MyProfile() {
                   variant="outline"
                   size="sm"
                   onClick={syncDupr}
-                  disabled={syncingDupr || !linkedPlayer}
+                  disabled={!linkedPlayer}
                   className="shrink-0 gap-1.5"
+                  title="Live DUPR rating sync will be enabled when the official DUPR API integration is available."
                 >
-                  {syncingDupr ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  <RefreshCw className="w-3 h-3" />
                   Sync DUPR
                 </Button>
               </div>
-              {!linkedPlayer && (
-                <p className="text-xs text-muted-foreground mt-2">Save your profile first to enable DUPR sync.</p>
+              {!linkedPlayer ? (
+                <p className="text-xs text-muted-foreground mt-2">Save your profile first to store your DUPR ID.</p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-2">Live DUPR rating sync is not connected yet. Your DUPR ID can still be saved in RallyHub.</p>
               )}
             </div>
           </GlassCard>
