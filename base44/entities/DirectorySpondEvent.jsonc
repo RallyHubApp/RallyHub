@@ -1,0 +1,80 @@
+{
+  "name": "DirectorySpondEvent",
+  "type": "object",
+  "properties": {
+    "listing_slug": {
+      "type": "string"
+    },
+    "spond_group_id": {
+      "type": "string"
+    },
+    "spond_event_id": {
+      "type": "string"
+    },
+    "occurrence_key": {
+      "type": "string"
+    },
+    "heading": {
+      "type": "string"
+    },
+    "start_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "venue_name": {
+      "type": "string"
+    },
+    "venue_address": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "stale",
+        "cancelled"
+      ],
+      "default": "active"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "listing_slug",
+    "spond_group_id",
+    "spond_event_id",
+    "occurrence_key",
+    "heading",
+    "start_timestamp",
+    "status",
+    "last_synced_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

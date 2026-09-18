@@ -216,6 +216,12 @@ Deno.serve(async (req) => {
       return Response.json({ connection: rows?.[0] || null });
     }
 
+    if (action === 'directory_disconnect') {
+      const existing = await base44.asServiceRole.entities.DirectorySpondConnection.filter({ listing_slug:slug, status:'active' }, '-last_synced_at', 5);
+      if (existing?.[0]) await base44.asServiceRole.entities.DirectorySpondConnection.update(existing[0].id, { status:'disconnected', last_synced_at:new Date().toISOString(), last_sync_summary:'Spond directory connection disconnected.' });
+      return Response.json({ success:true });
+    }
+
     let token = null;
     try { token = await directorySpondToken(user, body); } catch (error) {
       return Response.json({ error:`Could not connect to Spond: ${error?.message || 'login failed'}` }, { status:502 });
@@ -242,6 +248,52 @@ Deno.serve(async (req) => {
       return Response.json({ events, preview, rawCount:bounded.length, windowStart:minStart, windowEnd:maxStart });
     }
 
+    if (action === 'directory_sync_events') {
+      if (!groupId) return Response.json({ error:'groupId required' }, { status:400 });
+      const now = new Date();
+      const minStart = new Date(now.getTime() - 24*60*60*1000).toISOString();
+      const maxStart = new Date(now.getTime() + 120*24*60*60*1000).toISOString();
+      const params = new URLSearchParams({ groupId:String(groupId), minStartTimestamp:minStart, maxStartTimestamp:maxStart, max:'300', scheduled:'true', includeComments:'false', includeHidden:'false', addProfileInfo:'false' });
+      const raw = await spondRequest(`/sponds?${params.toString()}`, token);
+      const minMs=new Date(minStart).getTime(),maxMs=new Date(maxStart).getTime();
+      const bounded=(Array.isArray(raw)?raw:[]).map(e=>({...e,_resolvedStartTimestamp:occurrenceStartInWindow(e,minMs,maxMs)})).filter(e=>e._resolvedStartTimestamp);
+      const existing = await base44.asServiceRole.entities.DirectorySpondEvent.filter({ listing_slug:slug }, '-last_synced_at', 500);
+      const byKey = new Map((existing || []).map(row => [String(row.occurrence_key || ''), row]));
+      const seen = new Set();
+      let created=0, updated=0;
+      const syncedAt = new Date().toISOString();
+      for (const event of bounded) {
+        const start = eventStart(event);
+        if (!start) continue;
+        const key = `${String(event.id)}::${String(start)}`;
+        seen.add(key);
+        const payload = {
+          listing_slug:slug,
+          spond_group_id:String(groupId),
+          spond_event_id:String(event.id),
+          occurrence_key:key,
+          heading:clean(event.heading || 'Club Session', 220),
+          start_timestamp:new Date(start).toISOString(),
+          ...(event.endTimestamp ? { end_timestamp:new Date(event.endTimestamp).toISOString() } : {}),
+          venue_name:clean(event.location?.feature || event.location?.name || event.location?.address || '', 220),
+          venue_address:clean(event.location?.address || '', 320),
+          status:'active',
+          last_synced_at:syncedAt,
+        };
+        const row = byKey.get(key);
+        if (row) { await base44.asServiceRole.entities.DirectorySpondEvent.update(row.id, payload); updated++; }
+        else { await base44.asServiceRole.entities.DirectorySpondEvent.create(payload); created++; }
+      }
+      let stale=0;
+      for (const row of existing || []) {
+        if (row.status === 'active' && !seen.has(String(row.occurrence_key || ''))) {
+          await base44.asServiceRole.entities.DirectorySpondEvent.update(row.id, { status:'stale', last_synced_at:syncedAt });
+          stale++;
+        }
+      }
+      return Response.json({ success:true, created, updated, stale, active:seen.size, syncedAt });
+    }
+
     if (action === 'directory_save_connection') {
       if (!groupId) return Response.json({ error:'groupId required' }, { status:400 });
       const groups = await spondRequest('/groups', token);
@@ -252,12 +304,6 @@ Deno.serve(async (req) => {
       const data = { listing_slug:slug, spond_group_id:String(group.id), spond_group_name:String(group.name||'Spond group'), connected_by_user_id:user.id, connection_mode:user.role === 'admin' && !spondToken ? 'platform_admin' : 'club_account', last_synced_at:now, last_sync_summary:clean(body.summary || 'Spond directory connection updated.', 500), status:'active' };
       const saved = existing?.[0] ? await base44.asServiceRole.entities.DirectorySpondConnection.update(existing[0].id, data) : await base44.asServiceRole.entities.DirectorySpondConnection.create(data);
       return Response.json({ success:true, connection:saved });
-    }
-
-    if (action === 'directory_disconnect') {
-      const existing = await base44.asServiceRole.entities.DirectorySpondConnection.filter({ listing_slug:slug, status:'active' }, '-last_synced_at', 5);
-      if (existing?.[0]) await base44.asServiceRole.entities.DirectorySpondConnection.update(existing[0].id, { status:'disconnected', last_synced_at:new Date().toISOString(), last_sync_summary:'Spond directory connection disconnected.' });
-      return Response.json({ success:true });
     }
 
     return Response.json({ error:`Unknown directory Spond action: ${action}` }, { status:400 });
