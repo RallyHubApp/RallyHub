@@ -82,8 +82,10 @@ export default function DirectorySpondPanel({ listingSlug, onImport }) {
       try { sessionStorage.setItem('rallyhub_spond_token', res.data.token); } catch {}
       setPassword('');
       setNeedsLogin(false);
-      setMessage('Spond connected for this browser session. Now load the club groups.');
-      window.setTimeout(loadGroups, 0);
+      const groupsRes = await base44.functions.invoke('spondIntegrationWorking', { action:'directory_get_groups', listingSlug, spondToken:res.data.token });
+      if (groupsRes.data?.error) throw new Error(groupsRes.data.error);
+      setGroups(groupsRes.data?.groups || []);
+      setMessage((groupsRes.data?.groups || []).length ? 'Spond connected. Choose the club group to scan.' : 'Spond connected, but no groups were returned for this account.');
     } catch (err) {
       setError(err.message || 'Could not connect to Spond.');
     } finally { setLoggingIn(false); }
