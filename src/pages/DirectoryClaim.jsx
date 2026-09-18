@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Clock3, LockKeyhole, ShieldCheck, UserCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -13,6 +13,7 @@ import Seo from '@/components/public/Seo';
 
 export default function DirectoryClaim() {
   const { slug } = useParams();
+  const location = useLocation();
   const seedClub = getClub(slug);
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
   const [dynamicClub, setDynamicClub] = useState(null);
@@ -27,7 +28,8 @@ export default function DirectoryClaim() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const returnTo = useMemo(() => `/directory/${slug}/claim`, [slug]);
+  const inviteToken = useMemo(() => new URLSearchParams(location.search).get('invite') || '', [location.search]);
+  const returnTo = useMemo(() => `/directory/${slug}/claim${inviteToken ? `?invite=${encodeURIComponent(inviteToken)}` : ''}`, [slug, inviteToken]);
   const loginHref = `/login?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
   const registerHref = `/register?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
 
@@ -87,6 +89,7 @@ export default function DirectoryClaim() {
         claimantPhone,
         claimantMessage,
         networkUpdatesOptIn,
+        inviteToken,
       });
       if (res.data?.error) throw new Error(res.data.error);
       const refreshed = await base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: club.slug });
@@ -130,6 +133,7 @@ export default function DirectoryClaim() {
                 <p className="text-muted-foreground mt-2">
                   Club representatives can request permission to maintain this public directory listing. Directory access is separate from RallyHub club membership and the RallyHub club-management app.
                 </p>
+                {inviteToken && <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><strong>Secure invitation detected.</strong> This one-time link was issued by RallyHub for this club. Verify your account details below and, if they match the invited email or mobile number, you can continue without waiting for a separate administrator approval.</div>}
               </div>
             </div>
 
