@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { directoryClubs, irelandCounties, weekDays } from '@/data/directorySeed';
-import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, CheckCircle2, PlusCircle, UserCheck } from 'lucide-react';
+import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, Check, CheckCircle2, PlusCircle, Share2, UserCheck } from 'lucide-react';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 import { base44 } from '@/api/base44Client';
 
@@ -182,6 +182,7 @@ export default function PublicDirectory() {
   const [day, setDay] = useState('Any day');
   const [view, setView] = useState('clubs');
   const [directoryState, setDirectoryState] = useState({});
+  const [shareCopiedSlug, setShareCopiedSlug] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -240,6 +241,26 @@ export default function PublicDirectory() {
     })
     .sort((a, b) => query.trim() ? (b.searchScore - a.searchScore || a.club.name.localeCompare(b.club.name)) : a.club.name.localeCompare(b.club.name))
     .map(({ club }) => club), [effectiveClubs, query, county, day]);
+
+  const shareClub = async club => {
+    const url = `${SITE_URL}/directory/${club.slug}`;
+    const text = `${club.name} on the RallyHub Club Directory`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: club.name, text, url });
+        return;
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopiedSlug(club.slug);
+      window.setTimeout(() => setShareCopiedSlug(current => current === club.slug ? '' : current), 2200);
+    } catch {
+      window.location.assign(`/directory/${club.slug}`);
+    }
+  };
 
   const visibleVenueIds = new Set(filteredClubs.flatMap(club => (club.venues || []).map(v => `${club.id}:${v.id}`)));
   const directorySchema = {
@@ -422,6 +443,9 @@ export default function PublicDirectory() {
                             <UserCheck className="w-4 h-4" /> Claim this listing
                           </Link>
                         )}
+                        <button type="button" onClick={() => shareClub(club)} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background/40 px-3 py-2 text-sm font-semibold hover:border-primary/40 transition-colors" aria-label={`Share ${club.name}`}>
+                          {shareCopiedSlug === club.slug ? <Check className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4" />} {shareCopiedSlug === club.slug ? 'Link copied' : 'Share'}
+                        </button>
                         <Link to={`/directory/${club.slug}`} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/40 px-3 py-2 text-sm font-semibold text-primary hover:border-primary/40 transition-colors">
                           View details <ArrowRight className="w-4 h-4" />
                         </Link>
