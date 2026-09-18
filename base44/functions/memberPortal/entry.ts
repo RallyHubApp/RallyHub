@@ -79,17 +79,22 @@ function safeMember(member:any) {
     date_of_birth: member.date_of_birth || null,
     membership_season: member.membership_season || null,
     membership_status: member.membership_status || null,
-    profile_type: member.profile_type || null,
-    club_membership_id: member.club_membership_id || null,
+    profile_type: member.profile_type || member.relationship_type || null,
+    club_membership_id: member.club_membership_id || member.member_id || null,
     membership_type: member.membership_type || null,
     payment_status: member.payment_status || null,
     payment_date: member.payment_date || null,
-    membership_amount: member.membership_amount ?? null,
+    membership_amount: member.membership_amount ?? member.membership_fee ?? null,
     emergency_contact: member.emergency_contact || null,
     emergency_mobile: member.emergency_mobile || null,
     tenant_id: member.tenant_id || null,
     club_id: member.club_id || null,
     player_id: member.player_id || null,
+    person_id: member.person_id || null,
+    relationship_type: member.relationship_type || null,
+    join_date: member.join_date || null,
+    renewal_date: member.renewal_date || null,
+    expiry_date: member.expiry_date || null,
   };
 }
 
@@ -112,21 +117,32 @@ async function buildSnapshot(base44:any, targetUser:any, forcedContext:any = {})
     { primary_email: email },
   ]);
 
-  let member = await firstBy(base44, 'Member', [
-    { player_id: player?.id, tenant_id: tenantHint, club_id: clubHint },
-    { primary_email: email, tenant_id: tenantHint, club_id: clubHint },
-    { player_id: player?.id },
-    { primary_email: email },
-  ]);
-
-  if (!player && member?.player_id) {
-    player = await firstBy(base44, 'Player', [{ id: member.player_id }]);
-  }
   if (!person && player?.person_id) {
     person = await firstBy(base44, 'Person', [{ id: player.person_id }]);
   }
 
-  const tenantId = clean(tenantHint || player?.tenant_id || member?.tenant_id, 180);
+  // ClubMembership is the authoritative current membership relationship.
+  // Keep the older Member lookup only as a backwards-compatible fallback.
+  let member = await firstBy(base44, 'ClubMembership', [
+    { person_id: person?.id, tenant_id: tenantHint, club_id: clubHint },
+    { person_id: person?.id, club_id: clubHint },
+    { person_id: person?.id },
+  ]);
+
+  if (!member) {
+    member = await firstBy(base44, 'Member', [
+      { player_id: player?.id, tenant_id: tenantHint, club_id: clubHint },
+      { primary_email: email, tenant_id: tenantHint, club_id: clubHint },
+      { player_id: player?.id },
+      { primary_email: email },
+    ]);
+  }
+
+  if (!player && member?.player_id) {
+    player = await firstBy(base44, 'Player', [{ id: member.player_id }]);
+  }
+
+  const tenantId = clean(tenantHint || player?.tenant_id || person?.tenant_id || member?.tenant_id, 180);
   const clubId = clean(clubHint || player?.club_id || member?.club_id, 180);
 
   let club:any = null;
