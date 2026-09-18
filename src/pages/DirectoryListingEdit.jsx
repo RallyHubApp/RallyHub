@@ -664,7 +664,12 @@ export default function DirectoryListingEdit() {
               <section id="basics" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><Info className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Public club information</h2></div>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2 sm:col-span-2"><Label>Club description</Label><Textarea value={form.description || ''} onChange={e => setField('description', e.target.value)} rows={4} placeholder="Tell players what your club is about, where you play and who you welcome." /><p className="text-xs text-muted-foreground">This is the main introduction players see in search and on your club page.</p></div>
+                  <div className="space-y-2 sm:col-span-2"><Label>Club description</Label><Textarea value={form.description || ''} onChange={e => setField('description', e.target.value)} rows={4} placeholder="Tell players what your club is about, where you play and who you welcome." /><p className="text-xs text-muted-foreground">This is the main introduction players see in search and on your club page. Claim/unclaimed status is controlled automatically by RallyHub and does not need to be typed here.</p></div>
+                  <div className="sm:col-span-2 rounded-xl border border-border bg-background/35 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div><p className="font-semibold">Optional club details</p><p className="text-xs text-muted-foreground mt-1">Website, social links, joining information and attendance policy can all be added later.</p></div>
+                    <Button type="button" variant="outline" onClick={() => setShowEnhancements(value => !value)} className="gap-2 shrink-0"><Sparkles className="w-4 h-4" /> {showEnhancements ? 'Hide optional details' : 'Enhance listing'}</Button>
+                  </div>
+                  {showEnhancements && <>
                   <div className="space-y-2"><Label>Membership / joining status</Label><Input value={form.membershipStatus || ''} onChange={e => setField('membershipStatus', e.target.value)} placeholder="e.g. New members welcome" /></div>
                   <div className="space-y-2"><Label>Information heading</Label><Input value={form.policyLabel || ''} onChange={e => setField('policyLabel', e.target.value)} placeholder="e.g. Joining information" /></div>
                   <div className="space-y-2 sm:col-span-2"><Label>Guest / attendance information</Label><Textarea value={form.guestPolicy || ''} onChange={e => setField('guestPolicy', e.target.value)} rows={3} placeholder="What should someone know before attending?" /></div>
@@ -673,6 +678,7 @@ export default function DirectoryListingEdit() {
                   <div className="space-y-2"><Label>Joining button label</Label><Input value={form.joiningCtaLabel || ''} onChange={e => setField('joiningCtaLabel', e.target.value)} placeholder="e.g. Join waiting list" /></div>
                   <div className="space-y-2"><Label>Facebook page</Label><Input type="url" value={form.facebook || ''} onChange={e => setField('facebook', e.target.value)} placeholder="https://facebook.com/…" /><p className="text-xs text-muted-foreground">Only the Facebook button is shown publicly — not this full link as text.</p></div>
                   <div className="space-y-2"><Label>Instagram page</Label><Input type="url" value={form.instagram || ''} onChange={e => setField('instagram', e.target.value)} placeholder="https://instagram.com/…" /><p className="text-xs text-muted-foreground">Only the Instagram button is shown publicly — not this full link as text.</p></div>
+                  </>}
                   <div className="space-y-2 sm:col-span-2">
                     <Label>Club logo</Label>
                     <div className="rounded-xl border border-border bg-background/30 p-4 flex flex-col sm:flex-row sm:items-center gap-4">
@@ -766,7 +772,7 @@ export default function DirectoryListingEdit() {
                 </div>
               </section>
 
-              <DirectorySpondPanel listingSlug={slug} clubName={baseClub?.name || ''} onImport={importSpondDirectoryData} />
+              {showEnhancements && <DirectorySpondPanel listingSlug={slug} clubName={baseClub?.name || ''} onImport={importSpondDirectoryData} />}
 
               <section id="venues" className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
                 <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Venues</h2></div><p className="text-sm text-muted-foreground mt-1">Add every regular place where the club plays.</p></div><Button variant="outline" size="sm" onClick={addVenue} className="gap-1"><Plus className="w-4 h-4" /> Add venue</Button></div>
