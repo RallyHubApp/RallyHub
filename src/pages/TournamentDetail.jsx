@@ -211,6 +211,7 @@ export default function TournamentDetail() {
       start_date: tournament.start_date || '',
       end_date: tournament.end_date || '',
       description: tournament.description || '',
+      counts_toward_leaderboard: tournament.counts_toward_leaderboard === true,
     });
     setEditOpen(true);
   };
@@ -713,6 +714,19 @@ export default function TournamentDetail() {
                 />
               </div>
             ))}
+            <label className={`flex items-start gap-3 rounded-lg border border-border bg-secondary/30 p-3 ${['In Progress','Completed'].includes(tournament.status) ? 'opacity-60' : 'cursor-pointer'}`}>
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-primary"
+                checked={editForm.counts_toward_leaderboard === true}
+                disabled={['In Progress','Completed'].includes(tournament.status)}
+                onChange={e => setEditForm(f => ({ ...f, counts_toward_leaderboard: e.target.checked }))}
+              />
+              <span>
+                <span className="text-sm font-semibold text-foreground">Counts toward club leaderboard</span>
+                <span className="block text-[11px] text-muted-foreground mt-0.5">Set this before play starts. Test and practice competitions should stay excluded.</span>
+              </span>
+            </label>
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Description</label>
               <textarea
