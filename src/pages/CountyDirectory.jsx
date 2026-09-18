@@ -4,7 +4,7 @@ import { ArrowLeft, Building2, CalendarDays, MapPin, PlusCircle } from 'lucide-r
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 import { directoryClubs, irelandCounties } from '@/data/directorySeed';
-import { base44 } from '@/api/base44Client';
+import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 
 const countySlug = county => county.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -15,8 +15,8 @@ export default function CountyDirectory() {
 
   useEffect(() => {
     let active = true;
-    base44.functions.invoke('directoryListingProfile', { action: 'public_list' })
-      .then(res => { if (active && !res.data?.error) setDirectoryState(res.data?.listings || {}); })
+    loadPublicDirectoryState()
+      .then(listings => { if (active) setDirectoryState(listings || {}); })
       .catch(() => {});
     return () => { active = false; };
   }, []);
