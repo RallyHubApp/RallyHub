@@ -22,6 +22,7 @@ function idx(h:any,k:string,last=false){const a=h[k]||[];return a.length?(last?a
 function idxs(h:any,k:string){return h[k]||[];}
 function val(r:any[],i:number){return i>=0?r[i]:'';}
 function firstFromIndices(r:any[],indices:number[]){for(const i of indices||[]){const v=clean(val(r,i));if(v)return v;}return'';}
+function firstEmailFromIndices(r:any[],indices:number[]){for(const i of indices||[]){const v=email(val(r,i));if(v&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))return v;}return'';}
 
 async function readSheet(token:string,range:string){
  const url='https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent(range)+'?majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE';
@@ -40,7 +41,7 @@ function parseMaster(rows:any[][]){
 function parseForm(rows:any[][]){
  if(!rows.length)return[];const h=hmap(rows[0]);
  const I={names:idxs(h,'Your Full Name in First name, Surname Order'),address:idx(h,'Your full postal address'),eir:idx(h,'Your Eircode '),emails:idxs(h,'Email Address'),email1:idx(h,'Your Email Address'),email0:idx(h,'Email address'),mobile:idx(h,'Your Mobile phone number'),dob:idx(h,'Date of Birth, Please ensure your DOB is correct!'),eraw:idx(h,'Name and Contact details of relative or friend, in case of emergency? Please state Relationship?'),mid:idx(h,'Membership ID'),mtype:idx(h,'Membership Type'),amount:idx(h,'Payment Amount'),pstatus:idx(h,'Payment Status'),pdate:idx(h,'Payment Date'),mstatus:idx(h,'Membership Status'),mname:idx(h,'Member Name'),memail:idx(h,'Member Email')};
- return rows.slice(1).map((r,n)=>({source:'form',row:2+n,fullName:clean(first(val(r,I.mname),firstFromIndices(r,[...(I.names||[])].reverse()))),primaryEmail:email(first(val(r,I.memail),firstFromIndices(r,[...(I.emails||[])].reverse()),val(r,I.email1),val(r,I.email0))),mobile:phone(val(r,I.mobile)),dob:dateIso(val(r,I.dob)),address:clean(val(r,I.address)),eircode:clean(val(r,I.eir)),emergencyRaw:clean(val(r,I.eraw)),membershipId:clean(val(r,I.mid)),membershipType:clean(val(r,I.mtype)),amount:Number(String(val(r,I.amount)).replace(/[^0-9.]/g,''))||null,paymentStatus:clean(val(r,I.pstatus)).toUpperCase(),paymentDate:dateIso(val(r,I.pdate)),membershipStatus:clean(val(r,I.mstatus)).toUpperCase()})).filter(x=>x.fullName&&x.paymentStatus==='PAID'&&x.membershipStatus==='ACTIVE');
+ return rows.slice(1).map((r,n)=>({source:'form',row:2+n,fullName:clean(first(val(r,I.mname),firstFromIndices(r,[...(I.names||[])].reverse()))),primaryEmail:email(first((/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email(val(r,I.memail)))?val(r,I.memail):''),firstEmailFromIndices(r,[...(I.emails||[])].reverse()),val(r,I.email1),val(r,I.email0))),mobile:phone(val(r,I.mobile)),dob:dateIso(val(r,I.dob)),address:clean(val(r,I.address)),eircode:clean(val(r,I.eir)),emergencyRaw:clean(val(r,I.eraw)),membershipId:clean(val(r,I.mid)),membershipType:clean(val(r,I.mtype)),amount:Number(String(val(r,I.amount)).replace(/[^0-9.]/g,''))||null,paymentStatus:clean(val(r,I.pstatus)).toUpperCase(),paymentDate:dateIso(val(r,I.pdate)),membershipStatus:clean(val(r,I.mstatus)).toUpperCase()})).filter(x=>x.fullName&&x.paymentStatus==='PAID'&&x.membershipStatus==='ACTIVE');
 }
 
 function combine(master:any[],forms:any[]){
