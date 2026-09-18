@@ -68,6 +68,32 @@ Deno.serve(async (req) => {
       t.format !== 'King of the Court'
     );
     const eligibleIds = new Set(eligible.map((t:any) => String(t.id)));
+    const eligibleStandardIds = new Set(eligible.filter((t:any) => !['Club Challenge','Tournival','King of the Court'].includes(String(t.format || ''))).map((t:any) => String(t.id)));
+
+    // Tournival stores its completed round results inside the Tournament state rather than Match rows.
+    for (const t of eligible.filter((x:any) => x.format === 'Tournival' && x.kotc_state)) {
+      let state:any = null;
+      try { state = typeof t.kotc_state === 'string' ? JSON.parse(t.kotc_state) : t.kotc_state; } catch { state = null; }
+      if (!state) continue;
+      for (const round of (state.rounds || [])) {
+        const roundResults = state.results?.[round.roundNumber] || {};
+        for (const court of (round.courts || [])) {
+          const result = roundResults?.[court.courtNumber];
+          if (!result || !['A','B'].includes(result.winner)) continue;
+          const teamA = court.teamA || [], teamB = court.teamB || [];
+          for (const raw of teamA) {
+            const pid = String(raw || ''); if (!pid || !byPlayer.has(pid)) continue;
+            const row = ensure(stats, pid); row.events.add(String(t.id));
+            addResult(row, result.winner === 'A' ? 'win' : 'loss', result.scoreA, result.scoreB);
+          }
+          for (const raw of teamB) {
+            const pid = String(raw || ''); if (!pid || !byPlayer.has(pid)) continue;
+            const row = ensure(stats, pid); row.events.add(String(t.id));
+            addResult(row, result.winner === 'B' ? 'win' : 'loss', result.scoreB, result.scoreA);
+          }
+        }
+      }
+    }
 
     if (eligibleIds.size) {
       const [clubEvents, clubParticipants, clubMatches, tournamentParticipants, matches] = await Promise.all([
@@ -98,7 +124,7 @@ Deno.serve(async (req) => {
       }
 
       const tpById = new Map((tournamentParticipants || []).map((p:any) => [String(p.id), p]));
-      for (const m of (matches || []).filter((m:any) => eligibleIds.has(String(m.tournament_id)))) {
+      for (const m of (matches || []).filter((m:any) => eligibleStandardIds.has(String(m.tournament_id)))) {
         const score1 = (m.scores || []).reduce((n:number, g:any) => n + Number(g.team1 || 0), 0);
         const score2 = (m.scores || []).reduce((n:number, g:any) => n + Number(g.team2 || 0), 0);
         const team1 = (m.team1_participant_ids?.length ? m.team1_participant_ids.map((id:string) => tpById.get(String(id))?.source_player_id) : m.team1_player_ids) || [];
