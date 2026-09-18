@@ -753,6 +753,126 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
     }
 
+
+    if (action === 'access_list') {
+      const listingSlug = String(body.listingSlug || '').trim();
+      if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
+      const ownAccess = user.role === 'admin' ? null : (await base44.asServiceRole.entities.DirectoryListingAccess.filter({
+        listing_slug: listingSlug, user_id: user.id, status: 'active'
+      }))[0] || null;
+      if (user.role !== 'admin' && !ownAccess) return Response.json({ error: 'Directory access required' }, { status: 403 });
+
+      const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' }, 'granted_at', 50);
+      const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
+      const userMap = new Map((users || []).map((row:any) => [String(row.id), row]));
+      const people = (accesses || []).map((row:any) => {
+        const person = userMap.get(String(row.user_id));
+        return {
+          id: row.id,
+          userId: row.user_id,
+          role: row.role === 'owner' ? 'owner' : 'editor',
+          name: person?.full_name || person?.display_name || person?.email || 'Directory user',
+          email: person?.email || null,
+          grantedAt: row.granted_at || null,
+          isCurrentUser: String(row.user_id) === String(user.id),
+        };
+      });
+      const canManageAccess = user.role === 'admin' || ownAccess?.role === 'owner';
+      let pendingInvitations:any[] = [];
+      if (canManageAccess) {
+        const invitations = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ listing_slug: listingSlug, status: 'pending' }, '-created_date', 30);
+        pendingInvitations = (invitations || [])
+          .filter((row:any) => row.access_role === 'editor' && (!row.expires_at || Date.parse(row.expires_at) >= Date.now()))
+          .map((row:any) => ({
+            id: row.id,
+            name: row.contact_name || null,
+            email: row.contact_email || null,
+            phone: row.contact_phone || null,
+            expiresAt: row.expires_at || null,
+          }));
+      }
+      return Response.json({ success: true, people, pendingInvitations, canManageAccess });
+    }
+
+    if (action === 'invite_editor') {
+      const listingSlug = String(body.listingSlug || '').trim();
+      const contactName = String(body.contactName || '').trim().slice(0, 160);
+      const contactEmail = normaliseEmail(body.contactEmail || '').slice(0, 240);
+      const contactPhone = String(body.contactPhone || '').trim().slice(0, 80);
+      if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
+      if (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return Response.json({ error: 'A valid email address is required for the delegated editor.' }, { status: 400 });
+
+      const ownerAccess = user.role === 'admin' ? null : (await base44.asServiceRole.entities.DirectoryListingAccess.filter({
+        listing_slug: listingSlug, user_id: user.id, status: 'active'
+      }))[0] || null;
+      if (user.role !== 'admin' && ownerAccess?.role !== 'owner') return Response.json({ error: 'Only the Primary Owner can invite Directory Editors.' }, { status: 403 });
+
+      const listing = await resolveListing(base44, listingSlug);
+      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+
+      const users = await base44.asServiceRole.entities.User.filter({ email: contactEmail });
+      const targetUser = users?.[0] || null;
+      if (targetUser) {
+        const existing = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, user_id: targetUser.id, status: 'active' });
+        if (existing?.length) return Response.json({ error: 'That person already has access to this listing.' }, { status: 409 });
+      }
+
+      const previousInvites = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ listing_slug: listingSlug, status: 'pending' }, '-created_date', 50);
+      for (const row of previousInvites || []) {
+        if (row.access_role === 'editor' && normaliseEmail(row.contact_email) === contactEmail) {
+          await base44.asServiceRole.entities.DirectoryClaimInvitation.update(row.id, { status: 'revoked' });
+        }
+      }
+
+      const invitation = await createTrustedClaimInvitation(base44, {
+        listing, user, contactName, contactEmail, contactPhone, channel: 'email', accessRole: 'editor'
+      });
+      const result = await sendClaimInviteEmail(base44, {
+        user, listing, contactEmail, contactName, claimUrl: invitation.claimUrl, accessRole: 'editor'
+      });
+      if (!result.sent) return Response.json({ error: result.error || 'Could not send editor invitation.' }, { status: result.limited ? 429 : 502 });
+
+      await base44.asServiceRole.entities.DirectoryListingAudit.create({
+        listing_slug: listingSlug,
+        user_id: user.id,
+        action: 'access_invited',
+        occurred_at: new Date().toISOString(),
+        after_json: JSON.stringify({ role: 'editor', email: contactEmail, expiresAt: invitation.expiresAt }),
+      });
+      return Response.json({ success: true, email: contactEmail, expiresAt: invitation.expiresAt });
+    }
+
+    if (action === 'revoke_editor') {
+      const listingSlug = String(body.listingSlug || '').trim();
+      const accessId = String(body.accessId || '').trim();
+      if (!listingSlug || !accessId) return Response.json({ error: 'listingSlug and accessId required' }, { status: 400 });
+
+      const ownerAccess = user.role === 'admin' ? null : (await base44.asServiceRole.entities.DirectoryListingAccess.filter({
+        listing_slug: listingSlug, user_id: user.id, status: 'active'
+      }))[0] || null;
+      if (user.role !== 'admin' && ownerAccess?.role !== 'owner') return Response.json({ error: 'Only the Primary Owner can remove Directory Editors.' }, { status: 403 });
+
+      const matches = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ id: accessId });
+      const target = matches?.[0];
+      if (!target || target.listing_slug !== listingSlug || target.status !== 'active') return Response.json({ error: 'Active access record not found.' }, { status: 404 });
+      if (target.role === 'owner') return Response.json({ error: 'The Primary Owner cannot be removed through the editor-management screen.' }, { status: 409 });
+
+      const now = new Date().toISOString();
+      await base44.asServiceRole.entities.DirectoryListingAccess.update(target.id, {
+        status: 'revoked', revoked_by_user_id: user.id, revoked_at: now,
+        notes: [target.notes, 'Delegated Directory Editor access revoked by Primary Owner or RallyHub Super Admin.'].filter(Boolean).join(' '),
+      });
+      await base44.asServiceRole.entities.DirectoryListingAudit.create({
+        listing_slug: listingSlug,
+        user_id: user.id,
+        action: 'access_revoked',
+        occurred_at: now,
+        before_json: JSON.stringify({ accessId: target.id, userId: target.user_id, role: target.role }),
+        after_json: JSON.stringify({ status: 'revoked' }),
+      });
+      return Response.json({ success: true, status: 'revoked' });
+    }
+
     if (action === 'list_admin') {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
       const [claims, accesses, listingRequests, listingRecords] = await Promise.all([
