@@ -209,7 +209,7 @@ export const importedDirectoryClubs = [
   {
     "id": "ashbourne-pickleball",
     "slug": "ashbourne-pickleball",
-    "name": "Ashbourne Pickleball",
+    "name": "Ashbourne Pickleball Club",
     "sport": "Pickleball",
     "county": "Meath",
     "region": "Leinster",
@@ -224,7 +224,7 @@ export const importedDirectoryClubs = [
     "waitingListUrl": null,
     "joiningCtaLabel": "Contact club",
     "policyLabel": "Attendance information",
-    "description": "Ashbourne Pickleball is listed in the RallyHub Club Directory for County Meath. This listing has not yet been claimed and can be updated by an authorised club representative.",
+    "description": "Ashbourne Pickleball Club is listed in the RallyHub Club Directory for County Meath. This listing has not yet been claimed and can be updated by an authorised club representative.",
     "guestPolicy": "Contact the club directly before attending. Session times, access arrangements and membership details have not yet been verified by RallyHub.",
     "scheduleUpdatedAt": null,
     "source": "PickleBook club list (Pickleball Ireland)",
