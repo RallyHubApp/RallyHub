@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { Crown, Loader2, Mail, ShieldCheck, Trash2, UserPlus, Users } from 'lucide-react';
+import { Crown, Loader2, Mail, MessageCircle, ShieldCheck, Trash2, UserPlus, Users } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export default function DirectoryAccessPanel({ listingSlug, clubName }) {
+const whatsappDigits = (phone, county = '') => {
+  let digits = String(phone || '').replace(/\D/g, '');
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('0')) {
+    const ni = new Set(['Antrim', 'Armagh', 'Down', 'Fermanagh', 'Londonderry', 'Derry', 'Tyrone']);
+    digits = `${ni.has(String(county || '').trim()) ? '44' : '353'}${digits.slice(1)}`;
+  }
+  return digits;
+};
+
+export default function DirectoryAccessPanel({ listingSlug, clubName, county = '' }) {
   const [people, setPeople] = useState([]);
   const [pending, setPending] = useState([]);
   const [canManage, setCanManage] = useState(false);
@@ -33,23 +43,34 @@ export default function DirectoryAccessPanel({ listingSlug, clubName }) {
 
   useEffect(() => { load(); }, [listingSlug]);
 
-  const sendInvite = async event => {
-    event.preventDefault();
-    setError(''); setMessage(''); setBusy('invite');
+  const sendInvite = async (channel, event) => {
+    event?.preventDefault?.();
+    setError(''); setMessage(''); setBusy(channel);
     try {
+      if (channel === 'email' && !invite.email.trim()) throw new Error('Enter an email address to send an email invitation.');
+      if (channel === 'whatsapp' && !invite.phone.trim()) throw new Error('Enter a mobile number to send a WhatsApp invitation.');
       const res = await base44.functions.invoke('directoryClaim', {
         action: 'invite_editor',
         listingSlug,
         contactName: invite.name,
         contactEmail: invite.email,
         contactPhone: invite.phone,
+        channel,
       });
       if (res.data?.error) throw new Error(res.data.error);
-      setMessage(`Secure Directory Editor invitation sent to ${res.data?.email || invite.email}. It expires after 72 hours and can only be used once.`);
+      if (channel === 'whatsapp') {
+        const digits = whatsappDigits(invite.phone, county);
+        if (!digits) throw new Error('Enter a valid mobile number for WhatsApp.');
+        const text = `Hi ${invite.name.trim() || 'there'}, ${clubName} has invited you to help manage its RallyHub Directory listing. Use this secure one-time link to accept Directory Editor access: ${res.data?.claimUrl} The link expires after 72 hours.`;
+        window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+        setMessage(`Secure WhatsApp invitation opened for ${invite.phone}. The link expires after 72 hours and can only be used once.`);
+      } else {
+        setMessage(`Secure Directory Editor invitation emailed to ${res.data?.email || invite.email}. It expires after 72 hours and can only be used once.`);
+      }
       setInvite({ name: '', email: '', phone: '' });
       await load();
     } catch (err) {
-      setError(err?.message || 'Could not send the editor invitation.');
+      setError(err?.message || 'Could not create the editor invitation.');
     } finally {
       setBusy('');
     }
@@ -82,7 +103,7 @@ export default function DirectoryAccessPanel({ listingSlug, clubName }) {
 
       <div className="rounded-xl border border-border bg-background/35 p-4 text-sm text-muted-foreground flex gap-3">
         <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-        <p><strong className="text-foreground">Security:</strong> delegated access uses a single-use 72-hour invitation tied to the invited email address. A forwarded link cannot be accepted by a different email account. Primary Owner access cannot be removed from this screen.</p>
+        <p><strong className="text-foreground">Security:</strong> delegated access uses a single-use 72-hour invitation tied to the chosen email address or mobile number. A forwarded link cannot be accepted by somebody whose verified details do not match the invitation. Primary Owner access cannot be removed from this screen.</p>
       </div>
 
       {loading ? (
@@ -122,20 +143,26 @@ export default function DirectoryAccessPanel({ listingSlug, clubName }) {
       )}
 
       {canManage && (
-        <form onSubmit={sendInvite} className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-4">
+        <form onSubmit={event => sendInvite('email', event)} className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-4">
           <div>
             <div className="flex items-center gap-2"><UserPlus className="w-4 h-4 text-primary" /><h3 className="font-bold">Invite a Directory Editor</h3></div>
             <p className="text-xs text-muted-foreground mt-1">Use this for a trusted committee member, administrator, webmaster or designer who will help keep the listing current.</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1"><Label htmlFor="directory-editor-name">Name</Label><Input id="directory-editor-name" value={invite.name} onChange={e => setInvite(v => ({ ...v, name: e.target.value }))} placeholder="e.g. Club webmaster" /></div>
-            <div className="space-y-1"><Label htmlFor="directory-editor-email">Email</Label><Input id="directory-editor-email" type="email" required value={invite.email} onChange={e => setInvite(v => ({ ...v, email: e.target.value }))} placeholder="name@example.com" /></div>
-            <div className="space-y-1 sm:col-span-2"><Label htmlFor="directory-editor-phone">Mobile <span className="text-muted-foreground">(optional)</span></Label><Input id="directory-editor-phone" value={invite.phone} onChange={e => setInvite(v => ({ ...v, phone: e.target.value }))} placeholder="Used only as an additional trusted contact" /></div>
+            <div className="space-y-1"><Label htmlFor="directory-editor-email">Email <span className="text-muted-foreground">(for email invite)</span></Label><Input id="directory-editor-email" type="email" value={invite.email} onChange={e => setInvite(v => ({ ...v, email: e.target.value }))} placeholder="name@example.com" /></div>
+            <div className="space-y-1 sm:col-span-2"><Label htmlFor="directory-editor-phone">Mobile <span className="text-muted-foreground">(for WhatsApp invite)</span></Label><Input id="directory-editor-phone" value={invite.phone} onChange={e => setInvite(v => ({ ...v, phone: e.target.value }))} placeholder="e.g. 087 123 4567" /></div>
           </div>
-          <Button type="submit" disabled={busy === 'invite' || !invite.email.trim()} className="gap-2">
-            {busy === 'invite' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-            {busy === 'invite' ? 'Sending secure invitation…' : 'Send editor invitation'}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={!!busy || !invite.email.trim()} className="gap-2">
+              {busy === 'email' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+              {busy === 'email' ? 'Sending email…' : 'Invite by email'}
+            </Button>
+            <Button type="button" variant="outline" disabled={!!busy || !invite.phone.trim()} onClick={event => sendInvite('whatsapp', event)} className="gap-2">
+              {busy === 'whatsapp' ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+              {busy === 'whatsapp' ? 'Opening WhatsApp…' : 'Invite by WhatsApp'}
+            </Button>
+          </div>
         </form>
       )}
 
