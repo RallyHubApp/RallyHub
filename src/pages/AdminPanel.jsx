@@ -351,6 +351,109 @@ export default function AdminPanel() {
     }
   };
 
+  const directoryAdminListings = (() => {
+    const bySlug = new Map();
+    for (const club of directoryClubs || []) {
+      if (club?.slug) bySlug.set(club.slug, { slug: club.slug, name: club.name, county: club.county || '' });
+    }
+    for (const record of directoryVerification.listingRecords || []) {
+      if (record?.slug && record.status === 'active') bySlug.set(record.slug, { slug: record.slug, name: record.name || record.slug, county: record.county || '' });
+    }
+    return [...bySlug.values()].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+  })();
+
+  const selectedOwnerInviteListing = directoryAdminListings.find(item => item.slug === ownerInvite.listingSlug) || null;
+
+  const ownerInviteWhatsAppMessage = ({ claimUrl, clubName, contactName }) => `Hi ${String(contactName || '').trim() || 'there'},\n\n*RallyHub Club Directory*\n\nI’ve set up the listing for *${clubName}* on RallyHub and I’d really appreciate it if you could have a look and give me some feedback.\n\n*Claim & review your club:*\n${claimUrl}\n\nOnce signed in, you’ll become the *Primary Directory Owner* and can correct or update the club information.\n\nThe link is single-use and expires after 72 hours.\n\nIf anything is unclear or doesn’t work as you’d expect, please let me know — that feedback is exactly what I’m looking for.\n\nYours in sport,\n*Brian Moore*\nRallyHub\n087 810 0333`;
+
+  const whatsappDigitsForInvite = (phone, county = '') => {
+    let digits = String(phone || '').replace(/\D/g, '');
+    if (digits.startsWith('00')) digits = digits.slice(2);
+    if (digits.startsWith('0')) {
+      const niCounties = new Set(['Antrim', 'Armagh', 'Down', 'Fermanagh', 'Londonderry', 'Derry', 'Tyrone']);
+      digits = `${niCounties.has(String(county || '').trim()) ? '44' : '353'}${digits.slice(1)}`;
+    }
+    return digits;
+  };
+
+  const createOwnerWhatsAppInvite = async () => {
+    if (!ownerInvite.listingSlug || !selectedOwnerInviteListing) return toast.error('Choose a club first');
+    if (!ownerInvite.contactName.trim()) return toast.error('Enter the club contact name');
+    if (!ownerInvite.contactPhone.trim()) return toast.error('Enter the mobile number for WhatsApp');
+    setOwnerInviteBusy('whatsapp');
+    setOwnerInviteResult(null);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', {
+        action: 'create_claim_invite',
+        listingSlug: ownerInvite.listingSlug,
+        contactName: ownerInvite.contactName,
+        contactPhone: ownerInvite.contactPhone,
+        contactEmail: ownerInvite.contactEmail,
+        channel: 'whatsapp',
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      const message = ownerInviteWhatsAppMessage({
+        claimUrl: res.data.claimUrl,
+        clubName: selectedOwnerInviteListing.name,
+        contactName: ownerInvite.contactName,
+      });
+      setOwnerInviteResult({
+        channel: 'whatsapp',
+        claimUrl: res.data.claimUrl,
+        expiresAt: res.data.expiresAt,
+        message,
+        clubName: selectedOwnerInviteListing.name,
+        phone: ownerInvite.contactPhone,
+        county: selectedOwnerInviteListing.county,
+      });
+      queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
+      toast.success('Secure owner invitation created — review the WhatsApp message below');
+    } catch (error) {
+      toast.error(error.message || 'Could not create the WhatsApp invitation');
+    } finally {
+      setOwnerInviteBusy('');
+    }
+  };
+
+  const sendOwnerEmailInvite = async () => {
+    if (!ownerInvite.listingSlug || !selectedOwnerInviteListing) return toast.error('Choose a club first');
+    if (!ownerInvite.contactName.trim()) return toast.error('Enter the club contact name');
+    if (!ownerInvite.contactEmail.trim()) return toast.error('Enter the email address');
+    setOwnerInviteBusy('email');
+    setOwnerInviteResult(null);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', {
+        action: 'send_claim_invite',
+        listingSlug: ownerInvite.listingSlug,
+        contactName: ownerInvite.contactName,
+        contactPhone: ownerInvite.contactPhone,
+        contactEmail: ownerInvite.contactEmail,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      setOwnerInviteResult({ channel: 'email', claimUrl: res.data.claimUrl, expiresAt: res.data.expiresAt, clubName: selectedOwnerInviteListing.name });
+      queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
+      toast.success(`RallyHub invitation sent to ${res.data?.email || ownerInvite.contactEmail}`);
+    } catch (error) {
+      toast.error(error.message || 'Could not send the email invitation');
+    } finally {
+      setOwnerInviteBusy('');
+    }
+  };
+
+  const copyOwnerInviteMessage = async () => {
+    if (!ownerInviteResult?.message) return;
+    await navigator.clipboard.writeText(ownerInviteResult.message);
+    toast.success('WhatsApp invitation copied');
+  };
+
+  const openOwnerInviteWhatsApp = () => {
+    if (!ownerInviteResult?.message || !ownerInviteResult?.phone) return;
+    const digits = whatsappDigitsForInvite(ownerInviteResult.phone, ownerInviteResult.county);
+    if (!digits) return toast.error('The mobile number is not valid for WhatsApp');
+    const appUrl = `whatsapp://send?phone=${digits}&text=${encodeURIComponent(ownerInviteResult.message)}`;
+    window.location.href = appUrl;
+  };
+
   const setApprovalStatus = async (userId, status) => {
     setUpdatingApproval(userId);
     const approvalRes = await base44.functions.invoke('adminUserTools', { action: 'set_approval', userId, status });
