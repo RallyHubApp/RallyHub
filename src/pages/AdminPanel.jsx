@@ -437,8 +437,8 @@ export default function AdminPanel() {
           </TabsTrigger>
           <TabsTrigger value="directory" className="text-xs gap-1.5">
             <UserCheck className="w-3.5 h-3.5" /> Directory Claims
-            {(pendingDirectoryClaims.length + pendingNewDirectoryRequests.length) > 0 && (
-              <span className="ml-1 bg-amber-400 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{pendingDirectoryClaims.length + pendingNewDirectoryRequests.length}</span>
+            {(pendingDirectoryClaims.length + pendingNewDirectoryRequests.length + pendingDirectoryInvitations.length) > 0 && (
+              <span className="ml-1 bg-amber-400 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{pendingDirectoryClaims.length + pendingNewDirectoryRequests.length + pendingDirectoryInvitations.length}</span>
             )}
           </TabsTrigger>
           <TabsTrigger value="users" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Users & Roles</TabsTrigger>
