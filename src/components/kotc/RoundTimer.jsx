@@ -143,7 +143,7 @@ export default function RoundTimer({
   };
 
   const startPhase = async (nextPhase, { unlock = true } = {}) => {
-    if (unlock) await unlockAudio();
+    if (unlock) unlockAudio().catch(() => {});
     const duration = nextPhase === 'play' ? playSeconds : restSeconds;
     const label = nextPhase === 'play' ? 'Start round.' : 'Rest time.';
 
