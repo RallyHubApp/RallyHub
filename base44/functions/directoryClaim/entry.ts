@@ -772,19 +772,20 @@ Deno.serve(async (req) => {
       const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' }, 'granted_at', 50);
       const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
       const userMap = new Map((users || []).map((row:any) => [String(row.id), row]));
+      const canManageAccess = user.role === 'admin' || ownAccess?.role === 'owner';
       const people = (accesses || []).map((row:any) => {
         const person = userMap.get(String(row.user_id));
+        const isCurrentUser = String(row.user_id) === String(user.id);
         return {
           id: row.id,
           userId: row.user_id,
           role: row.role === 'owner' ? 'owner' : 'editor',
           name: person?.full_name || person?.display_name || person?.email || 'Directory user',
-          email: person?.email || null,
+          email: canManageAccess || isCurrentUser ? (person?.email || null) : null,
           grantedAt: row.granted_at || null,
-          isCurrentUser: String(row.user_id) === String(user.id),
+          isCurrentUser,
         };
       });
-      const canManageAccess = user.role === 'admin' || ownAccess?.role === 'owner';
       let pendingInvitations:any[] = [];
       if (canManageAccess) {
         const invitations = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ listing_slug: listingSlug, status: 'pending' }, '-created_date', 30);
