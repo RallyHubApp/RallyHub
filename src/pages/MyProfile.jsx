@@ -100,6 +100,19 @@ export default function MyProfile() {
 
   const activePlayer = memberSnapshot?.player || linkedPlayer;
   const playerId = activePlayer?.id;
+  const clubStats = clubLeaderboard.find(row => String(row.player_id) === String(playerId || '')) || null;
+
+  const ageFromDob = (value) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return null;
+    const [y, m, d] = String(value).split('-').map(Number);
+    const today = new Date();
+    let age = today.getFullYear() - y;
+    const beforeBirthday = (today.getMonth() + 1 < m) || ((today.getMonth() + 1 === m) && today.getDate() < d);
+    if (beforeBirthday) age -= 1;
+    return age >= 0 && age < 130 ? age : null;
+  };
+  const profileAge = ageFromDob(form.date_of_birth);
+  const profileAgeGroup = profileAge == null ? (activePlayer?.age_group || '') : profileAge < 18 ? 'Junior (U18)' : profileAge < 35 ? 'Open (18-34)' : profileAge < 50 ? 'Adult (35-49)' : profileAge < 65 ? 'Senior (50-64)' : 'Super Senior (65+)';
 
   // My matches — where this player appears as a participant
   const myMatches = allMatches.filter(m => {
@@ -217,7 +230,6 @@ export default function MyProfile() {
       description: 'Your own playing details. Club and official ratings remain separately controlled.',
       fields: [
         { label: 'DUPR ID', field: 'dupr_id', type: 'text', mono: true },
-        { label: 'Age group', field: 'age_group', options: ['Junior (U18)','Open (18-34)','Adult (35-49)','Senior (50-64)','Super Senior (65+)'] },
         { label: 'Preferred side', field: 'preferred_position', options: ['Left Side','Right Side','No Preference'] },
       ]
     }
