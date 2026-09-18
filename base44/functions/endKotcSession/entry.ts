@@ -10,8 +10,8 @@ function standings(matches:any[],participants:any[]){const s:any=Object.fromEntr
 async function rebuildClubLeaderboard(base44:any,session:any){
  if(session.exclude_from_aggregates===true)return{updated:0,skipped:true};
  const [allSessions,allTournaments]=await Promise.all([
-   retry('leaderboard sessions',()=>base44.asServiceRole.entities.KotcSession.filter({tenant_id:session.tenant_id,club_id:session.club_id})),
-   retry('leaderboard tournaments',()=>base44.asServiceRole.entities.Tournament.filter({tenant_id:session.tenant_id}))
+   retry('leaderboard sessions',()=>base44.asServiceRole.entities.KotcSession.filter({tenant_id:session.tenant_id,club_id:session.club_id},'-created_date',500)),
+   retry('leaderboard tournaments',()=>base44.asServiceRole.entities.Tournament.filter({tenant_id:session.tenant_id},'-created_date',500))
  ]);
  const tournamentById=new Map((allTournaments||[]).map((t:any)=>[String(t.id),t]));
  const sessions=(allSessions||[]).filter((s:any)=>['completed','finalised'].includes(s.status)&&s.exclude_from_aggregates!==true&&tournamentById.get(String(s.tournament_id))?.counts_toward_leaderboard!==false);
