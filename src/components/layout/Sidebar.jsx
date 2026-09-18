@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { 
   LayoutDashboard, Users, Trophy, Crown, 
@@ -23,6 +23,7 @@ const navItems = [
 
 export default function Sidebar({ isOpen, onToggle }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { role } = useKotcRole();
   const canAccessAdmin = user?.role === 'admin';
@@ -114,12 +115,26 @@ export default function Sidebar({ isOpen, onToggle }) {
             { path: '/app/my-profile', label: 'My Profile', icon: UserCircle },
             ...(canAccessAdmin ? [{ path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
           ].map(item => {
-            const isActive = location.pathname.startsWith(item.path);
+            const directoryAdmin = item.path === '/app/admin?tab=directory';
+            const adminPanel = item.path === '/app/admin';
+            const currentAdminTab = new URLSearchParams(location.search).get('tab');
+            const isActive = directoryAdmin
+              ? location.pathname === '/app/admin' && currentAdminTab === 'directory'
+              : adminPanel
+                ? location.pathname === '/app/admin' && currentAdminTab !== 'directory'
+                : location.pathname.startsWith(item.path);
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={() => window.innerWidth < 1024 && onToggle()}
+                onClick={(event) => {
+                  if (directoryAdmin) {
+                    event.preventDefault();
+                    navigate('/app/admin?tab=directory');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                  if (window.innerWidth < 1024) onToggle();
+                }}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                   isActive
