@@ -21,7 +21,6 @@ const role=read('src/hooks/useKotcRole.jsx');
 const hostUi=read('src/components/kotc/KotcV2SessionView.jsx');
 const scorerUi=read('src/pages/PublicKotcScorer.jsx');
 const workflow=read('src/lib/kotcV2Workflow.js');
-const dashboard=read('src/pages/Dashboard.jsx');
 const memberDashboard=read('src/components/member/MemberDashboardView.jsx');
 const playerProfile=read('src/pages/PlayerProfile.jsx');
 const myProfile=read('src/pages/MyProfile.jsx');
