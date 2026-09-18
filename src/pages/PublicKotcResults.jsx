@@ -16,13 +16,13 @@ function KotcPodium({podium=[],large=false}){
   const display=[ranked[1],ranked[0],ranked[2]].filter(Boolean);
   const cardClass=place=>{
     if(large){
-      if(place===1)return 'min-h-[300px] sm:min-h-[360px] border-2 border-yellow-400/80 shadow-[0_0_45px_rgba(250,204,21,.18)]';
-      if(place===2)return 'min-h-[250px] sm:min-h-[305px] border-2 border-slate-200/80 shadow-[0_0_0_1px_rgba(15,23,42,.85),0_0_24px_rgba(226,232,240,.10)]';
-      return 'min-h-[220px] sm:min-h-[270px] border border-amber-800/30';
+      if(place===1)return 'h-[320px] sm:h-[360px] border-2 border-yellow-400/80 shadow-[0_0_45px_rgba(250,204,21,.18)]';
+      if(place===2)return 'h-[275px] sm:h-[305px] border-2 border-slate-200/80 shadow-[0_0_0_1px_rgba(15,23,42,.85),0_0_24px_rgba(226,232,240,.10)]';
+      return 'h-[235px] sm:h-[270px] border border-amber-800/30';
     }
-    if(place===1)return 'min-h-[190px] sm:min-h-[220px] border-2 border-yellow-400/75 shadow-[0_0_30px_rgba(250,204,21,.12)]';
-    if(place===2)return 'min-h-[165px] sm:min-h-[195px] border-2 border-slate-200/75 shadow-[0_0_0_1px_rgba(15,23,42,.85),0_0_18px_rgba(226,232,240,.08)]';
-    return 'min-h-[150px] sm:min-h-[180px] border border-amber-800/25';
+    if(place===1)return 'h-[225px] sm:h-[240px] border-2 border-yellow-400/75 shadow-[0_0_30px_rgba(250,204,21,.12)]';
+    if(place===2)return 'h-[195px] sm:h-[210px] border-2 border-slate-200/75 shadow-[0_0_0_1px_rgba(15,23,42,.85),0_0_18px_rgba(226,232,240,.08)]';
+    return 'h-[170px] sm:h-[185px] border border-amber-800/25';
   };
   const medal=place=>place===1?'🥇':place===2?'🥈':'🥉';
   const label=place=>place===1?'1st':place===2?'2nd':'3rd';
@@ -30,7 +30,7 @@ function KotcPodium({podium=[],large=false}){
     {display.map(p=><div key={p.id} role="listitem" aria-label={`${label(p.place)} place: ${p.name}`} className={`rounded-t-2xl rounded-b-lg border bg-card text-center flex flex-col justify-end ${large?'p-4 sm:p-7':'p-3 sm:p-4'} ${cardClass(p.place)}`}>
       <div className={`${large?'text-4xl sm:text-6xl':'text-3xl sm:text-4xl'}`}>{medal(p.place)}</div>
       <p className={`${large?'text-sm sm:text-base':'text-xs'} uppercase tracking-[.16em] font-black mt-2 ${p.place===1?'text-yellow-400':'text-muted-foreground'}`}>{label(p.place)} place</p>
-      <p className={`${large?'text-lg sm:text-3xl':'text-sm sm:text-lg'} font-bold mt-2 leading-tight break-words`}>{p.name}</p>
+      <p title={p.name} className={`${large?'text-lg sm:text-3xl':'text-xs sm:text-lg'} font-bold mt-2 leading-tight break-words line-clamp-3`}>{p.name}</p>
       <p className={`${large?'text-xs sm:text-base':'text-[11px] sm:text-xs'} text-muted-foreground mt-2`}>{p.wins}W · {p.losses}L · {p.differential>0?'+':''}{p.differential}</p>
       <div className={`${p.place===1?(large?'h-14 sm:h-20':'h-9 sm:h-12'):p.place===2?(large?'h-9 sm:h-12':'h-6 sm:h-8'):(large?'h-5 sm:h-7':'h-3 sm:h-5')} mt-3 rounded-t-lg ${p.place===1?'bg-yellow-400/15 border border-yellow-400/35':p.place===2?'bg-slate-200/12 border-2 border-slate-200/35':'bg-amber-900/8 border border-amber-800/15'} flex items-center justify-center`}>
         <span className={`${large?'text-2xl sm:text-4xl':'text-lg sm:text-2xl'} font-black`}>{p.place}</span>
