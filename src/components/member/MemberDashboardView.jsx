@@ -18,15 +18,16 @@ function formatDate(value) {
 
 export default function MemberDashboardView({ snapshot, preview = false }) {
   const [playerSearch, setPlayerSearch] = useState('');
-  if (!snapshot) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">No member data available.</div>;
-
-  const { user, player, person, member, club, myCompetitions = [], clubCalendar = [], playerDirectory = [] } = snapshot;
-  const name = person?.preferred_name || person?.full_name || player?.full_name || user?.full_name || user?.email || 'Member';
+  const playerDirectory = snapshot?.playerDirectory || [];
   const filteredPlayers = useMemo(() => {
     const q = playerSearch.trim().toLowerCase();
     if (!q) return playerDirectory.slice(0, 12);
     return playerDirectory.filter(p => String(p.full_name || '').toLowerCase().includes(q)).slice(0, 20);
   }, [playerDirectory, playerSearch]);
+  if (!snapshot) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">No member data available.</div>;
+
+  const { user, player, person, member, club, myCompetitions = [], clubCalendar = [] } = snapshot;
+  const name = person?.preferred_name || person?.full_name || player?.full_name || user?.full_name || user?.email || 'Member';
 
   const profileRows = [
     labelValue('Full name', person?.full_name || player?.full_name || user?.full_name),
