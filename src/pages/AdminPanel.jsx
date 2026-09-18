@@ -10,17 +10,18 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, Send, Clock, XCircle, CheckCircle, Trash2, RefreshCw } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, Send, Clock, XCircle, CheckCircle, Trash2, RefreshCw, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
 import { useAuth } from '@/lib/AuthContext';
+import MemberDashboardView from '@/components/member/MemberDashboardView';
 
 export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
-  const allowedAdminTabs = ['approvals', 'membership', 'directory', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['approvals', 'membership', 'preview', 'directory', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
   const queryClient = useQueryClient();
@@ -36,6 +37,7 @@ export default function AdminPanel() {
   const [inviting, setInviting] = useState(false);
   const [membershipSyncing, setMembershipSyncing] = useState(false);
   const [membershipSyncResult, setMembershipSyncResult] = useState(null);
+  const [previewUserId, setPreviewUserId] = useState('');
 
   const [userSearch, setUserSearch] = useState('');
   const [updatingRole, setUpdatingRole] = useState(null);
@@ -67,6 +69,17 @@ export default function AdminPanel() {
       return res.data?.users || [];
     },
     enabled: canAccessAdmin
+  });
+
+  const previewTargetUserId = previewUserId || user?.id || '';
+  const { data: memberPreview = null, isLoading: loadingMemberPreview, error: memberPreviewError } = useQuery({
+    queryKey: ['admin-member-preview', previewTargetUserId],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('memberPortal', { action: 'admin_preview', userId: previewTargetUserId });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.snapshot || null;
+    },
+    enabled: canAccessAdmin && activeAdminTab === 'preview' && !!previewTargetUserId
   });
 
   const { data: matches = [] } = useQuery({
@@ -391,6 +404,9 @@ export default function AdminPanel() {
           <TabsTrigger value="membership" className="text-xs gap-1.5">
             <RefreshCw className="w-3.5 h-3.5" /> Membership Sync
           </TabsTrigger>
+          <TabsTrigger value="preview" className="text-xs gap-1.5">
+            <Eye className="w-3.5 h-3.5" /> Member Preview
+          </TabsTrigger>
           <TabsTrigger value="directory" className="text-xs gap-1.5">
             <UserCheck className="w-3.5 h-3.5" /> Directory Claims
             {(pendingDirectoryClaims.length + pendingNewDirectoryRequests.length) > 0 && (
@@ -529,6 +545,52 @@ export default function AdminPanel() {
                 </div>
               )}
             </div>
+          </div>
+        </TabsContent>
+
+        {/* ── MEMBER PREVIEW TAB ── */}
+        <TabsContent value="preview" className="mt-4">
+          <div className="space-y-4">
+            <div className="glass rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+              <div className="max-w-2xl">
+                <h3 className="font-semibold text-foreground flex items-center gap-2"><Eye className="w-4 h-4 text-primary" /> Member Preview</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Preview exactly the member dashboard without logging out or impersonating anyone. This is read-only: your Super Admin authentication and permissions never change.
+                </p>
+              </div>
+              <div className="w-full lg:w-80">
+                <Label className="text-xs text-muted-foreground">Preview as</Label>
+                <Select value={previewTargetUserId} onValueChange={setPreviewUserId}>
+                  <SelectTrigger className="mt-1 bg-secondary border-border"><SelectValue placeholder="Choose a member" /></SelectTrigger>
+                  <SelectContent>
+                    {[...allUsers]
+                      .filter(u => u.id === user?.id || u.approval_status === 'approved')
+                      .sort((a, b) => {
+                        if (a.id === user?.id) return -1;
+                        if (b.id === user?.id) return 1;
+                        return String(a.full_name || a.display_name || a.email || '').localeCompare(String(b.full_name || b.display_name || b.email || ''));
+                      })
+                      .map(u => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.id === user?.id ? `${u.full_name || u.display_name || u.email} (me as member)` : (u.full_name || u.display_name || u.email)}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {loadingMemberPreview ? (
+              <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading member preview…</div>
+            ) : memberPreviewError ? (
+              <div className="glass rounded-xl p-6 text-sm text-destructive">{memberPreviewError.message || 'Could not load member preview.'}</div>
+            ) : memberPreview ? (
+              <div className="rounded-2xl border border-primary/20 bg-background/20 p-3 sm:p-5">
+                <MemberDashboardView snapshot={memberPreview} preview />
+              </div>
+            ) : (
+              <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Choose a member account to preview.</div>
+            )}
           </div>
         </TabsContent>
 
