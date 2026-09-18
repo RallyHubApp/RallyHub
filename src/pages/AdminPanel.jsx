@@ -10,12 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, Send, Clock, XCircle, CheckCircle, Trash2, RefreshCw, Eye } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, Send, Clock, XCircle, CheckCircle, Trash2, RefreshCw, Eye, MessageCircle, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
 import { useAuth } from '@/lib/AuthContext';
 import MemberDashboardView from '@/components/member/MemberDashboardView';
+import { directoryClubs } from '@/data/directorySeed';
 
 export default function AdminPanel() {
   const { user } = useAuth();
@@ -54,6 +55,9 @@ export default function AdminPanel() {
   const [reviewingNewDirectoryRequest, setReviewingNewDirectoryRequest] = useState(null);
   const [revokingDirectoryAccess, setRevokingDirectoryAccess] = useState(null);
   const [removingDirectoryListing, setRemovingDirectoryListing] = useState(null);
+  const [ownerInvite, setOwnerInvite] = useState({ listingSlug: '', contactName: '', contactPhone: '', contactEmail: '' });
+  const [ownerInviteBusy, setOwnerInviteBusy] = useState('');
+  const [ownerInviteResult, setOwnerInviteResult] = useState(null);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
