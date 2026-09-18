@@ -352,6 +352,91 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'spondToken required' }, { status: 400 });
   }
 
+  // ── Action: import_interclub_attendees ──
+  if (action === 'import_interclub_attendees') {
+    const challengeId = String(interclubEventId || '').trim();
+    const side = String(interclubSide || '').trim();
+    if (!challengeId || !['club_a','club_b'].includes(side)) return Response.json({ error:'interclubEventId and valid interclubSide required' }, { status:400 });
+    if (!groupId || !eventId) return Response.json({ error:'groupId and eventId required' }, { status:400 });
+    if (!await interclubManagerAllowed(base44, user, challengeId)) return Response.json({ error:'Interclub event manager permission required' }, { status:403 });
+
+    const challenge = (await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:challengeId }))?.[0];
+    if (!challenge) return Response.json({ error:'Interclub Challenge event not found' }, { status:404 });
+    if (!['draft','draw_generated'].includes(challenge.status)) return Response.json({ error:'Spond players can only be imported before the draw is approved.' }, { status:409 });
+
+    const [event, group] = await Promise.all([
+      fetchEventOccurrence(groupId,eventId,spondToken,selectedStartTimestamp,selectedHeading),
+      fetchGroupForAttendees(groupId,spondToken),
+    ]);
+    const {accepted,waiting}=collectResponseIds(event);
+    const memberMap=buildMemberMap(group);
+    const sourceAttendees=[...accepted].map(id=>attendeeFromMember(id,memberMap[id])).filter(Boolean);
+    if (!sourceAttendees.length) return Response.json({ error:'No Spond attendees marked Going were found for this event.' }, { status:409 });
+
+    const existing = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:challenge.id }, 'event_rank', 200);
+    const normaliseIdentity = value => normaliseName(value || '');
+    const activeExisting = existing.filter(p => !['replaced','withdrawn','injured'].includes(p.status));
+    const existingKeys = new Set(activeExisting.map(p => String(p.unique_identity_key || '')).filter(Boolean));
+    const existingNames = new Map(activeExisting.map(p => [normaliseIdentity(p.display_name), p]));
+    const sideExisting = existing.filter(p => p.side === side && p.status !== 'replaced');
+    let nextRank = sideExisting.reduce((max,p)=>Math.max(max,Number(p.event_rank||0)),0)+1;
+
+    let scopedPlayers = [];
+    if (challenge.tenant_id && challenge.host_club_id) {
+      scopedPlayers = await base44.asServiceRole.entities.Player.filter({ tenant_id:challenge.tenant_id, club_id:challenge.host_club_id });
+    }
+
+    let created=0, skipped=0;
+    const skippedNames=[];
+    const createdNames=[];
+    for (const attendee of sourceAttendees) {
+      const identityKey=`spond-${String(groupId)}-${String(attendee.spondId)}`;
+      const nameKey=normaliseIdentity(attendee.fullName);
+      if (existingKeys.has(identityKey) || (nameKey && existingNames.has(nameKey))) {
+        skipped++;
+        skippedNames.push(attendee.fullName);
+        continue;
+      }
+      const match=matchAttendee(attendee,scopedPlayers);
+      const matchedPlayer=match.status==='matched' ? match.matched : null;
+      const participant=await base44.asServiceRole.entities.ClubChallengeParticipant.create({
+        tenant_id:challenge.tenant_id,
+        challenge_event_id:challenge.id,
+        tournament_id:challenge.tournament_id,
+        side,
+        display_name:String(attendee.fullName).trim().slice(0,120),
+        gender:String(attendee.gender || '').trim().slice(0,40),
+        ...(matchedPlayer?.id ? { source_player_id:matchedPlayer.id } : {}),
+        participant_type:matchedPlayer ? (matchedPlayer.relationship_type || 'member') : 'guest',
+        event_rank:nextRank++,
+        status:'active',
+        available_from_round:1,
+        unique_identity_key:identityKey,
+      });
+      existingKeys.add(identityKey);
+      existingNames.set(nameKey,participant);
+      created++;
+      createdNames.push(participant.display_name);
+    }
+
+    const now=new Date().toISOString();
+    await base44.asServiceRole.entities.ClubChallengeEvent.update(challenge.id, {
+      fairness_json:'',
+      status:challenge.status === 'draw_generated' ? 'draft' : challenge.status,
+      event_pack_stale:true,
+    });
+    await base44.asServiceRole.entities.ClubChallengeAudit.create({
+      tenant_id:challenge.tenant_id,
+      challenge_event_id:challenge.id,
+      action:'participants_imported_spond',
+      user_id:user.id,
+      occurred_at:now,
+      new_value_json:JSON.stringify({ side, group_id:String(groupId), group_name:String(group?.name||''), event_id:String(eventId), event_heading:String(event?.heading||''), created, skipped, waiting_list_excluded:waiting.size, created_names:createdNames }),
+      note:`Imported Spond attendees into ${side === 'club_a' ? challenge.club_a_name : challenge.club_b_name}.`,
+    });
+    return Response.json({ success:true, created, skipped, waitingListCount:waiting.size, createdNames, skippedNames, sourceGroupName:String(group?.name||''), event:{ id:event.id, heading:event.heading, startTimestamp:selectedStartTimestamp||eventStart(event), location:event.location?.address||event.location?.feature||'' } });
+  }
+
   // ── Action: get_groups ──
   if (action === 'get_groups') {
     const groups = await spondRequest('/groups', spondToken);
