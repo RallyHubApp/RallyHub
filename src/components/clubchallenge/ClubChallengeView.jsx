@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
@@ -499,7 +500,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const reorder = async (side, ordered) => {
     if (!event || !canManageEvent || sportingActionRef.current) return;
-    sportingActionRef.current = true; setHostAction('Saving player ranking… one command sent');
+    sportingActionRef.current = true;
+    flushSync(() => setHostAction('Saving player ranking… one command sent'));
     try {
       const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'reorder', side, orderedParticipantIds:ordered.map(p=>p.id) });
       if (res.data?.error) throw new Error(res.data.error);
