@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { geocodeDirectoryVenues } from './geocode.ts';
 
 const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
+const isRateLimit = (error:any) => /rate limit|too many requests|\b429\b|temporar(?:y|ily) busy/i.test(String(error?.message || error || ''));
 const nullable = (value:any, max=500) => { const v = clean(value, max); return v || null; };
 const safeUrl = (value:any) => {
   const v = clean(value, 500);
@@ -237,6 +238,12 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
     console.error('directoryListingProfile error', error);
+    if (isRateLimit(error)) {
+      return Response.json(
+        { error: 'RallyHub is temporarily busy. Please try again shortly.', retryAfterSeconds: 3 },
+        { status: 503, headers: { 'Retry-After': '3' } }
+      );
+    }
     return Response.json({ error: 'Unable to process the directory profile request right now.' }, { status: 500 });
   }
 });
