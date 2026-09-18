@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Search, PlusCircle, UserCheck } from 'lucide-react';
+import { Search, PlusCircle, UserCheck, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
 
@@ -32,6 +32,9 @@ export default function PublicDirectoryHeader() {
           </NavLink>
           <NavLink to="/directory/add" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5">
             <PlusCircle className="w-3.5 h-3.5" /> Add club
+          </NavLink>
+          <NavLink to="/directory/help" className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5">
+            <HelpCircle className="w-3.5 h-3.5" /> Help
           </NavLink>
         </nav>
         <div className="ml-auto flex items-center gap-2">
