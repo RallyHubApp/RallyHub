@@ -9,10 +9,8 @@ import { motion } from 'framer-motion';
 import StatCard from '@/components/shared/StatCard';
 import PageHeader from '@/components/shared/PageHeader';
 import { format } from 'date-fns';
-import { useAuth } from '@/lib/AuthContext';
-import MemberPortalDashboard from '@/components/member/MemberPortalDashboard';
 
-function AdminDashboard() {
+export default function Dashboard() {
   const { data: currentUser = null } = useQuery({
     queryKey: ['current-user'],
     queryFn: () => base44.auth.me().catch(() => null)
@@ -168,10 +166,4 @@ function AdminDashboard() {
       </div>
     </div>
   );
-}
-
-export default function Dashboard() {
-  const { user } = useAuth();
-  if (user?.role !== 'admin') return <MemberPortalDashboard />;
-  return <AdminDashboard />;
 }
