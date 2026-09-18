@@ -102,12 +102,12 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
-  const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [], listingRecords: [] } } = useQuery({
+  const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [], listingRecords: [], invitations: [] } } = useQuery({
     queryKey: ['directory-verification'],
     queryFn: async () => {
       const res = await base44.functions.invoke('directoryClaim', { action: 'list_admin' });
       if (res.data?.error) throw new Error(res.data.error);
-      return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [], listingRecords: res.data?.listingRecords || [] }; 
+      return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [], listingRecords: res.data?.listingRecords || [], invitations: res.data?.invitations || [] }; 
     },
     enabled: canAccessAdmin
   });
@@ -388,6 +388,8 @@ export default function AdminPanel() {
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
   const activeDirectoryAccesses = directoryVerification.accesses.filter(a => a.status === 'active');
+  const directoryInvitations = (directoryVerification.invitations || []).slice(0, 50);
+  const pendingDirectoryInvitations = directoryInvitations.filter(invite => invite.status === 'pending');
   const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active');
 
   return (
@@ -709,7 +711,34 @@ export default function AdminPanel() {
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Verified directory editors</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Directory invitations {pendingDirectoryInvitations.length ? `· ${pendingDirectoryInvitations.length} pending` : ''}</p>
+              {directoryInvitations.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-4 px-1">No directory invitations have been created yet.</p>
+              ) : directoryInvitations.map(invite => {
+                const inviter = allUsers.find(u => u.id === invite.created_by_user_id);
+                const recipient = invite.contact_name || invite.contact_email || invite.contact_phone || 'Unnamed recipient';
+                const statusClass = invite.status === 'pending' ? 'border-amber-400/40 text-amber-300' : invite.status === 'used' ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground';
+                return (
+                  <div key={invite.id} className="glass rounded-lg p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium text-foreground">{invite.listing_name_snapshot || invite.listing_slug}</p>
+                        <Badge variant="outline" className={statusClass}>{invite.status}</Badge>
+                        <Badge variant="outline">{invite.access_role === 'owner' ? 'Primary Owner' : 'Directory Editor'}</Badge>
+                        <Badge variant="outline">{invite.channel === 'whatsapp' ? 'WhatsApp' : 'Email'}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">To: {recipient}{invite.contact_email && recipient !== invite.contact_email ? ` · ${invite.contact_email}` : ''}{invite.contact_phone && recipient !== invite.contact_phone ? ` · ${invite.contact_phone}` : ''}</p>
+                      <p className="text-xs text-muted-foreground">Created by: {inviter?.full_name || inviter?.display_name || inviter?.email || invite.created_by_user_id}</p>
+                      {invite.expires_at && <p className="text-xs text-muted-foreground">Expires: {new Date(invite.expires_at).toLocaleString('en-IE')}</p>}
+                      {invite.used_at && <p className="text-xs text-green-400">Accepted: {new Date(invite.used_at).toLocaleString('en-IE')}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Verified directory owners & editors</p>
               {activeDirectoryAccesses.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No directory editor access has been granted yet.</p>
               ) : activeDirectoryAccesses.map(access => {
@@ -717,7 +746,7 @@ export default function AdminPanel() {
                 return (
                   <div key={access.id} className="glass rounded-lg p-3 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{access.listing_name_snapshot || access.listing_slug}</p>
+                      <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-medium text-foreground">{access.listing_name_snapshot || access.listing_slug}</p><Badge variant="outline">{access.role === 'owner' ? 'Primary Owner' : 'Directory Editor'}</Badge></div>
                       <p className="text-xs text-muted-foreground truncate">{accessUser?.full_name || accessUser?.display_name || accessUser?.email || access.user_id}</p>
                     </div>
                     <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30" disabled={revokingDirectoryAccess === access.id} onClick={() => revokeDirectoryAccess(access.id)}>
