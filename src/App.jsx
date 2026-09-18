@@ -43,7 +43,6 @@ import AddDirectoryClub from '@/pages/AddDirectoryClub';
 import CountyDirectory from '@/pages/CountyDirectory';
 import DirectoryListingEdit from '@/pages/DirectoryListingEdit';
 import DirectoryHelp from '@/pages/DirectoryHelp';
-import DirectoryHelp from '@/pages/DirectoryHelp';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -136,7 +135,6 @@ function App() {
             <Route path="/pickleball-clubs/:countySlug" element={<CountyDirectory />} />
             <Route path="/directory/:slug/claim" element={<DirectoryClaim />} />
             <Route path="/directory/:slug/edit" element={<DirectoryListingEdit />} />
-            <Route path="/directory/help" element={<DirectoryHelp />} />
             <Route path="/directory/help" element={<DirectoryHelp />} />
 
             {/* Public utility routes — no auth required */}
