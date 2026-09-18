@@ -23,6 +23,15 @@ const sortSessions = (sessions:any[]) => [...sessions].sort((a:any,b:any) =>
   String(a.start || '').localeCompare(String(b.start || '')) ||
   String(a.level || '').localeCompare(String(b.level || ''))
 );
+const safeLogoUrl = (value:any) => {
+  const v = clean(value, 500);
+  if (!v) return null;
+  // Curated seed listings may use app-hosted public assets such as
+  // /limerick-city-pickleball.webp. Preserve those on editor save while
+  // rejecting protocol-relative/external-looking paths.
+  if (/^\/(?!\/)[a-zA-Z0-9_./-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(v)) return v;
+  return safeUrl(v);
+};
 const safeEmail = (value:any) => {
   const v = clean(value, 240).toLowerCase();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? v : null;
@@ -95,7 +104,7 @@ function sanitiseProfile(input:any) {
     instagram: safeUrl(input?.instagram),
     waitingListUrl: safeUrl(input?.waitingListUrl),
     joiningCtaLabel: nullable(input?.joiningCtaLabel, 120),
-    logoUrl: safeUrl(input?.logoUrl),
+    logoUrl: safeLogoUrl(input?.logoUrl),
     contact: {
       name: nullable(input?.contact?.name, 180),
       phone: nullable(input?.contact?.phone, 80),
