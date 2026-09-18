@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: kotc-host-journey.spec.mjs >> 18-player mobile host journey: setup → controls → rounds → podium
-- Location: e2e/kotc-host-journey.spec.mjs:354:1
+- Name: directory-editor-sessions.spec.mjs >> directory editor: Add session is visible, adds a card, and Duplicate clones it
+- Location: e2e/directory-editor-sessions.spec.mjs:30:1
 
 # Error details
 
