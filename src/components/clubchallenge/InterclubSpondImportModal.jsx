@@ -3,8 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import PasswordInput from '@/components/ui/password-input';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CalendarDays, CheckCircle2, ChevronRight, Eye, EyeOff, Loader2, LogIn, Users } from 'lucide-react';
+import { AlertCircle, CalendarDays, CheckCircle2, ChevronRight, Loader2, LogIn, Users } from 'lucide-react';
 
 export default function InterclubSpondImportModal({ open, onOpenChange, tournament, event, side, onImported }) {
   const clubName = side === 'club_b' ? event?.club_b_name : event?.club_a_name;
@@ -13,7 +14,6 @@ export default function InterclubSpondImportModal({ open, onOpenChange, tourname
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [token, setToken] = useState(() => {
     try { return sessionStorage.getItem('rallyhub_spond_token') || ''; } catch { return ''; }
   });
@@ -177,7 +177,7 @@ export default function InterclubSpondImportModal({ open, onOpenChange, tourname
         {step==='login' && <div className="space-y-3">
           <p className="text-xs text-muted-foreground">Connect the Spond account that can see the event. RallyHub does not store the Spond password.</p>
           <Input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Spond email" />
-          <div className="relative"><Input type={showPassword?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder="Spond password" className="pr-10" onKeyDown={e=>e.key==='Enter'&&login()} /><button type="button" onClick={()=>setShowPassword(v=>!v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">{showPassword?<EyeOff className="w-4 h-4"/>:<Eye className="w-4 h-4"/>}</button></div>
+          <PasswordInput value={password} onChange={e=>setPassword(e.target.value)} placeholder="Spond password" autoComplete="current-password" onKeyDown={e=>e.key==='Enter'&&login()} />
           <Button onClick={login} disabled={loading||!email.trim()||!password} className="w-full">{loading?<Loader2 className="w-4 h-4 mr-2 animate-spin"/>:<LogIn className="w-4 h-4 mr-2"/>}{loading?'Connecting…':'Connect Spond'}</Button>
         </div>}
 
