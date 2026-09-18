@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Seo from '@/components/public/Seo';
+import DirectorySpondPanel from '@/components/directory/DirectorySpondPanel';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const emptyVenue = index => ({
@@ -497,6 +498,56 @@ export default function DirectoryListingEdit() {
     setForm(prev => ({ ...prev, sessions: prev.sessions.filter((_, i) => i !== index) }));
   };
 
+  const importSpondDirectoryData = ({ venues = [], sessions = [] }) => {
+    setSaved(false);
+    setForm(prev => {
+      const existingVenues = [...(prev?.venues || [])];
+      const venueIdMap = new Map();
+      const norm = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+      for (const incoming of venues) {
+        const match = existingVenues.find(v =>
+          norm(v.name) === norm(incoming.name) &&
+          (!incoming.address || !v.address || norm(v.address) === norm(incoming.address))
+        );
+        if (match) {
+          venueIdMap.set(incoming.id, match.id);
+          const idx = existingVenues.findIndex(v => v.id === match.id);
+          existingVenues[idx] = {
+            ...match,
+            address: match.address || incoming.address || '',
+            shortName: match.shortName || incoming.shortName || incoming.name || '',
+            playType: match.playType || incoming.playType || 'Contact club',
+          };
+        } else {
+          const uniqueId = `spond-${Date.now()}-${existingVenues.length + 1}`;
+          venueIdMap.set(incoming.id, uniqueId);
+          existingVenues.push({ ...incoming, id: uniqueId });
+        }
+      }
+
+      const existingSessions = [...(prev?.sessions || [])];
+      for (const incoming of sessions) {
+        const remapped = { ...incoming, id: newSessionId(), venueId: venueIdMap.get(incoming.venueId) || incoming.venueId };
+        const matchIndex = existingSessions.findIndex(s =>
+          s.day === remapped.day &&
+          s.start === remapped.start &&
+          String(s.end || '') === String(remapped.end || '') &&
+          s.venueId === remapped.venueId &&
+          String(s.level || '').trim().toLowerCase() === String(remapped.level || '').trim().toLowerCase()
+        );
+        if (matchIndex >= 0) {
+          existingSessions[matchIndex] = { ...existingSessions[matchIndex], ...remapped, id: existingSessions[matchIndex].id };
+        } else {
+          existingSessions.push(remapped);
+        }
+      }
+
+      return { ...prev, venues: existingVenues, sessions: existingSessions };
+    });
+    setSessionNotice('Spond venues and sessions imported into the form. Review them below, then press Save changes to publish.');
+  };
+
   if (!loadingListing && !baseClub) return <Navigate to="/directory" replace />;
 
   return (
@@ -564,6 +615,7 @@ export default function DirectoryListingEdit() {
                 <nav className="mt-5 flex gap-2 overflow-x-auto pb-1 text-sm">
                   <a href="#basics" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Club info</a>
                   <a href="#contact" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Contact</a>
+                  <a href="#spond" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Spond</a>
                   <a href="#venues" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Venues</a>
                   <a href="#sessions" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Sessions</a>
                 </nav>
@@ -678,6 +730,8 @@ export default function DirectoryListingEdit() {
                   </div>
                 </div>
               </section>
+
+              <DirectorySpondPanel listingSlug={slug} onImport={importSpondDirectoryData} />
 
               <section id="venues" className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
                 <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Venues</h2></div><p className="text-sm text-muted-foreground mt-1">Add every regular place where the club plays.</p></div><Button variant="outline" size="sm" onClick={addVenue} className="gap-1"><Plus className="w-4 h-4" /> Add venue</Button></div>
