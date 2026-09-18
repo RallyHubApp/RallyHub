@@ -121,6 +121,22 @@ async function directoryAccessAllowed(base44, user, listingSlug) {
   return !!access?.length;
 }
 
+async function interclubManagerAllowed(base44, user, eventId) {
+  if (user.role === 'admin') return true;
+  if (!eventId) return false;
+  const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:String(eventId) });
+  const event = events?.[0];
+  if (!event) return false;
+  const now = Date.now();
+  const inWindow = row => row && row.status === 'active' && (!row.starts_at || Date.parse(row.starts_at) <= now) && (!row.ends_at || Date.parse(row.ends_at) >= now);
+  const [tournamentAccess, challengeAccess] = await Promise.all([
+    base44.asServiceRole.entities.TournamentUserAccess.filter({ tournament_id:event.tournament_id, tenant_id:event.tenant_id, user_id:user.id, status:'active' }),
+    base44.asServiceRole.entities.ClubChallengeScorer.filter({ challenge_event_id:event.id, tenant_id:event.tenant_id, user_id:user.id, active:true }),
+  ]);
+  return (tournamentAccess || []).filter(inWindow).some(row => ['event_manager','event_host'].includes(row.role)) ||
+    (challengeAccess || []).some(row => ['owner','organiser'].includes(row.role));
+}
+
 async function directorySpondToken(user, body) {
   if (body.spondToken) return body.spondToken;
   if (user.role !== 'admin') return null;
@@ -205,7 +221,7 @@ Deno.serve(async (req) => {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { action, spondEmail, spondPassword, spondToken, groupId, eventId, targetDate, selectedStartTimestamp, selectedHeading, listingSlug } = body;
+  const { action, spondEmail, spondPassword, spondToken, groupId, eventId, targetDate, selectedStartTimestamp, selectedHeading, listingSlug, interclubEventId, interclubSide } = body;
 
   if (String(action || '').startsWith('directory_')) {
     const slug = clean(listingSlug, 180);
@@ -311,7 +327,8 @@ Deno.serve(async (req) => {
   }
 
   const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
-  const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole);
+  const hasInterclubManagerAccess = interclubEventId ? await interclubManagerAllowed(base44, user, interclubEventId) : false;
+  const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole) || hasInterclubManagerAccess;
   if (!isSpondManager) {
     return Response.json({ error: 'Forbidden: Spond host/admin access required' }, { status: 403 });
   }
