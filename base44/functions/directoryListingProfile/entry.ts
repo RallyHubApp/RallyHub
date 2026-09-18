@@ -8,9 +8,21 @@ const safeUrl = (value:any) => {
   if (!v) return null;
   try {
     const url = new URL(v);
-    return ['http:', 'https:'].includes(url.protocol) ? url.toString() : null;
+    if (!['http:', 'https:'].includes(url.protocol)) return null;
+    const marker = '/files/mp/public/';
+    if (url.hostname === 'base44.app' && url.pathname.includes(marker)) {
+      const tail = url.pathname.split(marker)[1];
+      if (tail) return `https://media.base44.com/images/public/${tail}`;
+    }
+    return url.toString();
   } catch { return null; }
 };
+const weekOrder = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const sortSessions = (sessions:any[]) => [...sessions].sort((a:any,b:any) =>
+  weekOrder.indexOf(a.day) - weekOrder.indexOf(b.day) ||
+  String(a.start || '').localeCompare(String(b.start || '')) ||
+  String(a.level || '').localeCompare(String(b.level || ''))
+);
 const safeEmail = (value:any) => {
   const v = clean(value, 240).toLowerCase();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? v : null;
@@ -56,7 +68,7 @@ function sanitiseProfile(input:any) {
 
   const venueIds = new Set(venues.map((v:any) => v.id));
   const sessionsIn = Array.isArray(input?.sessions) ? input.sessions.slice(0, 80) : [];
-  const sessions = sessionsIn.map((s:any, i:number) => ({
+  const sessions = sortSessions(sessionsIn.map((s:any, i:number) => ({
     id: idSafe(s?.id, `session-${i+1}`),
     venueId: venueIds.has(clean(s?.venueId, 120)) ? clean(s?.venueId, 120) : (venues[0]?.id || null),
     day: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].includes(clean(s?.day, 20)) ? clean(s?.day, 20) : 'Monday',
@@ -71,7 +83,7 @@ function sanitiseProfile(input:any) {
     showPublicJoinLink: s?.showPublicJoinLink === true,
     publicJoinUrl: safeUrl(s?.publicJoinUrl),
     source: clean(s?.source, 40) === 'Spond' ? 'Spond' : null,
-  })).filter((s:any) => s.venueId && s.start);
+  })).filter((s:any) => s.venueId && s.start));
 
   return {
     description: nullable(input?.description, 1600),
