@@ -19,6 +19,33 @@ const clubInitials = name => name
   .map(part => part[0]?.toUpperCase())
   .join('');
 
+const publicAssetUrl = value => {
+  const raw = String(value || '').trim();
+  const marker = '/files/mp/public/';
+  try {
+    const url = new URL(raw);
+    if (url.hostname === 'base44.app' && url.pathname.includes(marker)) {
+      const tail = url.pathname.split(marker)[1];
+      if (tail) return `https://media.base44.com/images/public/${tail}`;
+    }
+  } catch {}
+  return raw;
+};
+
+const publicDescription = club => {
+  const description = String(club?.description || '').trim();
+  if (club?.verificationStatus === 'verified' && /has not yet been claimed|listing is currently unclaimed|unclaimed listing/i.test(description)) {
+    return `${club.name} is listed in the RallyHub Club Directory for County ${club.county}.`;
+  }
+  return description;
+};
+
+const publicMembershipStatus = club => {
+  const status = String(club?.membershipStatus || '').trim();
+  if (club?.verificationStatus === 'verified' && /unclaimed/i.test(status)) return 'Contact club';
+  return status;
+};
+
 export default function PublicClubProfile() {
   const { slug } = useParams();
   const location = useLocation();
@@ -88,6 +115,9 @@ export default function PublicClubProfile() {
   } : { ...baseClub, verificationStatus, venues: baseClub.venues || [], sessions: baseClub.sessions || [], contact: baseClub.contact || {} };
 
   const schedule = groupByDay(club.sessions);
+  const displayDescription = publicDescription(club);
+  const displayMembershipStatus = publicMembershipStatus(club);
+  const displayLogoUrl = publicAssetUrl(club.logoUrl);
   const profileUrl = `${SITE_URL}/directory/${club.slug}`;
   const socialLinks = [club.website, club.facebook, club.instagram].filter(Boolean);
   const clubSchema = {
@@ -96,9 +126,9 @@ export default function PublicClubProfile() {
     name: club.name,
     url: profileUrl,
     sport: club.sport || 'Pickleball',
-    description: club.description,
+    description: displayDescription,
     areaServed: { '@type': 'AdministrativeArea', name: `County ${club.county}` },
-    ...(club.logoUrl ? { logo: absoluteUrl(club.logoUrl) } : {}),
+    ...(displayLogoUrl ? { logo: absoluteUrl(displayLogoUrl) } : {}),
     ...(socialLinks.length ? { sameAs: socialLinks } : {}),
     ...(club.contact?.email || club.contact?.phone ? {
       contactPoint: {
@@ -132,7 +162,7 @@ export default function PublicClubProfile() {
         title={`${club.name} | Pickleball in ${club.county} | RallyHub`}
         description={seoDescription}
         path={`/directory/${club.slug}`}
-        image={club.logoUrl ? absoluteUrl(club.logoUrl) : undefined}
+        image={displayLogoUrl ? absoluteUrl(displayLogoUrl) : undefined}
         type="profile"
         structuredData={clubSchema}
       />
@@ -146,8 +176,8 @@ export default function PublicClubProfile() {
               <ArrowLeft className="w-4 h-4" /> Back to directory
             </Link>
             <div className="flex flex-col sm:flex-row gap-6 items-start">
-              {club.logoUrl ? (
-                <img src={club.logoUrl} alt={`${club.name} logo`} className="w-32 h-32 rounded-3xl bg-white object-contain p-2 shadow-2xl shrink-0" />
+              {displayLogoUrl ? (
+                <img src={displayLogoUrl} alt={`${club.name} logo`} className="w-32 h-32 rounded-3xl bg-white object-contain p-2 shadow-2xl shrink-0" />
               ) : (
                 <div className="w-32 h-32 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center text-3xl font-black text-primary shadow-2xl shrink-0" aria-label={`${club.name} logo pending`}>
                   {clubInitials(club.name)}
@@ -165,7 +195,7 @@ export default function PublicClubProfile() {
                   )}
                 </div>
                 <h1 className="text-4xl sm:text-5xl font-black tracking-tight">{club.name}</h1>
-                <p className="mt-3 text-lg text-muted-foreground max-w-3xl">{club.description}</p>
+                <p className="mt-3 text-lg text-muted-foreground max-w-3xl">{displayDescription}</p>
                 <div className="mt-5 flex flex-wrap gap-3">
                   {club.website && <a href={club.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Globe2 className="w-4 h-4" /> Website</a>}
                   {club.waitingListUrl && <a href={club.waitingListUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold"><Users className="w-4 h-4" /> {club.joiningCtaLabel || 'Contact club'}</a>}
@@ -343,7 +373,7 @@ export default function PublicClubProfile() {
                 {club.town && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Town / area</dt><dd className="text-right">{club.town}</dd></div>}
                 {club.founded && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Founded</dt><dd>{club.founded}</dd></div>}
                 {club.affiliation && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Affiliation</dt><dd>{club.affiliation}</dd></div>}
-                <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Membership</dt><dd className="text-right">{club.membershipStatus}</dd></div>
+                {displayMembershipStatus && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Membership</dt><dd className="text-right">{displayMembershipStatus}</dd></div>}
                 <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Listing</dt><dd className="text-right">{club.verificationStatus === 'verified' ? 'Verified club representative' : 'RallyHub directory listing'}</dd></div>
               </dl>
             </section>
