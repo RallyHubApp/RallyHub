@@ -22,6 +22,9 @@ const hostUi=read('src/components/kotc/KotcV2SessionView.jsx');
 const scorerUi=read('src/pages/PublicKotcScorer.jsx');
 const workflow=read('src/lib/kotcV2Workflow.js');
 const dashboard=read('src/pages/Dashboard.jsx');
+const memberDashboard=read('src/components/member/MemberDashboardView.jsx');
+const playerProfile=read('src/pages/PlayerProfile.jsx');
+const myProfile=read('src/pages/MyProfile.jsx');
 const hostSessionPage=read('src/pages/KotcHostSession.jsx');
 const mobileHostTest=read('e2e/kotc-host-journey.spec.mjs');
 const kotcView=read('src/components/kotc/KotcView.jsx');
@@ -76,8 +79,11 @@ includes(saveScore,"KOTC scores cannot exceed 99.",'dedicated host score endpoin
 includes(scorer,"KOTC scores cannot exceed 99.",'player scorer endpoint must reject scores above 99');
 includes(command,"KOTC scores cannot exceed 99.",'general correction/autosave path must reject scores above 99');
 includes(workflow,"KOTC scores cannot exceed 99.",'sporting workflow validation must enforce the same two-digit score ceiling');
-assert(!dashboard.includes("player.skill_rating || 3.0"),'dashboard must never display a manufactured 3.0 rating for an unrated player');
-includes(dashboard,'player.dupr_rating != null','dashboard may show a rating only when a genuine DUPR value exists');
+assert(!memberDashboard.includes("player.skill_rating || 3.0")&&!memberDashboard.includes("player?.skill_rating || 3.0"),'member dashboard must never display a manufactured 3.0 rating for an unrated player');
+assert(/dupr_rating\s*!=\s*null/.test(memberDashboard),'member dashboard may show DUPR only when a genuine DUPR value exists');
+assert(!playerProfile.includes("(player.skill_rating || 3.0)")&&!/skill_rating[^\n]{0,100}DUPR Rating/.test(playerProfile),'player profile must never present a default or club rating as DUPR');
+assert(/player\.dupr_rating\s*!=\s*null/.test(playerProfile),'player profile DUPR display must depend on genuine DUPR data');
+assert(!/dupr_rating[^\n]{0,180}\|\|[^\n]{0,180}skill_rating/.test(myProfile),'my profile must never fall back from DUPR to club rating under a DUPR label');
 assert(!create.includes('skill_rating||3')&&!create.includes('skill_rating || 3'),'KOTC session creation must not manufacture a 3.0 rating snapshot');
 assert(!hostSessionPage.includes('rating_snapshot||3')&&!hostSessionPage.includes('rating_snapshot || 3'),'restricted host view must not manufacture a 3.0 rating');
 
