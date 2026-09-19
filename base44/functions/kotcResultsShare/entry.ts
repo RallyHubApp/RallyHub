@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { requireConfiguredEmailTransport } from './emailRouter.ts';
 
 const RUNTIME_VERSION='kotc-results-2026-09-11-r9';
 const APP_BASE_URL='https://rallyhub.ie';
@@ -79,6 +80,8 @@ Deno.serve(async req=>{try{
  if(!share){share=await retry('create share',()=>base44.asServiceRole.entities.KotcSessionShare.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,tournament_id:session.tournament_id,token:token(),status:'active',created_by_user_id:user.id}));}
  if(action==='get_or_create'||action==='get_or_create_by_tournament')return Response.json({success:true,token:share.token,shareId:share.id,livePath:`/kotc-live/${share.token}`,permanent:true,runtimeVersion:RUNTIME_VERSION});
  if(action==='email_preview'||action==='email_test'||action==='email_players'){
+   const transportConfig=await requireConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId:String(session.tenant_id),clubId:session.club_id?String(session.club_id):null});
+   if(transportConfig.provider!=='gmail_connector'||String(transportConfig.sender_email||'').toLowerCase()!==SHARED_GMAIL_ADDRESS.toLowerCase())return Response.json({error:'This club email transport is not currently routed through the Clare Pickleball Gmail account.',runtimeVersion:RUNTIME_VERSION},{status:409});
    const link=`${APP_BASE_URL}/kotc-live/${share.token}`;const resend=body.resend===true;
    let emailStage='participants';let participants:any[]=[];let clubs:any[]=[];let tournaments:any[]=[];let hostGrants:any[]=[];let primaryHost:any=null;
    try{
