@@ -60,7 +60,7 @@ export default function Login() {
     >
       {directoryMode && (
         <div className="mb-5 rounded-xl border border-primary/25 bg-primary/10 p-4 text-sm text-muted-foreground">
-          <strong className="text-foreground">Directory access only.</strong> This sign-in is for submitting, claiming or editing a public club listing. It does not make you a RallyHub player, club member or club administrator.
+          <strong className="text-foreground">Already have a RallyHub account? Sign in here.</strong> If this is your first RallyHub invitation, use <strong className="text-foreground">Create directory account</strong> below instead. Directory access is separate and does not give access to RallyHub Club, tournaments or player records.
         </div>
       )}
       <Button
