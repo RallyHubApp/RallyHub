@@ -35,7 +35,10 @@ Deno.serve(async (req) => {
           }, { status: 409 });
         }
       }
-      await base44.asServiceRole.entities.User.update(userId, { approval_status: status });
+      await base44.asServiceRole.entities.User.update(userId, {
+        approval_status: status,
+        ...(status === 'approved' ? { account_scope: 'club' } : {})
+      });
       return Response.json({ success: true, userId, status });
     }
 
