@@ -134,7 +134,7 @@ export default function DirectoryClaim() {
                 <p className="text-muted-foreground mt-2">
                   Club representatives can request permission to maintain this public directory listing. Directory access is separate from RallyHub club membership and the RallyHub club-management app.
                 </p>
-                {inviteToken && <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><strong>Secure invitation detected.</strong> This one-time link was sent by RallyHub for this club, usually by WhatsApp or email. If it came by WhatsApp, use the same mobile number. If it came by email, use the same email address. Once the invited detail matches your verified account, you can continue without waiting for a separate administrator approval.</div>
+                {inviteToken && <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><strong>Secure invitation detected.</strong> This one-time link was sent by RallyHub for this club, usually by WhatsApp or email. If it came by WhatsApp, use the same mobile number. If it came by email, use the same email address. Once the invited detail matches your verified account, you can continue without waiting for a separate administrator approval.</div>}
               </div>
             </div>
 
