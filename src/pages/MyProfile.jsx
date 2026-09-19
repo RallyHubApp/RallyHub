@@ -48,16 +48,6 @@ export default function MyProfile() {
     enabled: !!user
   });
 
-  const { data: completeMemberRecord } = useQuery({
-    queryKey: ['member-complete-self', user?.id, user?.active_tenant_id, user?.active_club_id],
-    queryFn: async () => {
-      const res = await base44.functions.invoke('membershipRecord', { action: 'self_record' });
-      if (res.data?.error) throw new Error(res.data.error);
-      return res.data?.record || null;
-    },
-    enabled: !!user
-  });
-
   const { data: clubLeaderboard = [] } = useQuery({
     queryKey: ['club-leaderboard', user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
@@ -95,6 +85,7 @@ export default function MyProfile() {
         primary_email: person?.primary_email || player?.email || user?.email || '',
         mobile: person?.mobile || player?.phone || '',
         date_of_birth: person?.date_of_birth || '',
+        age: person?.age ?? '',
         gender: person?.gender || player?.gender || '',
         address_line1: person?.address_line1 || person?.full_postal_address || '',
         address_line2: person?.address_line2 || '',
