@@ -168,7 +168,7 @@ export default function DirectoryClaim() {
               <div className="mt-8 rounded-2xl border border-green-400/30 bg-green-400/10 p-6">
                 <div className="flex items-center gap-2 text-green-300">
                   <CheckCircle2 className="w-5 h-5" />
-                  <h2 className="font-bold">Verified directory editor</h2>
+                  <h2 className="font-bold">Directory access verified</h2>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
                   Your account is verified for this directory listing only. This does not give you access to a RallyHub Club, player records or club-management tools.
@@ -230,7 +230,7 @@ export default function DirectoryClaim() {
                   </span>
                 </label>
                 <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
-                  {submitting ? 'Checking verification…' : 'Request directory access'}
+                  {submitting ? 'Checking verification…' : (inviteToken ? 'Verify & continue' : 'Request directory access')}
                 </Button>
               </form>
             )}
