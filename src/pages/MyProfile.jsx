@@ -543,40 +543,43 @@ export default function MyProfile() {
         {/* ── RESULTS TAB ── */}
         <TabsContent value="results" className="mt-4">
           <GlassCard>
-            <h3 className="text-sm font-semibold text-foreground mb-4">Match Results</h3>
-            {completed.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-8">No completed matches yet</p>
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">My RallyHub Match History</h3>
+                <p className="text-xs text-muted-foreground mt-1">Eligible KOTC, Interclub, Tournival and tournament results attached to your player identity.</p>
+              </div>
+              {clubStats && <Badge variant="outline" className="text-[10px]">Leaderboard #{leaderboardRank || '—'} · {leaderboardPoints} pts</Badge>}
+            </div>
+            {sportingHistory.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-8">No eligible RallyHub match history yet.</p>
             ) : (
               <div className="space-y-2">
-                {completed.map((m, i) => {
-                  const isTeam1 = m.team1_player_ids?.includes(playerId);
-                  const won = (isTeam1 && m.winner_team === 'team1') || (!isTeam1 && m.winner_team === 'team2');
-                  const opponent = isTeam1 ? m.team2_names : m.team1_names;
-                  const myScore = isTeam1 ? m.scores?.map(s => s.team1) : m.scores?.map(s => s.team2);
-                  const theirScore = isTeam1 ? m.scores?.map(s => s.team2) : m.scores?.map(s => s.team1);
-                  return (
-                    <motion.div key={m.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
-                      className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className={cn('w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold',
-                          won ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive')}>
-                          {won ? 'W' : 'L'}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">vs {opponent || 'Unknown'}</p>
-                          <p className="text-xs text-muted-foreground font-mono">
-                            {m.scores?.map((s, j) => `${myScore?.[j]}-${theirScore?.[j]}`).join(', ')}
-                          </p>
-                        </div>
+                {sportingHistory.map((m, i) => (
+                  <motion.div
+                    key={m.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: Math.min(i * 0.02, 0.3) }}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-secondary rounded-lg"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${m.result === 'win' ? 'bg-primary/20 text-primary' : m.result === 'draw' ? 'bg-amber-500/20 text-amber-600' : 'bg-destructive/20 text-destructive'}`}>
+                        {m.result === 'win' ? 'W' : m.result === 'draw' ? 'D' : 'L'}
                       </div>
-                      {m.created_date && (
-                        <p className="text-xs text-muted-foreground shrink-0">
-                          {new Date(m.created_date).toLocaleDateString()}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{m.competition_name || m.competition_type}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {m.competition_type} {m.round != null ? `· Round ${m.round}` : ''} {m.court != null ? `· Court ${m.court}` : ''}
                         </p>
-                      )}
-                    </motion.div>
-                  );
-                })}
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">vs {(m.opponent_names || []).join(' & ') || '—'}{m.partner_names?.length ? ` · with ${m.partner_names.join(' & ')}` : ''}</p>
+                      </div>
+                    </div>
+                    <div className="sm:text-right shrink-0">
+                      <p className="font-mono font-semibold">{m.score_for}-{m.score_against}</p>
+                      <p className="text-[10px] text-muted-foreground">{m.date ? new Date(m.date).toLocaleDateString() : ''}</p>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             )}
           </GlassCard>
