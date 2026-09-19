@@ -581,7 +581,11 @@ export default function AdminPanel() {
       .filter(a => a.user_id && !activeClubAccessUserIds.has(String(a.user_id)))
       .map(a => String(a.user_id))
   );
-  const platformApprovalUsers = allUsers.filter(u => u.role !== 'admin' && !directoryOnlyUserIds.has(String(u.id)));
+  const platformApprovalUsers = allUsers.filter(u =>
+    u.role !== 'admin' &&
+    u.account_scope !== 'directory' &&
+    !directoryOnlyUserIds.has(String(u.id))
+  );
   const pendingPlatformApprovalCount = platformApprovalUsers.filter(u => !u.approval_status || u.approval_status === 'pending').length;
   const directoryInvitations = (directoryVerification.invitations || []).filter(invite => invite.status === 'pending').slice(0, 50);
   const pendingDirectoryInvitations = directoryInvitations;
