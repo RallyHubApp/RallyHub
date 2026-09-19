@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 const clean=(v:any,max=500)=>String(v??'').trim().slice(0,max);
 const lower=(v:any)=>clean(v,240).toLowerCase();
+const nameKey=(v:any)=>lower(v).replace(/[’‘]/g,"'").replace(/[^a-z0-9]+/g,' ').trim();
 
 function ageFromDob(value:any,onDate=new Date()){
   const s=clean(value,20);
@@ -259,10 +260,74 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,record:await fullRecord(base44,resolved.tenantId,resolved.clubId,resolved.person,resolved.player)});
     }
 
+    if(action==='self_link'){
+      if(user.role!=='admin'&&user.approval_status!=='approved') return Response.json({error:'Approved member access required'},{status:403});
+      const playerId=clean(body.playerId,180);
+      if(!playerId) return Response.json({error:'playerId required'},{status:400});
+      const player=await first(base44,'Player',{id:playerId});
+      if(!player||player.status==='Inactive') return Response.json({error:'Player record not found'},{status:404});
+      if(player.user_id&&String(player.user_id)!==String(user.id)) return Response.json({error:'That player record is already linked to another account.'},{status:409});
+      const person=player.person_id?await first(base44,'Person',{id:player.person_id}):null;
+      const accountEmail=lower(user.email), recordEmail=lower(person?.primary_email||player.email);
+      if(!accountEmail||accountEmail!==recordEmail) return Response.json({error:'For security, members may only link a record with the same verified email address.'},{status:409});
+      const accountName=nameKey(user.full_name||user.display_name||''), recordName=nameKey(person?.full_name||player.full_name||'');
+      if(accountName&&recordName&&accountName!==recordName){
+        return Response.json({error:'The account email matches, but the names differ. A club administrator must confirm this identity before linking.',code:'NAME_MISMATCH_REQUIRES_ADMIN'},{status:409});
+      }
+      if(person?.linked_user_id&&String(person.linked_user_id)!==String(user.id)) return Response.json({error:'This member record is already linked to another account.'},{status:409});
+      await base44.asServiceRole.entities.Player.update(player.id,{user_id:user.id,linked_user_email:accountEmail});
+      if(person?.id) await base44.asServiceRole.entities.Person.update(person.id,{linked_user_id:user.id});
+      const tenantId=clean(player.tenant_id||person?.tenant_id,180), clubId=clean(player.club_id,180);
+      if(tenantId&&clubId){
+        const accessRows=await base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,user_id:user.id},'-updated_date',20);
+        const access=accessRows?.[0];
+        const accessData={tenant_id:tenantId,club_id:clubId,user_id:user.id,person_id:person?.id||undefined,player_id:player.id,permission_bundle:'member',relationship_type:'member',status:'active',approved_by_user_id:user.id,approved_at:new Date().toISOString()};
+        if(access) await base44.asServiceRole.entities.ClubUserAccess.update(access.id,accessData);
+        else await base44.asServiceRole.entities.ClubUserAccess.create(accessData);
+        await base44.asServiceRole.entities.User.update(user.id,{active_tenant_id:tenantId,active_club_id:clubId,active_club_role:'member',security_context_updated_at:new Date().toISOString()});
+      }
+      return Response.json({success:true,player_id:player.id,person_id:person?.id||null});
+    }
+
     const tenantId=clean(body.tenantId||user.active_tenant_id,180);
     const clubId=clean(body.clubId||user.active_club_id,180);
     if(!tenantId||!clubId) return Response.json({error:'Active club context required'},{status:400});
     await assertClubAdmin(base44,user,tenantId,clubId);
+
+    if(action==='admin_connect_account'){
+      const userId=clean(body.userId,180), personId=clean(body.personId,180);
+      if(!userId||!personId) return Response.json({error:'userId and personId required'},{status:400});
+      const targetUsers=await base44.asServiceRole.entities.User.filter({id:userId},'-updated_date',10);
+      const target=targetUsers?.[0];
+      if(!target) return Response.json({error:'User account not found'},{status:404});
+      const person=await first(base44,'Person',{id:personId,tenant_id:tenantId});
+      const membership=await first(base44,'ClubMembership',{tenant_id:tenantId,club_id:clubId,person_id:personId});
+      const player=await first(base44,'Player',{tenant_id:tenantId,club_id:clubId,person_id:personId});
+      if(!person||!membership||!player) return Response.json({error:'Complete member/person/player record not found in this club.'},{status:404});
+      const accountEmail=lower(target.email), recordEmail=lower(person.primary_email||player.email);
+      if(!accountEmail||accountEmail!==recordEmail) return Response.json({error:'Account email does not match the membership record email. Verify identity before linking.',code:'EMAIL_MISMATCH'},{status:409});
+      const accountName=nameKey(target.full_name||target.display_name||''), recordName=nameKey(person.full_name||player.full_name||'');
+      const nameMismatch=!!(accountName&&recordName&&accountName!==recordName);
+      if(nameMismatch&&body.confirmNameMismatch!==true){
+        return Response.json({error:'Email matches but account and membership names differ. Confirm the identity before linking.',code:'NAME_MISMATCH_REQUIRES_CONFIRMATION',account_name:target.full_name||target.display_name||null,record_name:person.full_name||player.full_name||null},{status:409});
+      }
+      const otherPerson=await first(base44,'Person',{linked_user_id:userId});
+      if(otherPerson&&String(otherPerson.id)!==String(personId)) return Response.json({error:'This user account is already linked to a different person record.'},{status:409});
+      const otherPlayer=await first(base44,'Player',{user_id:userId});
+      if(otherPlayer&&String(otherPlayer.id)!==String(player.id)) return Response.json({error:'This user account is already linked to a different player record.'},{status:409});
+      if(player.user_id&&String(player.user_id)!==String(userId)) return Response.json({error:'This player record is already linked to another user.'},{status:409});
+      await base44.asServiceRole.entities.Person.update(person.id,{linked_user_id:userId});
+      await base44.asServiceRole.entities.Player.update(player.id,{user_id:userId,linked_user_email:accountEmail});
+      const accessRows=await base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,user_id:userId},'-updated_date',20);
+      const existingAccess=accessRows?.[0];
+      const now=new Date().toISOString();
+      const accessData={tenant_id:tenantId,club_id:clubId,user_id:userId,person_id:person.id,player_id:player.id,permission_bundle:'member',relationship_type:'member',status:'active',approved_by_user_id:user.id,approved_at:now};
+      if(existingAccess) await base44.asServiceRole.entities.ClubUserAccess.update(existingAccess.id,accessData);
+      else await base44.asServiceRole.entities.ClubUserAccess.create(accessData);
+      await base44.asServiceRole.entities.User.update(userId,{approval_status:'approved',active_tenant_id:tenantId,active_club_id:clubId,active_club_role:'member',security_context_updated_at:now});
+      try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:tenantId,club_id:clubId,user_id:user.id,action:'member_account_connected',entity_type:'Person',entity_id:person.id,scope_type:'Club',scope_id:clubId,after_state:JSON.stringify({target_user_id:userId,player_id:player.id,email_match:true,name_mismatch:nameMismatch}),reason:nameMismatch?'Administrator confirmed changed-name identity using exact membership email':'Administrator connected matching member account'});}catch{}
+      return Response.json({success:true,user_id:userId,person_id:person.id,player_id:player.id,name_mismatch:nameMismatch});
+    }
 
     if(action==='admin_list'){
       const [members,people,players]=await Promise.all([
