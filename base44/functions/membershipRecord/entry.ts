@@ -271,12 +271,28 @@ Deno.serve(async(req)=>{
       const accountEmail=lower(user.email), recordEmail=lower(person?.primary_email||player.email);
       if(!accountEmail||accountEmail!==recordEmail) return Response.json({error:'For security, members may only link a record with the same verified email address.'},{status:409});
       const accountName=nameKey(user.full_name||user.display_name||''), recordName=nameKey(person?.full_name||player.full_name||'');
-      if(accountName&&recordName&&accountName!==recordName){
-        return Response.json({error:'The account email matches, but the names differ. A club administrator must confirm this identity before linking.',code:'NAME_MISMATCH_REQUIRES_ADMIN'},{status:409});
+      const nameMismatch=!!(accountName&&recordName&&accountName!==recordName);
+      const suppliedDob=clean(body.verifyDateOfBirth,20);
+      const suppliedMobile=clean(body.verifyMobile,80).replace(/\s+/g,'');
+      const recordMobile=clean(person?.mobile||player.phone,80).replace(/\s+/g,'');
+      const dobMatch=!!(suppliedDob&&person?.date_of_birth&&suppliedDob===String(person.date_of_birth));
+      const mobileMatch=!!(suppliedMobile&&recordMobile&&suppliedMobile===recordMobile);
+      if(nameMismatch&&!dobMatch&&!mobileMatch){
+        return Response.json({
+          error:'Your verified email matches an existing member record, but the names differ. Enter the date of birth or mobile number already held by the club to confirm the identity.',
+          code:'NAME_MISMATCH_REQUIRES_SECOND_FACTOR'
+        },{status:409});
       }
       if(person?.linked_user_id&&String(person.linked_user_id)!==String(user.id)) return Response.json({error:'This member record is already linked to another account.'},{status:409});
       await base44.asServiceRole.entities.Player.update(player.id,{user_id:user.id,linked_user_email:accountEmail});
       if(person?.id) await base44.asServiceRole.entities.Person.update(person.id,{linked_user_id:user.id});
+      if(nameMismatch&&person?.id){
+        const membership=await first(base44,'ClubMembership',{tenant_id:player.tenant_id,club_id:player.club_id,person_id:person.id});
+        if(membership){
+          const aliases=Array.from(new Set([...(membership.alternate_names||[]), clean(user.full_name||user.display_name,180)].filter(Boolean)));
+          await base44.asServiceRole.entities.ClubMembership.update(membership.id,{alternate_names:aliases});
+        }
+      }
       const tenantId=clean(player.tenant_id||person?.tenant_id,180), clubId=clean(player.club_id,180);
       if(tenantId&&clubId){
         const accessRows=await base44.asServiceRole.entities.ClubUserAccess.filter({tenant_id:tenantId,club_id:clubId,user_id:user.id},'-updated_date',20);
@@ -286,7 +302,7 @@ Deno.serve(async(req)=>{
         else await base44.asServiceRole.entities.ClubUserAccess.create(accessData);
         await base44.asServiceRole.entities.User.update(user.id,{active_tenant_id:tenantId,active_club_id:clubId,active_club_role:'member',security_context_updated_at:new Date().toISOString()});
       }
-      return Response.json({success:true,player_id:player.id,person_id:person?.id||null});
+      return Response.json({success:true,player_id:player.id,person_id:person?.id||null,verification:nameMismatch?(dobMatch?'dob':'mobile'):'email_and_name'});
     }
 
     const tenantId=clean(body.tenantId||user.active_tenant_id,180);
