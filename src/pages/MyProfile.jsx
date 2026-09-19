@@ -132,7 +132,6 @@ export default function MyProfile() {
           queryClient.invalidateQueries({ queryKey: ['member-profile-self'] }),
           queryClient.invalidateQueries({ queryKey: ['member-portal-self'] }),
           queryClient.invalidateQueries({ queryKey: ['membership-record-self'] }),
-          queryClient.invalidateQueries({ queryKey: ['membership-record-self'] }),
           queryClient.invalidateQueries({ queryKey: ['club-leaderboard'] }),
         ]);
         toast.success('Member profile updated');
