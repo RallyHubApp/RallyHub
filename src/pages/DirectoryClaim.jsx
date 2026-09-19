@@ -52,6 +52,7 @@ export default function DirectoryClaim() {
   useEffect(() => {
     if (!user) return;
     setClaimantName(user.full_name || user.display_name || '');
+    setClaimantPhone(user.directory_mobile || '');
   }, [user]);
 
   useEffect(() => {
@@ -141,13 +142,24 @@ export default function DirectoryClaim() {
               <div className="mt-8 rounded-xl border border-border bg-background/40 p-5 text-sm text-muted-foreground">Checking your sign-in…</div>
             ) : !isAuthenticated ? (
               <div className="mt-8 rounded-2xl border border-border bg-background/40 p-6">
-                <h2 className="text-xl font-bold">Sign in to request access</h2>
+                <h2 className="text-xl font-bold">{inviteToken ? 'First time on RallyHub?' : 'Sign in or create a directory account'}</h2>
                 <p className="text-sm text-muted-foreground mt-2">
-                  A login is required only so RallyHub can identify and verify the person asking to edit this listing. You do not need to join a RallyHub Club or create a player profile.
+                  {inviteToken
+                    ? 'If you do not already have a RallyHub account, create a directory account first. Use the same mobile number that received this invitation. You will also need an email address you can access so we can verify the account.'
+                    : 'A directory account is required only so RallyHub can identify and verify the person asking to edit this listing. It does not give access to RallyHub Club, tournaments or player records.'}
                 </p>
                 <div className="flex flex-wrap gap-3 mt-5">
-                  <Link to={loginHref}><Button>Sign in</Button></Link>
-                  <Link to={registerHref}><Button variant="outline">Create directory account</Button></Link>
+                  {inviteToken ? (
+                    <>
+                      <Link to={registerHref}><Button>Create directory account</Button></Link>
+                      <Link to={loginHref}><Button variant="outline">I already have an account</Button></Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link to={loginHref}><Button>Sign in</Button></Link>
+                      <Link to={registerHref}><Button variant="outline">Create directory account</Button></Link>
+                    </>
+                  )}
                 </div>
               </div>
             ) : loadingStatus ? (
