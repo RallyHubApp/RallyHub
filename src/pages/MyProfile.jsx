@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { User, Calendar, Trophy, RefreshCw, Link2, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
@@ -111,18 +110,6 @@ export default function MyProfile() {
   const playerId = activePlayer?.id;
   const clubStats = clubLeaderboard.find(row => String(row.player_id) === String(playerId || '')) || null;
 
-  const ageFromDob = (value) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return null;
-    const [y, m, d] = String(value).split('-').map(Number);
-    const today = new Date();
-    let age = today.getFullYear() - y;
-    const beforeBirthday = (today.getMonth() + 1 < m) || ((today.getMonth() + 1 === m) && today.getDate() < d);
-    if (beforeBirthday) age -= 1;
-    return age >= 0 && age < 130 ? age : null;
-  };
-  const profileAge = ageFromDob(form.date_of_birth);
-  const profileAgeGroup = profileAge == null ? (activePlayer?.age_group || '') : profileAge < 18 ? 'Junior (U18)' : profileAge < 35 ? 'Open (18-34)' : profileAge < 50 ? 'Adult (35-49)' : profileAge < 65 ? 'Senior (50-64)' : 'Super Senior (65+)';
-
   // My matches — where this player appears as a participant
   const myMatches = allMatches.filter(m => {
     if (!playerId && !user) return false;
@@ -134,13 +121,6 @@ export default function MyProfile() {
   });
 
   const upcoming = myMatches.filter(m => m.status === 'Scheduled' || m.status === 'In Progress');
-  const completed = myMatches.filter(m => m.status === 'Completed');
-
-  const wins = completed.filter(m => {
-    const isTeam1 = m.team1_player_ids?.includes(playerId);
-    return (isTeam1 && m.winner_team === 'team1') || (!isTeam1 && m.winner_team === 'team2');
-  }).length;
-
   const saveProfile = async () => {
     setSaving(true);
     try {
