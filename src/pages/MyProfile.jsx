@@ -48,6 +48,16 @@ export default function MyProfile() {
     enabled: !!user
   });
 
+  const { data: completeMemberRecord } = useQuery({
+    queryKey: ['member-complete-self', user?.id, user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('membershipRecord', { action: 'self_record' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.record || null;
+    },
+    enabled: !!user
+  });
+
   const { data: clubLeaderboard = [] } = useQuery({
     queryKey: ['club-leaderboard', user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
