@@ -73,10 +73,10 @@ export default function DirectoryQuickStart() {
           </div>
           <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-5 mb-5"><h2 className="font-black text-green-800">Before you start</h2><p className="text-sm text-slate-600 mt-1">Have your club logo, contact details, venue names/Eircodes, regular session days and times, website/social links and the mobile number used for your invitation.</p></div>
           <div className="space-y-3">
-            <Step n="1" title="Find your club">Open the RallyHub Directory and find your club by name, county or town.</Step>
-            <Step n="2" title="Open your secure claim link">If Brian has sent you a WhatsApp or email invitation, open that private link. It is single-use and valid for 72 hours.</Step>
-            <Step n="3" title="Create your Directory account">New to RallyHub? Enter your name, the <strong>same mobile number</strong> your club already has, an email address you can access and a password. RallyHub emails a six-digit code to verify the account. Already have an account? Sign in instead.</Step>
-            <Step n="4" title="Request Directory access">Return to the secure claim page, confirm your role and mobile number, and submit. If the trusted invitation matches your verified account/mobile, RallyHub can grant Directory access without giving you any RallyHub Club access.</Step>
+            <Step n="1" title="Open your secure invitation">Tap the private claim link Brian sends by WhatsApp or email. It opens the correct club listing automatically. The link is single-use and valid for 72 hours.</Step>
+            <Step n="2" title="Create or sign in to your Directory account">New to RallyHub? Enter your name, the <strong>same mobile number</strong> your club already has, an email address you can access and a password. Already have an account? Sign in instead.</Step>
+            <Step n="3" title="Verify your email">RallyHub emails a six-digit code. Enter the code to verify the account. RallyHub then returns you automatically to your club's secure claim page.</Step>
+            <Step n="4" title="Verify & continue">Confirm your role and mobile number, then continue. If the trusted invitation matches your verified account/mobile, RallyHub grants Directory access without giving you any RallyHub Club access.</Step>
           </div>
         </PageShell>
 
