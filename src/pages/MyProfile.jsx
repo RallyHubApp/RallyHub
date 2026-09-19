@@ -317,21 +317,36 @@ export default function MyProfile() {
         </div>
       </motion.div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3">
-        <GlassCard delay={0.1} className="text-center py-3">
-          <p className="text-xl font-bold text-primary">{wins}</p>
+      {/* Sporting summary — same authoritative totals as the club leaderboard */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <GlassCard delay={0.05} className="text-center py-3">
+          <p className="text-xl font-bold text-foreground">{matchesTotal}</p>
+          <p className="text-xs text-muted-foreground">Matches</p>
+        </GlassCard>
+        <GlassCard delay={0.08} className="text-center py-3">
+          <p className="text-xl font-bold text-primary">{winsTotal}</p>
           <p className="text-xs text-muted-foreground">Wins</p>
         </GlassCard>
-        <GlassCard delay={0.15} className="text-center py-3">
-          <p className="text-xl font-bold text-destructive">{completed.length - wins}</p>
+        <GlassCard delay={0.11} className="text-center py-3">
+          <p className="text-xl font-bold text-destructive">{lossesTotal}</p>
           <p className="text-xs text-muted-foreground">Losses</p>
         </GlassCard>
-        <GlassCard delay={0.2} className="text-center py-3">
+        <GlassCard delay={0.14} className="text-center py-3">
+          <p className="text-xl font-bold text-foreground">{drawsTotal}</p>
+          <p className="text-xs text-muted-foreground">Draws</p>
+        </GlassCard>
+        <GlassCard delay={0.17} className="text-center py-3">
           <p className="text-xl font-bold text-foreground">{winRate}%</p>
           <p className="text-xs text-muted-foreground">Win Rate</p>
         </GlassCard>
+        <GlassCard delay={0.2} className="text-center py-3">
+          <p className="text-xl font-bold text-foreground">{leaderboardRank ? `#${leaderboardRank}` : '—'}</p>
+          <p className="text-xs text-muted-foreground">Leaderboard</p>
+        </GlassCard>
       </div>
+      {clubStats && (
+        <p className="text-xs text-muted-foreground -mt-3">Across {eventsPlayed} eligible RallyHub event{eventsPlayed === 1 ? '' : 's'} · {leaderboardPoints} leaderboard point{leaderboardPoints === 1 ? '' : 's'}</p>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="profile">
