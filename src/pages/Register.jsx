@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PasswordInput from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
+import { UserPlus, Mail, Lock, Loader2, User, Phone } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
@@ -20,6 +20,8 @@ export default function Register() {
   if (returnTo !== '/') authParams.set('returnTo', returnTo);
   if (directoryMode) authParams.set('mode', 'directory');
   const returnToQuery = authParams.toString() ? `?${authParams.toString()}` : '';
+  const [fullName, setFullName] = useState("");
+  const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -31,6 +33,14 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (directoryMode && !fullName.trim()) {
+      setError("Enter your name");
+      return;
+    }
+    if (directoryMode && !mobile.trim()) {
+      setError("Enter the mobile number your club already has for you");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -53,6 +63,14 @@ export default function Register() {
       const result = await base44.auth.verifyOtp({ email, otpCode });
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
+      }
+      if (directoryMode) {
+        const saved = await base44.functions.invoke('directoryClaim', {
+          action: 'save_directory_identity',
+          fullName,
+          mobile,
+        });
+        if (saved.data?.error) throw new Error(saved.data.error);
       }
       window.location.href = returnTo;
     } catch (err) {
@@ -149,7 +167,7 @@ export default function Register() {
     >
       {directoryMode && (
         <div className="mb-5 rounded-xl border border-primary/25 bg-primary/10 p-4 text-sm text-muted-foreground">
-          <strong className="text-foreground">This creates a directory identity, not a player profile.</strong> You can use it to submit a missing club, claim an existing listing and edit listings you are verified to manage. It does not make you a RallyHub player, member, host or club administrator.
+          <strong className="text-foreground">First time on RallyHub? Create this account first.</strong> If your invitation came by WhatsApp, use the same mobile number your club already has for you. Your email is needed to create and verify the account; your mobile number is normally what links you to the Directory invitation. This account gives Directory access only, not RallyHub Club or tournament access.
         </div>
       )}
       <Button
@@ -177,15 +195,52 @@ export default function Register() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {directoryMode && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Your name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                <Input
+                  id="fullName"
+                  autoComplete="name"
+                  autoFocus
+                  placeholder="Your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="pl-10 h-12"
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mobile">Mobile number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                <Input
+                  id="mobile"
+                  type="tel"
+                  autoComplete="tel"
+                  placeholder="Use the number your club already has"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                  className="pl-10 h-12"
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">For WhatsApp invitations, this is the key detail RallyHub uses to match you to the invitation.</p>
+            </div>
+          </>
+        )}
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{directoryMode ? 'Email address for this account' : 'Email'}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="email"
               type="email"
               autoComplete="email"
-              autoFocus
+              autoFocus={!directoryMode}
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
