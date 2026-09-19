@@ -13,9 +13,6 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    if (user.role !== 'admin' && user.approval_status !== 'approved') {
-      return Response.json({ error: 'Account approval required' }, { status: 403 });
-    }
 
     const body = await req.json().catch(() => ({}));
     const { action = 'resolve_default', tenantId, clubId } = body;
@@ -24,6 +21,17 @@ Deno.serve(async (req) => {
       .filter(isCurrentlyValid);
     const tenantAccesses = (await base44.asServiceRole.entities.TenantUserAccess.filter({ user_id: user.id }))
       .filter(isCurrentlyValid);
+
+    if (user.role !== 'admin') {
+      if (user.approval_status !== 'approved') {
+        return Response.json({ error: 'RallyHub Club approval required' }, { status: 403 });
+      }
+      if (clubAccesses.length === 0) {
+        return Response.json({
+          error: 'No RallyHub Club access. Directory ownership or editing does not grant access to RallyHub Club features.'
+        }, { status: 403 });
+      }
+    }
 
     if (action === 'clear') {
       await base44.asServiceRole.entities.User.update(user.id, {
