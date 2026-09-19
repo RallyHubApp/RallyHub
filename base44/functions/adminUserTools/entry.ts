@@ -42,7 +42,10 @@ Deno.serve(async (req) => {
           }, { status: 409 });
         }
       }
-      await base44.asServiceRole.entities.User.update(userId, { approval_status: status });
+      await base44.asServiceRole.entities.User.update(userId, {
+        approval_status: status,
+        ...(status === 'approved' ? { account_scope: 'club' } : {})
+      });
       return Response.json({ success: true, userId, status });
     }
     if (body.action === 'set_kotc_role') {
@@ -84,7 +87,7 @@ Deno.serve(async (req) => {
           error: 'This is a Directory-only account. Give explicit RallyHub Club/Tenant access before any platform-admin promotion.'
         }, { status: 409 });
       }
-      await base44.asServiceRole.entities.User.update(targetUser.id, { role: 'admin' });
+      await base44.asServiceRole.entities.User.update(targetUser.id, { role: 'admin', account_scope: 'platform', approval_status: 'approved' });
       return Response.json({ success: true, userId: targetUser.id, userName: targetUser.full_name });
     }
 
