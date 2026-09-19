@@ -554,8 +554,8 @@ export default function AdminPanel() {
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
   const activeDirectoryAccesses = directoryVerification.accesses.filter(a => a.status === 'active');
-  const directoryInvitations = (directoryVerification.invitations || []).slice(0, 50);
-  const pendingDirectoryInvitations = directoryInvitations.filter(invite => invite.status === 'pending');
+  const directoryInvitations = (directoryVerification.invitations || []).filter(invite => invite.status === 'pending').slice(0, 50);
+  const pendingDirectoryInvitations = directoryInvitations;
   const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active');
   const filteredMembershipRows = membershipRows.filter(row => {
     if (!membershipSearch.trim()) return true;
@@ -1174,9 +1174,9 @@ export default function AdminPanel() {
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Directory invitations {pendingDirectoryInvitations.length ? `· ${pendingDirectoryInvitations.length} pending` : ''}</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Owner invitations awaiting acceptance {pendingDirectoryInvitations.length ? `· ${pendingDirectoryInvitations.length}` : ''}</p>
               {directoryInvitations.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-4 px-1">No directory invitations have been created yet.</p>
+                <p className="text-xs text-muted-foreground py-4 px-1">No active directory invitations are awaiting acceptance.</p>
               ) : directoryInvitations.map(invite => {
                 const inviter = allUsers.find(u => u.id === invite.created_by_user_id);
                 const recipient = invite.contact_name || invite.contact_email || invite.contact_phone || 'Unnamed recipient';
@@ -1186,7 +1186,7 @@ export default function AdminPanel() {
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-medium text-foreground">{invite.listing_name_snapshot || invite.listing_slug}</p>
-                        <Badge variant="outline" className={statusClass}>{invite.status}</Badge>
+                        <Badge variant="outline" className={statusClass}>Awaiting acceptance</Badge>
                         <Badge variant="outline">{invite.access_role === 'owner' ? 'Primary Owner' : 'Directory Editor'}</Badge>
                         <Badge variant="outline">{invite.channel === 'whatsapp' ? 'WhatsApp' : 'Email'}</Badge>
                       </div>
