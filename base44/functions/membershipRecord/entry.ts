@@ -34,6 +34,17 @@ async function assertClubAdmin(base44:any,user:any,tenantId:string,clubId:string
   if((rows||[]).some(activeWindow)) return true;
   throw Object.assign(new Error('Club administrator access required'),{status:403});
 }
+async function activeClubAccesses(base44:any,userId:string){
+  const rows=await base44.asServiceRole.entities.ClubUserAccess.filter({user_id:userId,status:'active'},'-updated_date',50);
+  return (rows||[]).filter(activeWindow);
+}
+async function isDirectoryOnlyAccount(base44:any,userId:string){
+  const [clubAccess,directoryAccess]=await Promise.all([
+    activeClubAccesses(base44,userId),
+    base44.asServiceRole.entities.DirectoryListingAccess.filter({user_id:userId,status:'active'},'-updated_date',50)
+  ]);
+  return !clubAccess.length && !!directoryAccess?.length;
+}
 async function first(base44:any,entity:string,filter:any){
   const rows=await base44.asServiceRole.entities[entity].filter(filter,'-updated_date',20);
   return rows?.[0]||null;
@@ -254,14 +265,21 @@ Deno.serve(async(req)=>{
     const action=clean(body.action||'self_record',80);
 
     if(action==='self_record'){
-      if(user.role!=='admin'&&user.approval_status!=='approved') return Response.json({error:'Approved member access required'},{status:403});
+      if(user.role!=='admin'){
+        if(user.approval_status!=='approved') return Response.json({error:'Approved RallyHub Club member access required'},{status:403});
+        const accesses=await activeClubAccesses(base44,user.id);
+        if(!accesses.length) return Response.json({error:'No RallyHub Club access. Directory access does not grant member access.'},{status:403});
+      }
       const resolved=await resolveSelf(base44,user);
       if(!resolved.person) return Response.json({success:true,record:null});
       return Response.json({success:true,record:await fullRecord(base44,resolved.tenantId,resolved.clubId,resolved.person,resolved.player)});
     }
 
     if(action==='self_link'){
-      if(user.role!=='admin'&&user.approval_status!=='approved') return Response.json({error:'Approved member access required'},{status:403});
+      if(user.role!=='admin'){
+        if(user.approval_status!=='approved') return Response.json({error:'Approved RallyHub Club member access required'},{status:403});
+        if(await isDirectoryOnlyAccount(base44,user.id)) return Response.json({error:'This is a Directory-only account. Club membership linking requires a separate RallyHub Club onboarding process.'},{status:403});
+      }
       const playerId=clean(body.playerId,180);
       if(!playerId) return Response.json({error:'playerId required'},{status:400});
       const player=await first(base44,'Player',{id:playerId});
