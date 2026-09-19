@@ -33,6 +33,25 @@ async function firstBy(base44:any, entity:string, filters:Array<Record<string, a
   return null;
 }
 
+function activeAccess(row:any) {
+  if (!row || row.status !== 'active') return false;
+  const now = Date.now();
+  if (row.starts_at && Date.parse(row.starts_at) > now) return false;
+  if (row.ends_at && Date.parse(row.ends_at) < now) return false;
+  return true;
+}
+
+async function requireRallyHubClubAccess(base44:any, user:any) {
+  if (user.role === 'admin') return;
+  if (user.approval_status !== 'approved') {
+    throw Object.assign(new Error('Approved RallyHub Club access required'), { status: 403 });
+  }
+  const rows = await base44.asServiceRole.entities.ClubUserAccess.filter({ user_id: user.id, status: 'active' });
+  if (!(rows || []).some(activeAccess)) {
+    throw Object.assign(new Error('No RallyHub Club access. Directory access does not grant member or club-management access.'), { status: 403 });
+  }
+}
+
 function safePlayer(player:any) {
   if (!player) return null;
   return {
@@ -263,16 +282,12 @@ Deno.serve(async (req) => {
     const action = String(body.action || 'self');
 
     if (action === 'self') {
-      if (user.role !== 'admin' && user.approval_status !== 'approved') {
-        return Response.json({ error: 'Approved RallyHub member access required' }, { status: 403 });
-      }
+      await requireRallyHubClubAccess(base44, user);
       return Response.json({ success: true, snapshot: await buildSnapshot(base44, user) });
     }
 
     if (action === 'self_update') {
-      if (user.role !== 'admin' && user.approval_status !== 'approved') {
-        return Response.json({ error: 'Approved RallyHub member access required' }, { status: 403 });
-      }
+      await requireRallyHubClubAccess(base44, user);
 
       const snapshot = await buildSnapshot(base44, user);
       const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
