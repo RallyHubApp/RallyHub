@@ -170,23 +170,27 @@ export default function Register() {
           <strong className="text-foreground">First time on RallyHub? Create this account first.</strong> If your invitation came by WhatsApp, use the same mobile number your club already has for you. Your email is needed to create and verify the account; your mobile number is normally what links you to the Directory invitation. This account gives Directory access only, not RallyHub Club or tournament access.
         </div>
       )}
-      <Button
-        variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
-        onClick={handleGoogle}
-      >
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continue with Google
-      </Button>
+      {!directoryMode && (
+        <>
+          <Button
+            variant="outline"
+            className="w-full h-12 text-sm font-medium mb-6"
+            onClick={handleGoogle}
+          >
+            <GoogleIcon className="w-5 h-5 mr-2" />
+            Continue with Google
+          </Button>
 
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">or</span>
-        </div>
-      </div>
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-3 text-muted-foreground">or</span>
+            </div>
+          </div>
+        </>
+      )}
 
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
