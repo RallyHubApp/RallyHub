@@ -622,7 +622,7 @@ export default function AdminPanel() {
       <Tabs value={activeAdminTab} onValueChange={value => setSearchParams(value === 'approvals' ? {} : { tab: value })}>
         <TabsList className="bg-secondary flex-wrap h-auto gap-1">
           <TabsTrigger value="approvals" className="text-xs gap-1.5">
-            <Clock className="w-3.5 h-3.5" /> Approvals
+            <Clock className="w-3.5 h-3.5" /> Club Access Approvals
             {pendingPlatformApprovalCount > 0 && (
               <span className="ml-1 bg-yellow-500 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">
                 {pendingPlatformApprovalCount}
@@ -1275,63 +1275,71 @@ export default function AdminPanel() {
               />
             </div>
             <div className="space-y-2">
-              {filteredUsers.map((u, i) => (
-                <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
-                  className="glass rounded-lg p-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                      {(u.full_name || u.email || 'U')[0].toUpperCase()}
+              {filteredUsers.map((u, i) => {
+                const isDirectoryOnly = directoryOnlyUserIds.has(String(u.id));
+                return (
+                  <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+                    className="glass rounded-lg p-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                        {(u.full_name || u.email || 'U')[0].toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{u.display_name || u.full_name || '(no name)'}</p>
+                          {isDirectoryOnly && <Badge variant="outline" className="text-[9px] border-primary/30 text-primary shrink-0">Directory only</Badge>}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                        {isDirectoryOnly && <p className="text-[10px] text-muted-foreground mt-0.5">No RallyHub Club, tournament or tenant access</p>}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{u.display_name || u.full_name || '(no name)'}</p>
-                      <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button size="icon" variant="ghost" className="w-7 h-7 text-muted-foreground hover:text-foreground shrink-0"
-                      onClick={() => { setEditingUser(u); setEditUserName(u.display_name || u.full_name || ''); }}>
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-                    <Select value={u.kotc_role || (u.role === 'admin' ? 'super_admin' : 'player')} onValueChange={value => setKotcRole(u.id, value)} disabled={updatingRole === u.id || u.id === user?.id}>
-                      <SelectTrigger className="h-8 w-32 bg-secondary border-border text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="super_admin">Super Admin</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="host">Host</SelectItem>
-                        <SelectItem value="player">Player</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                      onClick={() => sendPasswordReset(u)}>
-                      <Send className="w-3 h-3" /> {sendingReset && resetEmailUser?.email === u.email ? 'Sending…' : 'Reset Email'}
-                    </Button>
-                    {u.id !== user?.id && (
-                      u.role === 'admin' ? (
-                        <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                          disabled={updatingRole === u.id}
-                          onClick={() => setUserRole(u.id, 'user')}>
-                          <ShieldOff className="w-3 h-3 mr-1" />
-                          {updatingRole === u.id ? '…' : 'Remove Admin'}
-                        </Button>
-                      ) : (
-                        <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-                          disabled={updatingRole === u.id}
-                          onClick={() => setUserRole(u.id, 'admin')}>
-                          <ShieldCheck className="w-3 h-3 mr-1" />
-                          {updatingRole === u.id ? '…' : 'Make Admin'}
-                        </Button>
-                      )
-                    )}
-                    {u.id === user?.id && <span className="text-[10px] text-muted-foreground">(you)</span>}
-                    {u.id !== user?.id && (
-                      <Button size="icon" variant="ghost" className="w-7 h-7 text-muted-foreground hover:text-destructive shrink-0"
-                        onClick={() => setConfirmDeleteUser(u)}>
-                        <Trash2 className="w-3.5 h-3.5" />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button size="icon" variant="ghost" className="w-7 h-7 text-muted-foreground hover:text-foreground shrink-0"
+                        onClick={() => { setEditingUser(u); setEditUserName(u.display_name || u.full_name || ''); }}>
+                        <Pencil className="w-3.5 h-3.5" />
                       </Button>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+                      <Select value={u.kotc_role || (u.role === 'admin' ? 'super_admin' : 'player')} onValueChange={value => setKotcRole(u.id, value)} disabled={isDirectoryOnly || updatingRole === u.id || u.id === user?.id}>
+                        <SelectTrigger className="h-8 w-32 bg-secondary border-border text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="super_admin">Super Admin</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="host">Host</SelectItem>
+                          <SelectItem value="player">Player</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                        onClick={() => sendPasswordReset(u)}>
+                        <Send className="w-3 h-3" /> {sendingReset && resetEmailUser?.email === u.email ? 'Sending…' : 'Reset Email'}
+                      </Button>
+                      {u.id !== user?.id && (
+                        u.role === 'admin' ? (
+                          <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                            disabled={updatingRole === u.id}
+                            onClick={() => setUserRole(u.id, 'user')}>
+                            <ShieldOff className="w-3 h-3 mr-1" />
+                            {updatingRole === u.id ? '…' : 'Remove Admin'}
+                          </Button>
+                        ) : (
+                          <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                            disabled={isDirectoryOnly || updatingRole === u.id}
+                            title={isDirectoryOnly ? 'Directory-only accounts cannot be promoted without separate RallyHub Club/Tenant access' : undefined}
+                            onClick={() => setUserRole(u.id, 'admin')}>
+                            <ShieldCheck className="w-3 h-3 mr-1" />
+                            {updatingRole === u.id ? '…' : 'Make Admin'}
+                          </Button>
+                        )
+                      )}
+                      {u.id === user?.id && <span className="text-[10px] text-muted-foreground">(you)</span>}
+                      {u.id !== user?.id && (
+                        <Button size="icon" variant="ghost" className="w-7 h-7 text-muted-foreground hover:text-destructive shrink-0"
+                          onClick={() => setConfirmDeleteUser(u)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
               {filteredUsers.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-6">No users found</p>
               )}
