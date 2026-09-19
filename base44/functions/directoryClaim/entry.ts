@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { directoryVerificationIndex } from './contactIndex.ts';
 import { geocodeDirectoryVenue } from './geocode.ts';
-import { sendWithConfiguredEmailTransport } from '../_shared/emailRouter.ts';
+import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
 function normaliseEmail(value = '') {
   return String(value || '').trim().toLowerCase();
