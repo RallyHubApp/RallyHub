@@ -290,6 +290,18 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'submit';
 
+    if (action === 'save_directory_identity') {
+      const fullName = String(body.fullName || '').trim().slice(0, 160);
+      const mobile = String(body.mobile || '').trim().slice(0, 80);
+      if (!fullName) return Response.json({ error: 'Your name is required' }, { status: 400 });
+      if (!mobile) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
+      await base44.asServiceRole.entities.User.update(user.id, {
+        full_name: fullName,
+        directory_mobile: mobile,
+      });
+      return Response.json({ success: true, fullName, mobile });
+    }
+
     if (action === 'submit') {
       const listingSlug = String(body.listingSlug || '').trim();
       const listing = await resolveListing(base44, listingSlug);
@@ -331,6 +343,13 @@ Deno.serve(async (req) => {
       if (!claimantName) return Response.json({ error: 'Your name is required' }, { status: 400 });
       if (!claimantRole) return Response.json({ error: 'Your role or connection to the club is required' }, { status: 400 });
       if (!claimantPhone) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
+
+      // Keep the Directory identity on the account for future claims. This does not
+      // create any RallyHub Club, tenant, player or tournament access.
+      await base44.asServiceRole.entities.User.update(user.id, {
+        full_name: claimantName,
+        directory_mobile: claimantPhone,
+      });
 
       const userEmail = normaliseEmail(user.email);
       let trustedInvitation:any = null;
