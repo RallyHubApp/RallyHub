@@ -16,7 +16,11 @@ Deno.serve(async (req) => {
     // Mode: notifyAllPending — called by admin to blast notifications for all pending users
     if (payload.notifyAllPending) {
       const allUsers = await base44.asServiceRole.entities.User.list();
-      const pendingUsers = allUsers.filter(u => u.role !== 'admin' && (!u.approval_status || u.approval_status === 'pending'));
+      const pendingUsers = allUsers.filter(u =>
+        u.role !== 'admin' &&
+        u.account_scope !== 'directory' &&
+        (!u.approval_status || u.approval_status === 'pending')
+      );
       const admins = allUsers.filter(u => u.role === 'admin' && u.email);
 
       if (pendingUsers.length === 0) {
@@ -60,6 +64,9 @@ RallyHub`.trim()
       const targets = await base44.asServiceRole.entities.User.filter({ id: userId });
       const target = targets?.[0];
       if (!target?.email) return Response.json({ error: 'Target user/email not found' }, { status: 404 });
+      if (target.account_scope === 'directory') {
+        return Response.json({ error: 'Directory-only accounts are not part of RallyHub Club approval notifications.' }, { status: 409 });
+      }
       const userEmail = target.email;
       const userName = target.full_name || target.display_name || target.email;
 
