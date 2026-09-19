@@ -48,6 +48,14 @@
     "expected_connected_account": {
       "type": "string"
     },
+    "gateway_url": {
+      "type": "string",
+      "description": "Non-secret HTTPS endpoint for tenant-specific mail gateways such as Google Apps Script."
+    },
+    "secret_env_var": {
+      "type": "string",
+      "description": "Name of the backend environment secret containing the gateway shared secret; never store the secret value in this entity."
+    },
     "notes": {
       "type": "string"
     }
