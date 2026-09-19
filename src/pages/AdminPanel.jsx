@@ -1281,6 +1281,21 @@ export default function AdminPanel() {
                           : <ShieldCheck className="w-3.5 h-3.5" />}
                       </Button>
                     )}
+                    {p.person_id && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-7 h-7 text-muted-foreground hover:text-primary"
+                        title="Open complete membership record"
+                        onClick={() => {
+                          setSelectedMembershipPersonId(p.person_id);
+                          setMembershipSearch(p.full_name || '');
+                          setSearchParams({ tab: 'membership' });
+                        }}
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground hover:text-foreground" onClick={() => openEdit(p)}>
                       <Edit2 className="w-3.5 h-3.5" />
                     </Button>
