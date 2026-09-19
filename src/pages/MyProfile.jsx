@@ -216,6 +216,8 @@ export default function MyProfile() {
         { label: 'Contact email', field: 'primary_email', type: 'email' },
         { label: 'Mobile', field: 'mobile', type: 'tel' },
         { label: 'Date of birth', field: 'date_of_birth', type: 'date' },
+        { label: 'Age', field: 'age', readOnly: true },
+        { label: 'Age group', field: 'age_group', readOnly: true },
         { label: 'Gender', field: 'gender', options: ['Male','Female','Non-binary','Prefer not to say'] },
       ]
     },
@@ -373,10 +375,10 @@ export default function MyProfile() {
                     <p className="text-xs text-muted-foreground mt-1 normal-case tracking-normal">{section.description}</p>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    {section.fields.map(({ label, field, type, options, mono }) => (
+                    {section.fields.map(({ label, field, type, options, mono, readOnly }) => (
                       <div key={field}>
                         <Label className="text-xs text-muted-foreground">{label}</Label>
-                        {editing ? (
+                        {editing && !readOnly ? (
                           options ? (
                             <Select value={form[field] || ''} onValueChange={value => setForm(prev => ({ ...prev, [field]: value }))}>
                               <SelectTrigger className="mt-1 bg-secondary border-border text-sm">
