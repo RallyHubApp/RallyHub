@@ -148,6 +148,26 @@ async function uniqueListingSlug(base44, clubName) {
   return `${base}-${n}`;
 }
 
+async function hardenDirectoryOnlyAccount(base44:any, userId:string) {
+  const users = await base44.asServiceRole.entities.User.filter({ id:userId });
+  const target = users?.[0];
+  if (!target || target.role === 'admin') return;
+  const [clubAccess, tenantAccess] = await Promise.all([
+    base44.asServiceRole.entities.ClubUserAccess.filter({ user_id:userId, status:'active' }),
+    base44.asServiceRole.entities.TenantUserAccess.filter({ user_id:userId, status:'active' }),
+  ]);
+  if ((clubAccess || []).length || (tenantAccess || []).length) return;
+  await base44.asServiceRole.entities.User.update(userId, {
+    account_scope: 'directory',
+    approval_status: 'pending',
+    active_tenant_id: null,
+    active_club_id: null,
+    active_tenant_role: null,
+    active_club_role: null,
+    security_context_updated_at: new Date().toISOString(),
+  });
+}
+
 async function grantAccess(base44, { listing, userId, claimId, grantedByUserId = null, notes = '', role = 'editor' }) {
   const existing = await base44.asServiceRole.entities.DirectoryListingAccess.filter({
     listing_slug: listing.slug,
@@ -157,9 +177,11 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
   if (active) {
     if (role === 'owner' && active.role !== 'owner') {
       await base44.asServiceRole.entities.DirectoryListingAccess.update(active.id, { role: 'owner' });
+      await hardenDirectoryOnlyAccount(base44, userId);
       const refreshed = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ id: active.id });
       return refreshed[0] || { ...active, role: 'owner' };
     }
+    await hardenDirectoryOnlyAccount(base44, userId);
     return active;
   }
 
@@ -175,11 +197,12 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
       revoked_at: null,
       notes,
     });
+    await hardenDirectoryOnlyAccount(base44, userId);
     const refreshed = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ id: revoked.id });
     return refreshed[0] || revoked;
   }
 
-  return await base44.asServiceRole.entities.DirectoryListingAccess.create({
+  const created = await base44.asServiceRole.entities.DirectoryListingAccess.create({
     listing_slug: listing.slug,
     listing_name_snapshot: listing.name,
     user_id: userId,
@@ -190,6 +213,8 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
     granted_at: new Date().toISOString(),
     notes,
   });
+  await hardenDirectoryOnlyAccount(base44, userId);
+  return created;
 }
 
 async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl, accessRole = 'owner' }) {
@@ -295,9 +320,11 @@ Deno.serve(async (req) => {
       const mobile = String(body.mobile || '').trim().slice(0, 80);
       if (!fullName) return Response.json({ error: 'Your name is required' }, { status: 400 });
       if (!mobile) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
+      const existingClubAccess = await base44.asServiceRole.entities.ClubUserAccess.filter({ user_id:user.id, status:'active' });
       await base44.asServiceRole.entities.User.update(user.id, {
         full_name: fullName,
         directory_mobile: mobile,
+        ...(user.role === 'admin' || existingClubAccess?.length ? {} : { account_scope: 'directory', approval_status: 'pending' }),
       });
       return Response.json({ success: true, fullName, mobile });
     }
@@ -346,9 +373,11 @@ Deno.serve(async (req) => {
 
       // Keep the Directory identity on the account for future claims. This does not
       // create any RallyHub Club, tenant, player or tournament access.
+      const existingClubAccessForClaimant = await base44.asServiceRole.entities.ClubUserAccess.filter({ user_id:user.id, status:'active' });
       await base44.asServiceRole.entities.User.update(user.id, {
         full_name: claimantName,
         directory_mobile: claimantPhone,
+        ...(user.role === 'admin' || existingClubAccessForClaimant?.length ? {} : { account_scope: 'directory', approval_status: 'pending' }),
       });
 
       const userEmail = normaliseEmail(user.email);
@@ -950,6 +979,8 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.DirectoryListingRecord.list('-published_at', 500),
         base44.asServiceRole.entities.DirectoryClaimInvitation.list('-created_date', 300),
       ]);
+      const directoryUserIds = [...new Set((accesses || []).filter((a:any) => a.status === 'active' && a.user_id).map((a:any) => String(a.user_id)))];
+      await Promise.all(directoryUserIds.map((id:string) => hardenDirectoryOnlyAccount(base44, id)));
       return Response.json({ success: true, claims, accesses, listingRequests, listingRecords, invitations });
     }
 
