@@ -520,6 +520,11 @@ export default function AdminPanel() {
   const directoryInvitations = (directoryVerification.invitations || []).slice(0, 50);
   const pendingDirectoryInvitations = directoryInvitations.filter(invite => invite.status === 'pending');
   const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active');
+  const filteredMembershipRows = membershipRows.filter(row => {
+    if (!membershipSearch.trim()) return true;
+    const q = membershipSearch.toLowerCase();
+    return [row.full_name,row.email,row.mobile,row.member_id,row.dupr_id].some(value => String(value || '').toLowerCase().includes(q));
+  });
 
   return (
     <div className="space-y-6">
