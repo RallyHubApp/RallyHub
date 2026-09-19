@@ -61,6 +61,7 @@ export default function AdminPanel() {
   const [ownerInvite, setOwnerInvite] = useState({ listingSlug: '', contactName: '', contactPhone: '', contactEmail: '' });
   const [ownerInviteBusy, setOwnerInviteBusy] = useState('');
   const [ownerInviteResult, setOwnerInviteResult] = useState(null);
+  const [testingClareMail, setTestingClareMail] = useState(false);
   const [approvingDirectoryInvitation, setApprovingDirectoryInvitation] = useState('');
 
   const { data: players = [] } = useQuery({
@@ -484,6 +485,22 @@ export default function AdminPanel() {
       toast.error(error.message || 'Could not send the email invitation');
     } finally {
       setOwnerInviteBusy('');
+    }
+  };
+
+  const testClareMailGateway = async () => {
+    setTestingClareMail(true);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', {
+        action: 'test_clare_mail_gateway',
+        to: user?.email,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success(`Clare Pickleball test email sent to ${res.data?.to || user?.email}`);
+    } catch (error) {
+      toast.error(error.message || 'Could not send the Clare Pickleball test email');
+    } finally {
+      setTestingClareMail(false);
     }
   };
 
@@ -1065,6 +1082,16 @@ export default function AdminPanel() {
             </div>
 
             <div className="glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/25">
+              <div className="rounded-lg border border-blue-400/25 bg-blue-400/5 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Clare Pickleball tenant email</p>
+                  <p className="text-xs text-muted-foreground mt-1">Send a private test to your admin email before RallyHub’s master Gmail connection is changed.</p>
+                </div>
+                <Button type="button" variant="outline" onClick={testClareMailGateway} disabled={testingClareMail} className="gap-2 shrink-0">
+                  <Mail className="w-4 h-4" /> {testingClareMail ? 'Sending test…' : 'Send Clare test email'}
+                </Button>
+              </div>
+
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary">Invite a club owner / tester</p>
