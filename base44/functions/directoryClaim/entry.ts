@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { directoryVerificationIndex } from './contactIndex.ts';
 import { geocodeDirectoryVenue } from './geocode.ts';
+import { sendWithConfiguredEmailTransport } from '../_shared/emailRouter.ts';
 
 function normaliseEmail(value = '') {
   return String(value || '').trim().toLowerCase();
@@ -246,12 +247,62 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   const recipientName = String(contactName || '').trim().split(/\s+/)[0] || 'there';
   const ownerBody = `Hi ${recipientName},\n\nI’ve set up the ${listing.name} listing in the RallyHub Club Directory and I’d love you to be one of the people who helps me test it before I roll it out more widely.\n\nThe Directory came from a simple idea: make it easier for people anywhere in Ireland to find a club, see where and when it plays, and know who to contact. I’ve built it as a contribution to the pickleball community, and there’s no charge to claim and maintain your listing.\n\nI’d really value your honest feedback from a user point of view — anything that feels confusing, awkward, unnecessary, missing, or that you think could simply be better.\n\nYour secure link:\n${claimUrl}\n\nOnce verified, you’ll become the Primary Directory Owner for ${listing.name} and can check or update the public information. This gives Directory access only; it does not sign your club up for RallyHub Club or any paid service.\n\nWhy the Directory exists:\nhttps://rallyhub.ie/directory/story\n\nClub Guide & Help:\nhttps://rallyhub.ie/directory/help\n\nQuick Start Guide:\nhttps://rallyhub.ie/directory/quick-start\n\nThe secure link is single-use and expires after 72 hours. If anything gives you trouble, just WhatsApp or call me.\n\nThanks for helping me get this right.\n\nYours in sport,\nBrian Moore\n087 810 0333`;
   const editorBody = `Hi ${recipientName},\n\nYou’ve been invited to help manage the ${listing.name} listing in the RallyHub Club Directory as a Directory Editor.\n\nI’d really value your feedback while you use it — anything that feels confusing, awkward, unnecessary, missing, or that you think could simply be better.\n\nYour secure editor link:\n${claimUrl}\n\nIf you need a Directory account, RallyHub will first verify your email with a six-digit code. Directory Editor access lets you update the public listing but does not let you transfer ownership or manage other editors. It also does not give access to RallyHub Club, tournaments, players or club administration.\n\nWhy the Directory exists:\nhttps://rallyhub.ie/directory/story\n\nClub Guide & Help:\nhttps://rallyhub.ie/directory/help\n\nQuick Start Guide:\nhttps://rallyhub.ie/directory/quick-start\n\nThe secure link is single-use and expires after 72 hours. If anything gives you trouble, just WhatsApp or call me.\n\nYours in sport,\nBrian Moore\n087 810 0333`;
-  await base44.asServiceRole.integrations.Core.SendEmail({
-    to,
-    from_name: 'Brian Moore — RallyHub Directory',
-    subject: delegated ? `An invitation to help manage ${listing.name} on the RallyHub Directory` : `An invitation to review ${listing.name} on the RallyHub Directory`,
-    body: delegated ? editorBody : ownerBody,
-  });
+  const subject = delegated
+    ? `An invitation to help manage ${listing.name} on the RallyHub Directory`
+    : `An invitation to review ${listing.name} on the RallyHub Directory`;
+  const textBody = delegated ? editorBody : ownerBody;
+  const actionLabel = delegated ? 'Open your editor invitation' : 'Open your secure invitation';
+  const roleCopy = delegated
+    ? `You’ve been invited to help manage the <strong>${listing.name}</strong> listing as a Directory Editor.`
+    : `I’ve set up the <strong>${listing.name}</strong> listing and I’d love you to help me test the Directory before I roll it out more widely.`;
+  const htmlBody = `<!doctype html>
+<html>
+  <body style="margin:0;background:#f4f8f5;font-family:Arial,Helvetica,sans-serif;color:#0c1e35;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f8f5;padding:24px 12px;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border-radius:20px;overflow:hidden;border:1px solid #dfe9e2;">
+          <tr>
+            <td style="padding:28px 32px 18px;border-top:7px solid #159447;">
+              <div style="font-size:28px;font-weight:800;letter-spacing:-0.4px;">Rally<span style="color:#159447;">Hub</span></div>
+              <div style="font-size:11px;letter-spacing:2.2px;color:#66737f;margin-top:3px;">PLAY • CONNECT • BELONG</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 32px 8px;">
+              <p style="font-size:18px;margin:0 0 16px;">Hi ${recipientName},</p>
+              <p style="font-size:16px;line-height:1.6;margin:0 0 14px;">${roleCopy}</p>
+              <p style="font-size:15px;line-height:1.6;color:#55636f;margin:0 0 22px;">I’d really value your honest feedback — anything that feels confusing, awkward, unnecessary, missing, or that you think could simply be better.</p>
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 24px;"><tr>
+                <td bgcolor="#159447" style="border-radius:10px;">
+                  <a href="${claimUrl}" style="display:inline-block;padding:14px 22px;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;">${actionLabel}</a>
+                </td>
+              </tr></table>
+              <div style="background:#eef9f1;border:1px solid #d7eadc;border-radius:14px;padding:16px 18px;margin-bottom:22px;">
+                <div style="font-weight:700;margin-bottom:6px;">Directory access only</div>
+                <div style="font-size:14px;line-height:1.55;color:#55636f;">This does not sign your club up for RallyHub Club or any paid service. The secure invitation is single-use and expires after 72 hours.</div>
+              </div>
+              <p style="font-size:14px;line-height:1.8;margin:0 0 18px;">
+                <a href="https://rallyhub.ie/directory/story" style="color:#159447;font-weight:700;">Why the Directory exists</a><br>
+                <a href="https://rallyhub.ie/directory/help" style="color:#159447;font-weight:700;">Club Guide &amp; Help</a><br>
+                <a href="https://rallyhub.ie/directory/quick-start" style="color:#159447;font-weight:700;">Quick Start Guide</a>
+              </p>
+              <p style="font-size:15px;line-height:1.6;margin:0 0 8px;">Thanks for helping me get this right.</p>
+              <p style="font-size:15px;line-height:1.5;margin:0 0 4px;">Yours in sport,</p>
+              <p style="font-size:22px;font-style:italic;font-weight:700;margin:0 0 2px;">Brian Moore</p>
+              <p style="font-size:13px;color:#66737f;margin:0 0 24px;">087 810 0333 · rallyhubapp@gmail.com</p>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+
+  await sendWithConfiguredEmailTransport(
+    base44,
+    { scopeType: 'platform', purpose: 'directory' },
+    { to, subject, textBody, htmlBody },
+  );
   return { sent: 1, to, claimUrl };
 }
 
