@@ -115,6 +115,15 @@
     "directory_mobile": {
       "type": "string",
       "description": "Mobile number supplied by the user for RallyHub Directory identity verification; does not grant RallyHub Club access."
+    },
+    "account_scope": {
+      "type": "string",
+      "enum": [
+        "directory",
+        "club",
+        "platform"
+      ],
+      "description": "Primary RallyHub access context. Directory accounts do not receive RallyHub Club access unless separately onboarded."
     }
   },
   "required": [],
