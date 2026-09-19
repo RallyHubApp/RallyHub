@@ -53,6 +53,15 @@ Deno.serve(async (req) => {
       const users = await base44.asServiceRole.entities.User.filter({ id: userId });
       const target = users?.[0];
       if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
+      const [directoryAccess, clubAccess] = await Promise.all([
+        base44.asServiceRole.entities.DirectoryListingAccess.filter({ user_id: userId, status: 'active' }),
+        base44.asServiceRole.entities.ClubUserAccess.filter({ user_id: userId, status: 'active' }),
+      ]);
+      if (directoryAccess?.length && !clubAccess?.length) {
+        return Response.json({
+          error: 'Directory-only accounts cannot be assigned RallyHub Club/KOTC roles.'
+        }, { status: 409 });
+      }
       await base44.asServiceRole.entities.User.update(userId, { kotc_role: kotcRole });
       return Response.json({ success: true, userId, kotcRole });
     }
