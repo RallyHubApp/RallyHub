@@ -318,7 +318,7 @@ Deno.serve(async(req)=>{
         const accessData={tenant_id:tenantId,club_id:clubId,user_id:user.id,person_id:person?.id||undefined,player_id:player.id,permission_bundle:'member',relationship_type:'member',status:'active',approved_by_user_id:user.id,approved_at:new Date().toISOString()};
         if(access) await base44.asServiceRole.entities.ClubUserAccess.update(access.id,accessData);
         else await base44.asServiceRole.entities.ClubUserAccess.create(accessData);
-        await base44.asServiceRole.entities.User.update(user.id,{active_tenant_id:tenantId,active_club_id:clubId,active_club_role:'member',security_context_updated_at:new Date().toISOString()});
+        await base44.asServiceRole.entities.User.update(user.id,{account_scope:'club',approval_status:'approved',active_tenant_id:tenantId,active_club_id:clubId,active_club_role:'member',security_context_updated_at:new Date().toISOString()});
       }
       return Response.json({success:true,player_id:player.id,person_id:person?.id||null,verification:nameMismatch?(dobMatch?'dob':'mobile'):'email_and_name'});
     }
@@ -372,7 +372,7 @@ Deno.serve(async(req)=>{
       const accessData={tenant_id:tenantId,club_id:clubId,user_id:userId,person_id:person.id,player_id:player.id,permission_bundle:'member',relationship_type:'member',status:'active',approved_by_user_id:user.id,approved_at:now};
       if(existingAccess) await base44.asServiceRole.entities.ClubUserAccess.update(existingAccess.id,accessData);
       else await base44.asServiceRole.entities.ClubUserAccess.create(accessData);
-      await base44.asServiceRole.entities.User.update(userId,{approval_status:'approved',active_tenant_id:tenantId,active_club_id:clubId,active_club_role:'member',security_context_updated_at:now});
+      await base44.asServiceRole.entities.User.update(userId,{account_scope:'club',approval_status:'approved',active_tenant_id:tenantId,active_club_id:clubId,active_club_role:'member',security_context_updated_at:now});
       try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:tenantId,club_id:clubId,user_id:user.id,action:'member_account_connected',entity_type:'Person',entity_id:person.id,scope_type:'Club',scope_id:clubId,after_state:JSON.stringify({target_user_id:userId,player_id:player.id,email_match:true,name_mismatch:nameMismatch,verification:nameMismatch?(dobMatch?'dob':'mobile'):'email_and_name'}),reason:nameMismatch?'Administrator verified changed-name identity with a second factor':'Administrator connected matching member account'});}catch{}
       return Response.json({success:true,user_id:userId,person_id:person.id,player_id:player.id,name_mismatch:nameMismatch,verification:nameMismatch?(dobMatch?'dob':'mobile'):'email_and_name'});
     }
