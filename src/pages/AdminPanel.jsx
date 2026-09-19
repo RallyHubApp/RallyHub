@@ -639,46 +639,87 @@ export default function AdminPanel() {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
                     {section === 'pending' ? '⏳ Pending' : section === 'approved' ? '✅ Approved' : '❌ Rejected'}
                   </p>
-                  {sectionUsers.map((u, i) => (
-                    <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
-                      className="glass rounded-lg p-3 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                          {(u.full_name || u.email || 'U')[0].toUpperCase()}
+                  {sectionUsers.map((u, i) => {
+                    const candidate = membershipCandidateForUser(u);
+                    const nameMismatch = !!candidate &&
+                      normaliseIdentityName(u.full_name || u.display_name) &&
+                      normaliseIdentityName(candidate.full_name) &&
+                      normaliseIdentityName(u.full_name || u.display_name) !== normaliseIdentityName(candidate.full_name);
+                    return (
+                      <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+                        className="glass rounded-lg p-3 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                              {(u.full_name || u.email || 'U')[0].toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{u.full_name || '(no name)'}</p>
+                              <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {!candidate && section !== 'approved' && (
+                              <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
+                                disabled={updatingApproval === u.id}
+                                onClick={() => setApprovalStatus(u.id, 'approved')}>
+                                <CheckCircle className="w-3 h-3" />
+                                {updatingApproval === u.id ? '…' : 'Approve'}
+                              </Button>
+                            )}
+                            {section !== 'rejected' && u.id !== user?.id && (
+                              <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 gap-1"
+                                disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
+                                onClick={() => setApprovalStatus(u.id, 'rejected')}>
+                                <XCircle className="w-3 h-3" />
+                                {updatingApproval === u.id ? '…' : 'Reject'}
+                              </Button>
+                            )}
+                            {section === 'approved' && u.id !== user?.id && (
+                              <Button size="sm" variant="outline" className="h-7 text-xs text-muted-foreground gap-1"
+                                disabled={updatingApproval === u.id || connectingMemberAccount === u.id}
+                                onClick={() => setApprovalStatus(u.id, 'pending')}>
+                                <Clock className="w-3 h-3" />
+                                {updatingApproval === u.id ? '…' : 'Revoke'}
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{u.full_name || '(no name)'}</p>
-                          <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {section !== 'approved' && (
-                          <Button size="sm" className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
-                            disabled={updatingApproval === u.id}
-                            onClick={() => setApprovalStatus(u.id, 'approved')}>
-                            <CheckCircle className="w-3 h-3" />
-                            {updatingApproval === u.id ? '…' : 'Approve'}
-                          </Button>
+
+                        {candidate && (
+                          <div className={`rounded-lg border p-3 ${nameMismatch ? 'border-amber-400/40 bg-amber-500/10' : 'border-primary/25 bg-primary/5'}`}>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold">
+                                  Membership email match: {candidate.full_name}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground mt-1">
+                                  {nameMismatch
+                                    ? `Account name “${u.full_name || u.display_name}” differs from membership name “${candidate.full_name}”. Confirm only if you have verified they are the same person.`
+                                    : 'Name and verified email match the existing Clare member/player record.'}
+                                </p>
+                              </div>
+                              <Button
+                                size="sm"
+                                className="min-h-9 shrink-0"
+                                disabled={connectingMemberAccount === u.id}
+                                onClick={() => connectMemberAccount(u, candidate, nameMismatch)}
+                              >
+                                <Link2 className="w-3.5 h-3.5 mr-1" />
+                                {connectingMemberAccount === u.id
+                                  ? 'Connecting…'
+                                  : nameMismatch
+                                    ? 'Confirm identity & connect'
+                                    : section === 'approved'
+                                      ? 'Connect membership'
+                                      : 'Approve & connect'}
+                              </Button>
+                            </div>
+                          </div>
                         )}
-                        {section !== 'rejected' && u.id !== user?.id && (
-                          <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 gap-1"
-                            disabled={updatingApproval === u.id}
-                            onClick={() => setApprovalStatus(u.id, 'rejected')}>
-                            <XCircle className="w-3 h-3" />
-                            {updatingApproval === u.id ? '…' : 'Reject'}
-                          </Button>
-                        )}
-                        {section === 'approved' && u.id !== user?.id && (
-                          <Button size="sm" variant="outline" className="h-7 text-xs text-muted-foreground gap-1"
-                            disabled={updatingApproval === u.id}
-                            onClick={() => setApprovalStatus(u.id, 'pending')}>
-                            <Clock className="w-3 h-3" />
-                            {updatingApproval === u.id ? '…' : 'Revoke'}
-                          </Button>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               );
             })}
