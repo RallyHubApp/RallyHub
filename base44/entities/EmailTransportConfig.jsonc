@@ -1,0 +1,85 @@
+{
+  "name": "EmailTransportConfig",
+  "type": "object",
+  "properties": {
+    "scope_type": {
+      "type": "string",
+      "enum": [
+        "platform",
+        "tenant"
+      ]
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "base44_core",
+        "gmail_connector",
+        "google_apps_script",
+        "resend"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "configured",
+        "pending",
+        "disabled"
+      ],
+      "default": "pending"
+    },
+    "sender_email": {
+      "type": "string"
+    },
+    "sender_name": {
+      "type": "string"
+    },
+    "reply_to": {
+      "type": "string"
+    },
+    "expected_connected_account": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "scope_type",
+    "purpose",
+    "provider",
+    "status",
+    "sender_email",
+    "sender_name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
