@@ -38,6 +38,8 @@ export default function AdminPanel() {
   const [inviting, setInviting] = useState(false);
   const [membershipSyncing, setMembershipSyncing] = useState(false);
   const [membershipSyncResult, setMembershipSyncResult] = useState(null);
+  const [membershipSearch, setMembershipSearch] = useState('');
+  const [selectedMembershipPersonId, setSelectedMembershipPersonId] = useState('');
   const [previewUserId, setPreviewUserId] = useState('');
 
   const [userSearch, setUserSearch] = useState('');
@@ -73,6 +75,26 @@ export default function AdminPanel() {
       relationship_type: 'member'
     }, '-updated_date', 500),
     enabled: canAccessAdmin && !!user?.active_tenant_id && !!user?.active_club_id
+  });
+
+  const { data: membershipRows = [], isLoading: membershipRowsLoading } = useQuery({
+    queryKey: ['admin-membership-records', user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('membershipRecord', { action: 'admin_list' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.rows || [];
+    },
+    enabled: canAccessAdmin && activeAdminTab === 'membership' && !!user?.active_tenant_id && !!user?.active_club_id
+  });
+
+  const { data: selectedMembershipRecord = null, isLoading: selectedMembershipLoading, error: selectedMembershipError } = useQuery({
+    queryKey: ['admin-membership-detail', selectedMembershipPersonId, user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('membershipRecord', { action: 'admin_detail', personId: selectedMembershipPersonId });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.record || null;
+    },
+    enabled: canAccessAdmin && activeAdminTab === 'membership' && !!selectedMembershipPersonId
   });
 
   const { data: allUsers = [] } = useQuery({
