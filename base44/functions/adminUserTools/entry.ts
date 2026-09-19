@@ -19,7 +19,9 @@ Deno.serve(async (req) => {
     if (body.action === 'pending_approval_count') {
       const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
       const pendingCount = users.filter(u =>
-        u.role !== 'admin' && (!u.approval_status || u.approval_status === 'pending')
+        u.role !== 'admin' &&
+        u.account_scope !== 'directory' &&
+        (!u.approval_status || u.approval_status === 'pending')
       ).length;
       return Response.json({ pendingCount });
     }
