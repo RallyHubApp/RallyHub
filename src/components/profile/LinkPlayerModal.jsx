@@ -18,8 +18,14 @@ export default function LinkPlayerModal({ open, onOpenChange, user, onLinked }) 
     enabled: open
   });
 
-  // Filter out already-linked players, search by name or email
-  const unlinked = players.filter(p => !p.user_id || p.user_id === user?.id);
+  // Members may only self-link a record that uses their verified RallyHub email.
+  // Changed-name cases are deliberately escalated to a club administrator.
+  const accountEmail = String(user?.email || '').trim().toLowerCase();
+  const unlinked = players.filter(p =>
+    (!p.user_id || p.user_id === user?.id) &&
+    accountEmail &&
+    String(p.email || p.linked_user_email || '').trim().toLowerCase() === accountEmail
+  );
   const filtered = unlinked.filter(p => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -28,13 +34,16 @@ export default function LinkPlayerModal({ open, onOpenChange, user, onLinked }) 
 
   const linkPlayer = async (player) => {
     setLinking(player.id);
-    await base44.entities.Player.update(player.id, {
-      user_id: user.id,
-      linked_user_email: user.email
-    });
-    toast.success(`"${player.full_name}" linked to your account! All match history transferred.`);
-    setLinking(null);
-    onLinked?.();
+    try {
+      const res = await base44.functions.invoke('membershipRecord', { action: 'self_link', playerId: player.id });
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success(`"${player.full_name}" linked to your RallyHub account.`);
+      onLinked?.();
+    } catch (e) {
+      toast.error(e?.message || 'Could not link this member record.');
+    } finally {
+      setLinking(null);
+    }
   };
 
   return (
@@ -45,7 +54,7 @@ export default function LinkPlayerModal({ open, onOpenChange, user, onLinked }) 
             <Link2 className="w-4 h-4 text-primary" /> Link Existing Player Record
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Search for your manually-created player record to merge all historical data.
+            RallyHub only shows an unlinked member/player record that matches your verified account email. If the names differ, a club administrator must confirm the identity.
           </DialogDescription>
         </DialogHeader>
 
@@ -91,7 +100,7 @@ export default function LinkPlayerModal({ open, onOpenChange, user, onLinked }) 
         <div className="glass rounded-lg p-3 flex gap-2">
           <AlertCircle className="w-4 h-4 text-accent shrink-0 mt-0.5" />
           <p className="text-xs text-muted-foreground">
-            Linking will merge all historical matches, stats and ratings from that player record into your account.
+            Linking connects the existing Person, Membership and Player records to your account. It does not create a second member record.
           </p>
         </div>
       </DialogContent>
