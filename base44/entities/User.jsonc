@@ -111,6 +111,10 @@
           }
         }
       }
+    },
+    "directory_mobile": {
+      "type": "string",
+      "description": "Mobile number supplied by the user for RallyHub Directory identity verification; does not grant RallyHub Club access."
     }
   },
   "required": [],
