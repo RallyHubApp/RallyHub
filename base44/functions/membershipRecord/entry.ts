@@ -225,8 +225,8 @@ async function fullRecord(base44:any,tenantId:string,clubId:string,person:any,pl
     base44.asServiceRole.entities.SportProfile.filter({tenant_id:tenantId,person_id:person.id},'sport',100),
     base44.asServiceRole.entities.ConsentRecord.filter({tenant_id:tenantId,club_id:clubId,person_id:person.id},'-recorded_at',100),
     base44.asServiceRole.entities.PaymentRecord.filter({tenant_id:tenantId,club_id:clubId,person_id:person.id},'-payment_date',100),
-    base44.asServiceRole.entities.TrainingRecord.filter({tenant_id:tenantId,person_id:person.id},'-training_date',100),
-    base44.asServiceRole.entities.Qualification.filter({tenant_id:tenantId,person_id:person.id},'-issue_date',100),
+    base44.asServiceRole.entities.TrainingRecord.filter({tenant_id:tenantId,person_id:person.id},'-completion_date',100),
+    base44.asServiceRole.entities.Qualification.filter({tenant_id:tenantId,person_id:person.id},'-award_date',100),
     base44.asServiceRole.entities.MembershipSourceResponse.filter({tenant_id:tenantId,club_id:clubId,person_id:person.id},'source_row',100)
   ]);
   const history=await sportingHistory(base44,tenantId,clubId,player?.id||'');
