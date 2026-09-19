@@ -366,6 +366,30 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'submit';
 
+    if (action === 'test_clare_mail_gateway') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const to = normaliseEmail(String(body.to || user.email || ''));
+      if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+        return Response.json({ error: 'A valid test email address is required.' }, { status: 400 });
+      }
+      const sent = await sendWithConfiguredEmailTransport(
+        base44,
+        {
+          scopeType: 'tenant',
+          purpose: 'club_comms',
+          tenantId: '6a9b7790bc4a8d299938bda9',
+          clubId: '6a9b779684daba85b3ffdeb5',
+        },
+        {
+          to,
+          subject: 'Clare Pickleball — RallyHub mail gateway test',
+          textBody: 'This is a test from RallyHub confirming that Clare Pickleball tenant email is being sent through the Clare Pickleball mail gateway.',
+          htmlBody: '<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;border:1px solid #d9e2ec;border-radius:16px;overflow:hidden"><div style="background:#0b2a4a;color:white;padding:24px 28px"><div style="font-size:26px;font-weight:800">Clare Pickleball</div><div style="color:#f3c623;font-weight:700;margin-top:4px">RallyHub tenant mail test</div></div><div style="padding:28px"><p style="font-size:16px;line-height:1.6">This test confirms that Clare Pickleball email is now routed separately from RallyHub platform and Directory email.</p><p style="font-size:15px;line-height:1.6">If you are reading this, the Clare Pickleball tenant mail gateway is working correctly.</p><div style="margin-top:24px;padding:14px 16px;background:#fff8d8;border-left:5px solid #f3c623;border-radius:8px"><strong>Sender:</strong> clarepb2025@gmail.com</div><p style="margin-top:26px">Regards,<br><strong>Clare Pickleball</strong><br><span style="color:#667085">Powered by RallyHub</span></p></div></div>',
+        }
+      );
+      return Response.json({ success: true, to, provider: sent?.provider || null, senderEmail: sent?.senderEmail || null });
+    }
+
     if (action === 'save_directory_identity') {
       const fullName = String(body.fullName || '').trim().slice(0, 160);
       const mobile = String(body.mobile || '').trim().slice(0, 80);
