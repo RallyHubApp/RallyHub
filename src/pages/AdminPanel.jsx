@@ -109,6 +109,12 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
+  const { data: allClubUserAccesses = [] } = useQuery({
+    queryKey: ['all-club-user-accesses'],
+    queryFn: () => base44.entities.ClubUserAccess.list('-approved_at', 500),
+    enabled: canAccessAdmin
+  });
+
   const previewTargetUserId = previewUserId || user?.id || '';
   const { data: memberPreview = null, isLoading: loadingMemberPreview, error: memberPreviewError } = useQuery({
     queryKey: ['admin-member-preview', previewTargetUserId],
@@ -569,6 +575,14 @@ export default function AdminPanel() {
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
   const activeDirectoryAccesses = directoryVerification.accesses.filter(a => a.status === 'active');
+  const activeClubAccessUserIds = new Set((allClubUserAccesses || []).filter(a => a.status === 'active').map(a => String(a.user_id)));
+  const directoryOnlyUserIds = new Set(
+    activeDirectoryAccesses
+      .filter(a => a.user_id && !activeClubAccessUserIds.has(String(a.user_id)))
+      .map(a => String(a.user_id))
+  );
+  const platformApprovalUsers = allUsers.filter(u => u.role !== 'admin' && !directoryOnlyUserIds.has(String(u.id)));
+  const pendingPlatformApprovalCount = platformApprovalUsers.filter(u => !u.approval_status || u.approval_status === 'pending').length;
   const directoryInvitations = (directoryVerification.invitations || []).filter(invite => invite.status === 'pending').slice(0, 50);
   const pendingDirectoryInvitations = directoryInvitations;
   const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active');
@@ -609,9 +623,9 @@ export default function AdminPanel() {
         <TabsList className="bg-secondary flex-wrap h-auto gap-1">
           <TabsTrigger value="approvals" className="text-xs gap-1.5">
             <Clock className="w-3.5 h-3.5" /> Approvals
-            {allUsers.filter(u => !u.approval_status || u.approval_status === 'pending').length > 0 && (
+            {pendingPlatformApprovalCount > 0 && (
               <span className="ml-1 bg-yellow-500 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">
-                {allUsers.filter(u => !u.approval_status || u.approval_status === 'pending').length}
+                {pendingPlatformApprovalCount}
               </span>
             )}
           </TabsTrigger>
@@ -640,13 +654,13 @@ export default function AdminPanel() {
             <div className="glass rounded-lg p-3 flex items-start gap-2">
               <Clock className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
               <p className="text-xs text-muted-foreground">
-                Platform and club-app users must be approved before accessing protected RallyHub tools. Directory-only accounts do not need platform approval; their listing access is verified separately under Directory Claims.
+                <strong className="text-foreground">RallyHub Club access only.</strong> This tab does not approve Directory users. A user can enter the RallyHub Club application only when they have a separate active ClubUserAccess grant. Directory owners/editors are handled only under Directory Claims and cannot access tournaments, players, matches, leaderboards or other Club tools.
               </p>
             </div>
             {['pending', 'approved', 'rejected'].map(section => {
-              const sectionUsers = allUsers.filter(u => {
+              const sectionUsers = platformApprovalUsers.filter(u => {
                 const s = u.approval_status || 'pending';
-                return s === section && u.role !== 'admin';
+                return s === section;
               });
               if (sectionUsers.length === 0) return null;
               return (
@@ -738,8 +752,8 @@ export default function AdminPanel() {
                 </div>
               );
             })}
-            {allUsers.filter(u => u.role !== 'admin').length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-6">No users to review</p>
+            {platformApprovalUsers.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-6">No RallyHub Club users to review. Directory-only accounts are managed under Directory Claims.</p>
             )}
           </div>
         </TabsContent>
@@ -1039,7 +1053,7 @@ export default function AdminPanel() {
             <div className="glass rounded-lg p-3 flex items-start gap-2">
               <UserCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <p className="text-xs text-muted-foreground">
-                Directory verification is separate from RallyHub Club membership and platform approval. An exact match to an authenticated account email can verify an unclaimed listing automatically. A known RallyHub platform admin may also auto-verify where both the trusted name and trusted phone match; other claims require administrator review.
+                <strong className="text-foreground">Directory access only.</strong> Approving a claim here grants permission to edit the relevant public Directory listing and nothing else. It does not grant RallyHub Club, tenant, tournament, player, match, leaderboard, analytics or admin access. Those require a completely separate ClubUserAccess/Tenant access process.
               </p>
             </div>
 
@@ -1178,7 +1192,7 @@ export default function AdminPanel() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Button size="sm" disabled={reviewingDirectoryClaim === claim.id} onClick={() => reviewDirectoryClaim(claim.id, 'approved')} className="gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> {reviewingDirectoryClaim === claim.id ? '…' : 'Approve'}
+                      <CheckCircle className="w-3.5 h-3.5" /> {reviewingDirectoryClaim === claim.id ? '…' : 'Approve directory only'}
                     </Button>
                     <Button size="sm" variant="outline" disabled={reviewingDirectoryClaim === claim.id} onClick={() => reviewDirectoryClaim(claim.id, 'rejected')} className="gap-1 text-destructive border-destructive/30">
                       <XCircle className="w-3.5 h-3.5" /> {reviewingDirectoryClaim === claim.id ? '…' : 'Reject'}
@@ -1212,7 +1226,7 @@ export default function AdminPanel() {
                     </div>
                     {invite.access_role === 'owner' && (
                       <Button size="sm" disabled={approvingDirectoryInvitation === invite.id} onClick={() => approveDirectoryInvitation(invite.id)} className="gap-1 shrink-0">
-                        <CheckCircle className="w-3.5 h-3.5" /> {approvingDirectoryInvitation === invite.id ? 'Approving…' : 'Approve owner'}
+                        <CheckCircle className="w-3.5 h-3.5" /> {approvingDirectoryInvitation === invite.id ? 'Approving…' : 'Approve directory owner only'}
                       </Button>
                     )}
                   </div>
