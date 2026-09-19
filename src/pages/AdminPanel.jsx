@@ -1280,7 +1280,7 @@ export default function AdminPanel() {
             </div>
             <div className="space-y-2">
               {filteredUsers.map((u, i) => {
-                const isDirectoryOnly = directoryOnlyUserIds.has(String(u.id));
+                const isDirectoryOnly = u.account_scope === 'directory' || directoryOnlyUserIds.has(String(u.id));
                 return (
                   <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
                     className="glass rounded-lg p-3 flex items-center justify-between gap-3">
