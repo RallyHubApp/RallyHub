@@ -57,13 +57,29 @@ const LoadingScreen = () => (
 
 const AppAccessGate = () => {
   const { isLoadingPublicSettings, user } = useAuth();
+  const isNonAdmin = !!user?.id && user?.role !== 'admin';
   const { data: hostGrants = [], isLoading: isLoadingHostGrants } = useQuery({
     queryKey: ['my-kotc-session-access', user?.id],
     queryFn: () => base44.entities.KotcSessionAccess.filter({ user_id: user.id, status: 'active' }),
-    enabled: !!user?.id && user?.role !== 'admin',
+    enabled: isNonAdmin,
     staleTime: 15000,
   });
-  if (isLoadingPublicSettings || (!!user?.id && user?.role !== 'admin' && isLoadingHostGrants)) {
+  const { data: clubAccesses = [], isLoading: isLoadingClubAccess } = useQuery({
+    queryKey: ['my-rallyhub-club-access', user?.id],
+    queryFn: () => base44.entities.ClubUserAccess.filter({ user_id: user.id, status: 'active' }),
+    enabled: isNonAdmin,
+    staleTime: 15000,
+  });
+  const { data: directoryAccesses = [], isLoading: isLoadingDirectoryAccess } = useQuery({
+    queryKey: ['my-directory-listing-access', user?.id],
+    queryFn: () => base44.entities.DirectoryListingAccess.filter({ user_id: user.id, status: 'active' }),
+    enabled: isNonAdmin,
+    staleTime: 15000,
+  });
+  if (
+    isLoadingPublicSettings ||
+    (isNonAdmin && (isLoadingHostGrants || isLoadingClubAccess || isLoadingDirectoryAccess))
+  ) {
     return <LoadingScreen />;
   }
 
@@ -80,8 +96,24 @@ const AppAccessGate = () => {
     if (activeHost?.session_id) return <Navigate to={`/kotc-host/${activeHost.session_id}`} replace />;
   }
 
-  if (user?.role === 'admin' || user?.approval_status === 'approved') {
+  if (user?.role === 'admin') return <AuthenticatedRoutes />;
+
+  const now = Date.now();
+  const activeClubAccess = (clubAccesses || []).find(access =>
+    access.status === 'active' &&
+    (!access.starts_at || Date.parse(access.starts_at) <= now) &&
+    (!access.ends_at || Date.parse(access.ends_at) >= now)
+  );
+
+  // Directory ownership/editing is deliberately NOT RallyHub Club access.
+  // A non-admin must have an explicit active ClubUserAccess grant before any /app
+  // dashboard, player, tournament, match, leaderboard or analytics route can load.
+  if (activeClubAccess && user?.approval_status === 'approved') {
     return <AuthenticatedRoutes />;
+  }
+
+  if ((directoryAccesses || []).length > 0) {
+    return <Navigate to="/directory?manage=1" replace />;
   }
 
   return <PendingApprovalScreen status={user?.approval_status || 'pending'} />;
