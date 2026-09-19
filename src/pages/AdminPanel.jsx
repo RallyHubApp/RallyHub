@@ -61,6 +61,7 @@ export default function AdminPanel() {
   const [ownerInvite, setOwnerInvite] = useState({ listingSlug: '', contactName: '', contactPhone: '', contactEmail: '' });
   const [ownerInviteBusy, setOwnerInviteBusy] = useState('');
   const [ownerInviteResult, setOwnerInviteResult] = useState(null);
+  const [approvingDirectoryInvitation, setApprovingDirectoryInvitation] = useState('');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -371,6 +372,20 @@ export default function AdminPanel() {
       toast.error(error.message || 'Could not revoke directory access');
     } finally {
       setRevokingDirectoryAccess(null);
+    }
+  };
+
+  const approveDirectoryInvitation = async (invitationId) => {
+    setApprovingDirectoryInvitation(invitationId);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', { action: 'approve_invitation', invitationId });
+      if (res.data?.error) throw new Error(res.data.error);
+      queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
+      toast.success('Directory owner access approved');
+    } catch (error) {
+      toast.error(error.message || 'Could not approve this directory invitation yet');
+    } finally {
+      setApprovingDirectoryInvitation('');
     }
   };
 
@@ -1195,6 +1210,11 @@ export default function AdminPanel() {
                       {invite.expires_at && <p className="text-xs text-muted-foreground">Expires: {new Date(invite.expires_at).toLocaleString('en-IE')}</p>}
                       {invite.used_at && <p className="text-xs text-green-400">Accepted: {new Date(invite.used_at).toLocaleString('en-IE')}</p>}
                     </div>
+                    {invite.access_role === 'owner' && (
+                      <Button size="sm" disabled={approvingDirectoryInvitation === invite.id} onClick={() => approveDirectoryInvitation(invite.id)} className="gap-1 shrink-0">
+                        <CheckCircle className="w-3.5 h-3.5" /> {approvingDirectoryInvitation === invite.id ? 'Approving…' : 'Approve owner'}
+                      </Button>
+                    )}
                   </div>
                 );
               })}

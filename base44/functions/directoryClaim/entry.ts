@@ -970,6 +970,69 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, status: decision });
     }
 
+    if (action === 'approve_invitation') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const invitationId = String(body.invitationId || '').trim();
+      if (!invitationId) return Response.json({ error: 'invitationId required' }, { status: 400 });
+      const invitations = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ id: invitationId });
+      const invitation = invitations?.[0];
+      if (!invitation || invitation.status !== 'pending') return Response.json({ error: 'Pending invitation not found' }, { status: 404 });
+      const listing = await resolveListing(base44, invitation.listing_slug);
+      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+
+      const claims = await base44.asServiceRole.entities.DirectoryClaim.filter({ listing_slug: invitation.listing_slug }, '-created_date', 100);
+      const matchingClaim = (claims || []).find(claim =>
+        claim.status === 'pending' &&
+        (String(claim.claimant_user_id || '') === String(invitation.used_by_user_id || '') ||
+          (invitation.contact_email && normaliseEmail(claim.claimant_email) === normaliseEmail(invitation.contact_email)) ||
+          (invitation.contact_phone && phoneLooksSame(claim.claimant_phone, invitation.contact_phone)) ||
+          (invitation.contact_name && normaliseName(claim.claimant_name) === normaliseName(invitation.contact_name)))
+      ) || null;
+
+      let targetUserId = invitation.used_by_user_id || matchingClaim?.claimant_user_id || null;
+      if (!targetUserId && invitation.contact_email) {
+        const users = await base44.asServiceRole.entities.User.filter({ email: normaliseEmail(invitation.contact_email) });
+        targetUserId = users?.[0]?.id || null;
+      }
+      if (!targetUserId) {
+        return Response.json({ error: 'This person needs to open the secure claim link and sign in once before you can approve owner access.' }, { status: 409 });
+      }
+
+      const now = new Date().toISOString();
+      const existingListingAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: invitation.listing_slug, status: 'active' });
+      const grantedRole = invitation.access_role === 'editor' || existingListingAccess?.length ? 'editor' : 'owner';
+      const access = await grantAccess(base44, {
+        listing,
+        userId: targetUserId,
+        claimId: matchingClaim?.id || null,
+        grantedByUserId: user.id,
+        role: grantedRole,
+        notes: `Manually approved from pending ${grantedRole === 'owner' ? 'owner' : 'editor'} invitation by RallyHub administrator.`,
+      });
+      if (matchingClaim) {
+        await base44.asServiceRole.entities.DirectoryClaim.update(matchingClaim.id, {
+          status: 'approved',
+          match_method: 'admin_approved_invitation',
+          reviewed_by_user_id: user.id,
+          reviewed_at: now,
+          review_notes: 'Approved from pending directory invitation.',
+        });
+      }
+      await base44.asServiceRole.entities.DirectoryClaimInvitation.update(invitation.id, {
+        status: 'used',
+        used_by_user_id: targetUserId,
+        used_at: now,
+      });
+      await base44.asServiceRole.entities.DirectoryListingAudit.create({
+        listing_slug: invitation.listing_slug,
+        user_id: user.id,
+        action: grantedRole === 'owner' ? 'owner_assigned' : 'access_granted',
+        occurred_at: now,
+        after_json: JSON.stringify({ role: grantedRole, source: 'admin_approved_invitation', accessId: access?.id || null, targetUserId }),
+      });
+      return Response.json({ success: true, status: 'approved', role: grantedRole, accessId: access?.id || null });
+    }
+
     if (action === 'review_new') {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
       const requestId = String(body.requestId || '').trim();
