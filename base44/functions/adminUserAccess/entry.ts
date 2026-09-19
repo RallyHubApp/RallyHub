@@ -27,6 +27,14 @@ Deno.serve(async (req) => {
       if (target.role === 'admin' && status !== 'approved') {
         return Response.json({ error: 'Platform admins cannot be rejected/revoked here' }, { status: 400 });
       }
+      if (status === 'approved' && target.role !== 'admin') {
+        const clubAccesses = await base44.asServiceRole.entities.ClubUserAccess.filter({ user_id: userId, status: 'active' });
+        if (!clubAccesses?.length) {
+          return Response.json({
+            error: 'Cannot approve RallyHub Club access: this account has no active ClubUserAccess. Directory access is separate and must remain directory-only.'
+          }, { status: 409 });
+        }
+      }
       await base44.asServiceRole.entities.User.update(userId, { approval_status: status });
       return Response.json({ success: true, userId, status });
     }
