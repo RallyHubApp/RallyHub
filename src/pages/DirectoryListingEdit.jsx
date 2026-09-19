@@ -379,7 +379,9 @@ export default function DirectoryListingEdit() {
       if (res.data?.error) throw new Error(res.data.error);
       const claimUrl = res.data?.claimUrl;
       if (!claimUrl) throw new Error('Could not create the secure claim link.');
-      const message = `Hi ${contactName || 'there'}, RallyHub has created a Directory listing for ${baseClub?.name || 'your club'}. This secure one-time claim link expires in 72 hours. Please use it to verify your details and manage the listing: ${claimUrl}`;
+      const firstName = contactName.split(/\s+/)[0] || 'there';
+      const clubName = baseClub?.name || 'your club';
+      const message = `Hi ${firstName},\n\nI’ve set up the *${clubName}* listing in the RallyHub Club Directory and I’d love you to help me test it before I roll it out more widely.\n\nI’d really value your honest feedback — anything that feels confusing, awkward, unnecessary, missing, or that you think could be better.\n\n*Your secure link:*\n${claimUrl}\n\nOnce verified, you’ll become the *Primary Directory Owner* for ${clubName} and can check or update the public information. This gives Directory access only; it does not sign your club up for RallyHub Club or any paid service.\n\n*Why the Directory exists:*\nhttps://rallyhub.ie/directory/story\n\n*Club Guide & Help:*\nhttps://rallyhub.ie/directory/help\n\n*Quick Start Guide:*\nhttps://rallyhub.ie/directory/quick-start\n\nThe link is single-use and expires after 72 hours. If anything gives you trouble, just WhatsApp or call me.\n\nYours in sport,\n*Brian Moore*\n087 810 0333`;
       window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
       setInviteMessage(`Secure WhatsApp claim invitation opened for ${rawPhone}. The link expires in 72 hours and can only be used once.`);
     } catch (err) {
