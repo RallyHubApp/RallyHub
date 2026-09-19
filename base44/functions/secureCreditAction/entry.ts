@@ -56,15 +56,34 @@ async function hasDirectoryAccess(base44:any, user:any, listingSlug:string) {
   return !!rows?.length;
 }
 
+function accessActive(row:any) {
+  if (!row || row.status !== 'active') return false;
+  const now = Date.now();
+  if (row.starts_at && Date.parse(row.starts_at) > now) return false;
+  if (row.ends_at && Date.parse(row.ends_at) < now) return false;
+  return true;
+}
+
+async function hasRallyHubClubAccess(base44:any, user:any) {
+  if (user.role === 'admin') return true;
+  if (user.approval_status !== 'approved') return false;
+  const rows = await base44.asServiceRole.entities.ClubUserAccess.filter({ user_id:user.id, status:'active' });
+  return (rows || []).some(accessActive);
+}
+
 async function canManageTournament(base44:any, user:any, tournamentId:string) {
   if (user.role === 'admin') return true;
   if (!tournamentId) return false;
   const tournaments = await base44.asServiceRole.entities.Tournament.filter({ id:tournamentId });
   const tournament = tournaments?.[0];
   if (!tournament) return false;
-  const sameClubAdmin = user.approval_status === 'approved' && user.active_club_role === 'club_admin' &&
-    String(tournament.tenant_id || '') === String(user.active_tenant_id || '') &&
-    (!tournament.host_club_id || String(tournament.host_club_id) === String(user.active_club_id || ''));
+  const clubAccesses = await base44.asServiceRole.entities.ClubUserAccess.filter({
+    user_id:user.id,
+    status:'active',
+    tenant_id:tournament.tenant_id,
+    ...(tournament.host_club_id ? { club_id:tournament.host_club_id } : {}),
+  });
+  const sameClubAdmin = user.approval_status === 'approved' && (clubAccesses || []).some((g:any) => accessActive(g) && g.permission_bundle === 'club_admin');
   if (sameClubAdmin) return true;
   const grants = await base44.asServiceRole.entities.TournamentUserAccess.filter({ tournament_id:tournamentId, user_id:user.id, status:'active' });
   const now = Date.now();
@@ -133,7 +152,7 @@ Deno.serve(async (req) => {
         allowed = await hasDirectoryAccess(base44, user, listingSlug);
         contextId = listingSlug || user.id;
       } else if (purpose === 'profile_avatar') {
-        allowed = user.role === 'admin' || user.approval_status === 'approved';
+        allowed = await hasRallyHubClubAccess(base44, user);
       } else if (purpose === 'club_challenge_logo') {
         const tournamentId = clean(body.tournamentId, 180);
         allowed = await canManageTournament(base44, user, tournamentId);
@@ -172,7 +191,7 @@ Deno.serve(async (req) => {
       const players = await base44.asServiceRole.entities.Player.filter({ id:playerId });
       const player = players?.[0];
       const ownsPlayer = player && (String(player.user_id || '') === String(user.id) || String(player.linked_user_email || '').toLowerCase() === String(user.email || '').toLowerCase());
-      if (user.role !== 'admin' && (!ownsPlayer || user.approval_status !== 'approved')) return Response.json({ error:'You may only sync your own linked player profile.' }, { status:403 });
+      if (user.role !== 'admin' && (!ownsPlayer || !(await hasRallyHubClubAccess(base44, user)))) return Response.json({ error:'You may only sync your own linked RallyHub Club player profile.' }, { status:403 });
       const guard = await consumeAllowance(base44, user, 'dupr_lookup', 5, 24, playerId, 20);
       if (!guard.allowed) return guard.response;
       const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
