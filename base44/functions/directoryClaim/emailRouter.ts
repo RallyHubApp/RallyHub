@@ -129,6 +129,32 @@ export async function sendWithConfiguredEmailTransport(
     return { provider: config.provider, senderEmail: config.sender_email, payload };
   }
 
+  if (config.provider === 'google_apps_script') {
+    const gatewayUrl = String(config.gateway_url || '').trim();
+    const secretEnvVar = String(config.secret_env_var || '').trim();
+    const secret = secretEnvVar ? Deno.env.get(secretEnvVar) : '';
+    if (!gatewayUrl || !/^https:\/\//i.test(gatewayUrl)) throw new Error('The tenant mail gateway URL is not configured.');
+    if (!secret) throw new Error('The tenant mail gateway secret is not configured in the backend environment.');
+    const response = await fetch(gatewayUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        secret,
+        to: message.to,
+        subject: message.subject,
+        textBody: message.textBody,
+        htmlBody: message.htmlBody || '',
+        senderName: config.sender_name,
+        replyTo: config.reply_to || config.sender_email,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload?.ok === false) {
+      throw new Error(payload?.error || `Tenant mail gateway failed (${response.status})`);
+    }
+    return { provider: config.provider, senderEmail: config.sender_email, payload };
+  }
+
   if (config.provider === 'base44_core') {
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: message.to,
