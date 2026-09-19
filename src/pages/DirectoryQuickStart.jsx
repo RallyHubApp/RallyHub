@@ -69,14 +69,14 @@ export default function DirectoryQuickStart() {
         <PageShell page={1} ref={page1}>
           <div className="grid md:grid-cols-[1.2fr_.8fr] gap-6 items-center mb-6">
             <div><h1 className="text-4xl font-black leading-tight">RallyHub Directory</h1><p className="font-bold text-slate-700 mt-2">Claim & manage your existing club listing</p><p className="text-sm text-slate-600 mt-2">Use this guide if your club is already listed and you have received a claim link by WhatsApp or email.</p></div>
-            <div className="rounded-2xl bg-slate-950 p-5 text-white"><Smartphone className="w-7 h-7 text-lime-300"/><p className="font-bold mt-2">Invited by WhatsApp?</p><p className="text-sm text-slate-300 mt-1">If you are new to RallyHub, create a Directory account first and use the same mobile number that received the invitation.</p></div>
+            <div className="rounded-2xl bg-slate-950 p-5 text-white"><Smartphone className="w-7 h-7 text-lime-300"/><p className="font-bold mt-2">Invited by WhatsApp or email?</p><p className="text-sm text-slate-300 mt-1">If you are new to RallyHub, create a Directory account first. Use the same mobile number for a WhatsApp invite, or the same email address for an email invite.</p></div>
           </div>
-          <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-5 mb-5"><h2 className="font-black text-green-800">Before you start</h2><p className="text-sm text-slate-600 mt-1">Have your club logo, contact details, venue names/Eircodes, regular session days and times, website/social links and the mobile number used for your invitation.</p></div>
+          <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-5 mb-5"><h2 className="font-black text-green-800">Before you start</h2><p className="text-sm text-slate-600 mt-1">Have your club logo, contact details, venue names/Eircodes, regular session days and times, website/social links, and the mobile number or email address used for your invitation.</p></div>
           <div className="space-y-3">
             <Step n="1" title="Open your secure invitation">Tap the private claim link Brian sends by WhatsApp or email. It opens the correct club listing automatically. The link is single-use and valid for 72 hours.</Step>
-            <Step n="2" title="Create or sign in to your Directory account">New to RallyHub? Enter your name, the <strong>same mobile number</strong> your club already has, an email address you can access and a password. Already have an account? Sign in instead.</Step>
+            <Step n="2" title="Create or sign in to your Directory account">New to RallyHub? Enter your name and an email address you can access. If the invitation came by WhatsApp, use the <strong>same mobile number</strong> that received it. If it came by email, use that <strong>same email address</strong>. Create a password. Already have an account? Sign in instead.</Step>
             <Step n="3" title="Verify your email">RallyHub emails a six-digit code. Enter the code to verify the account. RallyHub then returns you automatically to your club's secure claim page.</Step>
-            <Step n="4" title="Verify & continue">Confirm your role and mobile number, then continue. If the trusted invitation matches your verified account/mobile, RallyHub grants Directory access without giving you any RallyHub Club access.</Step>
+            <Step n="4" title="Verify & continue">Confirm your role and mobile number, then continue. RallyHub checks the trusted WhatsApp mobile number or invited email address against your verified account and grants Directory access without giving you any RallyHub Club access.</Step>
           </div>
         </PageShell>
 
