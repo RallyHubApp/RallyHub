@@ -45,6 +45,7 @@ export default function AdminPanel() {
   const [userSearch, setUserSearch] = useState('');
   const [updatingRole, setUpdatingRole] = useState(null);
   const [updatingApproval, setUpdatingApproval] = useState(null);
+  const [connectingMemberAccount, setConnectingMemberAccount] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [editUserName, setEditUserName] = useState('');
   const [savingUserName, setSavingUserName] = useState(false);
@@ -476,6 +477,31 @@ export default function AdminPanel() {
     window.location.href = appUrl;
   };
 
+  const connectMemberAccount = async (targetUser, player, confirmNameMismatch = false) => {
+    if (!targetUser?.id || !player?.person_id) return;
+    setConnectingMemberAccount(targetUser.id);
+    try {
+      const res = await base44.functions.invoke('membershipRecord', {
+        action: 'admin_connect_account',
+        userId: targetUser.id,
+        personId: player.person_id,
+        confirmNameMismatch
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['all-users'] }),
+        queryClient.invalidateQueries({ queryKey: ['players'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-membership-records'] }),
+        queryClient.invalidateQueries({ queryKey: ['club-membership-relationships'] }),
+      ]);
+      toast.success(`${targetUser.full_name || targetUser.email} approved and connected to ${player.full_name}.`);
+    } catch (e) {
+      toast.error(e?.message || 'Could not connect this member account.');
+    } finally {
+      setConnectingMemberAccount(null);
+    }
+  };
+
   const setApprovalStatus = async (userId, status) => {
     setUpdatingApproval(userId);
     const approvalRes = await base44.functions.invoke('adminUserTools', { action: 'set_approval', userId, status });
@@ -496,6 +522,17 @@ export default function AdminPanel() {
         status
       }).catch(() => {});
     }
+  };
+
+  const normaliseIdentityName = value => String(value || '').toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9]+/g, ' ').trim();
+  const membershipCandidateForUser = targetUser => {
+    const targetEmail = String(targetUser?.email || '').trim().toLowerCase();
+    if (!targetEmail) return null;
+    return clubPlayers.find(p =>
+      p.person_id &&
+      (!p.user_id || p.user_id === targetUser.id) &&
+      String(p.email || p.linked_user_email || '').trim().toLowerCase() === targetEmail
+    ) || null;
   };
 
   const filteredUsers = allUsers.filter(u => {
