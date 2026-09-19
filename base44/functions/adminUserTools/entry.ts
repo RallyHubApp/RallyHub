@@ -34,6 +34,14 @@ Deno.serve(async (req) => {
       if (target.role === 'admin' && status !== 'approved') {
         return Response.json({ error: 'Platform admins cannot be rejected/revoked here' }, { status: 400 });
       }
+      if (status === 'approved' && target.role !== 'admin') {
+        const clubAccesses = await base44.asServiceRole.entities.ClubUserAccess.filter({ user_id: userId, status: 'active' });
+        if (!clubAccesses?.length) {
+          return Response.json({
+            error: 'Cannot approve RallyHub Club access: this account has no active ClubUserAccess. Directory access is separate and must remain directory-only.'
+          }, { status: 409 });
+        }
+      }
       await base44.asServiceRole.entities.User.update(userId, { approval_status: status });
       return Response.json({ success: true, userId, status });
     }
@@ -57,6 +65,16 @@ Deno.serve(async (req) => {
       const users = await base44.asServiceRole.entities.User.filter({ email: userEmail.toLowerCase() });
       const targetUser = users[0];
       if (!targetUser) return Response.json({ error: 'No user account found for this email' }, { status: 404 });
+      const [directoryAccess, clubAccess, tenantAccess] = await Promise.all([
+        base44.asServiceRole.entities.DirectoryListingAccess.filter({ user_id: targetUser.id, status: 'active' }),
+        base44.asServiceRole.entities.ClubUserAccess.filter({ user_id: targetUser.id, status: 'active' }),
+        base44.asServiceRole.entities.TenantUserAccess.filter({ user_id: targetUser.id, status: 'active' }),
+      ]);
+      if (directoryAccess?.length && !clubAccess?.length && !tenantAccess?.length) {
+        return Response.json({
+          error: 'This is a Directory-only account. Give explicit RallyHub Club/Tenant access before any platform-admin promotion.'
+        }, { status: 409 });
+      }
       await base44.asServiceRole.entities.User.update(targetUser.id, { role: 'admin' });
       return Response.json({ success: true, userId: targetUser.id, userName: targetUser.full_name });
     }
