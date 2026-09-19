@@ -353,7 +353,7 @@ export default function MyProfile() {
         <TabsList className="bg-secondary">
           <TabsTrigger value="profile" className="text-xs gap-1.5"><User className="w-3.5 h-3.5" /> Profile</TabsTrigger>
           <TabsTrigger value="fixtures" className="text-xs gap-1.5"><Calendar className="w-3.5 h-3.5" /> Fixtures ({upcoming.length})</TabsTrigger>
-          <TabsTrigger value="results" className="text-xs gap-1.5"><Trophy className="w-3.5 h-3.5" /> Results ({completed.length})</TabsTrigger>
+          <TabsTrigger value="results" className="text-xs gap-1.5"><Trophy className="w-3.5 h-3.5" /> Results ({sportingHistory.length})</TabsTrigger>
         </TabsList>
 
         {/* ── PROFILE TAB ── */}
@@ -466,6 +466,43 @@ export default function MyProfile() {
             {!memberSnapshot?.member && (
               <p className="mt-4 text-xs text-amber-600">A separate club membership record is not currently linked to this account. Your personal and playing records are still connected and editable above.</p>
             )}
+          </GlassCard>
+
+          <GlassCard>
+            <h3 className="text-sm font-semibold text-foreground mb-1">My consents & declarations</h3>
+            <p className="text-xs text-muted-foreground mb-4">The current membership consents RallyHub holds for you.</p>
+            <div className="grid md:grid-cols-2 gap-2">
+              {consentRows.map(consent => (
+                <div key={consent.id} className="rounded-lg border border-border p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold capitalize">{String(consent.consent_type || '').replaceAll('_',' ')}</p>
+                    <Badge variant="outline" className="text-[9px]">{consent.status || '—'}</Badge>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-2">{consent.response_text || 'No response text stored'}</p>
+                </div>
+              ))}
+              {consentRows.length === 0 && <p className="text-xs text-muted-foreground">No consent records are currently linked to this profile.</p>}
+            </div>
+          </GlassCard>
+
+          <GlassCard>
+            <h3 className="text-sm font-semibold text-foreground mb-1">Payments & receipts</h3>
+            <p className="text-xs text-muted-foreground mb-4">Your recorded RallyHub club payments. Downloadable receipts will be added when the full payment engine is enabled.</p>
+            <div className="space-y-2">
+              {paymentRows.map(payment => (
+                <div key={payment.id} className="rounded-lg border border-border p-3 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <p className="font-semibold capitalize">{payment.payment_type || payment.purpose_type || 'Payment'}</p>
+                    <p className="text-muted-foreground mt-0.5">{payment.payment_method || 'Payment method not recorded'} {payment.payment_date ? `· ${payment.payment_date}` : ''}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">{payment.amount != null ? `€${payment.amount}` : '—'}</p>
+                    <p className="text-muted-foreground capitalize">{payment.payment_status || '—'}</p>
+                  </div>
+                </div>
+              ))}
+              {paymentRows.length === 0 && <p className="text-xs text-muted-foreground">No payment records are currently linked to this profile.</p>}
+            </div>
           </GlassCard>
         </TabsContent>
 
