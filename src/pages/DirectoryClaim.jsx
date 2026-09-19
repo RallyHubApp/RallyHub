@@ -134,7 +134,7 @@ export default function DirectoryClaim() {
                 <p className="text-muted-foreground mt-2">
                   Club representatives can request permission to maintain this public directory listing. Directory access is separate from RallyHub club membership and the RallyHub club-management app.
                 </p>
-                {inviteToken && <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><strong>Secure invitation detected.</strong> This one-time link was issued by RallyHub for this club. Verify your account details below and, if they match the invited email or mobile number, you can continue without waiting for a separate administrator approval.</div>}
+                {inviteToken && <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><strong>Secure invitation detected.</strong> This one-time link was sent by RallyHub for this club, usually by WhatsApp or email. If it came by WhatsApp, use the same mobile number. If it came by email, use the same email address. Once the invited detail matches your verified account, you can continue without waiting for a separate administrator approval.</div>
               </div>
             </div>
 
@@ -145,7 +145,7 @@ export default function DirectoryClaim() {
                 <h2 className="text-xl font-bold">{inviteToken ? 'First time on RallyHub?' : 'Sign in or create a directory account'}</h2>
                 <p className="text-sm text-muted-foreground mt-2">
                   {inviteToken
-                    ? 'If you do not already have a RallyHub account, create a directory account first. Use the same mobile number that received this invitation. You will also need an email address you can access so we can verify the account.'
+                    ? 'If you do not already have a RallyHub account, create a directory account first. For a WhatsApp invitation, use the same mobile number that received it. For an email invitation, use the same email address. You will also need access to that email so RallyHub can verify the account.'
                     : 'A directory account is required only so RallyHub can identify and verify the person asking to edit this listing. It does not give access to RallyHub Club, tournaments or player records.'}
                 </p>
                 <div className="flex flex-wrap gap-3 mt-5">
