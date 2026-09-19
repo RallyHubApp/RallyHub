@@ -167,7 +167,7 @@ export default function Register() {
     >
       {directoryMode && (
         <div className="mb-5 rounded-xl border border-primary/25 bg-primary/10 p-4 text-sm text-muted-foreground">
-          <strong className="text-foreground">First time on RallyHub? Create this account first.</strong> If your invitation came by WhatsApp, use the same mobile number your club already has for you. Your email is needed to create and verify the account; your mobile number is normally what links you to the Directory invitation. This account gives Directory access only, not RallyHub Club or tournament access.
+          <strong className="text-foreground">First time on RallyHub? Create this account first.</strong> If your invitation came by WhatsApp, use the same mobile number that received it. If it came by email, use that same email address. An email address you can access is required to verify the Directory account. This account gives Directory access only, not RallyHub Club or tournament access.
         </div>
       )}
       {!directoryMode && (
@@ -232,7 +232,7 @@ export default function Register() {
                   required
                 />
               </div>
-              <p className="text-xs text-muted-foreground">For WhatsApp invitations, this is the key detail RallyHub uses to match you to the invitation.</p>
+              <p className="text-xs text-muted-foreground">For WhatsApp invitations, this is the key detail RallyHub uses to match you. For email invitations, the invited email address is the key match.</p>
             </div>
           </>
         )}
