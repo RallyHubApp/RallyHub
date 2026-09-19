@@ -61,7 +61,8 @@ export default function DirectoryAccessPanel({ listingSlug, clubName, county = '
       if (channel === 'whatsapp') {
         const digits = whatsappDigits(invite.phone, county);
         if (!digits) throw new Error('Enter a valid mobile number for WhatsApp.');
-        const text = `Hi ${invite.name.trim() || 'there'}, ${clubName} has invited you to help manage its RallyHub Directory listing. Use this secure one-time link to accept Directory Editor access: ${res.data?.claimUrl} The link expires after 72 hours.`;
+        const firstName = invite.name.trim().split(/\s+/)[0] || 'there';
+        const text = `Hi ${firstName},\n\nYou’ve been invited to help manage the *${clubName}* listing in the RallyHub Club Directory as a *Directory Editor*.\n\nI’d really value your feedback while you use it — anything that feels confusing, awkward, unnecessary, missing, or that you think could simply be better.\n\n*Your secure editor link:*\n${res.data?.claimUrl}\n\nThis gives you Directory editing access only. It does not give access to RallyHub Club, tournaments, players or club administration.\n\n*Why the Directory exists:*\nhttps://rallyhub.ie/directory/story\n\n*Club Guide & Help:*\nhttps://rallyhub.ie/directory/help\n\n*Quick Start Guide:*\nhttps://rallyhub.ie/directory/quick-start\n\nThe link is single-use and expires after 72 hours. If anything gives you trouble, just WhatsApp or call me.\n\nYours in sport,\n*Brian Moore*\n087 810 0333`;
         window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
         setMessage(`Secure WhatsApp invitation opened for ${invite.phone}. The link expires after 72 hours and can only be used once.`);
       } else {
