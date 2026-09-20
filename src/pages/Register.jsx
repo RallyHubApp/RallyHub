@@ -101,7 +101,7 @@ export default function Register() {
     return (
       <AuthLayout
         icon={Mail}
-        title={directoryMode ? "Verify your directory account" : "Verify your email"}
+        title="Verify your email"
         subtitle={`We sent a code to ${email}`}
       >
         {error && (
@@ -154,20 +154,20 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title={directoryMode ? "Create a directory account" : "Create your account"}
-      subtitle={directoryMode ? "For claiming, adding or maintaining a public club listing" : "Sign up to get started"}
+      title="Create your RallyHub account"
+      subtitle={directoryMode ? "Create one RallyHub account, then continue with your Directory task" : "Sign up to get started"}
       footer={
         <>
-          {directoryMode ? "Already have a RallyHub or directory account?" : "Already have an account?"}{" "}
+          Already have a RallyHub account?{" "}
           <Link to={`/login${returnToQuery}`} className="text-primary font-medium hover:underline">
-            {directoryMode ? 'Directory sign in' : 'Log in'}
+            Log in
           </Link>
         </>
       }
     >
       {directoryMode && (
         <div className="mb-5 rounded-xl border border-primary/25 bg-primary/10 p-4 text-sm text-muted-foreground">
-          <strong className="text-foreground">First time on RallyHub? Create this account first.</strong> If your invitation came by WhatsApp, use the same mobile number that received it. If it came by email, use that same email address. An email address you can access is required to verify the Directory account. This account gives Directory access only, not RallyHub Club or tournament access.
+          <strong className="text-foreground">This creates your RallyHub account.</strong> If your invitation came by WhatsApp, use the same mobile number that received it. If it came by email, use that same email address. You also need an email address you can access for verification. Directory editing is then granted as a permission on this account; it does not automatically give RallyHub Club or tournament access.
         </div>
       )}
       {!directoryMode && (
@@ -287,10 +287,10 @@ export default function Register() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              {directoryMode ? 'Creating directory account...' : 'Creating account...'}
+              Creating account...
             </>
           ) : (
-            directoryMode ? "Create directory account" : "Create account"
+            "Create account"
           )}
         </Button>
       </form>
