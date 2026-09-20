@@ -59,8 +59,10 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated, i
         const filters = { tenant_id: user.active_tenant_id, status: 'active' };
         if (user.active_club_id) filters.club_id = user.active_club_id;
         const rows = await base44.entities.Venue.filter(filters, 'name', 100);
-        const tournamentRows = await base44.entities.Tournament.list('-updated_date', 100).catch(() => []);
-        const kotcRows = (tournamentRows || []).filter(t => t.format === 'King of the Court' && !['Completed', 'Cancelled'].includes(t.status) && (!user.active_tenant_id || t.tenant_id === user.active_tenant_id) && (!user.active_club_id || t.host_club_id === user.active_club_id));
+        const tournamentFilters = { tenant_id: user.active_tenant_id };
+        if (user.active_club_id) tournamentFilters.host_club_id = user.active_club_id;
+        const tournamentRows = await base44.entities.Tournament.filter(tournamentFilters, '-updated_date', 100).catch(() => []);
+        const kotcRows = (tournamentRows || []).filter(t => t.format === 'King of the Court' && !['Completed', 'Cancelled'].includes(t.status));
         if (!cancelled) { setVenues(rows || []); setExistingKotc(kotcRows); }
       } catch { if (!cancelled) setVenues([]); }
     })();
