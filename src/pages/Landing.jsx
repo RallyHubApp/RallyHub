@@ -249,7 +249,7 @@ export default function Landing() {
 
               <div className="lg:hidden">
                 <img src={CLIFFS_PHOTO} alt="Cliffs of Moher, County Clare" className="block h-auto w-full"/>
-                <div className="grid bg-[#053c56] text-white sm:grid-cols-4">
+                <div className="hidden">
                   {[
                     [Users,'People','Build connections'],
                     [MapPin,'Places','Find your club'],
@@ -265,7 +265,7 @@ export default function Landing() {
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center justify-center bg-[#053c56] py-3 text-[9px] font-semibold tracking-[.38em] text-white sm:hidden">
+                <div className="flex items-center justify-center bg-[#053c56] py-3 text-[9px] font-semibold tracking-[.30em] text-white">
                   PLAY <span className="mx-2 text-[#9ade42]">•</span> CONNECT <span className="mx-2 text-[#9ade42]">•</span> BELONG
                   <span className="ml-4 h-7 w-7 rounded-full bg-[#d9ef30]"/>
                 </div>
