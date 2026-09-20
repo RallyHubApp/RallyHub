@@ -9,6 +9,7 @@ import {
   MapPin,
   Menu,
   Search,
+  Trophy,
   Users,
   X,
 } from 'lucide-react';
@@ -17,34 +18,45 @@ import { directoryClubs } from '@/data/directorySeed';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const HERO_PHOTO = 'https://images.unsplash.com/photo-1761644563005-87071f6485a6?auto=format&fit=crop&fm=jpg&q=84&w=2200';
+const CLIFFS_PHOTO = 'https://upload.wikimedia.org/wikipedia/commons/b/b0/CliffsOfMoher_Panorama.jpg';
 
-const FeatureCard = ({ icon: Icon, title, copy, action, to, muted = false }) => (
-  <article className={`rounded-2xl border border-[#dce7e3] bg-white p-5 shadow-[0_10px_28px_rgba(13,33,66,0.06)] ${muted ? 'opacity-90' : ''}`}>
-    <div className="flex items-start gap-4">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#079447] text-white shadow-sm">
-        <Icon className="h-6 w-6" />
-      </div>
-      <div className="min-w-0">
-        <h3 className="text-lg font-extrabold tracking-tight text-[#0b1a50]">{title}</h3>
-        <p className="mt-1 text-sm leading-5 text-slate-600">{copy}</p>
-        {to ? (
-          <Link to={to} className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[#087f45] hover:underline">
-            {action} <ArrowRight className="h-4 w-4" />
-          </Link>
-        ) : (
-          <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[#087f45]">{action}</span>
-        )}
-      </div>
-    </div>
-  </article>
-);
+const featureCards = [
+  {
+    icon: Search,
+    title: 'Find Clubs',
+    copy: 'Discover clubs, venues and sessions near you.',
+    action: 'Search Directory',
+    to: '/directory',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Join Events',
+    copy: 'See what’s on and get involved.',
+    action: 'Browse Events',
+    to: '/directory',
+  },
+  {
+    icon: Users,
+    title: 'Manage Your Club',
+    copy: 'Create and edit your club listing.',
+    action: 'Get Started',
+    to: '/directory?manage=1',
+  },
+  {
+    icon: BarChart3,
+    title: 'Play, Track, Progress',
+    copy: 'Take part, record your games and be part of a growing community.',
+    action: 'Learn More',
+    to: '/about',
+  },
+];
 
 export default function Landing() {
-  const { user, isAuthenticated, isLoadingAuth } = useAuth();
+  const { isAuthenticated, isLoadingAuth } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const loginHref = '/login?returnTo=%2F';
-  const appHref = '/app';
+  const loginTarget = isAuthenticated ? '/app' : '/login?returnTo=%2F';
 
   const faq = [
     {
@@ -82,7 +94,7 @@ export default function Landing() {
       name: 'RallyHub',
       url: SITE_URL,
       inLanguage: 'en-IE',
-      description: 'Find clubs and places to play across Ireland and beyond.'
+      description: 'Find clubs, venues and sessions across Ireland and beyond.'
     },
     {
       '@context': 'https://schema.org',
@@ -104,60 +116,71 @@ export default function Landing() {
         structuredData={seoData}
       />
 
-      <div className="min-h-screen bg-white text-[#0b1a50]">
-        <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-            <Link to="/" className="flex items-center gap-2.5">
-              <img src={LOGO_URL} alt="RallyHub" className="h-11 w-11 object-contain sm:h-12 sm:w-12" />
-              <div>
-                <div className="text-[1.45rem] font-black leading-none tracking-tight sm:text-[1.65rem]">
-                  Rally<span className="text-[#078a47]">Hub</span>
+      <div className="min-h-screen bg-[#f8fbfb] text-[#08184d]">
+        <header className="relative z-50 border-b border-[#e4ebed] bg-white">
+          <div className="mx-auto flex h-[78px] max-w-[1380px] items-center justify-between px-4 sm:px-6 lg:px-8">
+            <Link to="/" className="flex items-center gap-3">
+              <img src={LOGO_URL} alt="RallyHub" className="h-12 w-12 object-contain sm:h-14 sm:w-14" />
+              <div className="leading-none">
+                <div className="text-[1.65rem] font-black tracking-[-0.045em] text-[#08123f] sm:text-[2rem]">
+                  Rally<span className="text-[#079247]">Hub</span>
                 </div>
-                <div className="mt-1 text-[8px] font-bold tracking-[.25em] text-slate-600 sm:text-[9px]">PLAY • CONNECT • BELONG</div>
+                <div className="mt-1.5 text-[8px] font-bold tracking-[.31em] text-[#13235a] sm:text-[9px]">
+                  PLAY <span className="text-[#079247]">•</span> CONNECT <span className="text-[#079247]">•</span> BELONG
+                </div>
               </div>
             </Link>
 
-            <nav className="hidden items-center gap-7 text-sm font-semibold text-[#0b1a50] lg:flex">
-              <Link to="/" className="hover:text-[#078a47]">Home</Link>
-              <Link to="/directory" className="hover:text-[#078a47]">Directory</Link>
-              <Link to="/directory" className="hover:text-[#078a47]">Clubs</Link>
-              <Link to="/about" className="hover:text-[#078a47]">About</Link>
+            <nav className="hidden items-center gap-7 text-[13px] font-semibold text-[#10235a] lg:flex">
+              <Link to="/" className="text-[#079247]">Home</Link>
+              <Link to="/directory" className="transition hover:text-[#079247]">Directory</Link>
+              <Link to="/directory" className="transition hover:text-[#079247]">Clubs</Link>
+              <a href="#events" className="transition hover:text-[#079247]">Events</a>
+              <Link to="/about" className="transition hover:text-[#079247]">About</Link>
             </nav>
 
             <div className="hidden items-center gap-2 lg:flex">
-              <Link to={isAuthenticated ? appHref : loginHref}>
-                <Button variant="outline" className="border-slate-300 bg-white text-[#0b1a50] hover:bg-slate-50">
+              <Link to="/directory" aria-label="Search directory" className="mr-1 rounded-full p-2.5 text-[#092052] transition hover:bg-slate-50">
+                <Search className="h-5 w-5" />
+              </Link>
+              <Link to={loginTarget}>
+                <Button variant="outline" className="h-10 rounded-lg border-[#cfd9df] bg-white px-5 font-bold text-[#0a2150] hover:bg-slate-50">
                   {isLoadingAuth ? 'Checking…' : isAuthenticated ? 'Open RallyHub' : 'Log in'}
                 </Button>
               </Link>
               <Link to="/directory/add">
-                <Button className="bg-[#078a47] text-white hover:bg-[#06763d]">Get Started</Button>
+                <Button className="h-10 rounded-lg bg-[#078d48] px-5 font-bold text-white shadow-[0_7px_18px_rgba(7,141,72,.18)] hover:bg-[#067a3f]">
+                  Get Started
+                </Button>
               </Link>
             </div>
 
             <button
               type="button"
-              aria-label="Toggle menu"
+              aria-label="Menu"
               onClick={() => setMenuOpen(v => !v)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-[#0b1a50] lg:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-[#092052] lg:hidden"
             >
-              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
 
           {menuOpen && (
-            <div className="border-t border-slate-200 bg-white px-4 py-4 lg:hidden">
-              <div className="mx-auto flex max-w-7xl flex-col gap-1">
-                <Link to="/" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 font-semibold hover:bg-slate-50">Home</Link>
-                <Link to="/directory" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 font-semibold hover:bg-slate-50">Directory</Link>
-                <Link to="/about" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 font-semibold hover:bg-slate-50">About</Link>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <Link to={isAuthenticated ? appHref : loginHref} onClick={() => setMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">{isAuthenticated ? 'Open RallyHub' : 'Log in'}</Button>
+            <div className="border-t border-[#e6ecef] bg-white px-4 py-4 lg:hidden">
+              <div className="mx-auto max-w-[1380px] space-y-1">
+                {[
+                  ['Home','/'],
+                  ['Directory','/directory'],
+                  ['Clubs','/directory'],
+                  ['About','/about'],
+                ].map(([label,to]) => (
+                  <Link key={label} to={to} onClick={() => setMenuOpen(false)} className="flex items-center justify-between rounded-xl px-3 py-3 font-semibold text-[#0a2150] hover:bg-[#f4faf7]">
+                    {label}<ChevronRight className="h-4 w-4 text-[#078d48]" />
                   </Link>
-                  <Link to="/directory/add" onClick={() => setMenuOpen(false)}>
-                    <Button className="w-full bg-[#078a47] text-white hover:bg-[#06763d]">Get Started</Button>
-                  </Link>
+                ))}
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <Link to={loginTarget} onClick={() => setMenuOpen(false)}><Button variant="outline" className="w-full">{isAuthenticated ? 'Open RallyHub' : 'Log in'}</Button></Link>
+                  <Link to="/directory/add" onClick={() => setMenuOpen(false)}><Button className="w-full bg-[#078d48] text-white hover:bg-[#067a3f]">Get Started</Button></Link>
                 </div>
               </div>
             </div>
@@ -165,200 +188,178 @@ export default function Landing() {
         </header>
 
         <main>
-          <section className="relative overflow-hidden border-b border-[#dce8e4] bg-[linear-gradient(120deg,#f7fcfb_0%,#eef9f4_45%,#e7f5fb_100%)]">
-            <div className="absolute -right-32 top-8 h-96 w-96 rounded-full bg-[#b9ead1]/35 blur-3xl" />
-            <div className="absolute left-[45%] top-12 h-72 w-72 rounded-full bg-sky-200/35 blur-3xl" />
+          <section className="relative overflow-hidden bg-white">
+            <div className="mx-auto grid min-h-[510px] max-w-[1380px] lg:grid-cols-[52%_48%]">
+              <div className="relative z-20 flex items-center px-5 py-12 sm:px-8 lg:px-12 lg:py-14 xl:px-16">
+                <div className="max-w-[660px]">
+                  <h1 className="text-[3rem] font-black leading-[.96] tracking-[-0.05em] text-[#071342] sm:text-[4.1rem] xl:text-[5rem]">
+                    Play More
+                    <span className="block">Connect <span className="text-[#078f49]">Deeper</span></span>
+                    <span className="block text-[#0b5f5b]">Belong Together</span>
+                  </h1>
 
-            <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[1.02fr_.98fr] lg:px-8 lg:py-16">
-              <div className="max-w-2xl">
-                <div className="mb-5 inline-flex items-center rounded-full border border-[#bfe2d0] bg-white/80 px-3 py-1.5 text-xs font-bold text-[#087f45] shadow-sm">
-                  {directoryClubs.length} clubs listed in the RallyHub Directory
-                </div>
+                  <p className="mt-5 max-w-[610px] text-[1rem] font-medium leading-7 text-[#1e315f] sm:text-[1.08rem]">
+                    RallyHub helps players find clubs, venues and events across Ireland and beyond — for every sport, at every level.
+                  </p>
 
-                <h1 className="text-[2.75rem] font-black leading-[.98] tracking-[-0.045em] text-[#09184b] sm:text-6xl lg:text-[4.8rem]">
-                  Play More
-                  <span className="block">Connect <span className="text-[#087f45]">Deeper</span></span>
-                  <span className="block text-[#0b5b59]">Belong Together</span>
-                </h1>
-
-                <p className="mt-6 max-w-xl text-base font-medium leading-7 text-[#26385f] sm:text-lg">
-                  RallyHub helps players find clubs, venues and sessions across Ireland and beyond — for every sport, at every level.
-                </p>
-
-                <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                  <Link to="/directory">
-                    <Button size="lg" className="w-full rounded-xl bg-[#079447] px-7 text-white hover:bg-[#067f3d] sm:w-auto">
-                      <Search className="mr-2 h-5 w-5" /> Find a Club or Session
-                    </Button>
-                  </Link>
-                  <Link to="/directory/add">
-                    <Button size="lg" variant="outline" className="w-full rounded-xl border-slate-300 bg-white px-7 text-[#0b1a50] hover:bg-slate-50 sm:w-auto">
-                      Create Your Club Listing
-                    </Button>
-                  </Link>
-                </div>
-
-                <p className="mt-4 text-xs leading-5 text-slate-500">
-                  Browse without signing in. One RallyHub account is used only when you need to manage an authorised listing or access an approved club area.
-                </p>
-              </div>
-
-              <div className="relative min-h-[340px] overflow-hidden rounded-[2.2rem] border border-white/80 bg-[linear-gradient(135deg,#d8eef5_0%,#b9dfd0_45%,#72b4a1_100%)] shadow-[0_25px_70px_rgba(13,33,66,0.18)] sm:min-h-[420px]">
-                <div className="absolute inset-0 opacity-55">
-                  <div className="absolute left-[-5%] top-[20%] h-[2px] w-[110%] rotate-[-8deg] bg-white/80" />
-                  <div className="absolute left-[14%] top-[-10%] h-[120%] w-[2px] rotate-[11deg] bg-white/60" />
-                  <div className="absolute bottom-0 left-0 h-[46%] w-full bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(11,85,69,.42)_100%)]" />
-                  <div className="absolute bottom-16 left-10 h-16 w-16 rounded-full bg-slate-200/90 blur-[1px]" />
-                  <div className="absolute bottom-24 left-28 h-20 w-20 rounded-full bg-slate-200/70 blur-[1px]" />
-                  <div className="absolute bottom-20 right-16 h-16 w-16 rounded-full bg-slate-200/80 blur-[1px]" />
-                </div>
-
-                <div className="absolute right-[17%] top-[10%] h-[70%] w-[33%] rotate-[13deg] rounded-[42%_42%_30%_30%] border-[3px] border-[#9be35b] bg-[#15251f] shadow-2xl">
-                  <div className="absolute left-1/2 top-[28%] -translate-x-1/2 text-center">
-                    <img src={LOGO_URL} alt="" className="mx-auto h-16 w-16 object-contain brightness-125 sm:h-20 sm:w-20" />
-                    <div className="mt-2 text-[9px] font-semibold tracking-[.28em] text-white sm:text-[10px]">PLAY<br/>CONNECT<br/>BELONG</div>
+                  <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                    <Link to="/directory">
+                      <Button className="h-12 w-full rounded-lg bg-[#079447] px-7 text-[15px] font-bold text-white shadow-[0_8px_20px_rgba(7,148,71,.22)] hover:bg-[#067f3d] sm:w-auto">
+                        <Search className="mr-2 h-5 w-5" /> Find a Club or Session
+                      </Button>
+                    </Link>
+                    <Link to="/directory/add">
+                      <Button variant="outline" className="h-12 w-full rounded-lg border-[#b8c8d1] bg-white px-7 text-[15px] font-bold text-[#10235a] hover:bg-[#f8fbfb] sm:w-auto">
+                        Create Your Club Listing
+                      </Button>
+                    </Link>
                   </div>
-                  <div className="absolute bottom-[-23%] left-1/2 h-[28%] w-[22%] -translate-x-1/2 rounded-b-3xl bg-[#13221d]" />
+                </div>
+              </div>
+
+              <div className="relative min-h-[390px] overflow-hidden lg:min-h-[510px]">
+                <img
+                  src={HERO_PHOTO}
+                  alt="Players enjoying pickleball"
+                  className="absolute inset-0 h-full w-full object-cover object-center"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,.96)_0%,rgba(255,255,255,.54)_14%,rgba(255,255,255,0)_38%)] lg:-left-1" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,18,46,.02)_0%,rgba(5,18,46,.08)_100%)]" />
+
+                <div className="absolute right-[8%] top-[8%] h-[72%] w-[37%] rotate-[14deg] rounded-[42%_42%_30%_30%] border-[4px] border-[#99de55] bg-[linear-gradient(150deg,#26372f_0%,#101d18_72%)] shadow-[0_24px_38px_rgba(0,0,0,.38)] sm:right-[10%] sm:w-[34%] lg:right-[12%]">
+                  <div className="absolute left-1/2 top-[27%] -translate-x-1/2 text-center">
+                    <img src={LOGO_URL} alt="" className="mx-auto h-16 w-16 object-contain brightness-125 sm:h-20 sm:w-20" />
+                    <div className="mt-3 text-[9px] font-semibold tracking-[.26em] text-white sm:text-[10px]">
+                      PLAY<br/>CONNECT<br/>BELONG
+                    </div>
+                  </div>
+                  <div className="absolute bottom-[-21%] left-1/2 h-[27%] w-[21%] -translate-x-1/2 rounded-b-[16px] bg-[linear-gradient(90deg,#12231d,#26362f,#0c1713)] shadow-lg" />
                 </div>
 
-                <div className="absolute bottom-[12%] right-[47%] h-16 w-16 rounded-full bg-[#d7ef35] shadow-[inset_-8px_-8px_0_rgba(111,142,0,.17),0_12px_20px_rgba(20,40,30,.2)] sm:h-20 sm:w-20">
-                  <div className="absolute left-[22%] top-[24%] h-2 w-2 rounded-full bg-[#a9c81b]" />
-                  <div className="absolute right-[22%] top-[40%] h-2 w-2 rounded-full bg-[#a9c81b]" />
-                  <div className="absolute bottom-[23%] left-[42%] h-2 w-2 rounded-full bg-[#a9c81b]" />
+                <div className="absolute bottom-[10%] left-[17%] h-[76px] w-[76px] rounded-full bg-[radial-gradient(circle_at_32%_26%,#efff52_0%,#d9ee28_52%,#adc914_100%)] shadow-[0_14px_26px_rgba(0,0,0,.25)] sm:h-[92px] sm:w-[92px]">
+                  {[['24%','25%'],['62%','20%'],['42%','52%'],['68%','64%'],['25%','70%']].map(([l,t],i)=>(
+                    <span key={i} className="absolute h-2.5 w-2.5 rounded-full bg-[#a2bc17]/75 shadow-inner" style={{left:l,top:t}} />
+                  ))}
                 </div>
 
-                <div className="absolute bottom-9 right-7 rotate-[-8deg] text-right font-[cursive] text-2xl font-bold leading-none text-white drop-shadow sm:text-3xl">
+                <div className="absolute bottom-[8%] right-[6%] -rotate-6 text-right text-[2.1rem] font-bold leading-[.9] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,.7)] sm:text-[2.5rem]" style={{fontFamily:"'Caveat', cursive"}}>
                   Good People<br/>Great Games
-                  <div className="ml-auto mt-2 h-1.5 w-28 rotate-[-5deg] rounded-full bg-[#91d83a]" />
+                  <div className="ml-auto mt-2 h-1.5 w-32 -rotate-6 rounded-full bg-[#8fda39]" />
                 </div>
               </div>
             </div>
           </section>
 
-          <section className="mx-auto max-w-7xl px-4 py-9 sm:px-6 lg:px-8">
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <FeatureCard
-                icon={Search}
-                title="Find Clubs"
-                copy="Discover clubs, venues and sessions near you."
-                action="Search Directory"
-                to="/directory"
-              />
-              <FeatureCard
-                icon={CalendarDays}
-                title="Join Events"
-                copy="See what clubs are running and find the right place to play."
-                action="Browse Clubs"
-                to="/directory"
-              />
-              <FeatureCard
-                icon={Users}
-                title="Manage Your Club"
-                copy="Claim or create your public club listing and keep it current."
-                action="Get Started"
-                to="/directory?manage=1"
-              />
-              <FeatureCard
-                icon={BarChart3}
-                title="Play, Track, Progress"
-                copy="RallyHub Club is still under development and will be released separately."
-                action="In development"
-                muted
-              />
-            </div>
-          </section>
-
-          <section className="mx-auto max-w-7xl px-4 pb-0 sm:px-6 lg:px-8">
-            <div className="relative overflow-hidden rounded-t-[2rem] bg-[linear-gradient(145deg,#d8eee4_0%,#8dc6b3_35%,#176b73_68%,#0c4c68_100%)] px-6 py-9 text-white sm:px-10 sm:py-11">
-              <div className="absolute -bottom-16 left-[-4%] h-40 w-[58%] rounded-[50%] bg-[#3d7f52]/70" />
-              <div className="absolute -bottom-10 left-[30%] h-32 w-[45%] rounded-[50%] bg-[#7aa66b]/55" />
-              <div className="absolute right-[-6%] top-[14%] h-36 w-[42%] rounded-[48%] bg-[#d8eadb]/45" />
-              <div className="relative grid items-end gap-6 md:grid-cols-[1fr_auto]">
-                <div>
-                  <div className="font-[cursive] text-3xl font-bold leading-tight drop-shadow-sm sm:text-4xl">Cliffs of Moher</div>
-                  <div className="mt-1 text-sm font-semibold">County Clare, A Healthier, Happier Ireland</div>
-                  <div className="mt-3 h-1.5 w-40 rotate-[-3deg] rounded-full bg-[#92d83b]" />
-                </div>
-                <div className="font-[cursive] text-3xl font-bold sm:text-4xl">People · Places · Play</div>
-              </div>
-            </div>
-
-            <div className="grid gap-px overflow-hidden rounded-b-[2rem] bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                [Users, 'People', 'Build connections'],
-                [MapPin, 'Places', 'Find your club'],
-                [CalendarDays, 'Sessions', 'Play more'],
-                [Users, 'Community', 'Belong together']
-              ].map(([Icon,title,copy]) => (
-                <div key={title} className="bg-[#063a56] px-5 py-5 text-center text-white">
-                  <Icon className="mx-auto h-6 w-6" />
-                  <div className="mt-2 font-bold">{title}</div>
-                  <div className="text-xs text-white/75">{copy}</div>
-                </div>
+          <section id="events" className="bg-white">
+            <div className="mx-auto grid max-w-[1380px] gap-4 px-5 pb-8 pt-5 sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-12 xl:px-16">
+              {featureCards.map(({icon:Icon,title,copy,action,to}) => (
+                <Link key={title} to={to} className="group rounded-2xl border border-[#dfe8ea] bg-white p-5 shadow-[0_10px_28px_rgba(8,24,77,.055)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(8,24,77,.09)]">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#079447] text-white">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-[1.05rem] font-extrabold text-[#08184d]">{title}</h2>
+                      <p className="mt-1 text-sm leading-5 text-[#45567b]">{copy}</p>
+                      <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[#087e45]">
+                        {action}<ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                      </span>
+                    </div>
+                  </div>
+                </Link>
               ))}
             </div>
           </section>
 
-          <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div className="grid items-center gap-10 rounded-[2rem] border border-[#dce8e4] bg-[#f8fcfa] p-7 sm:p-10 lg:grid-cols-[.9fr_1.1fr]">
-              <div>
-                <div className="font-[cursive] text-3xl font-bold text-[#0b1a50]">Stronger Sporting Communities Together</div>
-                <div className="mt-3 h-1.5 w-44 rotate-[-3deg] rounded-full bg-[#91d83a]" />
-                <h2 className="mt-7 text-3xl font-black tracking-tight text-[#0b1a50]">One platform. Many sports. One community.</h2>
-                <p className="mt-4 leading-7 text-slate-600">
-                  RallyHub is being designed to support clubs and communities across pickleball, tennis, badminton, padel and more, while keeping the public Directory simple and useful today.
-                </p>
+          <section className="bg-white">
+            <div className="mx-auto max-w-[1380px] px-5 sm:px-8 lg:px-12 xl:px-16">
+              <div className="relative h-[158px] overflow-hidden rounded-t-[8px]">
+                <img src={CLIFFS_PHOTO} alt="Cliffs of Moher, County Clare" className="absolute inset-0 h-full w-full object-cover object-center" />
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,.08)_0%,rgba(255,255,255,.12)_58%,rgba(4,61,83,.6)_100%)]" />
+                <div className="absolute left-[22%] top-4 -rotate-3 text-[2rem] font-bold leading-[.95] text-[#0b214e] drop-shadow-[0_1px_2px_rgba(255,255,255,.9)] sm:left-[26%] sm:text-[2.35rem]" style={{fontFamily:"'Caveat', cursive"}}>
+                  Cliffs of Moher
+                  <div className="text-[1rem] sm:text-[1.25rem]">County Clare, A Healthier, Happier Ireland</div>
+                  <div className="mt-1.5 h-1.5 w-44 -rotate-3 rounded-full bg-[#91d83a]" />
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+
+              <div className="grid overflow-hidden rounded-b-[8px] bg-[#073b56] sm:grid-cols-2 lg:grid-cols-4">
                 {[
-                  ['●','Pickleball'],
-                  ['◉','Tennis'],
-                  ['✦','Badminton'],
-                  ['◈','Padel'],
-                  ['●●','And more']
-                ].map(([mark,label]) => (
-                  <div key={label} className="rounded-2xl border border-[#dce8e4] bg-white px-3 py-4 text-center shadow-sm">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#d9f2e4] text-xl font-black text-[#078a47]">{mark}</div>
-                    <div className="mt-2 text-xs font-bold text-[#0b1a50]">{label}</div>
+                  [Users,'People','Build connections'],
+                  [MapPin,'Places','Find your club'],
+                  [CalendarDays,'Sessions','Play more'],
+                  [Trophy,'Community','Belong together'],
+                ].map(([Icon,title,copy])=>(
+                  <div key={title} className="flex items-center justify-center gap-3 border-white/10 px-5 py-5 text-white sm:border-r">
+                    <Icon className="h-6 w-6 shrink-0" />
+                    <div>
+                      <div className="font-bold">{title}</div>
+                      <div className="text-xs text-white/70">{copy}</div>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           </section>
 
-          <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-black tracking-tight text-[#0b1a50] sm:text-4xl">RallyHub Directory FAQ</h2>
-              <p className="mt-3 text-slate-600">Straight answers about finding, adding and managing club listings.</p>
-            </div>
-            <div className="mt-8 grid gap-4 md:grid-cols-2">
-              {faq.map(item => (
-                <article key={item.question} className="rounded-2xl border border-[#dce8e4] bg-white p-5 shadow-[0_10px_28px_rgba(13,33,66,0.05)]">
-                  <h3 className="font-extrabold text-[#0b1a50]">{item.question}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.answer}</p>
-                </article>
-              ))}
+          <section className="bg-white">
+            <div className="mx-auto max-w-[1380px] px-5 py-12 sm:px-8 lg:px-12 xl:px-16">
+              <div className="flex flex-col items-center justify-between gap-6 rounded-2xl border border-[#dfe8ea] bg-[#fbfdfc] px-6 py-7 text-center md:flex-row md:text-left">
+                <div>
+                  <div className="text-[2.1rem] font-bold leading-none text-[#0d2a55]" style={{fontFamily:"'Caveat', cursive"}}>Stronger Sporting Communities Together</div>
+                  <div className="mt-2 h-1.5 w-44 -rotate-3 rounded-full bg-[#91d83a]" />
+                </div>
+                <div className="text-lg font-extrabold leading-6 text-[#0b1a50]">One Platform<br/>Many Sports<br/>Stronger Communities</div>
+                <div className="grid grid-cols-5 gap-3">
+                  {[
+                    ['●','Pickleball'],['◉','Tennis'],['✦','Badminton'],['◈','Padel'],['●●','And more']
+                  ].map(([mark,label])=>(
+                    <div key={label} className="text-center">
+                      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[#d9f2e4] text-base font-black text-[#078d48]">{mark}</div>
+                      <div className="mt-1 text-[10px] font-bold uppercase tracking-wide text-[#0b1a50]">{label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
 
-          <section className="border-t border-slate-200 bg-[#f7faf9]">
-            <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 py-8 text-center sm:px-6 md:flex-row md:text-left lg:px-8">
-              <div className="flex items-center gap-3">
-                <img src={LOGO_URL} alt="RallyHub" className="h-11 w-11 object-contain" />
-                <div>
-                  <div className="font-black text-[#0b1a50]">RallyHub</div>
-                  <div className="text-[9px] font-bold tracking-[.23em] text-slate-500">PLAY • CONNECT • BELONG</div>
-                </div>
+          <section className="bg-[#f7faf9] py-14">
+            <div className="mx-auto max-w-5xl px-5 sm:px-8">
+              <div className="text-center">
+                <h2 className="text-3xl font-black tracking-tight text-[#0b1a50]">RallyHub Directory FAQ</h2>
+                <p className="mt-2 text-sm text-slate-600">Straight answers about finding, adding and managing club listings.</p>
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-5 text-sm font-semibold text-[#0b1a50]">
-                <Link to="/directory" className="hover:text-[#078a47]">Directory</Link>
-                <Link to="/directory/story" className="hover:text-[#078a47]">Why RallyHub Directory</Link>
-                <Link to="/directory/help" className="hover:text-[#078a47]">Club Guide</Link>
-                <Link to="/about" className="hover:text-[#078a47]">About</Link>
-                <Link to="/contact" className="hover:text-[#078a47]">Contact</Link>
+              <div className="mt-7 grid gap-4 md:grid-cols-2">
+                {faq.map(item => (
+                  <article key={item.question} className="rounded-2xl border border-[#dfe8ea] bg-white p-5 shadow-[0_8px_20px_rgba(8,24,77,.04)]">
+                    <h3 className="font-extrabold text-[#0b1a50]">{item.question}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.answer}</p>
+                  </article>
+                ))}
               </div>
             </div>
           </section>
+
+          <footer className="border-t border-slate-200 bg-white">
+            <div className="mx-auto flex max-w-[1380px] flex-col items-center justify-between gap-5 px-5 py-7 text-center sm:px-8 md:flex-row md:text-left lg:px-12 xl:px-16">
+              <div className="flex items-center gap-3">
+                <img src={LOGO_URL} alt="RallyHub" className="h-10 w-10 object-contain" />
+                <div>
+                  <div className="font-black text-[#08184d]">RallyHub</div>
+                  <div className="text-[8px] font-bold tracking-[.28em] text-[#485879]">PLAY • CONNECT • BELONG</div>
+                </div>
+              </div>
+              <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm font-semibold text-[#0b1a50]">
+                <Link to="/directory">Directory</Link>
+                <Link to="/directory/story">Why RallyHub Directory</Link>
+                <Link to="/directory/help">Club Guide</Link>
+                <Link to="/about">About</Link>
+                <Link to="/contact">Contact</Link>
+              </div>
+            </div>
+          </footer>
         </main>
       </div>
     </>
