@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { getClub } from '@/data/directorySeed';
-import { ArrowLeft, CalendarDays, Check, CheckCircle2, ExternalLink, Facebook, Globe2, Link2, Lock, Mail, MapPin, MessageCircle, Phone, Share2, UserCheck, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Check, CheckCircle2, ExternalLink, Facebook, Globe2, Link2, Lightbulb, Lock, Mail, MapPin, MessageCircle, Phone, Share2, UserCheck, Users } from 'lucide-react';
 import Seo, { SITE_URL, absoluteUrl } from '@/components/public/Seo';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -47,7 +47,13 @@ export default function PublicClubProfile() {
   const [clubInterestOpen, setClubInterestOpen] = useState(false);
   const [clubInterestBusy, setClubInterestBusy] = useState(false);
   const [clubInterestDone, setClubInterestDone] = useState(false);
-  const [clubInterest, setClubInterest] = useState({ interestType: 'demo', contactPhone: user?.directory_mobile || '', features: [] });
+  const [clubInterestMessage, setClubInterestMessage] = useState('');
+  const [clubInterest, setClubInterest] = useState({ interestType: 'demo', contactPhone: user?.directory_mobile || '' });
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackBusy, setFeedbackBusy] = useState(false);
+  const [feedbackDone, setFeedbackDone] = useState(false);
+  const [feedbackResponse, setFeedbackResponse] = useState('');
+  const [feedback, setFeedback] = useState({ category: 'improvement', area: 'Directory', message: '', importance: 'important', contactOk: true });
 
   useEffect(() => {
     let active = true;
@@ -112,11 +118,6 @@ export default function PublicClubProfile() {
   const displayLogoUrl = normaliseDirectoryAssetUrl(club.logoUrl);
   const profileUrl = `${SITE_URL}/directory/${club.slug}`;
   const socialLinks = [club.website, club.facebook, club.instagram].filter(Boolean);
-  const clubFeatureOptions = ['Club & member management','Sessions & attendance','King of the Court','RallyHub Interclub','Tournaments & competitions','Spond integration','Leaderboards & player profiles'];
-  const toggleClubFeature = value => setClubInterest(current => ({
-    ...current,
-    features: current.features.includes(value) ? current.features.filter(item => item !== value) : [...current.features, value]
-  }));
   const submitClubInterest = async () => {
     if (!isAuthenticated) {
       window.location.href = `/login?returnTo=${encodeURIComponent(location.pathname)}`;
@@ -132,14 +133,39 @@ export default function PublicClubProfile() {
         contactEmail: user?.email || '',
         contactPhone: clubInterest.contactPhone,
         interestType: clubInterest.interestType,
-        features: clubInterest.features,
+        features: [],
       });
       if (res.data?.error) throw new Error(res.data.error);
+      setClubInterestMessage(res.data?.message || '');
       setClubInterestDone(true);
     } catch (error) {
       window.alert(error?.message || 'Could not add you to the RallyHub Club waiting list right now.');
     } finally {
       setClubInterestBusy(false);
+    }
+  };
+  const submitFeedback = async () => {
+    setFeedbackBusy(true);
+    try {
+      const res = await base44.functions.invoke('rallyHubFeedback', {
+        action: 'submit',
+        listingSlug: club.slug,
+        clubName: club.name,
+        category: feedback.category,
+        area: feedback.area,
+        message: feedback.message,
+        importance: feedback.importance,
+        contactOk: feedback.contactOk,
+        pagePath: window.location.pathname,
+        userAgent: navigator.userAgent,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      setFeedbackResponse(res.data?.message || '');
+      setFeedbackDone(true);
+    } catch (error) {
+      window.alert(error?.message || 'Could not send your feedback right now.');
+    } finally {
+      setFeedbackBusy(false);
     }
   };
   const clubSchema = {
@@ -405,16 +431,12 @@ export default function PublicClubProfile() {
                 <Link to={`/directory/${club.slug}/edit`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
                   Edit your listing
                 </Link>
-                <button type="button" onClick={() => { setClubInterestDone(false); setClubInterestOpen(true); }} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background/40 px-4 py-3 text-sm font-semibold text-foreground hover:border-primary/40 transition-colors">
-                  <Lock className="w-4 h-4" /> RallyHub Club — join waiting list
+                <button type="button" onClick={() => { setClubInterestDone(false); setClubInterestMessage(''); setClubInterestOpen(true); }} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background/40 px-4 py-3 text-sm font-semibold text-foreground hover:border-primary/40 transition-colors">
+                  <Lock className="w-4 h-4" /> RallyHub Club — join the waiting list
                 </button>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  {['Players & members','Competitions','Leaderboards','Analytics'].map(item => (
-                    <button key={item} type="button" onClick={() => { setClubInterestDone(false); setClubInterestOpen(true); }} className="cursor-pointer rounded-lg border border-border bg-muted/30 px-3 py-2 text-left text-xs text-muted-foreground opacity-70 hover:opacity-100">
-                      <span className="flex items-center gap-1.5"><Lock className="w-3 h-3" /> {item}</span>
-                    </button>
-                  ))}
-                </div>
+                <button type="button" onClick={() => { setFeedbackDone(false); setFeedbackResponse(''); setFeedbackOpen(true); }} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background/40 px-4 py-3 text-sm font-semibold text-foreground hover:border-primary/40 transition-colors">
+                  <Lightbulb className="w-4 h-4" /> Feedback & ideas
+                </button>
               </section>
             )}
             {!hasDirectoryAccess && club.verificationStatus === 'unclaimed' && (
@@ -472,7 +494,7 @@ export default function PublicClubProfile() {
             <div className="py-3">
               <CheckCircle2 className="w-11 h-11 text-primary" />
               <h2 className="text-2xl font-black mt-4">You’re on the list</h2>
-              <p className="text-sm text-muted-foreground mt-2">Thanks. We’ll contact you when RallyHub Club demos or further information become available.</p>
+              <p className="text-sm text-muted-foreground mt-2">{clubInterestMessage || 'Thanks. We’ll contact you when RallyHub Club demos or further information become available.'}</p>
               <p className="text-xs text-muted-foreground mt-3">Your free RallyHub Directory listing remains completely separate and available.</p>
               <Button className="mt-5 w-full" onClick={() => setClubInterestOpen(false)}>Done</Button>
             </div>
@@ -480,7 +502,7 @@ export default function PublicClubProfile() {
             <>
               <DialogHeader>
                 <DialogTitle>RallyHub Club is still under development</DialogTitle>
-                <DialogDescription>RallyHub Club is not yet available for general use. If you would like a demo, further information, or to be notified when it becomes available, join the waiting list.</DialogDescription>
+                <DialogDescription>Join the waiting list if you’d like a demo, further information, or an update when RallyHub Club becomes available.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
@@ -492,17 +514,6 @@ export default function PublicClubProfile() {
                   <div className="grid grid-cols-3 gap-2 mt-2">
                     {[['demo','A demo'],['information','More information'],['notify','Launch updates']].map(([value,label]) => (
                       <button key={value} type="button" onClick={() => setClubInterest(v => ({...v, interestType:value}))} className={`rounded-lg border px-2 py-2 text-xs font-semibold ${clubInterest.interestType===value?'border-primary bg-primary/10 text-primary':'border-border text-muted-foreground'}`}>{label}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Features you’d like to hear about</p>
-                  <div className="grid sm:grid-cols-2 gap-2 mt-2">
-                    {clubFeatureOptions.map(feature => (
-                      <label key={feature} className="flex items-start gap-2 rounded-lg border border-border p-2 text-xs cursor-pointer">
-                        <input type="checkbox" checked={clubInterest.features.includes(feature)} onChange={() => toggleClubFeature(feature)} className="mt-0.5" />
-                        <span>{feature}</span>
-                      </label>
                     ))}
                   </div>
                 </div>
