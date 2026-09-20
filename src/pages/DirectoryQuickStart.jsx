@@ -20,38 +20,50 @@ const CheckLine = ({ children }) => (
   </div>
 );
 
+const Signature = () => (
+  <div>
+    <p className="text-xs text-slate-500">Yours in sport,</p>
+    <p className="text-3xl text-slate-900 leading-none mt-1" style={{fontFamily:'cursive', transform:'rotate(-3deg)', transformOrigin:'left center'}}>Brian Moore</p>
+  </div>
+);
+
 const GuidePage = React.forwardRef(({ page, children }, ref) => (
-  <section ref={ref} className="bg-white text-slate-900 w-full max-w-[820px] mx-auto overflow-hidden rounded-[28px] border border-slate-200 shadow-xl">
-    <div className="relative overflow-hidden bg-gradient-to-br from-white via-emerald-50/40 to-sky-50 px-7 sm:px-9 pt-7 pb-5">
-      <div className="absolute right-0 top-0 w-52 h-full bg-gradient-to-l from-emerald-100/80 to-transparent" />
+  <section ref={ref} className="bg-white text-slate-950 w-full max-w-[820px] mx-auto overflow-hidden rounded-[28px] border border-slate-200 shadow-xl">
+    <div className="relative overflow-hidden bg-[linear-gradient(135deg,#ffffff_0%,#f0faf4_58%,#e9f4ef_100%)] px-7 sm:px-9 pt-7 pb-6">
+      <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-emerald-200/35" />
       <div className="relative flex items-start justify-between gap-5">
         <div className="flex items-center gap-3">
-          <img src={LOGO_URL} alt="RallyHub" className="w-14 h-14 rounded-2xl object-contain" crossOrigin="anonymous" />
+          <img src={LOGO_URL} alt="RallyHub" className="w-14 h-14 object-contain" crossOrigin="anonymous" />
           <div>
-            <div className="text-3xl font-black tracking-tight text-slate-950">Rally<span className="text-emerald-600">Hub</span></div>
-            <div className="text-[10px] tracking-[.28em] font-bold text-slate-500">PLAY · CONNECT · BELONG</div>
+            <div className="text-3xl font-black tracking-tight text-[#0d2142]">Rally<span className="text-emerald-600">Hub</span></div>
+            <div className="text-[10px] tracking-[.28em] font-bold text-slate-500">PLAY • CONNECT • BELONG</div>
           </div>
         </div>
-        <div className="hidden sm:block text-right">
-          <p className="font-semibold italic text-emerald-800">Stronger Pickleball</p>
-          <p className="font-semibold italic text-emerald-800">Communities Together</p>
+        <div className="hidden sm:block text-right text-[#0d2142]" style={{fontFamily:'cursive', transform:'rotate(-2deg)'}}>
+          <p className="text-xl leading-tight">Good people.</p>
+          <p className="text-xl leading-tight">Great games.</p>
         </div>
       </div>
       <div className="relative mt-5">
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-950">RallyHub Directory</h1>
-        <p className="text-xl font-black text-slate-900 mt-1">A quick start guide for clubs</p>
+        <p className="text-[10px] uppercase tracking-[.22em] font-black text-emerald-700">RallyHub Directory · Irish pickleball launch</p>
+        <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-[#0d2142] mt-1">Quick Start Guide</h1>
+        <p className="text-lg font-bold text-slate-700 mt-1">Claim and manage your club listing</p>
       </div>
     </div>
-    <div className="px-6 sm:px-8 pb-5">{children}</div>
-    <div className="relative overflow-hidden border-t border-slate-200 bg-gradient-to-r from-emerald-50 via-white to-slate-950 px-6 sm:px-8 py-5">
+
+    <div className="px-6 sm:px-8 pb-6">{children}</div>
+
+    <div className="border-t border-slate-200 bg-[linear-gradient(90deg,#eef9f2_0%,#ffffff_65%,#eef4f7_100%)] px-6 sm:px-8 py-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="font-semibold italic text-emerald-900">Cliffs of Moher · County Clare</p>
-          <p className="text-xs text-slate-500">A healthier, happier Ireland</p>
+          <p className="font-black text-[#0d2142]">RallyHub Directory</p>
+          <p className="text-xs text-slate-500">Clear, verified club information for players.</p>
         </div>
-        <div className="text-right text-[10px] tracking-[.24em] font-bold text-white bg-slate-950 rounded-full px-5 py-2">PLAY · CONNECT · BELONG</div>
+        <div className="text-right">
+          <p className="text-[10px] tracking-[.22em] font-bold text-emerald-700">PLAY • CONNECT • BELONG</p>
+          <p className="text-xs text-slate-500 mt-1">Page {page} of 2</p>
+        </div>
       </div>
-      {page === 2 && <p className="absolute right-6 top-2 text-xs font-bold text-slate-600">Page 2 of 2</p>}
     </div>
   </section>
 ));
@@ -92,65 +104,65 @@ export default function DirectoryQuickStart() {
 
         <div className="space-y-8">
           <GuidePage page={1} ref={page1}>
-            <p className="text-sm sm:text-base text-slate-600 mt-5 mb-5">Follow these simple steps to claim and manage your club listing on the RallyHub Directory. It only takes a few minutes.</p>
+            <p className="text-sm sm:text-base text-slate-600 mt-5 mb-5">If Brian has sent you a secure WhatsApp or email invitation, these are the exact steps to get Directory access.</p>
 
             <div className="space-y-4">
-              <div className="rounded-2xl border border-emerald-100 bg-white shadow-sm p-5 grid sm:grid-cols-[1fr_250px] gap-5">
+              <div className="rounded-3xl border border-emerald-100 bg-white shadow-sm p-5 grid sm:grid-cols-[1fr_250px] gap-5">
                 <div className="flex gap-4">
                   <StepBadge n="1" />
                   <div>
-                    <h2 className="text-xl font-black">Receive your invitation</h2>
-                    <p className="text-sm text-slate-600 mt-2">You’ll get a secure invite link from RallyHub, usually by <strong>WhatsApp</strong> and sometimes by email.</p>
-                    <p className="text-sm text-slate-600 mt-2">Tap the link on your phone or computer to get started. The link is unique to your club and is valid for <strong>72 hours</strong>.</p>
+                    <h2 className="text-xl font-black text-[#0d2142]">Open your secure invitation</h2>
+                    <p className="text-sm text-slate-600 mt-2">You’ll usually receive the link by <strong>WhatsApp</strong>, and sometimes by email.</p>
+                    <p className="text-sm text-slate-600 mt-2">Tap the secure link. It is unique to your club, can only be used once and expires after <strong>72 hours</strong>.</p>
                   </div>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-100 p-4">
-                  <div className="flex items-center gap-2 text-sm font-bold text-slate-700"><MessageCircle className="w-5 h-5 text-emerald-600" /> WhatsApp</div>
-                  <div className="rounded-xl bg-white border border-slate-200 p-3 mt-3 text-sm text-slate-700">You’re invited to claim your club listing on RallyHub Directory.<div className="text-emerald-700 font-semibold mt-2">Secure club claim link</div></div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-[#0d2142]"><MessageCircle className="w-5 h-5 text-emerald-600" /> WhatsApp invitation</div>
+                  <div className="rounded-xl bg-white border border-slate-200 p-3 mt-3 text-xs text-slate-600">Hi Sarah, you’ve been invited to manage your club listing…<div className="text-emerald-700 font-bold mt-2">Open secure Directory link →</div></div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-emerald-100 bg-white shadow-sm p-5 grid sm:grid-cols-[1fr_250px] gap-5">
+              <div className="rounded-3xl border border-emerald-100 bg-white shadow-sm p-5 grid sm:grid-cols-[1fr_250px] gap-5">
                 <div className="flex gap-4">
                   <StepBadge n="2" />
                   <div>
-                    <h2 className="text-xl font-black">Create your RallyHub account</h2>
-                    <p className="text-sm text-slate-600 mt-2 mb-3">If you don’t already have an account, you’ll be asked to create one.</p>
+                    <h2 className="text-xl font-black text-[#0d2142]">Create your Directory account</h2>
+                    <p className="text-sm text-slate-600 mt-2 mb-3">If you do not already have a RallyHub account, choose <strong>Create directory account</strong>.</p>
                     <div className="space-y-2">
-                      <CheckLine>Use the same mobile number that received the WhatsApp invite, or the same email address if invited by email</CheckLine>
-                      <CheckLine>Provide an email address you can access</CheckLine>
-                      <CheckLine>Enter the 6-digit verification code sent to your email</CheckLine>
-                      <CheckLine>Once verified, RallyHub takes you back to your club claim page automatically</CheckLine>
+                      <CheckLine>WhatsApp invite: use the same mobile number that received it</CheckLine>
+                      <CheckLine>Email invite: use the same invited email address</CheckLine>
+                      <CheckLine>Use an email address you can access for the 6-digit verification code</CheckLine>
+                      <CheckLine>After verification, RallyHub returns you to the claim page automatically</CheckLine>
                     </div>
                   </div>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="font-black text-center">Create your account</div>
+                  <div className="font-black text-center text-[#0d2142]">Create a directory account</div>
                   <div className="space-y-2 mt-3">
-                    {['Full name','Mobile number','Email address'].map(x => <div key={x} className="h-8 rounded-md border border-slate-200 bg-slate-50 text-[11px] text-slate-500 px-2 flex items-center">{x}</div>)}
-                    <div className="h-9 rounded-md bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">Send verification code</div>
+                    {['Your name','Mobile number','Email address','Password'].map(x => <div key={x} className="h-8 rounded-md border border-slate-200 bg-slate-50 text-[11px] text-slate-500 px-2 flex items-center">{x}</div>)}
+                    <div className="h-9 rounded-md bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">Create directory account</div>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-emerald-100 bg-white shadow-sm p-5 grid sm:grid-cols-[1fr_250px] gap-5">
+              <div className="rounded-3xl border border-emerald-100 bg-white shadow-sm p-5 grid sm:grid-cols-[1fr_250px] gap-5">
                 <div className="flex gap-4">
                   <StepBadge n="3" />
                   <div>
-                    <h2 className="text-xl font-black">Claim your club listing</h2>
-                    <p className="text-sm text-slate-600 mt-2 mb-3">Your club details will be ready for you to review. Check the information and add or update anything that’s missing.</p>
+                    <h2 className="text-xl font-black text-[#0d2142]">Confirm your details</h2>
+                    <p className="text-sm text-slate-600 mt-2 mb-3">Back on the claim page, review the details RallyHub uses to verify you.</p>
                     <div className="space-y-2">
-                      <CheckLine>Confirm your role or connection to the club</CheckLine>
-                      <CheckLine>Confirm your contact mobile number</CheckLine>
-                      <CheckLine>Make updates to sessions, venues or descriptions</CheckLine>
-                      <CheckLine>When you’re happy, verify and continue</CheckLine>
+                      <CheckLine>Check your name</CheckLine>
+                      <CheckLine>Add your role or connection to the club</CheckLine>
+                      <CheckLine>Confirm your mobile number</CheckLine>
+                      <CheckLine>Choose <strong>Verify & continue</strong></CheckLine>
                     </div>
                   </div>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="text-xs font-black">Claim Your Club Listing</div>
+                  <div className="text-xs font-black text-[#0d2142]">Directory verification</div>
                   <div className="space-y-2 mt-3">
-                    {['Your Club Name','Club contact name','Phone number','Email address'].map(x => <div key={x} className="h-7 rounded border border-slate-200 bg-slate-50 text-[10px] text-slate-500 px-2 flex items-center">{x}</div>)}
+                    {['Your name','Role / connection','Signed-in email','Mobile number'].map(x => <div key={x} className="h-7 rounded border border-slate-200 bg-slate-50 text-[10px] text-slate-500 px-2 flex items-center">{x}</div>)}
                     <div className="h-9 rounded-md bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">Verify & continue</div>
                   </div>
                 </div>
@@ -159,77 +171,78 @@ export default function DirectoryQuickStart() {
           </GuidePage>
 
           <GuidePage page={2} ref={page2}>
-            <p className="text-sm sm:text-base text-slate-600 mt-5 mb-5">Complete the final steps and get the most from your listing.</p>
+            <p className="text-sm sm:text-base text-slate-600 mt-5 mb-5">Once RallyHub has checked the invitation, you can open and maintain the public listing.</p>
 
             <div className="space-y-4">
-              <div className="rounded-2xl border border-emerald-100 bg-white shadow-sm p-5 grid sm:grid-cols-[1fr_250px] gap-5">
+              <div className="rounded-3xl border border-emerald-100 bg-white shadow-sm p-5 grid sm:grid-cols-[1fr_250px] gap-5">
                 <div className="flex gap-4">
                   <StepBadge n="4" />
                   <div>
-                    <h2 className="text-xl font-black">Verification</h2>
-                    <p className="text-sm text-slate-600 mt-2">RallyHub checks the secure invitation against the mobile number or email linked to it. If the details match, Directory access can be granted straight away. If they do not, the request is held for administrator review.</p>
+                    <h2 className="text-xl font-black text-[#0d2142]">Verification happens automatically where possible</h2>
+                    <p className="text-sm text-slate-600 mt-2">RallyHub checks the secure invitation against the mobile number or email tied to it. If they match, Directory access can be granted immediately. If they do not, the request is held for administrator review.</p>
                   </div>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 flex items-center justify-center text-center">
-                  <div><div className="w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto"><Check className="w-6 h-6" /></div><div className="font-black mt-3">Directory access verified</div><div className="text-xs text-slate-500 mt-1">You can now manage your listing</div></div>
+                <div className="rounded-2xl border border-slate-200 bg-emerald-50 p-5 flex items-center justify-center text-center">
+                  <div><div className="w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto"><Check className="w-6 h-6" /></div><div className="font-black mt-3 text-[#0d2142]">Directory access verified</div><div className="text-xs text-slate-500 mt-1">You can now manage your listing</div></div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-emerald-100 bg-white shadow-sm p-5 grid sm:grid-cols-[1fr_250px] gap-5">
+              <div className="rounded-3xl border border-emerald-100 bg-white shadow-sm p-5 grid sm:grid-cols-[1fr_250px] gap-5">
                 <div className="flex gap-4">
                   <StepBadge n="5" />
                   <div>
-                    <h2 className="text-xl font-black">Manage your listing anytime</h2>
-                    <p className="text-sm text-slate-600 mt-2">Once verified, you can return whenever needed to:</p>
+                    <h2 className="text-xl font-black text-[#0d2142]">Edit your public listing</h2>
+                    <p className="text-sm text-slate-600 mt-2">Choose <strong>Edit your listing</strong>. This is where you can now review and update:</p>
                     <ul className="mt-3 text-sm text-slate-700 space-y-1 list-disc pl-5">
-                      <li>Update session times, venues or contact details</li>
-                      <li>Add news, photos or links where available</li>
-                      <li>Keep your information up to date</li>
+                      <li>Club description and public contact details</li>
+                      <li>Venues and regular session times</li>
+                      <li>Visitor information, levels, links and logo</li>
+                      <li>Optional extras such as prices or Spond connection</li>
                     </ul>
                   </div>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="flex items-center gap-2 font-black text-sm"><Settings className="w-4 h-4 text-emerald-600" /> Your Club</div>
+                  <div className="flex items-center gap-2 font-black text-sm text-[#0d2142]"><Settings className="w-4 h-4 text-emerald-600" /> Your club listing</div>
                   <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4 mt-3">
                     <MapPin className="w-5 h-5 text-emerald-600" />
-                    <div className="font-bold mt-2">Club listing</div>
-                    <div className="h-9 rounded-md bg-emerald-600 text-white text-xs font-bold flex items-center justify-center mt-3">Edit listing</div>
+                    <div className="font-bold mt-2">Public listing</div>
+                    <div className="h-9 rounded-md bg-emerald-600 text-white text-xs font-bold flex items-center justify-center mt-3">Edit your listing</div>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-emerald-100 bg-gradient-to-r from-white via-emerald-50 to-sky-50 shadow-sm p-5 grid sm:grid-cols-[1fr_270px] gap-5">
+              <div className="rounded-3xl border border-emerald-100 bg-[linear-gradient(90deg,#ffffff_0%,#f0faf4_72%,#eef4f7_100%)] shadow-sm p-5 grid sm:grid-cols-[1fr_270px] gap-5">
                 <div className="flex gap-4">
                   <StepBadge n="6" />
                   <div>
-                    <h2 className="text-xl font-black">Need help?</h2>
-                    <p className="text-sm text-slate-600 mt-2">If you have any questions or need a hand, visit our Club Guide & Help page:</p>
+                    <h2 className="text-xl font-black text-[#0d2142]">Need help?</h2>
+                    <p className="text-sm text-slate-600 mt-2">The Club Guide & Help page explains the process, security and common editing questions.</p>
                     <Link to="/directory/help" className="inline-flex items-center gap-2 rounded-xl bg-emerald-100 text-emerald-900 font-black px-4 py-3 mt-3 text-sm"><HelpCircle className="w-5 h-5" /> rallyhub.ie/directory/help</Link>
-                    <p className="text-sm text-slate-600 mt-3">You’ll find guides, answers to common questions and details on how to get in touch.</p>
+                    <p className="text-sm text-slate-600 mt-3">Or WhatsApp or call Brian if you get stuck.</p>
                   </div>
                 </div>
-                <div className="rounded-2xl bg-slate-950 text-white p-5 flex flex-col justify-center">
-                  <p className="text-2xl font-semibold italic">Same Game</p>
-                  <p className="text-2xl font-semibold italic">More People</p>
-                  <p className="text-2xl font-semibold italic">Brighter Days</p>
+                <div className="rounded-2xl bg-[#0d2142] text-white p-5 flex flex-col justify-center">
+                  <p className="text-xs uppercase tracking-[.2em] text-lime-300 font-black">Directory only</p>
+                  <p className="text-lg font-bold mt-2">Claiming a listing does not give access to RallyHub Club, tournaments, player records or club administration.</p>
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-5 flex gap-4 items-start">
+              <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-5 flex gap-4 items-start">
                 <div className="w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0"><Users className="w-6 h-6" /></div>
-                <div><h2 className="text-xl font-black">Thank you!</h2><p className="text-sm text-slate-600 mt-1">By keeping your listing up to date, you’re helping players across Ireland find places to play and be part of a growing pickleball community.</p></div>
+                <div><h2 className="text-xl font-black text-[#0d2142]">Thank you</h2><p className="text-sm text-slate-600 mt-1">Keeping your club information current makes it easier for players to find the right place, session and contact person.</p></div>
               </div>
 
               <div className="grid sm:grid-cols-[1fr_auto] gap-5 items-end border-t border-slate-200 pt-5">
                 <div>
-                  <p className="font-black">Created by <span className="text-emerald-600">Brian Moore</span> through RallyHub</p>
-                  <p className="text-xs text-slate-500 mt-1">Part of my contribution to the continued growth of pickleball in Ireland</p>
-                  <p className="text-2xl italic font-semibold mt-3">Brian Moore</p>
+                  <p className="font-black text-[#0d2142]">Created by Brian Moore through RallyHub</p>
+                  <p className="text-xs text-slate-500 mt-1">Part of my contribution to helping more people find and enjoy pickleball.</p>
+                  <Signature/>
                 </div>
                 <div className="text-sm text-slate-600 space-y-1">
                   <div className="flex items-center gap-2"><span className="font-semibold">rallyhub.ie</span></div>
                   <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-emerald-600" /> rallyhubapp@gmail.com</div>
                   <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-emerald-600" /> 087 810 0333</div>
+                  <div className="text-[10px] tracking-[.22em] font-bold text-emerald-700 pt-2">PLAY • CONNECT • BELONG</div>
                 </div>
               </div>
             </div>
