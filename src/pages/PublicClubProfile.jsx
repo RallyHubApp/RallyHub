@@ -465,6 +465,57 @@ export default function PublicClubProfile() {
           </aside>
         </div>
       </main>
+
+      <Dialog open={clubInterestOpen} onOpenChange={setClubInterestOpen}>
+        <DialogContent className="sm:max-w-lg">
+          {clubInterestDone ? (
+            <div className="py-3">
+              <CheckCircle2 className="w-11 h-11 text-primary" />
+              <h2 className="text-2xl font-black mt-4">You’re on the list</h2>
+              <p className="text-sm text-muted-foreground mt-2">Thanks. We’ll contact you when RallyHub Club demos or further information become available.</p>
+              <p className="text-xs text-muted-foreground mt-3">Your free RallyHub Directory listing remains completely separate and available.</p>
+              <Button className="mt-5 w-full" onClick={() => setClubInterestOpen(false)}>Done</Button>
+            </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>RallyHub Club is still under development</DialogTitle>
+                <DialogDescription>RallyHub Club is not yet available for general use. If you would like a demo, further information, or to be notified when it becomes available, join the waiting list.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
+                  <strong>Your Directory listing stays separate.</strong>
+                  <span className="block text-muted-foreground mt-1">Joining this waiting list does not change your free RallyHub Directory access.</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">I’m interested in</p>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {[['demo','A demo'],['information','More information'],['notify','Launch updates']].map(([value,label]) => (
+                      <button key={value} type="button" onClick={() => setClubInterest(v => ({...v, interestType:value}))} className={`rounded-lg border px-2 py-2 text-xs font-semibold ${clubInterest.interestType===value?'border-primary bg-primary/10 text-primary':'border-border text-muted-foreground'}`}>{label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Features you’d like to hear about</p>
+                  <div className="grid sm:grid-cols-2 gap-2 mt-2">
+                    {clubFeatureOptions.map(feature => (
+                      <label key={feature} className="flex items-start gap-2 rounded-lg border border-border p-2 text-xs cursor-pointer">
+                        <input type="checkbox" checked={clubInterest.features.includes(feature)} onChange={() => toggleClubFeature(feature)} className="mt-0.5" />
+                        <span>{feature}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold">Mobile number</label>
+                  <input value={clubInterest.contactPhone} onChange={e => setClubInterest(v => ({...v,contactPhone:e.target.value}))} placeholder="Optional mobile number" className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm" />
+                </div>
+                <Button className="w-full" onClick={submitClubInterest} disabled={clubInterestBusy}>{clubInterestBusy ? 'Adding you…' : 'Join the RallyHub Club waiting list'}</Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
       </div>
     </>
   );
