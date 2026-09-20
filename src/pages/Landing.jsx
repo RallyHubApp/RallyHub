@@ -17,8 +17,8 @@ import { useAuth } from '@/lib/AuthContext';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
-const HERO_PHOTO = 'https://preview-assets-us-01.kc-usercontent.com/b3c539fb-5388-0052-9b2c-d05615ca0363/b4eb3039-3714-4632-8fb7-cb0256f4dc55/cru-pickleball-players-1920x1080.webp';
-const CLIFFS_PHOTO = 'https://upload.wikimedia.org/wikipedia/commons/b/b0/CliffsOfMoher_Panorama.jpg';
+const HERO_PHOTO = '/assets/rallyhub-home-hero.webp';
+const CLIFFS_PHOTO = '/assets/rallyhub-home-cliffs.webp';
 
 const features = [
   {
@@ -50,50 +50,6 @@ const features = [
     to: '/about',
   },
 ];
-
-function PaddleGraphic() {
-  return (
-    <div className="absolute right-[5.2%] top-[7%] h-[78%] w-[38%] max-w-[340px] rotate-[13deg] sm:right-[8%] lg:right-[5%] xl:right-[7%]">
-      <svg viewBox="0 0 280 450" className="h-full w-full overflow-visible drop-shadow-[0_18px_18px_rgba(0,0,0,.32)]" aria-hidden="true">
-        <defs>
-          <linearGradient id="paddleFace" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#27352f" />
-            <stop offset="58%" stopColor="#17241f" />
-            <stop offset="100%" stopColor="#0e1713" />
-          </linearGradient>
-          <linearGradient id="handle" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#0a100d" />
-            <stop offset="50%" stopColor="#29332e" />
-            <stop offset="100%" stopColor="#090e0c" />
-          </linearGradient>
-        </defs>
-        <path d="M76 20 C35 30 10 67 10 112 L10 265 C10 304 36 337 75 345 L110 352 L110 414 C110 434 122 447 140 447 C158 447 170 434 170 414 L170 352 L205 345 C244 337 270 304 270 265 L270 112 C270 67 245 30 204 20 C167 11 113 11 76 20 Z" fill="url(#paddleFace)" stroke="#9ADD55" strokeWidth="5"/>
-        <rect x="114" y="344" width="52" height="80" rx="14" fill="url(#handle)" />
-        <g transform="translate(140 150)">
-          <circle r="48" fill="none" stroke="#aef23c" strokeWidth="6" opacity=".95"/>
-          <circle r="34" fill="none" stroke="#aef23c" strokeWidth="5" opacity=".9"/>
-          <circle r="20" fill="#aef23c" opacity=".95"/>
-          <path d="M-33 34 L-55 58" stroke="#aef23c" strokeWidth="13" strokeLinecap="round"/>
-          <path d="M-46 48 L-61 65" stroke="#aef23c" strokeWidth="13" strokeLinecap="round"/>
-        </g>
-        <text x="140" y="227" textAnchor="middle" fill="white" fontSize="15" fontWeight="600" letterSpacing="4">PLAY</text>
-        <text x="140" y="251" textAnchor="middle" fill="white" fontSize="15" fontWeight="600" letterSpacing="4">CONNECT</text>
-        <text x="140" y="275" textAnchor="middle" fill="white" fontSize="15" fontWeight="600" letterSpacing="4">BELONG</text>
-      </svg>
-    </div>
-  );
-}
-
-function Pickleball() {
-  const holes = [
-    [25, 24],[52, 18],[72, 33],[32, 50],[60, 55],[78, 69],[22, 76],[49, 82]
-  ];
-  return (
-    <div className="absolute bottom-[7%] right-[38%] h-[86px] w-[86px] rounded-full bg-[radial-gradient(circle_at_31%_24%,#f4ff5a_0%,#def02d_52%,#aec710_100%)] shadow-[0_15px_25px_rgba(0,0,0,.28)] sm:h-[96px] sm:w-[96px]">
-      {holes.map(([l,t],i)=><span key={i} className="absolute h-[10px] w-[10px] rounded-full bg-[#9db516]/70 shadow-inner" style={{left:`${l}%`,top:`${t}%`}} />)}
-    </div>
-  );
-}
 
 function FeatureCard({ icon: Icon, title, description, action, to }) {
   return (
@@ -218,10 +174,9 @@ export default function Landing() {
 
         <main>
           <section className="relative overflow-hidden bg-[#f7fcfd]">
-            <div className="absolute inset-0">
-              <img src={HERO_PHOTO} alt="" className="h-full w-full object-cover object-center" />
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,#f8fcfd_0%,#f8fcfd_35%,rgba(248,252,253,.92)_45%,rgba(248,252,253,.56)_58%,rgba(248,252,253,.08)_74%,rgba(248,252,253,0)_100%)]"/>
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,.03)_0%,rgba(7,45,62,.05)_100%)]"/>
+            <div className="absolute inset-y-0 right-0 w-[47%] sm:w-[50%] lg:w-[49%]">
+              <img src={HERO_PHOTO} alt="Pickleball paddle and ball with players on court" className="h-full w-full object-cover object-center" />
+              <div className="absolute inset-y-0 left-0 w-[16%] bg-[linear-gradient(90deg,#f8fcfd_0%,rgba(248,252,253,.78)_45%,rgba(248,252,253,0)_100%)]"/>
             </div>
 
             <div className="relative mx-auto min-h-[405px] max-w-[1380px] px-5 py-9 sm:px-7 sm:py-10 lg:min-h-[425px] lg:px-10 xl:px-12">
@@ -247,13 +202,6 @@ export default function Landing() {
                   </Link>
                 </div>
               </div>
-
-              <PaddleGraphic/>
-              <Pickleball/>
-              <div className="absolute bottom-[7%] right-[2.5%] z-20 -rotate-6 text-right text-[1.8rem] font-bold leading-[.9] text-white drop-shadow-[0_2px_5px_rgba(0,0,0,.75)] sm:right-[4%] sm:text-[2.2rem]" style={{fontFamily:"'Caveat', cursive"}}>
-                Good<br/>People<br/>Great Games
-                <div className="ml-auto mt-2 h-1.5 w-28 -rotate-6 rounded-full bg-[#91d83a]"/>
-              </div>
             </div>
           </section>
 
@@ -266,14 +214,7 @@ export default function Landing() {
           <section className="relative bg-white">
             <div className="mx-auto max-w-[1380px] px-0 sm:px-7 lg:px-10 xl:px-12">
               <div className="relative h-[132px] overflow-hidden sm:h-[142px]">
-                <img src={CLIFFS_PHOTO} alt="Cliffs of Moher, County Clare" className="absolute inset-0 h-full w-full object-cover object-center"/>
-                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,.04)_0%,rgba(255,255,255,.05)_48%,rgba(4,54,76,.1)_100%)]"/>
-                <div className="absolute left-[28%] top-[8px] -rotate-3 text-[1.7rem] font-bold leading-[.88] text-[#0a2754] drop-shadow-[0_1px_2px_rgba(255,255,255,.95)] sm:left-[24%] sm:text-[2rem] lg:left-[22%]" style={{fontFamily:"'Caveat', cursive"}}>
-                  Cliffs of Moher
-                  <div className="mt-1 text-[.82rem] sm:text-[1rem]">County Clare, A Healthier, Happier Ireland</div>
-                  <div className="ml-14 mt-1 h-[4px] w-28 -rotate-3 rounded-full bg-[#8fd837] sm:w-36"/>
-                </div>
-
+                <img src={CLIFFS_PHOTO} alt="Cliffs of Moher, County Clare" className="absolute inset-y-0 left-0 h-full w-[48%] object-cover object-left"/>
                 <div className="absolute bottom-0 right-0 hidden h-[98px] w-[61%] rounded-tl-[92px] bg-[#053c56] lg:block">
                   <div className="grid h-full grid-cols-4 items-center text-center text-white">
                     {[
