@@ -1,20 +1,9 @@
 import React, { useState } from 'react';
-import { BarChart3, Crown, Lock, Trophy, Upload, Users, LayoutDashboard, Shield, CheckCircle2 } from 'lucide-react';
+import { Lock, CheckCircle2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
-const FEATURES = [
-  ['Dashboard', LayoutDashboard],
-  ['Players & members', Users],
-  ['Import players', Upload],
-  ['Create competition', Trophy],
-  ['Tournaments & competitions', Trophy],
-  ['Club leaderboard', Crown],
-  ['Analytics', BarChart3],
-  ['Club administration', Shield],
-];
 
 const INTEREST_OPTIONS = [
   'Club & member management',
@@ -81,13 +70,9 @@ export default function RallyHubClubPreviewLock({ listingSlug, clubName }) {
           </div>
           <Button type="button" variant="outline" onClick={show} className="shrink-0">Join waiting list</Button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-5">
-          {FEATURES.map(([label, Icon]) => (
-            <button key={label} type="button" onClick={show} className="rounded-xl border border-border bg-background/30 p-3 text-left opacity-55 hover:opacity-80 transition-opacity cursor-pointer">
-              <Icon className="w-4 h-4 text-muted-foreground" />
-              <p className="text-xs font-semibold text-muted-foreground mt-2 flex items-center gap-1.5"><Lock className="w-3 h-3" /> {label}</p>
-            </button>
-          ))}
+        <div className="mt-4 rounded-xl border border-border bg-background/30 p-3 text-xs text-muted-foreground flex items-start gap-2">
+          <Lock className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>RallyHub Club tools are not available from a Directory account. If you would like a demo or further information when they become available, join the waiting list.</span>
         </div>
       </section>
 
