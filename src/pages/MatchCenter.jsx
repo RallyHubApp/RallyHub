@@ -138,20 +138,42 @@ function KotcTournamentSection({ tournament, players }) {
 export default function MatchCenter() {
   const queryClient = useQueryClient();
 
-  const { data: matches = [] } = useQuery({
-    queryKey: ['matches'],
-    queryFn: () => base44.entities.Match.list('-created_date', 100)
+  const { data: currentUser = null } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: () => base44.auth.me().catch(() => null)
   });
 
   const { data: allTournaments = [] } = useQuery({
-    queryKey: ['all-tournaments'],
-    queryFn: () => base44.entities.Tournament.list('-updated_date', 50)
+    queryKey: ['match-center-tournaments', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: () => {
+      if (!currentUser?.active_tenant_id) return [];
+      const filters = { tenant_id: currentUser.active_tenant_id };
+      if (currentUser.active_club_id) filters.host_club_id = currentUser.active_club_id;
+      return base44.entities.Tournament.filter(filters, '-updated_date', 50);
+    },
+    enabled: !!currentUser
   });
+  const tournamentIds = new Set(allTournaments.map(t => t.id));
   const kotcTournaments = allTournaments.filter(t => t.format === 'King of the Court');
 
+  const { data: tenantMatches = [] } = useQuery({
+    queryKey: ['matches', currentUser?.active_tenant_id],
+    queryFn: () => currentUser?.active_tenant_id
+      ? base44.entities.Match.filter({ tenant_id: currentUser.active_tenant_id }, '-created_date', 100)
+      : [],
+    enabled: !!currentUser
+  });
+  const matches = tenantMatches.filter(m => !m.tournament_id || tournamentIds.has(m.tournament_id));
+
   const { data: allPlayers = [] } = useQuery({
-    queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list('-created_date', 200)
+    queryKey: ['match-center-players', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: () => {
+      if (!currentUser?.active_tenant_id) return [];
+      const filters = { tenant_id: currentUser.active_tenant_id };
+      if (currentUser.active_club_id) filters.club_id = currentUser.active_club_id;
+      return base44.entities.Player.filter(filters, '-created_date', 200);
+    },
+    enabled: !!currentUser
   });
 
   const liveMatches = matches.filter(m => m.status === 'In Progress');
