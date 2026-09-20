@@ -24,13 +24,17 @@ Deno.serve(async (req)=>{
       const existing=await base44.asServiceRole.entities.RallyHubClubInterest.filter({
         user_id:user.id, listing_slug:listingSlug, status:'waiting'
       },'-created_date',10);
+      const firstName=(contactName || user.full_name || user.display_name || 'there').trim().split(/\s+/)[0] || 'there';
       if(existing?.[0]){
         await base44.asServiceRole.entities.RallyHubClubInterest.update(existing[0].id,{
           club_name:clubName, contact_name:contactName, contact_email:contactEmail,
           contact_phone:contactPhone || null, interest_type:interestType, features, notes:notes || null,
           submitted_at:new Date().toISOString()
         });
-        return Response.json({success:true,alreadyJoined:true,id:existing[0].id});
+        return Response.json({
+          success:true,alreadyJoined:true,id:existing[0].id,firstName,
+          message:`Thanks, ${firstName}. We appreciate your interest in RallyHub Club. We’ll keep you updated when demos or further information become available.`
+        });
       }
 
       const row=await base44.asServiceRole.entities.RallyHubClubInterest.create({
@@ -39,7 +43,10 @@ Deno.serve(async (req)=>{
         interest_type:interestType, features, notes:notes || null, status:'waiting',
         submitted_at:new Date().toISOString()
       });
-      return Response.json({success:true,id:row.id});
+      return Response.json({
+        success:true,id:row.id,firstName,
+        message:`Thanks, ${firstName}. We appreciate your interest in RallyHub Club. We’ll keep you updated when demos or further information become available.`
+      });
     }
 
     if(action==='status'){
