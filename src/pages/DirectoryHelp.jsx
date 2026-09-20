@@ -15,7 +15,7 @@ const faqs = [
   },
   {
     q: 'Does claiming my listing give me RallyHub Club access?',
-    a: 'No. Directory ownership or editing is deliberately separate from RallyHub Club, tournaments, players, matches, leaderboards, analytics and tenant administration. Those require a completely separate onboarding and access process.'
+    a: 'No. RallyHub uses one account, but permissions are separate. Directory ownership or editing does not automatically give access to RallyHub Club, tournaments, players, matches, leaderboards, analytics or tenant administration. Those permissions require their own approval or onboarding.'
   },
   {
     q: 'Can somebody from another club claim my listing?',
@@ -23,7 +23,7 @@ const faqs = [
   },
   {
     q: 'What happens when I receive a RallyHub claim invitation?',
-    a: 'Open the secure invitation link. If you need a new Directory account, RallyHub sends a six-digit code to verify your email. The trusted invitation is single-use and expires after 72 hours. If your verified email or mobile matches the invitation, you can continue without waiting for a second manual approval.'
+    a: 'Open the secure invitation link. Sign in with your RallyHub account, or create one if this is your first time. RallyHub sends a six-digit code to verify a new account email. The trusted invitation is single-use and expires after 72 hours. If your verified email or mobile matches the invitation, you can continue without waiting for a second manual approval.'
   },
   {
     q: 'Can more than one person manage a club listing?',
