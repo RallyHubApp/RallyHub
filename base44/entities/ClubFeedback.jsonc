@@ -1,0 +1,131 @@
+{
+  "name": "ClubFeedback",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "person_name": {
+      "type": "string"
+    },
+    "person_email": {
+      "type": "string"
+    },
+    "listing_slug": {
+      "type": "string"
+    },
+    "club_name": {
+      "type": "string"
+    },
+    "feedback_type": {
+      "type": "string",
+      "enum": [
+        "issue",
+        "confusing",
+        "improvement",
+        "feature_request",
+        "other"
+      ]
+    },
+    "area": {
+      "type": "string",
+      "enum": [
+        "directory",
+        "club_profile",
+        "sessions_venues",
+        "login_access",
+        "rallyhub_club",
+        "competitions",
+        "other"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "maxLength": 5000
+    },
+    "importance": {
+      "type": "string",
+      "enum": [
+        "nice_to_have",
+        "important",
+        "blocking"
+      ]
+    },
+    "contact_ok": {
+      "type": "boolean",
+      "default": true
+    },
+    "page_path": {
+      "type": "string"
+    },
+    "device_type": {
+      "type": "string"
+    },
+    "user_agent": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "reviewing",
+        "wishlist",
+        "planned",
+        "in_progress",
+        "completed",
+        "closed"
+      ],
+      "default": "new"
+    },
+    "admin_note": {
+      "type": "string",
+      "maxLength": 3000
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by_user_id": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "person_name",
+    "person_email",
+    "listing_slug",
+    "club_name",
+    "feedback_type",
+    "area",
+    "message",
+    "importance",
+    "status",
+    "submitted_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
