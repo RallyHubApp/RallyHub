@@ -34,6 +34,6 @@ test('quick start guide matches the unified account journey', async ({ page }) =
 test('directory help explains one account with separate permissions', async ({ page }) => {
   await page.goto('/directory/help');
 
-  await page.getByRole('button', { name: /Does claiming my listing give me RallyHub Club access\?/ }).click();
+  await page.locator('summary').filter({ hasText: 'Does claiming my listing give me RallyHub Club access?' }).click();
   await expect(page.getByText('RallyHub uses one account, but permissions are separate.', { exact: false })).toBeVisible();
 });
