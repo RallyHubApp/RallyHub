@@ -20,20 +20,43 @@ const tooltipStyle = {
 };
 
 export default function Analytics() {
+  const { data: currentUser = null } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: () => base44.auth.me().catch(() => null)
+  });
+
   const { data: players = [] } = useQuery({
-    queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list('-created_date', 200)
+    queryKey: ['analytics-players', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: () => {
+      if (!currentUser?.active_tenant_id) return [];
+      const filters = { tenant_id: currentUser.active_tenant_id };
+      if (currentUser.active_club_id) filters.club_id = currentUser.active_club_id;
+      return base44.entities.Player.filter(filters, '-created_date', 200);
+    },
+    enabled: !!currentUser
   });
 
   const { data: tournaments = [] } = useQuery({
-    queryKey: ['tournaments'],
-    queryFn: () => base44.entities.Tournament.list('-created_date', 100)
+    queryKey: ['analytics-tournaments', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: () => {
+      if (!currentUser?.active_tenant_id) return [];
+      const filters = { tenant_id: currentUser.active_tenant_id };
+      if (currentUser.active_club_id) filters.host_club_id = currentUser.active_club_id;
+      return base44.entities.Tournament.filter(filters, '-created_date', 100);
+    },
+    enabled: !!currentUser
   });
 
-  const { data: matches = [] } = useQuery({
-    queryKey: ['matches'],
-    queryFn: () => base44.entities.Match.list('-created_date', 200)
+  const tournamentIds = new Set(tournaments.map(t => t.id));
+
+  const { data: tenantMatches = [] } = useQuery({
+    queryKey: ['analytics-matches', currentUser?.active_tenant_id],
+    queryFn: () => currentUser?.active_tenant_id
+      ? base44.entities.Match.filter({ tenant_id: currentUser.active_tenant_id }, '-created_date', 200)
+      : [],
+    enabled: !!currentUser
   });
+  const matches = tenantMatches.filter(m => !m.tournament_id || tournamentIds.has(m.tournament_id));
 
   // Club distribution
   const clubCounts = {};
