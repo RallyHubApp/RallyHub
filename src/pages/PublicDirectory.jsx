@@ -79,13 +79,13 @@ function DirectoryMap({ clubs, heightClass = 'h-[560px]' }) {
     .filter(({ venue }) => Number.isFinite(venue.latitude) && Number.isFinite(venue.longitude)), [clubs]);
 
   return (
-    <div className="rounded-2xl border border-border overflow-hidden bg-card">
-      <div className="p-4 border-b border-border flex flex-wrap items-center justify-between gap-3">
+    <div className="overflow-hidden rounded-2xl border border-[#dbe6e8] bg-white shadow-[0_8px_24px_rgba(8,24,77,.05)]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dbe6e8] p-4">
         <div>
-          <h2 className="font-bold">Explore clubs on the map</h2>
-          <p className="text-xs text-muted-foreground mt-1">{points.length} mapped venue{points.length === 1 ? '' : 's'} shown. Click a marker to open the club listing.</p>
+          <h2 className="font-extrabold text-[#07184c]">Explore clubs on the map</h2>
+          <p className="mt-1 text-xs text-[#748196]">{points.length} mapped venue{points.length === 1 ? '' : 's'} shown. Click a marker to open the club listing.</p>
         </div>
-        <span className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Ireland</span>
+        <span className="rounded-full border border-[#b8dfc7] bg-[#eef9f3] px-3 py-1 text-xs font-bold text-[#067b3f]">Ireland</span>
       </div>
       <MapContainer center={[53.35, -7.75]} zoom={6} scrollWheelZoom className={`${heightClass} w-full`}>
         <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
