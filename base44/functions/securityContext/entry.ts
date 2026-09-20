@@ -24,9 +24,26 @@ Deno.serve(async (req) => {
 
     if (user.role !== 'admin') {
       if (user.approval_status !== 'approved') {
+        await base44.asServiceRole.entities.User.update(user.id, {
+          active_tenant_id: null,
+          active_club_id: null,
+          active_tenant_role: null,
+          active_club_role: null,
+          security_context_updated_at: new Date().toISOString(),
+        });
         return Response.json({ error: 'RallyHub Club approval required' }, { status: 403 });
       }
       if (clubAccesses.length === 0) {
+        // A revoked or Directory-only user may still have an old active club cached
+        // on their User record. Clear it before denying Club access so the public UI
+        // never suggests they can still switch into a club they no longer belong to.
+        await base44.asServiceRole.entities.User.update(user.id, {
+          active_tenant_id: null,
+          active_club_id: null,
+          active_tenant_role: null,
+          active_club_role: null,
+          security_context_updated_at: new Date().toISOString(),
+        });
         return Response.json({
           error: 'No RallyHub Club access. Directory ownership or editing does not grant access to RallyHub Club features.'
         }, { status: 403 });
