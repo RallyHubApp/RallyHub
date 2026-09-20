@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/textarea';
 import Seo from '@/components/public/Seo';
 import DirectorySpondPanel from '@/components/directory/DirectorySpondPanel';
 import DirectoryAccessPanel from '@/components/directory/DirectoryAccessPanel';
+import RallyHubClubPreviewLock from '@/components/directory/RallyHubClubPreviewLock';
+import ClubFeedbackPanel from '@/components/directory/ClubFeedbackPanel';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const emptyVenue = index => ({
@@ -669,6 +671,8 @@ export default function DirectoryListingEdit() {
               </section>
 
               {isClaimed && <DirectoryAccessPanel listingSlug={slug} clubName={baseClub?.name || 'this club'} county={baseClub?.county || ''} />}
+              {isClaimed && <RallyHubClubPreviewLock listingSlug={slug} clubName={baseClub?.name || 'this club'} />}
+              {isClaimed && <ClubFeedbackPanel listingSlug={slug} clubName={baseClub?.name || 'this club'} />}
 
               <section id="basics" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><Info className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Public club information</h2></div>
