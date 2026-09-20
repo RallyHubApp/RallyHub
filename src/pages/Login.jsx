@@ -47,20 +47,20 @@ export default function Login() {
   return (
     <AuthLayout
       icon={LogIn}
-      title={directoryMode ? "Directory sign in" : "Welcome back"}
-      subtitle={directoryMode ? "Sign in to claim, add or manage a public club listing" : "Log in to your account"}
+      title="Sign in to RallyHub"
+      subtitle={directoryMode ? "Use your RallyHub account to continue with this Directory task" : "One account for RallyHub"}
       footer={
         <>
-          {directoryMode ? "Need a directory account?" : "Don't have an account?"}{" "}
+          New to RallyHub?{" "}
           <Link to={`/register${returnToQuery}`} className="text-primary font-medium hover:underline">
-            {directoryMode ? 'Create directory account' : 'Create one'}
+            Create an account
           </Link>
         </>
       }
     >
       {directoryMode && (
         <div className="mb-5 rounded-xl border border-primary/25 bg-primary/10 p-4 text-sm text-muted-foreground">
-          <strong className="text-foreground">Already have a RallyHub account? Sign in here.</strong> If this is your first RallyHub invitation, use <strong className="text-foreground">Create directory account</strong> below instead. Directory access is separate and does not give access to RallyHub Club, tournaments or player records.
+          <strong className="text-foreground">One RallyHub account is used everywhere.</strong> Sign in with your existing account. If this is your first time on RallyHub, create an account below. Directory editing is a permission on that account and does not automatically give access to RallyHub Club, tournaments or player records.
         </div>
       )}
       <Button
