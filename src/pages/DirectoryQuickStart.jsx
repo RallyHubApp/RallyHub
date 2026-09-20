@@ -155,7 +155,7 @@ export default function DirectoryQuickStart() {
                       <CheckLine>Check your name</CheckLine>
                       <CheckLine>Add your role or connection to the club</CheckLine>
                       <CheckLine>Confirm your mobile number</CheckLine>
-                      <CheckLine>Choose <strong>Verify & continue</strong></CheckLine>
+                      <CheckLine>Choose <strong>Submit for review</strong></CheckLine>
                     </div>
                   </div>
                 </div>
@@ -163,7 +163,7 @@ export default function DirectoryQuickStart() {
                   <div className="text-xs font-black text-[#0d2142]">Directory verification</div>
                   <div className="space-y-2 mt-3">
                     {['Your name','Role / connection','Signed-in email','Mobile number'].map(x => <div key={x} className="h-7 rounded border border-slate-200 bg-slate-50 text-[10px] text-slate-500 px-2 flex items-center">{x}</div>)}
-                    <div className="h-9 rounded-md bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">Verify & continue</div>
+                    <div className="h-9 rounded-md bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">Submit for review</div>
                   </div>
                 </div>
               </div>
@@ -178,12 +178,12 @@ export default function DirectoryQuickStart() {
                 <div className="flex gap-4">
                   <StepBadge n="4" />
                   <div>
-                    <h2 className="text-xl font-black text-[#0d2142]">Verification happens automatically where possible</h2>
-                    <p className="text-sm text-slate-600 mt-2">RallyHub checks the secure invitation against the mobile number or email tied to it. If they match, Directory access can be granted immediately. If they do not, the request is held for administrator review.</p>
+                    <h2 className="text-xl font-black text-[#0d2142]">We review and approve</h2>
+                    <p className="text-sm text-slate-600 mt-2">RallyHub checks the secure invitation and the details you supplied, then reviews the request before Directory access is granted. You’ll see confirmation once your listing access is approved.</p>
                   </div>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-emerald-50 p-5 flex items-center justify-center text-center">
-                  <div><div className="w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto"><Check className="w-6 h-6" /></div><div className="font-black mt-3 text-[#0d2142]">Directory access verified</div><div className="text-xs text-slate-500 mt-1">You can now manage your listing</div></div>
+                  <div><div className="w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto"><Check className="w-6 h-6" /></div><div className="font-black mt-3 text-[#0d2142]">Listing submitted for review</div><div className="text-xs text-slate-500 mt-1">We’ll let you know when it is approved</div></div>
                 </div>
               </div>
 
