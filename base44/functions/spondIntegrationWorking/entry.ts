@@ -239,6 +239,12 @@ Deno.serve(async (req) => {
       return Response.json({ success:true });
     }
 
+    if (action === 'directory_login') {
+      if (!spondEmail || !spondPassword) return Response.json({ error:'Email and password required' }, { status:400 });
+      const token = await spondLogin(spondEmail, spondPassword);
+      return Response.json({ token });
+    }
+
     let token = null;
     try { token = await directorySpondToken(user, body); } catch (error) {
       return Response.json({ error:`Could not connect to Spond: ${error?.message || 'login failed'}` }, { status:502 });
