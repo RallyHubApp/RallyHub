@@ -30,8 +30,16 @@ export default function Dashboard() {
   });
 
   const { data: tournaments = [] } = useQuery({
-    queryKey: ['tournaments'],
-    queryFn: () => base44.entities.Tournament.list('-created_date', 50)
+    queryKey: ['dashboard-tournaments', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: () => {
+      const filters = {};
+      if (currentUser?.active_tenant_id) filters.tenant_id = currentUser.active_tenant_id;
+      if (currentUser?.active_club_id) filters.host_club_id = currentUser.active_club_id;
+      return Object.keys(filters).length
+        ? base44.entities.Tournament.filter(filters, '-created_date', 50)
+        : [];
+    },
+    enabled: !!currentUser
   });
 
   const { data: clubLeaderboard = { rows: [] } } = useQuery({
