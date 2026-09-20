@@ -126,8 +126,8 @@ export default function DirectoryQuickStart() {
                 <div className="flex gap-4">
                   <StepBadge n="2" />
                   <div>
-                    <h2 className="text-xl font-black text-[#0d2142]">Create your Directory account</h2>
-                    <p className="text-sm text-slate-600 mt-2 mb-3">If you do not already have a RallyHub account, choose <strong>Create directory account</strong>.</p>
+                    <h2 className="text-xl font-black text-[#0d2142]">Sign in or create your RallyHub account</h2>
+                    <p className="text-sm text-slate-600 mt-2 mb-3">RallyHub uses one account. If you already have one, sign in. If not, choose <strong>Create account</strong>.</p>
                     <div className="space-y-2">
                       <CheckLine>WhatsApp invite: use the same mobile number that received it</CheckLine>
                       <CheckLine>Email invite: use the same invited email address</CheckLine>
@@ -137,10 +137,10 @@ export default function DirectoryQuickStart() {
                   </div>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="font-black text-center text-[#0d2142]">Create a directory account</div>
+                  <div className="font-black text-center text-[#0d2142]">Create your RallyHub account</div>
                   <div className="space-y-2 mt-3">
                     {['Your name','Mobile number','Email address','Password'].map(x => <div key={x} className="h-8 rounded-md border border-slate-200 bg-slate-50 text-[11px] text-slate-500 px-2 flex items-center">{x}</div>)}
-                    <div className="h-9 rounded-md bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">Create directory account</div>
+                    <div className="h-9 rounded-md bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">Create account</div>
                   </div>
                 </div>
               </div>
@@ -223,7 +223,7 @@ export default function DirectoryQuickStart() {
                 </div>
                 <div className="rounded-2xl bg-[#0d2142] text-white p-5 flex flex-col justify-center">
                   <p className="text-xs uppercase tracking-[.2em] text-lime-300 font-black">Directory only</p>
-                  <p className="text-lg font-bold mt-2">Claiming a listing does not give access to RallyHub Club, tournaments, player records or club administration.</p>
+                  <p className="text-lg font-bold mt-2">One RallyHub account, separate permissions. Claiming a listing lets you manage that Directory listing only; it does not automatically give RallyHub Club, tournament, player-record or club-administration access.</p>
                 </div>
               </div>
 
