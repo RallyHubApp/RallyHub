@@ -210,7 +210,7 @@ export default function Landing() {
 
               <div className="pointer-events-none absolute inset-y-0 right-0 z-0 w-[58%] overflow-hidden sm:w-[55%] lg:hidden">
                 <img src={HERO_PHOTO} alt="" className="h-full w-full object-cover object-center opacity-95" />
-                <div className="absolute inset-y-0 left-0 w-[42%] bg-[linear-gradient(90deg,#f7fcfd_0%,rgba(247,252,253,.94)_38%,rgba(247,252,253,.68)_64%,rgba(247,252,253,0)_100%)] sm:w-[34%]"/>
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,#f7fcfd_0%,rgba(247,252,253,.98)_28%,rgba(247,252,253,.92)_48%,rgba(247,252,253,.58)_70%,rgba(247,252,253,0)_100%)] sm:bg-[linear-gradient(90deg,#f7fcfd_0%,rgba(247,252,253,.96)_24%,rgba(247,252,253,.78)_50%,rgba(247,252,253,.35)_72%,rgba(247,252,253,0)_100%)]"/>
               </div>
             </div>
           </section>
