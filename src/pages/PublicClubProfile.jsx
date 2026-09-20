@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { getClub } from '@/data/directorySeed';
-import { ArrowLeft, CalendarDays, Check, CheckCircle2, ExternalLink, Facebook, Globe2, Link2, Mail, MapPin, MessageCircle, Phone, Share2, UserCheck, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Check, CheckCircle2, ExternalLink, Facebook, Globe2, Link2, Lock, Mail, MapPin, MessageCircle, Phone, Share2, UserCheck, Users } from 'lucide-react';
 import Seo, { SITE_URL, absoluteUrl } from '@/components/public/Seo';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import PublicDirectoryLogo, { normaliseDirectoryAssetUrl } from '@/components/directory/PublicDirectoryLogo';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const weekOrder = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const groupByDay = sessions => [...(sessions || [])]
@@ -42,6 +44,10 @@ export default function PublicClubProfile() {
   const [loadingListing, setLoadingListing] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [clubInterestOpen, setClubInterestOpen] = useState(false);
+  const [clubInterestBusy, setClubInterestBusy] = useState(false);
+  const [clubInterestDone, setClubInterestDone] = useState(false);
+  const [clubInterest, setClubInterest] = useState({ interestType: 'demo', contactPhone: user?.directory_mobile || '', features: [] });
 
   useEffect(() => {
     let active = true;
@@ -106,6 +112,36 @@ export default function PublicClubProfile() {
   const displayLogoUrl = normaliseDirectoryAssetUrl(club.logoUrl);
   const profileUrl = `${SITE_URL}/directory/${club.slug}`;
   const socialLinks = [club.website, club.facebook, club.instagram].filter(Boolean);
+  const clubFeatureOptions = ['Club & member management','Sessions & attendance','King of the Court','RallyHub Interclub','Tournaments & competitions','Spond integration','Leaderboards & player profiles'];
+  const toggleClubFeature = value => setClubInterest(current => ({
+    ...current,
+    features: current.features.includes(value) ? current.features.filter(item => item !== value) : [...current.features, value]
+  }));
+  const submitClubInterest = async () => {
+    if (!isAuthenticated) {
+      window.location.href = `/login?returnTo=${encodeURIComponent(location.pathname)}`;
+      return;
+    }
+    setClubInterestBusy(true);
+    try {
+      const res = await base44.functions.invoke('rallyHubClubInterest', {
+        action: 'submit',
+        listingSlug: club.slug,
+        clubName: club.name,
+        contactName: user?.full_name || user?.display_name || '',
+        contactEmail: user?.email || '',
+        contactPhone: clubInterest.contactPhone,
+        interestType: clubInterest.interestType,
+        features: clubInterest.features,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      setClubInterestDone(true);
+    } catch (error) {
+      window.alert(error?.message || 'Could not add you to the RallyHub Club waiting list right now.');
+    } finally {
+      setClubInterestBusy(false);
+    }
+  };
   const clubSchema = {
     '@context': 'https://schema.org',
     '@type': 'SportsOrganization',
@@ -369,9 +405,16 @@ export default function PublicClubProfile() {
                 <Link to={`/directory/${club.slug}/edit`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
                   Edit your listing
                 </Link>
-                <button type="button" onClick={() => window.alert('RallyHub Club upgrade is not available at this time. Your free directory listing remains active.')} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background/40 px-4 py-3 text-sm font-semibold text-foreground hover:border-primary/40 transition-colors">
-                  Upgrade to RallyHub Club
+                <button type="button" onClick={() => { setClubInterestDone(false); setClubInterestOpen(true); }} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background/40 px-4 py-3 text-sm font-semibold text-foreground hover:border-primary/40 transition-colors">
+                  <Lock className="w-4 h-4" /> RallyHub Club — join waiting list
                 </button>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {['Players & members','Competitions','Leaderboards','Analytics'].map(item => (
+                    <button key={item} type="button" onClick={() => { setClubInterestDone(false); setClubInterestOpen(true); }} className="cursor-pointer rounded-lg border border-border bg-muted/30 px-3 py-2 text-left text-xs text-muted-foreground opacity-70 hover:opacity-100">
+                      <span className="flex items-center gap-1.5"><Lock className="w-3 h-3" /> {item}</span>
+                    </button>
+                  ))}
+                </div>
               </section>
             )}
             {!hasDirectoryAccess && club.verificationStatus === 'unclaimed' && (
