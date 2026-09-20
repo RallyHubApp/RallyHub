@@ -1,59 +1,68 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import { Calendar, Users, MapPin, Trophy, ArrowRight, CheckCircle2, UserCheck, PlusCircle } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart3,
+  CalendarDays,
+  ChevronRight,
+  MapPin,
+  Menu,
+  Search,
+  Users,
+  X,
+} from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { directoryClubs } from '@/data/directorySeed';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 
+const FeatureCard = ({ icon: Icon, title, copy, action, to, muted = false }) => (
+  <article className={`rounded-2xl border border-[#dce7e3] bg-white p-5 shadow-[0_10px_28px_rgba(13,33,66,0.06)] ${muted ? 'opacity-90' : ''}`}>
+    <div className="flex items-start gap-4">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#079447] text-white shadow-sm">
+        <Icon className="h-6 w-6" />
+      </div>
+      <div className="min-w-0">
+        <h3 className="text-lg font-extrabold tracking-tight text-[#0b1a50]">{title}</h3>
+        <p className="mt-1 text-sm leading-5 text-slate-600">{copy}</p>
+        {to ? (
+          <Link to={to} className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[#087f45] hover:underline">
+            {action} <ArrowRight className="h-4 w-4" />
+          </Link>
+        ) : (
+          <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[#087f45]">{action}</span>
+        )}
+      </div>
+    </div>
+  </article>
+);
+
 export default function Landing() {
   const { user, isAuthenticated, isLoadingAuth } = useAuth();
-  const clubLoginHref = '/login?returnTo=%2Fapp';
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleOpenApp = () => {
-    window.location.href = isAuthenticated ? '/app' : clubLoginHref;
-  };
-
-  const features = [
-    {
-      icon: MapPin,
-      title: 'Find Clubs & Places to Play',
-      description: 'Browse public club listings, venues and contact details without creating an account.'
-    },
-    {
-      icon: Trophy,
-      title: 'Competitions & Events',
-      description: 'Run King of the Court, interclub challenges, tournaments and other club events.'
-    },
-    {
-      icon: Users,
-      title: 'Club & Member Management',
-      description: 'Manage club people, venues, communications and day-to-day operations in one place.'
-    },
-    {
-      icon: Calendar,
-      title: 'Multi-Sport Platform',
-      description: 'Built for Pickleball first, with Padel, Tennis, Badminton and other racket sports supported.'
-    }
-  ];
-
-  const benefits = [
-    'Public club directory with no login required',
-    'Verified directory access for club representatives',
-    'King of the Court and interclub competition tools',
-    'Event, tournament and venue management',
-    'Club and member administration',
-    'Mobile-friendly tools for courtside use'
-  ];
+  const loginHref = '/login?returnTo=%2F';
+  const appHref = '/app';
 
   const faq = [
-    { question: 'Do I need an account to use the RallyHub Club Directory?', answer: 'No. Anyone can browse public club listings, venues and contact information without creating a RallyHub account.' },
-    { question: 'How do I add a club that is missing from the directory?', answer: 'Choose Add Your Club, sign in so RallyHub can identify the submitter, and send the club details for review. Adding a directory listing does not create a RallyHub Club tenant.' },
-    { question: 'How can a club update its directory listing?', answer: 'Find the club, open its profile and choose Claim this listing. RallyHub verifies the representative before granting permission to edit that public listing.' },
-    { question: 'Does RallyHub cover the whole island of Ireland?', answer: 'Yes. The directory is designed around all 32 counties of Ireland and supports club listings throughout the island.' }
+    {
+      question: 'Do I need an account to use the RallyHub Club Directory?',
+      answer: 'No. Anyone can browse public club listings, venues and contact information without creating a RallyHub account.'
+    },
+    {
+      question: 'How do I add a club that is missing from the directory?',
+      answer: 'Choose Create Your Club Listing, sign in so RallyHub can identify the submitter, and send the club details for review. Adding a directory listing does not create RallyHub Club access.'
+    },
+    {
+      question: 'How can a club update its directory listing?',
+      answer: 'Find the club, open its profile and choose Claim this listing. RallyHub reviews the representative before granting permission to edit that public listing.'
+    },
+    {
+      question: 'Does RallyHub cover the whole island of Ireland?',
+      answer: 'Yes. The directory is designed around all 32 counties of Ireland and supports club listings throughout the island.'
+    }
   ];
 
   const seoData = [
@@ -65,7 +74,7 @@ export default function Landing() {
       logo: LOGO_URL,
       email: 'rallyhubapp@gmail.com',
       areaServed: { '@type': 'Place', name: 'Ireland' },
-      description: 'RallyHub is an all-Ireland racket-sports directory and club management platform, starting with pickleball.'
+      description: 'RallyHub helps players discover clubs, venues and sessions and gives authorised club representatives tools to maintain their public listing.'
     },
     {
       '@context': 'https://schema.org',
@@ -73,7 +82,7 @@ export default function Landing() {
       name: 'RallyHub',
       url: SITE_URL,
       inLanguage: 'en-IE',
-      description: 'Find pickleball clubs and places to play across the island of Ireland and access RallyHub club and competition tools.'
+      description: 'Find clubs and places to play across Ireland and beyond.'
     },
     {
       '@context': 'https://schema.org',
@@ -89,239 +98,268 @@ export default function Landing() {
   return (
     <>
       <Seo
-        title="RallyHub Ireland | Pickleball Club Directory & Club Management"
-        description="Find pickleball clubs and places to play across the island of Ireland. RallyHub also provides club, competition, King of the Court, interclub and tournament management tools."
+        title="RallyHub | Play More. Connect Deeper. Belong Together."
+        description="Find clubs, venues and sessions across Ireland and beyond. RallyHub helps stronger sporting communities connect."
         path="/"
         structuredData={seoData}
       />
-      <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
-        
-        <div className="container mx-auto px-4 py-16 sm:py-24 relative">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center max-w-4xl mx-auto"
-          >
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-200 mb-5">
-              Club Directory Preview · {directoryClubs.length} clubs currently listed · details are being verified
-            </div>
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <img 
-                src={LOGO_URL} 
-                alt="RallyHub" 
-                className="h-16 w-16 sm:h-20 sm:w-20 rounded-none"
-              />
-              <h1 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight">Welcome | RallyHub</h1>
-            </div>
-            
-            <p className="text-xl sm:text-2xl text-muted-foreground mb-8 leading-relaxed">
-              Find clubs and places to play. RallyHub also gives clubs the tools to organise members, competitions and events.
-            </p>
 
-            <div className="grid sm:grid-cols-3 gap-3 max-w-4xl mx-auto">
-              <Link to="/directory" className="w-full">
-                <Button size="lg" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-base sm:text-lg px-5 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all">
-                  Find a Club
-                  <MapPin className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-              <Link to="/directory?manage=1" className="w-full">
-                <Button size="lg" variant="outline" className="w-full text-base sm:text-lg px-5 py-6 rounded-xl">
-                  Manage Directory Listing
-                  <UserCheck className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={handleOpenApp}
-                className="w-full text-base sm:text-lg px-5 py-6 rounded-xl"
-              >
-                {isLoadingAuth ? 'Checking account…' : isAuthenticated ? 'Open RallyHub' : 'Log in'}
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </div>
-
-            <div className="mt-5 max-w-2xl mx-auto rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+      <div className="min-h-screen bg-white text-[#0b1a50]">
+        <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+            <Link to="/" className="flex items-center gap-2.5">
+              <img src={LOGO_URL} alt="RallyHub" className="h-11 w-11 object-contain sm:h-12 sm:w-12" />
               <div>
-                <p className="font-semibold text-foreground">Can't find your club?</p>
-                <p className="text-sm text-muted-foreground">Add it to the RallyHub Directory for review. This does not create a RallyHub Club account.</p>
+                <div className="text-[1.45rem] font-black leading-none tracking-tight sm:text-[1.65rem]">
+                  Rally<span className="text-[#078a47]">Hub</span>
+                </div>
+                <div className="mt-1 text-[8px] font-bold tracking-[.25em] text-slate-600 sm:text-[9px]">PLAY • CONNECT • BELONG</div>
               </div>
-              <Link to="/directory/add" className="shrink-0">
-                <Button variant="outline" className="border-amber-400/40 text-amber-700 dark:text-amber-200 hover:bg-amber-400/10">
-                  Add Your Club <PlusCircle className="w-4 h-4 ml-2" />
+            </Link>
+
+            <nav className="hidden items-center gap-7 text-sm font-semibold text-[#0b1a50] lg:flex">
+              <Link to="/" className="hover:text-[#078a47]">Home</Link>
+              <Link to="/directory" className="hover:text-[#078a47]">Directory</Link>
+              <Link to="/directory" className="hover:text-[#078a47]">Clubs</Link>
+              <Link to="/about" className="hover:text-[#078a47]">About</Link>
+            </nav>
+
+            <div className="hidden items-center gap-2 lg:flex">
+              <Link to={isAuthenticated ? appHref : loginHref}>
+                <Button variant="outline" className="border-slate-300 bg-white text-[#0b1a50] hover:bg-slate-50">
+                  {isLoadingAuth ? 'Checking…' : isAuthenticated ? 'Open RallyHub' : 'Log in'}
                 </Button>
+              </Link>
+              <Link to="/directory/add">
+                <Button className="bg-[#078a47] text-white hover:bg-[#06763d]">Get Started</Button>
               </Link>
             </div>
 
-            <p className="text-sm text-muted-foreground mt-4">
-              {isAuthenticated
-                ? `Signed in${user?.full_name ? ` as ${user.full_name}` : ''}. Browse freely or open the areas of RallyHub your account can access.`
-                : 'Browse freely. RallyHub uses one account; sign in only when you need to manage a listing or access authorised club tools.'}
-            </p>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="container mx-auto px-4 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Discover, Organise & Grow Your Club
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Start with the public club directory, then use RallyHub's competition and club-management tools when your club is ready.
-          </p>
-        </motion.div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, index) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className="glass rounded-xl p-6 text-center hover:glow-green-sm transition-all"
+            <button
+              type="button"
+              aria-label="Toggle menu"
+              onClick={() => setMenuOpen(v => !v)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-[#0b1a50] lg:hidden"
             >
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <feature.icon className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
-              <p className="text-sm text-muted-foreground">{feature.description}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
 
-      {/* Benefits Section */}
-      <div className="container mx-auto px-4 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="glass rounded-2xl p-8 sm:p-12"
-        >
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
-            <div>
-              <h2 className="text-3xl font-bold text-foreground mb-6">
-                One Public Directory. Separate Club Tools.
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Anyone can browse the directory. A verified club representative can manage their listing without becoming a RallyHub player or joining the full RallyHub Club platform.
-              </p>
-              <div className="space-y-3">
-                {benefits.map((benefit, index) => (
-                  <motion.div
-                    key={benefit}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    className="flex items-center gap-3"
-                  >
-                    <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
-                    <span className="text-foreground">{benefit}</span>
-                  </motion.div>
+          {menuOpen && (
+            <div className="border-t border-slate-200 bg-white px-4 py-4 lg:hidden">
+              <div className="mx-auto flex max-w-7xl flex-col gap-1">
+                <Link to="/" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 font-semibold hover:bg-slate-50">Home</Link>
+                <Link to="/directory" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 font-semibold hover:bg-slate-50">Directory</Link>
+                <Link to="/about" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 font-semibold hover:bg-slate-50">About</Link>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <Link to={isAuthenticated ? appHref : loginHref} onClick={() => setMenuOpen(false)}>
+                    <Button variant="outline" className="w-full">{isAuthenticated ? 'Open RallyHub' : 'Log in'}</Button>
+                  </Link>
+                  <Link to="/directory/add" onClick={() => setMenuOpen(false)}>
+                    <Button className="w-full bg-[#078a47] text-white hover:bg-[#06763d]">Get Started</Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+        </header>
+
+        <main>
+          <section className="relative overflow-hidden border-b border-[#dce8e4] bg-[linear-gradient(120deg,#f7fcfb_0%,#eef9f4_45%,#e7f5fb_100%)]">
+            <div className="absolute -right-32 top-8 h-96 w-96 rounded-full bg-[#b9ead1]/35 blur-3xl" />
+            <div className="absolute left-[45%] top-12 h-72 w-72 rounded-full bg-sky-200/35 blur-3xl" />
+
+            <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[1.02fr_.98fr] lg:px-8 lg:py-16">
+              <div className="max-w-2xl">
+                <div className="mb-5 inline-flex items-center rounded-full border border-[#bfe2d0] bg-white/80 px-3 py-1.5 text-xs font-bold text-[#087f45] shadow-sm">
+                  {directoryClubs.length} clubs listed in the RallyHub Directory
+                </div>
+
+                <h1 className="text-[2.75rem] font-black leading-[.98] tracking-[-0.045em] text-[#09184b] sm:text-6xl lg:text-[4.8rem]">
+                  Play More
+                  <span className="block">Connect <span className="text-[#087f45]">Deeper</span></span>
+                  <span className="block text-[#0b5b59]">Belong Together</span>
+                </h1>
+
+                <p className="mt-6 max-w-xl text-base font-medium leading-7 text-[#26385f] sm:text-lg">
+                  RallyHub helps players find clubs, venues and sessions across Ireland and beyond — for every sport, at every level.
+                </p>
+
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                  <Link to="/directory">
+                    <Button size="lg" className="w-full rounded-xl bg-[#079447] px-7 text-white hover:bg-[#067f3d] sm:w-auto">
+                      <Search className="mr-2 h-5 w-5" /> Find a Club or Session
+                    </Button>
+                  </Link>
+                  <Link to="/directory/add">
+                    <Button size="lg" variant="outline" className="w-full rounded-xl border-slate-300 bg-white px-7 text-[#0b1a50] hover:bg-slate-50 sm:w-auto">
+                      Create Your Club Listing
+                    </Button>
+                  </Link>
+                </div>
+
+                <p className="mt-4 text-xs leading-5 text-slate-500">
+                  Browse without signing in. One RallyHub account is used only when you need to manage an authorised listing or access an approved club area.
+                </p>
+              </div>
+
+              <div className="relative min-h-[340px] overflow-hidden rounded-[2.2rem] border border-white/80 bg-[linear-gradient(135deg,#d8eef5_0%,#b9dfd0_45%,#72b4a1_100%)] shadow-[0_25px_70px_rgba(13,33,66,0.18)] sm:min-h-[420px]">
+                <div className="absolute inset-0 opacity-55">
+                  <div className="absolute left-[-5%] top-[20%] h-[2px] w-[110%] rotate-[-8deg] bg-white/80" />
+                  <div className="absolute left-[14%] top-[-10%] h-[120%] w-[2px] rotate-[11deg] bg-white/60" />
+                  <div className="absolute bottom-0 left-0 h-[46%] w-full bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(11,85,69,.42)_100%)]" />
+                  <div className="absolute bottom-16 left-10 h-16 w-16 rounded-full bg-slate-200/90 blur-[1px]" />
+                  <div className="absolute bottom-24 left-28 h-20 w-20 rounded-full bg-slate-200/70 blur-[1px]" />
+                  <div className="absolute bottom-20 right-16 h-16 w-16 rounded-full bg-slate-200/80 blur-[1px]" />
+                </div>
+
+                <div className="absolute right-[17%] top-[10%] h-[70%] w-[33%] rotate-[13deg] rounded-[42%_42%_30%_30%] border-[3px] border-[#9be35b] bg-[#15251f] shadow-2xl">
+                  <div className="absolute left-1/2 top-[28%] -translate-x-1/2 text-center">
+                    <img src={LOGO_URL} alt="" className="mx-auto h-16 w-16 object-contain brightness-125 sm:h-20 sm:w-20" />
+                    <div className="mt-2 text-[9px] font-semibold tracking-[.28em] text-white sm:text-[10px]">PLAY<br/>CONNECT<br/>BELONG</div>
+                  </div>
+                  <div className="absolute bottom-[-23%] left-1/2 h-[28%] w-[22%] -translate-x-1/2 rounded-b-3xl bg-[#13221d]" />
+                </div>
+
+                <div className="absolute bottom-[12%] right-[47%] h-16 w-16 rounded-full bg-[#d7ef35] shadow-[inset_-8px_-8px_0_rgba(111,142,0,.17),0_12px_20px_rgba(20,40,30,.2)] sm:h-20 sm:w-20">
+                  <div className="absolute left-[22%] top-[24%] h-2 w-2 rounded-full bg-[#a9c81b]" />
+                  <div className="absolute right-[22%] top-[40%] h-2 w-2 rounded-full bg-[#a9c81b]" />
+                  <div className="absolute bottom-[23%] left-[42%] h-2 w-2 rounded-full bg-[#a9c81b]" />
+                </div>
+
+                <div className="absolute bottom-9 right-7 rotate-[-8deg] text-right font-[cursive] text-2xl font-bold leading-none text-white drop-shadow sm:text-3xl">
+                  Good People<br/>Great Games
+                  <div className="ml-auto mt-2 h-1.5 w-28 rotate-[-5deg] rounded-full bg-[#91d83a]" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-7xl px-4 py-9 sm:px-6 lg:px-8">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <FeatureCard
+                icon={Search}
+                title="Find Clubs"
+                copy="Discover clubs, venues and sessions near you."
+                action="Search Directory"
+                to="/directory"
+              />
+              <FeatureCard
+                icon={CalendarDays}
+                title="Join Events"
+                copy="See what clubs are running and find the right place to play."
+                action="Browse Clubs"
+                to="/directory"
+              />
+              <FeatureCard
+                icon={Users}
+                title="Manage Your Club"
+                copy="Claim or create your public club listing and keep it current."
+                action="Get Started"
+                to="/directory?manage=1"
+              />
+              <FeatureCard
+                icon={BarChart3}
+                title="Play, Track, Progress"
+                copy="RallyHub Club is still under development and will be released separately."
+                action="In development"
+                muted
+              />
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-7xl px-4 pb-0 sm:px-6 lg:px-8">
+            <div className="relative overflow-hidden rounded-t-[2rem] bg-[linear-gradient(145deg,#d8eee4_0%,#8dc6b3_35%,#176b73_68%,#0c4c68_100%)] px-6 py-9 text-white sm:px-10 sm:py-11">
+              <div className="absolute -bottom-16 left-[-4%] h-40 w-[58%] rounded-[50%] bg-[#3d7f52]/70" />
+              <div className="absolute -bottom-10 left-[30%] h-32 w-[45%] rounded-[50%] bg-[#7aa66b]/55" />
+              <div className="absolute right-[-6%] top-[14%] h-36 w-[42%] rounded-[48%] bg-[#d8eadb]/45" />
+              <div className="relative grid items-end gap-6 md:grid-cols-[1fr_auto]">
+                <div>
+                  <div className="font-[cursive] text-3xl font-bold leading-tight drop-shadow-sm sm:text-4xl">Cliffs of Moher</div>
+                  <div className="mt-1 text-sm font-semibold">County Clare, A Healthier, Happier Ireland</div>
+                  <div className="mt-3 h-1.5 w-40 rotate-[-3deg] rounded-full bg-[#92d83b]" />
+                </div>
+                <div className="font-[cursive] text-3xl font-bold sm:text-4xl">People · Places · Play</div>
+              </div>
+            </div>
+
+            <div className="grid gap-px overflow-hidden rounded-b-[2rem] bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                [Users, 'People', 'Build connections'],
+                [MapPin, 'Places', 'Find your club'],
+                [CalendarDays, 'Sessions', 'Play more'],
+                [Users, 'Community', 'Belong together']
+              ].map(([Icon,title,copy]) => (
+                <div key={title} className="bg-[#063a56] px-5 py-5 text-center text-white">
+                  <Icon className="mx-auto h-6 w-6" />
+                  <div className="mt-2 font-bold">{title}</div>
+                  <div className="text-xs text-white/75">{copy}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <div className="grid items-center gap-10 rounded-[2rem] border border-[#dce8e4] bg-[#f8fcfa] p-7 sm:p-10 lg:grid-cols-[.9fr_1.1fr]">
+              <div>
+                <div className="font-[cursive] text-3xl font-bold text-[#0b1a50]">Stronger Sporting Communities Together</div>
+                <div className="mt-3 h-1.5 w-44 rotate-[-3deg] rounded-full bg-[#91d83a]" />
+                <h2 className="mt-7 text-3xl font-black tracking-tight text-[#0b1a50]">One platform. Many sports. One community.</h2>
+                <p className="mt-4 leading-7 text-slate-600">
+                  RallyHub is being designed to support clubs and communities across pickleball, tennis, badminton, padel and more, while keeping the public Directory simple and useful today.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                {[
+                  ['●','Pickleball'],
+                  ['◉','Tennis'],
+                  ['✦','Badminton'],
+                  ['◈','Padel'],
+                  ['●●','And more']
+                ].map(([mark,label]) => (
+                  <div key={label} className="rounded-2xl border border-[#dce8e4] bg-white px-3 py-4 text-center shadow-sm">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#d9f2e4] text-xl font-black text-[#078a47]">{mark}</div>
+                    <div className="mt-2 text-xs font-bold text-[#0b1a50]">{label}</div>
+                  </div>
                 ))}
               </div>
             </div>
-            <div className="relative flex items-center justify-center">
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                <img 
-                  src={LOGO_URL} 
-                  alt="RallyHub" 
-                  className="h-32 w-32 rounded-none"
-                />
+          </section>
+
+          <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h2 className="text-3xl font-black tracking-tight text-[#0b1a50] sm:text-4xl">RallyHub Directory FAQ</h2>
+              <p className="mt-3 text-slate-600">Straight answers about finding, adding and managing club listings.</p>
+            </div>
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
+              {faq.map(item => (
+                <article key={item.question} className="rounded-2xl border border-[#dce8e4] bg-white p-5 shadow-[0_10px_28px_rgba(13,33,66,0.05)]">
+                  <h3 className="font-extrabold text-[#0b1a50]">{item.question}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.answer}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="border-t border-slate-200 bg-[#f7faf9]">
+            <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 py-8 text-center sm:px-6 md:flex-row md:text-left lg:px-8">
+              <div className="flex items-center gap-3">
+                <img src={LOGO_URL} alt="RallyHub" className="h-11 w-11 object-contain" />
+                <div>
+                  <div className="font-black text-[#0b1a50]">RallyHub</div>
+                  <div className="text-[9px] font-bold tracking-[.23em] text-slate-500">PLAY • CONNECT • BELONG</div>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-5 text-sm font-semibold text-[#0b1a50]">
+                <Link to="/directory" className="hover:text-[#078a47]">Directory</Link>
+                <Link to="/directory/story" className="hover:text-[#078a47]">Why RallyHub Directory</Link>
+                <Link to="/directory/help" className="hover:text-[#078a47]">Club Guide</Link>
+                <Link to="/about" className="hover:text-[#078a47]">About</Link>
+                <Link to="/contact" className="hover:text-[#078a47]">Contact</Link>
               </div>
             </div>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* FAQ / answer-first content for people and search */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl sm:text-4xl font-bold text-foreground">RallyHub Directory FAQ</h2>
-            <p className="text-muted-foreground mt-3">Straight answers about finding, adding and managing club listings.</p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            {faq.map(item => (
-              <article key={item.question} className="glass rounded-xl p-5">
-                <h3 className="font-bold text-foreground">{item.question}</h3>
-                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{item.answer}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="container mx-auto px-4 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center"
-        >
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Looking for Somewhere to Play?
-          </h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Explore the RallyHub club directory without logging in. If you run a listed club, open its profile to request verified directory access.
-          </p>
-          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3">
-            <Link to="/directory">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6 rounded-xl">
-                Find a Club
-                <MapPin className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-            <Link to="/directory?manage=1">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6 rounded-xl">
-                Manage Directory Listing
-                <UserCheck className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-            <Link to="/directory/add">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6 rounded-xl">
-                Add Your Club
-                <PlusCircle className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-            <Button size="lg" variant="outline" onClick={handleOpenApp} className="text-lg px-8 py-6 rounded-xl">
-              {isLoadingAuth ? 'Checking account…' : isAuthenticated ? 'Open RallyHub' : 'Log in'}
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Footer */}
-      <div className="container mx-auto px-4 py-8 border-t border-border">
-        <div className="text-center text-sm text-muted-foreground">
-          <div className="flex items-center justify-center gap-4 mb-3">
-            <Link to="/directory" className="hover:text-primary transition-colors">Club Directory</Link>
-            <Link to="/about" className="hover:text-primary transition-colors">About</Link>
-            <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
-          </div>
-          <p>&copy; {new Date().getFullYear()} RallyHub.ie. All rights reserved.</p>
-          <p className="mt-2">Built for the racket sports community</p>
-        </div>
-      </div>
+          </section>
+        </main>
       </div>
     </>
   );
