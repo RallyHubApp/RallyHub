@@ -16,11 +16,11 @@ Error: expect(locator).toBeVisible() failed
 
 Locator: getByRole('heading', { name: /Sign in or create your RallyHub account|First time on RallyHub\?/ })
 Expected: visible
-Timeout: 3000ms
+Timeout: 10000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByRole('heading', { name: /Sign in or create your RallyHub account|First time on RallyHub\?/ }) with timeout 3000ms
+  - Expect "toBeVisible" getByRole('heading', { name: /Sign in or create your RallyHub account|First time on RallyHub\?/ }) with timeout 10000ms
   - waiting for getByRole('heading', { name: /Sign in or create your RallyHub account|First time on RallyHub\?/ })
 
 ```
@@ -95,7 +95,7 @@ Call log:
   12 |   await claim.click();
   13 | 
   14 |   await expect(page).toHaveURL(/\/directory\/clare-pickleball\/claim/);
-> 15 |   await expect(page.getByRole('heading', { name: /Sign in or create your RallyHub account|First time on RallyHub\?/ })).toBeVisible();
+> 15 |   await expect(page.getByRole('heading', { name: /Sign in or create your RallyHub account|First time on RallyHub\?/ })).toBeVisible({ timeout: 10000 });
      |                                                                                                                         ^ Error: expect(locator).toBeVisible() failed
   16 | 
   17 |   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
@@ -118,7 +118,8 @@ Call log:
   34 | test('directory help explains one account with separate permissions', async ({ page }) => {
   35 |   await page.goto('/directory/help');
   36 | 
-  37 |   await expect(page.getByText('RallyHub uses one account, but permissions are separate.', { exact: false })).toBeVisible();
-  38 | });
-  39 | 
+  37 |   await page.getByRole('button', { name: /Does claiming my listing give me RallyHub Club access\?/ }).click();
+  38 |   await expect(page.getByText('RallyHub uses one account, but permissions are separate.', { exact: false })).toBeVisible();
+  39 | });
+  40 | 
 ```
