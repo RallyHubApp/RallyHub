@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { directoryClubs, irelandCounties, weekDays } from '@/data/directorySeed';
-import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, Check, CheckCircle2, PlusCircle, Share2, UserCheck } from 'lucide-react';
+import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, Check, CheckCircle2, PlusCircle, Share2, UserCheck, Users } from 'lucide-react';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 import PublicDirectoryLogo from '@/components/directory/PublicDirectoryLogo';
@@ -304,33 +304,27 @@ export default function PublicDirectory() {
               </div>
             </div>
 
-            <div className="relative hidden min-h-[355px] lg:block">
-              <div className="absolute right-0 top-[38px] w-[92%] max-w-[430px] rounded-[20px] border border-[#dce8e9] bg-white/95 p-[22px] shadow-[0_22px_55px_rgba(8,30,70,.12)]">
-                <div className="text-[12px] font-extrabold uppercase tracking-[.12em] text-[#68758b]">RallyHub Directory</div>
-                <div className="mt-3.5 grid grid-cols-3 gap-2.5">
-                  <div className="rounded-[14px] border border-[#e1eaeb] bg-[#f8fbfb] p-3">
-                    <strong className="block text-[24px] font-black text-[#07184c]">{effectiveClubs.length}</strong>
-                    <span className="text-[11px] text-[#67748a]">club listings</span>
+            <div className="relative hidden min-h-[355px] items-center lg:flex">
+              <div className="w-full overflow-hidden rounded-[22px] border border-[#dce8e9] bg-white shadow-[0_22px_55px_rgba(8,30,70,.12)]">
+                <div className="relative h-[255px] overflow-hidden bg-[linear-gradient(135deg,#d8eee5_0%,#b7ded1_48%,#b9dfe8_100%)]">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_68%_34%,rgba(255,255,255,.95)_0_4%,transparent_5%),radial-gradient(circle_at_79%_55%,#f5d42c_0_5%,transparent_5.5%),linear-gradient(115deg,transparent_0_48%,rgba(7,142,72,.16)_49%_52%,transparent_53%)]" />
+                  <div className="absolute left-7 top-7 max-w-[235px]">
+                    <div className="text-[12px] font-black uppercase tracking-[.14em] text-[#078e48]">Good people</div>
+                    <div className="mt-1 text-[31px] font-black leading-[.98] tracking-[-.04em] text-[#07184c]">Great games.</div>
+                    <p className="mt-3 text-[13px] font-medium leading-5 text-[#314465]">Clubs, venues and sessions across Ireland. Find your next game and get playing.</p>
                   </div>
-                  <div className="rounded-[14px] border border-[#e1eaeb] bg-[#f8fbfb] p-3">
-                    <strong className="block text-[24px] font-black text-[#07184c]">{listedCountyCount}</strong>
-                    <span className="text-[11px] text-[#67748a]">counties listed</span>
+                  <div className="absolute bottom-[-18px] right-[-12px] h-[205px] w-[265px] rotate-[-4deg] rounded-[48%_52%_18%_22%] border-[14px] border-[#1b2730] bg-[#26343d] shadow-xl">
+                    <div className="absolute left-[35px] top-[34px] h-[105px] w-[105px] rounded-full border-[5px] border-[#9ee65c]" />
+                    <div className="absolute left-[57px] top-[55px] h-[61px] w-[61px] rounded-full border-[4px] border-[#9ee65c]" />
                   </div>
-                  <div className="rounded-[14px] border border-[#e1eaeb] bg-[#f8fbfb] p-3">
-                    <strong className="block text-[24px] font-black text-[#07184c]">32</strong>
-                    <span className="text-[11px] text-[#67748a]">counties supported</span>
+                  <div className="absolute bottom-[32px] right-[210px] h-[64px] w-[64px] rounded-full bg-[#f5d42c] shadow-[0_8px_20px_rgba(7,24,76,.2)]">
+                    {[['18%','22%'],['55%','18%'],['30%','52%'],['66%','58%'],['47%','78%']].map(([left,top],i)=><span key={i} className="absolute h-[7px] w-[7px] rounded-full bg-[#d0af14]" style={{left,top}} />)}
                   </div>
                 </div>
-                <div className="relative mt-3.5 h-[124px] overflow-hidden rounded-[14px] bg-[linear-gradient(145deg,#dcefe4,#b8ddcd_48%,#b8dce6)]">
-                  <div className="absolute right-3 top-2 text-[9px] font-black tracking-[.18em] text-[#225c57]">IRELAND</div>
-                  {[
-                    ['32%','34%'],['45%','54%'],['57%','39%'],['49%','68%'],['70%','63%']
-                  ].map(([left,top], index) => (
-                    <span key={index} className="absolute h-[13px] w-[13px] rounded-full border-[3px] border-white bg-[#078e48] shadow-[0_2px_8px_rgba(0,0,0,.2)]" style={{left,top}} />
-                  ))}
-                  <span className="absolute left-[8%] top-[30%] h-[5px] w-[88%] rotate-[9deg] rounded-full bg-white/80" />
-                  <span className="absolute left-[18%] top-[55%] h-[5px] w-[69%] -rotate-[18deg] rounded-full bg-white/80" />
-                  <span className="absolute left-[8%] top-[73%] h-[5px] w-[62%] rotate-[21deg] rounded-full bg-white/80" />
+                <div className="grid grid-cols-3 divide-x divide-[#dfe8ea] bg-white px-3 py-4">
+                  <div className="px-3"><strong className="block text-[24px] font-black text-[#07184c]">{effectiveClubs.length}</strong><span className="text-[11px] text-[#67748a]">club listings</span></div>
+                  <div className="px-3"><strong className="block text-[24px] font-black text-[#07184c]">{listedCountyCount}</strong><span className="text-[11px] text-[#67748a]">counties listed</span></div>
+                  <div className="px-3"><strong className="block text-[24px] font-black text-[#07184c]">32</strong><span className="text-[11px] text-[#67748a]">counties supported</span></div>
                 </div>
               </div>
             </div>
