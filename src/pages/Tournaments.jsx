@@ -45,6 +45,11 @@ export default function Tournaments() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const { data: currentUser = null } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: () => base44.auth.me().catch(() => null)
+  });
+
   useEffect(() => {
     if (searchParams.get('create') === '1') {
       setCreateFormat('');
@@ -89,8 +94,14 @@ export default function Tournaments() {
   };
 
   const { data: tournaments = [], isLoading } = useQuery({
-    queryKey: ['tournaments'],
-    queryFn: () => base44.entities.Tournament.list('-updated_date', 100)
+    queryKey: ['tournaments', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: () => {
+      if (!currentUser?.active_tenant_id) return [];
+      const filters = { tenant_id: currentUser.active_tenant_id };
+      if (currentUser.active_club_id) filters.host_club_id = currentUser.active_club_id;
+      return base44.entities.Tournament.filter(filters, '-updated_date', 100);
+    },
+    enabled: !!currentUser
   });
 
   const filtered = tournaments
