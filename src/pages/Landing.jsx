@@ -174,33 +174,43 @@ export default function Landing() {
 
         <main>
           <section className="relative overflow-hidden bg-[#f7fcfd]">
-            <div className="absolute inset-y-0 right-0 w-[47%] sm:w-[50%] lg:w-[49%]">
-              <img src={HERO_PHOTO} alt="Pickleball paddle and ball with players on court" className="h-full w-full object-cover object-center" />
-              <div className="absolute inset-y-0 left-0 w-[16%] bg-[linear-gradient(90deg,#f8fcfd_0%,rgba(248,252,253,.78)_45%,rgba(248,252,253,0)_100%)]"/>
-            </div>
-
-            <div className="relative mx-auto min-h-[405px] max-w-[1380px] px-5 py-9 sm:px-7 sm:py-10 lg:min-h-[425px] lg:px-10 xl:px-12">
-              <div className="relative z-20 max-w-[620px]">
-                <h1 className="text-[2.8rem] font-black leading-[.98] tracking-[-.047em] text-[#061545] sm:text-[3.65rem] lg:text-[4.2rem] xl:text-[4.45rem]">
-                  Play More
-                  <span className="block">Connect <span className="text-[#078e48]">Deeper</span></span>
-                  <span className="block text-[#0a5e5b]">Belong Together</span>
-                </h1>
-                <p className="mt-4 max-w-[570px] text-[15px] font-medium leading-[1.55] text-[#172b5c] sm:text-[16px]">
-                  RallyHub helps players find clubs, venues and events across Ireland and beyond — for every sport, at every level.
-                </p>
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <Link to="/directory">
-                    <Button className="h-11 w-full rounded-lg bg-[#078f49] px-6 text-[13px] font-bold text-white shadow-[0_8px_18px_rgba(7,143,73,.2)] hover:bg-[#067c40] sm:w-auto">
-                      <Search className="mr-2 h-5 w-5"/> Find a Club or Session
-                    </Button>
-                  </Link>
-                  <Link to="/directory/add">
-                    <Button variant="outline" className="h-11 w-full rounded-lg border-[#b9cbd3] bg-white/95 px-6 text-[13px] font-bold text-[#0a2152] hover:bg-white sm:w-auto">
-                      Create Your Club Listing
-                    </Button>
-                  </Link>
+            <div className="relative mx-auto max-w-[1380px] lg:grid lg:grid-cols-[51%_49%] lg:items-stretch">
+              <div className="relative z-20 flex items-center px-5 py-9 sm:px-7 sm:py-10 lg:px-10 lg:py-12 xl:px-12">
+                <div className="max-w-[620px]">
+                  <h1 className="text-[2.8rem] font-black leading-[.98] tracking-[-.047em] text-[#061545] sm:text-[3.65rem] lg:text-[4.2rem] xl:text-[4.45rem]">
+                    Play More
+                    <span className="block">Connect <span className="text-[#078e48]">Deeper</span></span>
+                    <span className="block text-[#0a5e5b]">Belong Together</span>
+                  </h1>
+                  <p className="mt-4 max-w-[570px] text-[15px] font-medium leading-[1.55] text-[#172b5c] sm:text-[16px]">
+                    RallyHub helps players find clubs, venues and events across Ireland and beyond — for every sport, at every level.
+                  </p>
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <Link to="/directory">
+                      <Button className="h-11 w-full rounded-lg bg-[#078f49] px-6 text-[13px] font-bold text-white shadow-[0_8px_18px_rgba(7,143,73,.2)] hover:bg-[#067c40] sm:w-auto">
+                        <Search className="mr-2 h-5 w-5"/> Find a Club or Session
+                      </Button>
+                    </Link>
+                    <Link to="/directory/add">
+                      <Button variant="outline" className="h-11 w-full rounded-lg border-[#b9cbd3] bg-white/95 px-6 text-[13px] font-bold text-[#0a2152] hover:bg-white sm:w-auto">
+                        Create Your Club Listing
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
+              </div>
+
+              <div className="hidden lg:block">
+                <img
+                  src={HERO_PHOTO}
+                  alt="Pickleball paddle and ball with players on court"
+                  className="block h-auto w-full"
+                />
+              </div>
+
+              <div className="pointer-events-none absolute inset-y-0 right-0 -z-0 w-[48%] overflow-hidden lg:hidden">
+                <img src={HERO_PHOTO} alt="" className="h-full w-full object-cover object-center opacity-95" />
+                <div className="absolute inset-y-0 left-0 w-[30%] bg-[linear-gradient(90deg,#f7fcfd_0%,rgba(247,252,253,.88)_45%,rgba(247,252,253,0)_100%)]"/>
               </div>
             </div>
           </section>
@@ -213,9 +223,13 @@ export default function Landing() {
 
           <section className="relative bg-white">
             <div className="mx-auto max-w-[1380px] px-0 sm:px-7 lg:px-10 xl:px-12">
-              <div className="relative h-[132px] overflow-hidden sm:h-[142px]">
-                <img src={CLIFFS_PHOTO} alt="Cliffs of Moher, County Clare" className="absolute inset-y-0 left-0 h-full w-[48%] object-cover object-left"/>
-                <div className="absolute bottom-0 right-0 hidden h-[98px] w-[61%] rounded-tl-[92px] bg-[#053c56] lg:block">
+              <div className="relative hidden lg:block">
+                <img
+                  src={CLIFFS_PHOTO}
+                  alt="Cliffs of Moher, County Clare"
+                  className="block h-auto w-[48%]"
+                />
+                <div className="absolute bottom-0 right-0 h-[78%] w-[61%] rounded-tl-[92px] bg-[#053c56]">
                   <div className="grid h-full grid-cols-4 items-center text-center text-white">
                     {[
                       [Users,'People','Build connections'],
@@ -233,26 +247,28 @@ export default function Landing() {
                 </div>
               </div>
 
-              <div className="grid bg-[#053c56] text-white sm:grid-cols-4 lg:hidden">
-                {[
-                  [Users,'People','Build connections'],
-                  [MapPin,'Places','Find your club'],
-                  [CalendarDays,'Sessions','Play more'],
-                  [Trophy,'Community','Belong together'],
-                ].map(([Icon,title,copy])=>(
-                  <div key={title} className="flex items-center gap-3 border-white/10 px-5 py-4 sm:block sm:border-r sm:text-center">
-                    <Icon className="h-5 w-5 shrink-0 sm:mx-auto"/>
-                    <div>
-                      <div className="text-[13px] font-bold">{title}</div>
-                      <div className="text-[10px] text-white/75">{copy}</div>
+              <div className="lg:hidden">
+                <img src={CLIFFS_PHOTO} alt="Cliffs of Moher, County Clare" className="block h-auto w-full"/>
+                <div className="grid bg-[#053c56] text-white sm:grid-cols-4">
+                  {[
+                    [Users,'People','Build connections'],
+                    [MapPin,'Places','Find your club'],
+                    [CalendarDays,'Sessions','Play more'],
+                    [Trophy,'Community','Belong together'],
+                  ].map(([Icon,title,copy])=>(
+                    <div key={title} className="flex items-center gap-3 border-white/10 px-5 py-4 sm:block sm:border-r sm:text-center">
+                      <Icon className="h-5 w-5 shrink-0 sm:mx-auto"/>
+                      <div>
+                        <div className="text-[13px] font-bold">{title}</div>
+                        <div className="text-[10px] text-white/75">{copy}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-center bg-[#053c56] py-3 text-[9px] font-semibold tracking-[.38em] text-white sm:hidden">
-                PLAY <span className="mx-2 text-[#9ade42]">•</span> CONNECT <span className="mx-2 text-[#9ade42]">•</span> BELONG
-                <span className="ml-4 h-7 w-7 rounded-full bg-[#d9ef30]"/>
+                  ))}
+                </div>
+                <div className="flex items-center justify-center bg-[#053c56] py-3 text-[9px] font-semibold tracking-[.38em] text-white sm:hidden">
+                  PLAY <span className="mx-2 text-[#9ade42]">•</span> CONNECT <span className="mx-2 text-[#9ade42]">•</span> BELONG
+                  <span className="ml-4 h-7 w-7 rounded-full bg-[#d9ef30]"/>
+                </div>
               </div>
             </div>
           </section>
