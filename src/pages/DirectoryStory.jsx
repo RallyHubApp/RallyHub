@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
@@ -8,10 +8,6 @@ import { Button } from '@/components/ui/button';
 const PDF_URL = '/downloads/RallyHub_Directory_Explainer.pdf';
 
 export default function DirectoryStory() {
-  useEffect(() => {
-    window.location.replace(PDF_URL);
-  }, []);
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Seo title="RallyHub Directory Explainer" description="One-page full-colour PDF explaining the RallyHub Directory and how it helps clubs and players." path="/directory/story" robots="index,follow" />
