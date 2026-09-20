@@ -22,7 +22,7 @@ export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
-  const allowedAdminTabs = ['approvals', 'membership', 'preview', 'directory', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['approvals', 'membership', 'preview', 'directory', 'feedback', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
   const queryClient = useQueryClient();
@@ -63,6 +63,7 @@ export default function AdminPanel() {
   const [ownerInviteResult, setOwnerInviteResult] = useState(null);
   const [testingClareMail, setTestingClareMail] = useState(false);
   const [approvingDirectoryInvitation, setApprovingDirectoryInvitation] = useState('');
+  const [updatingFeedbackId, setUpdatingFeedbackId] = useState('');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -146,6 +147,59 @@ export default function AdminPanel() {
     },
     enabled: canAccessAdmin
   });
+
+  const { data: clubFeedbackRows = [] } = useQuery({
+    queryKey: ['club-feedback-admin'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('clubFeedback', { action: 'admin_list' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.rows || [];
+    },
+    enabled: canAccessAdmin
+  });
+
+  const updateFeedbackStatus = async (row, status) => {
+    setUpdatingFeedbackId(row.id);
+    try {
+      const res = await base44.functions.invoke('clubFeedback', {
+        action: 'admin_update',
+        feedbackId: row.id,
+        status,
+        adminNote: row.admin_note || ''
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      await queryClient.invalidateQueries({ queryKey: ['club-feedback-admin'] });
+      toast.success('Feedback status updated');
+    } catch (error) {
+      toast.error(error?.message || 'Could not update feedback');
+    } finally {
+      setUpdatingFeedbackId('');
+    }
+  };
+
+  const downloadFeedbackCsv = () => {
+    const headings = ['Date','Person','Email','Club','Type','Area','Importance','Status','Feedback'];
+    const rows = clubFeedbackRows.map(row => [
+      row.submitted_at || '',
+      row.person_name || '',
+      row.person_email || '',
+      row.club_name || '',
+      row.feedback_type || '',
+      row.area || '',
+      row.importance || '',
+      row.status || '',
+      row.message || ''
+    ]);
+    const escape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const csv = [headings, ...rows].map(row => row.map(escape).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RallyHub_Club_Feedback_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Guard: platform/site admins only. KOTC event roles must not grant site-admin access.
   if (!canAccessAdmin) {
@@ -663,6 +717,12 @@ export default function AdminPanel() {
             <UserCheck className="w-3.5 h-3.5" /> Directory Claims
             {(pendingDirectoryClaims.length + pendingNewDirectoryRequests.length + pendingDirectoryInvitations.length) > 0 && (
               <span className="ml-1 bg-amber-400 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{pendingDirectoryClaims.length + pendingNewDirectoryRequests.length + pendingDirectoryInvitations.length}</span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="feedback" className="text-xs gap-1.5">
+            <MessageCircle className="w-3.5 h-3.5" /> Feedback
+            {clubFeedbackRows.filter(row => row.status === 'new').length > 0 && (
+              <span className="ml-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{clubFeedbackRows.filter(row => row.status === 'new').length}</span>
             )}
           </TabsTrigger>
           <TabsTrigger value="users" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Users & Roles</TabsTrigger>
@@ -1287,6 +1347,58 @@ export default function AdminPanel() {
                 );
               })}
             </div>
+          </div>
+        </TabsContent>
+
+        {/* ── CLUB FEEDBACK TAB ── */}
+        <TabsContent value="feedback" className="mt-4">
+          <div className="space-y-4">
+            <div className="glass rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-foreground">Club feedback & development wishlist</h3>
+                <p className="text-xs text-muted-foreground mt-1">Feedback submitted by verified Directory owners and editors is kept here with the person, club, area and importance attached.</p>
+              </div>
+              <Button type="button" variant="outline" onClick={downloadFeedbackCsv} disabled={!clubFeedbackRows.length} className="shrink-0">Export CSV</Button>
+            </div>
+            {clubFeedbackRows.length === 0 ? (
+              <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">No club feedback has been submitted yet.</div>
+            ) : (
+              <div className="space-y-3">
+                {clubFeedbackRows.map(row => (
+                  <div key={row.id} className="glass rounded-xl p-4 sm:p-5">
+                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold text-foreground">{row.person_name || 'Club representative'}</p>
+                          <Badge variant="outline">{row.club_name || row.listing_slug}</Badge>
+                          <Badge variant="outline">{String(row.feedback_type || 'feedback').replaceAll('_',' ')}</Badge>
+                          {row.importance === 'blocking' && <Badge className="bg-destructive/15 text-destructive">Blocking</Badge>}
+                          {row.importance === 'important' && <Badge className="bg-amber-400/15 text-amber-500">Important</Badge>}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{row.person_email} · {String(row.area || 'other').replaceAll('_',' ')}</p>
+                        <p className="text-sm text-foreground mt-3 whitespace-pre-wrap">{row.message}</p>
+                        <p className="text-[11px] text-muted-foreground mt-3">{row.submitted_at ? new Date(row.submitted_at).toLocaleString('en-IE') : ''}{row.device_type ? ` · ${row.device_type}` : ''}{row.contact_ok === false ? ' · Do not contact' : ' · Contact permitted'}</p>
+                      </div>
+                      <div className="w-full lg:w-44 shrink-0">
+                        <Label className="text-xs">Status</Label>
+                        <Select value={row.status || 'new'} onValueChange={value => updateFeedbackStatus(row, value)} disabled={updatingFeedbackId === row.id}>
+                          <SelectTrigger className="mt-1 h-9 bg-secondary border-border text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="reviewing">Reviewing</SelectItem>
+                            <SelectItem value="wishlist">Wishlist</SelectItem>
+                            <SelectItem value="planned">Planned</SelectItem>
+                            <SelectItem value="in_progress">In progress</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="closed">Closed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </TabsContent>
 
