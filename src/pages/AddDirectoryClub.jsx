@@ -182,11 +182,11 @@ export default function AddDirectoryClub() {
               <div className="mt-8 rounded-2xl border border-border bg-background/40 p-6">
                 <h2 className="text-xl font-bold">Sign in to submit a club</h2>
                 <p className="text-sm text-muted-foreground mt-2">
-                  We require a verified account so we know who submitted the club and can contact you if we need to check the details. This does not create a RallyHub Club or player membership.
+                  We require a verified RallyHub account so we know who submitted the club and can contact you if we need to check the details. The same account can be used elsewhere in RallyHub, but submitting a Directory listing does not create a RallyHub Club or player membership.
                 </p>
                 <div className="flex flex-wrap gap-3 mt-5">
                   <Link to={loginHref}><Button>Sign in</Button></Link>
-                  <Link to={registerHref}><Button variant="outline">Create directory account</Button></Link>
+                  <Link to={registerHref}><Button variant="outline">Create RallyHub account</Button></Link>
                 </div>
               </div>
             ) : loadingStatus ? (
