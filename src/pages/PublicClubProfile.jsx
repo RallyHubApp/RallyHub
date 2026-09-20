@@ -527,6 +527,61 @@ export default function PublicClubProfile() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+        <DialogContent className="sm:max-w-lg">
+          {feedbackDone ? (
+            <div className="py-3">
+              <CheckCircle2 className="w-11 h-11 text-primary" />
+              <h2 className="text-2xl font-black mt-4">Feedback received</h2>
+              <p className="text-sm text-muted-foreground mt-2">{feedbackResponse}</p>
+              <Button className="mt-5 w-full" onClick={() => setFeedbackOpen(false)}>Done</Button>
+            </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Feedback & ideas</DialogTitle>
+                <DialogDescription>Tell us what could work better, what is confusing, or what you would like RallyHub to do next.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-semibold">What type of feedback is this?</label>
+                  <select value={feedback.category} onChange={e => setFeedback(v => ({...v,category:e.target.value}))} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="bug">Something isn’t working</option>
+                    <option value="confusing">Something is confusing</option>
+                    <option value="improvement">Suggestion or improvement</option>
+                    <option value="feature_request">Feature request</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold">Which area?</label>
+                  <select value={feedback.area} onChange={e => setFeedback(v => ({...v,area:e.target.value}))} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    {['Directory','Club profile','Sessions & venues','Login & access','RallyHub Club','Other'].map(x => <option key={x} value={x}>{x}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold">Tell us about it</label>
+                  <textarea value={feedback.message} onChange={e => setFeedback(v => ({...v,message:e.target.value}))} rows={5} maxLength={4000} placeholder="What happened, what would make this better, or what would you like us to add?" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold">How important is this to your club?</label>
+                  <select value={feedback.importance} onChange={e => setFeedback(v => ({...v,importance:e.target.value}))} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="nice_to_have">Nice to have</option>
+                    <option value="important">Important</option>
+                    <option value="blocking">Preventing us from doing something</option>
+                  </select>
+                </div>
+                <label className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <input type="checkbox" checked={feedback.contactOk} onChange={e => setFeedback(v => ({...v,contactOk:e.target.checked}))} className="mt-1" />
+                  <span>It’s okay for RallyHub to contact me about this feedback.</span>
+                </label>
+                <Button className="w-full" onClick={submitFeedback} disabled={feedbackBusy || !feedback.message.trim()}>{feedbackBusy ? 'Sending…' : 'Send feedback'}</Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
       </div>
     </>
   );
