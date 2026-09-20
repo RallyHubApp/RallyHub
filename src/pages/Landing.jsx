@@ -141,7 +141,7 @@ export default function Landing() {
                 onClick={handleOpenApp}
                 className="w-full text-base sm:text-lg px-5 py-6 rounded-xl"
               >
-                {isLoadingAuth ? 'Checking account…' : isAuthenticated ? 'Open RallyHub Club' : 'RallyHub Club Login'}
+                {isLoadingAuth ? 'Checking account…' : isAuthenticated ? 'Open RallyHub' : 'Log in'}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
@@ -161,7 +161,7 @@ export default function Landing() {
             <p className="text-sm text-muted-foreground mt-4">
               {isAuthenticated
                 ? `Signed in${user?.full_name ? ` as ${user.full_name}` : ''}. Browse freely or open RallyHub Club.`
-                : 'Browse freely. Sign in only to manage a directory listing or use the full RallyHub Club platform.'}
+                : 'Browse freely. RallyHub uses one account; sign in only when you need to manage a listing or access authorised club tools.'}
             </p>
           </motion.div>
         </div>
