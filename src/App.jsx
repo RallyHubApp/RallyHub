@@ -45,6 +45,7 @@ import DirectoryListingEdit from '@/pages/DirectoryListingEdit';
 import DirectoryHelp from '@/pages/DirectoryHelp';
 import DirectoryStory from '@/pages/DirectoryStory';
 import DirectoryQuickStart from '@/pages/DirectoryQuickStart';
+import TestClubEntry from '@/pages/TestClubEntry';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -188,6 +189,7 @@ function App() {
             {/* Protected app routes */}
             <Route element={<ProtectedRoute fallback={<LoadingScreen />} />}>
               <Route path="/kotc-host/:sessionId" element={<KotcHostSession />} />
+              <Route path="/test-club-entry" element={<TestClubEntry />} />
               <Route path="/app/*" element={<AppAccessGate />} />
               <Route path="/players" element={<Navigate to="/app/players" replace />} />
               <Route path="/players/:id" element={<LegacyRedirect prefix="/app/players/" paramKey="id" />} />
