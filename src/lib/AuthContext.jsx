@@ -105,6 +105,10 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (contextError) {
         console.warn('Security context resolution failed:', contextError);
+        // A denied Club-context check may have cleared stale active club fields
+        // after access was revoked. Re-read the account so navigation reflects
+        // the server-verified state rather than the pre-check snapshot.
+        currentUser = await base44.auth.me().catch(() => currentUser);
       }
 
       setUser(currentUser);
