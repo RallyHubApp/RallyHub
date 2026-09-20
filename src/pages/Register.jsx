@@ -155,7 +155,7 @@ export default function Register() {
     <AuthLayout
       icon={UserPlus}
       title="Create your RallyHub account"
-      subtitle={directoryMode ? "Create one RallyHub account, then continue with your Directory task" : "Sign up to get started"}
+      subtitle={directoryMode ? "Create your RallyHub account and we’ll return you to your Directory invitation" : "Sign up to get started"}
       footer={
         <>
           Already have a RallyHub account?{" "}
@@ -167,7 +167,7 @@ export default function Register() {
     >
       {directoryMode && (
         <div className="mb-5 rounded-xl border border-primary/25 bg-primary/10 p-4 text-sm text-muted-foreground">
-          <strong className="text-foreground">This creates your RallyHub account.</strong> If your invitation came by WhatsApp, use the same mobile number that received it. If it came by email, use that same email address. You also need an email address you can access for verification. Directory editing is then granted as a permission on this account; it does not automatically give RallyHub Club or tournament access.
+          <strong className="text-foreground">This creates your RallyHub account.</strong> If your invitation came by WhatsApp, use the same mobile number that received it. If it came by email, use that same email address. After verification, we’ll return you automatically to your Directory claim.
         </div>
       )}
       {!directoryMode && (
