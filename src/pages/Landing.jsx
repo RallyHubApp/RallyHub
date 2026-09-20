@@ -208,7 +208,7 @@ export default function Landing() {
                 />
               </div>
 
-              <div className="pointer-events-none absolute inset-y-0 right-0 -z-0 w-[48%] overflow-hidden lg:hidden">
+              <div className="pointer-events-none absolute inset-y-0 right-0 z-0 w-[48%] overflow-hidden lg:hidden">
                 <img src={HERO_PHOTO} alt="" className="h-full w-full object-cover object-center opacity-95" />
                 <div className="absolute inset-y-0 left-0 w-[30%] bg-[linear-gradient(90deg,#f7fcfd_0%,rgba(247,252,253,.88)_45%,rgba(247,252,253,0)_100%)]"/>
               </div>
