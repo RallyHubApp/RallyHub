@@ -308,8 +308,8 @@ export default function PublicDirectory() {
               <div className="w-full overflow-hidden rounded-[22px] border border-[#dce8e9] bg-white shadow-[0_22px_55px_rgba(8,30,70,.12)]">
                 <div className="relative h-[255px] overflow-hidden bg-[#dce8e9]">
                   <img
-                    src="https://images.unsplash.com/photo-1747027694225-cbf12dd20826?auto=format&fit=crop&fm=jpg&q=85&w=1800"
-                    alt="Pickleball players enjoying a game on an outdoor court"
+                    src="https://images.pexels.com/photos/30864598/pexels-photo-30864598/free-photo-of-pickleball-player-on-outdoor-court.jpeg?auto=compress&dpr=1&w=1600"
+                    alt="Pickleball player in action on an outdoor court with paddle and ball"
                     className="h-full w-full object-cover object-center"
                     loading="eager"
                   />
