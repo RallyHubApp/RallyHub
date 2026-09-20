@@ -1,26 +1,76 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Gift, Info, Rocket, Users, CheckCircle2, MapPin, Contact, ClipboardList, Link2 } from 'lucide-react';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import Seo from '@/components/public/Seo';
-import { Button } from '@/components/ui/button';
 
 const PDF_URL = '/downloads/RallyHub_Directory_Explainer.pdf';
 
+const benefits = [
+  ['Be easier to find', Users],
+  ['Show your venues, session times and levels', MapPin],
+  ['Point players to the right contact route', Contact],
+  ['Keep one up-to-date public listing', ClipboardList],
+  ['Help travelling players and new local players find you', Users],
+  ['Keep using Spond, WhatsApp, Facebook or your own website', Link2],
+];
+
 export default function DirectoryStory() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Seo title="RallyHub Directory Explainer" description="One-page full-colour PDF explaining the RallyHub Directory and how it helps clubs and players." path="/directory/story" robots="index,follow" />
+    <div className="min-h-screen bg-[#f7faf9] text-[#07184c]">
+      <Seo title="RallyHub Directory Explainer" description="Helping players find your club, your venues and your sessions." path="/directory/story" robots="index,follow" />
       <PublicDirectoryHeader />
-      <main className="container mx-auto max-w-3xl px-4 py-8">
-        <Link to="/directory/help" className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Club Guide & Help</Link>
-        <section className="glass rounded-2xl p-6 sm:p-8">
-          <h1 className="text-3xl font-black">Opening the Directory Explainer</h1>
-          <p className="mt-2 text-muted-foreground">If the PDF does not open automatically, use the button below.</p>
-          <a href={PDF_URL} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex">
-            <Button className="gap-2"><ExternalLink className="h-4 w-4" /> Open PDF</Button>
-          </a>
+      <main className="mx-auto max-w-[1180px] px-4 py-8 sm:px-6 lg:px-10">
+        <Link to="/directory/help" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[#52647d] hover:text-[#078e48]"><ArrowLeft className="h-4 w-4" /> Club Guide & Help</Link>
+
+        <section className="overflow-hidden rounded-[28px] border border-[#dbe6e8] bg-white shadow-[0_14px_40px_rgba(8,24,77,.07)]">
+          <div className="bg-gradient-to-br from-[#f7fbf9] via-white to-[#edf8f2] px-6 py-9 sm:px-10 lg:px-12">
+            <p className="text-xs font-extrabold uppercase tracking-[.22em] text-[#078e48]">RallyHub Directory</p>
+            <h1 className="mt-3 max-w-4xl text-4xl font-black tracking-[-.04em] text-[#07184c] sm:text-5xl">Helping players find your club, your venues and your sessions</h1>
+            <p className="mt-4 max-w-3xl text-lg leading-8 text-[#52647d]">A simple way for players across Ireland to discover pickleball clubs, venues and sessions — and get to the right contact person.</p>
+            <a href={PDF_URL} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#078e48] px-5 py-3 text-sm font-bold text-white shadow-[0_7px_18px_rgba(7,142,72,.2)] hover:bg-[#067b3f]"><ExternalLink className="h-4 w-4" /> Open approved PDF</a>
+          </div>
         </section>
+
+        <div className="mt-6 grid gap-5 md:grid-cols-2">
+          <section className="rounded-2xl border border-[#dbe6e8] bg-white p-6 shadow-[0_8px_24px_rgba(8,24,77,.05)]">
+            <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-full bg-[#eaf8f0] text-[#078e48]"><Users /></span><h2 className="text-2xl font-black">Why I built this</h2></div>
+            <p className="mt-4 leading-7 text-[#52647d]">I started this because I was away from home, wanted a game of pickleball, and discovered how awkward it could be to find the right club, the right session and the right contact person.</p>
+            <p className="mt-3 leading-7 text-[#52647d]">RallyHub began as a father-and-son project to help me run Clare Pickleball. I realised the same platform could also do something useful for the wider pickleball community in Ireland.</p>
+          </section>
+
+          <section className="rounded-2xl border border-[#dbe6e8] bg-white p-6 shadow-[0_8px_24px_rgba(8,24,77,.05)]">
+            <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-full bg-[#eaf8f0] text-[#078e48]"><Gift /></span><h2 className="text-2xl font-black">What’s in it for your club?</h2></div>
+            <div className="mt-4 space-y-3">{benefits.map(([text,Icon]) => <div key={text} className="flex gap-3 text-[#52647d]"><Icon className="mt-0.5 h-5 w-5 shrink-0 text-[#078e48]" /><span>{text}</span></div>)}</div>
+          </section>
+
+          <section className="rounded-2xl border border-[#dbe6e8] bg-white p-6 shadow-[0_8px_24px_rgba(8,24,77,.05)]">
+            <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-full bg-[#eaf8f0] text-[#078e48]"><Info /></span><h2 className="text-2xl font-black">Important to know</h2></div>
+            <div className="mt-4 space-y-3">{['Free to join the Directory','No subscription and no catch','This is Directory access only','RallyHub Club is still under development','Claiming a listing does not sign your club up to a future paid product'].map(x => <div key={x} className="flex gap-3 text-[#52647d]"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#078e48]" /><span>{x}</span></div>)}</div>
+          </section>
+
+          <section className="rounded-2xl border border-[#dbe6e8] bg-white p-6 shadow-[0_8px_24px_rgba(8,24,77,.05)]">
+            <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-full bg-[#eaf8f0] text-[#078e48]"><Users /></span><h2 className="text-2xl font-black">A little about <span className="text-[#078e48]">RallyHub</span></h2></div>
+            <p className="mt-4 leading-7 text-[#52647d]">RallyHub is a project my son and I started to help me run Clare Pickleball across three centres — members, sessions, King of the Court, inter-club challenges and competitions.</p>
+            <p className="mt-3 leading-7 text-[#52647d]">It is not on general release yet. For now, the Directory is a separate free contribution to the Irish pickleball community.</p>
+          </section>
+
+          <section className="rounded-2xl border border-[#dbe6e8] bg-white p-6 shadow-[0_8px_24px_rgba(8,24,77,.05)] md:col-span-2">
+            <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-full bg-[#eaf8f0] text-[#078e48]"><Rocket /></span><h2 className="text-2xl font-black">Why you’re being asked now</h2></div>
+            <p className="mt-4 max-w-4xl leading-7 text-[#52647d]">We’re inviting a small number of clubs to help test the Directory before wider rollout.</p>
+            <p className="mt-2 max-w-4xl leading-7 text-[#52647d]">If you’re happy to be part of it, I’ll send your club’s private link so you can review or claim your listing, correct anything that is wrong and help shape the final experience.</p>
+          </section>
+        </div>
+
+        <section className="mt-6 rounded-2xl border border-[#b8dfc7] bg-[#eef9f3] p-6 sm:p-8">
+          <blockquote className="text-2xl font-black tracking-[-.02em] text-[#07184c]">“Keep using what already works for your club.”</blockquote>
+          <p className="mt-3 max-w-4xl leading-7 text-[#52647d]">RallyHub Directory is not replacing Spond, WhatsApp, Facebook or your website. It simply helps players discover your club and then direct them to the contact route you choose.</p>
+        </section>
+
+        <footer className="mt-6 flex flex-col gap-3 border-t border-[#dbe6e8] py-6 text-sm text-[#52647d] sm:flex-row sm:items-end sm:justify-between">
+          <div><p className="font-bold text-[#07184c]">Created by <span className="text-[#078e48]">Brian Moore</span> through RallyHub</p><p>Part of my contribution to the continued growth of pickleball in Ireland</p></div>
+          <div className="sm:text-right"><p>rallyhub.ie</p><p>rallyhubapp@gmail.com</p><p>Brian Moore &nbsp; 087 810 0333</p></div>
+        </footer>
       </main>
     </div>
   );
