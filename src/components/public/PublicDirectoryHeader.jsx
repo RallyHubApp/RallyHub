@@ -11,8 +11,8 @@ export default function PublicDirectoryHeader() {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const returnTo = `${location.pathname}${location.search || ''}`;
-  const directoryLoginHref = `/login?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
-  const displayName = user?.full_name || user?.display_name || user?.email || 'Directory account';
+  const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`;
+  const displayName = user?.full_name || user?.display_name || user?.email || 'RallyHub account';
   const isSuperAdmin = user?.role === 'admin' && (!user?.kotc_role || user?.kotc_role === 'super_admin');
   const canUseClubApp = user?.role === 'admin' || (user?.approval_status === 'approved' && !!user?.active_tenant_id && !!user?.active_club_id);
 
@@ -66,18 +66,11 @@ export default function PublicDirectoryHeader() {
               )}
             </>
           ) : (
-            <>
-              <Link to={directoryLoginHref} aria-label="Directory Login">
-                <Button size="sm" variant="outline" className="font-semibold whitespace-nowrap">
-                  Directory Login
-                </Button>
-              </Link>
-              <Link to="/login?returnTo=%2Fapp">
-                <Button size="sm" variant="ghost" className="hidden md:inline-flex font-semibold whitespace-nowrap">
-                  RallyHub Club Login
-                </Button>
-              </Link>
-            </>
+            <Link to={loginHref} aria-label="Log in to RallyHub">
+              <Button size="sm" variant="outline" className="font-semibold whitespace-nowrap">
+                Log in
+              </Button>
+            </Link>
           )}
         </div>
       </div>
