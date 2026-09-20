@@ -340,13 +340,14 @@ Deno.serve(async (req) => {
 
   const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
   const hasInterclubManagerAccess = interclubEventId ? await interclubManagerAllowed(base44, user, interclubEventId) : false;
-  const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole) || hasInterclubManagerAccess;
+  const hasDirectoryEditorAccess = action === 'login' && listingSlug ? await directoryAccessAllowed(base44, user, clean(listingSlug, 180)) : false;
+  const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole) || hasInterclubManagerAccess || hasDirectoryEditorAccess;
   if (!isSpondManager) {
     return Response.json({ error: 'Forbidden: Spond host/admin access required' }, { status: 403 });
   }
   const activeTenantId = user.active_tenant_id || null;
   const activeClubId = user.active_club_id || null;
-  if (user.role !== 'admin' && (!activeTenantId || !activeClubId)) {
+  if (user.role !== 'admin' && !hasDirectoryEditorAccess && (!activeTenantId || !activeClubId)) {
     return Response.json({ error: 'Forbidden: active tenant/club context required' }, { status: 403 });
   }
 
