@@ -91,7 +91,7 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
     if (!email.trim() || !password) { setError('Enter the Spond email and password for this club account.'); return; }
     setLoggingIn(true); setError(''); setMessage('');
     try {
-      const res = await base44.functions.invoke('spondIntegrationWorking', { action:'login', spondEmail:email.trim(), spondPassword:password });
+      const res = await base44.functions.invoke('spondIntegrationWorking', { action:'login', listingSlug, spondEmail:email.trim(), spondPassword:password });
       if (res.data?.error) throw new Error(res.data.error);
       if (!res.data?.token) throw new Error('Spond did not return a connection token.');
       setToken(res.data.token);
