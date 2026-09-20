@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Download, Heart, MapPin, Search, Users } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import Seo from '@/components/public/Seo';
 import { Button } from '@/components/ui/button';
@@ -11,14 +12,20 @@ const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c2
 export default function DirectoryStory(){
   const cardRef=useRef(null);
   const [downloading,setDownloading]=useState(false);
-  const downloadImage=async()=>{
+  const downloadPdf=async()=>{
     setDownloading(true);
     try{
       const canvas=await html2canvas(cardRef.current,{scale:2,backgroundColor:'#ffffff',useCORS:true});
-      const link=document.createElement('a');
-      link.download='RallyHub_Directory_Explainer.png';
-      link.href=canvas.toDataURL('image/png');
-      link.click();
+      const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+      const pageWidth=210;
+      const pageHeight=297;
+      const ratio=Math.min(pageWidth/canvas.width,pageHeight/canvas.height);
+      const renderWidth=canvas.width*ratio;
+      const renderHeight=canvas.height*ratio;
+      const x=(pageWidth-renderWidth)/2;
+      const y=(pageHeight-renderHeight)/2;
+      pdf.addImage(canvas.toDataURL('image/png'),'PNG',x,y,renderWidth,renderHeight,undefined,'FAST');
+      pdf.save('RallyHub_Directory_Explainer.pdf');
     }finally{setDownloading(false);}
   };
   return <div className="min-h-screen bg-background text-foreground">
@@ -27,7 +34,7 @@ export default function DirectoryStory(){
     <main className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <Link to="/directory/help" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4"/> Club Guide & Help</Link>
-        <Button onClick={downloadImage} disabled={downloading} className="gap-2"><Download className="w-4 h-4"/>{downloading?'Creating image…':'Download explainer image'}</Button>
+        <Button onClick={downloadPdf} disabled={downloading} className="gap-2"><Download className="w-4 h-4"/>{downloading?'Creating PDF…':'Download PDF'}</Button>
       </div>
       <section ref={cardRef} className="bg-white text-slate-900 rounded-[30px] overflow-hidden border border-slate-200 shadow-xl">
         <div className="grid lg:grid-cols-[1.08fr_.92fr] bg-gradient-to-br from-white via-emerald-50/40 to-slate-100">
