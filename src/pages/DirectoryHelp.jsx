@@ -75,18 +75,18 @@ export default function DirectoryHelp() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-4 mt-7">
-              <Link to="/directory/story" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
+              <a href="/downloads/RallyHub_Directory_Explainer.pdf" target="_blank" rel="noopener noreferrer" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
                 <Heart className="w-6 h-6 text-primary" />
                 <h2 className="font-black text-lg mt-3">1. Why the Directory exists</h2>
                 <p className="text-sm text-muted-foreground mt-1">Brian's story, why the Directory is free, what clubs gain and what RallyHub is - and is not - offering right now.</p>
-                <span className="inline-flex mt-4 text-sm font-semibold text-primary">Read the explainer →</span>
-              </Link>
-              <Link to="/directory/quick-start" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
+                <span className="inline-flex mt-4 text-sm font-semibold text-primary">Open Directory Explainer PDF →</span>
+              </a>
+              <a href="/downloads/RallyHub_Directory_Quick_Start_Guide.pdf" target="_blank" rel="noopener noreferrer" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
                 <FileText className="w-6 h-6 text-primary" />
                 <h2 className="font-black text-lg mt-3">2. Quick Start Guide</h2>
                 <p className="text-sm text-muted-foreground mt-1">A phone-friendly two-page guide covering WhatsApp invitations, account creation, verification and managing your listing.</p>
-                <span className="inline-flex mt-4 text-sm font-semibold text-primary">View / download 2-page PDF →</span>
-              </Link>
+                <span className="inline-flex mt-4 text-sm font-semibold text-primary">Open Quick Start Guide PDF →</span>
+              </a>
               <a href="#faqs" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
                 <BookOpen className="w-6 h-6 text-primary" />
                 <h2 className="font-black text-lg mt-3">3. Frequently asked questions</h2>
