@@ -1,0 +1,118 @@
+{
+  "name": "RallyHubFeedback",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "listing_slug": {
+      "type": "string"
+    },
+    "club_name": {
+      "type": "string"
+    },
+    "person_name": {
+      "type": "string"
+    },
+    "person_email": {
+      "type": "string"
+    },
+    "person_phone": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "bug",
+        "confusing",
+        "improvement",
+        "feature_request",
+        "other"
+      ]
+    },
+    "area": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "importance": {
+      "type": "string",
+      "enum": [
+        "nice_to_have",
+        "important",
+        "blocking"
+      ],
+      "default": "important"
+    },
+    "contact_ok": {
+      "type": "boolean",
+      "default": true
+    },
+    "page_path": {
+      "type": "string"
+    },
+    "user_agent": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "reviewing",
+        "planned",
+        "in_progress",
+        "completed",
+        "closed"
+      ],
+      "default": "new"
+    },
+    "admin_notes": {
+      "type": "string"
+    },
+    "admin_reply": {
+      "type": "string"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "listing_slug",
+    "club_name",
+    "person_name",
+    "person_email",
+    "category",
+    "message",
+    "status",
+    "submitted_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
