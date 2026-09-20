@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
@@ -8,10 +8,6 @@ import { Button } from '@/components/ui/button';
 const PDF_URL = '/downloads/RallyHub_Directory_Quick_Start_Guide.pdf';
 
 export default function DirectoryQuickStart() {
-  useEffect(() => {
-    window.location.replace(PDF_URL);
-  }, []);
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Seo title="RallyHub Directory Quick Start Guide" description="Two-page full-colour PDF guide for claiming and managing a RallyHub Directory club listing." path="/directory/quick-start" robots="index,follow" />
