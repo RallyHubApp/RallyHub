@@ -13,7 +13,7 @@ const ALLOWED_EMAIL = 'brian.moore007@gmail.com';
 
 export default function TestClubEntry() {
   const location = useLocation();
-  const { user, checkUserAuth } = useAuth();
+  const { user } = useAuth();
   const [status, setStatus] = useState('working');
   const [error, setError] = useState('');
   const restore = new URLSearchParams(location.search).get('restore') === '1';
@@ -36,7 +36,6 @@ export default function TestClubEntry() {
           clubId: restore ? CLARE_CLUB_ID : TEST_CLUB_ID,
         });
         if (res.data?.error) throw new Error(res.data.error);
-        await checkUserAuth();
         if (!active) return;
         setStatus('done');
         window.setTimeout(() => {
@@ -50,7 +49,7 @@ export default function TestClubEntry() {
     };
     run();
     return () => { active = false; };
-  }, [user?.email, restore, checkUserAuth]);
+  }, [user?.email, restore]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
