@@ -134,7 +134,7 @@ export default function DirectoryClaim() {
                 <p className="text-muted-foreground mt-2">
                   Club representatives can request permission to maintain this public directory listing. Directory access is separate from RallyHub club membership and the RallyHub club-management app.
                 </p>
-                {inviteToken && <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><strong>Secure invitation detected.</strong> This one-time link was sent by RallyHub for this club, usually by WhatsApp or email. If it came by WhatsApp, use the same mobile number. If it came by email, use the same email address. Once the invited detail matches your verified account, you can continue without waiting for a separate administrator approval.</div>}
+                {inviteToken && <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><strong>Secure invitation detected.</strong> This one-time link was sent by RallyHub for this club, usually by WhatsApp or email. If it came by WhatsApp, use the same mobile number. If it came by email, use the same email address. After you confirm your details, your Directory request is sent to RallyHub for approval.</div>}
               </div>
             </div>
 
@@ -230,7 +230,7 @@ export default function DirectoryClaim() {
                   </span>
                 </label>
                 <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
-                  {submitting ? 'Checking verification…' : (inviteToken ? 'Verify & continue' : 'Request directory access')}
+                  {submitting ? 'Submitting…' : (inviteToken ? 'Submit for review' : 'Request directory access')}
                 </Button>
               </form>
             )}
