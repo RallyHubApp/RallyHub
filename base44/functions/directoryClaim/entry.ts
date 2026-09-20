@@ -490,14 +490,15 @@ Deno.serve(async (req) => {
         ? trustedContacts.some(c => c.phone && phoneLooksSame(c.phone, claimantPhone))
         : false;
 
-      // Normal users auto-verify only when their authenticated account email exactly matches a trusted club email.
-      // A RallyHub platform admin may also auto-verify when BOTH trusted name and trusted phone match the claim.
-      // This recognises a known platform identity without weakening the rule for external claimants.
-      // Once a listing is already verified, additional editors always require manual review.
+      // Directory claims require RallyHub review before access is granted.
+      // A secure invitation verifies that the claimant received the intended email/phone link,
+      // but it does not itself approve Directory ownership. This preserves the agreed beta
+      // journey: invitation -> sign in/verify -> submit claim -> RallyHub review -> access.
+      // The only exception is a platform admin whose trusted name and phone both match.
       const adminIdentityMatch = user.role === 'admin' && nameMatch && phoneMatch;
       const anyExistingAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' });
       const listingAlreadyVerified = listing.verificationStatus === 'verified' || !!anyExistingAccess?.length;
-      const autoVerified = !!trustedInvitation || ((emailMatch || adminIdentityMatch) && !listingAlreadyVerified);
+      const autoVerified = adminIdentityMatch && !listingAlreadyVerified;
       const now = new Date().toISOString();
       const claim = await base44.asServiceRole.entities.DirectoryClaim.create({
         listing_slug: listing.slug,
@@ -509,7 +510,7 @@ Deno.serve(async (req) => {
         claimant_phone: claimantPhone || null,
         claimant_message: claimantMessage || null,
         status: autoVerified ? 'auto_verified' : 'pending',
-        match_method: autoVerified ? (trustedInvitation ? 'trusted_invitation' : emailMatch ? 'authenticated_email' : 'platform_admin_identity') : 'manual_review',
+        match_method: autoVerified ? 'platform_admin_identity' : 'manual_review',
         email_match: emailMatch,
         phone_match: phoneMatch,
         name_match: nameMatch,
@@ -519,39 +520,28 @@ Deno.serve(async (req) => {
       });
 
       if (autoVerified) {
-        const grantedRole = trustedInvitation?.access_role === 'editor' ? 'editor' : (listingAlreadyVerified ? 'editor' : 'owner');
+        const grantedRole = listingAlreadyVerified ? 'editor' : 'owner';
         await grantAccess(base44, {
           listing,
           userId: user.id,
           claimId: claim.id,
-          grantedByUserId: trustedInvitation?.created_by_user_id || null,
+          grantedByUserId: null,
           role: grantedRole,
-          notes: trustedInvitation
-            ? `Automatically verified using a one-time trusted ${grantedRole === 'owner' ? 'owner' : 'editor'} invitation.`
-            : emailMatch
-              ? 'Automatically verified by exact match to authenticated account email.'
-              : 'Automatically verified for a known RallyHub platform admin whose trusted name and phone both matched.',
+          notes: 'Automatically verified for a known RallyHub platform admin whose trusted name and phone both matched.',
         });
-        if (trustedInvitation) {
-          await base44.asServiceRole.entities.DirectoryClaimInvitation.update(trustedInvitation.id, {
-            status: 'used',
-            used_by_user_id: user.id,
-            used_at: now,
-          });
-        }
         await base44.asServiceRole.entities.DirectoryListingAudit.create({
           listing_slug: listingSlug,
           user_id: user.id,
           action: grantedRole === 'owner' ? 'owner_assigned' : 'access_granted',
           occurred_at: now,
-          after_json: JSON.stringify({ role: grantedRole, source: trustedInvitation ? 'trusted_invitation' : 'claim_verification' }),
+          after_json: JSON.stringify({ role: grantedRole, source: 'platform_admin_identity' }),
         });
         return Response.json({
           success: true,
           verified: true,
           status: 'auto_verified',
           hasAccess: true,
-          message: trustedInvitation?.access_role === 'editor' ? 'Your Directory Editor access has been verified.' : 'Your connection to this club has been verified.',
+          message: 'Your connection to this club has been verified.',
         });
       }
 
