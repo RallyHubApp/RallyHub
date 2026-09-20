@@ -545,6 +545,27 @@ Deno.serve(async (req) => {
         });
       }
 
+      if (trustedInvitation) {
+        await base44.asServiceRole.entities.DirectoryClaimInvitation.update(trustedInvitation.id, {
+          status: 'used',
+          used_by_user_id: user.id,
+          used_at: now,
+        });
+        await base44.asServiceRole.entities.DirectoryListingAudit.create({
+          listing_slug: listingSlug,
+          user_id: user.id,
+          action: 'claim_invitation_accepted',
+          occurred_at: now,
+          after_json: JSON.stringify({
+            invitationId: trustedInvitation.id,
+            channel: trustedInvitation.channel,
+            requestedRole: trustedInvitation.access_role || 'owner',
+            claimId: claim.id,
+            outcome: 'pending_admin_review',
+          }),
+        });
+      }
+
       await sendAdminDirectoryEmail(base44, {
         user,
         kind: 'claim_review',
@@ -558,7 +579,9 @@ Deno.serve(async (req) => {
         verified: false,
         status: 'pending',
         hasAccess: false,
-        message: 'We could not verify your connection automatically. A verification request has been sent to RallyHub for review.',
+        message: trustedInvitation
+          ? 'Your secure invitation has been verified. Your Directory access request is now with RallyHub for review.'
+          : 'Your Directory access request has been sent to RallyHub for review.',
       });
     }
 
