@@ -24,7 +24,7 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
   const [disconnecting, setDisconnecting] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [needsLogin, setNeedsLogin] = useState(false);
+  const [needsLogin, setNeedsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
@@ -203,10 +203,10 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
         </div>
       )}
 
-      {groups.length === 0 && !needsLogin ? (
+      {groups.length === 0 && !needsLogin && token ? (
         <Button type="button" variant="outline" onClick={loadGroups} disabled={loadingGroups} className="gap-2">
           {loadingGroups ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
-          {loadingGroups ? 'Connecting to Spond…' : connection ? 'Refresh Spond connection' : 'Connect Spond'}
+          {loadingGroups ? 'Refreshing Spond groups…' : 'Refresh Spond groups'}
         </Button>
       ) : null}
 
