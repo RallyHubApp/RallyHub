@@ -31,9 +31,11 @@ Deno.serve(async(req)=>{
       }
 
       const now=new Date().toISOString();
+      const personName=clean(user.full_name||user.display_name||user.email,180);
+      const firstName=personName.split(/\s+/).filter(Boolean)[0] || 'there';
       const row=await base44.asServiceRole.entities.ClubFeedback.create({
         user_id:user.id,
-        person_name:clean(user.full_name||user.display_name||user.email,180),
+        person_name:personName,
         person_email:clean(user.email,240).toLowerCase(),
         listing_slug:listingSlug,
         club_name:clubName,
@@ -49,7 +51,12 @@ Deno.serve(async(req)=>{
         submitted_at:now,
         updated_at:now
       });
-      return Response.json({success:true,id:row.id});
+      return Response.json({
+        success:true,
+        id:row.id,
+        firstName,
+        message:`Thanks, ${firstName}. We appreciate your feedback. We’ll review it and make sure it is directed to the right place, whether that’s a fix, an improvement or our RallyHub development wishlist.`
+      });
     }
 
     if(action==='my_list'){
