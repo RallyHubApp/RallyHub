@@ -679,7 +679,7 @@ export default function DirectoryListingEdit() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2 sm:col-span-2"><Label>Club description</Label><Textarea value={form.description || ''} onChange={e => setField('description', e.target.value)} rows={4} placeholder="Tell players what your club is about, where you play and who you welcome." /><p className="text-xs text-muted-foreground">This is the main introduction players see in search and on your club page. Claim/unclaimed status is controlled automatically by RallyHub and does not need to be typed here.</p></div>
                   <div className="sm:col-span-2 rounded-xl border border-border bg-background/35 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div><p className="font-semibold">Optional club details</p><p className="text-xs text-muted-foreground mt-1">Website, social links, joining information and attendance policy can all be added later.</p></div>
+                    <div><p className="font-semibold">Optional club details</p><p className="text-xs text-muted-foreground mt-1">Website, social links, joining information and attendance policy can all be added later. If your club uses Spond, you can also connect your Spond account here to bring your regular venues and session times into RallyHub instead of entering them manually.</p></div>
                     <Button type="button" variant="outline" onClick={() => setShowEnhancements(value => !value)} className="gap-2 shrink-0"><Sparkles className="w-4 h-4" /> {showEnhancements ? 'Hide optional details' : 'Enhance listing'}</Button>
                   </div>
                   {showEnhancements && <>
