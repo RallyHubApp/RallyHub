@@ -78,7 +78,6 @@ export const AuthProvider = ({ children }) => {
         setIsLoadingPublicSettings(false);
         setIsLoadingAuth(false);
         setAuthChecked(true);
-        setAuthChecked(true);
       }
     } catch (error) {
       console.error('Unexpected error:', error);
