@@ -106,7 +106,7 @@ export default function Landing() {
         structuredData={structuredData}
       />
 
-      <div className="min-h-screen bg-white text-[#07184c]">
+      <div className="min-h-screen overflow-x-hidden bg-white text-[#07184c]">
         <header className="relative z-50 border-b border-[#e7edef] bg-white">
           <div className="mx-auto flex h-[72px] max-w-[1380px] items-center justify-between px-4 sm:px-6 lg:px-10 xl:px-12">
             <Link to="/" className="flex items-center gap-2.5">
@@ -175,17 +175,17 @@ export default function Landing() {
         <main>
           <section className="relative overflow-hidden bg-[#f7fcfd]">
             <div className="relative mx-auto max-w-[1380px] lg:grid lg:grid-cols-[51%_49%] lg:items-stretch">
-              <div className="relative z-20 flex items-center px-5 py-9 sm:px-7 sm:py-10 lg:px-10 lg:py-12 xl:px-12">
+              <div className="relative z-20 flex min-h-[370px] items-start px-5 pb-8 pt-7 sm:min-h-[430px] sm:items-center sm:px-7 sm:py-10 lg:min-h-0 lg:px-10 lg:py-12 xl:px-12">
                 <div className="max-w-[620px]">
-                  <h1 className="text-[2.8rem] font-black leading-[.98] tracking-[-.047em] text-[#061545] sm:text-[3.65rem] lg:text-[4.2rem] xl:text-[4.45rem]">
+                  <h1 className="max-w-[92%] text-[2.35rem] font-black leading-[.98] tracking-[-.047em] text-[#061545] min-[380px]:text-[2.55rem] sm:max-w-[620px] sm:text-[3.65rem] lg:text-[4.2rem] xl:text-[4.45rem]">
                     Play More
                     <span className="block">Connect <span className="text-[#078e48]">Deeper</span></span>
                     <span className="block text-[#0a5e5b]">Belong Together</span>
                   </h1>
-                  <p className="mt-4 max-w-[570px] text-[15px] font-medium leading-[1.55] text-[#172b5c] sm:text-[16px]">
+                  <p className="mt-4 max-w-[88%] text-[14px] font-medium leading-[1.5] text-[#172b5c] sm:max-w-[570px] sm:text-[16px]">
                     RallyHub helps players find clubs, venues and events across Ireland and beyond — for every sport, at every level.
                   </p>
-                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <div className="mt-5 flex max-w-[94%] flex-col gap-2.5 sm:mt-6 sm:max-w-none sm:flex-row">
                     <Link to="/directory">
                       <Button className="h-11 w-full rounded-lg bg-[#078f49] px-6 text-[13px] font-bold text-white shadow-[0_8px_18px_rgba(7,143,73,.2)] hover:bg-[#067c40] sm:w-auto">
                         <Search className="mr-2 h-5 w-5"/> Find a Club or Session
@@ -208,9 +208,9 @@ export default function Landing() {
                 />
               </div>
 
-              <div className="pointer-events-none absolute inset-y-0 right-0 z-0 w-[48%] overflow-hidden lg:hidden">
+              <div className="pointer-events-none absolute inset-y-0 right-0 z-0 w-[58%] overflow-hidden sm:w-[55%] lg:hidden">
                 <img src={HERO_PHOTO} alt="" className="h-full w-full object-cover object-center opacity-95" />
-                <div className="absolute inset-y-0 left-0 w-[30%] bg-[linear-gradient(90deg,#f7fcfd_0%,rgba(247,252,253,.88)_45%,rgba(247,252,253,0)_100%)]"/>
+                <div className="absolute inset-y-0 left-0 w-[42%] bg-[linear-gradient(90deg,#f7fcfd_0%,rgba(247,252,253,.94)_38%,rgba(247,252,253,.68)_64%,rgba(247,252,253,0)_100%)] sm:w-[34%]"/>
               </div>
             </div>
           </section>
