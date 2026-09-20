@@ -1,0 +1,38 @@
+import { test, expect } from '@playwright/test';
+
+test('directory claim journey stays on one RallyHub account flow', async ({ page }) => {
+  await page.goto('/directory?manage=1');
+
+  await expect(page.getByText('Manage an existing club listing', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+
+  await page.goto('/directory/clare-pickleball');
+  const claim = page.getByRole('link', { name: /Claim this listing/i }).first();
+  await expect(claim).toBeVisible();
+  await claim.click();
+
+  await expect(page).toHaveURL(/\/directory\/clare-pickleball\/claim/);
+  await expect(page.getByRole('heading', { name: /Sign in or create your RallyHub account|First time on RallyHub\?/ })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page).toHaveURL(/\/login\?mode=directory&returnTo=/);
+  await expect(page.getByRole('heading', { name: 'Sign in to RallyHub' })).toBeVisible();
+  await expect(page.getByText('One RallyHub account is used everywhere.', { exact: false })).toBeVisible();
+  await expect(page.getByText('Create directory account', { exact: true })).toHaveCount(0);
+});
+
+test('quick start guide matches the unified account journey', async ({ page }) => {
+  await page.goto('/directory/quick-start');
+
+  await expect(page.getByRole('heading', { name: 'Sign in or create your RallyHub account' })).toBeVisible();
+  await expect(page.getByText('RallyHub uses one account.', { exact: false })).toBeVisible();
+  await expect(page.getByText('Create your RallyHub account', { exact: true })).toBeVisible();
+  await expect(page.getByText('One RallyHub account, separate permissions.', { exact: false })).toBeVisible();
+  await expect(page.getByText('Create your Directory account', { exact: true })).toHaveCount(0);
+});
+
+test('directory help explains one account with separate permissions', async ({ page }) => {
+  await page.goto('/directory/help');
+
+  await expect(page.getByText('RallyHub uses one account, but permissions are separate.', { exact: false })).toBeVisible();
+});
