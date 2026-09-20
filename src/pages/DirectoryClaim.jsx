@@ -142,22 +142,22 @@ export default function DirectoryClaim() {
               <div className="mt-8 rounded-xl border border-border bg-background/40 p-5 text-sm text-muted-foreground">Checking your sign-in…</div>
             ) : !isAuthenticated ? (
               <div className="mt-8 rounded-2xl border border-border bg-background/40 p-6">
-                <h2 className="text-xl font-bold">{inviteToken ? 'First time on RallyHub?' : 'Sign in or create a directory account'}</h2>
+                <h2 className="text-xl font-bold">{inviteToken ? 'First time on RallyHub?' : 'Sign in or create your RallyHub account'}</h2>
                 <p className="text-sm text-muted-foreground mt-2">
                   {inviteToken
-                    ? 'If you do not already have a RallyHub account, create a directory account first. For a WhatsApp invitation, use the same mobile number that received it. For an email invitation, use the same email address. You will also need access to that email so RallyHub can verify the account.'
-                    : 'A directory account is required only so RallyHub can identify and verify the person asking to edit this listing. It does not give access to RallyHub Club, tournaments or player records.'}
+                    ? 'If you do not already have a RallyHub account, create one first. For a WhatsApp invitation, use the same mobile number that received it. For an email invitation, use the same email address. You will also need access to that email so RallyHub can verify the account.'
+                    : 'RallyHub uses one account system. We use your signed-in identity to verify the person asking to edit this listing. Directory editing is a permission on your account and does not automatically give access to RallyHub Club, tournaments or player records.'}
                 </p>
                 <div className="flex flex-wrap gap-3 mt-5">
                   {inviteToken ? (
                     <>
-                      <Link to={registerHref}><Button>Create directory account</Button></Link>
+                      <Link to={registerHref}><Button>Create RallyHub account</Button></Link>
                       <Link to={loginHref}><Button variant="outline">I already have an account</Button></Link>
                     </>
                   ) : (
                     <>
                       <Link to={loginHref}><Button>Sign in</Button></Link>
-                      <Link to={registerHref}><Button variant="outline">Create directory account</Button></Link>
+                      <Link to={registerHref}><Button variant="outline">Create RallyHub account</Button></Link>
                     </>
                   )}
                 </div>
@@ -171,7 +171,7 @@ export default function DirectoryClaim() {
                   <h2 className="font-bold">Directory access verified</h2>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Your account is verified for this directory listing only. This does not give you access to a RallyHub Club, player records or club-management tools.
+                  Your RallyHub account now has permission to manage this directory listing. That permission does not give you access to a RallyHub Club, player records or club-management tools.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
                   <Link to={`/directory/${club.slug}/edit`}>
