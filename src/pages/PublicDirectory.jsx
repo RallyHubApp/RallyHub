@@ -306,19 +306,17 @@ export default function PublicDirectory() {
 
             <div className="relative hidden min-h-[355px] items-center lg:flex">
               <div className="w-full overflow-hidden rounded-[22px] border border-[#dce8e9] bg-white shadow-[0_22px_55px_rgba(8,30,70,.12)]">
-                <div className="relative h-[255px] overflow-hidden bg-[linear-gradient(135deg,#d8eee5_0%,#b7ded1_48%,#b9dfe8_100%)]">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_68%_34%,rgba(255,255,255,.95)_0_4%,transparent_5%),radial-gradient(circle_at_79%_55%,#f5d42c_0_5%,transparent_5.5%),linear-gradient(115deg,transparent_0_48%,rgba(7,142,72,.16)_49%_52%,transparent_53%)]" />
-                  <div className="absolute left-7 top-7 max-w-[235px]">
-                    <div className="text-[12px] font-black uppercase tracking-[.14em] text-[#078e48]">Good people</div>
-                    <div className="mt-1 text-[31px] font-black leading-[.98] tracking-[-.04em] text-[#07184c]">Great games.</div>
-                    <p className="mt-3 text-[13px] font-medium leading-5 text-[#314465]">Clubs, venues and sessions across Ireland. Find your next game and get playing.</p>
-                  </div>
-                  <div className="absolute bottom-[-18px] right-[-12px] h-[205px] w-[265px] rotate-[-4deg] rounded-[48%_52%_18%_22%] border-[14px] border-[#1b2730] bg-[#26343d] shadow-xl">
-                    <div className="absolute left-[35px] top-[34px] h-[105px] w-[105px] rounded-full border-[5px] border-[#9ee65c]" />
-                    <div className="absolute left-[57px] top-[55px] h-[61px] w-[61px] rounded-full border-[4px] border-[#9ee65c]" />
-                  </div>
-                  <div className="absolute bottom-[32px] right-[210px] h-[64px] w-[64px] rounded-full bg-[#f5d42c] shadow-[0_8px_20px_rgba(7,24,76,.2)]">
-                    {[['18%','22%'],['55%','18%'],['30%','52%'],['66%','58%'],['47%','78%']].map(([left,top],i)=><span key={i} className="absolute h-[7px] w-[7px] rounded-full bg-[#d0af14]" style={{left,top}} />)}
+                <div className="relative h-[255px] overflow-hidden bg-[#dce8e9]">
+                  <img
+                    src="https://images.unsplash.com/photo-1747027694225-cbf12dd20826?auto=format&fit=crop&fm=jpg&q=85&w=1800"
+                    alt="Pickleball players enjoying a game on an outdoor court"
+                    className="h-full w-full object-cover object-center"
+                    loading="eager"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#061545]/65 via-[#061545]/10 to-transparent" />
+                  <div className="absolute left-6 top-6 max-w-[235px] text-white">
+                    <div className="text-[29px] font-black leading-[1.02] tracking-[-.04em]">Good people.<br />Great games.</div>
+                    <p className="mt-2 text-[12px] font-semibold leading-5 text-white/90">Pickleball clubs, venues and sessions across Ireland.</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 divide-x divide-[#dfe8ea] bg-white px-3 py-4">
