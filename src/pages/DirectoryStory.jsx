@@ -1,29 +1,31 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Gift, Info, Rocket, Users, CheckCircle2, MapPin, Contact, ClipboardList, Link2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import Seo from '@/components/public/Seo';
 
 const PDF_URL = '/downloads/RallyHub_Directory_Explainer.pdf';
-
-const benefits = [
-  ['Be easier to find', Users],
-  ['Show your venues, session times and levels', MapPin],
-  ['Point players to the right contact route', Contact],
-  ['Keep one up-to-date public listing', ClipboardList],
-  ['Help travelling players and new local players find you', Users],
-  ['Keep using Spond, WhatsApp, Facebook or your own website', Link2],
-];
 
 export default function DirectoryStory() {
   return (
     <div className="min-h-screen bg-[#f7faf9] text-[#07184c]">
       <Seo title="RallyHub Directory Explainer" description="Helping players find your club, your venues and your sessions." path="/directory/story" robots="index,follow" />
       <PublicDirectoryHeader />
-      <main className="mx-auto max-w-[1180px] px-4 py-8 sm:px-6 lg:px-10">
+      <main className="mx-auto max-w-[1120px] px-4 py-8 sm:px-6 lg:px-10">
         <Link to="/directory/help" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[#52647d] hover:text-[#078e48]"><ArrowLeft className="h-4 w-4" /> Club Guide & Help</Link>
 
-        <section className="overflow-hidden rounded-[28px] border border-[#dbe6e8] bg-white shadow-[0_14px_40px_rgba(8,24,77,.07)]">
+        <section className="overflow-hidden rounded-[24px] border border-[#dbe6e8] bg-white shadow-[0_14px_40px_rgba(8,24,77,.08)]">
+          <div className="flex items-center justify-between gap-4 border-b border-[#dbe6e8] bg-white px-4 py-3 sm:px-5">
+            <p className="text-sm font-bold text-[#07184c]">Approved RallyHub Directory Explainer</p>
+            <a href={PDF_URL} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#078e48] px-4 py-2 text-sm font-bold text-white hover:bg-[#067b3f]"><ExternalLink className="h-4 w-4" /> Open / print PDF</a>
+          </div>
+          <object data={PDF_URL} type="application/pdf" className="block h-[78vh] min-h-[720px] w-full bg-white" aria-label="RallyHub Directory Explainer PDF">
+            <div className="p-8 text-center"><p className="text-[#52647d]">Your browser cannot display the PDF inline.</p><a href={PDF_URL} className="mt-4 inline-flex rounded-xl bg-[#078e48] px-5 py-3 font-bold text-white">Open the approved PDF</a></div>
+          </object>
+        </section>
+
+        <section className="sr-only" aria-hidden="true">
+
           <div className="bg-gradient-to-br from-[#f7fbf9] via-white to-[#edf8f2] px-6 py-9 sm:px-10 lg:px-12">
             <p className="text-xs font-extrabold uppercase tracking-[.22em] text-[#078e48]">RallyHub Directory</p>
             <h1 className="mt-3 max-w-4xl text-4xl font-black tracking-[-.04em] text-[#07184c] sm:text-5xl">Helping players find your club, your venues and your sessions</h1>
@@ -67,6 +69,7 @@ export default function DirectoryStory() {
           <p className="mt-3 max-w-4xl leading-7 text-[#52647d]">RallyHub Directory is not replacing Spond, WhatsApp, Facebook or your website. It simply helps players discover your club and then direct them to the contact route you choose.</p>
         </section>
 
+        </section>
         <footer className="mt-6 flex flex-col gap-3 border-t border-[#dbe6e8] py-6 text-sm text-[#52647d] sm:flex-row sm:items-end sm:justify-between">
           <div><p className="font-bold text-[#07184c]">Created by <span className="text-[#078e48]">Brian Moore</span> through RallyHub</p><p>Part of my contribution to the continued growth of pickleball in Ireland</p></div>
           <div className="sm:text-right"><p>rallyhub.ie</p><p>rallyhubapp@gmail.com</p><p>Brian Moore &nbsp; 087 810 0333</p></div>
