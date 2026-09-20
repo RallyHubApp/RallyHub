@@ -271,229 +271,287 @@ export default function PublicDirectory() {
         path="/directory"
         structuredData={directorySchema}
       />
-      <div className="min-h-screen bg-background text-foreground">
-      <PublicDirectoryHeader />
 
-      <section className="border-b border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,.13),transparent_42%)]">
-        <div className="container mx-auto px-4 py-7 sm:py-9">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-5">
-              <MapPin className="w-3.5 h-3.5" /> All-Ireland directory · all 32 counties supported
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight">Find a club. Find a session. Get playing.</h1>
-            <p className="mt-3 text-base text-muted-foreground max-w-2xl">
-              Search public sports clubs across the whole island of Ireland by county, location, day and venue. We currently have {effectiveClubs.length} club listings across {listedCountyCount} counties, with all 32 counties available as the directory grows.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link to="/directory?manage=1" className="inline-flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/15 transition-colors">
-                <UserCheck className="w-4 h-4" /> Manage a listing
-              </Link>
-              <Link to="/directory/add" className="inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-700 dark:text-amber-200 hover:bg-amber-400/15 transition-colors">
-                <PlusCircle className="w-4 h-4" /> Add a missing club
-              </Link>
-            </div>
-          </div>
+      <div className="min-h-screen overflow-x-hidden bg-white text-[#07184c]">
+        <PublicDirectoryHeader />
 
-          {manageMode && (
-            <div className="mt-8 rounded-2xl border border-primary/30 bg-primary/10 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <p className="font-bold text-foreground">Manage an existing club listing</p>
-                <p className="text-sm text-muted-foreground mt-1">Search for your club below, open its profile and choose <strong className="text-foreground">Claim this listing</strong>. RallyHub verifies you before granting editing access.</p>
+        <section className="border-b border-[#e4ecee] bg-[linear-gradient(115deg,#f8fcfd_0%,#f3faf7_54%,#edf7f9_100%)]">
+          <div className="mx-auto grid max-w-[1380px] items-stretch px-4 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:px-10 xl:px-12">
+            <div className="flex items-center py-8 sm:py-10 lg:min-h-[355px] lg:py-11">
+              <div className="max-w-[700px]">
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#cfe4d8] bg-white px-3 py-2 text-[10px] font-extrabold uppercase tracking-[.08em] text-[#078e48] shadow-[0_6px_18px_rgba(8,33,76,.04)] sm:text-xs">
+                  <MapPin className="h-3.5 w-3.5" /> All-Ireland club directory · all 32 counties supported
+                </div>
+
+                <h1 className="mt-5 text-[2.65rem] font-black leading-[.97] tracking-[-.05em] text-[#061545] sm:text-[3.6rem] lg:text-[4.2rem]">
+                  Find a club.
+                  <span className="block">Find a session.</span>
+                  <span className="block text-[#0a5e5b]">Get playing.</span>
+                </h1>
+
+                <p className="mt-4 max-w-[650px] text-[14px] font-medium leading-[1.55] text-[#23365f] sm:text-[16px]">
+                  Search public sports clubs across the whole island of Ireland by county, location, day and venue. The Directory stays simple to browse, while clubs can keep their public information accurate and up to date.
+                </p>
+
+                <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
+                  <Link to="/directory?manage=1" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#078e48] px-5 text-[13px] font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] transition hover:bg-[#067b3f]">
+                    <UserCheck className="h-4 w-4" /> Manage a listing
+                  </Link>
+                  <Link to="/directory/add" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-5 text-[13px] font-bold text-[#0c2257] transition hover:bg-[#f7faf9]">
+                    <PlusCircle className="h-4 w-4" /> Add a missing club
+                  </Link>
+                </div>
               </div>
-              <Link to="/directory/add" className="shrink-0">
-                <button className="h-10 px-4 rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-700 dark:text-amber-200 text-sm font-semibold hover:bg-amber-400/15 transition-colors">
-                  Club not listed? Add it
-                </button>
-              </Link>
             </div>
-          )}
 
-          <div className="mt-5 glass-strong rounded-2xl p-3 grid gap-3 lg:grid-cols-[minmax(260px,1fr)_200px_200px_auto]">
-            <label className="relative">
-              <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
-              <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Club, town, venue or Eircode" aria-label="Search club directory" className="w-full h-11 rounded-xl border border-input bg-background/70 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/40" />
-            </label>
-            <select value={county} onChange={e => setCounty(e.target.value)} className="h-11 rounded-xl border border-input bg-background/70 px-3 text-sm">
-              {counties.map(item => <option key={item}>{item}</option>)}
-            </select>
-            <select value={day} onChange={e => setDay(e.target.value)} className="h-11 rounded-xl border border-input bg-background/70 px-3 text-sm">
-              <option>Any day</option>
-              {weekDays.map(item => <option key={item}>{item}</option>)}
-            </select>
-            <div className="flex rounded-xl border border-input p-1 bg-background/70">
-              <button onClick={() => setView('clubs')} className={`flex-1 lg:px-4 rounded-lg text-sm font-medium ${view === 'clubs' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Clubs</button>
-              <button onClick={() => setView('sessions')} className={`flex-1 lg:px-4 rounded-lg text-sm font-medium ${view === 'sessions' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Sessions</button>
-              <button onClick={() => setView('map')} className={`flex-1 lg:px-4 rounded-lg text-sm font-medium ${view === 'map' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Map</button>
+            <div className="relative hidden min-h-[355px] lg:block">
+              <div className="absolute right-0 top-[38px] w-[92%] max-w-[430px] rounded-[20px] border border-[#dce8e9] bg-white/95 p-[22px] shadow-[0_22px_55px_rgba(8,30,70,.12)]">
+                <div className="text-[12px] font-extrabold uppercase tracking-[.12em] text-[#68758b]">RallyHub Directory</div>
+                <div className="mt-3.5 grid grid-cols-3 gap-2.5">
+                  <div className="rounded-[14px] border border-[#e1eaeb] bg-[#f8fbfb] p-3">
+                    <strong className="block text-[24px] font-black text-[#07184c]">{effectiveClubs.length}</strong>
+                    <span className="text-[11px] text-[#67748a]">club listings</span>
+                  </div>
+                  <div className="rounded-[14px] border border-[#e1eaeb] bg-[#f8fbfb] p-3">
+                    <strong className="block text-[24px] font-black text-[#07184c]">{listedCountyCount}</strong>
+                    <span className="text-[11px] text-[#67748a]">counties listed</span>
+                  </div>
+                  <div className="rounded-[14px] border border-[#e1eaeb] bg-[#f8fbfb] p-3">
+                    <strong className="block text-[24px] font-black text-[#07184c]">32</strong>
+                    <span className="text-[11px] text-[#67748a]">counties supported</span>
+                  </div>
+                </div>
+                <div className="relative mt-3.5 h-[124px] overflow-hidden rounded-[14px] bg-[linear-gradient(145deg,#dcefe4,#b8ddcd_48%,#b8dce6)]">
+                  <div className="absolute right-3 top-2 text-[9px] font-black tracking-[.18em] text-[#225c57]">IRELAND</div>
+                  {[
+                    ['32%','34%'],['45%','54%'],['57%','39%'],['49%','68%'],['70%','63%']
+                  ].map(([left,top], index) => (
+                    <span key={index} className="absolute h-[13px] w-[13px] rounded-full border-[3px] border-white bg-[#078e48] shadow-[0_2px_8px_rgba(0,0,0,.2)]" style={{left,top}} />
+                  ))}
+                  <span className="absolute left-[8%] top-[30%] h-[5px] w-[88%] rotate-[9deg] rounded-full bg-white/80" />
+                  <span className="absolute left-[18%] top-[55%] h-[5px] w-[69%] -rotate-[18deg] rounded-full bg-white/80" />
+                  <span className="absolute left-[8%] top-[73%] h-[5px] w-[62%] rotate-[21deg] rounded-full bg-white/80" />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <main className="container mx-auto px-4 py-6">
-        <section className="mb-6 rounded-xl border border-border/70 bg-card/40 px-4 py-3">
-          <div className="flex items-center justify-between gap-3 mb-2.5">
-            <div className="min-w-0">
-              <h2 className="text-sm font-bold">Browse by county</h2>
-              <p className="text-xs text-muted-foreground">All 32 counties · {listedCountyCount} currently have listings</p>
-            </div>
-            <Link to="/directory/add" className="shrink-0 text-xs font-semibold text-amber-300 hover:underline">Missing club? Add it</Link>
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-            {irelandCounties.map(item => {
-              const count = effectiveClubs.filter(club => club.county === item).length;
-              return (
-                <Link key={item} to={`/pickleball-clubs/${countySlug(item)}`} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${count ? 'border-primary/25 bg-primary/10 text-primary hover:bg-primary/15' : 'border-border text-muted-foreground hover:text-foreground'}`}>
-                  {item}{count ? ` · ${count}` : ''}
-                </Link>
-              );
-            })}
           </div>
         </section>
 
-        {view === 'map' ? (
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-muted-foreground">{filteredClubs.length} matching club{filteredClubs.length === 1 ? '' : 's'}</p>
-                <h2 className="text-2xl font-bold">Club map</h2>
+        {manageMode && (
+          <section className="bg-white">
+            <div className="mx-auto max-w-[1380px] px-4 pt-4 sm:px-6 lg:px-10 xl:px-12">
+              <div className="flex flex-col justify-between gap-4 rounded-2xl border border-[#b8dfc7] bg-[#eef9f3] p-4 sm:flex-row sm:items-center sm:p-5">
+                <div>
+                  <p className="font-extrabold text-[#07184c]">Manage an existing club listing</p>
+                  <p className="mt-1 text-sm text-[#52627d]">Search for your club below, open its profile and choose <strong className="text-[#07184c]">Claim this listing</strong>. RallyHub reviews the representative before granting editing access.</p>
+                </div>
+                <Link to="/directory/add" className="shrink-0">
+                  <button className="h-10 rounded-lg border border-[#d5c18c] bg-white px-4 text-sm font-bold text-[#8e610b] transition hover:bg-[#fffaf0]">Club not listed? Add it</button>
+                </Link>
               </div>
-              <p className="hidden sm:block text-xs text-muted-foreground">Search and county/day filters also update the map</p>
             </div>
-            {filteredClubs.length ? (
-              <DirectoryMap clubs={filteredClubs} />
-            ) : (
-              <div className="glass rounded-2xl p-10 text-center">
-                <MapPin className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                <h3 className="font-semibold">No clubs to show on the map</h3>
-                <p className="text-sm text-muted-foreground mt-1">Try changing your search or filters.</p>
-              </div>
-            )}
           </section>
-        ) : (
-        <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(380px,.8fr)] gap-6">
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-muted-foreground">{filteredClubs.length} club{filteredClubs.length === 1 ? '' : 's'} found{query.trim() ? ` for “${query.trim()}”` : ''}</p>
-                <h2 className="text-2xl font-bold">{view === 'sessions' ? 'Weekly sessions' : query.trim() ? 'Best matches' : 'Club directory'}</h2>
-              </div>
-              <SlidersHorizontal className="w-5 h-5 text-muted-foreground" />
-            </div>
-
-            {view === 'clubs' ? (
-              <div className="space-y-4">
-                {filteredClubs.map(club => (
-                  <article key={club.id} className="glass rounded-2xl p-5 sm:p-6 hover:border-primary/30 transition-colors">
-                    <div className="flex gap-4">
-                      <PublicDirectoryLogo
-                        src={club.logoUrl}
-                        name={club.name}
-                        imageClassName="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white object-contain p-1 shrink-0"
-                        fallbackClassName="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-xl sm:text-2xl font-black text-primary shrink-0"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-primary">{club.sport} · County {club.county}</p>
-                            <h3 className="text-xl sm:text-2xl font-bold mt-1">{club.name}</h3>
-                          </div>
-                          {club.verificationStatus === 'unclaimed' ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-amber-300"><CheckCircle2 className="w-3.5 h-3.5" /> Unclaimed listing</span>
-                          ) : club.verificationStatus === 'verified' ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Verified club listing</span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Active listing</span>
-                          )}
-                        </div>
-                        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{publicDescription(club)}</p>
-                        <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1.5"><Building2 className="w-4 h-4 text-primary" /> {club.venues.length} venue{club.venues.length === 1 ? '' : 's'}</span>
-                          <span className="flex items-center gap-1.5"><CalendarDays className="w-4 h-4 text-primary" /> {club.sessions.length ? `${club.sessions.length} weekly session${club.sessions.length === 1 ? '' : 's'}` : 'Schedule pending'}</span>
-                          <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-primary" /> {club.county}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-5 pt-4 border-t border-border flex flex-wrap gap-3 justify-between items-center">
-                      <div className="flex flex-wrap gap-2">
-                        {club.venues.filter(venue => venue.shortName || venue.name).map(venue => <span key={venue.id} className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground">{venue.shortName || venue.name}</span>)}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {club.verificationStatus === 'unclaimed' && (
-                          <Link to={`/directory/${club.slug}/claim`} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-700 dark:text-amber-200 hover:bg-amber-400/15 transition-colors">
-                            <UserCheck className="w-4 h-4" /> Claim this listing
-                          </Link>
-                        )}
-                        <button type="button" onClick={() => shareClub(club)} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background/40 px-3 py-2 text-sm font-semibold hover:border-primary/40 transition-colors" aria-label={`Share ${club.name}`}>
-                          {shareCopiedSlug === club.slug ? <Check className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4" />} {shareCopiedSlug === club.slug ? 'Link copied' : 'Share'}
-                        </button>
-                        <Link to={`/directory/${club.slug}`} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background/40 px-3 py-2 text-sm font-semibold text-primary hover:border-primary/40 transition-colors">
-                          View details <ArrowRight className="w-4 h-4" />
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {allSessions.filter(({club, day: sessionDay}) => filteredClubs.some(c => c.id === club.id) && (day === 'Any day' || sessionDay === day)).map(session => {
-                  const venue = session.club.venues.find(v => v.id === session.venueId);
-                  return (
-                    <Link key={session.id} to={`/directory/${session.club.slug}`} className="glass rounded-xl p-4 flex items-center gap-4 hover:border-primary/30 transition-colors">
-                      <div className="w-14 text-center shrink-0">
-                        <p className="text-xs uppercase text-muted-foreground">{session.day.slice(0,3)}</p>
-                        <p className="font-bold text-primary">{session.start}</p>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold">{session.level}</p>
-                        <p className="text-sm text-muted-foreground truncate">{session.club.name} · {venue?.shortName}</p>
-                      </div>
-                      <p className="text-sm font-semibold">Contact club</p>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-
-            {filteredClubs.length === 0 && (
-              <div className="glass rounded-2xl p-10 text-center">
-                <Search className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                <h3 className="font-semibold">No matching clubs yet</h3>
-                <p className="text-sm text-muted-foreground mt-1">Try removing a filter or searching a nearby county. If the club is missing, you can add it for review.</p>
-                <Link to="/directory/add" className="inline-flex mt-4 h-10 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground">Add a missing club</Link>
-              </div>
-            )}
-          </section>
-
-          <aside className="xl:sticky xl:top-24 h-fit">
-            <div className="rounded-2xl border border-border overflow-hidden bg-card">
-              <div className="p-4 border-b border-border">
-                <h2 className="font-bold">Venue map</h2>
-                <p className="text-xs text-muted-foreground mt-1">Every venue has its own pin, even when several venues belong to one club.</p>
-              </div>
-              <MapContainer center={[53.35, -7.75]} zoom={6} scrollWheelZoom={false} className="h-[390px] w-full">
-                <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                {effectiveClubs
-                  .flatMap(club => (club.venues || []).map(venue => ({club, venue})))
-                  .filter(({club, venue}) => visibleVenueIds.has(`${club.id}:${venue.id}`) && Number.isFinite(venue.latitude) && Number.isFinite(venue.longitude))
-                  .map(({club, venue}) => (
-                  <Marker key={`${club.id}-${venue.id}`} position={[venue.latitude, venue.longitude]}>
-                    <Popup>
-                      <div className="min-w-[190px]">
-                        <strong>{club.name}</strong><br />
-                        <span>{venue.name}</span><br />
-                        <span>{venue.eircode}</span><br />
-                        <a href={`/directory/${club.slug}`} className="font-semibold">View listing</a>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
-            </div>
-          </aside>
-        </div>
         )}
-      </main>
+
+        <section className="bg-white">
+          <div className="mx-auto max-w-[1380px] px-4 pb-2 pt-4 sm:px-6 lg:px-10 xl:px-12">
+            <div className="grid gap-2.5 rounded-2xl border border-[#dbe6e8] bg-white p-2.5 shadow-[0_9px_25px_rgba(8,24,77,.055)] lg:grid-cols-[minmax(300px,1.5fr)_220px_190px_auto]">
+              <label className="relative">
+                <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-[#738096]" />
+                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Club, town, venue or Eircode" aria-label="Search club directory" className="h-11 w-full rounded-xl border border-[#cfdde0] bg-[#fbfdfd] pl-10 pr-3 text-sm text-[#1a2c58] outline-none focus:border-[#078e48] focus:ring-2 focus:ring-[#078e48]/20" />
+              </label>
+              <select value={county} onChange={e => setCounty(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm text-[#1a2c58]">
+                {counties.map(item => <option key={item}>{item}</option>)}
+              </select>
+              <select value={day} onChange={e => setDay(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm text-[#1a2c58]">
+                <option>Any day</option>
+                {weekDays.map(item => <option key={item}>{item}</option>)}
+              </select>
+              <div className="flex h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] p-1">
+                {['clubs','sessions','map'].map(item => (
+                  <button key={item} onClick={() => setView(item)} className={`flex-1 rounded-lg px-3 text-[12px] font-bold capitalize transition ${view === item ? 'bg-[#078e48] text-white' : 'text-[#6a778a] hover:text-[#07184c]'}`}>{item}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-none">
+              <span className="mr-1 hidden shrink-0 text-[12px] font-extrabold text-[#07184c] sm:inline">Browse by county</span>
+              {irelandCounties.map(item => {
+                const count = effectiveClubs.filter(club => club.county === item).length;
+                return (
+                  <Link key={item} to={`/pickleball-clubs/${countySlug(item)}`} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${count ? 'border-[#b8dfc7] bg-[#eef9f3] text-[#067b3f] hover:bg-[#e4f5eb]' : 'border-[#dbe6e8] bg-white text-[#69768a] hover:text-[#07184c]'}`}>
+                    {item}{count ? ` · ${count}` : ''}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <main className="bg-white">
+          <div className="mx-auto max-w-[1380px] px-4 pb-8 pt-2 sm:px-6 lg:px-10 xl:px-12">
+            {view === 'map' ? (
+              <section>
+                <div className="mb-4 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[12px] text-[#6a778a]">{filteredClubs.length} matching club{filteredClubs.length === 1 ? '' : 's'}</p>
+                    <h2 className="mt-1 text-[26px] font-black tracking-[-.03em] text-[#07184c]">Club map</h2>
+                  </div>
+                  <p className="hidden text-xs text-[#6a778a] sm:block">Search and county/day filters also update the map</p>
+                </div>
+                {filteredClubs.length ? <DirectoryMap clubs={filteredClubs} /> : (
+                  <div className="rounded-2xl border border-[#dbe6e8] bg-white p-10 text-center shadow-sm">
+                    <MapPin className="mx-auto mb-3 h-8 w-8 text-[#8792a4]" />
+                    <h3 className="font-bold text-[#07184c]">No clubs to show on the map</h3>
+                    <p className="mt-1 text-sm text-[#6a778a]">Try changing your search or filters.</p>
+                  </div>
+                )}
+              </section>
+            ) : (
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
+                <section>
+                  <div className="mb-4 flex items-end justify-between gap-3">
+                    <div>
+                      <p className="text-[12px] text-[#6a778a]">{filteredClubs.length} club{filteredClubs.length === 1 ? '' : 's'} found{query.trim() ? ` for “${query.trim()}”` : ''}</p>
+                      <h2 className="mt-1 text-[26px] font-black tracking-[-.03em] text-[#07184c]">{view === 'sessions' ? 'Weekly sessions' : query.trim() ? 'Best matches' : 'Club directory'}</h2>
+                    </div>
+                    <SlidersHorizontal className="h-5 w-5 text-[#8a95a5]" />
+                  </div>
+
+                  {view === 'clubs' ? (
+                    <div className="space-y-3">
+                      {filteredClubs.map(club => (
+                        <article key={club.id} className="rounded-2xl border border-[#dbe6e8] bg-white p-4 shadow-[0_6px_18px_rgba(8,24,77,.035)] transition hover:border-[#b8dfc7] sm:p-5">
+                          <div className="flex gap-3 sm:gap-4">
+                            <PublicDirectoryLogo
+                              src={club.logoUrl}
+                              name={club.name}
+                              imageClassName="h-[60px] w-[60px] shrink-0 rounded-[14px] border border-[#dbe9e2] bg-white object-contain p-1 sm:h-[74px] sm:w-[74px]"
+                              fallbackClassName="h-[60px] w-[60px] shrink-0 rounded-[14px] border border-[#dbe9e2] bg-[linear-gradient(145deg,#eaf8ef,#e8f0f6)] flex items-center justify-center text-lg sm:h-[74px] sm:w-[74px] sm:text-xl font-black text-[#078e48]"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-start justify-between gap-2">
+                                <div>
+                                  <p className="text-[10px] font-extrabold uppercase tracking-[.09em] text-[#078e48]">{club.sport} · County {club.county}</p>
+                                  <h3 className="mt-1 text-[18px] font-extrabold tracking-[-.02em] text-[#07184c] sm:text-[20px]">{club.name}</h3>
+                                </div>
+                                {club.verificationStatus === 'unclaimed' ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-[#ecd49e] bg-[#fff8e8] px-2 py-1 text-[10px] font-extrabold text-[#9b6508]"><CheckCircle2 className="h-3 w-3" /> Unclaimed listing</span>
+                                ) : club.verificationStatus === 'verified' ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-[#c2e3ce] bg-[#eaf8ef] px-2 py-1 text-[10px] font-extrabold text-[#067b3f]"><CheckCircle2 className="h-3 w-3" /> Verified club listing</span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-[#c2e3ce] bg-[#eaf8ef] px-2 py-1 text-[10px] font-extrabold text-[#067b3f]"><CheckCircle2 className="h-3 w-3" /> Active listing</span>
+                                )}
+                              </div>
+                              <p className="mt-2 line-clamp-2 text-[12.5px] leading-[1.45] text-[#405174]">{publicDescription(club)}</p>
+                              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-[#67748a]">
+                                <span className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-[#078e48]" /> {club.venues.length} venue{club.venues.length === 1 ? '' : 's'}</span>
+                                <span className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-[#078e48]" /> {club.sessions.length ? `${club.sessions.length} weekly session${club.sessions.length === 1 ? '' : 's'}` : 'Schedule pending'}</span>
+                                <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-[#078e48]" /> {club.county}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex flex-col justify-between gap-3 border-t border-[#e6edef] pt-3 sm:flex-row sm:items-center">
+                            <div className="flex flex-wrap gap-2">
+                              {club.venues.filter(venue => venue.shortName || venue.name).slice(0,4).map(venue => <span key={venue.id} className="rounded-full bg-[#f3f7f7] px-2.5 py-1 text-[10px] font-medium text-[#506078]">{venue.shortName || venue.name}</span>)}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {club.verificationStatus === 'unclaimed' && (
+                                <Link to={`/directory/${club.slug}/claim`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#ecd49e] bg-[#fff8e8] px-3 text-[11px] font-bold text-[#946109] transition hover:bg-[#fff5db]">
+                                  <UserCheck className="h-3.5 w-3.5" /> Claim this listing
+                                </Link>
+                              )}
+                              <button type="button" onClick={() => shareClub(club)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#cfdbdf] bg-white px-3 text-[11px] font-bold text-[#07184c] transition hover:bg-[#f7faf9]" aria-label={`Share ${club.name}`}>
+                                {shareCopiedSlug === club.slug ? <Check className="h-3.5 w-3.5 text-[#078e48]" /> : <Share2 className="h-3.5 w-3.5" />} {shareCopiedSlug === club.slug ? 'Link copied' : 'Share'}
+                              </button>
+                              <Link to={`/directory/${club.slug}`} className="inline-flex h-9 items-center gap-1 rounded-lg bg-[#078e48] px-3 text-[11px] font-bold text-white transition hover:bg-[#067b3f]">
+                                View club <ArrowRight className="h-3.5 w-3.5" />
+                              </Link>
+                            </div>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {allSessions.filter(({club, day: sessionDay}) => filteredClubs.some(c => c.id === club.id) && (day === 'Any day' || sessionDay === day)).map(session => {
+                        const venue = session.club.venues.find(v => v.id === session.venueId);
+                        return (
+                          <Link key={session.id} to={`/directory/${session.club.slug}`} className="flex items-center gap-4 rounded-xl border border-[#dbe6e8] bg-white p-4 shadow-[0_5px_14px_rgba(8,24,77,.03)] transition hover:border-[#b8dfc7]">
+                            <div className="w-14 shrink-0 text-center">
+                              <p className="text-[10px] font-extrabold uppercase tracking-wide text-[#778397]">{session.day.slice(0,3)}</p>
+                              <p className="font-extrabold text-[#078e48]">{session.start}</p>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-[#07184c]">{session.level}</p>
+                              <p className="truncate text-sm text-[#6a778a]">{session.club.name} · {venue?.shortName}</p>
+                            </div>
+                            <p className="hidden text-xs font-bold text-[#07184c] sm:block">Contact club</p>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {filteredClubs.length === 0 && (
+                    <div className="rounded-2xl border border-[#dbe6e8] bg-white p-10 text-center shadow-sm">
+                      <Search className="mx-auto mb-3 h-8 w-8 text-[#8792a4]" />
+                      <h3 className="font-bold text-[#07184c]">No matching clubs yet</h3>
+                      <p className="mt-1 text-sm text-[#6a778a]">Try removing a filter or searching a nearby county. If the club is missing, you can add it for review.</p>
+                      <Link to="/directory/add" className="mt-4 inline-flex h-10 items-center rounded-lg bg-[#078e48] px-4 text-sm font-bold text-white">Add a missing club</Link>
+                    </div>
+                  )}
+                </section>
+
+                <aside className="hidden h-fit xl:sticky xl:top-24 xl:block">
+                  <div className="overflow-hidden rounded-2xl border border-[#dbe6e8] bg-white shadow-[0_8px_24px_rgba(8,24,77,.05)]">
+                    <div className="border-b border-[#dbe6e8] p-4">
+                      <h2 className="font-extrabold text-[#07184c]">Explore clubs on the map</h2>
+                      <p className="mt-1 text-xs text-[#748196]">Mapped venues update with the same filters.</p>
+                    </div>
+                    <MapContainer center={[53.35, -7.75]} zoom={6} scrollWheelZoom={false} className="h-[390px] w-full">
+                      <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                      {effectiveClubs
+                        .flatMap(club => (club.venues || []).map(venue => ({club, venue})))
+                        .filter(({club, venue}) => visibleVenueIds.has(`${club.id}:${venue.id}`) && Number.isFinite(venue.latitude) && Number.isFinite(venue.longitude))
+                        .map(({club, venue}) => (
+                          <Marker key={`${club.id}-${venue.id}`} position={[venue.latitude, venue.longitude]}>
+                            <Popup>
+                              <div className="min-w-[190px]">
+                                <strong>{club.name}</strong><br />
+                                <span>{venue.name}</span><br />
+                                {venue.eircode && <><span>{venue.eircode}</span><br /></>}
+                                <a href={`/directory/${club.slug}`} className="font-semibold">View listing</a>
+                              </div>
+                            </Popup>
+                          </Marker>
+                        ))}
+                    </MapContainer>
+                  </div>
+                </aside>
+              </div>
+            )}
+          </div>
+        </main>
+
+        <footer className="mt-4 bg-white">
+          <div className="h-[92px] bg-[url('/assets/rallyhub-home-cliffs.webp')] bg-cover bg-center sm:h-[118px]" />
+          <div className="bg-[#053c56] text-white">
+            <div className="mx-auto flex min-h-[70px] max-w-[1380px] flex-col items-center justify-center gap-3 px-4 py-4 text-center sm:px-6 md:flex-row md:justify-between md:text-left lg:px-10 xl:px-12">
+              <div>
+                <div className="font-black">RallyHub</div>
+                <div className="mt-1 text-[8px] font-bold tracking-[.30em] text-white/90">PLAY • CONNECT • BELONG</div>
+              </div>
+              <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[11px] font-bold text-white/85">
+                <Link to="/directory">Directory</Link>
+                <Link to="/directory/help">Club Guide</Link>
+                <Link to="/about">About</Link>
+                <Link to="/contact">Contact</Link>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
     </>
   );
