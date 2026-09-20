@@ -308,16 +308,11 @@ export default function PublicDirectory() {
               <div className="w-full overflow-hidden rounded-[22px] border border-[#dce8e9] bg-white shadow-[0_22px_55px_rgba(8,30,70,.12)]">
                 <div className="relative h-[255px] overflow-hidden bg-[#dce8e9]">
                   <img
-                    src="https://images.pexels.com/photos/30864598/pexels-photo-30864598/free-photo-of-pickleball-player-on-outdoor-court.jpeg?auto=compress&dpr=1&w=1600"
-                    alt="Pickleball player in action on an outdoor court with paddle and ball"
+                    src="/images/directory/rallyhub-directory-hero-approved.webp"
+                    alt="Pickleball players on court with the RallyHub message Good People Great Games"
                     className="h-full w-full object-cover object-center"
                     loading="eager"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#061545]/65 via-[#061545]/10 to-transparent" />
-                  <div className="absolute left-6 top-6 max-w-[235px] text-white">
-                    <div className="text-[29px] font-black leading-[1.02] tracking-[-.04em]">Good people.<br />Great games.</div>
-                    <p className="mt-2 text-[12px] font-semibold leading-5 text-white/90">Pickleball clubs, venues and sessions across Ireland.</p>
-                  </div>
                 </div>
                 <div className="grid grid-cols-3 divide-x divide-[#dfe8ea] bg-white px-3 py-4">
                   <div className="px-3"><strong className="block text-[24px] font-black text-[#07184c]">{effectiveClubs.length}</strong><span className="text-[11px] text-[#67748a]">club listings</span></div>
