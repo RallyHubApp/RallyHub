@@ -53,7 +53,7 @@ export default function PublicClubProfile() {
   const [feedbackBusy, setFeedbackBusy] = useState(false);
   const [feedbackDone, setFeedbackDone] = useState(false);
   const [feedbackResponse, setFeedbackResponse] = useState('');
-  const [feedback, setFeedback] = useState({ category: 'improvement', area: 'Directory', message: '', importance: 'important', contactOk: true });
+  const [feedback, setFeedback] = useState({ category: 'improvement', area: 'directory', message: '', importance: 'important', contactOk: true });
 
   useEffect(() => {
     let active = true;
@@ -147,11 +147,11 @@ export default function PublicClubProfile() {
   const submitFeedback = async () => {
     setFeedbackBusy(true);
     try {
-      const res = await base44.functions.invoke('rallyHubFeedback', {
+      const res = await base44.functions.invoke('clubFeedback', {
         action: 'submit',
         listingSlug: club.slug,
         clubName: club.name,
-        category: feedback.category,
+        feedbackType: feedback.category,
         area: feedback.area,
         message: feedback.message,
         importance: feedback.importance,
@@ -547,7 +547,7 @@ export default function PublicClubProfile() {
                 <div>
                   <label className="text-sm font-semibold">What type of feedback is this?</label>
                   <select value={feedback.category} onChange={e => setFeedback(v => ({...v,category:e.target.value}))} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    <option value="bug">Something isn’t working</option>
+                    <option value="issue">Something isn’t working</option>
                     <option value="confusing">Something is confusing</option>
                     <option value="improvement">Suggestion or improvement</option>
                     <option value="feature_request">Feature request</option>
@@ -557,7 +557,7 @@ export default function PublicClubProfile() {
                 <div>
                   <label className="text-sm font-semibold">Which area?</label>
                   <select value={feedback.area} onChange={e => setFeedback(v => ({...v,area:e.target.value}))} className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                    {['Directory','Club profile','Sessions & venues','Login & access','RallyHub Club','Other'].map(x => <option key={x} value={x}>{x}</option>)}
+                    {[['directory','Directory'],['club_profile','Club profile'],['sessions_venues','Sessions & venues'],['login_access','Login & access'],['rallyhub_club','RallyHub Club'],['competitions','Competitions'],['other','Other']].map(([value,label]) => <option key={value} value={value}>{label}</option>)}
                   </select>
                 </div>
                 <div>
