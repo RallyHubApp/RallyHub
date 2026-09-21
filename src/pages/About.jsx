@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, CalendarDays, MapPin, Menu, Monitor, Rocket, Trophy, Users, MessageCircle } from 'lucide-react';
+import { BarChart3, CalendarDays, MapPin, Menu, Monitor, Rocket, Trophy, Users } from 'lucide-react';
 import Seo from '@/components/public/Seo';
 
 const LOGO='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
