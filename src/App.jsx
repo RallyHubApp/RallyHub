@@ -28,6 +28,7 @@ import Contact from '@/pages/Contact';
 import Events from '@/pages/Events';
 import Events from '@/pages/Events';
 import Events from '@/pages/Events';
+import Events from '@/pages/Events';
 import PendingApprovalScreen from '@/components/PendingApprovalScreen';
 import AndroidInstallPrompt from '@/components/AndroidInstallPrompt';
 import Login from '@/pages/Login';
@@ -167,6 +168,7 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/events" element={<Events />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events" element={<Events />} />
