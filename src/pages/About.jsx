@@ -7,15 +7,16 @@ const LOGO='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041
 const HERO='/assets/rallyhub-home-hero.webp';
 const CLIFFS='/assets/rallyhub-home-cliffs.webp';
 const FOUNDERS='/assets/rallyhub-founders.webp';
+const CARD='/assets/about/';
 
 const cards=[
- [MapPin,'Directory & Discovery','Find clubs, venues, sessions and events across Ireland.',CLIFFS,'50% 50%'],
- [Users,'Club Management','Membership, profiles, communications and more.',HERO,'18% 42%'],
- [CalendarDays,'Play & Organise','Sessions, courts, attendance and player management.',HERO,'42% 44%'],
- [Trophy,'Competitions','King of the Court, Interclub and tournaments.',HERO,'78% 42%'],
- [Monitor,'Live Event Experience','Scoring, timers, Hall Displays and event control.',HERO,'64% 54%'],
- [BarChart3,'Player Journey','Results, leaderboards and future DUPR integration.',HERO,'30% 50%'],
- [Rocket,'Built to Grow','Pickleball first in Ireland, with a pathway to more sports in the future.',CLIFFS,'72% 50%'],
+ [MapPin,'Directory & Discovery','Find clubs, venues, sessions and events across Ireland.',CARD+'card-directory.webp'],
+ [Users,'Club Management','Membership, profiles, communications and more.',CARD+'card-club.webp'],
+ [CalendarDays,'Play & Organise','Sessions, courts, attendance and player management.',CARD+'card-play.webp'],
+ [Trophy,'Competitions','King of the Court, Interclub and tournaments.',CARD+'card-competitions.webp'],
+ [Monitor,'Live Event Experience','Scoring, timers, Hall Displays and event control.',CARD+'card-live.webp'],
+ [BarChart3,'Player Journey','Results, leaderboards and future DUPR integration.',CARD+'card-player.webp'],
+ [Rocket,'Built to Grow','Pickleball first in Ireland, with a pathway to more sports in the future.',CARD+'card-grow.webp'],
 ];
 
 function Header(){
@@ -51,7 +52,7 @@ export default function About(){
   </section>
 
   <section id="capabilities" className="mx-auto max-w-[1024px] px-[30px] pb-[18px] pt-[2px]"><div className="text-[9px] font-black tracking-[.1em] text-[#078e48]">WHAT RALLYHUB BRINGS TOGETHER</div><div className="flex items-end justify-between"><h2 className="mt-[6px] text-[26px] font-black tracking-[-.035em]">A complete platform for clubs, players and organisers</h2><span className="mb-[5px] hidden text-[9px] md:block">See all features&nbsp; →</span></div>
-   <div className="mt-[10px] grid gap-[12px] sm:grid-cols-2 md:grid-cols-4">{cards.map(([I,title,copy,img,pos])=><article key={title} className="overflow-hidden rounded-[6px] border border-[#dce6e8] bg-white shadow-[0_4px_12px_rgba(12,34,65,.10)]"><div className="h-[89px] overflow-hidden"><img src={img} alt="" className="h-full w-full object-cover" style={{objectPosition:pos}}/></div><div className="relative min-h-[68px] px-[13px] pb-[9px] pt-[13px]"><div className="absolute -top-[24px] left-[9px] flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#09a957] text-white ring-[3px] ring-white"><I className="h-[20px] w-[20px]"/></div><h3 className="ml-[47px] text-[11px] font-black leading-tight">{title}</h3><p className="ml-[47px] mt-[3px] text-[9px] leading-[1.3] text-[#344a72]">{copy}</p></div></article>)}</div>
+   <div className="mt-[10px] grid gap-[12px] sm:grid-cols-2 md:grid-cols-4">{cards.map(([I,title,copy,img])=><article key={title} className="overflow-hidden rounded-[6px] border border-[#dce6e8] bg-white shadow-[0_4px_12px_rgba(12,34,65,.10)]"><div className="h-[89px] overflow-hidden"><img src={img} alt="" className="h-full w-full object-cover"/></div><div className="relative min-h-[68px] px-[13px] pb-[9px] pt-[13px]"><div className="absolute -top-[24px] left-[9px] flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#09a957] text-white ring-[3px] ring-white"><I className="h-[20px] w-[20px]"/></div><h3 className="ml-[47px] text-[11px] font-black leading-tight">{title}</h3><p className="ml-[47px] mt-[3px] text-[9px] leading-[1.3] text-[#344a72]">{copy}</p></div></article>)}</div>
   </section>
 
   <section className="relative overflow-hidden bg-[#073d65] text-white"><div className="mx-auto grid min-h-[225px] max-w-[1024px] md:grid-cols-[32%_68%]"><div className="overflow-hidden"><img src={HERO} alt="Pickleball community" className="h-full min-h-[225px] w-full object-cover"/></div><div className="relative flex items-center px-[28px] py-[25px]"><div className="max-w-[520px]"><div className="text-[9px] font-black tracking-[.12em] text-[#65d77d]">JOIN THE JOURNEY</div><h2 className="mt-[7px] text-[25px] font-black">Let’s grow the game together</h2><p className="mt-[6px] max-w-[470px] text-[11px] leading-[1.45] text-white/95">Whether you’re a player, club, organiser or just curious about pickleball, we’d love to hear from you.</p><div className="mt-[15px] flex gap-[12px]"><Link to="/contact" className="rounded-[5px] bg-[#08a65a] px-[31px] py-[11px] text-[10px] font-bold">Get in Touch</Link><Link to="/contact" className="flex items-center gap-2 rounded-[5px] border border-white px-[18px] py-[10px] text-[10px] font-bold"><MessageCircle className="h-5 w-5"/>Contact Brian on WhatsApp</Link></div></div><div className="absolute right-[25px] top-1/2 hidden h-[145px] w-[145px] -translate-y-1/2 rotate-[-5deg] items-center justify-center rounded-full border-[3px] border-white/90 text-center text-[17px] italic leading-[1.25] lg:flex">More<br/>People<br/>More Places<br/><span className="text-[#b7e83e]">Brighter Futures</span></div></div></div></section>
