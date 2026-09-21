@@ -61,3 +61,32 @@ test('desktop setup: drag and drop ranking visibly changes the source to Manual 
   await expect(page.getByTestId('kotc-seeding-source')).toContainText('Manual ranking');
   await expect(page.getByTestId('kotc-player-order-1')).toContainText('Player 17');
 });
+
+test('desktop setup: Balanced Ranking spreads ranked strength evenly across four courts',async({page})=>{
+  let createBody=null;
+  await page.route('**/api/apps/**',async route=>{
+    const req=route.request(),url=new URL(req.url()),marker=`/api/apps/${APP_ID}/functions/`;
+    if(url.pathname.includes('/entities/KotcPlayerAggregate'))return json(route,[]);
+    if(url.pathname.includes(marker)){
+      const name=decodeURIComponent(url.pathname.split(marker)[1]?.split('/')[0]||'');
+      let body={};try{body=req.postDataJSON()||{};}catch{}
+      if(name==='getKotcV2State')return json(route,{session:null,participants:[],rounds:[],slots:[],matches:[],fixedPairs:[]});
+      if(name==='createKotcV2Session'){createBody=body;return json(route,{success:true,session:{id:'created'}});}
+    }
+    return json(route,[]);
+  });
+  await page.goto('/e2e/kotcHarness.html');
+  await expect(page.getByTestId('kotc-draw-method')).toContainText('Balanced Ranking');
+  await page.getByRole('button',{name:'Player 17',exact:true}).click();
+  await page.getByRole('button',{name:'Player 18',exact:true}).click();
+  await page.getByTestId('kotc-create-session').click();
+  await expect.poll(()=>createBody!==null).toBe(true);
+  expect(createBody.drawMethod).toBe('balanced');
+  expect(createBody.playerOrder).toEqual([
+    'player-1','player-8','player-9','player-16',
+    'player-2','player-7','player-10','player-15',
+    'player-3','player-6','player-11','player-14',
+    'player-4','player-5','player-12','player-13',
+    'player-17','player-18',
+  ]);
+});
