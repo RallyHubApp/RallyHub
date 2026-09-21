@@ -111,7 +111,7 @@ check('sound: one-minute, 30-second, 10-second and five-second countdown cues ex
 check('sound: round-end cue asks for scores', contains(ui,'Round finished. Please give your scores.'));
 check('Base44 control: timer actions are single-flight', contains(ui,'timerCommandRef.current'));
 check('Base44 control: major sporting actions are single-flight', contains(ui,'sportingActionRef.current'));
-check('Base44 control: player ranking is one browser function call, not 16 parallel entity writes', contains(ui,"action:'reorder'") && !contains(ui,'Promise.all(ordered.map'));
+check('Base44 control: team assignment and ranking save in one browser function call', contains(ui,"action:'organise_teams'") && !contains(ui,'Promise.all(ordered.map'));
 check('Base44 control: full draw replacement is one browser function call', contains(ui,"replaceClubChallengeDraw") && contains(drawFn,'ClubChallengeMatch.bulkCreate'));
 check('Base44 control: approve/start route through authorised event backend', contains(ui,"action:'approve_draw'") && contains(ui,"action:'start'"));
 check('Base44 control: public voting double-tap is single-flight', contains(publicVote,'savingRef.current'));
