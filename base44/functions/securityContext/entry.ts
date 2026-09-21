@@ -7,6 +7,11 @@ function isCurrentlyValid(access) {
   if (access.ends_at && Date.parse(access.ends_at) < now) return false;
   return true;
 }
+function isTemporaryTestClub(club) {
+  const slug = String(club?.slug || '').toLowerCase();
+  const name = String(club?.name || '').toLowerCase();
+  return slug.startsWith('rallyhub-test-club-') || name === 'rallyhub test club';
+}
 
 Deno.serve(async (req) => {
   try {
@@ -15,7 +20,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { action = 'resolve_default', tenantId, clubId } = body;
+    const { action = 'resolve_default', tenantId, clubId, allowTestContext = false } = body;
 
     const clubAccesses = (await base44.asServiceRole.entities.ClubUserAccess.filter({ user_id: user.id }))
       .filter(isCurrentlyValid);
@@ -62,11 +67,30 @@ Deno.serve(async (req) => {
     }
 
     let selectedClubAccess = null;
+    if (action !== 'activate' && !allowTestContext && user.active_club_id) {
+      const currentClub = (await base44.asServiceRole.entities.Club.filter({ id: user.active_club_id }))?.[0] || null;
+      if (isTemporaryTestClub(currentClub)) {
+        const ids = clubAccesses.map(a => a.club_id).filter(Boolean);
+        const accessibleClubs = ids.length ? await base44.asServiceRole.entities.Club.filter({ id: { $in: ids }, status: 'active' }) : [];
+        const productionClubs = (accessibleClubs || []).filter(c => !isTemporaryTestClub(c));
+        if (productionClubs.length === 1) {
+          const target = productionClubs[0];
+          selectedClubAccess = clubAccesses.find(a => a.club_id === target.id && a.tenant_id === target.tenant_id) || null;
+        } else if (productionClubs.length > 1) {
+          return Response.json({
+            success: true,
+            requires_selection: true,
+            test_context_cleared: true,
+            options: clubAccesses.filter(a => productionClubs.some(c => c.id === a.club_id)).map(a => ({ tenant_id: a.tenant_id, club_id: a.club_id, permission_bundle: a.permission_bundle })),
+          });
+        }
+      }
+    }
     if (action === 'activate') {
       if (!tenantId || !clubId) return Response.json({ error: 'tenantId and clubId required' }, { status: 400 });
       selectedClubAccess = clubAccesses.find(a => a.tenant_id === tenantId && a.club_id === clubId) || null;
       if (!selectedClubAccess) return Response.json({ error: 'No active access to requested club' }, { status: 403 });
-    } else {
+    } else if (!selectedClubAccess) {
       const current = clubAccesses.find(a => a.tenant_id === user.active_tenant_id && a.club_id === user.active_club_id);
       selectedClubAccess = current || (clubAccesses.length === 1 ? clubAccesses[0] : null);
       if (!selectedClubAccess) {
