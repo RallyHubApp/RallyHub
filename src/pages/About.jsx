@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/AuthContext';
 const LOGO='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 const CARD='/assets/about/';
 // About page imagery is locked to the signed-off About artwork, not the Home page imagery.
-const HERO='/assets/rallyhub-home-hero.webp';
+const HERO='/assets/about-hero-approved.webp?v=20260921-final';
 const CLIFFS='/assets/rallyhub-home-cliffs.webp';
 const FOUNDERS='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/';
 const CTA_COMMUNITY=CARD+'card-club.webp';
