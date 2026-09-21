@@ -46,10 +46,12 @@ test('desktop setup: visible seeding choice is the seeding order sent to the eng
   expect(createBody.playerOrder.slice(-2)).toEqual(['player-17','player-18']);
 });
 
-test('desktop setup: drag and drop ranking visibly changes the source to Manual ranking',async({page})=>{
+test('desktop setup: drag and drop ranking visibly changes the source to Manual ranking and auto-saves',async({page})=>{
+  let savedOrder=null;
   await page.route('**/api/apps/**',async route=>{
-    const url=new URL(route.request().url()),marker=`/api/apps/${APP_ID}/functions/`;
+    const req=route.request(),url=new URL(req.url()),marker=`/api/apps/${APP_ID}/functions/`;
     if(url.pathname.includes('/entities/KotcPlayerAggregate'))return json(route,[]);
+    if(url.pathname.includes('/entities/Tournament')){let body={};try{body=req.postDataJSON()||{};}catch{}if(Array.isArray(body.kotc_player_order))savedOrder=body.kotc_player_order;return json(route,{id:'e2e-kotc-tournament',...body});}
     if(url.pathname.includes(marker))return json(route,{session:null,participants:[],rounds:[],slots:[],matches:[],fixedPairs:[]});
     return json(route,[]);
   });
@@ -60,6 +62,9 @@ test('desktop setup: drag and drop ranking visibly changes the source to Manual 
   await handle.focus();await handle.press('Space');await handle.press('ArrowDown');await handle.press('Space');
   await expect(page.getByTestId('kotc-seeding-source')).toContainText('Manual ranking');
   await expect(page.getByTestId('kotc-player-order-1')).toContainText('Player 17');
+  await expect(page.getByTestId('kotc-ranking-save-state')).toContainText('Saved ✓',{timeout:1600});
+  await expect.poll(()=>savedOrder).not.toBeNull();
+  expect(savedOrder.slice(0,2)).toEqual(['player-17','player-18']);
 });
 
 test('desktop setup: Balanced Ranking spreads ranked strength evenly across four courts',async({page})=>{
