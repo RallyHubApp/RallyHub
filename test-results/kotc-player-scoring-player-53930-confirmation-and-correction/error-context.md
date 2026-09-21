@@ -12,41 +12,37 @@
 # Error details
 
 ```
-Error: expect(locator).toHaveValue(expected) failed
+Error: expect(locator).toContainText(expected) failed
 
-Locator:  getByTestId('scorer-court-2').locator('input').first()
-Expected: ""
-Received: "2"
-Timeout:  3000ms
+Locator: getByTestId('scorer-court-1')
+Expected substring: "Score saved: 12–8"
+Received string:    "Court 1SAVEDP1A1 & P1A2P1B1 & P1B2Updated score saved✓ Score saved: 11–7Undo / Update Score · 84s"
+Timeout: 3000ms
 
 Call log:
-  - Expect "toHaveValue" getByTestId('scorer-court-2').locator('input').first() with timeout 3000ms
-  - waiting for getByTestId('scorer-court-2').locator('input').first()
-    10 × locator resolved to <input value="2" type="text" maxlength="2" pattern="[0-9]*" inputmode="numeric" data-dynamic-content="true" data-source-location="src/pages/PublicKotcScorer.jsx:35:103" class="flex w-full rounded-md border border-input bg-transparent px-3 py-1 shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opaci…/>
-       - unexpected value "2"
+  - Expect "toContainText" getByTestId('scorer-court-1') with timeout 3000ms
+  - waiting for getByTestId('scorer-court-1')
+    10 × locator resolved to <div data-dynamic-content="true" data-testid="scorer-court-1" data-collection-item-id="match-1" class="rounded-xl border bg-card p-4 space-y-3 " data-source-location="src/pages/PublicKotcScorer.jsx:32:8">…</div>
+       - unexpected value "Court 1SAVEDP1A1 & P1A2P1B1 & P1B2Updated score saved✓ Score saved: 11–7Undo / Update Score · 84s"
 
 ```
 
 ```yaml
-- textbox: "2"
+- img
+- text: Court 1 SAVED P1A1 & P1A2
+- textbox [disabled]: "11"
+- text: P1B1 & P1B2
+- textbox [disabled]: "7"
+- img
+- text: "Updated score saved ✓ Score saved: 11–7"
+- button "Undo / Update Score · 84s":
+  - img
+  - text: Undo / Update Score · 84s
 ```
 
 # Test source
 
 ```ts
-  1   | import { test, expect } from '@playwright/test';
-  2   | 
-  3   | const APP_ID = process.env.VITE_BASE44_APP_ID || '6a01dc00702b7dd2a2978c28';
-  4   | const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-  5   | const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
-  6   | 
-  7   | function createModel(){
-  8   |   const now=()=>Date.now();
-  9   |   const matches=[1,2].map(c=>({id:`match-${c}`,court:c,status:'scheduled',revision:0,team_a:[`P${c}A1`,`P${c}A2`],team_b:[`P${c}B1`,`P${c}B2`],team_a_score:null,team_b_score:null,lockOwner:'',lockExpires:0,correctionOwner:'',correction_count:0,completedAt:0}));
-  10  |   const calls=[];let transientSaveRateLimits=0,commitThenFail=0,finished=false;
-  11  |   const correctionOpen=(m,clientId)=>m.status==='completed'&&m.correctionOwner===clientId&&m.completedAt>0&&now()-m.completedAt<=90000;
-  12  |   const state=(clientId)=>finished?{success:true,finished:true,results_path:'/kotc-live/e2e-final-results',session:{name:'E2E Player Scoring',status:'completed',current_round_number:1}}:({success:true,session:{name:'E2E Player Scoring',status:'in_progress',current_round_number:1,scoring_mode:'timed'},round:{id:'round-1',round_number:1,status:'started'},bench:[],timer:{running:true,remainingSeconds:300,deadlineAt:new Date(Date.now()+300000).toISOString()},matches:matches.map(m=>({id:m.id,court:m.court,status:m.status,revision:m.revision,team_a:m.team_a,team_b:m.team_b,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:m.lockOwner&&m.lockExpires>now()?(m.lockOwner===clientId?'mine':'other'):'free',lock_seconds:m.lockExpires>now()?Math.ceil((m.lockExpires-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0}))});
-  13  |   const handle=async(body)=>{
   14  |     calls.push({...body,at:Date.now()});
   15  |     const action=body.action||'state',clientId=body.clientId||'';
   16  |     if(action==='state') return state(clientId);
@@ -115,8 +111,7 @@ Call log:
   79  |   const aCourt2First=a.getByTestId('scorer-court-2').locator('input').nth(0);
   80  |   await aCourt2First.fill('2');
   81  |   await expect(a.getByTestId('scorer-court-2')).toContainText('already scoring Court 1');
-> 82  |   await expect(aCourt2First).toHaveValue('');
-      |                              ^ Error: expect(locator).toHaveValue(expected) failed
+  82  |   await expect(aCourt2First).toHaveValue('');
   83  | 
   84  |   // Phone B cannot take Court 1, but its first digit can claim Court 2 independently.
   85  |   const bCourt1First=b.getByTestId('scorer-court-1').locator('input').nth(0);
@@ -148,7 +143,8 @@ Call log:
   111 |   await card.getByRole('button',{name:'Undo / Update Score'}).click();
   112 |   await expect(card).toContainText('Court 1 ready for correction');
   113 |   card=await fillCourt(a,1,12,8);await card.getByRole('button',{name:'Save Updated Score'}).click();
-  114 |   await expect(card).toContainText('Score saved: 12–8');
+> 114 |   await expect(card).toContainText('Score saved: 12–8');
+      |                      ^ Error: expect(locator).toContainText(expected) failed
   115 |   expect(model.matches[0].revision).toBe(2);expect(model.matches[0].correction_count).toBe(1);
   116 | 
   117 |   // Sporting-integrity guard: a tied timed game cannot be saved until the scorer
