@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, CalendarDays, MapPin, Menu, Monitor, Rocket, Trophy, Users, MessageCircle } from 'lucide-react';
 import Seo from '@/components/public/Seo';
+import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 
 const LOGO='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 const CARD='/assets/about/';
@@ -31,8 +33,12 @@ function Header(){
 }
 
 export default function About(){
+ const { user } = useAuth();
+ const [uploading,setUploading]=useState('');
+ const [uploaded,setUploaded]=useState({});
+ const uploadApproved=async(purpose,file)=>{ if(!file)return; setUploading(purpose); try { const fd=new FormData(); fd.append('file',file); fd.append('action','upload_image'); fd.append('purpose',purpose); const res=await base44.functions.invoke('secureCreditAction',fd); const url=res?.data?.file_url||res?.file_url; if(!url) throw new Error('No file URL returned'); setUploaded(v=>({...v,[purpose]:url})); } catch(e){ alert('Upload failed: '+(e?.message||e)); } finally { setUploading(''); } };
  return <><Seo title="About RallyHub | Built Around Sport. Built Around People." description="RallyHub connects players, clubs, organisers and competitions — built from real club experience in Ireland and designed to grow." path="/about"/>
- <div className="min-h-screen bg-white font-sans text-[#07184c]"><Header/><main>
+ <div className="min-h-screen bg-white font-sans text-[#07184c]"><Header/>{user?.role==='admin'&&<div className="mx-auto my-3 max-w-[964px] rounded-lg border-2 border-[#08a65a] bg-[#f4fbf7] p-4"><div className="font-black text-[#07184c]">TEMPORARY SUPER ADMIN — APPROVED ABOUT ARTWORK</div><div className="mt-1 text-sm text-[#344a72]">Upload the two exact signed-off screenshots from this chat. They are stored securely; this panel will be removed after installation.</div><div className="mt-3 flex flex-wrap gap-4"><label className="rounded-md bg-[#075287] px-4 py-2 text-sm font-bold text-white cursor-pointer">{uploading==='about_top'?'Uploading hero…':uploaded.about_top?'✓ Hero uploaded':'Upload approved HERO'}<input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e=>uploadApproved('about_top',e.target.files?.[0])}/></label><label className="rounded-md bg-[#075287] px-4 py-2 text-sm font-bold text-white cursor-pointer">{uploading==='about_footer'?'Uploading footer…':uploaded.about_footer?'✓ Footer uploaded':'Upload approved FOOTER'}<input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e=>uploadApproved('about_footer',e.target.files?.[0])}/></label></div></div>}<main>
   <section className="bg-white"><img src="/assets/about-locked/about-top-approved.png?v=20260921" alt="RallyHub About — Built around sport. Built around people." className="block h-auto w-full"/><div className="hidden"><div className="mx-auto grid max-w-[1024px] md:grid-cols-[42%_58%]">
    <div className="flex min-h-[382px] items-center px-[39px] py-8"><div><div className="inline-flex rounded-full bg-[#e6f5ec] px-[12px] py-[6px] text-[10px] font-black tracking-[.08em] text-[#078e48]">PICKLEBALL FIRST • BUILT IN IRELAND</div>
     <h1 className="mt-[18px] text-[42px] font-black leading-[.98] tracking-[-.045em]">Built around sport.<br/>Built around <span className="text-[#078e48]">people.</span></h1>
