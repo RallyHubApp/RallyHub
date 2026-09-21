@@ -28,11 +28,14 @@ export default function AdminPanel() {
   const queryClient = useQueryClient();
   const [assetUploading, setAssetUploading] = useState(false);
   const [assetUploadUrl, setAssetUploadUrl] = useState('');
+  const [assetName, setAssetName] = useState('');
   const uploadSiteAsset = async (file) => {
     if (!file) return;
     setAssetUploading(true);
     try {
-      const res = await base44.functions.invoke('secureCreditAction', { action:'upload_image', purpose:'about_master', file });
+      const assetKey = assetName.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+      if (!assetKey) throw new Error('Enter an asset name first');
+      const res = await base44.functions.invoke('secureCreditAction', { action:'upload_image', purpose:'site_asset', assetKey, file });
       const url = res?.data?.file_url || res?.file_url;
       if (!url) throw new Error(res?.data?.error || 'No file URL returned');
       setAssetUploadUrl(url);
@@ -1659,7 +1662,8 @@ export default function AdminPanel() {
           <GlassCard>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Upload className="w-4 h-4 text-primary" /> RallyHub Asset Uploader</h3>
             <p className="mt-2 text-xs text-muted-foreground">Securely upload approved production artwork to RallyHub. This area is available only inside the platform Admin Panel.</p>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="mt-4 max-w-md"><Label className="text-xs text-muted-foreground">Asset name</Label><Input value={assetName} onChange={e=>setAssetName(e.target.value)} placeholder="e.g. About page hero" className="mt-1 bg-secondary border-border" /></div>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
               <label className="inline-flex cursor-pointer items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
                 <Upload className="mr-2 h-4 w-4" />{assetUploading ? 'Uploading…' : 'Upload approved asset'}
                 <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={assetUploading} onChange={e=>uploadSiteAsset(e.target.files?.[0])}/>
