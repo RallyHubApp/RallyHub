@@ -112,7 +112,8 @@ function ProposedRoundEditor({round,slots,participants,names,fixedPairs,onStart,
   const ordered=useMemo(()=>[...slots].sort((a,b)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank)||String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number)),[slots]);
   const original=useMemo(()=>Object.fromEntries(ordered.map(s=>[s.id,String(s.participant_id)])),[ordered]);
   const [draft,setDraft]=useState(original);const [selected,setSelected]=useState(null);const [pairBusyKey,setPairBusyKey]=useState('');const [draftStatus,setDraftStatus]=useState(null);const [roundMinutes,setRoundMinutes]=useState(Math.min(60,Math.max(1,Number(playMinutes)||8)));
-  useEffect(()=>{setDraft(original);setSelected(null);setPairBusyKey('');setDraftStatus(null);setRoundMinutes(Math.min(60,Math.max(1,Number(playMinutes)||8)));},[round?.id,round?.proposal_revision,playMinutes,JSON.stringify(original)]);
+  useEffect(()=>{setDraft(original);setSelected(null);setPairBusyKey('');setRoundMinutes(Math.min(60,Math.max(1,Number(playMinutes)||8)));},[round?.id,round?.proposal_revision,playMinutes,JSON.stringify(original)]);
+  useEffect(()=>setDraftStatus(null),[round?.id]);
   const activeIds=new Set(Object.values(draft));const eligible=participants.filter(p=>['registered','confirmed','present','leaving_early'].includes(p.status));const bench=eligible.filter(p=>!activeIds.has(String(p.id)));
   const swapSlot=(source,target)=>{if(!source||!target||source===target){setSelected(null);return;}setDraftStatus(null);setDraft(prev=>({...prev,[source]:prev[target],[target]:prev[source]}));setSelected(null);};
   const clickCourt=id=>{if(!selected){setSelected({type:'court',id});return;}if(selected.type==='court')return swapSlot(selected.id,id);const benchId=selected.id;setDraftStatus(null);setDraft(prev=>({...prev,[id]:benchId}));setSelected(null);};
