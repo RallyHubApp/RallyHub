@@ -19,8 +19,13 @@ function scorerCorrectionSeconds(match:any,clientId:string){if(!scorerCorrection
 Deno.serve(async req=>{try{
  const base44=createClientFromRequest(req);const body=await req.json().catch(()=>({}));const token=String(body.token||'');if(!token)return Response.json({error:'Token required'},{status:400});
  const scorer=await resolveToken(base44,token);const session=(await withRateLimitRetry('scorer session read',()=>base44.asServiceRole.entities.KotcSession.filter({id:scorer.session_id})))?.[0];if(!session)return Response.json({error:'Session not found'},{status:404});
- const round=(await withRateLimitRetry('scorer round read',()=>base44.asServiceRole.entities.KotcRound.filter({id:session.current_round_id,session_id:session.id})))?.[0]||null;
  const requestedAction=String(body.action||'state');const clientId=String(body.clientId||'').trim();
+ if(['completed','finalised'].includes(session.status)){
+   const share=await ensureResultsShare(base44,session,scorer);
+   return Response.json({success:true,finished:true,results_path:`/kotc-live/${share.token}`,session:{name:session.name,status:session.status,current_round_number:session.current_round_number}});
+ }
+ if(scorer.expires_at&&Date.parse(scorer.expires_at)<Date.now())return Response.json({error:'Scorer link has expired.'},{status:410});
+ const round=(await withRateLimitRetry('scorer round read',()=>base44.asServiceRole.entities.KotcRound.filter({id:session.current_round_id,session_id:session.id})))?.[0]||null;
  if(['claim','heartbeat','release'].includes(requestedAction)){
   if(!clientId)return Response.json({error:'Scorer device id required'},{status:400});
   if(session.status!=='in_progress'||round?.status!=='started')return Response.json({error:'Court scoring is only available while the current round is live.'},{status:409});
