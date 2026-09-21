@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import { getRallyHubPaLevel, listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
@@ -213,7 +213,6 @@ function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true,
 export default function ClubChallengeView({ tournament, queryClient, isAdmin }) {
   const [tab, setTab] = useState('setup');
   const [setup, setSetup] = useState(DEFAULT_SETUP);
-  const [manual, setManual] = useState({ club_a: '', club_b: '' });
   const [saving, setSaving] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [logoUploading, setLogoUploading] = useState('');
@@ -553,7 +552,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const addManual = async (side, overrideName = '') => {
-    const name = String(overrideName || manual[side] || '').trim();
+    const name = String(overrideName || '').trim();
     if (!event || !name || !canManageEvent) return;
     try {
       const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'add_manual', side, displayName:name });
@@ -595,18 +594,6 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       setSaving(false);
       setHostAction('');
     }
-  };
-
-  const reorder = async (side, ordered) => {
-    if (!event || !canManageEvent || sportingActionRef.current) return;
-    sportingActionRef.current = true;
-    flushSync(() => setHostAction('Saving player ranking… one command sent'));
-    try {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'reorder', side, orderedParticipantIds:ordered.map(p=>p.id) });
-      if (res.data?.error) throw new Error(res.data.error);
-      await sync();
-    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not save player ranking'); }
-    finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
   const calculateFormat = () => {
