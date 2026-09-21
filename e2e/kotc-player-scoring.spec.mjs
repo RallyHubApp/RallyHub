@@ -7,9 +7,9 @@ const json = (route, body, status = 200) => route.fulfill({ status, contentType:
 function createModel(){
   const now=()=>Date.now();
   const matches=[1,2].map(c=>({id:`match-${c}`,court:c,status:'scheduled',revision:0,team_a:[`P${c}A1`,`P${c}A2`],team_b:[`P${c}B1`,`P${c}B2`],team_a_score:null,team_b_score:null,lockOwner:'',lockExpires:0,correctionOwner:'',correction_count:0,completedAt:0}));
-  const calls=[];let transientSaveRateLimits=0,commitThenFail=0;
+  const calls=[];let transientSaveRateLimits=0,commitThenFail=0,finished=false;
   const correctionOpen=(m,clientId)=>m.status==='completed'&&m.correctionOwner===clientId&&m.completedAt>0&&now()-m.completedAt<=90000;
-  const state=(clientId)=>({success:true,session:{name:'E2E Player Scoring',status:'in_progress',current_round_number:1,scoring_mode:'timed'},round:{id:'round-1',round_number:1,status:'started'},bench:[],timer:{running:true,remainingSeconds:300,deadlineAt:new Date(Date.now()+300000).toISOString()},matches:matches.map(m=>({id:m.id,court:m.court,status:m.status,revision:m.revision,team_a:m.team_a,team_b:m.team_b,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:m.lockOwner&&m.lockExpires>now()?(m.lockOwner===clientId?'mine':'other'):'free',lock_seconds:m.lockExpires>now()?Math.ceil((m.lockExpires-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0}))});
+  const state=(clientId)=>finished?{success:true,finished:true,results_path:'/kotc-live/e2e-final-results',session:{name:'E2E Player Scoring',status:'completed',current_round_number:1}}:({success:true,session:{name:'E2E Player Scoring',status:'in_progress',current_round_number:1,scoring_mode:'timed'},round:{id:'round-1',round_number:1,status:'started'},bench:[],timer:{running:true,remainingSeconds:300,deadlineAt:new Date(Date.now()+300000).toISOString()},matches:matches.map(m=>({id:m.id,court:m.court,status:m.status,revision:m.revision,team_a:m.team_a,team_b:m.team_b,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:m.lockOwner&&m.lockExpires>now()?(m.lockOwner===clientId?'mine':'other'):'free',lock_seconds:m.lockExpires>now()?Math.ceil((m.lockExpires-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0}))});
   const handle=async(body)=>{
     calls.push({...body,at:Date.now()});
     const action=body.action||'state',clientId=body.clientId||'';
@@ -45,7 +45,7 @@ function createModel(){
     }
     return {status:400,body:{error:'Unsupported'}};
   };
-  return {matches,calls,handle,setTransientSaveRateLimits:n=>{transientSaveRateLimits=n;},setCommitThenFail:n=>{commitThenFail=n;}};
+  return {matches,calls,handle,setTransientSaveRateLimits:n=>{transientSaveRateLimits=n;},setCommitThenFail:n=>{commitThenFail=n;},setFinished:v=>{finished=Boolean(v);}};
 }
 
 async function install(context,model){
