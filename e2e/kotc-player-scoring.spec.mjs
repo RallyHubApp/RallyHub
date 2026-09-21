@@ -9,7 +9,7 @@ function createModel(){
   const matches=[1,2].map(c=>({id:`match-${c}`,court:c,status:'scheduled',revision:0,team_a:[`P${c}A1`,`P${c}A2`],team_b:[`P${c}B1`,`P${c}B2`],team_a_score:null,team_b_score:null,lockOwner:'',lockExpires:0,correctionOwner:'',correction_count:0,completedAt:0}));
   const calls=[];let transientSaveRateLimits=0,commitThenFail=0,finished=false;
   const correctionOpen=(m,clientId)=>m.status==='completed'&&m.correctionOwner===clientId&&m.completedAt>0&&now()-m.completedAt<=90000;
-  const state=(clientId)=>finished?{success:true,finished:true,results_path:'/kotc-live/e2e-final-results',session:{name:'E2E Player Scoring',status:'completed',current_round_number:1}}:({success:true,session:{name:'E2E Player Scoring',status:'in_progress',current_round_number:1,scoring_mode:'timed'},round:{id:'round-1',round_number:1,status:'started'},bench:[],timer:{running:true,remainingSeconds:300,deadlineAt:new Date(Date.now()+300000).toISOString()},matches:matches.map(m=>({id:m.id,court:m.court,status:m.status,revision:m.revision,team_a:m.team_a,team_b:m.team_b,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:m.lockOwner&&m.lockExpires>now()?(m.lockOwner===clientId?'mine':'other'):'free',lock_seconds:m.lockExpires>now()?Math.ceil((m.lockExpires-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0}))});
+  const state=(clientId)=>finished?{success:true,finished:true,results_path:'/kotc-live/e2e-final-results',session:{name:'E2E Player Scoring',status:'completed',current_round_number:1}}:({success:true,session:{name:'E2E Player Scoring',status:'in_progress',current_round_number:1,planned_rounds:1,scoring_mode:'timed'},round:{id:'round-1',round_number:1,status:'started'},bench:[],timer:{running:true,remainingSeconds:300,deadlineAt:new Date(Date.now()+300000).toISOString()},matches:matches.map(m=>({id:m.id,court:m.court,status:m.status,revision:m.revision,team_a:m.team_a,team_b:m.team_b,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:m.lockOwner&&m.lockExpires>now()?(m.lockOwner===clientId?'mine':'other'):'free',lock_seconds:m.lockExpires>now()?Math.ceil((m.lockExpires-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0}))});
   const handle=async(body)=>{
     calls.push({...body,at:Date.now()});
     const action=body.action||'state',clientId=body.clientId||'';
@@ -150,6 +150,8 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
 test('finished KOTC: existing player scorer link becomes the final results link on Refresh Round',async({browser})=>{
   const model=createModel();
   const ctx=await browser.newContext({viewport:{width:390,height:844}});await install(ctx,model);const page=await openScorer(ctx);
+  await expect(page.getByTestId('kotc-final-round-results-help')).toContainText('This same player link will then open the final results');
+  await expect(page.getByTestId('scorer-refresh')).toContainText('Refresh / View Results');
   model.setFinished(true);
   await page.getByTestId('scorer-refresh').click();
   await expect(page.getByTestId('kotc-results-redirected')).toBeVisible({timeout:1600});
