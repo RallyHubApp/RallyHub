@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, CalendarDays, MapPin, Menu, Monitor, Rocket, Trophy, Users, MessageCircle } from 'lucide-react';
 import Seo from '@/components/public/Seo';
+import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 
 const LOGO='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 const CARD='/assets/about/';
@@ -31,8 +33,11 @@ function Header(){
 }
 
 export default function About(){
+ const { user } = useAuth();
+ const [founderUploadStatus,setFounderUploadStatus]=useState('');
+ const uploadFounder=async(e)=>{const file=e.target.files?.[0];if(!file)return;try{setFounderUploadStatus('Uploading original photograph…');const res=await base44.functions.invoke('secureCreditAction',{action:'upload_image',purpose:'about_founders',file});const url=res.data?.file_url;if(!url)throw new Error('Upload returned no file URL');localStorage.setItem('rallyhub_about_founders_uploaded_url',url);setFounderUploadStatus('UPLOAD COMPLETE — keep this page open and tell ChatGPT “uploaded”.');}catch(err){setFounderUploadStatus('Upload failed: '+(err?.response?.data?.error||err.message||'Unknown error'));}};
  return <><Seo title="About RallyHub | Built Around Sport. Built Around People." description="RallyHub connects players, clubs, organisers and competitions — built from real club experience in Ireland and designed to grow." path="/about"/>
- <div className="min-h-screen bg-white font-sans text-[#07184c]"><Header/><main>
+ <div className="min-h-screen bg-white font-sans text-[#07184c]"><Header/>{user?.role==='admin'&&<div className="mx-auto max-w-[1024px] border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm"><div className="flex flex-wrap items-center gap-3"><strong>Temporary Super Admin: Founder photo</strong><label className="cursor-pointer rounded-full bg-[#07528a] px-5 py-2 font-bold text-white">Upload original founder photo<input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={uploadFounder}/></label><span>{founderUploadStatus}</span></div></div>}<main>
   <section className="bg-[#f7fbfc]"><div className="mx-auto grid max-w-[1024px] md:grid-cols-[42%_58%]">
    <div className="flex min-h-[437px] items-center px-[39px] py-8"><div><div className="inline-flex rounded-full bg-[#e6f5ec] px-[12px] py-[6px] text-[10px] font-black tracking-[.08em] text-[#078e48]">PICKLEBALL FIRST • BUILT IN IRELAND</div>
     <h1 className="mt-[18px] text-[42px] font-black leading-[.98] tracking-[-.045em]">Built around sport.<br/>Built around <span className="text-[#078e48]">people.</span></h1>
