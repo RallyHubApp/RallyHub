@@ -421,6 +421,21 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   expect(model.slots.find(s=>s.id===swappedSlotId)?.participant_id).not.toBe(swappedParticipantBeforeLock);
   expect(Number(model.rounds.find(r=>r.id==='round-1')?.proposal_revision||0)).toBeGreaterThan(1);
 
+  // Busy-hall setup: move an entire four-player court as one unit, save it without
+  // starting the round, then reload and prove that the saved court layout survives.
+  const court4Before=model.slots.filter(s=>s.round_id==='round-1'&&Number(s.ladder_court_rank)===4).sort((a,b)=>String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number)).map(s=>s.participant_id);
+  const courtMove=page.getByTestId('kotc-whole-court-drag-4');
+  await courtMove.focus();await courtMove.press('Space');await courtMove.press('ArrowUp');await courtMove.press('ArrowUp');await courtMove.press('Space');
+  const saveRound=page.getByTestId('kotc-save-round-setup');
+  await expect(saveRound).toBeEnabled();
+  const saveBefore=model.calls.filter(c=>c.name==='kotcCommand'&&c.body.commandType==='adjust_proposed_round').length;
+  started=Date.now();await saveRound.click();await expect(page.getByText('Saving Round 1 setup… command sent')).toBeVisible({timeout:300});metric(report,'round_setup_save_ack_ms',Date.now()-started,300);await expect(page.getByTestId('kotc-save-round-status')).toContainText('Round setup saved',{timeout:1800});
+  expect(model.calls.filter(c=>c.name==='kotcCommand'&&c.body.commandType==='adjust_proposed_round').length-saveBefore).toBe(1);
+  const court2After=model.slots.filter(s=>s.round_id==='round-1'&&Number(s.ladder_court_rank)===2).sort((a,b)=>String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number)).map(s=>s.participant_id);
+  expect(court2After).toEqual(court4Before);report.whole_court_drag_saved=true;
+  const movedCourtName=model.participants.find(p=>p.id===court4Before[0])?.display_name;
+  await page.reload();await expect(page.getByTestId('kotc-round-editor')).toBeVisible({timeout:1800});await expect(page.getByTestId('kotc-whole-court-2')).toContainText(movedCourtName);report.round_setup_survives_reload=true;
+
   // START ROUND must acknowledge instantly and transition to LIVE promptly.
   let started = Date.now();
   const startRound = page.getByTestId('kotc-start-round');
