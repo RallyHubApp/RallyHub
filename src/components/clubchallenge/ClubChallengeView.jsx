@@ -161,7 +161,7 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="min-w-0 flex-1">
             {id === 'pool' ? <><p className="text-sm font-semibold">Player Pool</p><p className="text-[10px] text-muted-foreground">Import both Spond events here, then drag players into the teams.</p></> :
-              <><Label className="text-[10px]">Team name</Label><Input value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" /></>}
+              <><Label className="text-[10px]">Team name</Label><Input value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" /><button type="button" onClick={() => onImportSpond?.(id)} disabled={locked || busy} className="mt-1 text-[10px] text-primary hover:underline disabled:opacity-40">Import a Spond event directly to this team</button></>
           </div>
           <Badge variant="outline">{ids.length}</Badge>
         </div>
