@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CalendarDays, CheckCircle2, ChevronRight, Loader2, LogIn, Users } from 'lucide-react';
 
 export default function InterclubSpondImportModal({ open, onOpenChange, tournament, event, side, onImported }) {
-  const clubName = side === 'club_b' ? event?.club_b_name : event?.club_a_name;
+  const clubName = side === 'pool' ? 'Player Pool' : side === 'club_b' ? event?.club_b_name : event?.club_a_name;
+  const poolMode = side === 'pool';
   const [step, setStep] = useState('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -160,7 +161,7 @@ export default function InterclubSpondImportModal({ open, onOpenChange, tourname
             Import {clubName || 'team'} from Spond
           </DialogTitle>
           <DialogDescription>
-            Choose the Spond event. RallyHub imports only people marked Going into this Interclub team; waiting-list players are excluded.
+            {poolMode ? 'Choose a Spond event. RallyHub adds only people marked Going to the shared Player Pool; waiting-list players are excluded. You can repeat this for a second Spond event.' : 'Choose the Spond event. RallyHub imports only people marked Going into this Interclub team; waiting-list players are excluded.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -188,7 +189,7 @@ export default function InterclubSpondImportModal({ open, onOpenChange, tourname
         </div>}
 
         {step==='event' && <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Choose the exact Spond event for {clubName}.</p>
+          <p className="text-xs text-muted-foreground">Choose the exact Spond event for {poolMode ? 'this player import' : clubName}.</p>
           {events.map(item=><button type="button" key={`${item.id}-${item.startTimestamp}`} onClick={()=>chooseEvent(item)} disabled={loading} className="w-full rounded-lg border border-border bg-secondary/40 p-3 flex gap-3 text-left hover:border-primary/40"><CalendarDays className="w-4 h-4 text-primary mt-0.5"/><div className="min-w-0 flex-1"><p className="text-sm font-semibold truncate">{item.heading}</p><p className="text-[10px] text-muted-foreground">{item.startTimestamp?new Date(item.startTimestamp).toLocaleString('en-IE',{timeZone:'Europe/Dublin',weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}{item.location?` · ${item.location}`:''}</p></div><Badge variant="outline">{item.attendingCount} going</Badge></button>)}
           {!events.length&&!loading&&<p className="text-xs text-muted-foreground py-4 text-center">No upcoming Spond events were returned for this group.</p>}
           <Button variant="outline" size="sm" onClick={()=>setStep('group')}>Back</Button>
@@ -197,16 +198,16 @@ export default function InterclubSpondImportModal({ open, onOpenChange, tourname
         {step==='preview' && <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2"><div className="rounded-lg bg-secondary/50 p-3 text-center"><p className="text-2xl font-bold">{attendees.length}</p><p className="text-[10px] text-muted-foreground">Going</p></div><div className="rounded-lg bg-secondary/50 p-3 text-center"><p className="text-2xl font-bold">{waitingListCount}</p><p className="text-[10px] text-muted-foreground">Waiting list excluded</p></div></div>
           <div className="max-h-64 overflow-y-auto rounded-lg border border-border divide-y divide-border">{attendees.map(person=><div key={person.spondId} className="px-3 py-2 text-sm flex items-center justify-between gap-2"><span className="font-medium">{person.fullName}</span>{person.gender&&<span className="text-[10px] text-muted-foreground">{person.gender}</span>}</div>)}</div>
-          <p className="text-[11px] text-muted-foreground">Imported players are added to {clubName} at the bottom of the current event ranking. Reorder them before generating the draw.</p>
+          <p className="text-[11px] text-muted-foreground">{poolMode ? 'These players will be added to the shared Player Pool. Import another Spond event if needed, then drag all players into the two teams and rank each team before generating the draw.' : `Imported players are added to ${clubName} at the bottom of the current event ranking. Reorder them before generating the draw.`}</p>
           <div className="grid grid-cols-2 gap-2"><Button variant="outline" onClick={()=>setStep('event')} disabled={loading}>Back</Button><Button onClick={importAttendees} disabled={loading||!attendees.length}>{loading?<Loader2 className="w-4 h-4 mr-2 animate-spin"/>:null}{loading?'Importing…':`Import ${attendees.length} Going`}</Button></div>
         </div>}
 
         {step==='done' && <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-2">
           <p className="font-semibold text-primary">Spond roster imported</p>
-          <p className="text-sm">{result?.created || 0} player{Number(result?.created||0)===1?'':'s'} added to {clubName}.</p>
+          <p className="text-sm">{result?.created || 0} player{Number(result?.created||0)===1?'':'s'} added to {poolMode ? 'the Player Pool' : clubName}.</p>
           {result?.skipped>0&&<p className="text-xs text-muted-foreground">{result.skipped} already-present player{result.skipped===1?' was':'s were'} skipped safely.</p>}
           {result?.waitingListCount>0&&<p className="text-xs text-muted-foreground">{result.waitingListCount} waiting-list player{result.waitingListCount===1?' was':'s were'} not imported.</p>}
-          <Button onClick={close} className="w-full">Done</Button>
+          <Button onClick={close} className="w-full">{poolMode ? 'Done · Import another event or build teams' : 'Done'}</Button>
         </div>}
       </DialogContent>
     </Dialog>
