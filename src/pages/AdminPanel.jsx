@@ -454,13 +454,13 @@ export default function AdminPanel() {
     }
   };
 
-  const approveDirectoryInvitation = async (invitationId) => {
+  const approveDirectoryInvitation = async (invitationId, accessRole = 'owner') => {
     setApprovingDirectoryInvitation(invitationId);
     try {
       const res = await base44.functions.invoke('directoryClaim', { action: 'approve_invitation', invitationId });
       if (res.data?.error) throw new Error(res.data.error);
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
-      toast.success('Directory owner access approved');
+      toast.success(`Directory ${accessRole === 'editor' ? 'editor' : 'owner'} access approved`);
     } catch (error) {
       toast.error(error.message || 'Could not approve this directory invitation yet');
     } finally {
@@ -481,10 +481,19 @@ export default function AdminPanel() {
 
   const selectedOwnerInviteListing = directoryAdminListings.find(item => item.slug === ownerInvite.listingSlug) || null;
 
-  const ownerInviteWhatsAppMessage = ({ claimUrl, clubName, contactName }) => {
+  const betaInviteWhatsAppMessage = ({ claimUrl, clubName, contactName, accessRole = 'owner' }) => {
     const firstName = String(contactName || '').trim().split(/\s+/)[0] || 'there';
-    return `Hi ${firstName},\n\nI’ve set up the *${clubName}* listing in the RallyHub Club Directory and I’d love you to be one of the people who helps me test it before I roll it out more widely.\n\nThe Directory came from a simple idea: make it easier for people anywhere in Ireland to find a club, see where and when it plays, and know who to contact. I’ve built it as a contribution to the pickleball community, and there’s no charge to claim and maintain your listing.\n\nI’d really value your honest feedback from a user point of view — anything that feels confusing, awkward, unnecessary, missing, or that you think could simply be better.\n\n*Your secure link:*\n${claimUrl}\n\nOnce verified, you’ll become the *Primary Directory Owner* for ${clubName} and can check or update the public information. This gives Directory access only; it does not sign your club up for RallyHub Club or any paid service.\n\n*Why the Directory exists:*\nhttps://rallyhub.ie/directory/story\n\n*Club Guide & Help:*\nhttps://rallyhub.ie/directory/help\n\n*Quick Start Guide:*\nhttps://rallyhub.ie/directory/quick-start\n\nThe secure link is single-use and expires after 72 hours. If anything gives you trouble, just WhatsApp or call me.\n\nThanks for helping me get this right.\n\nYours in sport,\n*Brian Moore*\n087 810 0333`;
+    const editor = accessRole === 'editor';
+    const ask = editor
+      ? `I’ve invited you as a *Directory Editor* for ${clubName} because I’d really value your help testing the editing side of it from a club user’s point of view.`
+      : `I’ve already put together the *${clubName}* listing and I’d love you to have a look, claim it and help me test the whole process from a club’s point of view.`;
+    const role = editor
+      ? `This gives you Directory editing access only. It doesn’t give access to RallyHub Club, tournaments, players or club administration.`
+      : `Once verified, you’ll become the *Primary Directory Owner* for ${clubName} and can check or update the public information. There’s no charge to claim or maintain the listing, and it doesn’t sign the club up for RallyHub Club or any paid service.`;
+    return `Hi ${firstName},\n\nAs you know, RallyHub started out as a father-and-son project between Conall and me, really just trying to solve some of the things we needed for Clare Pickleball. It has grown legs a bit since then, and we’re now building out the Directory with clubs around Ireland. I’ve also been asked about including events and a few other things that would be useful to clubs, so *Events is probably the next area we’ll develop if clubs feel there’s a need for it.*\n\n${ask}\n\n${role}\n\n*Your secure ${editor ? 'editor ' : ''}link:*\n${claimUrl}\n\nThis link is for you personally, is single-use and expires after 72 hours.\n\nIf you want a quick look at RallyHub first:\n*About RallyHub:* https://rallyhub.ie/about\n*1-page Directory Explainer:* https://rallyhub.ie/directory/story\n\nIf you need a hand getting started:\n*Club Guide & Help:* https://rallyhub.ie/directory/help\n*Quick Start Guide:* https://rallyhub.ie/directory/quick-start\n\nThere’s also a *Feedback* area in RallyHub for anything you spot, suggestions or wishlist ideas. The Events page is under construction too, so if you have thoughts on what would actually be useful there, I’d really like to hear them.\n\nDon’t be afraid to tell me what doesn’t make sense — that’s exactly what this beta testing is for.\n\nThanks for helping me get this right.\n\nYours in sport,\n*Brian Moore*\n087 810 0333`;
   };
+
+  const ownerInviteWhatsAppMessage = (args) => betaInviteWhatsAppMessage({ ...args, accessRole: 'owner' });
 
   const whatsappDigitsForInvite = (phone, county = '') => {
     let digits = String(phone || '').replace(/\D/g, '');
@@ -1337,11 +1346,11 @@ export default function AdminPanel() {
                       {invite.expires_at && <p className="text-xs text-muted-foreground">Expires: {new Date(invite.expires_at).toLocaleString('en-IE')}</p>}
                       {invite.used_at && <p className="text-xs text-green-400">Accepted: {new Date(invite.used_at).toLocaleString('en-IE')}</p>}
                     </div>
-                    {invite.access_role === 'owner' && (
-                      <Button size="sm" disabled={approvingDirectoryInvitation === invite.id} onClick={() => approveDirectoryInvitation(invite.id)} className="gap-1 shrink-0">
-                        <CheckCircle className="w-3.5 h-3.5" /> {approvingDirectoryInvitation === invite.id ? 'Approving…' : 'Approve directory owner only'}
+                    <div className="flex flex-wrap gap-2 shrink-0">
+                      <Button size="sm" disabled={approvingDirectoryInvitation === invite.id} onClick={() => approveDirectoryInvitation(invite.id, invite.access_role)} className="gap-1">
+                        <CheckCircle className="w-3.5 h-3.5" /> {approvingDirectoryInvitation === invite.id ? 'Approving…' : `Approve Directory ${invite.access_role === 'owner' ? 'Owner' : 'Editor'}`}
                       </Button>
-                    )}
+                    </div>
                   </div>
                 );
               })}
