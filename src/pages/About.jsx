@@ -6,11 +6,11 @@ import Seo from '@/components/public/Seo';
 const LOGO='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 const CARD='/assets/about/';
 // About page imagery is locked to the signed-off About artwork, not the Home page imagery.
-const HERO=CARD+'card-player.webp';
-const CLIFFS=CARD+'card-directory.webp';
+const HERO='/assets/rallyhub-home-hero.webp';
+const CLIFFS='/assets/rallyhub-home-cliffs.webp';
 const FOUNDERS='/assets/rallyhub-founders.webp';
 const CTA_COMMUNITY=CARD+'card-club.webp';
-const CTA_SCENIC=CARD+'card-directory.webp';
+const CTA_SCENIC=CLIFFS;
 
 const cards=[
  [MapPin,'Directory & Discovery','Find clubs, venues, sessions and events across Ireland.',CARD+'card-directory.webp'],
