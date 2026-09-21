@@ -147,6 +147,15 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
   await aCtx.close();await bCtx.close();
 });
 
+test('finished KOTC: existing player scorer link becomes the final results link on Refresh Round',async({browser})=>{
+  const model=createModel();
+  const ctx=await browser.newContext({viewport:{width:390,height:844}});await install(ctx,model);const page=await openScorer(ctx);
+  model.setFinished(true);
+  await page.getByTestId('scorer-refresh').click();
+  await expect(page.getByTestId('kotc-results-redirected')).toBeVisible({timeout:1600});
+  await ctx.close();
+});
+
 test('scorer reconciles committed save when Base44 response is lost and ignores double tap',async({browser})=>{
   const model=createModel();model.setCommitThenFail(1);
   const ctx=await browser.newContext({viewport:{width:390,height:844}});await install(ctx,model);const page=await openScorer(ctx);
