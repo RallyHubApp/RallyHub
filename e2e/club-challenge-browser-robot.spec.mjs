@@ -69,6 +69,13 @@ function createClubChallengeModel() {
 
     if (name === 'manageClubChallengeParticipant') {
       await sleep(320);
+      if (body.action === 'organise_teams') {
+        const groups=[['pool',body.poolParticipantIds||[]],['club_a',body.clubAParticipantIds||[]],['club_b',body.clubBParticipantIds||[]]];
+        let changed=0;
+        for(const [side,ids] of groups){ids.forEach((pid,index)=>{const p=model.participants.find(x=>x.id===pid);if(p){if(p.side!==side||Number(p.event_rank)!==index+1)changed++;p.side=side;p.event_rank=index+1;}});}
+        Object.assign(model.event,{club_a_name:body.clubAName||model.event.club_a_name,club_b_name:body.clubBName||model.event.club_b_name,fairness_json:'',status:model.event.status==='draw_generated'?'draft':model.event.status,event_pack_stale:true});
+        return { success:true, event:model.event, poolCount:(body.poolParticipantIds||[]).length, clubACount:(body.clubAParticipantIds||[]).length, clubBCount:(body.clubBParticipantIds||[]).length, changed };
+      }
       if (body.action === 'reorder') {
         body.orderedParticipantIds.forEach((pid,index)=>{const p=model.participants.find(x=>x.id===pid);if(p)p.event_rank=index+1;});
         Object.assign(model.event,{fairness_json:'',status:model.event.status==='draw_generated'?'draft':model.event.status,event_pack_stale:true});
