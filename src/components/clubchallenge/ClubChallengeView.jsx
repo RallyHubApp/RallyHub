@@ -116,13 +116,13 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="min-w-0 flex-1">
             {id === 'pool' ? <><p className="text-sm font-semibold">Player Pool</p><p className="text-[10px] text-muted-foreground">Import both Spond events here, then drag players into the teams.</p></> :
-              <><Label className="text-[10px]">Team name</Label><Input value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" /><button type="button" onClick={() => onImportSpond?.(id)} disabled={locked || busy} className="mt-1 text-[10px] text-primary hover:underline disabled:opacity-40">Import a Spond event directly to this team</button></>
+              <><Label className="text-[10px]">Team name</Label><Input value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" /><button type="button" onClick={() => onImportSpond?.(id)} disabled={locked || busy || dirty} className="mt-1 text-[10px] text-primary hover:underline disabled:opacity-40">Import a Spond event directly to this team</button></>
           </div>
           <Badge variant="outline">{ids.length}</Badge>
         </div>
         {id === 'pool' && <div className="space-y-2 mb-3">
-          <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => onImportSpond?.('pool')} disabled={locked || busy}><Download className="w-3.5 h-3.5 mr-1" />Import Spond Event</Button>
-          <div className="grid grid-cols-[1fr_auto] gap-2"><Input placeholder="Add player manually" value={manualPool} onChange={e=>setManualPool(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addPool()} disabled={locked || busy} className="h-9 bg-secondary" /><Button type="button" size="sm" onClick={addPool} disabled={locked || busy || !manualPool.trim()}><Plus className="w-4 h-4" /></Button></div>
+          <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => onImportSpond?.('pool')} disabled={locked || busy || dirty}><Download className="w-3.5 h-3.5 mr-1" />Import Spond Event</Button>
+          <div className="grid grid-cols-[1fr_auto] gap-2"><Input placeholder="Add player manually" value={manualPool} onChange={e=>setManualPool(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addPool()} disabled={locked || busy || dirty} className="h-9 bg-secondary" /><Button type="button" size="sm" onClick={addPool} disabled={locked || busy || dirty || !manualPool.trim()}><Plus className="w-4 h-4" /></Button></div>
         </div>}
         <div className="space-y-1 max-h-[34rem] overflow-auto">
           {ids.map((pid, i) => {
