@@ -157,6 +157,9 @@ Deno.serve(async (req) => {
         const tournamentId = clean(body.tournamentId, 180);
         allowed = await canManageTournament(base44, user, tournamentId);
         contextId = tournamentId || user.id;
+      } else if (purpose === 'about_founders') {
+        allowed = user.role === 'admin';
+        contextId = user.id;
       }
       if (!allowed) return Response.json({ error:'You do not have permission to upload this image.' }, { status:403 });
 
