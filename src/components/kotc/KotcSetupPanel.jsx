@@ -17,7 +17,7 @@ export default function KotcSetupPanel({
   testMode,setTestMode,canUseTestMode=false,sandboxMode=false,
   countsTowardLeaderboard,setCountsTowardLeaderboard,
   seedingSource,applySeedingSource,drawMethod,setDrawMethod,kotcAggregates,
-  rankingOpen,setRankingOpen,orderedPlayers,setPlayerOrder,setSeedingSource,
+  rankingOpen,setRankingOpen,rankingSaveState='idle',orderedPlayers,setPlayerOrder,setSeedingSource,
   benchIds,toggleBench,creating,createSession,
 }){
   const benchReady=benchIds.length===requiredBench;
@@ -61,7 +61,7 @@ export default function KotcSetupPanel({
           {!sandboxMode&&seedingSource==='previous_kotc'&&kotcAggregates.length===0&&<div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-2.5 text-xs text-amber-600 mt-3">No previous KOTC history is stored for this roster yet. Choose Roster order, Manual ranking or Genuine DUPR.</div>}
           <Button type="button" variant="outline" className="w-full justify-between min-h-11 mt-4" onClick={()=>setRankingOpen(v=>!v)}><span>Review player order <span className="text-muted-foreground">({players.length})</span></span><span className="text-xs text-muted-foreground">{rankingOpen?'Hide':'Show'}</span></Button>
           {rankingOpen&&<div className="mt-3 rounded-xl border bg-secondary/15 overflow-hidden">
-            <div className="px-3 py-2 border-b bg-secondary/30 flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-semibold">Current starting order</p><p className="text-[10px] text-muted-foreground">Drag players into 1-to-N order. Any drag changes the source to Manual ranking.</p></div><Badge variant="outline">{seedingLabel[seedingSource]||seedingSource}</Badge></div>
+            <div className="px-3 py-2 border-b bg-secondary/30 flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-semibold">Current starting order</p><p className="text-[10px] text-muted-foreground">Drag players into 1-to-N order. Changes are saved automatically so you can leave setup and come back later.</p></div><div className="flex items-center gap-2"><Badge variant="outline">{seedingLabel[seedingSource]||seedingSource}</Badge><Badge data-testid="kotc-ranking-save-state" variant="outline" className={rankingSaveState==='error'?'text-destructive':rankingSaveState==='saving'?'text-amber-600':'text-green-600'}>{rankingSaveState==='saving'?'Saving…':rankingSaveState==='error'?'Save failed':'Saved ✓'}</Badge></div></div>
             <DragDropContext onDragEnd={result=>{if(!result.destination||result.destination.index===result.source.index)return;setSeedingSource('manual');setPlayerOrder(current=>{const next=[...current];const [moved]=next.splice(result.source.index,1);next.splice(result.destination.index,0,moved);return next;});}}>
               <Droppable droppableId="kotc-player-ranking">
                 {provided=><div ref={provided.innerRef} {...provided.droppableProps} className="max-h-[420px] overflow-y-auto divide-y" data-testid="kotc-player-order">
