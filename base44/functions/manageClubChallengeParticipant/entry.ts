@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, orderedParticipantIds } = body;
-    if (!eventId || !['replace','continue_short','late_arrival','add_manual','reorder','replacement_candidates'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
+    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName } = body;
+    if (!eventId || !['replace','continue_short','late_arrival','add_manual','reorder','organise_teams','replacement_candidates'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -82,6 +82,48 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_added_manual', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({participant_id:created.id,side,name:cleanName}) });
       return Response.json({ success:true, participant:created });
+    }
+
+    if (action === 'organise_teams') {
+      if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Teams can only be organised before the draw is approved.' }, { status:409 });
+      const poolIds = Array.isArray(poolParticipantIds) ? poolParticipantIds.map(String) : [];
+      const aIds = Array.isArray(clubAParticipantIds) ? clubAParticipantIds.map(String) : [];
+      const bIds = Array.isArray(clubBParticipantIds) ? clubBParticipantIds.map(String) : [];
+      const activePlayers = participants.filter((p:any) => !['replaced','withdrawn','injured'].includes(p.status));
+      const activeIds = activePlayers.map((p:any) => String(p.id)).sort();
+      const requested = [...poolIds, ...aIds, ...bIds];
+      if (requested.length !== activeIds.length || new Set(requested).size !== requested.length || [...requested].sort().join('|') !== activeIds.join('|')) {
+        return Response.json({ error:'Every current player must appear exactly once in the Player Pool, Team A or Team B.' }, { status:409 });
+      }
+      const cleanAName = String(clubAName || event.club_a_name || 'Team A').trim().replace(/\s+/g,' ').slice(0,120);
+      const cleanBName = String(clubBName || event.club_b_name || 'Team B').trim().replace(/\s+/g,' ').slice(0,120);
+      if (!cleanAName || !cleanBName) return Response.json({ error:'Both team names are required.' }, { status:400 });
+      const byId = new Map(activePlayers.map((p:any) => [String(p.id), p]));
+      let changed = 0;
+      const applyGroup = async (ids:string[], nextSide:'pool'|'club_a'|'club_b') => {
+        for (let i=0;i<ids.length;i++) {
+          const p:any = byId.get(ids[i]);
+          if (!p) continue;
+          const nextRank = nextSide === 'pool' ? i + 1 : i + 1;
+          if (p.side !== nextSide || Number(p.event_rank || 0) !== nextRank) {
+            await base44.asServiceRole.entities.ClubChallengeParticipant.update(p.id, { side:nextSide, event_rank:nextRank });
+            changed++;
+          }
+        }
+      };
+      await applyGroup(poolIds, 'pool');
+      await applyGroup(aIds, 'club_a');
+      await applyGroup(bIds, 'club_b');
+      const updatedEvent = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
+        club_a_name:cleanAName, club_b_name:cleanBName, fairness_json:'',
+        status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true,
+      });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({
+        tenant_id:event.tenant_id, challenge_event_id:event.id, action:'teams_organised', user_id:user.id, occurred_at:now,
+        new_value_json:JSON.stringify({ pool:poolIds, club_a:aIds, club_b:bIds, club_a_name:cleanAName, club_b_name:cleanBName, changed }),
+        note:'Host organised the Interclub player pool into ranked teams.',
+      });
+      return Response.json({ success:true, event:updatedEvent, poolCount:poolIds.length, clubACount:aIds.length, clubBCount:bIds.length, changed });
     }
 
     if (action === 'reorder') {
