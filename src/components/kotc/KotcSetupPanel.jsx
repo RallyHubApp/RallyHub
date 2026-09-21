@@ -67,7 +67,7 @@ export default function KotcSetupPanel({
                 {provided=><div ref={provided.innerRef} {...provided.droppableProps} className="max-h-[420px] overflow-y-auto divide-y" data-testid="kotc-player-order">
                   {orderedPlayers.map((p,i)=><Draggable key={p.id} draggableId={String(p.id)} index={i}>
                     {(dragProvided,snapshot)=><div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={`flex items-center gap-2 px-3 py-2.5 ${snapshot.isDragging?'bg-primary/10 shadow-lg':''}`} data-testid={`kotc-player-order-${i+1}`}>
-                      <button type="button" {...dragProvided.dragHandleProps} data-testid={`kotc-ranking-drag-${p.id}`} aria-label={`Drag ${p.full_name} to change ranking`} className="w-9 h-9 -ml-1 rounded-md flex items-center justify-center text-muted-foreground hover:bg-secondary touch-none"><GripVertical className="w-5 h-5"/></button>
+                      <div role="button" tabIndex={0} {...dragProvided.dragHandleProps} data-testid={`kotc-ranking-drag-${p.id}`} aria-label={`Drag ${p.full_name} to change ranking`} className="w-9 h-9 -ml-1 rounded-md flex items-center justify-center text-muted-foreground hover:bg-secondary touch-none"><GripVertical className="w-5 h-5"/></div>
                       <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">{i+1}</span>
                       <span className="flex-1 text-sm font-medium min-w-0 truncate">{p.full_name}</span>
                       {p.dupr_rating!=null&&<Badge variant="outline" className="hidden sm:inline-flex">DUPR {Number(p.dupr_rating).toFixed(2)}</Badge>}
