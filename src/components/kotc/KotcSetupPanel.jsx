@@ -4,10 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Crown,Play,Settings2,ListOrdered,Users,CheckCircle2 } from 'lucide-react';
+import { Crown,Play,Settings2,ListOrdered,Users,CheckCircle2,GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const seedingLabel={roster:'Roster order',manual:'Manual ranking',dupr:'Genuine DUPR',previous_kotc:'Previous KOTC'};
-const drawLabel={balanced:'Balanced Random',pure_random:'Pure Random',strict:'Strict Ranking'};
+const drawLabel={balanced:'Balanced Ranking',pure_random:'Pure Random',strict:'Strict Ranking'};
 
 export default function KotcSetupPanel({
   players,courts,requiredBench,
