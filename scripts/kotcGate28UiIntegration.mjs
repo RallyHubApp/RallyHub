@@ -3,6 +3,7 @@ import fs from 'node:fs';
 
 const view=fs.readFileSync('src/components/kotc/KotcView.jsx','utf8');
 const v2=fs.readFileSync('src/components/kotc/KotcV2SessionView.jsx','utf8');
+const setup=fs.readFileSync('src/components/kotc/KotcSetupPanel.jsx','utf8');
 const command=fs.readFileSync('base44/functions/kotcCommand/entry.ts','utf8');
 const create=fs.readFileSync('base44/functions/createKotcV2Session/entry.ts','utf8');
 const get=fs.readFileSync('base44/functions/getKotcV2State/entry.ts','utf8');
@@ -28,6 +29,9 @@ ok(command.includes('Fairness substitution invariant failed'),'server fairness i
 ok(command.includes('current-round match result(s) unresolved'),'unresolved results block generation');
 ok(create.includes("ENGINE_VERSION='2.0.0-rc.1'"),'new sessions pin accepted RC engine');
 ok(v2.includes('Tap one player then another to swap'),'current tap-to-swap host editor is mounted');
+ok(setup.includes('DragDropContext')&&setup.includes('kotc-ranking-drag-'),'setup ranking uses drag/drop rather than repeated move buttons');
+ok(setup.includes('Balanced Ranking')&&v2.includes("tiers=[active.slice(0,c),active.slice(c,c*2).reverse(),active.slice(c*2,c*3),active.slice(c*3,c*4).reverse()]"),'balanced ranking spreads quartiles deterministically across courts');
+ok(create.includes("drawMethod==='balanced'?{teamA:[four[0],four[3]],teamB:[four[1],four[2]]}"),'balanced ranking pairs strongest+weakest against the middle pair on each court');
 ok(create.includes('KotcSessionParticipant.bulkCreate'),'participants persisted independently in a rate-limit-safe batch');
 ok(create.includes('KotcRoundSlot.bulkCreate'),'round slots persisted independently in a rate-limit-safe batch');
 ok(create.includes('KotcMatch.bulkCreate'),'matches persisted independently in a rate-limit-safe batch');
