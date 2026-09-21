@@ -112,11 +112,11 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
   };
   const lane = (id, title, ids, teamName, setTeamName) => (
     <Droppable droppableId={id}>
-      {(provided, snapshot) => <div ref={provided.innerRef} {...provided.droppableProps} className={cn('rounded-xl border bg-card p-3 min-h-[18rem] transition-colors', snapshot.isDraggingOver ? 'border-primary bg-primary/5' : 'border-border')}>
+      {(provided, snapshot) => <div data-testid={`cc-team-lane-${id}`} ref={provided.innerRef} {...provided.droppableProps} className={cn('rounded-xl border bg-card p-3 min-h-[18rem] transition-colors', snapshot.isDraggingOver ? 'border-primary bg-primary/5' : 'border-border')}>
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="min-w-0 flex-1">
             {id === 'pool' ? <><p className="text-sm font-semibold">Player Pool</p><p className="text-[10px] text-muted-foreground">Import both Spond events here, then drag players into the teams.</p></> :
-              <><Label className="text-[10px]">Team name</Label><Input value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" /><button type="button" onClick={() => onImportSpond?.(id)} disabled={locked || busy || dirty} className="mt-1 text-[10px] text-primary hover:underline disabled:opacity-40">Import a Spond event directly to this team</button></>}
+              <><Label className="text-[10px]">Team name</Label><Input data-testid={`cc-team-name-${id}`} value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" /><button type="button" onClick={() => onImportSpond?.(id)} disabled={locked || busy || dirty} className="mt-1 text-[10px] text-primary hover:underline disabled:opacity-40">Import a Spond event directly to this team</button></>}
           </div>
           <Badge variant="outline">{ids.length}</Badge>
         </div>
@@ -129,7 +129,7 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
             const p = byId.get(pid);
             if (!p) return null;
             return <Draggable key={p.id} draggableId={p.id} index={i} isDragDisabled={locked || busy}>
-              {(dragProvided, dragSnapshot) => <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn('flex items-center gap-2 rounded-lg border border-border bg-secondary/60 p-2 min-h-11', dragSnapshot.isDragging && 'border-primary bg-primary/10 shadow-lg')}>
+              {(dragProvided, dragSnapshot) => <div data-testid={`cc-team-player-${p.id}`} ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn('flex items-center gap-2 rounded-lg border border-border bg-secondary/60 p-2 min-h-11', dragSnapshot.isDragging && 'border-primary bg-primary/10 shadow-lg')}>
                 <div {...dragProvided.dragHandleProps} className="w-9 h-9 -ml-1 flex items-center justify-center rounded-md touch-none shrink-0 text-muted-foreground active:bg-primary/10"><GripVertical className="w-5 h-5" /></div>
                 {id !== 'pool' && <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>}
                 <span className="text-xs text-foreground flex-1 truncate">{p.display_name}</span>
