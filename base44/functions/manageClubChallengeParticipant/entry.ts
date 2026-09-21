@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
 
     if (action === 'add_manual') {
       if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Players can only be added before the draw is approved.' }, { status:409 });
-      if (!['club_a','club_b'].includes(side)) return Response.json({ error:'Valid club side required.' }, { status:400 });
+      if (!['pool','club_a','club_b'].includes(side)) return Response.json({ error:'Valid player group required.' }, { status:400 });
       const cleanName = String(displayName || '').trim().replace(/\s+/g,' ').slice(0,120);
       if (!cleanName) return Response.json({ error:'Player name required.' }, { status:400 });
       const identity = cleanName.toLowerCase();
