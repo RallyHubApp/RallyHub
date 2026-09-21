@@ -13,6 +13,7 @@ import RoundTimer, { KotcSoundCheck } from './RoundTimer';
 import KotcHostAccessPanel from './KotcHostAccessPanel';
 import KotcSetupPanel from './KotcSetupPanel';
 import { activeCourtCount } from '@/lib/kotcV2Domain';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 function commandId(prefix='kotc'){return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;}
 function errMsg(error){return error?.response?.data?.error||error?.data?.error||error?.message||'Unexpected KOTC error';}
