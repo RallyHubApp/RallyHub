@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
         const tournamentId = clean(body.tournamentId, 180);
         allowed = await canManageTournament(base44, user, tournamentId);
         contextId = tournamentId || user.id;
-      } else if (purpose === 'about_founders' || purpose === 'about_top' || purpose === 'about_footer') {
+      } else if (purpose === 'about_founders' || purpose === 'about_master') {
         allowed = user.role === 'admin';
         contextId = user.id;
       }
@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
       if (!guard.allowed) return guard.response;
       const result = await base44.asServiceRole.integrations.Core.UploadFile({ file });
       const fileUrl = result?.file_url || null;
-      if (['about_founders','about_top','about_footer'].includes(purpose) && fileUrl) {
+      if (['about_founders','about_master'].includes(purpose) && fileUrl) {
         const existing = await base44.asServiceRole.entities.SiteAsset.filter({ key:purpose });
         if (existing?.[0]?.id) await base44.asServiceRole.entities.SiteAsset.update(existing[0].id, { file_url:fileUrl, updated_by_user_id:user.id });
         else await base44.asServiceRole.entities.SiteAsset.create({ key:purpose, file_url:fileUrl, updated_by_user_id:user.id });
