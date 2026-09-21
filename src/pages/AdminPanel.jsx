@@ -81,6 +81,8 @@ export default function AdminPanel() {
   const [ownerInviteResult, setOwnerInviteResult] = useState(null);
   const [testingClareMail, setTestingClareMail] = useState(false);
   const [approvingDirectoryInvitation, setApprovingDirectoryInvitation] = useState('');
+  const [resendInviteBusy, setResendInviteBusy] = useState('');
+  const [resendPreview, setResendPreview] = useState(null);
   const [updatingFeedbackId, setUpdatingFeedbackId] = useState('');
 
   const { data: players = [] } = useQuery({
@@ -552,21 +554,50 @@ export default function AdminPanel() {
     setOwnerInviteResult(null);
     try {
       const res = await base44.functions.invoke('directoryClaim', {
-        action: 'send_claim_invite',
-        listingSlug: ownerInvite.listingSlug,
-        contactName: ownerInvite.contactName,
-        contactPhone: ownerInvite.contactPhone,
-        contactEmail: ownerInvite.contactEmail,
+        action: 'create_claim_invite', listingSlug: ownerInvite.listingSlug,
+        contactName: ownerInvite.contactName, contactPhone: ownerInvite.contactPhone,
+        contactEmail: ownerInvite.contactEmail, channel: 'email',
       });
       if (res.data?.error) throw new Error(res.data.error);
-      setOwnerInviteResult({ channel: 'email', claimUrl: res.data.claimUrl, expiresAt: res.data.expiresAt, clubName: selectedOwnerInviteListing.name });
+      const message = betaInviteWhatsAppMessage({ claimUrl: res.data.claimUrl, clubName: selectedOwnerInviteListing.name, contactName: ownerInvite.contactName, accessRole: 'owner' }).replace(/\*/g, '');
+      setOwnerInviteResult({ channel: 'email-preview', invitationId: res.data.invitationId, claimUrl: res.data.claimUrl, expiresAt: res.data.expiresAt, clubName: selectedOwnerInviteListing.name, email: ownerInvite.contactEmail, subject: `An invitation to review ${selectedOwnerInviteListing.name} on the RallyHub Directory`, message });
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
-      toast.success(`RallyHub invitation sent to ${res.data?.email || ownerInvite.contactEmail}`);
-    } catch (error) {
-      toast.error(error.message || 'Could not send the email invitation');
-    } finally {
-      setOwnerInviteBusy('');
-    }
+      toast.success('Email invitation prepared — review it before sending');
+    } catch (error) { toast.error(error.message || 'Could not prepare the email invitation'); }
+    finally { setOwnerInviteBusy(''); }
+  };
+
+  const sendPreparedEmail = async (preview, clear = 'owner') => {
+    if (!preview?.invitationId || !preview?.email || !preview?.message) return;
+    setResendInviteBusy(preview.invitationId);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', { action: 'send_prepared_invitation_email', invitationId: preview.invitationId, claimUrl: preview.claimUrl, subject: preview.subject, message: preview.message });
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success(`RallyHub beta invitation sent to ${res.data?.email || preview.email}`);
+      if (clear === 'owner') setOwnerInviteResult({ ...preview, channel: 'email-sent' }); else setResendPreview(null);
+      queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
+    } catch (error) { toast.error(error.message || 'Could not send the invitation'); }
+    finally { setResendInviteBusy(''); }
+  };
+
+  const prepareInvitationResend = async (invite) => {
+    setResendInviteBusy(invite.id);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', { action: 'prepare_resend_invitation', invitationId: invite.id });
+      if (res.data?.error) throw new Error(res.data.error);
+      const message = betaInviteWhatsAppMessage({ claimUrl: res.data.claimUrl, clubName: res.data.clubName, contactName: res.data.contactName, accessRole: res.data.accessRole });
+      setResendPreview({ ...res.data, email: res.data.contactEmail, phone: res.data.contactPhone, county: directoryAdminListings.find(x => x.slug === res.data.listingSlug)?.county || '', subject: res.data.accessRole === 'editor' ? `An invitation to help manage ${res.data.clubName} on the RallyHub Directory` : `An invitation to review ${res.data.clubName} on the RallyHub Directory`, message: res.data.channel === 'email' ? message.replace(/\*/g, '') : message });
+      queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
+      toast.success('Fresh 72-hour invitation prepared — review it before sending');
+    } catch (error) { toast.error(error.message || 'Could not prepare the resend'); }
+    finally { setResendInviteBusy(''); }
+  };
+
+  const openResendWhatsApp = () => {
+    if (!resendPreview?.phone || !resendPreview?.message) return;
+    const digits = whatsappDigitsForInvite(resendPreview.phone, resendPreview.county);
+    if (!digits) return toast.error('The mobile number is not valid for WhatsApp');
+    window.location.href = `whatsapp://send?phone=${digits}&text=${encodeURIComponent(resendPreview.message)}`;
   };
 
   const testClareMailGateway = async () => {
@@ -1219,7 +1250,7 @@ export default function AdminPanel() {
                   <MessageCircle className="w-4 h-4" /> {ownerInviteBusy === 'whatsapp' ? 'Creating secure link…' : 'Create WhatsApp invitation'}
                 </Button>
                 <Button type="button" variant="outline" onClick={sendOwnerEmailInvite} disabled={!!ownerInviteBusy || !ownerInvite.listingSlug || !ownerInvite.contactName.trim() || !ownerInvite.contactEmail.trim()} className="gap-2">
-                  <Mail className="w-4 h-4" /> {ownerInviteBusy === 'email' ? 'Sending email…' : 'Send email invitation'}
+                  <Mail className="w-4 h-4" /> {ownerInviteBusy === 'email' ? 'Preparing email…' : 'Prepare email invitation'}
                 </Button>
               </div>
 
@@ -1238,12 +1269,16 @@ export default function AdminPanel() {
                 </div>
               )}
 
-              {ownerInviteResult?.channel === 'email' && (
-                <div className="rounded-xl border border-green-400/25 bg-green-400/5 p-4">
-                  <p className="font-semibold text-green-300">Email invitation sent</p>
-                  <p className="text-sm text-muted-foreground mt-1">The secure claim link was sent with the RallyHub Directory wording and your Brian Moore / RallyHub signature block. It expires after 72 hours and can only be used once.</p>
+              {ownerInviteResult?.channel === 'email-preview' && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+                  <p className="font-semibold">Email ready — review before sending</p>
+                  <Input value={ownerInviteResult.subject} onChange={e => setOwnerInviteResult(v => ({ ...v, subject: e.target.value }))} aria-label="Email subject" />
+                  <textarea value={ownerInviteResult.message} onChange={e => setOwnerInviteResult(v => ({ ...v, message: e.target.value }))} rows={18} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-6 font-sans" />
+                  <Button type="button" onClick={() => sendPreparedEmail(ownerInviteResult, 'owner')} disabled={resendInviteBusy === ownerInviteResult.invitationId} className="gap-2"><Mail className="w-4 h-4" /> {resendInviteBusy === ownerInviteResult.invitationId ? 'Sending…' : 'Send reviewed email'}</Button>
+                  <p className="text-xs text-muted-foreground">Nothing is emailed until you press Send reviewed email. The secure link expires after 72 hours.</p>
                 </div>
               )}
+              {ownerInviteResult?.channel === 'email-sent' && <div className="rounded-xl border border-green-400/25 bg-green-400/5 p-4 text-sm">Email invitation sent successfully.</div>}
             </div>
 
             <div className="space-y-2">
@@ -1350,11 +1385,27 @@ export default function AdminPanel() {
                       <Button size="sm" disabled={approvingDirectoryInvitation === invite.id} onClick={() => approveDirectoryInvitation(invite.id, invite.access_role)} className="gap-1">
                         <CheckCircle className="w-3.5 h-3.5" /> {approvingDirectoryInvitation === invite.id ? 'Approving…' : `Approve Directory ${invite.access_role === 'owner' ? 'Owner' : 'Editor'}`}
                       </Button>
+                      <Button size="sm" variant="outline" disabled={resendInviteBusy === invite.id} onClick={() => prepareInvitationResend(invite)}>
+                        {resendInviteBusy === invite.id ? 'Preparing…' : 'Review & Resend'}
+                      </Button>
                     </div>
                   </div>
                 );
               })}
             </div>
+
+
+            {resendPreview && (
+              <div className="glass rounded-xl p-4 border border-primary/30 space-y-3">
+                <div><p className="font-semibold">Review & Resend · {resendPreview.clubName}</p><p className="text-xs text-muted-foreground">{resendPreview.accessRole === 'editor' ? 'Directory Editor' : 'Primary Owner'} · {resendPreview.channel === 'whatsapp' ? 'WhatsApp' : 'Email'} · fresh 72-hour secure link created</p></div>
+                {resendPreview.channel === 'email' && <Input value={resendPreview.subject} onChange={e => setResendPreview(v => ({ ...v, subject: e.target.value }))} aria-label="Resend email subject" />}
+                <textarea value={resendPreview.message} onChange={e => setResendPreview(v => ({ ...v, message: e.target.value }))} rows={18} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-6 font-sans" />
+                <div className="flex flex-wrap gap-2">
+                  {resendPreview.channel === 'email' ? <Button type="button" onClick={() => sendPreparedEmail(resendPreview, 'resend')} disabled={resendInviteBusy === resendPreview.invitationId} className="gap-2"><Mail className="w-4 h-4" /> {resendInviteBusy === resendPreview.invitationId ? 'Sending…' : 'Send reviewed email'}</Button> : <Button type="button" onClick={openResendWhatsApp} className="gap-2"><MessageCircle className="w-4 h-4" /> Open reviewed WhatsApp</Button>}
+                  <Button type="button" variant="outline" onClick={() => setResendPreview(null)}>Close</Button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Verified directory owners & editors</p>
