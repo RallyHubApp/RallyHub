@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
         const tournamentId = clean(body.tournamentId, 180);
         allowed = await canManageTournament(base44, user, tournamentId);
         contextId = tournamentId || user.id;
-      } else if (purpose === 'about_founders' || purpose === 'about_master') {
+      } else if (purpose === 'about_founders' || purpose === 'about_master' || purpose === 'site_asset') {
         allowed = user.role === 'admin';
         contextId = user.id;
       }
@@ -169,10 +169,12 @@ Deno.serve(async (req) => {
       if (!guard.allowed) return guard.response;
       const result = await base44.asServiceRole.integrations.Core.UploadFile({ file });
       const fileUrl = result?.file_url || null;
-      if (['about_founders','about_master'].includes(purpose) && fileUrl) {
-        const existing = await base44.asServiceRole.entities.SiteAsset.filter({ key:purpose });
+      if (['about_founders','about_master','site_asset'].includes(purpose) && fileUrl) {
+        const assetKey = purpose === 'site_asset' ? clean(body.assetKey, 120) : purpose;
+        if (!assetKey) return Response.json({ error:'Asset name required.' }, { status:400 });
+        const existing = await base44.asServiceRole.entities.SiteAsset.filter({ key:assetKey });
         if (existing?.[0]?.id) await base44.asServiceRole.entities.SiteAsset.update(existing[0].id, { file_url:fileUrl, updated_by_user_id:user.id });
-        else await base44.asServiceRole.entities.SiteAsset.create({ key:purpose, file_url:fileUrl, updated_by_user_id:user.id });
+        else await base44.asServiceRole.entities.SiteAsset.create({ key:assetKey, file_url:fileUrl, updated_by_user_id:user.id });
       }
       return Response.json({ success:true, file_url:fileUrl });
     }
