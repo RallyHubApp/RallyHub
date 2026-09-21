@@ -369,7 +369,7 @@ Deno.serve(async (req) => {
   if (action === 'import_interclub_attendees') {
     const challengeId = String(interclubEventId || '').trim();
     const side = String(interclubSide || '').trim();
-    if (!challengeId || !['club_a','club_b'].includes(side)) return Response.json({ error:'interclubEventId and valid interclubSide required' }, { status:400 });
+    if (!challengeId || !['pool','club_a','club_b'].includes(side)) return Response.json({ error:'interclubEventId and valid interclubSide required' }, { status:400 });
     if (!groupId || !eventId) return Response.json({ error:'groupId and eventId required' }, { status:400 });
     if (!await interclubManagerAllowed(base44, user, challengeId)) return Response.json({ error:'Interclub event manager permission required' }, { status:403 });
 
@@ -445,7 +445,7 @@ Deno.serve(async (req) => {
       user_id:user.id,
       occurred_at:now,
       new_value_json:JSON.stringify({ side, group_id:String(groupId), group_name:String(group?.name||''), event_id:String(eventId), event_heading:String(event?.heading||''), created, skipped, waiting_list_excluded:waiting.size, created_names:createdNames }),
-      note:`Imported Spond attendees into ${side === 'club_a' ? challenge.club_a_name : challenge.club_b_name}.`,
+      note:`Imported Spond attendees into ${side === 'pool' ? 'the Interclub Player Pool' : side === 'club_a' ? challenge.club_a_name : challenge.club_b_name}.`,
     });
     return Response.json({ success:true, created, skipped, waitingListCount:waiting.size, createdNames, skippedNames, sourceGroupName:String(group?.name||''), event:{ id:event.id, heading:event.heading, startTimestamp:selectedStartTimestamp||eventStart(event), location:event.location?.address||event.location?.feature||'' } });
   }
