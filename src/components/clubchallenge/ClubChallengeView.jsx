@@ -61,51 +61,6 @@ function ClubBadge({ name, logo, primary, secondary }) {
   );
 }
 
-function RankingList({ side, title, participants, locked, onReorder }) {
-  const ordered = [...participants].sort((a, b) => (a.event_rank || 999) - (b.event_rank || 999));
-  const move = (from, to) => {
-    if (locked || to < 0 || to >= ordered.length || from === to) return;
-    const next = [...ordered];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    onReorder(side, next);
-  };
-  const handleDragEnd = result => {
-    if (!result.destination || locked) return;
-    move(result.source.index, result.destination.index);
-  };
-  return (
-    <div className="glass rounded-xl p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div><p className="text-sm font-semibold text-foreground">{title}</p><p className="text-[10px] text-muted-foreground">Strongest #1 → developing</p></div>
-        <Badge variant="outline">{ordered.length}</Badge>
-      </div>
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId={`cc-${side}`}>
-          {provided => (
-            <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-1 max-h-[32rem] overflow-auto">
-              {ordered.map((p, i) => (
-                <Draggable key={p.id} draggableId={p.id} index={i} isDragDisabled={locked}>
-                  {(dragProvided, snapshot) => (
-                    <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn('flex items-center gap-2 rounded-lg border border-border bg-secondary/60 p-2 min-h-11', snapshot.isDragging && 'border-primary bg-primary/10')}>
-                      <div {...dragProvided.dragHandleProps} className={cn('w-9 h-9 -ml-1 flex items-center justify-center rounded-md touch-none shrink-0', locked ? 'opacity-30' : 'text-muted-foreground active:bg-primary/10')}><GripVertical className="w-5 h-5" /></div>
-                      <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
-                      <span className="text-xs text-foreground flex-1 truncate">{p.display_name}</span>
-                      {p.gender && <span className="text-[10px] text-muted-foreground">{p.gender}</span>}
-                      {!locked && <div className="flex shrink-0"><button type="button" aria-label={`Move ${p.display_name} up`} disabled={i === 0} onClick={() => move(i, i - 1)} className="w-8 h-8 rounded-l-md border border-border flex items-center justify-center disabled:opacity-25 hover:bg-primary/10"><ChevronUp className="w-4 h-4" /></button><button type="button" aria-label={`Move ${p.display_name} down`} disabled={i === ordered.length - 1} onClick={() => move(i, i + 1)} className="w-8 h-8 rounded-r-md border border-l-0 border-border flex items-center justify-center disabled:opacity-25 hover:bg-primary/10"><ChevronDown className="w-4 h-4" /></button></div>}
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
-    </div>
-  );
-}
-
 function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImportSpond, onAddManual, onSave }) {
   const active = participants.filter(p => !['replaced','withdrawn','injured'].includes(p.status));
   const signature = active.map(p => `${p.id}:${p.side}:${p.event_rank}`).sort().join('|');
