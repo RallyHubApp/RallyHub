@@ -597,15 +597,49 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setSaving(false);
   };
 
-  const addManual = async side => {
-    const name = manual[side].trim();
+  const addManual = async (side, overrideName = '') => {
+    const name = String(overrideName || manual[side] || '').trim();
     if (!event || !name || !canManageEvent) return;
     try {
       const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'add_manual', side, displayName:name });
       if (res.data?.error) throw new Error(res.data.error);
-      setManual(m => ({ ...m, [side]: '' }));
+      if (!overrideName) setManual(m => ({ ...m, [side]: '' }));
       await sync();
-    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not add player'); }
+      return res.data;
+    } catch (e) {
+      toast.error(e?.response?.data?.error || e?.message || 'Could not add player');
+      throw e;
+    }
+  };
+
+  const organiseTeams = async ({ poolIds, clubAIds, clubBIds, clubAName, clubBName }) => {
+    if (!event || !canManageEvent || sportingActionRef.current) return;
+    sportingActionRef.current = true;
+    setSaving(true);
+    flushSync(() => setHostAction('Saving teams and rankings… one command sent'));
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+        eventId:event.id,
+        action:'organise_teams',
+        poolParticipantIds:poolIds,
+        clubAParticipantIds:clubAIds,
+        clubBParticipantIds:clubBIds,
+        clubAName,
+        clubBName,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      await sync();
+      toast.success(`Teams saved · ${clubAIds.length} vs ${clubBIds.length}${poolIds.length ? ` · ${poolIds.length} still unassigned` : ''}`);
+      return res.data;
+    } catch (e) {
+      const message = e?.response?.data?.error || e?.message || 'Could not save teams and rankings';
+      toast.error(message);
+      throw new Error(message);
+    } finally {
+      sportingActionRef.current = false;
+      setSaving(false);
+      setHostAction('');
+    }
   };
 
   const reorder = async (side, ordered) => {
