@@ -77,6 +77,7 @@ export default function AdminPanel() {
   const [revokingDirectoryAccess, setRevokingDirectoryAccess] = useState(null);
   const [removingDirectoryListing, setRemovingDirectoryListing] = useState(null);
   const [ownerInvite, setOwnerInvite] = useState({ listingSlug: '', contactName: '', contactPhone: '', contactEmail: '' });
+  const [directoryClubSearch, setDirectoryClubSearch] = useState('');
   const [ownerInviteBusy, setOwnerInviteBusy] = useState('');
   const [ownerInviteResult, setOwnerInviteResult] = useState(null);
   const [testingClareMail, setTestingClareMail] = useState(false);
@@ -482,6 +483,15 @@ export default function AdminPanel() {
   })();
 
   const selectedOwnerInviteListing = directoryAdminListings.find(item => item.slug === ownerInvite.listingSlug) || null;
+  const filteredDirectoryAdminListings = directoryAdminListings.filter(item => {
+    const q = directoryClubSearch.trim().toLowerCase();
+    return !q || `${item.name} ${item.county}`.toLowerCase().includes(q);
+  });
+  const chooseDirectoryClubForInvite = (listing) => {
+    setOwnerInvite(v => ({ ...v, listingSlug: listing.slug }));
+    setOwnerInviteResult(null);
+    setTimeout(() => document.getElementById('directory-beta-invite')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  };
 
   const betaInviteWhatsAppMessage = ({ claimUrl, clubName, contactName, accessRole = 'owner' }) => {
     const firstName = String(contactName || '').trim().split(/\s+/)[0] || 'there';
@@ -1200,7 +1210,29 @@ export default function AdminPanel() {
               </p>
             </div>
 
-            <div className="glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/25">
+            <div className="glass rounded-xl p-4 sm:p-5 space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Directory clubs</p>
+                <h3 className="text-lg font-bold text-foreground mt-1">Invite beta testers without leaving Admin</h3>
+                <p className="text-sm text-muted-foreground mt-1">Search any club already in the RallyHub Directory, select it here, then use the same secure invitation workflow below.</p>
+              </div>
+              <Input value={directoryClubSearch} onChange={e => setDirectoryClubSearch(e.target.value)} placeholder="Search club or county…" aria-label="Search Directory clubs" />
+              <div className="max-h-72 overflow-y-auto rounded-lg border border-border divide-y divide-border">
+                {filteredDirectoryAdminListings.map(listing => {
+                  const accesses = activeDirectoryAccesses.filter(access => access.listing_slug === listing.slug && access.status === 'active');
+                  const pending = directoryInvitations.filter(invite => invite.listing_slug === listing.slug && ['pending','used'].includes(invite.status));
+                  const status = accesses.length ? 'Claimed' : pending.length ? 'Invitation in progress' : 'Unclaimed';
+                  return <div key={listing.slug} className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/20">
+                    <div className="min-w-0"><p className="text-sm font-semibold truncate">{listing.name}</p><p className="text-xs text-muted-foreground">{listing.county || 'County not set'} · {status}{pending.length ? ` · ${pending.length} active invitation${pending.length === 1 ? '' : 's'}` : ''}</p></div>
+                    <Button type="button" size="sm" variant={ownerInvite.listingSlug === listing.slug ? 'default' : 'outline'} onClick={() => chooseDirectoryClubForInvite(listing)} className="shrink-0 gap-1"><UserPlus className="w-3.5 h-3.5" /> {ownerInvite.listingSlug === listing.slug ? 'Selected' : 'Invite / manage'}</Button>
+                  </div>;
+                })}
+                {filteredDirectoryAdminListings.length === 0 && <p className="p-4 text-sm text-muted-foreground">No Directory clubs match that search.</p>}
+              </div>
+              <p className="text-xs text-muted-foreground">{directoryAdminListings.length} Directory clubs available · showing {filteredDirectoryAdminListings.length}</p>
+            </div>
+
+            <div id="directory-beta-invite" className="glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/25 scroll-mt-24">
               <div className="rounded-lg border border-blue-400/25 bg-blue-400/5 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Clare Pickleball tenant email</p>
@@ -1227,7 +1259,7 @@ export default function AdminPanel() {
                     <option value="">Choose a club…</option>
                     {directoryAdminListings.map(listing => {
                       const claimed = activeDirectoryAccesses.some(access => access.listing_slug === listing.slug && access.status === 'active');
-                      return <option key={listing.slug} value={listing.slug} disabled={claimed}>{listing.name}{listing.county ? ` · ${listing.county}` : ''}{claimed ? ' · already claimed' : ''}</option>;
+                      return <option key={listing.slug} value={listing.slug}>{listing.name}{listing.county ? ` · ${listing.county}` : ''}{claimed ? ' · claimed' : ' · unclaimed'}</option>;
                     })}
                   </select>
                 </div>
