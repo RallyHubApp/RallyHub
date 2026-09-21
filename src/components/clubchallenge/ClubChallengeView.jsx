@@ -655,7 +655,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const calculateFormat = () => {
-    if (!aPlayers.length || !bPlayers.length) return null;
+    if (poolPlayers.length || !aPlayers.length || !bPlayers.length || aPlayers.length !== bPlayers.length) return null;
     try {
       return calculateClubChallengeFormat({ clubAPlayerCount: aPlayers.length, clubBPlayerCount: bPlayers.length, courts: number(setup.courts), availableMinutes: number(setup.availableMinutes), playMinutes: number(setup.playMinutes), changeoverMinutes: number(setup.changeoverMinutes), includeBreak: setup.includeBreak, breakMinutes: number(setup.breakMinutes), breakAfterRound: number(setup.breakAfterRound) });
     } catch { return null; }
