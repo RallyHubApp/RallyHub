@@ -1,88 +1,74 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BarChart3, CalendarDays, MapPin, Menu, Rocket, Search, Trophy, Users } from 'lucide-react';
+import { BarChart3, CalendarDays, MapPin, Menu, Rocket, Trophy, Users, Monitor, MessageCircle } from 'lucide-react';
 import Seo from '@/components/public/Seo';
 
-const LOGO_URL='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const LOGO='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 const HERO='/assets/rallyhub-home-hero.webp';
 const CLIFFS='/assets/rallyhub-home-cliffs.webp';
 const FOUNDERS='/assets/rallyhub-founders.webp';
 
-const featureCards=[
-  [MapPin,'Directory & Discovery','Find clubs, venues, sessions and events across Ireland.',CLIFFS],
-  [Users,'Club Management','Membership, profiles, communications and more.',HERO],
-  [CalendarDays,'Play & Organise','Sessions, courts, attendance and player management.',HERO],
-  [Trophy,'Competitions','King of the Court, Interclub and tournaments.',HERO],
-  [BarChart3,'Live Event Experience','Scoring, timers, Hall Displays and event control.',HERO],
-  [BarChart3,'Player Journey','Results, leaderboards and future DUPR integration.',HERO],
-  [Rocket,'Built to Grow','Pickleball first in Ireland, with a pathway to more sports.',CLIFFS],
+const cards=[
+ [MapPin,'Directory & Discovery','Find clubs, venues, sessions and events across Ireland.',CLIFFS,'50% 50%'],
+ [Users,'Club Management','Membership, profiles, communications and more.',HERO,'45% 42%'],
+ [CalendarDays,'Play & Organise','Sessions, courts, attendance and player management.',HERO,'34% 44%'],
+ [Trophy,'Competitions','King of the Court, Interclub and tournaments.',HERO,'72% 43%'],
+ [Monitor,'Live Event Experience','Scoring, timers, Hall Displays and event control.',HERO,'50% 52%'],
+ [BarChart3,'Player Journey','Results, leaderboards and future DUPR integration.',HERO,'38% 45%'],
+ [Rocket,'Built to Grow','Pickleball first in Ireland, with a pathway to more sports in the future.',CLIFFS,'72% 50%'],
 ];
 
 function Header(){
-  return <header className="border-b border-[#e7edef] bg-white">
-    <div className="mx-auto flex h-[72px] max-w-[1380px] items-center justify-between px-4 sm:px-6 lg:px-10 xl:px-12">
-      <Link to="/" className="flex items-center gap-2.5">
-        <img src={LOGO_URL} alt="RallyHub" className="h-[48px] w-[48px] object-contain sm:h-[52px] sm:w-[52px]"/>
-        <div><div className="text-[1.7rem] font-black leading-[.88] tracking-[-.045em] text-[#081342] sm:text-[2rem]">Rally<span className="text-[#078e48]">Hub</span></div>
-        <div className="mt-1.5 text-[7px] font-bold tracking-[.3em] text-[#0c1e53] sm:text-[8px]">PLAY <span className="text-[#0b914a]">•</span> CONNECT <span className="text-[#0b914a]">•</span> BELONG</div></div>
-      </Link>
-      <nav className="hidden items-center gap-[27px] text-[12px] font-semibold text-[#0d2258] lg:flex">
-        <Link to="/">Home</Link><Link to="/directory">Directory</Link><Link to="/directory">Clubs</Link><Link to="/directory">Events</Link><Link className="border-b-2 border-[#078e48] pb-2 text-[#078e48]" to="/about">About</Link>
-      </nav>
-      <Link to="/directory/add" className="hidden rounded-lg bg-[#078e48] px-6 py-3 text-[13px] font-bold text-white lg:block">Get Started</Link>
-      <Menu className="h-6 w-6 lg:hidden"/>
-    </div>
-  </header>
+ return <header className="h-[63px] border-b border-[#e5ecef] bg-white">
+  <div className="mx-auto flex h-full max-w-[1024px] items-center px-[37px]">
+   <Link to="/" className="flex items-center gap-2">
+    <img src={LOGO} alt="RallyHub logo" className="h-[51px] w-[51px] object-contain"/>
+    <div><div className="text-[27px] font-black leading-[.9] tracking-[-.045em] text-[#07184c]">Rally<span className="text-[#078e48]">Hub</span></div><div className="mt-[7px] text-[7px] font-bold tracking-[.29em] text-[#07184c]">PLAY <span className="text-[#078e48]">•</span> CONNECT <span className="text-[#078e48]">•</span> BELONG</div></div>
+   </Link>
+   <nav className="ml-auto hidden items-center gap-[28px] text-[11px] text-[#07184c] md:flex"><Link to="/">Home</Link><Link to="/directory">Directory</Link><Link to="/directory">Clubs</Link><Link to="/directory">Events</Link><Link to="/about" className="border-b-2 border-[#078e48] pb-[10px] text-[#078e48]">About</Link></nav>
+   <Link to="/directory/add" className="ml-[30px] hidden rounded-[6px] bg-[#078e48] px-[29px] py-[11px] text-[11px] font-bold text-white md:block">Get Started</Link>
+   <Menu className="ml-auto h-6 w-6 md:hidden"/>
+  </div>
+ </header>
 }
 
 export default function About(){
  return <>
-  <Seo title="About RallyHub | Built Around Sport. Built Around People." description="RallyHub connects players, clubs, organisers and competitions — built from real club experience in Ireland and designed to grow." path="/about"/>
-  <div className="min-h-screen overflow-x-hidden bg-white text-[#07184c]">
-   <Header/>
-   <main>
-    <section className="bg-[#f7fcfd]">
-      <div className="mx-auto grid max-w-[1380px] lg:grid-cols-[43%_57%]">
-        <div className="flex items-center px-5 py-10 sm:px-7 lg:px-10 lg:py-12 xl:px-12">
-          <div>
-            <span className="inline-flex rounded-full bg-[#e6f5ec] px-4 py-2 text-[11px] font-black tracking-[.11em] text-[#078e48]">PICKLEBALL FIRST • BUILT IN IRELAND</span>
-            <h1 className="mt-5 text-[2.7rem] font-black leading-[.96] tracking-[-.05em] sm:text-[3.7rem] lg:text-[4rem]">Built around sport.<br/>Built around <span className="text-[#078e48]">people.</span></h1>
-            <p className="mt-5 max-w-[520px] text-[16px] leading-[1.5] text-[#243964]">RallyHub brings players, clubs, organisers and competitions together — making it easier to find somewhere to play, run a thriving club and create great sporting experiences.</p>
-            <div className="mt-6 flex flex-wrap gap-3"><Link to="/directory" className="rounded-full bg-[#07447b] px-6 py-3 text-[13px] font-bold text-white">Explore the Directory →</Link><a href="#capabilities" className="rounded-full border border-[#174578] bg-white px-6 py-3 text-[13px] font-bold text-[#07184c]">See What RallyHub Does</a></div>
-            <div className="mt-7 flex gap-7 text-[12px] font-bold"><span>👥 Players<br/>Welcome</span><span>📍 Clubs<br/>Grow</span><span>▣ Communities<br/>Thrive</span></div>
-          </div>
-        </div>
-        <div className="relative min-h-[360px] lg:min-h-[560px]"><img src={HERO} alt="Pickleball players on court" className="absolute inset-0 h-full w-full object-cover"/><div className="absolute bottom-6 right-5 rotate-[-5deg] bg-[#07184c]/90 px-6 py-4 text-right text-[22px] italic text-white shadow-xl">Good People.<br/>Great Games.<div className="mt-2 h-1 w-28 bg-[#8dd33f]"/></div></div>
-      </div>
-    </section>
+ <Seo title="About RallyHub | Built Around Sport. Built Around People." description="RallyHub connects players, clubs, organisers and competitions — built from real club experience in Ireland and designed to grow." path="/about"/>
+ <div className="min-h-screen bg-white font-sans text-[#07184c]"><Header/><main>
+  <section className="bg-[#f7fbfc]">
+   <div className="mx-auto grid max-w-[1024px] md:grid-cols-[42%_58%]">
+    <div className="flex min-h-[437px] items-center px-[39px] py-8">
+     <div><div className="inline-flex rounded-full bg-[#e6f5ec] px-[12px] py-[6px] text-[10px] font-black tracking-[.08em] text-[#078e48]">PICKLEBALL FIRST • BUILT IN IRELAND</div>
+      <h1 className="mt-[18px] text-[42px] font-black leading-[.98] tracking-[-.045em]">Built around sport.<br/>Built around <span className="text-[#078e48]">people.</span></h1>
+      <p className="mt-[15px] max-w-[335px] text-[14px] leading-[1.45] text-[#263d6b]">RallyHub brings players, clubs, organisers and competitions together — making it easier to find somewhere to play, run a thriving club and create great sporting experiences.</p>
+      <div className="mt-[17px] flex flex-wrap gap-[10px]"><Link to="/directory" className="rounded-full bg-[#07528a] px-[18px] py-[10px] text-[11px] font-bold text-white">Explore the Directory&nbsp; →</Link><a href="#capabilities" className="rounded-full border border-[#174578] bg-white px-[18px] py-[10px] text-[11px] font-bold">See What RallyHub Does</a></div>
+      <div className="mt-[23px] grid grid-cols-3 gap-4 text-[10px] font-semibold text-[#10275a]"><div className="flex gap-2"><Users className="h-7 w-7 text-[#09a55a]"/><span>Players<br/>Welcome</span></div><div className="flex gap-2"><MapPin className="h-7 w-7 text-[#09a55a]"/><span>Clubs<br/>Grow</span></div><div className="flex gap-2"><CalendarDays className="h-7 w-7 text-[#09a55a]"/><span>Communities<br/>Thrive</span></div></div>
+     </div>
+    </div>
+    <div className="relative min-h-[437px] overflow-hidden"><img src={HERO} alt="Pickleball being played" className="absolute inset-0 h-full w-full object-cover"/><div className="absolute bottom-[25px] right-[22px] rotate-[-7deg] bg-[#07184c]/95 px-[22px] py-[13px] text-right text-[19px] italic leading-[1.35] text-white shadow-xl">Good People.<br/>Great Games.<div className="ml-auto mt-[6px] h-[3px] w-[96px] bg-[#83cf3d]"/></div></div>
+   </div>
+  </section>
 
-    <section className="bg-white py-4"><div className="mx-auto grid max-w-[1320px] grid-cols-2 rounded-xl bg-[#f0f8fb] px-5 py-5 sm:grid-cols-4">
-      {[[Users,'155+','Members (and growing)'],[MapPin,'3','Club venues in Clare'],[CalendarDays,'Weekly','Club sessions'],[Users,'A growing','Irish community']].map(([I,n,t])=><div key={t} className="flex items-center gap-3 border-[#cbdce3] px-4 py-2 sm:border-r sm:last:border-0"><I className="h-7 w-7 text-[#0b4c8c]"/><div><div className="text-[22px] font-black">{n}</div><div className="text-[11px]">{t}</div></div></div>)}
-    </div></section>
+  <section className="mx-auto max-w-[1024px] px-[29px] py-[14px]"><div className="grid grid-cols-2 rounded-[8px] bg-[#eff8fb] px-[55px] py-[13px] sm:grid-cols-4">
+   {[[Users,'155+','Members (and growing)'],[MapPin,'3','Club venues in Clare'],[CalendarDays,'Weekly','Club sessions'],[Users,'A growing','Irish community']].map(([I,a,b],i)=><div key={b} className={"flex items-center gap-[13px] px-[17px] py-[3px] "+(i<3?'sm:border-r sm:border-[#c7dbe3]':'')}><I className="h-7 w-7 shrink-0 text-[#0b5793]"/><div><div className="text-[20px] font-black leading-none">{a}</div><div className="mt-[4px] whitespace-nowrap text-[9px]">{b}</div></div></div>)}
+  </div></section>
 
-    <section className="mx-auto grid max-w-[1380px] gap-7 px-5 py-5 sm:px-7 lg:grid-cols-[47%_53%] lg:px-10 xl:px-12">
-      <div className="relative overflow-hidden rounded-xl bg-[#eef3f4]"><img src={FOUNDERS} alt="Conall and Brian Moore, RallyHub founders" className="h-full min-h-[360px] w-full object-cover"/><div className="absolute bottom-4 left-4 rounded-md bg-[#064b78] px-4 py-2 text-white"><div className="text-[13px] font-bold">Conall and Brian Moore</div><div className="text-[11px]">Founders, RallyHub</div></div></div>
-      <div className="flex flex-col justify-center lg:pl-3"><div className="text-[11px] font-black tracking-[.12em] text-[#078e48]">OUR STORY</div><h2 className="mt-2 text-[2rem] font-black tracking-[-.035em] lg:text-[2.4rem]">From our court to a bigger community</h2><p className="mt-3 max-w-[700px] text-[15px] leading-[1.5] text-[#30456f]">RallyHub grew from our own experience in Clare Pickleball — the joy of playing, the challenge of organising, and the brilliant people we've met along the way. Conall and Brian created RallyHub to make it easier for clubs, players and organisers to connect, play and grow — not just in Clare, but across Ireland and beyond.</p>
-      <div className="mt-5 rounded-xl bg-[#eef8f3] p-5 text-[14px] italic leading-[1.45] text-[#173765]"><span className="mr-2 text-3xl font-black text-[#0aa15b]">“</span>Pickleball has given us so much — great games, great people and a real sense of community. RallyHub is our way of giving something back and helping the sport grow.”<div className="mt-3 font-bold not-italic">Brian Moore</div></div></div>
-    </section>
+  <section className="mx-auto grid max-w-[1024px] gap-[28px] px-[30px] pb-[19px] md:grid-cols-[47%_53%]">
+   <div className="relative h-[296px] overflow-hidden rounded-[5px] bg-[#e9eef0]"><img src={FOUNDERS} alt="Conall and Brian Moore" className="h-full w-full object-cover object-center"/><div className="absolute bottom-0 left-[10px] rounded-t-[5px] bg-[#075287] px-[12px] py-[8px] text-white"><div className="text-[11px] font-bold">Conall and Brian Moore</div><div className="text-[9px]">Founders, RallyHub</div></div></div>
+   <div className="flex flex-col justify-center"><div className="text-[9px] font-black tracking-[.1em] text-[#078e48]">OUR STORY</div><h2 className="mt-[5px] text-[25px] font-black leading-tight tracking-[-.03em]">From our court to a bigger community</h2><p className="mt-[9px] text-[12px] leading-[1.45] text-[#2e4570]">RallyHub grew from our own experience in Clare Pickleball — the joy of playing, the challenge of organising, and the brilliant people we’ve met along the way. Conall and Brian created RallyHub to make it easier for clubs, players and organisers to connect, play and grow — not just in Clare, but across Ireland and beyond.</p>
+    <div className="mt-[12px] rounded-[6px] bg-[#edf8f4] px-[15px] py-[11px] text-[11px] italic leading-[1.45] text-[#24416c]"><span className="mr-2 text-[25px] font-black leading-none text-[#08a158]">“</span>“Pickleball has given us so much — great games, great people and a real sense of community. RallyHub is our way of giving something back and helping the sport grow.”<div className="mt-[5px] ml-[34px] font-bold not-italic text-[#07184c]">Brian Moore</div><div className="ml-[34px] mt-[3px] h-[2px] w-[36px] bg-[#08a158]"/></div>
+   </div>
+  </section>
 
-    <section id="capabilities" className="mx-auto max-w-[1380px] px-5 py-8 sm:px-7 lg:px-10 xl:px-12">
-      <div className="text-[11px] font-black tracking-[.12em] text-[#078e48]">WHAT RALLYHUB BRINGS TOGETHER</div>
-      <div className="flex items-end justify-between"><h2 className="mt-2 text-[2rem] font-black tracking-[-.035em] lg:text-[2.45rem]">A complete platform for clubs, players and organisers</h2><span className="hidden text-[12px] font-semibold lg:block">See all features →</span></div>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-       {featureCards.map(([I,title,copy,img],idx)=><article key={title} className={"group overflow-hidden rounded-xl border border-[#dbe6e8] bg-white shadow-[0_8px_20px_rgba(13,33,66,.07)] "+(idx>3?'lg:col-span-1':'')}>
-          <div className="relative h-[118px] overflow-hidden"><img src={img} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-[#07184c]/25 to-transparent"/></div>
-          <div className="relative p-4 pt-5"><div className="absolute -top-7 left-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#08a153] text-white ring-4 ring-white"><I className="h-6 w-6"/></div><h3 className="mt-1 text-[15px] font-black">{title}</h3><p className="mt-1 text-[12px] leading-[1.35] text-[#344b75]">{copy}</p></div>
-        </article>)}
-      </div>
-    </section>
+  <section id="capabilities" className="mx-auto max-w-[1024px] px-[30px] pb-[18px] pt-[2px]"><div className="text-[9px] font-black tracking-[.1em] text-[#078e48]">WHAT RALLYHUB BRINGS TOGETHER</div><div className="flex items-end justify-between"><h2 className="mt-[6px] text-[26px] font-black tracking-[-.035em]">A complete platform for clubs, players and organisers</h2><span className="mb-[5px] hidden text-[9px] md:block">See all features&nbsp; →</span></div>
+   <div className="mt-[10px] grid gap-[12px] sm:grid-cols-2 md:grid-cols-4">
+    {cards.map(([I,title,copy,img,pos],i)=><article key={title} className={(i>3?'md:col-span-1 ':'')+"overflow-hidden rounded-[6px] border border-[#dce6e8] bg-white shadow-[0_4px_12px_rgba(12,34,65,.10)]"}>
+     <div className="h-[89px] overflow-hidden"><img src={img} alt="" className="h-full w-full object-cover" style={{objectPosition:pos}}/></div><div className="relative min-h-[68px] px-[13px] pb-[9px] pt-[13px]"><div className="absolute -top-[24px] left-[9px] flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#09a957] text-white ring-[3px] ring-white"><I className="h-[20px] w-[20px]"/></div><h3 className="ml-[47px] text-[11px] font-black leading-tight">{title}</h3><p className="ml-[47px] mt-[3px] text-[9px] leading-[1.3] text-[#344a72]">{copy}</p></div>
+    </article>)}
+   </div>
+  </section>
 
-    <section className="mt-3 bg-[#073a62] text-white"><div className="mx-auto grid max-w-[1380px] lg:grid-cols-[32%_68%]">
-      <div className="min-h-[270px]"><img src={HERO} alt="Pickleball community" className="h-full w-full object-cover"/></div>
-      <div className="relative flex items-center px-6 py-10 sm:px-10"><div><div className="text-[11px] font-black tracking-[.13em] text-[#78d88f]">JOIN THE JOURNEY</div><h2 className="mt-2 text-[2rem] font-black">Let's grow the game together</h2><p className="mt-2 max-w-[620px] text-[15px] text-white/90">Whether you're a player, club, organiser or just curious about pickleball, we'd love to hear from you.</p><div className="mt-5 flex flex-wrap gap-3"><Link to="/contact" className="rounded-lg bg-[#08a153] px-7 py-3 text-[13px] font-bold">Get in Touch</Link><Link to="/contact" className="rounded-lg border border-white px-7 py-3 text-[13px] font-bold">Contact Brian on WhatsApp</Link></div></div>
-      <div className="ml-auto hidden h-44 w-44 rotate-[-6deg] items-center justify-center rounded-full border-4 border-white/80 text-center text-[22px] italic leading-tight lg:flex">More<br/>People<br/>More Places<br/><span className="text-[#b6e841]">Brighter Futures</span></div></div>
-    </div></section>
-   </main>
-  </div>
- </>;
+  <section className="relative overflow-hidden bg-[#073d65] text-white"><div className="mx-auto grid min-h-[225px] max-w-[1024px] md:grid-cols-[32%_68%]"><div className="overflow-hidden"><img src={HERO} alt="Pickleball community" className="h-full min-h-[225px] w-full object-cover"/></div><div className="relative flex items-center px-[28px] py-[25px]"><div className="max-w-[520px]"><div className="text-[9px] font-black tracking-[.12em] text-[#65d77d]">JOIN THE JOURNEY</div><h2 className="mt-[7px] text-[25px] font-black">Let’s grow the game together</h2><p className="mt-[6px] max-w-[470px] text-[11px] leading-[1.45] text-white/95">Whether you’re a player, club, organiser or just curious about pickleball, we’d love to hear from you.</p><div className="mt-[15px] flex gap-[12px]"><Link to="/contact" className="rounded-[5px] bg-[#08a65a] px-[31px] py-[11px] text-[10px] font-bold">Get in Touch</Link><Link to="/contact" className="flex items-center gap-2 rounded-[5px] border border-white px-[18px] py-[10px] text-[10px] font-bold"><MessageCircle className="h-5 w-5"/>Contact Brian on WhatsApp</Link></div></div><div className="absolute right-[25px] top-1/2 hidden h-[145px] w-[145px] -translate-y-1/2 rotate-[-5deg] items-center justify-center rounded-full border-[3px] border-white/90 text-center text-[17px] italic leading-[1.25] lg:flex">More<br/>People<br/>More Places<br/><span className="text-[#b7e83e]">Brighter Futures</span></div></div></div></section>
+ </main></div></>;
 }
