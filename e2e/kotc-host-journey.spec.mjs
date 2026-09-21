@@ -206,6 +206,20 @@ function createModel() {
         return { success: true, session: model.session, pair: model.fixedPairs[0], locked: body.locked !== false };
       }
 
+      if (body.commandType === 'adjust_proposed_round') {
+        await sleep(280);
+        const round = currentRound();
+        let changed = 0;
+        for (const slot of currentSlots()) {
+          const next = body.slotParticipantIds?.[slot.id];
+          if (next && next !== slot.participant_id) { slot.participant_id = next; slot.assignment_type = 'manual_override'; slot.assignment_revision = Number(slot.assignment_revision || 1) + 1; changed += 1; }
+        }
+        syncMatchesFromSlots(round.id);
+        if (changed) round.proposal_revision = Number(round.proposal_revision || 1) + 1;
+        model.session.revision += 1;
+        return { success: true, noChange: changed === 0, session: model.session, round, changes: Array.from({ length: changed }, (_, index) => ({ index })) };
+      }
+
       if (body.commandType === 'start_proposed_round' || name === 'startKotcRound') {
         await sleep(600);
         const round = currentRound();
