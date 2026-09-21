@@ -1372,7 +1372,7 @@ export default function AdminPanel() {
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-medium text-foreground">{invite.listing_name_snapshot || invite.listing_slug}</p>
-                        <Badge variant="outline" className={statusClass}>Awaiting acceptance</Badge>
+                        <Badge variant="outline" className={statusClass}>{invite.used_by_user_id ? 'Ready for approval' : 'Awaiting recipient'}</Badge>
                         <Badge variant="outline">{invite.access_role === 'owner' ? 'Primary Owner' : 'Directory Editor'}</Badge>
                         <Badge variant="outline">{invite.channel === 'whatsapp' ? 'WhatsApp' : 'Email'}</Badge>
                       </div>
@@ -1382,9 +1382,9 @@ export default function AdminPanel() {
                       {invite.used_at && <p className="text-xs text-green-400">Accepted: {new Date(invite.used_at).toLocaleString('en-IE')}</p>}
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0">
-                      <Button size="sm" disabled={approvingDirectoryInvitation === invite.id} onClick={() => approveDirectoryInvitation(invite.id, invite.access_role)} className="gap-1">
+                      {invite.used_by_user_id && <Button size="sm" disabled={approvingDirectoryInvitation === invite.id} onClick={() => approveDirectoryInvitation(invite.id, invite.access_role)} className="gap-1">
                         <CheckCircle className="w-3.5 h-3.5" /> {approvingDirectoryInvitation === invite.id ? 'Approving…' : `Approve Directory ${invite.access_role === 'owner' ? 'Owner' : 'Editor'}`}
-                      </Button>
+                      </Button>}
                       <Button size="sm" variant="outline" disabled={resendInviteBusy === invite.id} onClick={() => prepareInvitationResend(invite)}>
                         {resendInviteBusy === invite.id ? 'Preparing…' : 'Review & Resend'}
                       </Button>
