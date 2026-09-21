@@ -16,6 +16,7 @@ const eventFn = fs.readFileSync('base44/functions/manageClubChallengeEvent/entry
 const scoreFn = fs.readFileSync('base44/functions/saveClubChallengeScore/entry.ts','utf8');
 const voteFn = fs.readFileSync('base44/functions/castPublicClubChallengePotVote/entry.ts','utf8');
 const participantFn = fs.readFileSync('base44/functions/manageClubChallengeParticipant/entry.ts','utf8');
+const spondFn = fs.readFileSync('base44/functions/spondIntegrationWorking/entry.ts','utf8');
 const scheduleFn = fs.readFileSync('base44/functions/updateClubChallengeSchedule/entry.ts','utf8');
 const finaliseFn = fs.readFileSync('base44/functions/finaliseClubChallenge/entry.ts','utf8');
 const practiceFn = fs.readFileSync('base44/functions/loadClubChallengePracticeRoster/entry.ts','utf8');
@@ -71,11 +72,14 @@ check('test mode: full population includes Showcase when enabled', contains(full
 check('test mode: full population includes sample POT voting', contains(fullPracticeFn,'practiceVotes') && contains(fullPracticeFn,"pot_status:'revealed'"));
 check('test mode: visual bulk population is one browser function invocation', (ui.match(/populateClubChallengePracticeScenario/g)||[]).length === 1);
 
-// 3. Ranking journey: touch-friendly as well as drag/drop.
-check('host: rankings retain drag/drop', contains(ui,'DragDropContext'));
-check('host: rankings expose explicit move-up control', contains(ui,'Move ${p.display_name} up'));
-check('host: rankings expose explicit move-down control', contains(ui,'Move ${p.display_name} down'));
-check('host: rank number is visually prominent', contains(ui,'rounded-full bg-primary text-primary-foreground'));
+// 3. Team build + ranking journey: pooled import, drag/drop and one-save organisation.
+check('host: team builder has a shared Player Pool', contains(ui,'Player Pool') && contains(ui,'Import Spond Event'));
+check('host: teams and rankings use cross-column drag/drop', contains(ui,'DragDropContext') && contains(ui,"Droppable droppableId={id}") && contains(ui,"club_a") && contains(ui,"club_b"));
+check('host: team names are editable before saving', contains(ui,'Team name') && contains(ui,'Save Teams & Rankings'));
+check('host: team rank number is visually prominent', contains(ui,'rounded-full bg-primary text-primary-foreground'));
+check('host: team organisation is a single backend action', contains(ui,"action:'organise_teams'") && contains(participantFn,"action === 'organise_teams'"));
+check('host: draw is blocked until pool is empty and team sizes match', contains(ui,'poolPlayers.length') && contains(ui,'aPlayers.length !== bPlayers.length'));
+check('Spond: Interclub import supports neutral Player Pool', contains(spondFn,"['pool','club_a','club_b'].includes(side)") && contains(spondFn,"Interclub Player Pool"));
 
 // 4. Busy-hall live operation.
 check('host: live screen has at-a-glance court state', contains(ui,'Round at a Glance'));
