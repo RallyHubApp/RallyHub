@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,10 +46,12 @@ function CourtScore({match,session,token,clientId,onSaved}){
 }
 
 export default function PublicKotcScorer(){
- const {token}=useParams();const clientId=useMemo(()=>getClientId(),[]);const [data,setData]=useState(null),[error,setError]=useState(''),[offline,setOffline]=useState(false),[now,setNow]=useState(Date.now()),[refreshing,setRefreshing]=useState(false);
+ const {token}=useParams();const navigate=useNavigate();const clientId=useMemo(()=>getClientId(),[]);const [data,setData]=useState(null),[error,setError]=useState(''),[offline,setOffline]=useState(false),[now,setNow]=useState(Date.now()),[refreshing,setRefreshing]=useState(false);
  const dataRef=useRef(null);useEffect(()=>{dataRef.current=data;},[data]);
- const load=async({manual=false}={})=>{if(manual)setRefreshing(true);try{const r=await scorerInvoke({action:'state',token,clientId},2);setData(r.data);setError('');setOffline(false);return r.data;}catch(e){if(isRateLimit(e)&&dataRef.current)return dataRef.current;if(dataRef.current)setOffline(true);else setError(msg(e));return null;}finally{if(manual)setRefreshing(false);}};
+ const load=async({manual=false}={})=>{if(manual)setRefreshing(true);try{const r=await scorerInvoke({action:'state',token,clientId},2);if(r.data?.finished&&r.data?.results_path){navigate(r.data.results_path,{replace:true});return r.data;}setData(r.data);setError('');setOffline(false);return r.data;}catch(e){if(isRateLimit(e)&&dataRef.current)return dataRef.current;if(dataRef.current)setOffline(true);else setError(msg(e));return null;}finally{if(manual)setRefreshing(false);}};
  useEffect(()=>{load();const t=setInterval(()=>setNow(Date.now()),1000);const off=()=>setOffline(true),on=()=>{setOffline(false);load();},focus=()=>{load();};window.addEventListener('offline',off);window.addEventListener('online',on);window.addEventListener('focus',focus);return()=>{clearInterval(t);window.removeEventListener('offline',off);window.removeEventListener('online',on);window.removeEventListener('focus',focus);};},[token]);
+ const allResolvedForFinishWatch=!!data?.matches?.length&&(data.matches||[]).every(m=>['completed','retired','abandoned','not_played'].includes(m.status));
+ useEffect(()=>{if(data?.session?.status!=='in_progress'||!allResolvedForFinishWatch)return;const spread=[...clientId].reduce((n,ch)=>n+ch.charCodeAt(0),0)%12000;const t=setInterval(()=>load(),22000+spread);return()=>clearInterval(t);},[data?.session?.status,data?.session?.current_round_number,allResolvedForFinishWatch,clientId,token]);
  if(error&&!data)return <div className="min-h-screen bg-background grid place-items-center p-4"><div className="glass rounded-xl p-5 max-w-md"><h1 className="font-bold">Scorer link unavailable</h1><p className="text-sm text-muted-foreground mt-2">{error}</p></div></div>;
  if(!data)return <div className="min-h-screen bg-background grid place-items-center"><RefreshCw className="animate-spin"/></div>;
  const t=data.timer||{};const remaining=t.running&&t.deadlineAt?Math.max(0,Math.ceil((Date.parse(t.deadlineAt)-now)/1000)):Number(t.remainingSeconds||0);const live=data.session.status==='in_progress'&&data.round?.status==='started';const allSaved=(data.matches||[]).length>0&&(data.matches||[]).every(m=>['completed','retired','abandoned','not_played'].includes(m.status));
