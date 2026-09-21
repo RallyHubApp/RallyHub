@@ -83,10 +83,10 @@ test('desktop setup: Balanced Ranking spreads ranked strength evenly across four
   await expect.poll(()=>createBody!==null).toBe(true);
   expect(createBody.drawMethod).toBe('balanced');
   expect(createBody.playerOrder).toEqual([
-    'player-1','player-8','player-9','player-16',
-    'player-2','player-7','player-10','player-15',
-    'player-3','player-6','player-11','player-14',
-    'player-4','player-5','player-12','player-13',
+    'player-01','player-08','player-09','player-16',
+    'player-02','player-07','player-10','player-15',
+    'player-03','player-06','player-11','player-14',
+    'player-04','player-05','player-12','player-13',
     'player-17','player-18',
   ]);
 });
