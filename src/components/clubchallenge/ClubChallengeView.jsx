@@ -130,7 +130,7 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
             if (!p) return null;
             return <Draggable key={p.id} draggableId={p.id} index={i} isDragDisabled={locked || busy}>
               {(dragProvided, dragSnapshot) => <div data-testid={`cc-team-player-${p.id}`} ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn('flex items-center gap-2 rounded-lg border border-border bg-secondary/60 p-2 min-h-11', dragSnapshot.isDragging && 'border-primary bg-primary/10 shadow-lg')}>
-                <div {...dragProvided.dragHandleProps} className="w-9 h-9 -ml-1 flex items-center justify-center rounded-md touch-none shrink-0 text-muted-foreground active:bg-primary/10"><GripVertical className="w-5 h-5" /></div>
+                <div data-testid={`cc-team-drag-${p.id}`} {...dragProvided.dragHandleProps} className="w-9 h-9 -ml-1 flex items-center justify-center rounded-md touch-none shrink-0 text-muted-foreground active:bg-primary/10"><GripVertical className="w-5 h-5" /></div>
                 {id !== 'pool' && <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>}
                 <span className="text-xs text-foreground flex-1 truncate">{p.display_name}</span>
                 {p.gender && <span className="text-[10px] text-muted-foreground">{p.gender}</span>}
