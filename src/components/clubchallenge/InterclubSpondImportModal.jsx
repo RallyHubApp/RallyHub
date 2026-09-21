@@ -138,6 +138,17 @@ export default function InterclubSpondImportModal({ open, onOpenChange, tourname
     } finally { setLoading(false); }
   };
 
+  const importAnother = () => {
+    setStep('group');
+    setError('');
+    setSelectedGroup(null);
+    setEvents([]);
+    setSelectedEvent(null);
+    setAttendees([]);
+    setWaitingListCount(0);
+    setResult(null);
+  };
+
   const close = () => {
     onOpenChange(false);
     window.setTimeout(() => {
@@ -207,7 +218,7 @@ export default function InterclubSpondImportModal({ open, onOpenChange, tourname
           <p className="text-sm">{result?.created || 0} player{Number(result?.created||0)===1?'':'s'} added to {poolMode ? 'the Player Pool' : clubName}.</p>
           {result?.skipped>0&&<p className="text-xs text-muted-foreground">{result.skipped} already-present player{result.skipped===1?' was':'s were'} skipped safely.</p>}
           {result?.waitingListCount>0&&<p className="text-xs text-muted-foreground">{result.waitingListCount} waiting-list player{result.waitingListCount===1?' was':'s were'} not imported.</p>}
-          <Button onClick={close} className="w-full">{poolMode ? 'Done · Import another event or build teams' : 'Done'}</Button>
+          {poolMode ? <div className="grid grid-cols-2 gap-2"><Button variant="outline" onClick={close}>Done</Button><Button onClick={importAnother}>Import Another Spond Event</Button></div> : <Button onClick={close} className="w-full">Done</Button>}
         </div>}
       </DialogContent>
     </Dialog>
