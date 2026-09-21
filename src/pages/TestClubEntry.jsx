@@ -30,6 +30,8 @@ export default function TestClubEntry() {
         return;
       }
       try {
+        if (restore) sessionStorage.removeItem('rallyhub-test-club-mode');
+        else sessionStorage.setItem('rallyhub-test-club-mode', '1');
         const res = await base44.functions.invoke('securityContext', {
           action: 'activate',
           tenantId: restore ? CLARE_TENANT_ID : TEST_TENANT_ID,
@@ -42,6 +44,7 @@ export default function TestClubEntry() {
           window.location.replace('/app');
         }, 700);
       } catch (err) {
+        if (!restore) sessionStorage.removeItem('rallyhub-test-club-mode');
         if (!active) return;
         setStatus('error');
         setError(err.message || 'Could not switch the temporary test club context.');
