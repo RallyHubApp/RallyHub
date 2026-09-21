@@ -972,41 +972,6 @@ Deno.serve(async (req) => {
     }
 
 
-    if (action === 'prepare_resend_invitation') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
-      const invitationId = String(body.invitationId || '').trim();
-      const rows = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ id: invitationId });
-      const previous = rows?.[0];
-      if (!previous) return Response.json({ error: 'Invitation not found' }, { status: 404 });
-      const listing = await resolveListing(base44, previous.listing_slug);
-      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
-      if (previous.status === 'pending') await base44.asServiceRole.entities.DirectoryClaimInvitation.update(previous.id, { status: 'revoked' });
-      const invitation = await createTrustedClaimInvitation(base44, {
-        listing, user,
-        contactName: previous.contact_name || '', contactEmail: previous.contact_email || '', contactPhone: previous.contact_phone || '',
-        channel: previous.channel === 'whatsapp' ? 'whatsapp' : 'email', accessRole: previous.access_role === 'editor' ? 'editor' : 'owner'
-      });
-      return Response.json({ success: true, invitationId: invitation.id, channel: previous.channel, accessRole: previous.access_role, contactName: previous.contact_name, contactEmail: previous.contact_email, contactPhone: previous.contact_phone, listingSlug: listing.slug, clubName: listing.name, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
-    }
-
-    if (action === 'send_prepared_invitation_email') {
-      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
-      const invitationId = String(body.invitationId || '').trim();
-      const rows = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ id: invitationId });
-      const invitation = rows?.[0];
-      if (!invitation || invitation.status !== 'pending') return Response.json({ error: 'Prepared invitation not found' }, { status: 404 });
-      const listing = await resolveListing(base44, invitation.listing_slug);
-      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
-      const result = await sendClaimInviteEmail(base44, {
-        user, listing, contactEmail: invitation.contact_email, contactName: invitation.contact_name,
-        claimUrl: String(body.claimUrl || ''), accessRole: invitation.access_role,
-        customText: String(body.message || '').slice(0, 12000), customSubject: String(body.subject || '').slice(0, 180)
-      });
-      if (!result.sent) return Response.json({ error: result.error || 'Could not send invitation.' }, { status: result.limited ? 429 : 502 });
-      return Response.json({ success: true, sent: true, email: result.to });
-    }
-
-
     if (action === 'access_list') {
       const listingSlug = String(body.listingSlug || '').trim();
       if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
