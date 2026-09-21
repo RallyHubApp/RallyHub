@@ -31,7 +31,7 @@ function HostScrollControls(){
   </div>;
 }
 function shuffle(list){const a=[...list];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function drawOrderFromRanking(rankedIds,benchIds,courts,method){const bench=new Set(benchIds);const active=rankedIds.filter(id=>!bench.has(id));if(method==='pure_random')return [...shuffle(active),...benchIds];if(method==='strict')return [...active,...benchIds];const c=Math.max(1,courts);const tiers=[];for(let i=0;i<4;i++)tiers.push(shuffle(active.slice(i*c,(i+1)*c)));const balanced=[];for(let court=0;court<c;court++)for(let tier=0;tier<4;tier++)if(tiers[tier]?.[court])balanced.push(tiers[tier][court]);return [...balanced,...benchIds];}
+function drawOrderFromRanking(rankedIds,benchIds,courts,method){const bench=new Set(benchIds);const active=rankedIds.filter(id=>!bench.has(id));if(method==='pure_random')return [...shuffle(active),...benchIds];if(method==='strict')return [...active,...benchIds];const c=Math.max(1,courts);const tiers=[active.slice(0,c),active.slice(c,c*2).reverse(),active.slice(c*2,c*3),active.slice(c*3,c*4).reverse()];const balanced=[];for(let court=0;court<c;court++)for(let tier=0;tier<4;tier++)if(tiers[tier]?.[court])balanced.push(tiers[tier][court]);return [...balanced,...benchIds];}
 
 function ScoreCard({ match, names, session, onSaved, onRefreshPlayerScores=null, disabled, allowHostTakeover=true, collaborativeScoring=false, testFillKey=0 }){
   const [a,setA]=useState(match.team_a_score ?? '');
