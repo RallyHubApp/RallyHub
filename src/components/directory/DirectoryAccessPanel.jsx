@@ -24,6 +24,7 @@ export default function DirectoryAccessPanel({ listingSlug, clubName, county = '
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [invite, setInvite] = useState({ name: '', email: '', phone: '' });
+  const [preparedInvite, setPreparedInvite] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -56,25 +57,37 @@ export default function DirectoryAccessPanel({ listingSlug, clubName, county = '
         contactEmail: invite.email,
         contactPhone: invite.phone,
         channel,
+        prepareOnly: true,
       });
       if (res.data?.error) throw new Error(res.data.error);
-      if (channel === 'whatsapp') {
-        const digits = whatsappDigits(invite.phone, county);
-        if (!digits) throw new Error('Enter a valid mobile number for WhatsApp.');
-        const firstName = invite.name.trim().split(/\s+/)[0] || 'there';
-        const text = `Hi ${firstName},\n\nAs you know, RallyHub started out as a father-and-son project between Conall and me, really just trying to solve some of the things we needed for Clare Pickleball. It has grown legs a bit since then, and we’re now building out the Directory with clubs around Ireland. I’ve also been asked about including events and a few other things that would be useful to clubs, so *Events is probably the next area we’ll develop if clubs feel there’s a need for it.*\n\nI’ve invited you as a *Directory Editor* for ${clubName} because I’d really value your help testing the editing side of it from a club user’s point of view.\n\nThis gives you Directory editing access only. It doesn’t give access to RallyHub Club, tournaments, players or club administration.\n\n*Your secure editor link:*\n${res.data?.claimUrl}\n\nThis link is for you personally, is single-use and expires after 72 hours.\n\nIf you want a quick look at RallyHub first:\n*About RallyHub:* https://rallyhub.ie/about\n*1-page Directory Explainer:* https://rallyhub.ie/directory/story\n\nIf you need a hand getting started:\n*Club Guide & Help:* https://rallyhub.ie/directory/help\n*Quick Start Guide:* https://rallyhub.ie/directory/quick-start\n\nThere’s also a *Feedback* area in RallyHub for anything you spot, suggestions or wishlist ideas. The Events page is under construction too, so if you have thoughts on what would actually be useful there, I’d really like to hear them.\n\nDon’t be afraid to tell me what doesn’t make sense — that’s exactly what this beta testing is for.\n\nThanks for helping me get this right.\n\nYours in sport,\n*Brian Moore*\n087 810 0333`;
-        window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-        setMessage(`Secure WhatsApp invitation opened for ${invite.phone}. The link expires after 72 hours and can only be used once.`);
-      } else {
-        setMessage(`Secure Directory Editor invitation emailed to ${res.data?.email || invite.email}. It expires after 72 hours and can only be used once.`);
-      }
-      setInvite({ name: '', email: '', phone: '' });
+      const firstName = invite.name.trim().split(/\s+/)[0] || 'there';
+      const text = `Hi ${firstName},\n\nAs you know, RallyHub started out as a father-and-son project between Conall and me, really just trying to solve some of the things we needed for Clare Pickleball. It has grown legs a bit since then, and we’re now building out the Directory with clubs around Ireland. I’ve also been asked about including events and a few other things that would be useful to clubs, so *Events is probably the next area we’ll develop if clubs feel there’s a need for it.*\n\nI’ve invited you as a *Directory Editor* for ${clubName} because I’d really value your help testing the editing side of it from a club user’s point of view.\n\nThis gives you Directory editing access only. It doesn’t give access to RallyHub Club, tournaments, players or club administration.\n\n*Your secure editor link:*\n${res.data?.claimUrl}\n\nThis link is for you personally, is single-use and expires after 72 hours.\n\nIf you want a quick look at RallyHub first:\n*About RallyHub:* https://rallyhub.ie/about\n*1-page Directory Explainer:* https://rallyhub.ie/directory/story\n\nIf you need a hand getting started:\n*Club Guide & Help:* https://rallyhub.ie/directory/help\n*Quick Start Guide:* https://rallyhub.ie/directory/quick-start\n\nThere’s also a *Feedback* area in RallyHub for anything you spot, suggestions or wishlist ideas. The Events page is under construction too, so if you have thoughts on what would actually be useful there, I’d really like to hear them.\n\nDon’t be afraid to tell me what doesn’t make sense — that’s exactly what this beta testing is for.\n\nThanks for helping me get this right.\n\nYours in sport,\n*Brian Moore*\n087 810 0333`;
+      setPreparedInvite({ channel, invitationId: res.data?.invitationId, claimUrl: res.data?.claimUrl, expiresAt: res.data?.expiresAt, email: invite.email, phone: invite.phone, subject: `An invitation to help manage ${clubName} on the RallyHub Directory`, message: channel === 'email' ? text.replace(/\*/g, '') : text });
+      setMessage(`${channel === 'email' ? 'Email' : 'WhatsApp'} invitation prepared. Review the wording below before sending.`);
       await load();
     } catch (err) {
       setError(err?.message || 'Could not create the editor invitation.');
     } finally {
       setBusy('');
     }
+  };
+
+  const sendPreparedEditorEmail = async () => {
+    if (!preparedInvite?.invitationId) return;
+    setBusy('prepared-email'); setError('');
+    try {
+      const res = await base44.functions.invoke('directoryClaim', { action: 'send_prepared_invitation_email', invitationId: preparedInvite.invitationId, claimUrl: preparedInvite.claimUrl, subject: preparedInvite.subject, message: preparedInvite.message });
+      if (res.data?.error) throw new Error(res.data.error);
+      setMessage(`Directory Editor beta invitation sent to ${res.data?.email || preparedInvite.email}.`);
+      setPreparedInvite(null); setInvite({ name: '', email: '', phone: '' }); await load();
+    } catch (err) { setError(err?.message || 'Could not send the editor invitation.'); }
+    finally { setBusy(''); }
+  };
+
+  const openPreparedEditorWhatsApp = () => {
+    const digits = whatsappDigits(preparedInvite?.phone, county);
+    if (!digits) return setError('Enter a valid mobile number for WhatsApp.');
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(preparedInvite.message)}`, '_blank', 'noopener,noreferrer');
   };
 
   const removeEditor = async person => {
@@ -157,14 +170,26 @@ export default function DirectoryAccessPanel({ listingSlug, clubName, county = '
           <div className="flex flex-wrap gap-2">
             <Button type="submit" disabled={!!busy || !invite.email.trim()} className="gap-2">
               {busy === 'email' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-              {busy === 'email' ? 'Sending email…' : 'Invite by email'}
+              {busy === 'email' ? 'Preparing…' : 'Prepare email invite'}
             </Button>
             <Button type="button" variant="outline" disabled={!!busy || !invite.phone.trim()} onClick={event => sendInvite('whatsapp', event)} className="gap-2">
               {busy === 'whatsapp' ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-              {busy === 'whatsapp' ? 'Opening WhatsApp…' : 'Invite by WhatsApp'}
+              {busy === 'whatsapp' ? 'Preparing…' : 'Prepare WhatsApp invite'}
             </Button>
           </div>
         </form>
+      )}
+
+      {preparedInvite && (
+        <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3">
+          <div><p className="font-semibold">Review before sending</p><p className="text-xs text-muted-foreground">A fresh secure link has been created. You can edit this invitation before it leaves RallyHub.</p></div>
+          {preparedInvite.channel === 'email' && <Input value={preparedInvite.subject} onChange={e => setPreparedInvite(v => ({ ...v, subject: e.target.value }))} aria-label="Editor invitation email subject" />}
+          <textarea value={preparedInvite.message} onChange={e => setPreparedInvite(v => ({ ...v, message: e.target.value }))} rows={18} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-6 font-sans" />
+          <div className="flex flex-wrap gap-2">
+            {preparedInvite.channel === 'email' ? <Button type="button" onClick={sendPreparedEditorEmail} disabled={!!busy} className="gap-2"><Mail className="w-4 h-4" /> {busy === 'prepared-email' ? 'Sending…' : 'Send reviewed email'}</Button> : <Button type="button" onClick={openPreparedEditorWhatsApp} className="gap-2"><MessageCircle className="w-4 h-4" /> Open reviewed WhatsApp</Button>}
+            <Button type="button" variant="outline" onClick={() => setPreparedInvite(null)}>Close</Button>
+          </div>
+        </div>
       )}
 
       {message && <div aria-live="polite" className="rounded-xl border border-green-500/40 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300">{message}</div>}
