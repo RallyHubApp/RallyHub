@@ -1527,17 +1527,17 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <div><p className="text-sm font-semibold">Participants</p><p className="text-xs text-muted-foreground">Event ranks are independent of permanent RallyHub skill ratings.</p></div>
               <Button data-testid="cc-load-practice" variant="outline" className="w-full sm:w-auto min-h-11" onClick={loadTestRoster} disabled={locked || saving || !canManageEvent}><Users className="w-4 h-4 mr-2" />Practice with 32 Test Players</Button>
             </div>
-            <div className="grid lg:grid-cols-2 gap-4">
-              {['club_a','club_b'].map(side => {
-                const clubName = side === 'club_a' ? setup.clubAName : setup.clubBName;
-                return <div key={side} className="glass rounded-xl p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">{clubName}</p><p className="text-[10px] text-muted-foreground">Add manually or import confirmed attendees from Spond.</p></div><Button type="button" variant="outline" size="sm" onClick={() => setSpondImportSide(side)} disabled={locked || !canManageEvent}><Download className="w-3.5 h-3.5 mr-1" />Import Spond</Button></div>
-                  <div className="grid grid-cols-[1fr_auto] gap-2"><Input placeholder={`Add ${clubName} player`} value={manual[side]} onChange={e => setManual(m => ({ ...m, [side]: e.target.value }))} className="bg-secondary" /><Button className="w-11 h-11 p-0" onClick={() => addManual(side)} disabled={locked || !manual[side].trim()}><Plus className="w-4 h-4" /></Button></div>
-                </div>;
-              })}
-            </div>
-            <div className="grid lg:grid-cols-2 gap-4"><RankingList side="club_a" title={setup.clubAName} participants={aPlayers} locked={locked} onReorder={reorder} /><RankingList side="club_b" title={setup.clubBName} participants={bPlayers} locked={locked} onReorder={reorder} /></div>
-            {formatInfo && <div className="glass rounded-xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-center"><div><p className="text-xl font-bold">{formatInfo.recommendedRounds}</p><p className="text-[10px] text-muted-foreground">Rounds</p></div><div><p className="text-xl font-bold">{formatInfo.totalMatches}</p><p className="text-[10px] text-muted-foreground">Matches</p></div><div><p className="text-xl font-bold">{formatInfo.gamesRangeClubA.join('–')}</p><p className="text-[10px] text-muted-foreground">Games/player</p></div><div><p className="text-xl font-bold">{formatInfo.structuredMinutes}</p><p className="text-[10px] text-muted-foreground">Structured min</p></div><div><p className="text-xl font-bold">{formatInfo.remainingMinutes}</p><p className="text-[10px] text-muted-foreground">Contingency min</p></div></div>}
+            <TeamBuilder
+              participants={participants}
+              clubAName={setup.clubAName}
+              clubBName={setup.clubBName}
+              locked={locked}
+              busy={saving || !!hostAction}
+              onImportSpond={setSpondImportSide}
+              onAddManual={addManual}
+              onSave={organiseTeams}
+            />
+            {formatInfo ? <div className="glass rounded-xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-center"><div><p className="text-xl font-bold">{formatInfo.recommendedRounds}</p><p className="text-[10px] text-muted-foreground">Rounds</p></div><div><p className="text-xl font-bold">{formatInfo.totalMatches}</p><p className="text-[10px] text-muted-foreground">Matches</p></div><div><p className="text-xl font-bold">{formatInfo.gamesRangeClubA.join('–')}</p><p className="text-[10px] text-muted-foreground">Games/player</p></div><div><p className="text-xl font-bold">{formatInfo.structuredMinutes}</p><p className="text-[10px] text-muted-foreground">Structured min</p></div><div><p className="text-xl font-bold">{formatInfo.remainingMinutes}</p><p className="text-[10px] text-muted-foreground">Contingency min</p></div></div> : participants.length > 0 && <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-700">Finish assigning every player, save the teams, and make the two team sizes equal before generating the draw.</div>}
             <Button data-testid="cc-generate-draw" onClick={generateDraw} disabled={locked || saving || !formatInfo} className="w-full h-11"><ListChecks className="w-4 h-4 mr-2" />Generate Draw & Fairness Report</Button>
           </>}
         </div>
