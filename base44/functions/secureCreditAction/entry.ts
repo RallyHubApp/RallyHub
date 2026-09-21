@@ -168,7 +168,13 @@ Deno.serve(async (req) => {
       const guard = await consumeAllowance(base44, user, `upload_${purpose}`, perUserLimit, 24, contextId, globalLimitForAction);
       if (!guard.allowed) return guard.response;
       const result = await base44.asServiceRole.integrations.Core.UploadFile({ file });
-      return Response.json({ success:true, file_url:result?.file_url || null });
+      const fileUrl = result?.file_url || null;
+      if (purpose === 'about_founders' && fileUrl) {
+        const existing = await base44.asServiceRole.entities.SiteAsset.filter({ key:'about_founders' });
+        if (existing?.[0]?.id) await base44.asServiceRole.entities.SiteAsset.update(existing[0].id, { file_url:fileUrl, updated_by_user_id:user.id });
+        else await base44.asServiceRole.entities.SiteAsset.create({ key:'about_founders', file_url:fileUrl, updated_by_user_id:user.id });
+      }
+      return Response.json({ success:true, file_url:fileUrl });
     }
 
     if (action === 'extract_pairs' || action === 'extract_players') {
