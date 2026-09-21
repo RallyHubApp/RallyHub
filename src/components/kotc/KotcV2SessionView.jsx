@@ -199,6 +199,15 @@ export default function KotcV2SessionView({ tournament, players, queryClient, se
     return()=>window.removeEventListener('pageshow',onPageShow);
   },[stateKey,refetch]);
   const session=state?.session||null;const participants=state?.participants||[];const rounds=state?.rounds||[];const slots=state?.slots||[];const matches=state?.matches||[];const fixedPairs=state?.fixedPairs||[];const assistant=state?.currentAccessRole==='assistant_host';
+  useEffect(()=>{
+    if(session||sessionId||!tournament?.id||!playerOrder.length)return;
+    const signature=playerOrder.map(String).join('|');
+    if(signature===lastSavedRankingRef.current){setRankingSaveState('saved');return;}
+    if(rankingSaveTimer.current)clearTimeout(rankingSaveTimer.current);
+    setRankingSaveState('saving');
+    rankingSaveTimer.current=setTimeout(async()=>{try{await base44.entities.Tournament.update(tournament.id,{kotc_player_order:[...playerOrder]});lastSavedRankingRef.current=signature;setRankingSaveState('saved');queryClient?.invalidateQueries({queryKey:['tournament',tournament.id]});}catch(e){setRankingSaveState('error');toast.error(`Could not save player order: ${errMsg(e)}`);}},350);
+    return()=>{if(rankingSaveTimer.current)clearTimeout(rankingSaveTimer.current);};
+  },[playerOrder.join('|'),session?.id,sessionId,tournament?.id]);
   useEffect(()=>{if(state?.scorerLinkActive)setScorerSyncEnabled(true);},[state?.scorerLinkActive,session?.id]);const isSuperAdmin=state?.isAdmin===true;const testMode=isSuperAdmin&&!!(session?.exclude_from_aggregates||session?.demo_mode);const participantNames=useMemo(()=>Object.fromEntries(participants.map(p=>[p.id,p.display_name||p.id])),[participants]);
   useEffect(()=>{if(session)setLivePlayMinutes(String(session.play_minutes||8));},[session?.id,session?.play_minutes]);
   const courts=activeCourtCount(players.length,Math.max(1,Number(venueCourts)||1));const requiredBench=Math.max(0,players.length-courts*4);useEffect(()=>setBenchIds(prev=>prev.filter(id=>players.some(p=>p.id===id)).slice(0,requiredBench)),[requiredBench,players.length]);
