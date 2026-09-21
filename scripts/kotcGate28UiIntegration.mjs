@@ -32,6 +32,7 @@ ok(v2.includes('Tap one player then another to swap'),'current tap-to-swap host 
 ok(setup.includes('DragDropContext')&&setup.includes('kotc-ranking-drag-'),'setup ranking uses drag/drop rather than repeated move buttons');
 ok(setup.includes('Balanced Ranking')&&v2.includes("tiers=[active.slice(0,c),active.slice(c,c*2).reverse(),active.slice(c*2,c*3),active.slice(c*3,c*4).reverse()]"),'balanced ranking spreads quartiles deterministically across courts');
 ok(create.includes("drawMethod==='balanced'?{teamA:[four[0],four[3]],teamB:[four[1],four[2]]}"),'balanced ranking pairs strongest+weakest against the middle pair on each court');
+ok(v2.includes('rankingOrder:playerOrder')&&create.includes('rankingRank[id]'),'balanced court distribution preserves the host’s original 1-to-N ranking as seed_rank');
 ok(create.includes('KotcSessionParticipant.bulkCreate'),'participants persisted independently in a rate-limit-safe batch');
 ok(create.includes('KotcRoundSlot.bulkCreate'),'round slots persisted independently in a rate-limit-safe batch');
 ok(create.includes('KotcMatch.bulkCreate'),'matches persisted independently in a rate-limit-safe batch');
