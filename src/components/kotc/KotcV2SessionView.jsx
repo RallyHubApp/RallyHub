@@ -114,10 +114,20 @@ function ProposedRoundEditor({round,slots,participants,names,fixedPairs,onStart,
   const [draft,setDraft]=useState(original);const [selected,setSelected]=useState(null);const [pairBusyKey,setPairBusyKey]=useState('');const [draftStatus,setDraftStatus]=useState(null);const [roundMinutes,setRoundMinutes]=useState(Math.min(60,Math.max(1,Number(playMinutes)||8)));
   useEffect(()=>{setDraft(original);setSelected(null);setPairBusyKey('');setDraftStatus(null);setRoundMinutes(Math.min(60,Math.max(1,Number(playMinutes)||8)));},[round?.id,round?.proposal_revision,playMinutes,JSON.stringify(original)]);
   const activeIds=new Set(Object.values(draft));const eligible=participants.filter(p=>['registered','confirmed','present','leaving_early'].includes(p.status));const bench=eligible.filter(p=>!activeIds.has(String(p.id)));
-  const swapSlot=(source,target)=>{if(!source||!target||source===target){setSelected(null);return;}setDraft(prev=>({...prev,[source]:prev[target],[target]:prev[source]}));setSelected(null);};
-  const clickCourt=id=>{if(!selected){setSelected({type:'court',id});return;}if(selected.type==='court')return swapSlot(selected.id,id);const benchId=selected.id;setDraft(prev=>({...prev,[id]:benchId}));setSelected(null);};
-  const clickBench=id=>{if(!selected){setSelected({type:'bench',id});return;}if(selected.type==='bench'){setSelected(selected.id===id?null:{type:'bench',id});return;}const source=selected.id;const outgoing=draft[source];setDraft(prev=>({...prev,[source]:id}));setSelected({type:'bench',id:outgoing});setSelected(null);};
+  const swapSlot=(source,target)=>{if(!source||!target||source===target){setSelected(null);return;}setDraftStatus(null);setDraft(prev=>({...prev,[source]:prev[target],[target]:prev[source]}));setSelected(null);};
+  const clickCourt=id=>{if(!selected){setSelected({type:'court',id});return;}if(selected.type==='court')return swapSlot(selected.id,id);const benchId=selected.id;setDraftStatus(null);setDraft(prev=>({...prev,[id]:benchId}));setSelected(null);};
+  const clickBench=id=>{if(!selected){setSelected({type:'bench',id});return;}if(selected.type==='bench'){setSelected(selected.id===id?null:{type:'bench',id});return;}const source=selected.id;setDraftStatus(null);setDraft(prev=>({...prev,[source]:id}));setSelected(null);};
   const courts=[...new Set(ordered.map(s=>Number(s.ladder_court_rank)))];
+  const dirty=ordered.some(s=>String(draft[s.id]||'')!==String(original[s.id]||''));
+  const moveWholeCourt=(sourceIndex,destinationIndex)=>{
+    if(sourceIndex===destinationIndex||sourceIndex<0||destinationIndex<0)return;
+    const groups=courts.map(rank=>ordered.filter(s=>Number(s.ladder_court_rank)===rank).map(s=>String(draft[s.id]||s.participant_id)));
+    const [moved]=groups.splice(sourceIndex,1);groups.splice(destinationIndex,0,moved);
+    const next={...draft};
+    courts.forEach((rank,index)=>{const targetSlots=ordered.filter(s=>Number(s.ladder_court_rank)===rank);targetSlots.forEach((slot,slotIndex)=>{next[slot.id]=groups[index][slotIndex];});});
+    setDraftStatus(null);setDraft(next);setSelected(null);
+  };
+  const saveDraft=async()=>{if(!dirty||saving||issues.length)return;setDraftStatus({state:'saving',text:'Saving this round setup…'});try{await onSaveDraft?.(draft);setDraftStatus({state:'saved',text:'Round setup saved. You can leave this screen and come back later.'});}catch(e){setDraftStatus({state:'error',text:errMsg(e)});}};
   const hostLocks=(fixedPairs||[]).filter(p=>p.status==='active'&&p.pair_source==='host_selected');
   const issues=[];const vals=Object.values(draft);if(vals.length!==Number(round.active_court_count||0)*4)issues.push('Every active court needs four players.');if(new Set(vals).size!==vals.length)issues.push('A player appears more than once.');
   for(const rank of courts){const c=ordered.filter(s=>Number(s.ladder_court_rank)===rank);if(c.length!==4)issues.push(`Court ${rank} is incomplete.`);}
