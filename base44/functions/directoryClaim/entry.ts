@@ -50,7 +50,7 @@ async function createTrustedClaimInvitation(base44, { listing, user, contactName
   const token = randomInviteToken();
   const tokenHash = await hashInviteToken(token);
   const expiresAt = new Date(Date.now() + (72 * 60 * 60 * 1000)).toISOString();
-  await base44.asServiceRole.entities.DirectoryClaimInvitation.create({
+  const createdInvitation = await base44.asServiceRole.entities.DirectoryClaimInvitation.create({
     listing_slug: listing.slug,
     listing_name_snapshot: listing.name,
     contact_name: String(contactName || '').trim().slice(0, 160) || null,
@@ -64,6 +64,7 @@ async function createTrustedClaimInvitation(base44, { listing, user, contactName
     expires_at: expiresAt,
   });
   return {
+    id: createdInvitation?.id || null,
     token,
     expiresAt,
     claimUrl: `https://rallyhub.ie/directory/${encodeURIComponent(listing.slug)}/claim?invite=${encodeURIComponent(token)}`,
@@ -218,7 +219,7 @@ async function grantAccess(base44, { listing, userId, claimId, grantedByUserId =
   return created;
 }
 
-async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl, accessRole = 'owner' }) {
+async function sendClaimInviteEmail(base44, { user, listing, contactEmail, contactName, claimUrl, accessRole = 'owner', customText = '', customSubject = '' }) {
   const to = normaliseEmail(contactEmail);
   if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
     return { sent: 0, error: 'A valid club contact email is required.' };
@@ -248,15 +249,18 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   const sharedStory = `As you know, RallyHub started out as a father-and-son project between Conall and me, really just trying to solve some of the things we needed for Clare Pickleball. It has grown legs a bit since then, and we’re now building out the Directory with clubs around Ireland. I’ve also been asked about including events and a few other things that would be useful to clubs, so Events is probably the next area we’ll develop if clubs feel there’s a need for it.`;
   const ownerBody = `Hi ${recipientName},\n\n${sharedStory}\n\nI’ve already put together the ${listing.name} listing and I’d love you to have a look, claim it and help me test the whole process from a club’s point of view.\n\nOnce verified, you’ll become the Primary Directory Owner for ${listing.name} and can check or update the public information. There’s no charge to claim or maintain the listing, and it doesn’t sign the club up for RallyHub Club or any paid service.\n\nYour secure link:\n${claimUrl}\n\nThis link is for you personally, is single-use and expires after 72 hours.\n\nIf you want a quick look at RallyHub first:\nAbout RallyHub: https://rallyhub.ie/about\n1-page Directory Explainer: https://rallyhub.ie/directory/story\n\nIf you need a hand getting started:\nClub Guide & Help: https://rallyhub.ie/directory/help\nQuick Start Guide: https://rallyhub.ie/directory/quick-start\n\nThere’s also a Feedback area in RallyHub for anything you spot, suggestions or wishlist ideas. The Events page is under construction too, so if you have thoughts on what would actually be useful there, I’d really like to hear them.\n\nDon’t be afraid to tell me what doesn’t make sense — that’s exactly what this beta testing is for.\n\nThanks for helping me get this right.\n\nYours in sport,\nBrian Moore\n087 810 0333`;
   const editorBody = `Hi ${recipientName},\n\n${sharedStory}\n\nI’ve invited you as a Directory Editor for ${listing.name} because I’d really value your help testing the editing side of it from a club user’s point of view.\n\nThis gives you Directory editing access only. It doesn’t give access to RallyHub Club, tournaments, players or club administration. If you need a Directory account, RallyHub will first verify your email with a six-digit code.\n\nYour secure editor link:\n${claimUrl}\n\nThis link is for you personally, is single-use and expires after 72 hours.\n\nIf you want a quick look at RallyHub first:\nAbout RallyHub: https://rallyhub.ie/about\n1-page Directory Explainer: https://rallyhub.ie/directory/story\n\nIf you need a hand getting started:\nClub Guide & Help: https://rallyhub.ie/directory/help\nQuick Start Guide: https://rallyhub.ie/directory/quick-start\n\nThere’s also a Feedback area in RallyHub for anything you spot, suggestions or wishlist ideas. The Events page is under construction too, so if you have thoughts on what would actually be useful there, I’d really like to hear them.\n\nDon’t be afraid to tell me what doesn’t make sense — that’s exactly what this beta testing is for.\n\nThanks for helping me get this right.\n\nYours in sport,\nBrian Moore\n087 810 0333`;
-  const subject = delegated
+  const subject = String(customSubject || '').trim().slice(0, 180) || (delegated
     ? `An invitation to help manage ${listing.name} on the RallyHub Directory`
-    : `An invitation to review ${listing.name} on the RallyHub Directory`;
-  const textBody = delegated ? editorBody : ownerBody;
+    : `An invitation to review ${listing.name} on the RallyHub Directory`);
+  const textBody = String(customText || '').trim() || (delegated ? editorBody : ownerBody);
   const actionLabel = delegated ? 'Open your editor invitation' : 'Open your secure invitation';
   const roleCopy = delegated
     ? `I’ve invited you as a <strong>Directory Editor</strong> for <strong>${listing.name}</strong> because I’d really value your help testing the editing side of it from a club user’s point of view.`
     : `I’ve already put together the <strong>${listing.name}</strong> listing and I’d love you to have a look, claim it and help me test the whole process from a club’s point of view.`;
-  const htmlBody = `<!doctype html>
+  const customHtmlText = String(customText || '').trim()
+    ? String(customText).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
+    : '';
+  const htmlBody = customHtmlText ? `<!doctype html><html><body style="margin:0;background:#f4f8f5;font-family:Arial,Helvetica,sans-serif;color:#0c1e35;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f8f5;padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border-radius:20px;border:1px solid #dfe9e2;"><tr><td style="padding:28px 32px;border-top:7px solid #159447;"><div style="font-size:28px;font-weight:800;">Rally<span style="color:#159447;">Hub</span></div><div style="font-size:11px;letter-spacing:2.2px;color:#66737f;margin:3px 0 24px;">PLAY • CONNECT • BELONG</div><div style="font-size:15px;line-height:1.7;">${customHtmlText}</div></td></tr></table></td></tr></table></body></html>` : `<!doctype html>
 <html>
   <body style="margin:0;background:#f4f8f5;font-family:Arial,Helvetica,sans-serif;color:#0c1e35;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f8f5;padding:24px 12px;">
@@ -929,7 +933,77 @@ Deno.serve(async (req) => {
       } catch (auditError) {
         console.warn('Directory owner invitation audit write failed', auditError?.message || auditError);
       }
-      return Response.json({ success: true, channel: inviteChannel, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
+      return Response.json({ success: true, channel: inviteChannel, invitationId: invitation.id, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
+    }
+
+
+    if (action === 'prepare_resend_invitation') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const invitationId = String(body.invitationId || '').trim();
+      const rows = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ id: invitationId });
+      const previous = rows?.[0];
+      if (!previous) return Response.json({ error: 'Invitation not found' }, { status: 404 });
+      const listing = await resolveListing(base44, previous.listing_slug);
+      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+      if (previous.status === 'pending') await base44.asServiceRole.entities.DirectoryClaimInvitation.update(previous.id, { status: 'revoked' });
+      const invitation = await createTrustedClaimInvitation(base44, {
+        listing, user,
+        contactName: previous.contact_name || '', contactEmail: previous.contact_email || '', contactPhone: previous.contact_phone || '',
+        channel: previous.channel === 'whatsapp' ? 'whatsapp' : 'email', accessRole: previous.access_role === 'editor' ? 'editor' : 'owner'
+      });
+      return Response.json({ success: true, invitationId: invitation.id, channel: previous.channel, accessRole: previous.access_role, contactName: previous.contact_name, contactEmail: previous.contact_email, contactPhone: previous.contact_phone, listingSlug: listing.slug, clubName: listing.name, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
+    }
+
+    if (action === 'send_prepared_invitation_email') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const invitationId = String(body.invitationId || '').trim();
+      const rows = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ id: invitationId });
+      const invitation = rows?.[0];
+      if (!invitation || invitation.status !== 'pending') return Response.json({ error: 'Prepared invitation not found' }, { status: 404 });
+      const listing = await resolveListing(base44, invitation.listing_slug);
+      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+      const result = await sendClaimInviteEmail(base44, {
+        user, listing, contactEmail: invitation.contact_email, contactName: invitation.contact_name,
+        claimUrl: String(body.claimUrl || ''), accessRole: invitation.access_role,
+        customText: String(body.message || '').slice(0, 12000), customSubject: String(body.subject || '').slice(0, 180)
+      });
+      if (!result.sent) return Response.json({ error: result.error || 'Could not send invitation.' }, { status: result.limited ? 429 : 502 });
+      return Response.json({ success: true, sent: true, email: result.to });
+    }
+
+
+    if (action === 'prepare_resend_invitation') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const invitationId = String(body.invitationId || '').trim();
+      const rows = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ id: invitationId });
+      const previous = rows?.[0];
+      if (!previous) return Response.json({ error: 'Invitation not found' }, { status: 404 });
+      const listing = await resolveListing(base44, previous.listing_slug);
+      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+      if (previous.status === 'pending') await base44.asServiceRole.entities.DirectoryClaimInvitation.update(previous.id, { status: 'revoked' });
+      const invitation = await createTrustedClaimInvitation(base44, {
+        listing, user,
+        contactName: previous.contact_name || '', contactEmail: previous.contact_email || '', contactPhone: previous.contact_phone || '',
+        channel: previous.channel === 'whatsapp' ? 'whatsapp' : 'email', accessRole: previous.access_role === 'editor' ? 'editor' : 'owner'
+      });
+      return Response.json({ success: true, invitationId: invitation.id, channel: previous.channel, accessRole: previous.access_role, contactName: previous.contact_name, contactEmail: previous.contact_email, contactPhone: previous.contact_phone, listingSlug: listing.slug, clubName: listing.name, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
+    }
+
+    if (action === 'send_prepared_invitation_email') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const invitationId = String(body.invitationId || '').trim();
+      const rows = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ id: invitationId });
+      const invitation = rows?.[0];
+      if (!invitation || invitation.status !== 'pending') return Response.json({ error: 'Prepared invitation not found' }, { status: 404 });
+      const listing = await resolveListing(base44, invitation.listing_slug);
+      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+      const result = await sendClaimInviteEmail(base44, {
+        user, listing, contactEmail: invitation.contact_email, contactName: invitation.contact_name,
+        claimUrl: String(body.claimUrl || ''), accessRole: invitation.access_role,
+        customText: String(body.message || '').slice(0, 12000), customSubject: String(body.subject || '').slice(0, 180)
+      });
+      if (!result.sent) return Response.json({ error: result.error || 'Could not send invitation.' }, { status: result.limited ? 429 : 502 });
+      return Response.json({ success: true, sent: true, email: result.to });
     }
 
 
@@ -1027,7 +1101,7 @@ Deno.serve(async (req) => {
         occurred_at: new Date().toISOString(),
         after_json: JSON.stringify({ role: 'editor', channel: inviteChannel, email: contactEmail || null, phone: contactPhone || null, expiresAt: invitation.expiresAt }),
       });
-      return Response.json({ success: true, channel: inviteChannel, email: contactEmail || null, phone: contactPhone || null, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
+      return Response.json({ success: true, channel: inviteChannel, invitationId: invitation.id, email: contactEmail || null, phone: contactPhone || null, claimUrl: invitation.claimUrl, expiresAt: invitation.expiresAt });
     }
 
     if (action === 'revoke_editor') {
