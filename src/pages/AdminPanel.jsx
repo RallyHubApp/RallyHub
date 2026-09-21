@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, Send, Clock, XCircle, CheckCircle, Trash2, RefreshCw, Eye, MessageCircle, Copy } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, Send, Clock, XCircle, CheckCircle, Trash2, RefreshCw, Eye, MessageCircle, Copy, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
@@ -22,10 +22,25 @@ export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
-  const allowedAdminTabs = ['approvals', 'membership', 'preview', 'directory', 'feedback', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['approvals', 'membership', 'preview', 'directory', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
   const queryClient = useQueryClient();
+  const [assetUploading, setAssetUploading] = useState(false);
+  const [assetUploadUrl, setAssetUploadUrl] = useState('');
+  const uploadSiteAsset = async (file) => {
+    if (!file) return;
+    setAssetUploading(true);
+    try {
+      const res = await base44.functions.invoke('secureCreditAction', { action:'upload_image', purpose:'about_master', file });
+      const url = res?.data?.file_url || res?.file_url;
+      if (!url) throw new Error(res?.data?.error || 'No file URL returned');
+      setAssetUploadUrl(url);
+      toast.success('Asset uploaded and stored in RallyHub');
+    } catch (e) {
+      toast.error(e?.response?.data?.error || e?.message || 'Asset upload failed');
+    } finally { setAssetUploading(false); }
+  };
   const [playerSearch, setPlayerSearch] = useState('');
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [editForm, setEditForm] = useState(/** @type {any} */ ({}));
@@ -725,6 +740,7 @@ export default function AdminPanel() {
               <span className="ml-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{clubFeedbackRows.filter(row => row.status === 'new').length}</span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="assets" className="text-xs gap-1.5"><Upload className="w-3.5 h-3.5" /> Asset Uploader</TabsTrigger>
           <TabsTrigger value="users" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Users & Roles</TabsTrigger>
           <TabsTrigger value="players" className="text-xs gap-1.5"><Users className="w-3.5 h-3.5" /> Players</TabsTrigger>
           <TabsTrigger value="matches" className="text-xs gap-1.5"><Swords className="w-3.5 h-3.5" /> Matches</TabsTrigger>
@@ -1636,6 +1652,22 @@ export default function AdminPanel() {
               <p className="text-xs text-muted-foreground text-center py-6">No linked accounts yet</p>
             )}
           </div>
+        </TabsContent>
+
+        {/* ── ASSET UPLOADER TAB — RallyHub Super Admin only ── */}
+        <TabsContent value="assets" className="mt-4">
+          <GlassCard>
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Upload className="w-4 h-4 text-primary" /> RallyHub Asset Uploader</h3>
+            <p className="mt-2 text-xs text-muted-foreground">Securely upload approved production artwork to RallyHub. This area is available only inside the platform Admin Panel.</p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+                <Upload className="mr-2 h-4 w-4" />{assetUploading ? 'Uploading…' : 'Upload approved asset'}
+                <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={assetUploading} onChange={e=>uploadSiteAsset(e.target.files?.[0])}/>
+              </label>
+              {assetUploadUrl && <Badge className="bg-green-500/15 text-green-500"><CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Uploaded & stored</Badge>}
+            </div>
+            {assetUploadUrl && <div className="mt-3 break-all rounded-md bg-secondary p-3 text-[11px] text-muted-foreground">{assetUploadUrl}</div>}
+          </GlassCard>
         </TabsContent>
 
         {/* ── INVITATIONS TAB ── */}
