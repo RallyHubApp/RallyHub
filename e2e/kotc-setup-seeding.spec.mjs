@@ -82,6 +82,7 @@ test('desktop setup: Balanced Ranking spreads ranked strength evenly across four
   await page.getByTestId('kotc-create-session').click();
   await expect.poll(()=>createBody!==null).toBe(true);
   expect(createBody.drawMethod).toBe('balanced');
+  expect(createBody.rankingOrder).toEqual(Array.from({length:18},(_,i)=>`player-${String(i+1).padStart(2,'0')}`));
   expect(createBody.playerOrder).toEqual([
     'player-01','player-08','player-09','player-16',
     'player-02','player-07','player-10','player-15',
