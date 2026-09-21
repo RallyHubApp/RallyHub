@@ -46,7 +46,7 @@ test('desktop setup: visible seeding choice is the seeding order sent to the eng
   expect(createBody.playerOrder.slice(-2)).toEqual(['player-17','player-18']);
 });
 
-test('desktop setup: a manual arrow adjustment visibly changes the source to Manual ranking',async({page})=>{
+test('desktop setup: drag and drop ranking visibly changes the source to Manual ranking',async({page})=>{
   await page.route('**/api/apps/**',async route=>{
     const url=new URL(route.request().url()),marker=`/api/apps/${APP_ID}/functions/`;
     if(url.pathname.includes('/entities/KotcPlayerAggregate'))return json(route,[]);
@@ -56,6 +56,8 @@ test('desktop setup: a manual arrow adjustment visibly changes the source to Man
   await page.goto('/e2e/kotcHarness.html');
   await page.getByTestId('kotc-seeding-source').click();
   await page.getByRole('option',{name:'Genuine DUPR'}).click();
-  await page.getByRole('button',{name:'Move Player 18 down'}).click();
+  const handle=page.getByTestId('kotc-ranking-drag-player-18');
+  await handle.focus();await handle.press('Space');await handle.press('ArrowDown');await handle.press('Space');
   await expect(page.getByTestId('kotc-seeding-source')).toContainText('Manual ranking');
+  await expect(page.getByTestId('kotc-player-order-1')).toContainText('Player 17');
 });
