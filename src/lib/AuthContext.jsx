@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }) => {
       // Resolve a server-verified Tenant/Club security context. The backend checks
       // ClubUserAccess/TenantUserAccess before writing any active scope fields.
       try {
-        const contextRes = await base44.functions.invoke('securityContext', { action: 'resolve_default' });
+        const contextRes = await base44.functions.invoke('securityContext', { action: 'resolve_default', allowTestContext: sessionStorage.getItem('rallyhub-test-club-mode') === '1' });
         if (contextRes.data?.success && contextRes.data?.context) {
           currentUser = await base44.auth.me();
         }
