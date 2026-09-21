@@ -365,7 +365,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       drawsAllowed: event.timed_draws_allowed !== false, compositionMode: event.composition_mode || s.compositionMode,
       showcaseEnabled: !!event.showcase_enabled, showcasePoints: event.showcase_points ?? s.showcasePoints, potEnabled: !!event.pot_enabled, juniorDisplayMode: !!event.junior_display_mode,
     }));
-  }, [event?.id]);
+  }, [event?.id, event?.club_a_name, event?.club_b_name]);
 
   React.useEffect(() => {
     if (event || !hostClub) return;
@@ -408,6 +408,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     enabled: !!event?.id && canManageEvent && ['in_progress','paused'].includes(event?.status),
     staleTime: 30000,
   });
+  const poolPlayers = participants.filter(p => p.side === 'pool');
   const aPlayers = participants.filter(p => p.side === 'club_a');
   const bPlayers = participants.filter(p => p.side === 'club_b');
   const normalMatches = matches.filter(m => !m.is_showcase);
