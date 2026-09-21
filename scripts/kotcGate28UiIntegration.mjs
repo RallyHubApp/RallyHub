@@ -28,7 +28,10 @@ ok(command.includes("commandType === 'generate_next_round'"),'server command mus
 ok(command.includes('Fairness substitution invariant failed'),'server fairness invariant guard present');
 ok(command.includes('current-round match result(s) unresolved'),'unresolved results block generation');
 ok(create.includes("ENGINE_VERSION='2.0.0-rc.1'"),'new sessions pin accepted RC engine');
-ok(v2.includes('Tap one player then another to swap'),'current tap-to-swap host editor is mounted');
+ok(v2.includes('Tap two players to swap them'),'current tap-to-swap host editor is mounted');
+ok(v2.includes('kotc-whole-court-drag-')&&v2.includes('Move court'),'whole-court drag control is mounted in proposed-round setup');
+ok(v2.includes("commandType:'adjust_proposed_round'")&&v2.includes('kotc-save-round-setup'),'host can explicitly save a proposed round without starting it');
+ok(v2.includes('kotc_player_order')&&v2.includes("setRankingSaveState('saving')"),'pre-session ranking order auto-saves to the tournament');
 ok(setup.includes('DragDropContext')&&setup.includes('kotc-ranking-drag-'),'setup ranking uses drag/drop rather than repeated move buttons');
 ok(setup.includes('Balanced Ranking')&&v2.includes("tiers=[active.slice(0,c),active.slice(c,c*2).reverse(),active.slice(c*2,c*3),active.slice(c*3,c*4).reverse()]"),'balanced ranking spreads quartiles deterministically across courts');
 ok(create.includes("drawMethod==='balanced'?{teamA:[four[0],four[3]],teamB:[four[1],four[2]]}"),'balanced ranking pairs strongest+weakest against the middle pair on each court');
