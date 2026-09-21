@@ -106,6 +106,115 @@ function RankingList({ side, title, participants, locked, onReorder }) {
   );
 }
 
+function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImportSpond, onAddManual, onSave }) {
+  const active = participants.filter(p => !['replaced','withdrawn','injured'].includes(p.status));
+  const signature = active.map(p => `${p.id}:${p.side}:${p.event_rank}`).sort().join('|');
+  const makeLanes = () => ({
+    pool: active.filter(p => p.side === 'pool').sort((a,b)=>(a.event_rank||999)-(b.event_rank||999)).map(p => p.id),
+    club_a: active.filter(p => p.side === 'club_a').sort((a,b)=>(a.event_rank||999)-(b.event_rank||999)).map(p => p.id),
+    club_b: active.filter(p => p.side === 'club_b').sort((a,b)=>(a.event_rank||999)-(b.event_rank||999)).map(p => p.id),
+  });
+  const [lanes, setLanes] = useState(makeLanes);
+  const [nameA, setNameA] = useState(clubAName || 'Team A');
+  const [nameB, setNameB] = useState(clubBName || 'Team B');
+  const [dirty, setDirty] = useState(false);
+  const [status, setStatus] = useState(null);
+  const [manualPool, setManualPool] = useState('');
+
+  React.useEffect(() => {
+    setLanes(makeLanes());
+    setNameA(clubAName || 'Team A');
+    setNameB(clubBName || 'Team B');
+    setDirty(false);
+  }, [signature, clubAName, clubBName]);
+
+  const byId = new Map(active.map(p => [p.id, p]));
+  const handleDragEnd = result => {
+    if (!result.destination || locked || busy) return;
+    const from = result.source.droppableId;
+    const to = result.destination.droppableId;
+    const next = { pool:[...lanes.pool], club_a:[...lanes.club_a], club_b:[...lanes.club_b] };
+    const [id] = next[from].splice(result.source.index, 1);
+    next[to].splice(result.destination.index, 0, id);
+    setLanes(next);
+    setDirty(true);
+    setStatus(null);
+  };
+  const save = async () => {
+    setStatus({state:'working',text:'Saving teams and rankings…'});
+    try {
+      await onSave?.({ poolIds:lanes.pool, clubAIds:lanes.club_a, clubBIds:lanes.club_b, clubAName:nameA, clubBName:nameB });
+      setDirty(false);
+      setStatus({state:'success',text:`Teams saved · ${lanes.club_a.length} in ${nameA} · ${lanes.club_b.length} in ${nameB}${lanes.pool.length ? ` · ${lanes.pool.length} still in Player Pool` : ''}.`});
+    } catch (e) {
+      setStatus({state:'error',text:e?.message || 'Could not save teams and rankings.'});
+    }
+  };
+  const addPool = async () => {
+    const name = manualPool.trim();
+    if (!name || busy || locked) return;
+    try { await onAddManual?.('pool', name); setManualPool(''); } catch {}
+  };
+  const lane = (id, title, ids, teamName, setTeamName) => (
+    <Droppable droppableId={id}>
+      {(provided, snapshot) => <div ref={provided.innerRef} {...provided.droppableProps} className={cn('rounded-xl border bg-card p-3 min-h-[18rem] transition-colors', snapshot.isDraggingOver ? 'border-primary bg-primary/5' : 'border-border')}>
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="min-w-0 flex-1">
+            {id === 'pool' ? <><p className="text-sm font-semibold">Player Pool</p><p className="text-[10px] text-muted-foreground">Import both Spond events here, then drag players into the teams.</p></> :
+              <><Label className="text-[10px]">Team name</Label><Input value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" /></>}
+          </div>
+          <Badge variant="outline">{ids.length}</Badge>
+        </div>
+        {id === 'pool' && <div className="space-y-2 mb-3">
+          <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => onImportSpond?.('pool')} disabled={locked || busy}><Download className="w-3.5 h-3.5 mr-1" />Import Spond Event</Button>
+          <div className="grid grid-cols-[1fr_auto] gap-2"><Input placeholder="Add player manually" value={manualPool} onChange={e=>setManualPool(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addPool()} disabled={locked || busy} className="h-9 bg-secondary" /><Button type="button" size="sm" onClick={addPool} disabled={locked || busy || !manualPool.trim()}><Plus className="w-4 h-4" /></Button></div>
+        </div>}
+        <div className="space-y-1 max-h-[34rem] overflow-auto">
+          {ids.map((pid, i) => {
+            const p = byId.get(pid);
+            if (!p) return null;
+            return <Draggable key={p.id} draggableId={p.id} index={i} isDragDisabled={locked || busy}>
+              {(dragProvided, dragSnapshot) => <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn('flex items-center gap-2 rounded-lg border border-border bg-secondary/60 p-2 min-h-11', dragSnapshot.isDragging && 'border-primary bg-primary/10 shadow-lg')}>
+                <div {...dragProvided.dragHandleProps} className="w-9 h-9 -ml-1 flex items-center justify-center rounded-md touch-none shrink-0 text-muted-foreground active:bg-primary/10"><GripVertical className="w-5 h-5" /></div>
+                {id !== 'pool' && <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>}
+                <span className="text-xs text-foreground flex-1 truncate">{p.display_name}</span>
+                {p.gender && <span className="text-[10px] text-muted-foreground">{p.gender}</span>}
+              </div>}
+            </Draggable>;
+          })}
+          {provided.placeholder}
+          {!ids.length && <div className="rounded-lg border border-dashed border-border p-5 text-center text-xs text-muted-foreground">{id === 'pool' ? 'Import Spond attendees here' : 'Drag players here'}</div>}
+        </div>
+      </div>}
+    </Droppable>
+  );
+
+  const balanced = lanes.club_a.length > 0 && lanes.club_a.length === lanes.club_b.length;
+  return <div className="space-y-3">
+    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div><p className="text-sm font-semibold">Build the two teams</p><p className="text-xs text-muted-foreground">Drag players from the pool into either team. Within each team, drag again to rank strongest #1 downwards.</p></div>
+        <div className="flex gap-2 text-xs"><Badge variant="outline">{active.length} players</Badge><Badge className={balanced && lanes.pool.length===0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-700'}>{lanes.pool.length===0 && balanced ? 'Balanced teams' : `${lanes.pool.length} unassigned`}</Badge></div>
+      </div>
+    </div>
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="grid xl:grid-cols-3 gap-3">
+        {lane('pool','Player Pool',lanes.pool)}
+        {lane('club_a',nameA,lanes.club_a,nameA,setNameA)}
+        {lane('club_b',nameB,lanes.club_b,nameB,setNameB)}
+      </div>
+    </DragDropContext>
+    <div className="rounded-xl border border-border bg-card p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex-1 text-xs text-muted-foreground">
+        {lanes.pool.length ? `${lanes.pool.length} player${lanes.pool.length===1?'':'s'} still need a team.` : balanced ? `Ready to save: ${lanes.club_a.length} vs ${lanes.club_b.length}.` : 'Teams must contain the same number of players before the draw can be generated.'}
+        {dirty && <span className="ml-1 font-semibold text-amber-600">Unsaved changes.</span>}
+      </div>
+      <Button data-testid="cc-save-team-builder" onClick={save} disabled={locked || busy || !dirty || !nameA.trim() || !nameB.trim()} className="w-full sm:w-auto">{busy ? 'Saving…' : 'Save Teams & Rankings'}</Button>
+    </div>
+    {status && <div data-testid="cc-team-builder-status" className={cn('rounded-lg border p-3 text-xs font-semibold', status.state==='success'?'border-primary/30 bg-primary/10 text-primary':status.state==='error'?'border-destructive/30 bg-destructive/10 text-destructive':'border-amber-400/30 bg-amber-500/10 text-amber-700')}>{status.text}</div>}
+  </div>;
+}
+
 function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true, onQueue, canScore = true }) {
   const [a, setA] = useState(match.score_a ?? '');
   const [b, setB] = useState(match.score_b ?? '');
