@@ -278,7 +278,7 @@ export default function KotcV2SessionView({ tournament, players, queryClient, se
       testMode={sandboxTournament||(isSuperAdmin&&setupTestMode)} setTestMode={setSetupTestMode} canUseTestMode={isSuperAdmin&&!sandboxTournament} sandboxMode={sandboxTournament}
       countsTowardLeaderboard={countsTowardLeaderboard} setCountsTowardLeaderboard={setCountsTowardLeaderboard}
       seedingSource={seedingSource} applySeedingSource={applySeedingSource} drawMethod={drawMethod} setDrawMethod={setDrawMethod}
-      kotcAggregates={kotcAggregates} rankingOpen={rankingOpen} setRankingOpen={setRankingOpen}
+      kotcAggregates={kotcAggregates} rankingOpen={rankingOpen} setRankingOpen={setRankingOpen} rankingSaveState={rankingSaveState}
       orderedPlayers={orderedPlayers} setPlayerOrder={setPlayerOrder} setSeedingSource={setSeedingSource}
       benchIds={benchIds} toggleBench={toggleBench} creating={creating} createSession={createSession}
     /><HostScrollControls/></>;
