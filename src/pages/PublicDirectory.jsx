@@ -64,11 +64,11 @@ function MapAutoFit({ points }) {
   useEffect(() => {
     if (!points.length) return;
     if (points.length === 1) {
-      map.setView([points[0].venue.latitude, points[0].venue.longitude], 11, { animate: true });
+      map.setView([points[0].venue.latitude, points[0].venue.longitude], 11, { animate: false });
       return;
     }
     const bounds = L.latLngBounds(points.map(({ venue }) => [venue.latitude, venue.longitude]));
-    map.fitBounds(bounds, { padding: [36, 36], maxZoom: 11, animate: true });
+    map.fitBounds(bounds, { padding: [36, 36], maxZoom: 11, animate: false });
   }, [map, points]);
   return null;
 }
