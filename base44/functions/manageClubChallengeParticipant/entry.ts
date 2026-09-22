@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName } = body;
-    if (!eventId || !['replace','continue_short','late_arrival','add_manual','reorder','organise_teams','replacement_candidates'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
+    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, rosterRole, reserveParticipantId, coverParticipantId } = body;
+    if (!eventId || !['replace','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','reorder','organise_teams','replacement_candidates','set_roster_role'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -78,10 +78,22 @@ Deno.serve(async (req) => {
       const identity = cleanName.toLowerCase();
       if (participants.some((p:any) => ['active','late'].includes(p.status) && String(p.display_name||'').trim().toLowerCase().replace(/\s+/g,' ') === identity)) return Response.json({ error:'That player name is already active in this Interclub Challenge.' }, { status:409 });
       const sidePlayers = participants.filter((p:any) => p.side === side && !['replaced'].includes(p.status));
-      const created = await base44.asServiceRole.entities.ClubChallengeParticipant.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id, side, display_name:cleanName, event_rank:sidePlayers.length + 1, status:'active', available_from_round:1, unique_identity_key:`manual-${side}-${crypto.randomUUID().slice(0,12)}` });
+      const created = await base44.asServiceRole.entities.ClubChallengeParticipant.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id, side, display_name:cleanName, event_rank:sidePlayers.length + 1, roster_role:'rotation', status:'active', available_from_round:1, unique_identity_key:`manual-${side}-${crypto.randomUUID().slice(0,12)}` });
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_added_manual', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({participant_id:created.id,side,name:cleanName}) });
       return Response.json({ success:true, participant:created });
+    }
+
+    if (action === 'set_roster_role') {
+      if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Rotation and Reserve roles can only be changed before the draw is approved.' }, { status:409 });
+      const p = participants.find((x:any) => x.id === participantId);
+      if (!p || !['club_a','club_b'].includes(p.side)) return Response.json({ error:'Choose a player already assigned to a team.' }, { status:400 });
+      const role = rosterRole === 'reserve' ? 'reserve' : rosterRole === 'rotation' ? 'rotation' : '';
+      if (!role) return Response.json({ error:'Roster role must be Rotation or Reserve.' }, { status:400 });
+      await base44.asServiceRole.entities.ClubChallengeParticipant.update(p.id, { roster_role:role, reserve_activated:false });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_roster_role_changed', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({participant_id:p.id,roster_role:p.roster_role || 'rotation'}), new_value_json:JSON.stringify({participant_id:p.id,roster_role:role}) });
+      return Response.json({ success:true, participantId:p.id, participantName:p.display_name, rosterRole:role });
     }
 
     if (action === 'organise_teams') {
@@ -159,7 +171,7 @@ Deno.serve(async (req) => {
         tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id,
         side:outgoing.side, display_name:cleanName, gender:String(incomingGender || outgoing.gender || ''),
         source_player_id:String(incomingSourcePlayerId || ''), participant_type:String(incomingParticipantType || outgoing.participant_type || 'member'),
-        event_rank:outgoing.event_rank, status:'active', available_from_round:currentRound,
+        event_rank:outgoing.event_rank, roster_role:'rotation', status:'active', available_from_round:currentRound,
         replacement_for_participant_id:outgoing.id, replacement_effective_round:currentRound,
         unique_identity_key:`replacement-${outgoing.side}-${cleanName.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${crypto.randomUUID().slice(0,8)}`,
       });
@@ -176,6 +188,81 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { event_pack_stale:true });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_replaced', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({participant_id:outgoing.id,name:outgoing.display_name,status:outgoing.status}), new_value_json:JSON.stringify({participant_id:incoming.id,name:incoming.display_name,effective_round:currentRound,fixtures_changed:affected.length}), note:String(reason || `${status} replacement`) });
       return Response.json({ success:true, outgoingName:outgoing.display_name, incomingName:incoming.display_name, effectiveRound:currentRound, affected:affected.length });
+    }
+
+    if (action === 'activate_reserve') {
+      const outgoing = participants.find((p:any) => p.id === outgoingParticipantId);
+      const reserve = participants.find((p:any) => p.id === reserveParticipantId);
+      if (!outgoing || !reserve) return Response.json({ error:'Outgoing player and team reserve are required.' }, { status:400 });
+      if (['withdrawn','injured','replaced'].includes(outgoing.status)) return Response.json({ error:'Outgoing participant is already inactive.' }, { status:409 });
+      if (reserve.side !== outgoing.side || (reserve.roster_role || 'rotation') !== 'reserve') return Response.json({ error:'The selected replacement is not a reserve for the same team.' }, { status:409 });
+      if (['withdrawn','injured','replaced'].includes(reserve.status) || reserve.reserve_activated) return Response.json({ error:'That reserve is not currently available.' }, { status:409 });
+      const sideKey = outgoing.side === 'club_a' ? 'club_a' : 'club_b';
+      const idsKey = `${sideKey}_participant_ids`, namesKey = `${sideKey}_names`;
+      const affected = normal.filter((m:any) => Number(m.round_number) >= currentRound && !TERMINAL.has(m.status) && (m[idsKey] || []).includes(outgoing.id));
+      const conflict = normal.find((m:any) => Number(m.round_number) >= currentRound && !TERMINAL.has(m.status) && (m[idsKey] || []).includes(reserve.id));
+      if (conflict) return Response.json({ error:`${reserve.display_name} already has a future fixture and cannot be activated as an unused reserve.` }, { status:409 });
+      const status = ['withdrawn','injured'].includes(withdrawalStatus) ? withdrawalStatus : 'withdrawn';
+      await base44.asServiceRole.entities.ClubChallengeParticipant.update(outgoing.id, { status, replaced_by_participant_id:reserve.id, withdrawn_at:now, withdrawal_reason:String(reason || status) });
+      await base44.asServiceRole.entities.ClubChallengeParticipant.update(reserve.id, { reserve_activated:true, status:'active', available_from_round:currentRound, replacement_for_participant_id:outgoing.id, replacement_effective_round:currentRound });
+      for (const m of affected) {
+        const ids = [...(m[idsKey] || [])], names = [...(m[namesKey] || [])];
+        const idx = ids.indexOf(outgoing.id);
+        if (idx >= 0) { ids[idx] = reserve.id; names[idx] = reserve.display_name; }
+        await base44.asServiceRole.entities.ClubChallengeMatch.update(m.id, { [idsKey]:ids, [namesKey]:names, revision:Number(m.revision||0)+1 });
+      }
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'reserve_activated', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({participant_id:outgoing.id,name:outgoing.display_name}), new_value_json:JSON.stringify({reserve_participant_id:reserve.id,reserve_name:reserve.display_name,effective_round:currentRound,fixtures_changed:affected.length}), note:String(reason || 'Team reserve activated.') });
+      return Response.json({ success:true, outgoingName:outgoing.display_name, incomingName:reserve.display_name, effectiveRound:currentRound, affected:affected.length, mode:'reserve' });
+    }
+
+    if (action === 'cover_existing') {
+      const outgoing = participants.find((p:any) => p.id === outgoingParticipantId);
+      const cover = participants.find((p:any) => p.id === coverParticipantId);
+      if (!outgoing || !cover) return Response.json({ error:'Outgoing player and cover player are required.' }, { status:400 });
+      if (outgoing.id === cover.id || outgoing.side !== cover.side) return Response.json({ error:'Cover must be a different player from the same team.' }, { status:409 });
+      if (['withdrawn','injured','replaced'].includes(outgoing.status)) return Response.json({ error:'Outgoing participant is already inactive.' }, { status:409 });
+      if (!['active','late'].includes(cover.status) || ((cover.roster_role || 'rotation') === 'reserve' && !cover.reserve_activated)) return Response.json({ error:'Choose an active rotation player as cover.' }, { status:409 });
+      const sideKey = outgoing.side === 'club_a' ? 'club_a' : 'club_b';
+      const idsKey = `${sideKey}_participant_ids`, namesKey = `${sideKey}_names`;
+      const future = normal.filter((m:any) => Number(m.round_number) >= currentRound && !TERMINAL.has(m.status));
+      const affected = future.filter((m:any) => (m[idsKey] || []).includes(outgoing.id)).sort((a:any,b:any)=>Number(a.round_number)-Number(b.round_number)||Number(a.court_number)-Number(b.court_number));
+      const eligible = participants.filter((p:any) => p.side === outgoing.side && p.id !== outgoing.id && ['active','late'].includes(p.status) && ((p.roster_role || 'rotation') !== 'reserve' || p.reserve_activated));
+      const assignmentCounts:any = {};
+      for (const m of future) for (const id of (m[idsKey] || [])) assignmentCounts[id] = Number(assignmentCounts[id] || 0) + 1;
+      const plan:any[] = [];
+      for (const target of affected) {
+        const round = Number(target.round_number);
+        const roundMatches = future.filter((m:any) => Number(m.round_number) === round);
+        const scheduled = new Set(roundMatches.flatMap((m:any) => m[idsKey] || []));
+        let chosen:any = null;
+        if (!scheduled.has(cover.id)) chosen = cover;
+        else {
+          const candidates = eligible.filter((p:any) => p.id !== cover.id && !scheduled.has(p.id));
+          candidates.sort((a:any,b:any) => Number(assignmentCounts[a.id] || 0) - Number(assignmentCounts[b.id] || 0) || Math.abs(Number(a.event_rank||999)-Number(outgoing.event_rank||999)) - Math.abs(Number(b.event_rank||999)-Number(outgoing.event_rank||999)) || String(a.display_name).localeCompare(String(b.display_name)));
+          chosen = candidates[0] || null;
+        }
+        if (!chosen) return Response.json({ error:`No conflict-free cover arrangement is available for Round ${round}. Use a reserve or Continue Short for this situation.`, conflictRound:round }, { status:409 });
+        plan.push({ match:target, chosen, primaryCover:chosen.id === cover.id });
+        assignmentCounts[outgoing.id] = Math.max(0, Number(assignmentCounts[outgoing.id] || 0) - 1);
+        assignmentCounts[chosen.id] = Number(assignmentCounts[chosen.id] || 0) + 1;
+      }
+      const status = ['withdrawn','injured'].includes(withdrawalStatus) ? withdrawalStatus : 'withdrawn';
+      await base44.asServiceRole.entities.ClubChallengeParticipant.update(outgoing.id, { status, covered_by_participant_id:cover.id, withdrawn_at:now, withdrawal_reason:String(reason || status) });
+      const covering = Array.isArray(cover.covering_for_participant_ids) ? cover.covering_for_participant_ids.map(String) : [];
+      if (!covering.includes(String(outgoing.id))) covering.push(String(outgoing.id));
+      await base44.asServiceRole.entities.ClubChallengeParticipant.update(cover.id, { covering_for_participant_ids:covering });
+      for (const item of plan) {
+        const m = item.match, ids = [...(m[idsKey] || [])], names = [...(m[namesKey] || [])];
+        const idx = ids.indexOf(outgoing.id);
+        if (idx >= 0) { ids[idx] = item.chosen.id; names[idx] = item.chosen.display_name; }
+        await base44.asServiceRole.entities.ClubChallengeMatch.update(m.id, { [idsKey]:ids, [namesKey]:names, revision:Number(m.revision||0)+1 });
+      }
+      const primaryGames = plan.filter(x=>x.primaryCover).length;
+      const rebalanced = plan.length - primaryGames;
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'existing_player_cover_applied', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({participant_id:outgoing.id,name:outgoing.display_name}), new_value_json:JSON.stringify({cover_participant_id:cover.id,cover_name:cover.display_name,effective_round:currentRound,fixtures_changed:plan.length,cover_games:primaryGames,rebalanced_conflicts:rebalanced}), note:String(reason || 'Existing rotation player used as cover with conflict-safe rebalance.') });
+      return Response.json({ success:true, outgoingName:outgoing.display_name, incomingName:cover.display_name, effectiveRound:currentRound, affected:plan.length, coverGames:primaryGames, rebalanced, mode:'cover' });
     }
 
     if (action === 'continue_short') {
