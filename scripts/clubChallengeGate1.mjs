@@ -72,6 +72,21 @@ assert.equal(variableTimer.recommendedRounds, 16);
 assert.equal(variableTimer.averageGamesClubA, 8);
 assert.equal(variableTimer.structuredMinutes, 180);
 
+// Rotation-heavy event: do not throw away several playable rounds merely to force exact equality.
+// With 18 players per club and 4 courts, 13 rounds fit in three hours. RallyHub uses all 13
+// and balances the unavoidable spread at 5–6 games rather than stopping at 9 rounds / 4 each.
+const rotation18Format = calculateClubChallengeFormat({ clubAPlayerCount:18, clubBPlayerCount:18, courts:4, availableMinutes:180, playMinutes:10, changeoverMinutes:2, includeBreak:true, breakMinutes:20, breakAfterRound:6 });
+assert.equal(rotation18Format.recommendedRounds, 13);
+assert.equal(rotation18Format.totalMatches, 52);
+assert.deepEqual(rotation18Format.gamesRangeClubA, [5, 6]);
+assert.equal(rotation18Format.exactEquality, false);
+assert.equal(rotation18Format.remainingMinutes, 4);
+const rotation18Fairness = assertScheduleIntegrity({ count:18, courts:4, rounds:13, expectedMin:5, expectedMax:6, label:'T18ROT' });
+assert.equal(rotation18Fairness.balancedGames, true);
+assert.equal(rotation18Fairness.duplicatePlayerRoundIssues, 0);
+assert.equal(rotation18Fairness.sameClubIntegrityIssues, 0);
+assert.equal(rotation18Fairness.repeatedPartnerPairs, 0);
+
 // Canonical fixture acceptance.
 const canonicalFairness = assertScheduleIntegrity({ count: 16, courts: 4, rounds: 12, expectedMin: 6, expectedMax: 6, label: 'CANON' });
 assert.equal(canonicalFairness.equalGames, true);
@@ -148,5 +163,5 @@ console.log('\nCLUB CHALLENGE v1.0 — GATE 1 ENGINE TESTS PASS');
 console.log('------------------------------------------------');
 console.log(`Canonical: 16+16 | 4 courts | 12 rounds | 48 matches | games ${canonicalFairness.minGames}-${canonicalFairness.maxGames}`);
 console.log(`Canonical fairness: partner repeats ${canonicalFairness.repeatedPartnerPairs}; opponent pairs repeated ${canonicalFairness.repeatedOpponentPairs}; max opponent repeat ${canonicalFairness.maxOpponentRepeat}; consecutive rests ${canonicalFairness.consecutiveRestOccurrences}; avg strength gap ${canonicalFairness.averageStrengthGap.toFixed(2)}`);
-console.log('Generalised fixtures: 12+12/3c, 13+13/3c, 20+20/4c, 20+20/5c, 24+24/4c, 24+24/6c PASS');
+console.log('Generalised fixtures: 12+12/3c, 13+13/3c, 18+18/4c rotation, 20+20/4c, 20+20/5c, 24+24/4c, 24+24/6c PASS');
 console.log('Variable timing, timed draws, 11/15 win-by-1/2 validation, showcase scoring, tiebreak and revision-conflict helpers PASS');
