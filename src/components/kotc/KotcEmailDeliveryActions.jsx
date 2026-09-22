@@ -20,7 +20,7 @@ export default function KotcEmailDeliveryActions({preview,emailTestSent,sharing,
   const bulkAt=delivery.bulkResendAvailableAt?Date.parse(delivery.bulkResendAvailableAt):0;
   const bulkLocked=Boolean(bulkAt&&Number.isFinite(bulkAt)&&bulkAt>Date.now());
 
-  if(!emailTestSent){
+  if(!attempted&&!emailTestSent){
     return <div className="space-y-2">
       <Button data-testid="kotc-email-test" className="w-full min-h-12" onClick={onTest} disabled={sharing||preview?.transportReady!==true}>
         {sharing?<><Loader2 className="w-4 h-4 mr-2 animate-spin"/>Sending test…</>:`Send test email to ${preview?.testRecipientName||'me'}`}
@@ -54,12 +54,19 @@ export default function KotcEmailDeliveryActions({preview,emailTestSent,sharing,
 
     {sentCount>0
       ? <Button data-testid="kotc-email-send-complete" variant="secondary" className="w-full min-h-12" disabled>✓ {allSent?`Sent to ${sentCount} Players`:`${sentCount} of ${recipientCount} Sent`}</Button>
-      : <Button className="w-full min-h-12" onClick={onSendAll} disabled={sharing}>{sharing?'Retrying…':`Retry Send to ${recipientCount} Players`}</Button>}
+      : <Button className="w-full min-h-12" onClick={onSendAll} disabled={sharing||!emailTestSent}>{sharing?'Retrying…':`Retry Send to ${recipientCount} Players`}</Button>}
 
-    {sentCount>0&&!allSent&&<Button variant="outline" className="w-full min-h-11" onClick={onSendAll} disabled={sharing}><RefreshCw className="w-4 h-4 mr-2"/>Retry unsent players</Button>}
+    {!emailTestSent&&<div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-3 space-y-2">
+      <p className="text-xs font-semibold text-amber-700">The previous send confirmation is retained. Send a fresh test email before any new send or resend.</p>
+      <Button data-testid="kotc-email-retest" variant="outline" className="w-full min-h-11" onClick={onTest} disabled={sharing||preview?.transportReady!==true}>
+        {sharing?<><Loader2 className="w-4 h-4 mr-2 animate-spin"/>Sending test…</>:`Send test email to ${preview?.testRecipientName||'me'}`}
+      </Button>
+    </div>}
+
+    {sentCount>0&&!allSent&&<Button variant="outline" className="w-full min-h-11" onClick={onSendAll} disabled={sharing||!emailTestSent}><RefreshCw className="w-4 h-4 mr-2"/>Retry unsent players</Button>}
 
     {sentCount>0&&<div className="grid sm:grid-cols-2 gap-2">
-      <Button data-testid="kotc-email-resend-all" variant="outline" className="min-h-11" onClick={onResendAll} disabled={sharing||bulkLocked}><RefreshCw className="w-4 h-4 mr-2"/>Resend to all {recipientCount}</Button>
+      <Button data-testid="kotc-email-resend-all" variant="outline" className="min-h-11" onClick={onResendAll} disabled={sharing||bulkLocked||!emailTestSent}><RefreshCw className="w-4 h-4 mr-2"/>Resend to all {recipientCount}</Button>
       <div className="rounded-lg border p-2 text-[11px] text-muted-foreground flex items-center">{bulkLocked?`Bulk resend available after ${formatEmailTimestamp(delivery.bulkResendAvailableAt)}. Individual resend is available now.`:'Bulk resend is available. Individual resend is also available below.'}</div>
     </div>}
 
@@ -71,7 +78,7 @@ export default function KotcEmailDeliveryActions({preview,emailTestSent,sharing,
             <p className="text-sm font-medium truncate">{r.name}</p>
             <p className={`text-[11px] ${r.deliveryStatus==='failed'?'text-destructive':r.hasSent?'text-green-600':'text-muted-foreground'}`}>{r.deliveryStatus==='failed'?'⚠ Latest attempt failed':r.hasSent?`✓ Sent${r.lastSentAt?` · ${formatEmailTimestamp(r.lastSentAt)}`:''}`:'Not sent yet'}</p>
           </div>
-          <Button size="sm" variant="outline" onClick={()=>onResendPlayer(r.playerId)} disabled={sharing}>{r.hasSent?'Resend':'Send'}</Button>
+          <Button size="sm" variant="outline" onClick={()=>onResendPlayer(r.playerId)} disabled={sharing||!emailTestSent}>{r.hasSent?'Resend':'Send'}</Button>
         </div>)}
       </div>
     </div>}
