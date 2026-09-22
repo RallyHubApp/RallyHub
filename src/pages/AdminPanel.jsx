@@ -579,7 +579,6 @@ export default function AdminPanel() {
 
   const createOwnerWhatsAppInvite = async () => {
     if (!ownerInvite.listingSlug || !selectedOwnerInviteListing) return toast.error('Choose a club first');
-    if (!ownerInvite.contactName.trim()) return toast.error('Enter the club contact name');
     if (!ownerInvite.contactPhone.trim()) return toast.error('Enter the mobile number for WhatsApp');
     setOwnerInviteBusy('whatsapp');
     setOwnerInviteResult(null);
@@ -618,7 +617,6 @@ export default function AdminPanel() {
 
   const sendOwnerEmailInvite = async () => {
     if (!ownerInvite.listingSlug || !selectedOwnerInviteListing) return toast.error('Choose a club first');
-    if (!ownerInvite.contactName.trim()) return toast.error('Enter the club contact name');
     if (!ownerInvite.contactEmail.trim()) return toast.error('Enter the email address');
     setOwnerInviteBusy('email');
     setOwnerInviteResult(null);
@@ -1351,12 +1349,12 @@ export default function AdminPanel() {
               )}
               <div className="flex flex-wrap gap-2">
                 {ownerInvite.contactPhone && (
-                  <Button type="button" onClick={createOwnerWhatsAppInvite} disabled={!!ownerInviteBusy || !ownerInvite.listingSlug || !ownerInvite.contactName.trim()} className="gap-2">
+                  <Button type="button" onClick={createOwnerWhatsAppInvite} disabled={!!ownerInviteBusy || !ownerInvite.listingSlug} className="gap-2">
                     <MessageCircle className="w-4 h-4" /> {ownerInviteBusy === 'whatsapp' ? 'Creating secure link…' : 'Create WhatsApp invitation'}
                   </Button>
                 )}
                 {ownerInvite.contactEmail && (
-                  <Button type="button" variant={ownerInvite.contactPhone ? 'outline' : 'default'} onClick={sendOwnerEmailInvite} disabled={!!ownerInviteBusy || !ownerInvite.listingSlug || !ownerInvite.contactName.trim()} className="gap-2">
+                  <Button type="button" variant={ownerInvite.contactPhone ? 'outline' : 'default'} onClick={sendOwnerEmailInvite} disabled={!!ownerInviteBusy || !ownerInvite.listingSlug} className="gap-2">
                     <Mail className="w-4 h-4" /> {ownerInviteBusy === 'email' ? 'Preparing email…' : 'Prepare email invitation'}
                   </Button>
                 )}
