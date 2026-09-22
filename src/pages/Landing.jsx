@@ -222,16 +222,16 @@ export default function Landing() {
           </section>
 
           <section className="relative bg-white">
-            <div className="mx-auto max-w-[1380px] px-0 sm:px-7 lg:px-10 xl:px-12">
-              <div className="relative hidden overflow-hidden md:block">
-                <div className="aspect-[782/336] w-[48%]">
+            <div className="mx-auto max-w-[1380px] px-0">
+              <div className="relative hidden aspect-[6.15/1] overflow-hidden md:block">
+                <div className="h-full w-[41%]">
                   <img
                     src={FOOTER_PHOTO}
                     alt="Pickleball players enjoying time together on court"
                     className="h-full w-full object-cover object-center"
                   />
                 </div>
-                <div className="absolute inset-y-0 right-0 w-[61%] rounded-tl-[92px] bg-[#053c56]">
+                <div className="absolute inset-y-0 right-0 w-[61.5%] rounded-tl-[54px] bg-[#053c56]">
                   <div className="grid h-full grid-cols-4 items-center text-center text-white">
                     {[
                       [Users,'People','Build connections'],
