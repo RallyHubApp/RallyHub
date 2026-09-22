@@ -37,7 +37,7 @@ export default function About(){
     <div className="mt-[17px] flex flex-wrap gap-[10px]"><Link to="/directory" className="rounded-full bg-[#07528a] px-[18px] py-[10px] text-[11px] font-bold text-white">Explore the Directory&nbsp; →</Link><a href="#capabilities" className="rounded-full border border-[#174578] bg-white px-[18px] py-[10px] text-[11px] font-bold">See What RallyHub Does</a></div>
     <div className="mt-[23px] grid grid-cols-3 gap-4 text-[10px] font-semibold text-[#10275a]"><div className="flex gap-2"><Users className="h-7 w-7 text-[#09a55a]"/><span>Players<br/>Welcome</span></div><div className="flex gap-2"><MapPin className="h-7 w-7 text-[#09a55a]"/><span>Clubs<br/>Grow</span></div><div className="flex gap-2"><CalendarDays className="h-7 w-7 text-[#09a55a]"/><span>Communities<br/>Thrive</span></div></div>
    </div></div>
-   <div className="relative min-h-[437px] overflow-hidden bg-[#dce8e8] max-md:aspect-[1.36] max-md:min-h-0"><img src={APPROVED_MASTER} alt="Pickleball players on court" className="absolute right-0 top-[-63px] w-[172.4%] max-w-none max-md:top-[-10.6%]"/></div>
+   <div className="relative min-h-[382px] overflow-hidden bg-[#dce8e8] max-md:aspect-[1.36] max-md:min-h-0"><img src={APPROVED_MASTER} alt="Pickleball players on court" className="absolute right-0 top-[-63px] w-[172.4%] max-w-none max-md:top-[-10.6%]"/></div>
   </div></section>
 
   <section className="mx-auto max-w-[1024px] px-[29px] py-[14px]"><div className="grid grid-cols-2 rounded-[8px] bg-[#eff8fb] px-[55px] py-[13px] sm:grid-cols-4">
