@@ -37,6 +37,7 @@ export default function Events() {
               <Link to="/contact">Contact</Link>
             </nav>
           </div>
+          <div className="flex min-h-[36px] items-center justify-center border-t border-white/10 px-4 py-2 text-center text-[10px] font-medium text-white/70 sm:text-[11px]">© 2026 RallyHub All rights reserved.</div>
         </footer>
       </div>
     </div>
