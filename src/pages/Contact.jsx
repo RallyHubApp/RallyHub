@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Seo from '@/components/public/Seo';
+import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 
 export default function Contact() {
   return (
@@ -13,7 +14,7 @@ export default function Contact() {
         path="/contact"
       />
       <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-4 py-12 sm:py-16 max-w-3xl">
+      <div className="container mx-auto max-w-3xl px-4 pb-4 pt-12 sm:pt-16">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-8">
           <ArrowLeft className="w-4 h-4" /> Back to RallyHub
         </Link>
@@ -50,6 +51,9 @@ export default function Contact() {
             </Button>
           </div>
         </div>
+      </div>
+      <div className="px-4 pb-4">
+        <PublicCopyrightFooter maxWidthClass="max-w-3xl" />
       </div>
       </div>
     </>
