@@ -572,7 +572,6 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try {
       const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'add_manual', side, displayName:name });
       if (res.data?.error) throw new Error(res.data.error);
-      if (!overrideName) setManual(m => ({ ...m, [side]: '' }));
       await sync();
       return res.data;
     } catch (e) {
