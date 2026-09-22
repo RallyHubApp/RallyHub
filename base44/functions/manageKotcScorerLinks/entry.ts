@@ -9,8 +9,10 @@ Deno.serve(async req=>{try{
  const session=(await base44.asServiceRole.entities.KotcSession.filter({id:sessionId}))?.[0];if(!session)return Response.json({error:'KOTC session not found'},{status:404});
  let allowed=user.role==='admin';if(!allowed){const grants=await base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'});allowed=(grants||[]).some((g:any)=>validHostAccess(g,session.tenant_id,session.id));}if(!allowed)return Response.json({error:'Primary session host access required'},{status:403});
  let existing=(await base44.asServiceRole.entities.KotcScorerToken.filter({session_id:session.id,status:'active'})).sort((a:any,b:any)=>Date.parse(b.created_at||b.created_date||0)-Date.parse(a.created_at||a.created_date||0));
- for(const row of existing.filter((x:any)=>x.expires_at&&Date.parse(x.expires_at)<Date.now()))await base44.asServiceRole.entities.KotcScorerToken.update(row.id,{status:'revoked'});
- existing=existing.filter((x:any)=>!x.expires_at||Date.parse(x.expires_at)>=Date.now());
+ const finished=['completed','finalised'].includes(String(session.status||''));
+ // Once a KOTC is finished, the exact player/scorer link already issued becomes the permanent
+ // results route for that session. Do not revoke it merely because its live-scoring window expired.
+ if(!finished){for(const row of existing.filter((x:any)=>x.expires_at&&Date.parse(x.expires_at)<Date.now()))await base44.asServiceRole.entities.KotcScorerToken.update(row.id,{status:'revoked'});existing=existing.filter((x:any)=>!x.expires_at||Date.parse(x.expires_at)>=Date.now());}
  if(action==='revoke'){for(const row of existing)await base44.asServiceRole.entities.KotcScorerToken.update(row.id,{status:'revoked'});return Response.json({success:true,revoked:existing.length});}
  let scorer=existing[0]||null;if(!scorer){const now=new Date().toISOString();scorer=await base44.asServiceRole.entities.KotcScorerToken.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,token:randomToken(),status:'active',created_by_user_id:user.id,created_at:now,expires_at:new Date(Date.now()+18*60*60*1000).toISOString(),use_count:0});}
  return Response.json({success:true,token:scorer.token,scorerId:scorer.id,expires_at:scorer.expires_at,scorerPath:`/kotc-score/${scorer.token}`});
