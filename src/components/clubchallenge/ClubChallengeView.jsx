@@ -251,6 +251,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [playerControlBusy, setPlayerControlBusy] = useState(false);
   const [playerControlStatus, setPlayerControlStatus] = useState(null);
   const [hostAction, setHostAction] = useState('');
+  const [roundActionStatus, setRoundActionStatus] = useState(null);
   const hostBarAnchorRef = React.useRef(null);
   const hostBarInnerRef = React.useRef(null);
   const [hostBarPinned, setHostBarPinned] = useState(false);
@@ -690,12 +691,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
-  const timerAction = async (action, phase) => {
+  const timerAction = async (action, phase, extra = {}) => {
     if (!event || timerCommandRef.current) return false;
     timerCommandRef.current = true;
     setHostAction(action === 'start' ? `Starting ${phase || 'timer'}… command sent` : action === 'pause' ? 'Pausing timer… command sent' : action === 'resume' ? 'Resuming timer… command sent' : 'Updating timer… command sent');
     try {
-      const res = await base44.functions.invoke('updateClubChallengeTimer', { eventId: event.id, action, phase, expectedRevision: Number(event.timer_revision || 0) });
+      const res = await base44.functions.invoke('updateClubChallengeTimer', { eventId: event.id, action, phase, expectedRevision: Number(event.timer_revision || 0), ...extra });
       if (res.data?.conflict) { toast.error('Timer changed on another device. RallyHub has refreshed the authoritative timer.'); await refetchEvent(); return false; }
       if (res.data?.error) { toast.error(res.data.error); return false; }
       await refetchEvent();
