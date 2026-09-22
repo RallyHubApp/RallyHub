@@ -16,7 +16,7 @@ export default function Events() {
           <h1 className="mt-2 text-4xl font-black tracking-[-.04em] sm:text-5xl">Events are coming to RallyHub</h1>
           <p className="mx-auto mt-5 max-w-[650px] text-base leading-7 text-[#52627d]">This section is under development. If you have an upcoming event and would like it listed on RallyHub, please contact Brian. We’d be delighted to work with some of the first event organisers as we build this part of the platform.</p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <a href="mailto:hello@rallyhub.ie" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-5 text-sm font-bold text-[#0c2257]"><Mail className="h-4 w-4"/>Email Brian</a>
+            <a href="mailto:rallyhubapp@gmail.com" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-5 text-sm font-bold text-[#0c2257]"><Mail className="h-4 w-4"/>Email Brian</a>
             <a href="https://wa.me/353878100333" target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#078e48] px-5 text-sm font-bold text-white"><MessageCircle className="h-4 w-4"/>WhatsApp Brian</a>
           </div>
         </section>
