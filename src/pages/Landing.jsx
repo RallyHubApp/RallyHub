@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/AuthContext';
 import Seo, { SITE_URL } from '@/components/public/Seo';
+import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 const HERO_PHOTO = '/assets/rallyhub-home-hero.webp';
@@ -274,6 +275,7 @@ export default function Landing() {
               </div>
             </div>
           </section>
+          <PublicCopyrightFooter />
         </main>
       </div>
     </>
