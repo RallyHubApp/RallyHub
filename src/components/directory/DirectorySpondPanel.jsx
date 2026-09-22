@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, CheckCircle2, Link2, Loader2, LogIn, RefreshCw, Unlink } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Link2, Loader2, LogIn, RefreshCw, Save, Unlink } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const sessionKey = s => [s.day, s.start, s.end || '', s.level || '', s.venueId || ''].join('|');
 const normaliseClubName = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport }) {
+export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport, onSave, saveBusy = false, hasUnsavedChanges = false, saved = false }) {
   const { user } = useAuth();
   const [connection, setConnection] = useState(null);
   const [groups, setGroups] = useState([]);
@@ -28,11 +28,15 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+  const [lastImportedCount, setLastImportedCount] = useState(0);
+  const [importedSelectionSignature, setImportedSelectionSignature] = useState('');
   const [token, setToken] = useState(() => {
     try { return sessionStorage.getItem('rallyhub_spond_token') || ''; } catch { return ''; }
   });
 
   const selectedGroup = useMemo(() => groups.find(g => String(g.id) === String(selectedGroupId)) || null, [groups, selectedGroupId]);
+  const currentSelectionSignature = useMemo(() => `${selectedGroupId}::${[...selectedSessions].sort().join('||')}`, [selectedGroupId, selectedSessions]);
+  const importComplete = lastImportedCount > 0 && importedSelectionSignature === currentSelectionSignature;
 
   useEffect(() => {
     let active = true;
@@ -119,7 +123,7 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
 
   const scanEvents = async () => {
     if (!selectedGroupId) { setError('Choose the Spond group first.'); return; }
-    setLoadingEvents(true); setError(''); setMessage('');
+    setLoadingEvents(true); setError(''); setMessage(''); setLastImportedCount(0); setImportedSelectionSignature('');
     try {
       const data = await invokeDirectory('directory_get_events', { groupId:selectedGroupId });
       setPreview(data.preview || { venues:[], sessions:[] });
@@ -147,7 +151,9 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
       });
       onImport?.({ venues, sessions, group:selectedGroup });
       setConnection(data.connection || connection);
-      setMessage(`Imported ${sessions.length} Spond session pattern${sessions.length === 1 ? '' : 's'} into the Directory form and synced ${eventSync.active || 0} upcoming Spond event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} for the RallyHub calendar. Press Save changes to publish the Directory sessions.`);
+      setLastImportedCount(sessions.length);
+      setImportedSelectionSignature(currentSelectionSignature);
+      setMessage(`Imported ${sessions.length} Spond session pattern${sessions.length === 1 ? '' : 's'} into the Directory form and synced ${eventSync.active || 0} upcoming Spond event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} for the RallyHub calendar. The import is complete; press Save changes to publish the Directory sessions.`);
     } catch (err) {
       setError(err.message || 'Could not import the Spond sessions.');
     } finally { setSavingConnection(false); }
@@ -157,7 +163,7 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
     setDisconnecting(true); setError(''); setMessage('');
     try {
       await invokeDirectory('directory_disconnect');
-      setConnection(null); setGroups([]); setSelectedGroupId(''); setPreview(null);
+      setConnection(null); setGroups([]); setSelectedGroupId(''); setPreview(null); setLastImportedCount(0); setImportedSelectionSignature('');
       setMessage('Spond disconnected from this Directory listing. Existing published venues and sessions were left unchanged.');
     } catch (err) {
       setError(err.message || 'Could not disconnect Spond.');
@@ -169,6 +175,8 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
     setSelectedSessions(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
+      setLastImportedCount(0);
+      setImportedSelectionSignature('');
       return next;
     });
   };
@@ -215,7 +223,7 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
           <div className="grid sm:grid-cols-[1fr_auto] gap-3 items-end">
             <div>
               <Label className="text-xs">Spond club group</Label>
-              <Select value={selectedGroupId} onValueChange={value => { setSelectedGroupId(value); setPreview(null); setMessage(''); }}>
+              <Select value={selectedGroupId} onValueChange={value => { setSelectedGroupId(value); setPreview(null); setMessage(''); setLastImportedCount(0); setImportedSelectionSignature(''); }}>
                 <SelectTrigger className="mt-1 bg-background"><SelectValue placeholder="Choose a Spond group" /></SelectTrigger>
                 <SelectContent>
                   {groups.map(group => <SelectItem key={group.id} value={String(group.id)}>{group.name}{group.memberCount ? ` · ${group.memberCount} members` : ''}</SelectItem>)}
@@ -252,10 +260,24 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
                   })}
                 </div>
               )}
-              <Button type="button" onClick={importSelected} disabled={savingConnection || selectedSessions.size === 0} className="gap-2">
-                {savingConnection ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
-                {savingConnection ? 'Importing…' : `Import ${selectedSessions.size} selected session${selectedSessions.size === 1 ? '' : 's'}`}
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  onClick={importSelected}
+                  disabled={savingConnection || selectedSessions.size === 0 || importComplete}
+                  variant={importComplete ? 'outline' : 'default'}
+                  className={`gap-2 ${importComplete ? 'cursor-default border-border bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground' : ''}`}
+                >
+                  {savingConnection ? <Loader2 className="w-4 h-4 animate-spin" /> : importComplete ? <CheckCircle2 className="w-4 h-4" /> : <CalendarDays className="w-4 h-4" />}
+                  {savingConnection ? 'Importing…' : importComplete ? `Imported ${lastImportedCount}` : `Import ${selectedSessions.size} selected session${selectedSessions.size === 1 ? '' : 's'}`}
+                </Button>
+                {importComplete && onSave && (
+                  <Button type="button" onClick={onSave} disabled={saveBusy || !hasUnsavedChanges} className="gap-2">
+                    {saveBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : !hasUnsavedChanges && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                    {saveBusy ? 'Saving…' : hasUnsavedChanges ? 'Save changes' : saved ? 'Saved ✓' : 'All saved'}
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </div>
