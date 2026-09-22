@@ -56,6 +56,10 @@
       "type": "string",
       "description": "Name of the backend environment secret containing the gateway shared secret; never store the secret value in this entity."
     },
+    "kotc_player_link_guide_url": {
+      "type": "string",
+      "description": "Optional public URL for the club-branded KOTC player-link infographic used in results/member communications."
+    },
     "notes": {
       "type": "string"
     }
