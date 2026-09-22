@@ -61,9 +61,9 @@ function ClubBadge({ name, logo, primary, secondary }) {
   );
 }
 
-function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImportSpond, onAddManual, onSave }) {
+function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImportSpond, onAddManual, onSave, onSetRosterRole }) {
   const active = participants.filter(p => !['replaced','withdrawn','injured'].includes(p.status));
-  const signature = active.map(p => `${p.id}:${p.side}:${p.event_rank}`).sort().join('|');
+  const signature = active.map(p => `${p.id}:${p.side}:${p.event_rank}:${p.roster_role || 'rotation'}`).sort().join('|');
   const makeLanes = () => ({
     pool: active.filter(p => p.side === 'pool').sort((a,b)=>(a.event_rank||999)-(b.event_rank||999)).map(p => p.id),
     club_a: active.filter(p => p.side === 'club_a').sort((a,b)=>(a.event_rank||999)-(b.event_rank||999)).map(p => p.id),
@@ -133,6 +133,7 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
                 <div data-testid={`cc-team-drag-${p.id}`} {...dragProvided.dragHandleProps} className="w-9 h-9 -ml-1 flex items-center justify-center rounded-md touch-none shrink-0 text-muted-foreground active:bg-primary/10"><GripVertical className="w-5 h-5" /></div>
                 {id !== 'pool' && <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>}
                 <span className="text-xs text-foreground flex-1 truncate">{p.display_name}</span>
+                {id !== 'pool' && <Select value={p.roster_role || 'rotation'} onValueChange={async value => { setStatus({state:'working',text:`Updating ${p.display_name}…`}); try { await onSetRosterRole?.(p.id, value); setStatus({state:'success',text:`${p.display_name} set as ${value === 'reserve' ? 'Reserve' : 'Rotation'} player.`}); } catch (e) { setStatus({state:'error',text:e?.message || 'Could not update roster role.'}); } }} disabled={locked || busy || dirty}><SelectTrigger className="h-8 w-[102px] bg-background text-[10px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="rotation">Rotation</SelectItem><SelectItem value="reserve">Reserve</SelectItem></SelectContent></Select>}
                 {p.gender && <span className="text-[10px] text-muted-foreground">{p.gender}</span>}
               </div>}
             </Draggable>;
@@ -144,12 +145,17 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
     </Droppable>
   );
 
-  const balanced = lanes.club_a.length > 0 && lanes.club_a.length === lanes.club_b.length;
+  const roleOf = id => byId.get(id)?.roster_role || 'rotation';
+  const rotationA = lanes.club_a.filter(id => roleOf(id) === 'rotation').length;
+  const rotationB = lanes.club_b.filter(id => roleOf(id) === 'rotation').length;
+  const reserveA = lanes.club_a.filter(id => roleOf(id) === 'reserve').length;
+  const reserveB = lanes.club_b.filter(id => roleOf(id) === 'reserve').length;
+  const balanced = rotationA > 0 && rotationA === rotationB;
   return <div className="space-y-3">
     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div><p className="text-sm font-semibold">Build the two teams</p><p className="text-xs text-muted-foreground">Drag players from the pool into either team. Within each team, drag again to rank strongest #1 downwards.</p></div>
-        <div className="flex gap-2 text-xs"><Badge variant="outline">{active.length} players</Badge><Badge className={balanced && lanes.pool.length===0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-700'}>{lanes.pool.length===0 && balanced ? 'Balanced teams' : `${lanes.pool.length} unassigned`}</Badge></div>
+        <div><p className="text-sm font-semibold">Build the two teams</p><p className="text-xs text-muted-foreground">Drag players into the teams, rank them, then mark each team member as Rotation or Reserve. Rotation players are included in the draw; Reserves travel with the team but stay outside the scheduled rotation until activated.</p></div>
+        <div className="flex flex-wrap gap-2 text-xs"><Badge variant="outline">{active.length} players</Badge><Badge variant="outline">A: {rotationA} rotation · {reserveA} reserve</Badge><Badge variant="outline">B: {rotationB} rotation · {reserveB} reserve</Badge><Badge className={balanced && lanes.pool.length===0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-700'}>{lanes.pool.length===0 && balanced ? 'Rotation squads balanced' : `${lanes.pool.length} unassigned`}</Badge></div>
       </div>
     </div>
     <DragDropContext onDragEnd={handleDragEnd}>
@@ -161,7 +167,7 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
     </DragDropContext>
     <div className="rounded-xl border border-border bg-card p-3 flex flex-col sm:flex-row sm:items-center gap-3">
       <div className="flex-1 text-xs text-muted-foreground">
-        {lanes.pool.length ? `${lanes.pool.length} player${lanes.pool.length===1?'':'s'} still need a team.` : balanced ? `Ready to save: ${lanes.club_a.length} vs ${lanes.club_b.length}.` : 'Teams must contain the same number of players before the draw can be generated.'}
+        {lanes.pool.length ? `${lanes.pool.length} player${lanes.pool.length===1?'':'s'} still need a team.` : balanced ? `Ready: ${rotationA} rotation players per club${reserveA || reserveB ? ` · reserves ${reserveA}–${reserveB}` : ''}.` : 'The Rotation squads must contain the same number of players before the draw can be generated. Reserve numbers may differ.'}
         {dirty && <span className="ml-1 font-semibold text-amber-600">Unsaved changes.</span>}
       </div>
       <Button data-testid="cc-save-team-builder" onClick={save} disabled={locked || busy || !dirty || !nameA.trim() || !nameB.trim()} className="w-full sm:w-auto">{busy ? 'Saving…' : 'Save Teams & Rankings'}</Button>
