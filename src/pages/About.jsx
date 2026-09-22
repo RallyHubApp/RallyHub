@@ -41,8 +41,8 @@ export default function About(){
    <div className="relative min-h-[382px] overflow-hidden bg-[#dce8e8] max-md:aspect-[1.36] max-md:min-h-0"><img src={APPROVED_HERO} alt="Pickleball players on court" className="absolute inset-0 h-full w-full object-cover object-center"/></div>
   </div></section>
 
-  <section className="mx-auto max-w-[1024px] px-[29px] py-[14px]"><div className="grid grid-cols-2 rounded-[8px] bg-[#eff8fb] px-[55px] py-[13px] sm:grid-cols-4">
-   {[[Users,'155+','Members (and growing)'],[MapPin,'3','Club venues in Clare'],[CalendarDays,'Weekly','Club sessions'],[Users,'A growing','Irish community']].map(([I,a,b],i)=><div key={b} className={"flex items-center gap-[13px] px-[17px] py-[3px] "+(i<3?'sm:border-r sm:border-[#c7dbe3]':'')}><I className="h-7 w-7 shrink-0 text-[#0b5793]"/><div><div className="text-[20px] font-black leading-none">{a}</div><div className="mt-[4px] whitespace-nowrap text-[9px]">{b}</div></div></div>)}
+  <section className="mx-auto max-w-[1024px] px-4 py-[14px] sm:px-[29px]"><div className="grid grid-cols-2 gap-x-3 gap-y-4 rounded-[8px] bg-[#eff8fb] px-4 py-4 sm:grid-cols-4 sm:gap-0 sm:px-[55px] sm:py-[13px]">
+   {[[Users,'155+','Members (and growing)'],[MapPin,'3','Club venues in Clare'],[CalendarDays,'Weekly','Club sessions'],[Users,'A growing','Irish community']].map(([I,a,b],i)=><div key={b} className={"flex min-w-0 items-center gap-2 px-1 py-[3px] sm:gap-[13px] sm:px-[17px] "+(i<3?'sm:border-r sm:border-[#c7dbe3]':'')}><I className="h-6 w-6 shrink-0 text-[#0b5793] sm:h-7 sm:w-7"/><div className="min-w-0"><div className="text-[16px] font-black leading-tight sm:text-[20px] sm:leading-none">{a}</div><div className="mt-[3px] text-[8px] leading-tight sm:mt-[4px] sm:whitespace-nowrap sm:text-[9px]">{b}</div></div></div>)}
   </div></section>
 
   <section className="mx-auto grid max-w-[1024px] gap-[28px] px-[30px] pb-[19px] md:grid-cols-[47%_53%]">
