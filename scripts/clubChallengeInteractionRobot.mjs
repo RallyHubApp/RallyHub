@@ -52,6 +52,11 @@ const fairness = analyseClubChallengeFairness({schedule,clubAPlayers:clubA,clubB
 check('sporting: equal games remain protected', fairness.equalGames && fairness.minGames === 6 && fairness.maxGames === 6);
 check('sporting: no partner repeats remain protected', fairness.repeatedPartnerPairs === 0);
 check('sporting: no consecutive rests remain protected', fairness.consecutiveRestOccurrences === 0);
+const rotationFormat = calculateClubChallengeFormat({clubAPlayerCount:18,clubBPlayerCount:18,courts:4,availableMinutes:180,playMinutes:10,changeoverMinutes:2,includeBreak:true,breakMinutes:20,breakAfterRound:6});
+const rotationSchedule = generateClubChallengeFixtures({clubAPlayers:Array.from({length:18},(_,i)=>({id:`RA${i+1}`,name:`RA${i+1}`,rank:i+1})),clubBPlayers:Array.from({length:18},(_,i)=>({id:`RB${i+1}`,name:`RB${i+1}`,rank:i+1})),courts:4,rounds:rotationFormat.recommendedRounds});
+const rotationFairness = analyseClubChallengeFairness({schedule:rotationSchedule,clubAPlayers:Array.from({length:18},(_,i)=>({id:`RA${i+1}`,name:`RA${i+1}`,rank:i+1})),clubBPlayers:Array.from({length:18},(_,i)=>({id:`RB${i+1}`,name:`RB${i+1}`,rank:i+1}))});
+check('sporting: 18-a-side uses available time instead of dropping four rounds', rotationFormat.recommendedRounds === 13 && rotationFormat.totalMatches === 52 && rotationFormat.remainingMinutes === 4);
+check('sporting: 18-a-side rotation remains within one game per player', rotationFairness.balancedGames && rotationFairness.minGames === 5 && rotationFairness.maxGames === 6);
 
 // 2. Host setup / first-use journey.
 check('branding: user-facing module is RallyHub Interclub', contains(interclubBranding,"INTERCLUB_MODULE_NAME = 'RallyHub Interclub'") && contains(tournamentsPage,'INTERCLUB_MODULE_NAME'));
@@ -116,6 +121,8 @@ check('Base44 control: timer actions are single-flight', contains(ui,'timerComma
 check('Base44 control: major sporting actions are single-flight', contains(ui,'sportingActionRef.current'));
 check('Base44 control: team assignment and ranking save in one browser function call', contains(ui,"action:'organise_teams'") && !contains(ui,'Promise.all(ordered.map'));
 check('Base44 control: full draw replacement is one browser function call', contains(ui,"replaceClubChallengeDraw") && contains(drawFn,'ClubChallengeMatch.bulkCreate'));
+check('Base44 control: unactivated Reserves are excluded from authoritative draw validation', contains(drawFn,"roster_role || 'rotation'") && contains(drawFn,'Unactivated Reserves cannot appear in the draw'));
+check('Base44 control: one-game rotation spread is accepted but wider unfairness is rejected', contains(drawFn,'aSpread > 1 || bSpread > 1') && contains(drawFn,'fairness.balancedGames'));
 check('Base44 control: approve/start route through authorised event backend', contains(ui,"action:'approve_draw'") && contains(ui,"action:'start'"));
 check('Base44 control: public voting double-tap is single-flight', contains(publicVote,'savingRef.current'));
 check('busy-hall UX: accepted host command stays visibly acknowledged', contains(ui,'RallyHub has accepted your tap'));
