@@ -1252,6 +1252,37 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
+  const endBreakEarly = async () => {
+    if (!canManageEvent || sportingActionRef.current || !event || currentRound >= Math.max(...rounds)) return;
+    const nextRound = currentRound + 1;
+    sportingActionRef.current = true;
+    setRoundActionStatus({ state:'working', text:`Ending break early and preparing Round ${nextRound}…` });
+    setHostAction(`Ending break early → Round ${nextRound}… command sent`);
+    try {
+      const res = await base44.functions.invoke('updateClubChallengeRound', { eventId:event.id, nextRound, skipBreak:true });
+      if (res.data?.error) throw new Error(res.data.error);
+      await refetchEvent();
+      const message = `Break ended early · Round ${nextRound} ready`;
+      setRoundActionStatus({ state:'success', text:message });
+      toast.success(message);
+      speak(`Break finished. ${roundLabel(nextRound)} is ready.`, { signal:'start' });
+    } catch (e) {
+      const message = e?.response?.data?.error || e?.message || 'Could not end the break early';
+      setRoundActionStatus({ state:'error', text:message });
+      toast.error(message);
+      await refetchEvent();
+    } finally {
+      sportingActionRef.current = false;
+      setHostAction('');
+    }
+  };
+
+  const adjustScheduledBreak = async deltaMinutes => {
+    if (!canManageEvent || timerPhase !== 'break' || sportingActionRef.current) return;
+    const ok = await timerAction('adjust_break', null, { minutes:deltaMinutes });
+    if (ok) toast.success(`${Math.abs(deltaMinutes)} minutes ${deltaMinutes > 0 ? 'added to' : 'removed from'} the break.`);
+  };
+
   const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase && m.status !== 'not_played');
   const currentRoundSavedCount = currentMatches.filter(m => ['completed','draw','retired','forfeit','abandoned'].includes(m.status)).length;
   const currentRoundComplete = currentMatches.length > 0 && currentRoundSavedCount === currentMatches.length;
