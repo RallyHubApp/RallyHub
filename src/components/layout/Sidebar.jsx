@@ -41,6 +41,18 @@ export default function Sidebar({ isOpen, onToggle }) {
     refetchOnWindowFocus: true
   });
 
+  const { data: pendingDirectoryAdminCount = 0 } = useQuery({
+    queryKey: ['directory-verification', 'pending-count'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('directoryClaim', { action: 'pending_admin_count' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return Number(res.data?.pendingCount || 0);
+    },
+    enabled: canAccessAdmin && isSuperAdmin,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true
+  });
+
   return (
     <>
       {/* Mobile overlay */}
@@ -144,11 +156,20 @@ export default function Sidebar({ isOpen, onToggle }) {
               >
                 <item.icon className="w-4 h-4" />
                 {item.label}
+                {directoryAdmin && pendingDirectoryAdminCount > 0 && (
+                  <span
+                    className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-black text-[11px] font-black flex items-center justify-center"
+                    aria-label={`${pendingDirectoryAdminCount} pending directory actions`}
+                    title={`${pendingDirectoryAdminCount} pending directory actions`}
+                  >
+                    {pendingDirectoryAdminCount}
+                  </span>
+                )}
                 {item.admin && pendingApprovalCount > 0 && (
                   <span
                     className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-black text-[11px] font-black flex items-center justify-center"
-                    aria-label={`${pendingApprovalCount} pending approvals`}
-                    title={`${pendingApprovalCount} pending approvals`}
+                    aria-label={`${pendingApprovalCount} pending club access approvals`}
+                    title={`${pendingApprovalCount} pending club access approvals`}
                   >
                     {pendingApprovalCount}
                   </span>
