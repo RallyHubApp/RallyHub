@@ -53,6 +53,65 @@ const phoneHref = (value:any) => {
   return `tel:+${digits}`;
 };
 
+// Public Directory reads are identical for every visitor. Keep one warm snapshot per
+// function isolate and collapse simultaneous cold requests onto the same rebuild.
+// This prevents a launch-day burst from multiplying into three Base44 entity reads
+// per visitor. Writes invalidate the snapshot immediately.
+const PUBLIC_LIST_CACHE_TTL_MS = 60 * 1000;
+const PUBLIC_LIST_STALE_IF_BUSY_MS = 15 * 60 * 1000;
+let publicListCache:any = null;
+let publicListInFlight:Promise<any> | null = null;
+
+function invalidatePublicListCache() {
+  publicListCache = null;
+}
+
+async function buildPublicDirectoryList(base44:any) {
+  const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ status: 'active' }, '-updated_at', 500);
+  const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ status: 'active' }, '-granted_at', 500);
+  const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500);
+  const hidden = new Set((dynamicRows || []).filter((x:any) => x.visibility === 'preview_only').map((x:any) => x.slug));
+  const verified = new Set((accesses || []).filter((x:any) => !hidden.has(x.listing_slug)).map((x:any) => x.listing_slug));
+  const result:any = {};
+  for (const row of dynamicRows || []) {
+    if (!row.slug || row.visibility === 'preview_only' || result[row.slug]) continue;
+    result[row.slug] = { base: parseJson(row.base_json), profile: null, verificationStatus: verified.has(row.slug) ? 'verified' : 'unclaimed' };
+  }
+  for (const row of rows || []) {
+    if (!row.listing_slug || hidden.has(row.listing_slug)) continue;
+    const current = result[row.listing_slug] || { base: null, profile: null, verificationStatus: verified.has(row.listing_slug) ? 'verified' : 'unclaimed' };
+    if (!current.profile) current.profile = parseJson(row.public_json);
+    current.verificationStatus = verified.has(row.listing_slug) ? 'verified' : 'unclaimed';
+    result[row.listing_slug] = current;
+  }
+  for (const slug of verified) {
+    if (!result[slug]) result[slug] = { base: null, profile: null, verificationStatus: 'verified' };
+  }
+  return result;
+}
+
+async function getPublicDirectoryList(base44:any) {
+  const now = Date.now();
+  if (publicListCache && now - publicListCache.savedAt < PUBLIC_LIST_CACHE_TTL_MS) return publicListCache.listings;
+  if (publicListInFlight) return publicListInFlight;
+
+  const stale = publicListCache;
+  publicListInFlight = buildPublicDirectoryList(base44)
+    .then((listings:any) => {
+      publicListCache = { savedAt: Date.now(), listings };
+      return listings;
+    })
+    .catch((error:any) => {
+      if (stale && Date.now() - stale.savedAt < PUBLIC_LIST_STALE_IF_BUSY_MS && isRateLimit(error)) {
+        return stale.listings;
+      }
+      throw error;
+    })
+    .finally(() => { publicListInFlight = null; });
+
+  return publicListInFlight;
+}
+
 function parseJson(value:any) {
   if (!value) return null;
   try { return JSON.parse(value); } catch { return null; }
@@ -150,29 +209,11 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'public_list') {
-      // Public Directory traffic is open-ended. Avoid turning each visitor into a
-      // three-call provider burst; the client also keeps a short-lived read cache.
-      const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ status: 'active' }, '-updated_at', 500);
-      const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ status: 'active' }, '-granted_at', 500);
-      const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500);
-      const hidden = new Set((dynamicRows || []).filter((x:any) => x.visibility === 'preview_only').map((x:any) => x.slug));
-      const verified = new Set((accesses || []).filter((x:any) => !hidden.has(x.listing_slug)).map((x:any) => x.listing_slug));
-      const result:any = {};
-      for (const row of dynamicRows || []) {
-        if (!row.slug || row.visibility === 'preview_only' || result[row.slug]) continue;
-        result[row.slug] = { base: parseJson(row.base_json), profile: null, verificationStatus: verified.has(row.slug) ? 'verified' : 'unclaimed' };
-      }
-      for (const row of rows || []) {
-        if (!row.listing_slug || hidden.has(row.listing_slug)) continue;
-        const current = result[row.listing_slug] || { base: null, profile: null, verificationStatus: verified.has(row.listing_slug) ? 'verified' : 'unclaimed' };
-        if (!current.profile) current.profile = parseJson(row.public_json);
-        current.verificationStatus = verified.has(row.listing_slug) ? 'verified' : 'unclaimed';
-        result[row.listing_slug] = current;
-      }
-      for (const slug of verified) {
-        if (!result[slug]) result[slug] = { base: null, profile: null, verificationStatus: 'verified' };
-      }
-      return Response.json({ success: true, listings: result });
+      const result = await getPublicDirectoryList(base44);
+      return Response.json(
+        { success: true, listings: result },
+        { headers: { 'Cache-Control': 'public, max-age=30, stale-while-revalidate=300' } }
+      );
     }
 
     const user = await base44.auth.me();
@@ -254,6 +295,7 @@ Deno.serve(async (req) => {
       } catch (auditError) {
         console.warn('Directory listing audit write failed', auditError?.message || auditError);
       }
+      invalidatePublicListCache();
       return Response.json({ success: true, profile: publicProfile, updatedAt: now, id: record?.id || existing?.[0]?.id || null });
     }
 
