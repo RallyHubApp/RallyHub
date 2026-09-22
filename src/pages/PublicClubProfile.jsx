@@ -298,7 +298,7 @@ export default function PublicClubProfile() {
                   </div>
                   {hasDirectoryAccess && (
                     <Link to={`/directory/${club.slug}/edit`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm">
-                      <UserCheck className="w-4 h-4" /> Edit your listing
+                      <UserCheck className="w-4 h-4" /> {user?.role === 'admin' && club.verificationStatus === 'unclaimed' ? 'Manage / invite club' : 'Edit your listing'}
                     </Link>
                   )}
                   {!hasDirectoryAccess && club.verificationStatus === 'unclaimed' && (
@@ -427,11 +427,11 @@ export default function PublicClubProfile() {
               <section className="rounded-2xl border border-primary/35 bg-primary/10 p-5">
                 <div className="flex items-center gap-2 text-primary">
                   <UserCheck className="w-5 h-5" />
-                  <h2 className="font-bold">You manage this listing</h2>
+                  <h2 className="font-bold">{user?.role === 'admin' && club.verificationStatus === 'unclaimed' ? 'Super Admin · Unclaimed listing' : 'You manage this listing'}</h2>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">Update the club's public contact details, venues, sessions and joining information.</p>
+                <p className="text-sm text-muted-foreground mt-2">{user?.role === 'admin' && club.verificationStatus === 'unclaimed' ? 'Check the club details and contact the representative to offer them their free Directory listing.' : "Update the club's public contact details, venues, sessions and joining information."}</p>
                 <Link to={`/directory/${club.slug}/edit`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
-                  Edit your listing
+                  {user?.role === 'admin' && club.verificationStatus === 'unclaimed' ? 'Manage / invite club' : 'Edit your listing'}
                 </Link>
                 <button type="button" onClick={() => { setClubInterestDone(false); setClubInterestMessage(''); setClubInterestOpen(true); }} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background/40 px-4 py-3 text-sm font-semibold text-foreground hover:border-primary/40 transition-colors">
                   <Lock className="w-4 h-4" /> RallyHub Club — join the waiting list
