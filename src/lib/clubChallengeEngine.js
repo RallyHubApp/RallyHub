@@ -91,13 +91,17 @@ export function calculateClubChallengeFormat({
   const maxRounds = Math.floor((total - pause) / block);
   if (maxRounds < 1) throw new Error('The event is too short for one round.');
 
-  let rounds = maxRounds;
-  let exactEquality = false;
+  let equalRounds = null;
   for (let r = maxRounds; r >= 1; r--) {
     const gamesA = (c * 2 * r) / a;
     const gamesB = (c * 2 * r) / b;
-    if (nearlyInteger(gamesA) && nearlyInteger(gamesB)) { rounds = r; exactEquality = true; break; }
+    if (nearlyInteger(gamesA) && nearlyInteger(gamesB)) { equalRounds = r; break; }
   }
+  // Prefer exact equality when it costs no more than one playable round. If exact
+  // equality would discard several rounds, use the venue time and let the fairness
+  // engine distribute the unavoidable extra game so the spread is at most one.
+  const exactEquality = equalRounds !== null && (maxRounds - equalRounds) <= 1;
+  const rounds = exactEquality ? equalRounds : maxRounds;
 
   const avgA = (c * 2 * rounds) / a, avgB = (c * 2 * rounds) / b;
   const structuredMinutes = rounds * block + pause;
@@ -491,10 +495,11 @@ export function analyseClubChallengeFairness({ schedule, clubAPlayers, clubBPlay
   const partnerRepeats = Object.values(partnerCounts).filter(n => n > 1);
   const opponentRepeats = Object.values(opponentCounts).filter(n => n > 1);
   const values = Object.values(games);
+  const minGames = Math.min(...values), maxGames = Math.max(...values);
   return {
     totalMatches: matches,
     gameCounts: games,
-    minGames: Math.min(...values), maxGames: Math.max(...values), equalGames: Math.min(...values) === Math.max(...values),
+    minGames, maxGames, equalGames:minGames === maxGames, balancedGames:(maxGames - minGames) <= 1,
     duplicatePlayerRoundIssues, sameClubIntegrityIssues,
     repeatedPartnerPairs: partnerRepeats.length, maxPartnerRepeat: partnerRepeats.length ? Math.max(...partnerRepeats) : 1,
     repeatedOpponentPairs: opponentRepeats.length, maxOpponentRepeat: opponentRepeats.length ? Math.max(...opponentRepeats) : 1,
