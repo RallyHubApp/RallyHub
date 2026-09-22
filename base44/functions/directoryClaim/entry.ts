@@ -373,6 +373,21 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'submit';
 
+    if (action === 'pending_admin_count') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const [claims, listingRequests] = await Promise.all([
+        base44.asServiceRole.entities.DirectoryClaim.filter({ status: 'pending' }, '-created_date', 300),
+        base44.asServiceRole.entities.DirectoryListingRequest.filter({ status: 'pending' }, '-created_date', 300),
+      ]);
+      const pendingClaims = (claims || []).length;
+      const pendingListingRequests = (listingRequests || []).length;
+      return Response.json({
+        pendingCount: pendingClaims + pendingListingRequests,
+        pendingClaims,
+        pendingListingRequests,
+      });
+    }
+
     if (action === 'test_clare_mail_gateway') {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
       const to = normaliseEmail(String(body.to || user.email || ''));
