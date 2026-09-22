@@ -422,6 +422,7 @@ Deno.serve(async (req) => {
         ...(matchedPlayer?.id ? { source_player_id:matchedPlayer.id } : {}),
         participant_type:matchedPlayer ? (matchedPlayer.relationship_type || 'member') : 'guest',
         event_rank:nextRank++,
+        roster_role:'rotation',
         status:'active',
         available_from_round:1,
         unique_identity_key:identityKey,
