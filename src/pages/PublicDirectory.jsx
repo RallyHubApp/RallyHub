@@ -531,6 +531,7 @@ export default function PublicDirectory() {
               </div>
               <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[11px] font-bold text-white/85">
                 <Link to="/directory">Directory</Link>
+                <Link to="/events">Events</Link>
                 <Link to="/directory/help">Club Guide</Link>
                 <Link to="/about">About</Link>
                 <Link to="/contact">Contact</Link>
