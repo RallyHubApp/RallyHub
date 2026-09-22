@@ -62,6 +62,8 @@ Deno.serve(async (req) => {
     const safeParticipants = participants.map((p:any) => ({
       id:p.id, tenant_id:p.tenant_id, challenge_event_id:p.challenge_event_id, tournament_id:p.tournament_id,
       side:p.side, display_name:p.display_name, gender:p.gender, age_category:p.age_category, event_rank:p.event_rank,
+      roster_role:p.roster_role || 'rotation', reserve_activated:!!p.reserve_activated,
+      covering_for_participant_ids:Array.isArray(p.covering_for_participant_ids) ? p.covering_for_participant_ids : [], covered_by_participant_id:p.covered_by_participant_id,
       status:p.status, available_from_round:p.available_from_round, replaced_by_participant_id:p.replaced_by_participant_id,
       replacement_for_participant_id:p.replacement_for_participant_id, replacement_effective_round:p.replacement_effective_round,
       withdrawn_at:p.withdrawn_at, withdrawal_reason:p.withdrawal_reason,
