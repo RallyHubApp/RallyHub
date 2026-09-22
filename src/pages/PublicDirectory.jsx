@@ -347,10 +347,10 @@ export default function PublicDirectory() {
                 <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-[#738096]" />
                 <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Club, town, venue or Eircode" aria-label="Search club directory" className="h-11 w-full rounded-xl border border-[#cfdde0] bg-[#fbfdfd] pl-10 pr-3 text-sm text-[#1a2c58] outline-none focus:border-[#078e48] focus:ring-2 focus:ring-[#078e48]/20" />
               </label>
-              <select value={county} onChange={e => setCounty(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm text-[#1a2c58]">
+              <select aria-label="Filter by county" value={county} onChange={e => setCounty(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm text-[#1a2c58]">
                 {counties.map(item => <option key={item}>{item}</option>)}
               </select>
-              <select value={day} onChange={e => setDay(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm text-[#1a2c58]">
+              <select aria-label="Filter by day" value={day} onChange={e => setDay(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm text-[#1a2c58]">
                 <option>Any day</option>
                 {weekDays.map(item => <option key={item}>{item}</option>)}
               </select>
