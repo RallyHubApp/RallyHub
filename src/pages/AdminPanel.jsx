@@ -490,10 +490,47 @@ export default function AdminPanel() {
   const directoryAdminListings = (() => {
     const bySlug = new Map();
     for (const club of directoryClubs || []) {
-      if (club?.slug) bySlug.set(club.slug, { slug: club.slug, name: club.name, county: club.county || '' });
+      if (!club?.slug) continue;
+      const contacts = [club.contact, ...(club.secondaryContacts || [])].filter(Boolean).map(contact => ({
+        name: String(contact?.name || '').trim(),
+        phone: String(contact?.phone || '').trim(),
+        email: String(contact?.email || '').trim(),
+      }));
+      const preferredContact = contacts.find(contact => contact.phone) || contacts.find(contact => contact.email) || contacts[0] || { name: '', phone: '', email: '' };
+      bySlug.set(club.slug, {
+        slug: club.slug,
+        name: club.name,
+        county: club.county || '',
+        contacts,
+        contactName: preferredContact.name,
+        contactPhone: preferredContact.phone,
+        contactEmail: preferredContact.email,
+      });
     }
     for (const record of directoryVerification.listingRecords || []) {
-      if (record?.slug && record.status === 'active') bySlug.set(record.slug, { slug: record.slug, name: record.name || record.slug, county: record.county || '', visibility: record.visibility || 'public' });
+      if (!record?.slug || record.status !== 'active') continue;
+      let contacts = [];
+      try {
+        const parsed = record.trusted_contacts_json ? JSON.parse(record.trusted_contacts_json) : [];
+        contacts = Array.isArray(parsed) ? parsed.map(contact => ({
+          name: String(contact?.name || '').trim(),
+          phone: String(contact?.phone || '').trim(),
+          email: String(contact?.email || '').trim(),
+        })) : [];
+      } catch { contacts = []; }
+      const preferredContact = contacts.find(contact => contact.phone) || contacts.find(contact => contact.email) || contacts[0] || { name: '', phone: '', email: '' };
+      const existing = bySlug.get(record.slug) || {};
+      bySlug.set(record.slug, {
+        ...existing,
+        slug: record.slug,
+        name: record.name || existing.name || record.slug,
+        county: record.county || existing.county || '',
+        visibility: record.visibility || 'public',
+        contacts: contacts.length ? contacts : (existing.contacts || []),
+        contactName: preferredContact.name || existing.contactName || '',
+        contactPhone: preferredContact.phone || existing.contactPhone || '',
+        contactEmail: preferredContact.email || existing.contactEmail || '',
+      });
     }
     return [...bySlug.values()].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
   })();
@@ -501,27 +538,31 @@ export default function AdminPanel() {
   const selectedOwnerInviteListing = directoryAdminListings.find(item => item.slug === ownerInvite.listingSlug) || null;
   const filteredDirectoryAdminListings = directoryAdminListings.filter(item => {
     const q = directoryClubSearch.trim().toLowerCase();
-    return !q || `${item.name} ${item.county}`.toLowerCase().includes(q);
+    if (!q) return true;
+    const contacts = (item.contacts || []).map(contact => `${contact.name} ${contact.phone} ${contact.email}`).join(' ');
+    return `${item.name} ${item.county} ${contacts}`.toLowerCase().includes(q);
   });
   const chooseDirectoryClubForInvite = (listing) => {
-    setOwnerInvite(v => ({ ...v, listingSlug: listing.slug }));
+    setOwnerInvite({
+      listingSlug: listing.slug,
+      contactName: listing.contactName || '',
+      contactPhone: listing.contactPhone || '',
+      contactEmail: listing.contactEmail || '',
+    });
     setOwnerInviteResult(null);
-    setTimeout(() => document.getElementById('directory-beta-invite')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+    setTimeout(() => document.getElementById('directory-claim-invite')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
   };
 
-  const betaInviteWhatsAppMessage = ({ claimUrl, clubName, contactName, accessRole = 'owner' }) => {
+  const directoryInviteMessage = ({ claimUrl, clubName, contactName, accessRole = 'owner' }) => {
     const firstName = String(contactName || '').trim().split(/\s+/)[0] || 'there';
     const editor = accessRole === 'editor';
-    const ask = editor
-      ? `I’ve invited you as a *Directory Editor* for ${clubName} because I’d really value your help testing the editing side of it from a club user’s point of view.`
-      : `I’ve already put together the *${clubName}* listing and I’d love you to have a look, claim it and help me test the whole process from a club’s point of view.`;
-    const role = editor
-      ? `This gives you Directory editing access only. It doesn’t give access to RallyHub Club, tournaments, players or club administration.`
-      : `Once verified, you’ll become the *Primary Directory Owner* for ${clubName} and can check or update the public information. There’s no charge to claim or maintain the listing, and it doesn’t sign the club up for RallyHub Club or any paid service.`;
-    return `Hi ${firstName},\n\nAs you know, RallyHub started out as a father-and-son project between Conall and me, really just trying to solve some of the things we needed for Clare Pickleball. It has grown legs a bit since then, and we’re now building out the Directory with clubs around Ireland. I’ve also been asked about including events and a few other things that would be useful to clubs, so *Events is probably the next area we’ll develop if clubs feel there’s a need for it.*\n\n${ask}\n\n${role}\n\n*Your secure ${editor ? 'editor ' : ''}link:*\n${claimUrl}\n\nThis link is for you personally, is single-use and expires after 72 hours.\n\nIf you want a quick look at RallyHub first:\n*About RallyHub:* https://rallyhub.ie/about\n*1-page Directory Explainer:* https://rallyhub.ie/directory/story\n\nIf you need a hand getting started:\n*Club Guide & Help:* https://rallyhub.ie/directory/help\n*Quick Start Guide:* https://rallyhub.ie/directory/quick-start\n\nThere’s also a *Feedback* area in RallyHub for anything you spot, suggestions or wishlist ideas. The Events page is under construction too, so if you have thoughts on what would actually be useful there, I’d really like to hear them.\n\nDon’t be afraid to tell me what doesn’t make sense — that’s exactly what this beta testing is for.\n\nThanks for helping me get this right.\n\nYours in sport,\n*Brian Moore*\n087 810 0333`;
+    if (editor) {
+      return `Hi ${firstName},\n\nYou’ve been invited as a *Directory Editor* for *${clubName}* on RallyHub. This gives you access to help maintain the club’s public Directory information only. It does not give access to RallyHub Club, tournaments, players or club administration.\n\n*Your secure editor link:*\n${claimUrl}\n\nThe link is personal to you, can only be used once and expires after 72 hours.\n\n*About RallyHub:*\nhttps://rallyhub.ie/about\n\n*Club Guide & Help:*\nhttps://rallyhub.ie/directory/help\n\nYours in sport,\n*Brian Moore*\n📱 087 810 0333\n🌐 https://rallyhub.ie`;
+    }
+    return `Hi ${firstName},\n\nI’m getting in touch because I’ve put together a *free RallyHub Directory listing for ${clubName}* as part of a wider effort to improve information on pickleball clubs around Ireland, following David Molloy’s request for help updating the national club map.\n\nRallyHub started as a father-and-son project between Conall and me, originally to solve some of the practical things we needed for Clare Pickleball. It has grown from there, and the first public phase is the *RallyHub Club Directory* — helping players find clubs, venues and regular sessions around Ireland.\n\nI’ve already created the *${clubName}* listing, so most of the work is done. I’d simply like you to have a look, claim the listing and correct or add anything that needs updating.\n\nOnce verified, you’ll become the *Primary Directory Owner* for ${clubName}, which means you can manage the club’s public Directory information directly.\n\n*The Directory listing is completely free.*\nThere is no subscription, no catch and no obligation to use any other RallyHub services.\n\nRallyHub is also developing other optional club tools around session management, King of the Court, tournaments and events, but those are separate from your free Directory listing.\n\n*Your secure claim link:*\n${claimUrl}\n\nThe link is personal to you, can only be used once and expires after 72 hours.\n\nIf you’d like to have a quick look at RallyHub first:\n\n*About RallyHub:*\nhttps://rallyhub.ie/about\n\n*1-page Directory Explainer:*\nhttps://rallyhub.ie/directory/story\n\n*Club Guide & Help:*\nhttps://rallyhub.ie/directory/help\n\n*Quick Start Guide:*\nhttps://rallyhub.ie/directory/quick-start\n\nThere is also a *Feedback* area inside RallyHub, and I’m always happy to hear suggestions about what would genuinely be useful to clubs.\n\nIf you have any difficulty claiming the listing, just WhatsApp or call me.\n\nYours in sport,\n*Brian Moore*\n📱 087 810 0333\n🌐 https://rallyhub.ie`;
   };
 
-  const ownerInviteWhatsAppMessage = (args) => betaInviteWhatsAppMessage({ ...args, accessRole: 'owner' });
+  const ownerInviteWhatsAppMessage = (args) => directoryInviteMessage({ ...args, accessRole: 'owner' });
 
   const whatsappDigitsForInvite = (phone, county = '') => {
     let digits = String(phone || '').replace(/\D/g, '');
@@ -585,8 +626,8 @@ export default function AdminPanel() {
         contactEmail: ownerInvite.contactEmail, channel: 'email',
       });
       if (res.data?.error) throw new Error(res.data.error);
-      const message = betaInviteWhatsAppMessage({ claimUrl: res.data.claimUrl, clubName: selectedOwnerInviteListing.name, contactName: ownerInvite.contactName, accessRole: 'owner' }).replace(/\*/g, '');
-      setOwnerInviteResult({ channel: 'email-preview', invitationId: res.data.invitationId, claimUrl: res.data.claimUrl, expiresAt: res.data.expiresAt, clubName: selectedOwnerInviteListing.name, email: ownerInvite.contactEmail, subject: `An invitation to review ${selectedOwnerInviteListing.name} on the RallyHub Directory`, message });
+      const message = directoryInviteMessage({ claimUrl: res.data.claimUrl, clubName: selectedOwnerInviteListing.name, contactName: ownerInvite.contactName, accessRole: 'owner' }).replace(/\*/g, '');
+      setOwnerInviteResult({ channel: 'email-preview', invitationId: res.data.invitationId, claimUrl: res.data.claimUrl, expiresAt: res.data.expiresAt, clubName: selectedOwnerInviteListing.name, email: ownerInvite.contactEmail, subject: `Your free RallyHub Directory listing – ${selectedOwnerInviteListing.name}`, message });
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
       toast.success('Email invitation prepared — review it before sending');
     } catch (error) { toast.error(error.message || 'Could not prepare the email invitation'); }
@@ -599,7 +640,7 @@ export default function AdminPanel() {
     try {
       const res = await base44.functions.invoke('directoryClaim', { action: 'send_prepared_invitation_email', invitationId: preview.invitationId, claimUrl: preview.claimUrl, subject: preview.subject, message: preview.message });
       if (res.data?.error) throw new Error(res.data.error);
-      toast.success(`RallyHub beta invitation sent to ${res.data?.email || preview.email}`);
+      toast.success(`RallyHub Directory invitation sent to ${res.data?.email || preview.email}`);
       if (clear === 'owner') setOwnerInviteResult({ ...preview, channel: 'email-sent' }); else setResendPreview(null);
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
     } catch (error) { toast.error(error.message || 'Could not send the invitation'); }
@@ -611,8 +652,8 @@ export default function AdminPanel() {
     try {
       const res = await base44.functions.invoke('directoryClaim', { action: 'prepare_resend_invitation', invitationId: invite.id });
       if (res.data?.error) throw new Error(res.data.error);
-      const message = betaInviteWhatsAppMessage({ claimUrl: res.data.claimUrl, clubName: res.data.clubName, contactName: res.data.contactName, accessRole: res.data.accessRole });
-      setResendPreview({ ...res.data, email: res.data.contactEmail, phone: res.data.contactPhone, county: directoryAdminListings.find(x => x.slug === res.data.listingSlug)?.county || '', subject: res.data.accessRole === 'editor' ? `An invitation to help manage ${res.data.clubName} on the RallyHub Directory` : `An invitation to review ${res.data.clubName} on the RallyHub Directory`, message: res.data.channel === 'email' ? message.replace(/\*/g, '') : message });
+      const message = directoryInviteMessage({ claimUrl: res.data.claimUrl, clubName: res.data.clubName, contactName: res.data.contactName, accessRole: res.data.accessRole });
+      setResendPreview({ ...res.data, email: res.data.contactEmail, phone: res.data.contactPhone, county: directoryAdminListings.find(x => x.slug === res.data.listingSlug)?.county || '', subject: res.data.accessRole === 'editor' ? `RallyHub Directory editor invitation – ${res.data.clubName}` : `Your free RallyHub Directory listing – ${res.data.clubName}`, message: res.data.channel === 'email' ? message.replace(/\*/g, '') : message });
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
       toast.success('Fresh 72-hour invitation prepared — review it before sending');
     } catch (error) { toast.error(error.message || 'Could not prepare the resend'); }
