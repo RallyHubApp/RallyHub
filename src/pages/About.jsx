@@ -8,6 +8,7 @@ const LOGO='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041
 const CARD='/assets/about/';
 // About page imagery is locked to the signed-off About artwork, not the Home page imagery.
 const APPROVED_MASTER='/assets/about-locked/about-master-approved.png?v=20260921-locked';
+const APPROVED_HERO='/assets/about/about-hero-approved.png?v=20260922-crop';
 
 const cards=[
  [MapPin,'Directory & Discovery','Find clubs, venues, sessions and events across Ireland.',CARD+'card-directory.webp'],
@@ -37,7 +38,7 @@ export default function About(){
     <div className="mt-[17px] flex flex-wrap gap-[10px]"><Link to="/directory" className="rounded-full bg-[#07528a] px-[18px] py-[10px] text-[11px] font-bold text-white">Explore the Directory&nbsp; →</Link><a href="#capabilities" className="rounded-full border border-[#174578] bg-white px-[18px] py-[10px] text-[11px] font-bold">See What RallyHub Does</a></div>
     <div className="mt-[23px] grid grid-cols-3 gap-4 text-[10px] font-semibold text-[#10275a]"><div className="flex gap-2"><Users className="h-7 w-7 text-[#09a55a]"/><span>Players<br/>Welcome</span></div><div className="flex gap-2"><MapPin className="h-7 w-7 text-[#09a55a]"/><span>Clubs<br/>Grow</span></div><div className="flex gap-2"><CalendarDays className="h-7 w-7 text-[#09a55a]"/><span>Communities<br/>Thrive</span></div></div>
    </div></div>
-   <div className="relative min-h-[382px] overflow-hidden bg-[#dce8e8] max-md:aspect-[1.36] max-md:min-h-0"><img src={APPROVED_MASTER} alt="Pickleball players on court" className="absolute right-0 top-[-63px] w-[172.4%] max-w-none max-md:top-[-10.6%]"/></div>
+   <div className="relative min-h-[382px] overflow-hidden bg-[#dce8e8] max-md:aspect-[1.36] max-md:min-h-0"><img src={APPROVED_HERO} alt="Pickleball players on court" className="absolute inset-0 h-full w-full object-cover object-center"/></div>
   </div></section>
 
   <section className="mx-auto max-w-[1024px] px-[29px] py-[14px]"><div className="grid grid-cols-2 rounded-[8px] bg-[#eff8fb] px-[55px] py-[13px] sm:grid-cols-4">
