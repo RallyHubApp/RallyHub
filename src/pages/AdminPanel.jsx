@@ -76,6 +76,7 @@ export default function AdminPanel() {
   const [reviewingNewDirectoryRequest, setReviewingNewDirectoryRequest] = useState(null);
   const [revokingDirectoryAccess, setRevokingDirectoryAccess] = useState(null);
   const [removingDirectoryListing, setRemovingDirectoryListing] = useState(null);
+  const [directoryVisibilityBusy, setDirectoryVisibilityBusy] = useState(null);
   const [ownerInvite, setOwnerInvite] = useState({ listingSlug: '', contactName: '', contactPhone: '', contactEmail: '' });
   const [directoryClubSearch, setDirectoryClubSearch] = useState('');
   const [ownerInviteBusy, setOwnerInviteBusy] = useState('');
@@ -426,6 +427,21 @@ export default function AdminPanel() {
     }
   };
 
+  const setDirectoryVisibility = async (listing, visibility) => {
+    if (!listing?.slug) return;
+    setDirectoryVisibilityBusy(listing.slug);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', { action:'set_visibility', listingSlug:listing.slug, visibility });
+      if (res.data?.error) throw new Error(res.data.error);
+      await queryClient.invalidateQueries({ queryKey:['directory-verification'] });
+      toast.success(visibility === 'preview_only' ? `${listing.name || 'Listing'} is now Preview only` : `${listing.name || 'Listing'} is now public`);
+    } catch (error) {
+      toast.error(error?.message || 'Could not change directory visibility');
+    } finally {
+      setDirectoryVisibilityBusy(null);
+    }
+  };
+
   const removeDirectoryListing = async (listing) => {
     if (!listing?.slug) return;
     const confirmed = window.confirm(`Remove ${listing.name || listing.slug} from the public directory?\n\nThis will archive the listing, hide it from the public directory and revoke its directory-editor access. Curated RallyHub seed listings cannot be removed with this action.`);
@@ -477,7 +493,7 @@ export default function AdminPanel() {
       if (club?.slug) bySlug.set(club.slug, { slug: club.slug, name: club.name, county: club.county || '' });
     }
     for (const record of directoryVerification.listingRecords || []) {
-      if (record?.slug && record.status === 'active') bySlug.set(record.slug, { slug: record.slug, name: record.name || record.slug, county: record.county || '' });
+      if (record?.slug && record.status === 'active') bySlug.set(record.slug, { slug: record.slug, name: record.name || record.slug, county: record.county || '', visibility: record.visibility || 'public' });
     }
     return [...bySlug.values()].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
   })();
@@ -1344,19 +1360,23 @@ export default function AdminPanel() {
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Published submitted listings</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Submitted & test listings</p>
               {activeDynamicDirectoryListings.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-4 px-1">No submitted directory listings are currently published.</p>
+                <p className="text-xs text-muted-foreground py-4 px-1">No active database-backed Directory listings.</p>
               ) : activeDynamicDirectoryListings.map(listing => (
                 <div key={listing.id || listing.slug} className="glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="font-semibold text-foreground">{listing.name}</p>
+                    <div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-foreground">{listing.name}</p><Badge variant="outline" className={(listing.visibility || 'public') === 'preview_only' ? 'border-amber-400/40 text-amber-500' : 'border-green-400/40 text-green-500'}>{(listing.visibility || 'public') === 'preview_only' ? 'Preview only' : 'Public'}</Badge></div>
                     <p className="text-sm text-muted-foreground">County {listing.county} · /directory/{listing.slug}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Submitted listings can be removed here without affecting RallyHub's curated seed directory records.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Preview-only listings stay available for authenticated testing but are excluded from the external Directory.</p>
                   </div>
-                  <Button size="sm" variant="outline" className="gap-1 text-destructive border-destructive/30" disabled={removingDirectoryListing === listing.slug} onClick={() => removeDirectoryListing(listing)}>
-                    <Trash2 className="w-3.5 h-3.5" /> {removingDirectoryListing === listing.slug ? 'Removing…' : 'Remove listing'}
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => window.open(`/directory/${listing.slug}?preview=1`, '_blank', 'noopener,noreferrer')}><Eye className="w-3.5 h-3.5" /> Preview</Button>
+                    <Button size="sm" variant="outline" className="gap-1" disabled={directoryVisibilityBusy === listing.slug} onClick={() => setDirectoryVisibility(listing, (listing.visibility || 'public') === 'preview_only' ? 'public' : 'preview_only')}>{directoryVisibilityBusy === listing.slug ? 'Updating…' : (listing.visibility || 'public') === 'preview_only' ? 'Make Public' : 'Hide from Public'}</Button>
+                    <Button size="sm" variant="outline" className="gap-1 text-destructive border-destructive/30" disabled={removingDirectoryListing === listing.slug} onClick={() => removeDirectoryListing(listing)}>
+                      <Trash2 className="w-3.5 h-3.5" /> {removingDirectoryListing === listing.slug ? 'Removing…' : 'Remove listing'}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
