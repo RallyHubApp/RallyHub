@@ -36,6 +36,7 @@ export default function PublicClubProfile() {
   const { slug } = useParams();
   const location = useLocation();
   const seedClub = getClub(slug);
+  const previewMode = new URLSearchParams(location.search).get('preview') === '1';
   const { user, isAuthenticated } = useAuth();
   const [dynamicBase, setDynamicBase] = useState(null);
   const [publicProfile, setPublicProfile] = useState(null);
@@ -69,7 +70,7 @@ export default function PublicClubProfile() {
       }
     } catch {}
 
-    base44.functions.invoke('directoryListingProfile', { action: 'public_get', listingSlug: slug, refresh: Date.now() })
+    base44.functions.invoke('directoryListingProfile', { action: previewMode ? 'private_get' : 'public_get', listingSlug: slug, refresh: Date.now() })
       .then(res => {
         if (!active || res.data?.error) return;
         setDynamicBase(res.data?.base || null);
@@ -80,7 +81,7 @@ export default function PublicClubProfile() {
       .catch(() => {})
       .finally(() => { if (active) setLoadingListing(false); });
     return () => { active = false; };
-  }, [slug, seedClub, location.search]);
+  }, [slug, seedClub, location.search, previewMode]);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) { setHasDirectoryAccess(false); return; }
@@ -271,7 +272,7 @@ export default function PublicClubProfile() {
                     <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Active listing</span>
                   )}
                 </div>
-                <h1 className="text-4xl sm:text-5xl font-black tracking-tight">{club.name}</h1>
+                <div className="flex flex-wrap items-center gap-3"><h1 className="text-4xl sm:text-5xl font-black tracking-tight">{club.name}</h1>{previewMode && <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-500">PREVIEW ONLY · NOT PUBLIC</span>}</div>
                 <p className="mt-3 text-lg text-muted-foreground max-w-3xl">{displayDescription}</p>
                 <div className="mt-5 flex flex-wrap gap-3">
                   {club.website && <a href={club.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Globe2 className="w-4 h-4" /> Website</a>}
