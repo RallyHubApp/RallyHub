@@ -37,6 +37,7 @@ import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
 import KotcHostSession from '@/pages/KotcHostSession';
 import PublicKotcResults from '@/pages/PublicKotcResults';
 import PublicKotcScorer from '@/pages/PublicKotcScorer';
+import PublicPlayerLinkGuide from '@/pages/PublicPlayerLinkGuide';
 import PublicDirectory from '@/pages/PublicDirectory';
 import PublicClubProfile from '@/pages/PublicClubProfile';
 import DirectoryClaim from '@/pages/DirectoryClaim';
@@ -187,6 +188,7 @@ function App() {
             <Route path="/kotc-results/:token" element={<PublicKotcResults />} />
             <Route path="/kotc-live/:token" element={<PublicKotcResults />} />
             <Route path="/kotc-score/:token" element={<PublicKotcScorer />} />
+            <Route path="/guides/clare-pickleball/player-link" element={<PublicPlayerLinkGuide />} />
 
             {/* Protected app routes */}
             <Route element={<ProtectedRoute fallback={<LoadingScreen />} />}>
