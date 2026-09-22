@@ -1271,18 +1271,23 @@ export default function AdminPanel() {
             <div className="glass rounded-xl p-4 sm:p-5 space-y-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Directory clubs</p>
-                <h3 className="text-lg font-bold text-foreground mt-1">Invite beta testers without leaving Admin</h3>
-                <p className="text-sm text-muted-foreground mt-1">Search any club already in the RallyHub Directory, select it here, then use the same secure invitation workflow below.</p>
+                <h3 className="text-lg font-bold text-foreground mt-1">Contact a club and invite them to claim</h3>
+                <p className="text-sm text-muted-foreground mt-1">Search by club, county, contact name, mobile or email. RallyHub will prefill the known contact details and create the secure claim link for you.</p>
               </div>
-              <Input value={directoryClubSearch} onChange={e => setDirectoryClubSearch(e.target.value)} placeholder="Search club or county…" aria-label="Search Directory clubs" />
+              <Input value={directoryClubSearch} onChange={e => setDirectoryClubSearch(e.target.value)} placeholder="Search club, contact name, mobile or email…" aria-label="Search Directory clubs and contacts" />
               <div className="max-h-72 overflow-y-auto rounded-lg border border-border divide-y divide-border">
                 {filteredDirectoryAdminListings.map(listing => {
                   const accesses = activeDirectoryAccesses.filter(access => access.listing_slug === listing.slug && access.status === 'active');
                   const pending = directoryInvitations.filter(invite => invite.listing_slug === listing.slug && ['pending','used'].includes(invite.status));
                   const status = accesses.length ? 'Claimed' : pending.length ? 'Invitation in progress' : 'Unclaimed';
+                  const contactSummary = [listing.contactName, listing.contactPhone, listing.contactEmail].filter(Boolean).join(' · ');
                   return <div key={listing.slug} className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/20">
-                    <div className="min-w-0"><p className="text-sm font-semibold truncate">{listing.name}</p><p className="text-xs text-muted-foreground">{listing.county || 'County not set'} · {status}{pending.length ? ` · ${pending.length} active invitation${pending.length === 1 ? '' : 's'}` : ''}</p></div>
-                    <Button type="button" size="sm" variant={ownerInvite.listingSlug === listing.slug ? 'default' : 'outline'} onClick={() => chooseDirectoryClubForInvite(listing)} className="shrink-0 gap-1"><UserPlus className="w-3.5 h-3.5" /> {ownerInvite.listingSlug === listing.slug ? 'Selected' : 'Invite / manage'}</Button>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate">{listing.name}</p>
+                      <p className="text-xs text-muted-foreground">{listing.county || 'County not set'} · {status}{pending.length ? ` · ${pending.length} active invitation${pending.length === 1 ? '' : 's'}` : ''}</p>
+                      {contactSummary && <p className="mt-1 text-xs text-muted-foreground break-all">{contactSummary}</p>}
+                    </div>
+                    <Button type="button" size="sm" variant={ownerInvite.listingSlug === listing.slug ? 'default' : 'outline'} onClick={() => chooseDirectoryClubForInvite(listing)} className="shrink-0 gap-1"><UserPlus className="w-3.5 h-3.5" /> {ownerInvite.listingSlug === listing.slug ? 'Selected' : accesses.length ? 'Manage' : 'Contact / invite'}</Button>
                   </div>;
                 })}
                 {filteredDirectoryAdminListings.length === 0 && <p className="p-4 text-sm text-muted-foreground">No Directory clubs match that search.</p>}
@@ -1290,7 +1295,7 @@ export default function AdminPanel() {
               <p className="text-xs text-muted-foreground">{directoryAdminListings.length} Directory clubs available · showing {filteredDirectoryAdminListings.length}</p>
             </div>
 
-            <div id="directory-beta-invite" className="glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/25 scroll-mt-24">
+            <div id="directory-claim-invite" className="glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/25 scroll-mt-24">
               <div className="rounded-lg border border-blue-400/25 bg-blue-400/5 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Clare Pickleball tenant email</p>
@@ -1303,9 +1308,9 @@ export default function AdminPanel() {
 
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary">Invite a club owner / tester</p>
-                  <h3 className="text-lg font-bold text-foreground mt-1">Create a secure claim invitation</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Choose a club, add the authorised representative and send a single-use 72-hour invitation by WhatsApp or email.</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary">Club claim invitation</p>
+                  <h3 className="text-lg font-bold text-foreground mt-1">Offer the club its free Directory listing</h3>
+                  <p className="text-sm text-muted-foreground mt-1">The known contact details are filled automatically. Mobile/WhatsApp is preferred when available; email is used when that is the contact we have.</p>
                 </div>
                 <UserPlus className="w-5 h-5 text-primary shrink-0 mt-1" />
               </div>
@@ -1313,7 +1318,7 @@ export default function AdminPanel() {
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-1.5 md:col-span-2">
                   <Label htmlFor="directory-owner-club">Club</Label>
-                  <select id="directory-owner-club" value={ownerInvite.listingSlug} onChange={e => { setOwnerInvite(v => ({ ...v, listingSlug: e.target.value })); setOwnerInviteResult(null); }} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                  <select id="directory-owner-club" value={ownerInvite.listingSlug} onChange={e => { const listing = directoryAdminListings.find(item => item.slug === e.target.value); if (listing) chooseDirectoryClubForInvite(listing); else { setOwnerInvite({ listingSlug: '', contactName: '', contactPhone: '', contactEmail: '' }); setOwnerInviteResult(null); } }} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
                     <option value="">Choose a club…</option>
                     {directoryAdminListings.map(listing => {
                       const claimed = activeDirectoryAccesses.some(access => access.listing_slug === listing.slug && access.status === 'active');
@@ -1335,13 +1340,24 @@ export default function AdminPanel() {
                 </div>
               </div>
 
+              {(ownerInvite.contactPhone || ownerInvite.contactEmail) && (
+                <p className="text-xs text-muted-foreground">
+                  Preferred contact: <strong className="text-foreground">{ownerInvite.contactPhone ? 'WhatsApp' : 'Email'}</strong>
+                  {ownerInvite.contactPhone && ownerInvite.contactEmail ? ' · Email remains available as a fallback.' : ''}
+                </p>
+              )}
               <div className="flex flex-wrap gap-2">
-                <Button type="button" onClick={createOwnerWhatsAppInvite} disabled={!!ownerInviteBusy || !ownerInvite.listingSlug || !ownerInvite.contactName.trim() || !ownerInvite.contactPhone.trim()} className="gap-2">
-                  <MessageCircle className="w-4 h-4" /> {ownerInviteBusy === 'whatsapp' ? 'Creating secure link…' : 'Create WhatsApp invitation'}
-                </Button>
-                <Button type="button" variant="outline" onClick={sendOwnerEmailInvite} disabled={!!ownerInviteBusy || !ownerInvite.listingSlug || !ownerInvite.contactName.trim() || !ownerInvite.contactEmail.trim()} className="gap-2">
-                  <Mail className="w-4 h-4" /> {ownerInviteBusy === 'email' ? 'Preparing email…' : 'Prepare email invitation'}
-                </Button>
+                {ownerInvite.contactPhone && (
+                  <Button type="button" onClick={createOwnerWhatsAppInvite} disabled={!!ownerInviteBusy || !ownerInvite.listingSlug || !ownerInvite.contactName.trim()} className="gap-2">
+                    <MessageCircle className="w-4 h-4" /> {ownerInviteBusy === 'whatsapp' ? 'Creating secure link…' : 'Create WhatsApp invitation'}
+                  </Button>
+                )}
+                {ownerInvite.contactEmail && (
+                  <Button type="button" variant={ownerInvite.contactPhone ? 'outline' : 'default'} onClick={sendOwnerEmailInvite} disabled={!!ownerInviteBusy || !ownerInvite.listingSlug || !ownerInvite.contactName.trim()} className="gap-2">
+                    <Mail className="w-4 h-4" /> {ownerInviteBusy === 'email' ? 'Preparing email…' : 'Prepare email invitation'}
+                  </Button>
+                )}
+                {!ownerInvite.contactPhone && !ownerInvite.contactEmail && <p className="text-sm text-amber-500">No mobile or email is stored for this club yet. Add one above before creating the invitation.</p>}
               </div>
 
               {ownerInviteResult?.channel === 'whatsapp' && (
