@@ -253,9 +253,12 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
     ? `An invitation to help manage ${listing.name} on the RallyHub Directory`
     : `Your free RallyHub Directory listing – ${listing.name}`);
   const textBody = String(customText || '').trim() || (delegated ? editorBody : ownerBody);
-  const actionLabel = delegated ? 'Open your editor invitation' : 'Open your secure invitation';
+  const actionLabel = delegated ? 'Open your editor invitation' : 'Claim your free Directory listing';
+  const introCopy = delegated
+    ? sharedStory
+    : `I’m getting in touch because I’ve put together a <strong>free RallyHub Directory listing for ${listing.name}</strong> as part of a wider effort to improve information on pickleball clubs around Ireland, following David Molloy’s request for help updating the national club map.`;
   const roleCopy = delegated
-    ? `I’ve invited you as a <strong>Directory Editor</strong> for <strong>${listing.name}</strong> because I’d really value your help testing the editing side of it from a club user’s point of view.`
+    ? `You’ve been invited as a <strong>Directory Editor</strong> for <strong>${listing.name}</strong>. This gives you access to help maintain the club’s public Directory information only.`
     : `I’ve already created the <strong>${listing.name}</strong> listing, so most of the work is done. I’d simply like you to have a look, claim the listing and correct or add anything that needs updating.`;
   const customHtmlText = String(customText || '').trim()
     ? String(customText).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
@@ -275,7 +278,8 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
           <tr>
             <td style="padding:6px 32px 8px;">
               <p style="font-size:18px;margin:0 0 16px;">Hi ${recipientName},</p>
-              <p style="font-size:15px;line-height:1.6;color:#55636f;margin:0 0 16px;">${sharedStory}</p>
+              <p style="font-size:15px;line-height:1.6;color:#55636f;margin:0 0 16px;">${introCopy}</p>
+              ${!delegated ? `<p style="font-size:15px;line-height:1.6;color:#55636f;margin:0 0 16px;">${sharedStory}</p>` : ''}
               <p style="font-size:16px;line-height:1.6;margin:0 0 22px;">${roleCopy}</p>
               <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 24px;"><tr>
                 <td bgcolor="#159447" style="border-radius:10px;">
