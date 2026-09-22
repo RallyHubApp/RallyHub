@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+
+    <script type="module" src="/@vite/client"></script>
+
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/c350ab512_IMG_3007.png" />
+    <link rel="apple-touch-icon" href="https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/c350ab512_IMG_3007.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="RallyHub" />
+    <meta name="theme-color" content="#22c55e" />
+    <title>RallyHub Ireland | Pickleball Club Directory &amp; Club Management</title>
+    <meta name="description" content="Find pickleball clubs and places to play across the island of Ireland. RallyHub also provides club, competition, King of the Court, interclub and tournament management tools." />
+    <meta name="application-name" content="RallyHub" />
+
+    <!-- Open Graph (Facebook, LinkedIn, WhatsApp) -->
+    <meta property="og:title" content="RallyHub Ireland | Pickleball Club Directory &amp; Club Management" />
+    <meta property="og:site_name" content="RallyHub" />
+    <meta property="og:description" content="Find pickleball clubs and places to play across the island of Ireland. RallyHub also provides club, competition, King of the Court, interclub and tournament management tools." />
+    <meta property="og:url" content="https://rallyhub.ie" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/c350ab512_IMG_3007.png" />
+    <meta name="twitter:image" content="https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/c350ab512_IMG_3007.png" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="RallyHub Ireland | Pickleball Club Directory &amp; Club Management" />
+    <meta name="twitter:description" content="Find pickleball clubs and places to play across the island of Ireland. RallyHub also provides club, competition, King of the Court, interclub and tournament management tools." />
+      <!-- Tailwind CSS CDN for visual editing -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/node_modules/@base44/vite-plugin/dist/injections/unhandled-errors-handlers.js" type="module"></script>
+    <script src="/node_modules/@base44/vite-plugin/dist/injections/sandbox-hmr-notifier.js" type="module"></script>
+    <script src="/node_modules/@base44/vite-plugin/dist/injections/navigation-notifier.js" type="module"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx?t=1790108457968"></script>
+    <script src="/node_modules/@base44/vite-plugin/dist/injections/sandbox-mount-observer.js" type="module"></script>
+    <script type="module">if (window.self !== window.top) {
+  const mode = new URLSearchParams(location.search).get("sandbox-bridge");
+  const url = mode === "local"
+    ? "https://localhost:3201/index.mjs"
+    : "/node_modules/@base44/vite-plugin/dist/statics/index.mjs";
+  import(url)
+    .then(mod => {
+      if (typeof mod.setupVisualEditAgent === "function") mod.setupVisualEditAgent();
+    })
+    .catch(e => console.error("[visual-edit-agent] Failed to load:", e));
+}</script>
+  </body>
+</html>
