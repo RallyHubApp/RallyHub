@@ -92,6 +92,8 @@ check('Spond: Interclub import supports neutral Player Pool', contains(spondFn,"
 // 4. Busy-hall live operation.
 check('host: live screen has at-a-glance court state', contains(ui,'Round at a Glance'));
 check('host: live screen exposes who is resting', contains(ui,'Resting this round'));
+check('host: not-played fixtures are excluded from NOW, score cards and next-round cards', contains(ui,"m.status !== 'not_played'") && contains(ui,"currentMatches = matches.filter"));
+check('host: late players are not labelled as resting before their available round', contains(ui,"p.status === 'late' && Number(p.available_from_round || 1) <= currentRound"));
 check('host: live screen exposes next round without navigation', contains(ui,'Up next · Round'));
 check('display: Hall Display exposes On Court Now', contains(ui,'On Court Now') && contains(publicDisplay,'On Court Now'));
 check('display: Hall Display exposes Resting This Round', contains(ui,'Resting This Round') && contains(publicDisplay,'Resting This Round'));
