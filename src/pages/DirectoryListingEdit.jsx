@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { invalidatePublicDirectoryCache } from '@/lib/public-directory-cache';
 import { getClub, weekDays } from '@/data/directorySeed';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
+import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -860,6 +861,7 @@ export default function DirectoryListingEdit() {
             </div>
           ) : null}
         </main>
+        <div className="px-4 pb-4"><PublicCopyrightFooter maxWidthClass="max-w-6xl" /></div>
       </div>
     </>
   );
