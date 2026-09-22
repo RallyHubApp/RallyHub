@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, nextRound } = body;
+    const { eventId, nextRound, skipBreak = false } = body;
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id: eventId });
     const event = events?.[0];
     if (!event) return Response.json({ error: 'Interclub Challenge event not found' }, { status: 404 });
@@ -39,7 +39,27 @@ Deno.serve(async (req) => {
     if (round > maxRound) return Response.json({ error: 'Round exceeds approved schedule' }, { status: 400 });
     const previousRound = Math.max(1, round - 1);
     const unresolved = normal.filter((m:any) => Number(m.round_number) === previousRound && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status));
-    if (round > Number(event.current_round || 0) && unresolved.length) return Response.json({ error: `${unresolved.length} result(s) still unresolved in Round ${previousRound}` }, { status: 409 });
+    const currentRound = Number(event.current_round || 0);
+    const advancing = round > currentRound;
+    if (advancing && unresolved.length) return Response.json({ error: `${unresolved.length} result(s) still unresolved in Round ${previousRound}` }, { status: 409 });
+
+    let timer:any = {};
+    try { timer = event.timer_state_json ? JSON.parse(event.timer_state_json) : {}; } catch { timer = {}; }
+    const scheduledBreakTransition = advancing
+      && event.include_break === true
+      && currentRound === Number(event.break_after_round || 0)
+      && round === currentRound + 1;
+    if (scheduledBreakTransition && !skipBreak) {
+      const nowMs = Date.now();
+      const elapsed = timer.running && timer.started_at ? Math.max(0, Math.floor((nowMs - Date.parse(timer.started_at)) / 1000)) : 0;
+      const breakRemaining = Math.max(0, Number(timer.remaining_seconds || 0) - elapsed);
+      if (String(timer.phase || '') !== 'break') {
+        return Response.json({ breakRequired:true, error:`Scheduled ${Number(event.break_minutes || 20)}-minute break must start before Round ${round}.` }, { status:409 });
+      }
+      if (breakRemaining > 0) {
+        return Response.json({ breakInProgress:true, remaining_seconds:breakRemaining, error:`Break still in progress (${Math.ceil(breakRemaining / 60)} min remaining).` }, { status:409 });
+      }
+    }
 
     const nextTimer = { phase:'ready', running:false, remaining_seconds:Number(event.play_minutes || 10) * 60, started_at:null, round };
     const nextTimerRevision = Number(event.timer_revision || 0) + 1;
@@ -56,9 +76,9 @@ Deno.serve(async (req) => {
       user_id:user.id,
       occurred_at:new Date().toISOString(),
       old_value_json:JSON.stringify({current_round:event.current_round,status:event.status,timer_state_json:event.timer_state_json || ''}),
-      new_value_json:JSON.stringify({current_round:round,status:'in_progress',timer_state:nextTimer,timer_revision:nextTimerRevision}),
+      new_value_json:JSON.stringify({current_round:round,status:'in_progress',timer_state:nextTimer,timer_revision:nextTimerRevision,break_skipped:!!skipBreak}),
     });
-    return Response.json({ success:true, event:updated, timer_state:nextTimer, timer_revision:nextTimerRevision });
+    return Response.json({ success:true, event:updated, timer_state:nextTimer, timer_revision:nextTimerRevision, break_skipped:!!skipBreak });
   } catch (error) {
     return Response.json({ error:error?.message || 'Unexpected round update error' }, { status:500 });
   }
