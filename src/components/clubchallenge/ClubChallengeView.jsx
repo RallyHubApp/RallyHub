@@ -1554,8 +1554,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 <div className="font-bold tabular-nums text-lg sm:text-xl">{fmtTimer(timerRemaining)}</div>
                 <div className="text-xs text-muted-foreground"><strong className="text-foreground">{currentRoundSavedCount}/{currentMatches.length}</strong> scores saved</div>
                 <div className="ml-auto flex flex-wrap items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={() => { const panel = document.getElementById('cc-pa-panel'); if (panel) { panel.open = true; panel.scrollIntoView({ behavior:'smooth', block:'center' }); } }}><Mic className="w-4 h-4 mr-1" />PA</Button>
-                  <Button size="sm" variant="outline" onClick={() => { const panel = document.getElementById('cc-player-controls'); if (panel) { panel.open = true; panel.scrollIntoView({ behavior:'smooth', block:'center' }); } }}><Users className="w-4 h-4 mr-1" />Players</Button>
+                  <Button size="sm" variant="outline" onClick={() => { const panel = document.getElementById('cc-pa-panel'); if (panel instanceof HTMLDetailsElement) { panel.open = true; panel.scrollIntoView({ behavior:'smooth', block:'center' }); } }}><Mic className="w-4 h-4 mr-1" />PA</Button>
+                  <Button size="sm" variant="outline" onClick={() => { const panel = document.getElementById('cc-player-controls'); if (panel instanceof HTMLDetailsElement) { panel.open = true; panel.scrollIntoView({ behavior:'smooth', block:'center' }); } }}><Users className="w-4 h-4 mr-1" />Players</Button>
                   {!['completed','archived'].includes(event.status) && <Button size="sm" disabled={!canManageEvent || !currentRoundComplete} onClick={advanceRound}>{currentRoundComplete ? (currentRound < Math.max(...rounds) ? `Complete Round ${currentRound}` : 'Finalise') : `${Math.max(0,currentMatches.length-currentRoundSavedCount)} score${Math.max(0,currentMatches.length-currentRoundSavedCount)===1?'':'s'} to save`}</Button>}
                 </div>
               </div>
