@@ -44,7 +44,8 @@ export function createChallengeEventDraft({ tournament, hostClub, opponent, setu
 
 export function buildApprovedDraw({ schedule, clubAPlayers, clubBPlayers, previousVersion = 0, approvedBy, approvedAt = new Date().toISOString() }) {
   const fairness = analyseClubChallengeFairness({ schedule, clubAPlayers, clubBPlayers });
-  if (fairness.duplicatePlayerRoundIssues || fairness.sameClubIntegrityIssues || !fairness.equalGames) {
+  const gamesBalanced = fairness.balancedGames === true || fairness.equalGames === true || (Number(fairness.maxGames) - Number(fairness.minGames) <= 1);
+  if (fairness.duplicatePlayerRoundIssues || fairness.sameClubIntegrityIssues || !gamesBalanced) {
     throw new Error('Draw cannot be approved because hard fairness constraints failed.');
   }
   return { draw_version: Number(previousVersion || 0) + 1, status: 'draw_approved', draw_approved_by: approvedBy || '', draw_approved_at: approvedAt, fairness_json: JSON.stringify(fairness), event_pack_stale: true };
