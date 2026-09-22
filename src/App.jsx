@@ -149,6 +149,21 @@ function RouteAwareAppearanceControl() {
   return isDedicatedHostRoute ? <HostAppearanceControl /> : null;
 }
 
+function RouteAwareCopyrightFooter() {
+  const location = useLocation();
+  const isAppRoute = location.pathname === '/app' || location.pathname.startsWith('/app/');
+
+  return (
+    <footer className="bg-[#053c56] text-white" aria-label="RallyHub copyright">
+      <div className={isAppRoute ? 'lg:pl-64' : ''}>
+        <div className="mx-auto flex min-h-[42px] max-w-[1380px] items-center justify-center px-4 py-2 text-center text-[11px] font-medium text-white/80 sm:px-6 lg:px-10 xl:px-12">
+          © 2026 RallyHub All rights reserved.
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 function App() {
   return (
     <AppearanceProvider>
@@ -209,6 +224,7 @@ function App() {
 
             <Route path="*" element={<PageNotFound />} />
           </Routes>
+          <RouteAwareCopyrightFooter />
           <RouteAwareAppearanceControl />
         </Router>
         <Toaster />
