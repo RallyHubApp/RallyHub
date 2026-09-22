@@ -384,7 +384,7 @@ export default function DirectoryListingEdit() {
       if (!claimUrl) throw new Error('Could not create the secure claim link.');
       const firstName = contactName.split(/\s+/)[0] || 'there';
       const clubName = baseClub?.name || 'your club';
-      const message = `Hi ${firstName},\n\nI’ve set up the *${clubName}* listing in the RallyHub Club Directory and I’d love you to help me test it before I roll it out more widely.\n\nI’d really value your honest feedback — anything that feels confusing, awkward, unnecessary, missing, or that you think could be better.\n\n*Your secure link:*\n${claimUrl}\n\nOnce verified, you’ll become the *Primary Directory Owner* for ${clubName} and can check or update the public information. This gives Directory access only; it does not sign your club up for RallyHub Club or any paid service.\n\n*Why the Directory exists:*\nhttps://rallyhub.ie/directory/story\n\n*Club Guide & Help:*\nhttps://rallyhub.ie/directory/help\n\n*Quick Start Guide:*\nhttps://rallyhub.ie/directory/quick-start\n\nThe link is single-use and expires after 72 hours. If anything gives you trouble, just WhatsApp or call me.\n\nYours in sport,\n*Brian Moore*\n087 810 0333`;
+      const message = `Hi ${firstName},\n\nI’m getting in touch because I’ve put together a *free RallyHub Directory listing for ${clubName}* as part of a wider effort to improve information on pickleball clubs around Ireland, following David Molloy’s request for help updating the national club map.\n\nRallyHub started as a father-and-son project between Conall and me, originally to solve some of the practical things we needed for Clare Pickleball. It has grown from there, and the first public phase is the *RallyHub Club Directory* — helping players find clubs, venues and regular sessions around Ireland.\n\nI’ve already created the *${clubName}* listing, so most of the work is done. I’d simply like you to have a look, claim the listing and correct or add anything that needs updating.\n\nOnce verified, you’ll become the *Primary Directory Owner* for ${clubName}, which means you can manage the club’s public Directory information directly.\n\n*The Directory listing is completely free.*\nThere is no subscription, no catch and no obligation to use any other RallyHub services.\n\nRallyHub is also developing other optional club tools around session management, King of the Court, tournaments and events, but those are separate from your free Directory listing.\n\n*Your secure claim link:*\n${claimUrl}\n\nThe link is personal to you, can only be used once and expires after 72 hours.\n\nIf you’d like to have a quick look at RallyHub first:\n\n*About RallyHub:*\nhttps://rallyhub.ie/about\n\n*1-page Directory Explainer:*\nhttps://rallyhub.ie/directory/story\n\n*Club Guide & Help:*\nhttps://rallyhub.ie/directory/help\n\n*Quick Start Guide:*\nhttps://rallyhub.ie/directory/quick-start\n\nThere is also a *Feedback* area inside RallyHub, and I’m always happy to hear suggestions about what would genuinely be useful to clubs.\n\nIf you have any difficulty claiming the listing, just WhatsApp or call me.\n\nYours in sport,\n*Brian Moore*\n📱 087 810 0333\n🌐 https://rallyhub.ie`;
       window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
       setInviteMessage(`Secure WhatsApp claim invitation opened for ${rawPhone}. The link expires in 72 hours and can only be used once.`);
     } catch (err) {
@@ -629,14 +629,14 @@ export default function DirectoryListingEdit() {
                   <div className="flex flex-wrap gap-2 shrink-0">
                     <Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><ExternalLink className="w-4 h-4" /> View public listing</Button>
                     {user?.role === 'admin' && !isClaimed && <>
-                      <Button type="button" variant="outline" className="gap-2" onClick={sendClaimInvite} disabled={saving || inviting || dirty || !form?.contact?.email} title={dirty ? 'Save changes before sending the claim invitation' : undefined}>
-                        {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-                        {inviting ? 'Sending email…' : dirty ? 'Save before email' : 'Email claim link'}
-                      </Button>
-                      <Button type="button" variant="outline" className="gap-2" onClick={openWhatsAppClaimInvite} disabled={saving || dirty || !form?.contact?.phone} title={dirty ? 'Save changes before opening WhatsApp' : undefined}>
+                      {form?.contact?.phone && <Button type="button" className="gap-2" onClick={openWhatsAppClaimInvite} disabled={saving || dirty} title={dirty ? 'Save changes before opening WhatsApp' : undefined}>
                         <MessageCircle className="w-4 h-4" />
-                        {dirty ? 'Save before WhatsApp' : 'WhatsApp claim link'}
-                      </Button>
+                        {dirty ? 'Save before WhatsApp' : 'WhatsApp claim invitation'}
+                      </Button>}
+                      {form?.contact?.email && <Button type="button" variant={form?.contact?.phone ? 'outline' : 'default'} className="gap-2" onClick={sendClaimInvite} disabled={saving || inviting || dirty} title={dirty ? 'Save changes before sending the claim invitation' : undefined}>
+                        {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                        {inviting ? 'Sending email…' : dirty ? 'Save before email' : 'Email claim invitation'}
+                      </Button>}
                     </>}
                     <Button onClick={save} disabled={saving || !dirty} className="gap-2 min-w-36">
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : !dirty && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
