@@ -1,6 +1,6 @@
 import { base44 } from '@/api/base44Client';
 
-const CACHE_KEY = 'rallyhub.publicDirectory.v1';
+const CACHE_KEY = 'rallyhub.publicDirectory.v2';
 const FRESH_MS = 5 * 60 * 1000;
 
 let memoryCache = null;
