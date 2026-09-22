@@ -876,12 +876,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await unlockHallAudio();
     if (await timerAction('start', phase)) {
       lastTimerAnnouncementRef.current = new Set();
-      speak(phase === 'play' ? `${roundLabel(currentRound)}. Start round.` : phase === 'changeover' ? 'Changeover.' : `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`, { signal:'start' });
+      speak(phase === 'play' ? `${roundLabel(currentRound)}. Start round.` : phase === 'changeover' ? 'Changeover.' : `Your ${Number(event?.break_minutes || 20)} minute break starts now. Enjoy your break.`, { signal:'start' });
       requestWakeLock();
     }
   };
   const pauseTimer = async () => { if (await timerAction('pause')) { speak('Event paused.'); wakeLockRef.current?.release?.(); } };
-  const resumeTimer = async () => { await unlockHallAudio(); if (await timerAction('resume')) { speak(`${roundLabel(currentRound)}. Resume play.`, { signal:'start' }); requestWakeLock(); } };
+  const resumeTimer = async () => { await unlockHallAudio(); if (await timerAction('resume')) { speak(String(timerState?.phase || '') === 'break' ? 'Break resumed.' : String(timerState?.phase || '') === 'changeover' ? 'Changeover resumed.' : `${roundLabel(currentRound)}. Resume play.`, { signal:'start' }); requestWakeLock(); } };
   const resetTimer = () => timerAction('reset');
   const preparedRoundMinutes = ['ready','play'].includes(String(timerState?.phase || '')) && Number(timerState?.round || 0) === Number(currentRound) && !timerState?.running && Number(timerState?.remaining_seconds || 0) > 0
     ? Math.max(1, Math.round(Number(timerState.remaining_seconds) / 60))
@@ -917,10 +917,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     }
     if (timerRemaining <= 5 && timerRemaining > 0) announceOnce(`${prefix}-count-${timerRemaining}`, String(timerRemaining));
     if (timerRemaining === 0) {
-      announceOnce(`${prefix}-end`, phase === 'play' ? 'Round finished. Please give your scores.' : phase === 'changeover' ? 'Changeover finished. Next round ready.' : 'Break finished.', 'end');
+      const scheduledBreakAfterThisRound = event?.include_break && Number(currentRound) === Number(event?.break_after_round || 0);
+      const endMessage = phase === 'play'
+        ? (scheduledBreakAfterThisRound ? `${roundLabel(currentRound)} finished. Your ${Number(event?.break_minutes || 20)} minute break is next. Please give in your scores.` : 'Round finished. Please give your scores.')
+        : phase === 'changeover'
+          ? 'Changeover finished. Next round ready.'
+          : `Break finished. ${roundLabel(Number(currentRound) + 1)} is ready when the host is ready.`;
+      announceOnce(`${prefix}-end`, endMessage, 'end');
       wakeLockRef.current?.release?.();
     }
-  }, [timerRemaining, timerState?.running, timerState?.phase, currentRound, hallVolume, voiceMode, voices]);
+  }, [timerRemaining, timerState?.running, timerState?.phase, currentRound, hallVolume, voiceMode, voices, event?.include_break, event?.break_after_round, event?.break_minutes]);
   const runCompressedTimerAudioTest = async () => {
     if (compressedTimer.running) return;
     const steps = [
