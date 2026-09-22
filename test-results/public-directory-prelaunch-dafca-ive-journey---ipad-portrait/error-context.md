@@ -1,0 +1,2249 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: public-directory-prelaunch.spec.mjs >> directory responsive journey - ipad-portrait
+- Location: e2e/public-directory-prelaunch.spec.mjs:24:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByRole('link', { name: 'Directory', exact: true })
+Expected: visible
+Error: strict mode violation: getByRole('link', { name: 'Directory', exact: true }) resolved to 2 elements:
+    1) <a href="/directory" data-dynamic-content="true" data-collection-item-field="label" data-source-location="src/components/public/PublicDirectoryHeader.jsx:90:14" class="flex items-center justify-between rounded-lg px-3 py-3 font-semibold text-[#0c2257] hover:bg-[#f4faf7]">…</a> aka getByRole('banner').getByRole('link', { name: 'Directory' })
+    2) <a href="/directory" data-dynamic-content="false" data-source-location="src/pages/PublicDirectory.jsx:533:16">Directory</a> aka getByRole('contentinfo').getByRole('link', { name: 'Directory' })
+
+Call log:
+  - Expect "toBeVisible" getByRole('link', { name: 'Directory', exact: true }) with timeout 3000ms
+  - waiting for getByRole('link', { name: 'Directory', exact: true })
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "RallyHub RallyHub PLAY • CONNECT • BELONG" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "RallyHub" [ref=e7]
+        - generic [ref=e8]:
+          - generic [ref=e9]: RallyHub
+          - generic [ref=e10]: PLAY • CONNECT • BELONG
+      - button "Menu" [active] [ref=e11] [cursor=pointer]
+    - generic [ref=e17]:
+      - link "Home" [ref=e18] [cursor=pointer]:
+        - /url: /
+      - link "Directory" [ref=e21] [cursor=pointer]:
+        - /url: /directory
+      - link "Events" [ref=e24] [cursor=pointer]:
+        - /url: /events
+      - link "Club Guide" [ref=e27] [cursor=pointer]:
+        - /url: /directory/help
+      - link "About" [ref=e30] [cursor=pointer]:
+        - /url: /about
+      - generic [ref=e33]:
+        - button "Current appearance Dark. Change appearance." [ref=e34] [cursor=pointer]
+        - link [ref=e35] [cursor=pointer]:
+          - /url: /login?returnTo=%2Fdirectory
+          - button "Log in" [ref=e36]
+        - link [ref=e37] [cursor=pointer]:
+          - /url: /directory/add
+          - button "Get Started" [ref=e38]
+  - generic [ref=e42]:
+    - generic [ref=e43]: All-Ireland club directory · all 32 counties supported
+    - heading "Find a club. Find a session. Get playing." [level=1] [ref=e47]:
+      - text: Find a club.
+      - generic [ref=e48]: Find a session.
+      - generic [ref=e49]: Get playing.
+    - paragraph [ref=e50]: Search public sports clubs across the whole island of Ireland by county, location, day and venue. The Directory stays simple to browse, while clubs can keep their public information accurate and up to date.
+    - generic [ref=e51]:
+      - link "Manage a listing" [ref=e52] [cursor=pointer]:
+        - /url: /directory?manage=1
+      - link "Add a missing club" [ref=e57] [cursor=pointer]:
+        - /url: /directory/add
+  - generic [ref=e61]:
+    - generic [ref=e62]:
+      - textbox "Search club directory" [ref=e67]:
+        - /placeholder: Club, town, venue or Eircode
+      - combobox "Filter by county" [ref=e68]:
+        - option "All counties" [selected]
+        - option "Antrim"
+        - option "Armagh"
+        - option "Carlow"
+        - option "Cavan"
+        - option "Clare"
+        - option "Cork"
+        - option "Derry"
+        - option "Donegal"
+        - option "Down"
+        - option "Dublin"
+        - option "Fermanagh"
+        - option "Galway"
+        - option "Kerry"
+        - option "Kildare"
+        - option "Kilkenny"
+        - option "Laois"
+        - option "Leitrim"
+        - option "Limerick"
+        - option "Longford"
+        - option "Louth"
+        - option "Mayo"
+        - option "Meath"
+        - option "Monaghan"
+        - option "Offaly"
+        - option "Roscommon"
+        - option "Sligo"
+        - option "Tipperary"
+        - option "Tyrone"
+        - option "Waterford"
+        - option "Westmeath"
+        - option "Wexford"
+        - option "Wicklow"
+      - combobox "Filter by day" [ref=e69]:
+        - option "Any day" [selected]
+        - option "Monday"
+        - option "Tuesday"
+        - option "Wednesday"
+        - option "Thursday"
+        - option "Friday"
+        - option "Saturday"
+        - option "Sunday"
+      - generic [ref=e70]:
+        - button "clubs" [ref=e71] [cursor=pointer]
+        - button "sessions" [ref=e72] [cursor=pointer]
+        - button "map" [ref=e73] [cursor=pointer]
+    - generic [ref=e74]:
+      - generic [ref=e75]: Browse by county
+      - link "Antrim · 4" [ref=e76] [cursor=pointer]:
+        - /url: /pickleball-clubs/antrim
+      - link "Armagh · 2" [ref=e77] [cursor=pointer]:
+        - /url: /pickleball-clubs/armagh
+      - link "Carlow · 1" [ref=e78] [cursor=pointer]:
+        - /url: /pickleball-clubs/carlow
+      - link "Cavan · 5" [ref=e79] [cursor=pointer]:
+        - /url: /pickleball-clubs/cavan
+      - link "Clare · 1" [ref=e80] [cursor=pointer]:
+        - /url: /pickleball-clubs/clare
+      - link "Cork · 10" [ref=e81] [cursor=pointer]:
+        - /url: /pickleball-clubs/cork
+      - link "Derry" [ref=e82] [cursor=pointer]:
+        - /url: /pickleball-clubs/derry
+      - link "Donegal · 1" [ref=e83] [cursor=pointer]:
+        - /url: /pickleball-clubs/donegal
+      - link "Down · 1" [ref=e84] [cursor=pointer]:
+        - /url: /pickleball-clubs/down
+      - link "Dublin · 15" [ref=e85] [cursor=pointer]:
+        - /url: /pickleball-clubs/dublin
+      - link "Fermanagh" [ref=e86] [cursor=pointer]:
+        - /url: /pickleball-clubs/fermanagh
+      - link "Galway · 5" [ref=e87] [cursor=pointer]:
+        - /url: /pickleball-clubs/galway
+      - link "Kerry · 4" [ref=e88] [cursor=pointer]:
+        - /url: /pickleball-clubs/kerry
+      - link "Kildare · 4" [ref=e89] [cursor=pointer]:
+        - /url: /pickleball-clubs/kildare
+      - link "Kilkenny · 1" [ref=e90] [cursor=pointer]:
+        - /url: /pickleball-clubs/kilkenny
+      - link "Laois · 1" [ref=e91] [cursor=pointer]:
+        - /url: /pickleball-clubs/laois
+      - link "Leitrim" [ref=e92] [cursor=pointer]:
+        - /url: /pickleball-clubs/leitrim
+      - link "Limerick · 1" [ref=e93] [cursor=pointer]:
+        - /url: /pickleball-clubs/limerick
+      - link "Longford · 1" [ref=e94] [cursor=pointer]:
+        - /url: /pickleball-clubs/longford
+      - link "Louth · 2" [ref=e95] [cursor=pointer]:
+        - /url: /pickleball-clubs/louth
+      - link "Mayo · 7" [ref=e96] [cursor=pointer]:
+        - /url: /pickleball-clubs/mayo
+      - link "Meath · 3" [ref=e97] [cursor=pointer]:
+        - /url: /pickleball-clubs/meath
+      - link "Monaghan · 1" [ref=e98] [cursor=pointer]:
+        - /url: /pickleball-clubs/monaghan
+      - link "Offaly · 1" [ref=e99] [cursor=pointer]:
+        - /url: /pickleball-clubs/offaly
+      - link "Roscommon" [ref=e100] [cursor=pointer]:
+        - /url: /pickleball-clubs/roscommon
+      - link "Sligo · 2" [ref=e101] [cursor=pointer]:
+        - /url: /pickleball-clubs/sligo
+      - link "Tipperary" [ref=e102] [cursor=pointer]:
+        - /url: /pickleball-clubs/tipperary
+      - link "Tyrone" [ref=e103] [cursor=pointer]:
+        - /url: /pickleball-clubs/tyrone
+      - link "Waterford · 1" [ref=e104] [cursor=pointer]:
+        - /url: /pickleball-clubs/waterford
+      - link "Westmeath · 3" [ref=e105] [cursor=pointer]:
+        - /url: /pickleball-clubs/westmeath
+      - link "Wexford · 2" [ref=e106] [cursor=pointer]:
+        - /url: /pickleball-clubs/wexford
+      - link "Wicklow · 5" [ref=e107] [cursor=pointer]:
+        - /url: /pickleball-clubs/wicklow
+  - main [ref=e108]:
+    - generic [ref=e111]:
+      - generic [ref=e113]:
+        - paragraph [ref=e114]: 84 clubs found
+        - heading "Club directory" [level=2] [ref=e115]
+      - generic [ref=e117]:
+        - article [ref=e118]:
+          - generic [ref=e119]:
+            - generic "ABC Pickleball Club logo unavailable" [ref=e120]: AP
+            - generic [ref=e121]:
+              - generic [ref=e122]:
+                - generic [ref=e123]:
+                  - paragraph [ref=e124]: Pickleball · County Armagh
+                  - heading "ABC Pickleball Club" [level=3] [ref=e125]
+                - generic [ref=e126]: Unclaimed listing
+              - paragraph [ref=e130]: ABC Pickleball Club is listed in the RallyHub Club Directory for County Armagh. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e131]:
+                - generic [ref=e132]: 1 venue
+                - generic [ref=e137]: Schedule pending
+                - generic [ref=e140]: Armagh
+          - generic [ref=e144]:
+            - generic [ref=e145]: 1 Lake Rd
+            - generic [ref=e147]:
+              - link "Claim this listing" [ref=e148] [cursor=pointer]:
+                - /url: /directory/abc-pickleball-club/claim
+              - button "Share ABC Pickleball Club" [ref=e153] [cursor=pointer]: Share
+              - link "View club" [ref=e160] [cursor=pointer]:
+                - /url: /directory/abc-pickleball-club
+        - article [ref=e163]:
+          - generic [ref=e164]:
+            - generic "Achill Pickleball logo unavailable" [ref=e165]: AP
+            - generic [ref=e166]:
+              - generic [ref=e167]:
+                - generic [ref=e168]:
+                  - paragraph [ref=e169]: Pickleball · County Mayo
+                  - heading "Achill Pickleball" [level=3] [ref=e170]
+                - generic [ref=e171]: Unclaimed listing
+              - paragraph [ref=e175]: Achill Pickleball is listed in the RallyHub Club Directory for County Mayo. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e176]:
+                - generic [ref=e177]: 1 venue
+                - generic [ref=e182]: Schedule pending
+                - generic [ref=e185]: Mayo
+          - generic [ref=e189]:
+            - generic [ref=e190]: The Boreen Cashel Achill Island Coun
+            - generic [ref=e192]:
+              - link "Claim this listing" [ref=e193] [cursor=pointer]:
+                - /url: /directory/achill-pickleball/claim
+              - button "Share Achill Pickleball" [ref=e198] [cursor=pointer]: Share
+              - link "View club" [ref=e205] [cursor=pointer]:
+                - /url: /directory/achill-pickleball
+        - article [ref=e208]:
+          - generic [ref=e209]:
+            - generic "Annascaul Picklers logo unavailable" [ref=e210]: AP
+            - generic [ref=e211]:
+              - generic [ref=e212]:
+                - generic [ref=e213]:
+                  - paragraph [ref=e214]: Pickleball · County Kerry
+                  - heading "Annascaul Picklers" [level=3] [ref=e215]
+                - generic [ref=e216]: Unclaimed listing
+              - paragraph [ref=e220]: Annascaul Picklers is listed in the RallyHub Club Directory for County Kerry. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e221]:
+                - generic [ref=e222]: 1 venue
+                - generic [ref=e227]: Schedule pending
+                - generic [ref=e230]: Kerry
+          - generic [ref=e234]:
+            - generic [ref=e235]: FARRANACARRIGA Annascaul County Kerr
+            - generic [ref=e237]:
+              - link "Claim this listing" [ref=e238] [cursor=pointer]:
+                - /url: /directory/annascaul-picklers/claim
+              - button "Share Annascaul Picklers" [ref=e243] [cursor=pointer]: Share
+              - link "View club" [ref=e250] [cursor=pointer]:
+                - /url: /directory/annascaul-picklers
+        - article [ref=e253]:
+          - generic [ref=e254]:
+            - generic "Ards Blair Mayne Pickleball Club logo unavailable" [ref=e255]: AB
+            - generic [ref=e256]:
+              - generic [ref=e257]:
+                - generic [ref=e258]:
+                  - paragraph [ref=e259]: Pickleball · County Down
+                  - heading "Ards Blair Mayne Pickleball Club" [level=3] [ref=e260]
+                - generic [ref=e261]: Unclaimed listing
+              - paragraph [ref=e265]: Ards Blair Mayne Pickleball Club is listed in the RallyHub Club Directory for County Down. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e266]:
+                - generic [ref=e267]: 1 venue
+                - generic [ref=e272]: Schedule pending
+                - generic [ref=e275]: Down
+          - generic [ref=e279]:
+            - generic [ref=e280]: Ards Blair Mayne Wellbeing and Leisu
+            - generic [ref=e282]:
+              - link "Claim this listing" [ref=e283] [cursor=pointer]:
+                - /url: /directory/ards-blair-mayne-pickleball-club/claim
+              - button "Share Ards Blair Mayne Pickleball Club" [ref=e288] [cursor=pointer]: Share
+              - link "View club" [ref=e295] [cursor=pointer]:
+                - /url: /directory/ards-blair-mayne-pickleball-club
+        - article [ref=e298]:
+          - generic [ref=e299]:
+            - generic "Ashbourne Pickleball Club logo unavailable" [ref=e300]: AP
+            - generic [ref=e301]:
+              - generic [ref=e302]:
+                - generic [ref=e303]:
+                  - paragraph [ref=e304]: Pickleball · County Meath
+                  - heading "Ashbourne Pickleball Club" [level=3] [ref=e305]
+                - generic [ref=e306]: Unclaimed listing
+              - paragraph [ref=e310]: Ashbourne Pickleball Club is listed in the RallyHub Club Directory for County Meath. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e311]:
+                - generic [ref=e312]: 1 venue
+                - generic [ref=e317]: Schedule pending
+                - generic [ref=e320]: Meath
+          - generic [ref=e324]:
+            - generic [ref=e325]: Rolestown National School
+            - generic [ref=e327]:
+              - link "Claim this listing" [ref=e328] [cursor=pointer]:
+                - /url: /directory/ashbourne-pickleball/claim
+              - button "Share Ashbourne Pickleball Club" [ref=e333] [cursor=pointer]: Share
+              - link "View club" [ref=e340] [cursor=pointer]:
+                - /url: /directory/ashbourne-pickleball
+        - article [ref=e343]:
+          - generic [ref=e344]:
+            - generic "Athboy Pickleball logo unavailable" [ref=e345]: AP
+            - generic [ref=e346]:
+              - generic [ref=e347]:
+                - generic [ref=e348]:
+                  - paragraph [ref=e349]: Pickleball · County Meath
+                  - heading "Athboy Pickleball" [level=3] [ref=e350]
+                - generic [ref=e351]: Unclaimed listing
+              - paragraph [ref=e355]: Athboy Pickleball is listed in the RallyHub Club Directory for County Meath. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e356]:
+                - generic [ref=e357]: 1 venue
+                - generic [ref=e362]: Schedule pending
+                - generic [ref=e365]: Meath
+          - generic [ref=e369]:
+            - generic [ref=e370]: Athboy Convent Community centre
+            - generic [ref=e372]:
+              - link "Claim this listing" [ref=e373] [cursor=pointer]:
+                - /url: /directory/athboy-pickleball/claim
+              - button "Share Athboy Pickleball" [ref=e378] [cursor=pointer]: Share
+              - link "View club" [ref=e385] [cursor=pointer]:
+                - /url: /directory/athboy-pickleball
+        - article [ref=e388]:
+          - generic [ref=e389]:
+            - generic "Balbriggan Pickleball logo unavailable" [ref=e390]: BP
+            - generic [ref=e391]:
+              - generic [ref=e392]:
+                - generic [ref=e393]:
+                  - paragraph [ref=e394]: Pickleball · County Dublin
+                  - heading "Balbriggan Pickleball" [level=3] [ref=e395]
+                - generic [ref=e396]: Unclaimed listing
+              - paragraph [ref=e400]: Balbriggan Pickleball is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e401]:
+                - generic [ref=e402]: 1 venue
+                - generic [ref=e407]: Schedule pending
+                - generic [ref=e410]: Dublin
+          - generic [ref=e414]:
+            - generic [ref=e415]: Flemington Community Centre
+            - generic [ref=e417]:
+              - link "Claim this listing" [ref=e418] [cursor=pointer]:
+                - /url: /directory/balbriggan-pickleball/claim
+              - button "Share Balbriggan Pickleball" [ref=e423] [cursor=pointer]: Share
+              - link "View club" [ref=e430] [cursor=pointer]:
+                - /url: /directory/balbriggan-pickleball
+        - article [ref=e433]:
+          - generic [ref=e434]:
+            - generic "Ballyfermot Pickleballers logo unavailable" [ref=e435]: BP
+            - generic [ref=e436]:
+              - generic [ref=e437]:
+                - generic [ref=e438]:
+                  - paragraph [ref=e439]: Pickleball · County Dublin
+                  - heading "Ballyfermot Pickleballers" [level=3] [ref=e440]
+                - generic [ref=e441]: Unclaimed listing
+              - paragraph [ref=e445]: Ballyfermot Pickleballers is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e446]:
+                - generic [ref=e447]: 1 venue
+                - generic [ref=e452]: Schedule pending
+                - generic [ref=e455]: Dublin
+          - generic [ref=e459]:
+            - generic [ref=e460]: Ballyfermot Main Street
+            - generic [ref=e462]:
+              - link "Claim this listing" [ref=e463] [cursor=pointer]:
+                - /url: /directory/ballyfermot-pickleballers/claim
+              - button "Share Ballyfermot Pickleballers" [ref=e468] [cursor=pointer]: Share
+              - link "View club" [ref=e475] [cursor=pointer]:
+                - /url: /directory/ballyfermot-pickleballers
+        - article [ref=e478]:
+          - generic [ref=e479]:
+            - generic "Bayside Pickleball Club logo unavailable" [ref=e480]: BP
+            - generic [ref=e481]:
+              - generic [ref=e482]:
+                - generic [ref=e483]:
+                  - paragraph [ref=e484]: Pickleball · County Dublin
+                  - heading "Bayside Pickleball Club" [level=3] [ref=e485]
+                - generic [ref=e486]: Unclaimed listing
+              - paragraph [ref=e490]: Bayside Pickleball Club is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e491]:
+                - generic [ref=e492]: 1 venue
+                - generic [ref=e497]: Schedule pending
+                - generic [ref=e500]: Dublin
+          - generic [ref=e504]:
+            - generic [ref=e505]: Bayside Junior School
+            - generic [ref=e507]:
+              - link "Claim this listing" [ref=e508] [cursor=pointer]:
+                - /url: /directory/bayside-pickleball-club/claim
+              - button "Share Bayside Pickleball Club" [ref=e513] [cursor=pointer]: Share
+              - link "View club" [ref=e520] [cursor=pointer]:
+                - /url: /directory/bayside-pickleball-club
+        - article [ref=e523]:
+          - generic [ref=e524]:
+            - generic "Belfast Pickleball Club logo unavailable" [ref=e525]: BP
+            - generic [ref=e526]:
+              - generic [ref=e527]:
+                - generic [ref=e528]:
+                  - paragraph [ref=e529]: Pickleball · County Antrim
+                  - heading "Belfast Pickleball Club" [level=3] [ref=e530]
+                - generic [ref=e531]: Unclaimed listing
+              - paragraph [ref=e535]: Belfast Pickleball Club is listed in the RallyHub Club Directory for County Antrim. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e536]:
+                - generic [ref=e537]: 1 venue
+                - generic [ref=e542]: Schedule pending
+                - generic [ref=e545]: Antrim
+          - generic [ref=e549]:
+            - generic [ref=e550]: Strathearn School 188 Belmont Rd
+            - generic [ref=e552]:
+              - link "Claim this listing" [ref=e553] [cursor=pointer]:
+                - /url: /directory/belfast-pickleball-club/claim
+              - button "Share Belfast Pickleball Club" [ref=e558] [cursor=pointer]: Share
+              - link "View club" [ref=e565] [cursor=pointer]:
+                - /url: /directory/belfast-pickleball-club
+        - article [ref=e568]:
+          - generic [ref=e569]:
+            - generic "Belmayne Pickleball logo unavailable" [ref=e570]: BP
+            - generic [ref=e571]:
+              - generic [ref=e572]:
+                - generic [ref=e573]:
+                  - paragraph [ref=e574]: Pickleball · County Dublin
+                  - heading "Belmayne Pickleball" [level=3] [ref=e575]
+                - generic [ref=e576]: Unclaimed listing
+              - paragraph [ref=e580]: Belmayne Pickleball is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e581]:
+                - generic [ref=e582]: 1 venue
+                - generic [ref=e587]: Schedule pending
+                - generic [ref=e590]: Dublin
+          - generic [ref=e594]:
+            - generic [ref=e595]: Belmayne main street
+            - generic [ref=e597]:
+              - link "Claim this listing" [ref=e598] [cursor=pointer]:
+                - /url: /directory/belmayne-pickleball/claim
+              - button "Share Belmayne Pickleball" [ref=e603] [cursor=pointer]: Share
+              - link "View club" [ref=e610] [cursor=pointer]:
+                - /url: /directory/belmayne-pickleball
+        - article [ref=e613]:
+          - generic [ref=e614]:
+            - generic "Better Pickleball Club logo unavailable" [ref=e615]: BP
+            - generic [ref=e616]:
+              - generic [ref=e617]:
+                - generic [ref=e618]:
+                  - paragraph [ref=e619]: Pickleball · County Antrim
+                  - heading "Better Pickleball Club" [level=3] [ref=e620]
+                - generic [ref=e621]: Unclaimed listing
+              - paragraph [ref=e625]: Better Pickleball Club is listed in the RallyHub Club Directory for County Antrim. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e626]:
+                - generic [ref=e627]: 1 venue
+                - generic [ref=e632]: Schedule pending
+                - generic [ref=e635]: Antrim
+          - generic [ref=e639]:
+            - generic [ref=e640]: Castlereagh
+            - generic [ref=e642]:
+              - link "Claim this listing" [ref=e643] [cursor=pointer]:
+                - /url: /directory/better-pickleball-club/claim
+              - button "Share Better Pickleball Club" [ref=e648] [cursor=pointer]: Share
+              - link "View club" [ref=e655] [cursor=pointer]:
+                - /url: /directory/better-pickleball-club
+        - article [ref=e658]:
+          - generic [ref=e659]:
+            - generic "Blackrock Pickleball logo unavailable" [ref=e660]: BP
+            - generic [ref=e661]:
+              - generic [ref=e662]:
+                - generic [ref=e663]:
+                  - paragraph [ref=e664]: Pickleball · County Dublin
+                  - heading "Blackrock Pickleball" [level=3] [ref=e665]
+                - generic [ref=e666]: Unclaimed listing
+              - paragraph [ref=e670]: Blackrock Pickleball is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e671]:
+                - generic [ref=e672]: 1 venue
+                - generic [ref=e677]: Schedule pending
+                - generic [ref=e680]: Dublin
+          - generic [ref=e684]:
+            - generic [ref=e685]: Cabinteely Community School
+            - generic [ref=e687]:
+              - link "Claim this listing" [ref=e688] [cursor=pointer]:
+                - /url: /directory/blackrock-pickleball/claim
+              - button "Share Blackrock Pickleball" [ref=e693] [cursor=pointer]: Share
+              - link "View club" [ref=e700] [cursor=pointer]:
+                - /url: /directory/blackrock-pickleball
+        - article [ref=e703]:
+          - generic [ref=e704]:
+            - generic "Blessington Pickleball Club logo unavailable" [ref=e705]: BP
+            - generic [ref=e706]:
+              - generic [ref=e707]:
+                - generic [ref=e708]:
+                  - paragraph [ref=e709]: Pickleball · County Wicklow
+                  - heading "Blessington Pickleball Club" [level=3] [ref=e710]
+                - generic [ref=e711]: Unclaimed listing
+              - paragraph [ref=e715]: Blessington Pickleball Club is listed in the RallyHub Club Directory for County Wicklow. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e716]:
+                - generic [ref=e717]: 1 venue
+                - generic [ref=e722]: Schedule pending
+                - generic [ref=e725]: Wicklow
+          - generic [ref=e729]:
+            - generic [ref=e730]: Blessington Demesne
+            - generic [ref=e732]:
+              - link "Claim this listing" [ref=e733] [cursor=pointer]:
+                - /url: /directory/blessington-pickleball-club/claim
+              - button "Share Blessington Pickleball Club" [ref=e738] [cursor=pointer]: Share
+              - link "View club" [ref=e745] [cursor=pointer]:
+                - /url: /directory/blessington-pickleball-club
+        - article [ref=e748]:
+          - generic [ref=e749]:
+            - generic "Bluestack Pickleball Club logo unavailable" [ref=e750]: BP
+            - generic [ref=e751]:
+              - generic [ref=e752]:
+                - generic [ref=e753]:
+                  - paragraph [ref=e754]: Pickleball · County Donegal
+                  - heading "Bluestack Pickleball Club" [level=3] [ref=e755]
+                - generic [ref=e756]: Unclaimed listing
+              - paragraph [ref=e760]: Bluestack Pickleball Club is listed in the RallyHub Club Directory for County Donegal. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e761]:
+                - generic [ref=e762]: 1 venue
+                - generic [ref=e767]: Schedule pending
+                - generic [ref=e770]: Donegal
+          - generic [ref=e774]:
+            - generic [ref=e775]: St John Bosco centre. Donegal Town
+            - generic [ref=e777]:
+              - link "Claim this listing" [ref=e778] [cursor=pointer]:
+                - /url: /directory/bluestack-pickleball-club/claim
+              - button "Share Bluestack Pickleball Club" [ref=e783] [cursor=pointer]: Share
+              - link "View club" [ref=e790] [cursor=pointer]:
+                - /url: /directory/bluestack-pickleball-club
+        - article [ref=e793]:
+          - generic [ref=e794]:
+            - generic "Breffni Pickleball Club logo unavailable" [ref=e795]: BP
+            - generic [ref=e796]:
+              - generic [ref=e797]:
+                - generic [ref=e798]:
+                  - paragraph [ref=e799]: Pickleball · County Cavan
+                  - heading "Breffni Pickleball Club" [level=3] [ref=e800]
+                - generic [ref=e801]: Unclaimed listing
+              - paragraph [ref=e805]: Breffni Pickleball Club is listed in the RallyHub Club Directory for County Cavan. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e806]:
+                - generic [ref=e807]: 1 venue
+                - generic [ref=e812]: Schedule pending
+                - generic [ref=e815]: Cavan
+          - generic [ref=e819]:
+            - generic [ref=e820]: Cavan Sports Complex
+            - generic [ref=e822]:
+              - link "Claim this listing" [ref=e823] [cursor=pointer]:
+                - /url: /directory/breffni-pickleball-club/claim
+              - button "Share Breffni Pickleball Club" [ref=e828] [cursor=pointer]: Share
+              - link "View club" [ref=e835] [cursor=pointer]:
+                - /url: /directory/breffni-pickleball-club
+        - article [ref=e838]:
+          - generic [ref=e839]:
+            - generic "Carlingford Pickleball Club logo unavailable" [ref=e840]: CP
+            - generic [ref=e841]:
+              - generic [ref=e842]:
+                - generic [ref=e843]:
+                  - paragraph [ref=e844]: Pickleball · County Louth
+                  - heading "Carlingford Pickleball Club" [level=3] [ref=e845]
+                - generic [ref=e846]: Unclaimed listing
+              - paragraph [ref=e850]: Carlingford Pickleball Club is listed in the RallyHub Club Directory for County Louth. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e851]:
+                - generic [ref=e852]: 1 venue
+                - generic [ref=e857]: Schedule pending
+                - generic [ref=e860]: Louth
+          - generic [ref=e864]:
+            - generic [ref=e865]: Foy Center
+            - generic [ref=e867]:
+              - link "Claim this listing" [ref=e868] [cursor=pointer]:
+                - /url: /directory/carlingford-pickleball-club/claim
+              - button "Share Carlingford Pickleball Club" [ref=e873] [cursor=pointer]: Share
+              - link "View club" [ref=e880] [cursor=pointer]:
+                - /url: /directory/carlingford-pickleball-club
+        - article [ref=e883]:
+          - generic [ref=e884]:
+            - generic "Carlow/Tullow Pickleball Club logo unavailable" [ref=e885]: CP
+            - generic [ref=e886]:
+              - generic [ref=e887]:
+                - generic [ref=e888]:
+                  - paragraph [ref=e889]: Pickleball · County Carlow
+                  - heading "Carlow/Tullow Pickleball Club" [level=3] [ref=e890]
+                - generic [ref=e891]: Unclaimed listing
+              - paragraph [ref=e895]: Carlow/Tullow Pickleball Club is listed in the RallyHub Club Directory for County Carlow. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e896]:
+                - generic [ref=e897]: 1 venue
+                - generic [ref=e902]: Schedule pending
+                - generic [ref=e905]: Carlow
+          - generic [ref=e909]:
+            - generic [ref=e910]: Tullowphelim
+            - generic [ref=e912]:
+              - link "Claim this listing" [ref=e913] [cursor=pointer]:
+                - /url: /directory/carlow-tullow-pickleball-club/claim
+              - button "Share Carlow/Tullow Pickleball Club" [ref=e918] [cursor=pointer]: Share
+              - link "View club" [ref=e925] [cursor=pointer]:
+                - /url: /directory/carlow-tullow-pickleball-club
+        - article [ref=e928]:
+          - generic [ref=e929]:
+            - generic "Carrickmacross Pickleball Club logo unavailable" [ref=e930]: CP
+            - generic [ref=e931]:
+              - generic [ref=e932]:
+                - generic [ref=e933]:
+                  - paragraph [ref=e934]: Pickleball · County Monaghan
+                  - heading "Carrickmacross Pickleball Club" [level=3] [ref=e935]
+                - generic [ref=e936]: Unclaimed listing
+              - paragraph [ref=e940]: Carrickmacross Pickleball Club is listed in the RallyHub Club Directory for County Monaghan. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e941]:
+                - generic [ref=e942]: 1 venue
+                - generic [ref=e947]: Schedule pending
+                - generic [ref=e950]: Monaghan
+          - generic [ref=e954]:
+            - generic [ref=e955]: Carrickmacross
+            - generic [ref=e957]:
+              - link "Claim this listing" [ref=e958] [cursor=pointer]:
+                - /url: /directory/carrickmacross-pickleball-club/claim
+              - button "Share Carrickmacross Pickleball Club" [ref=e963] [cursor=pointer]: Share
+              - link "View club" [ref=e970] [cursor=pointer]:
+                - /url: /directory/carrickmacross-pickleball-club
+        - article [ref=e973]:
+          - generic [ref=e974]:
+            - generic "Castlerahan Pickleball Club logo unavailable" [ref=e975]: CP
+            - generic [ref=e976]:
+              - generic [ref=e977]:
+                - generic [ref=e978]:
+                  - paragraph [ref=e979]: Pickleball · County Cavan
+                  - heading "Castlerahan Pickleball Club" [level=3] [ref=e980]
+                - generic [ref=e981]: Unclaimed listing
+              - paragraph [ref=e985]: Castlerahan Pickleball Club is listed in the RallyHub Club Directory for County Cavan. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e986]:
+                - generic [ref=e987]: 1 venue
+                - generic [ref=e992]: Schedule pending
+                - generic [ref=e995]: Cavan
+          - generic [ref=e999]:
+            - generic [ref=e1000]: A82 Y4T2
+            - generic [ref=e1002]:
+              - link "Claim this listing" [ref=e1003] [cursor=pointer]:
+                - /url: /directory/castlerahan-pickleball-club/claim
+              - button "Share Castlerahan Pickleball Club" [ref=e1008] [cursor=pointer]: Share
+              - link "View club" [ref=e1015] [cursor=pointer]:
+                - /url: /directory/castlerahan-pickleball-club
+        - article [ref=e1018]:
+          - generic [ref=e1019]:
+            - img "Clare Pickleball logo" [ref=e1020]
+            - generic [ref=e1021]:
+              - generic [ref=e1022]:
+                - generic [ref=e1023]:
+                  - paragraph [ref=e1024]: Pickleball · County Clare
+                  - heading "Clare Pickleball" [level=3] [ref=e1025]
+                - generic [ref=e1026]: Unclaimed listing
+              - paragraph [ref=e1030]: A welcoming, members-only pickleball club with indoor sessions across County Clare.
+              - generic [ref=e1031]:
+                - generic [ref=e1032]: 3 venues
+                - generic [ref=e1037]: 7 weekly sessions
+                - generic [ref=e1040]: Clare
+          - generic [ref=e1044]:
+            - generic [ref=e1045]:
+              - generic [ref=e1046]: Doora Barefield
+              - generic [ref=e1047]: Corofin
+              - generic [ref=e1048]: Ennistymon
+            - generic [ref=e1049]:
+              - link "Claim this listing" [ref=e1050] [cursor=pointer]:
+                - /url: /directory/clare-pickleball/claim
+              - button "Share Clare Pickleball" [ref=e1055] [cursor=pointer]: Share
+              - link "View club" [ref=e1062] [cursor=pointer]:
+                - /url: /directory/clare-pickleball
+        - article [ref=e1065]:
+          - generic [ref=e1066]:
+            - generic "Clonakilty Pickleball Club logo unavailable" [ref=e1067]: CP
+            - generic [ref=e1068]:
+              - generic [ref=e1069]:
+                - generic [ref=e1070]:
+                  - paragraph [ref=e1071]: Pickleball · County Cork
+                  - heading "Clonakilty Pickleball Club" [level=3] [ref=e1072]
+                - generic [ref=e1073]: Unclaimed listing
+              - paragraph [ref=e1077]: Clonakilty Pickleball Club is listed in the RallyHub Club Directory for County Cork. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1078]:
+                - generic [ref=e1079]: 1 venue
+                - generic [ref=e1084]: Schedule pending
+                - generic [ref=e1087]: Cork
+          - generic [ref=e1091]:
+            - generic [ref=e1092]: Clonakilty
+            - generic [ref=e1094]:
+              - link "Claim this listing" [ref=e1095] [cursor=pointer]:
+                - /url: /directory/clonakilty-pickleball-club/claim
+              - button "Share Clonakilty Pickleball Club" [ref=e1100] [cursor=pointer]: Share
+              - link "View club" [ref=e1107] [cursor=pointer]:
+                - /url: /directory/clonakilty-pickleball-club
+        - article [ref=e1110]:
+          - generic [ref=e1111]:
+            - generic "Cobh Pickleball logo unavailable" [ref=e1112]: CP
+            - generic [ref=e1113]:
+              - generic [ref=e1114]:
+                - generic [ref=e1115]:
+                  - paragraph [ref=e1116]: Pickleball · County Cork
+                  - heading "Cobh Pickleball" [level=3] [ref=e1117]
+                - generic [ref=e1118]: Unclaimed listing
+              - paragraph [ref=e1122]: Cobh Pickleball is listed in the RallyHub Club Directory for County Cork. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1123]:
+                - generic [ref=e1124]: 1 venue
+                - generic [ref=e1129]: Schedule pending
+                - generic [ref=e1132]: Cork
+          - generic [ref=e1136]:
+            - generic [ref=e1137]: Great Island Community Centre
+            - generic [ref=e1139]:
+              - link "Claim this listing" [ref=e1140] [cursor=pointer]:
+                - /url: /directory/cobh-pickleball/claim
+              - button "Share Cobh Pickleball" [ref=e1145] [cursor=pointer]: Share
+              - link "View club" [ref=e1152] [cursor=pointer]:
+                - /url: /directory/cobh-pickleball
+        - article [ref=e1155]:
+          - generic [ref=e1156]:
+            - generic "Connemara Pickleball Club logo unavailable" [ref=e1157]: CP
+            - generic [ref=e1158]:
+              - generic [ref=e1159]:
+                - generic [ref=e1160]:
+                  - paragraph [ref=e1161]: Pickleball · County Galway
+                  - heading "Connemara Pickleball Club" [level=3] [ref=e1162]
+                - generic [ref=e1163]: Unclaimed listing
+              - paragraph [ref=e1167]: Connemara Pickleball Club is listed in the RallyHub Club Directory for County Galway. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1168]:
+                - generic [ref=e1169]: 2 venues
+                - generic [ref=e1174]: Schedule pending
+                - generic [ref=e1177]: Galway
+          - generic [ref=e1181]:
+            - generic [ref=e1182]:
+              - generic [ref=e1183]: Carrowroe South
+              - generic [ref=e1184]: Maumeen
+            - generic [ref=e1185]:
+              - link "Claim this listing" [ref=e1186] [cursor=pointer]:
+                - /url: /directory/connemara-pickleball-club/claim
+              - button "Share Connemara Pickleball Club" [ref=e1191] [cursor=pointer]: Share
+              - link "View club" [ref=e1198] [cursor=pointer]:
+                - /url: /directory/connemara-pickleball-club
+        - article [ref=e1201]:
+          - generic [ref=e1202]:
+            - generic "Cork Pickleballers logo unavailable" [ref=e1203]: CP
+            - generic [ref=e1204]:
+              - generic [ref=e1205]:
+                - generic [ref=e1206]:
+                  - paragraph [ref=e1207]: Pickleball · County Cork
+                  - heading "Cork Pickleballers" [level=3] [ref=e1208]
+                - generic [ref=e1209]: Unclaimed listing
+              - paragraph [ref=e1213]: Cork Pickleballers is listed in the RallyHub Club Directory for County Cork. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1214]:
+                - generic [ref=e1215]: 2 venues
+                - generic [ref=e1220]: Schedule pending
+                - generic [ref=e1223]: Cork
+          - generic [ref=e1227]:
+            - generic [ref=e1228]:
+              - generic [ref=e1229]: Ballyanly
+              - generic [ref=e1230]: Cork
+            - generic [ref=e1231]:
+              - link "Claim this listing" [ref=e1232] [cursor=pointer]:
+                - /url: /directory/cork-pickleballers/claim
+              - button "Share Cork Pickleballers" [ref=e1237] [cursor=pointer]: Share
+              - link "View club" [ref=e1244] [cursor=pointer]:
+                - /url: /directory/cork-pickleballers
+        - article [ref=e1247]:
+          - generic [ref=e1248]:
+            - generic "Cumann Pickleball A Chorráin logo unavailable" [ref=e1249]: CP
+            - generic [ref=e1250]:
+              - generic [ref=e1251]:
+                - generic [ref=e1252]:
+                  - paragraph [ref=e1253]: Pickleball · County Mayo
+                  - heading "Cumann Pickleball A Chorráin" [level=3] [ref=e1254]
+                - generic [ref=e1255]: Unclaimed listing
+              - paragraph [ref=e1259]: Cumann Pickleball A Chorráin is listed in the RallyHub Club Directory for County Mayo. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1260]:
+                - generic [ref=e1261]: 1 venue
+                - generic [ref=e1266]: Schedule pending
+                - generic [ref=e1269]: Mayo
+          - generic [ref=e1273]:
+            - generic [ref=e1274]: Glor na Dtonn
+            - generic [ref=e1276]:
+              - link "Claim this listing" [ref=e1277] [cursor=pointer]:
+                - /url: /directory/cumann-pickleball-a-chorrain/claim
+              - button "Share Cumann Pickleball A Chorráin" [ref=e1282] [cursor=pointer]: Share
+              - link "View club" [ref=e1289] [cursor=pointer]:
+                - /url: /directory/cumann-pickleball-a-chorrain
+        - article [ref=e1292]:
+          - generic [ref=e1293]:
+            - generic "Déise Pickleball logo unavailable" [ref=e1294]: DP
+            - generic [ref=e1295]:
+              - generic [ref=e1296]:
+                - generic [ref=e1297]:
+                  - paragraph [ref=e1298]: Pickleball · County Waterford
+                  - heading "Déise Pickleball" [level=3] [ref=e1299]
+                - generic [ref=e1300]: Unclaimed listing
+              - paragraph [ref=e1304]: Déise Pickleball is listed in the RallyHub Club Directory for County Waterford. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1305]:
+                - generic [ref=e1306]: 1 venue
+                - generic [ref=e1311]: Schedule pending
+                - generic [ref=e1314]: Waterford
+          - generic [ref=e1318]:
+            - generic [ref=e1319]: Kilmacthomas
+            - generic [ref=e1321]:
+              - link "Claim this listing" [ref=e1322] [cursor=pointer]:
+                - /url: /directory/deise-pickleball/claim
+              - button "Share Déise Pickleball" [ref=e1327] [cursor=pointer]: Share
+              - link "View club" [ref=e1334] [cursor=pointer]:
+                - /url: /directory/deise-pickleball
+        - article [ref=e1337]:
+          - generic [ref=e1338]:
+            - generic "Drogheda Pickleball logo unavailable" [ref=e1339]: DP
+            - generic [ref=e1340]:
+              - generic [ref=e1341]:
+                - generic [ref=e1342]:
+                  - paragraph [ref=e1343]: Pickleball · County Louth
+                  - heading "Drogheda Pickleball" [level=3] [ref=e1344]
+                - generic [ref=e1345]: Unclaimed listing
+              - paragraph [ref=e1349]: Drogheda Pickleball is listed in the RallyHub Club Directory for County Louth. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1350]:
+                - generic [ref=e1351]: 1 venue
+                - generic [ref=e1356]: Schedule pending
+                - generic [ref=e1359]: Louth
+          - generic [ref=e1363]:
+            - generic [ref=e1364]: O'Raghallaighs GFC
+            - generic [ref=e1366]:
+              - link "Claim this listing" [ref=e1367] [cursor=pointer]:
+                - /url: /directory/drogheda-pickleball/claim
+              - button "Share Drogheda Pickleball" [ref=e1372] [cursor=pointer]: Share
+              - link "View club" [ref=e1379] [cursor=pointer]:
+                - /url: /directory/drogheda-pickleball
+        - article [ref=e1382]:
+          - generic [ref=e1383]:
+            - generic "Dublin 15 Pickleball logo unavailable" [ref=e1384]: D1
+            - generic [ref=e1385]:
+              - generic [ref=e1386]:
+                - generic [ref=e1387]:
+                  - paragraph [ref=e1388]: Pickleball · County Dublin
+                  - heading "Dublin 15 Pickleball" [level=3] [ref=e1389]
+                - generic [ref=e1390]: Unclaimed listing
+              - paragraph [ref=e1394]: Dublin 15 Pickleball is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1395]:
+                - generic [ref=e1396]: 7 venues
+                - generic [ref=e1401]: Schedule pending
+                - generic [ref=e1404]: Dublin
+          - generic [ref=e1408]:
+            - generic [ref=e1409]:
+              - generic [ref=e1410]: Hartstown
+              - generic [ref=e1411]: Coolmine
+              - generic [ref=e1412]: Hollywoodrath
+              - generic [ref=e1413]: Coolmine
+            - generic [ref=e1414]:
+              - link "Claim this listing" [ref=e1415] [cursor=pointer]:
+                - /url: /directory/dublin-15-pickleball/claim
+              - button "Share Dublin 15 Pickleball" [ref=e1420] [cursor=pointer]: Share
+              - link "View club" [ref=e1427] [cursor=pointer]:
+                - /url: /directory/dublin-15-pickleball
+        - article [ref=e1430]:
+          - generic [ref=e1431]:
+            - generic "Dublin 7 Pickleball Club logo unavailable" [ref=e1432]: D7
+            - generic [ref=e1433]:
+              - generic [ref=e1434]:
+                - generic [ref=e1435]:
+                  - paragraph [ref=e1436]: Pickleball · County Dublin
+                  - heading "Dublin 7 Pickleball Club" [level=3] [ref=e1437]
+                - generic [ref=e1438]: Unclaimed listing
+              - paragraph [ref=e1442]: Dublin 7 Pickleball Club is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1443]:
+                - generic [ref=e1444]: 1 venue
+                - generic [ref=e1449]: Schedule pending
+                - generic [ref=e1452]: Dublin
+          - generic [ref=e1456]:
+            - generic [ref=e1457]: "2 Locations: 1st is Parkside Communi"
+            - generic [ref=e1459]:
+              - link "Claim this listing" [ref=e1460] [cursor=pointer]:
+                - /url: /directory/dublin-7-pickleball-club/claim
+              - button "Share Dublin 7 Pickleball Club" [ref=e1465] [cursor=pointer]: Share
+              - link "View club" [ref=e1472] [cursor=pointer]:
+                - /url: /directory/dublin-7-pickleball-club
+        - article [ref=e1475]:
+          - generic [ref=e1476]:
+            - generic "Duhallow Pickleball logo unavailable" [ref=e1477]: DP
+            - generic [ref=e1478]:
+              - generic [ref=e1479]:
+                - generic [ref=e1480]:
+                  - paragraph [ref=e1481]: Pickleball · County Cork
+                  - heading "Duhallow Pickleball" [level=3] [ref=e1482]
+                - generic [ref=e1483]: Unclaimed listing
+              - paragraph [ref=e1487]: Duhallow Pickleball is listed in the RallyHub Club Directory for County Cork. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1488]:
+                - generic [ref=e1489]: 1 venue
+                - generic [ref=e1494]: Schedule pending
+                - generic [ref=e1497]: Cork
+          - generic [ref=e1501]:
+            - generic [ref=e1502]: Kilbrin/Kanturk
+            - generic [ref=e1504]:
+              - link "Claim this listing" [ref=e1505] [cursor=pointer]:
+                - /url: /directory/duhallow-pickleball/claim
+              - button "Share Duhallow Pickleball" [ref=e1510] [cursor=pointer]: Share
+              - link "View club" [ref=e1517] [cursor=pointer]:
+                - /url: /directory/duhallow-pickleball
+        - article [ref=e1520]:
+          - generic [ref=e1521]:
+            - generic "East Cavan Pickleball logo unavailable" [ref=e1522]: EC
+            - generic [ref=e1523]:
+              - generic [ref=e1524]:
+                - generic [ref=e1525]:
+                  - paragraph [ref=e1526]: Pickleball · County Cavan
+                  - heading "East Cavan Pickleball" [level=3] [ref=e1527]
+                - generic [ref=e1528]: Unclaimed listing
+              - paragraph [ref=e1532]: East Cavan Pickleball is listed in the RallyHub Club Directory for County Cavan. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1533]:
+                - generic [ref=e1534]: 2 venues
+                - generic [ref=e1539]: Schedule pending
+                - generic [ref=e1542]: Cavan
+          - generic [ref=e1546]:
+            - generic [ref=e1547]:
+              - generic [ref=e1548]: Rosehill
+              - generic [ref=e1549]: Beagh Glebe
+            - generic [ref=e1550]:
+              - link "Claim this listing" [ref=e1551] [cursor=pointer]:
+                - /url: /directory/east-cavan-pickleball/claim
+              - button "Share East Cavan Pickleball" [ref=e1556] [cursor=pointer]: Share
+              - link "View club" [ref=e1563] [cursor=pointer]:
+                - /url: /directory/east-cavan-pickleball
+        - article [ref=e1566]:
+          - generic [ref=e1567]:
+            - generic "East Cork Pickleball logo unavailable" [ref=e1568]: EC
+            - generic [ref=e1569]:
+              - generic [ref=e1570]:
+                - generic [ref=e1571]:
+                  - paragraph [ref=e1572]: Pickleball · County Cork
+                  - heading "East Cork Pickleball" [level=3] [ref=e1573]
+                - generic [ref=e1574]: Unclaimed listing
+              - paragraph [ref=e1578]: East Cork Pickleball is listed in the RallyHub Club Directory for County Cork. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1579]:
+                - generic [ref=e1580]: 1 venue
+                - generic [ref=e1585]: Schedule pending
+                - generic [ref=e1588]: Cork
+          - generic [ref=e1592]:
+            - generic [ref=e1593]: Townparks
+            - generic [ref=e1595]:
+              - link "Claim this listing" [ref=e1596] [cursor=pointer]:
+                - /url: /directory/east-cork-pickleball/claim
+              - button "Share East Cork Pickleball" [ref=e1601] [cursor=pointer]: Share
+              - link "View club" [ref=e1608] [cursor=pointer]:
+                - /url: /directory/east-cork-pickleball
+        - article [ref=e1611]:
+          - generic [ref=e1612]:
+            - generic "East Meath Pickleball Club logo unavailable" [ref=e1613]: EM
+            - generic [ref=e1614]:
+              - generic [ref=e1615]:
+                - generic [ref=e1616]:
+                  - paragraph [ref=e1617]: Pickleball · County Meath
+                  - heading "East Meath Pickleball Club" [level=3] [ref=e1618]
+                - generic [ref=e1619]: Unclaimed listing
+              - paragraph [ref=e1623]: East Meath Pickleball Club is listed in the RallyHub Club Directory for County Meath. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1624]:
+                - generic [ref=e1625]: 2 venues
+                - generic [ref=e1630]: Schedule pending
+                - generic [ref=e1633]: Meath
+          - generic [ref=e1637]:
+            - generic [ref=e1638]:
+              - generic [ref=e1639]: Dunboyne Community Centre
+              - generic [ref=e1640]: Dunshaughlin
+            - generic [ref=e1641]:
+              - link "Claim this listing" [ref=e1642] [cursor=pointer]:
+                - /url: /directory/east-meath-pickleball-club/claim
+              - button "Share East Meath Pickleball Club" [ref=e1647] [cursor=pointer]: Share
+              - link "View club" [ref=e1654] [cursor=pointer]:
+                - /url: /directory/east-meath-pickleball-club
+        - article [ref=e1657]:
+          - generic [ref=e1658]:
+            - generic "Edenderry Pickleball Club logo unavailable" [ref=e1659]: EP
+            - generic [ref=e1660]:
+              - generic [ref=e1661]:
+                - generic [ref=e1662]:
+                  - paragraph [ref=e1663]: Pickleball · County Offaly
+                  - heading "Edenderry Pickleball Club" [level=3] [ref=e1664]
+                - generic [ref=e1665]: Unclaimed listing
+              - paragraph [ref=e1669]: Edenderry Pickleball Club is listed in the RallyHub Club Directory for County Offaly. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1670]:
+                - generic [ref=e1671]: 1 venue
+                - generic [ref=e1676]: Schedule pending
+                - generic [ref=e1679]: Offaly
+          - generic [ref=e1683]:
+            - generic [ref=e1684]: School Ln
+            - generic [ref=e1686]:
+              - link "Claim this listing" [ref=e1687] [cursor=pointer]:
+                - /url: /directory/edenderry-pickleball-club/claim
+              - button "Share Edenderry Pickleball Club" [ref=e1692] [cursor=pointer]: Share
+              - link "View club" [ref=e1699] [cursor=pointer]:
+                - /url: /directory/edenderry-pickleball-club
+        - article [ref=e1702]:
+          - generic [ref=e1703]:
+            - generic "ezPICKLEBALL logo unavailable" [ref=e1704]: E
+            - generic [ref=e1705]:
+              - generic [ref=e1706]:
+                - generic [ref=e1707]:
+                  - paragraph [ref=e1708]: Pickleball · County Dublin
+                  - heading "ezPICKLEBALL" [level=3] [ref=e1709]
+                - generic [ref=e1710]: Unclaimed listing
+              - paragraph [ref=e1714]: ezPICKLEBALL is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1715]:
+                - generic [ref=e1716]: 1 venue
+                - generic [ref=e1721]: Schedule pending
+                - generic [ref=e1724]: Dublin
+          - generic [ref=e1728]:
+            - generic [ref=e1729]: ezCOURTHIRE Dome
+            - generic [ref=e1731]:
+              - link "Claim this listing" [ref=e1732] [cursor=pointer]:
+                - /url: /directory/ezpickleball/claim
+              - button "Share ezPICKLEBALL" [ref=e1737] [cursor=pointer]: Share
+              - link "View club" [ref=e1744] [cursor=pointer]:
+                - /url: /directory/ezpickleball
+        - article [ref=e1747]:
+          - generic [ref=e1748]:
+            - generic "Fenside Pickleball logo unavailable" [ref=e1749]: FP
+            - generic [ref=e1750]:
+              - generic [ref=e1751]:
+                - generic [ref=e1752]:
+                  - paragraph [ref=e1753]: Pickleball · County Kilkenny
+                  - heading "Fenside Pickleball" [level=3] [ref=e1754]
+                - generic [ref=e1755]: Unclaimed listing
+              - paragraph [ref=e1759]: Fenside Pickleball is listed in the RallyHub Club Directory for County Kilkenny. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1760]:
+                - generic [ref=e1761]: 1 venue
+                - generic [ref=e1766]: Schedule pending
+                - generic [ref=e1769]: Kilkenny
+          - generic [ref=e1773]:
+            - generic [ref=e1774]: Newpark Lower
+            - generic [ref=e1776]:
+              - link "Claim this listing" [ref=e1777] [cursor=pointer]:
+                - /url: /directory/fenside-pickleball/claim
+              - button "Share Fenside Pickleball" [ref=e1782] [cursor=pointer]: Share
+              - link "View club" [ref=e1789] [cursor=pointer]:
+                - /url: /directory/fenside-pickleball
+        - article [ref=e1792]:
+          - generic [ref=e1793]:
+            - img "Galway County Pickleball Club logo" [ref=e1794]
+            - generic [ref=e1795]:
+              - generic [ref=e1796]:
+                - generic [ref=e1797]:
+                  - paragraph [ref=e1798]: Pickleball · County Galway
+                  - heading "Galway County Pickleball Club" [level=3] [ref=e1799]
+                - generic [ref=e1800]: Unclaimed listing
+              - paragraph [ref=e1804]: A community pickleball club with more than 150 members and weekly sessions across County Galway.
+              - generic [ref=e1805]:
+                - generic [ref=e1806]: 5 venues
+                - generic [ref=e1811]: 9 weekly sessions
+                - generic [ref=e1814]: Galway
+          - generic [ref=e1818]:
+            - generic [ref=e1819]:
+              - generic [ref=e1820]: Eyrecourt
+              - generic [ref=e1821]: Kilcornan
+              - generic [ref=e1822]: Loughrea
+              - generic [ref=e1823]: Maree
+            - generic [ref=e1824]:
+              - link "Claim this listing" [ref=e1825] [cursor=pointer]:
+                - /url: /directory/galway-county-pickleball/claim
+              - button "Share Galway County Pickleball Club" [ref=e1830] [cursor=pointer]: Share
+              - link "View club" [ref=e1837] [cursor=pointer]:
+                - /url: /directory/galway-county-pickleball
+        - article [ref=e1840]:
+          - generic [ref=e1841]:
+            - img "Galway Pickleball logo" [ref=e1842]
+            - generic [ref=e1843]:
+              - generic [ref=e1844]:
+                - generic [ref=e1845]:
+                  - paragraph [ref=e1846]: Pickleball · County Galway
+                  - heading "Galway Pickleball" [level=3] [ref=e1847]
+                - generic [ref=e1848]: Unclaimed listing
+              - paragraph [ref=e1852]: An inclusive and friendly pickleball club founded in 2020, with more than 400 active members and sessions across Galway City and County Galway.
+              - generic [ref=e1853]:
+                - generic [ref=e1854]: 9 venues
+                - generic [ref=e1859]: 30 weekly sessions
+                - generic [ref=e1862]: Galway
+          - generic [ref=e1866]:
+            - generic [ref=e1867]:
+              - generic [ref=e1868]: Árus
+              - generic [ref=e1869]: Maree
+              - generic [ref=e1870]: Renmore
+              - generic [ref=e1871]: Oranmore
+            - generic [ref=e1872]:
+              - link "Claim this listing" [ref=e1873] [cursor=pointer]:
+                - /url: /directory/galway-pickleball/claim
+              - button "Share Galway Pickleball" [ref=e1878] [cursor=pointer]: Share
+              - link "View club" [ref=e1885] [cursor=pointer]:
+                - /url: /directory/galway-pickleball
+        - article [ref=e1888]:
+          - generic [ref=e1889]:
+            - generic "Hook Pickleball logo unavailable" [ref=e1890]: HP
+            - generic [ref=e1891]:
+              - generic [ref=e1892]:
+                - generic [ref=e1893]:
+                  - paragraph [ref=e1894]: Pickleball · County Wexford
+                  - heading "Hook Pickleball" [level=3] [ref=e1895]
+                - generic [ref=e1896]: Unclaimed listing
+              - paragraph [ref=e1900]: Hook Pickleball is listed in the RallyHub Club Directory for County Wexford. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1901]:
+                - generic [ref=e1902]: 2 venues
+                - generic [ref=e1907]: Schedule pending
+                - generic [ref=e1910]: Wexford
+          - generic [ref=e1914]:
+            - generic [ref=e1915]:
+              - generic [ref=e1916]: Ramsgrange
+              - generic [ref=e1917]: Fethard
+            - generic [ref=e1918]:
+              - link "Claim this listing" [ref=e1919] [cursor=pointer]:
+                - /url: /directory/hook-pickleball/claim
+              - button "Share Hook Pickleball" [ref=e1924] [cursor=pointer]: Share
+              - link "View club" [ref=e1931] [cursor=pointer]:
+                - /url: /directory/hook-pickleball
+        - article [ref=e1934]:
+          - generic [ref=e1935]:
+            - generic "Iveragh Pickleball Club logo unavailable" [ref=e1936]: IP
+            - generic [ref=e1937]:
+              - generic [ref=e1938]:
+                - generic [ref=e1939]:
+                  - paragraph [ref=e1940]: Pickleball · County Kerry
+                  - heading "Iveragh Pickleball Club" [level=3] [ref=e1941]
+                - generic [ref=e1942]: Unclaimed listing
+              - paragraph [ref=e1946]: Iveragh Pickleball Club is listed in the RallyHub Club Directory for County Kerry. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1947]:
+                - generic [ref=e1948]: 1 venue
+                - generic [ref=e1953]: Schedule pending
+                - generic [ref=e1956]: Kerry
+          - generic [ref=e1960]:
+            - generic [ref=e1961]: Foilmore
+            - generic [ref=e1963]:
+              - link "Claim this listing" [ref=e1964] [cursor=pointer]:
+                - /url: /directory/iveragh-pickleball-club/claim
+              - button "Share Iveragh Pickleball Club" [ref=e1969] [cursor=pointer]: Share
+              - link "View club" [ref=e1976] [cursor=pointer]:
+                - /url: /directory/iveragh-pickleball-club
+        - article [ref=e1979]:
+          - generic [ref=e1980]:
+            - generic "Kilcullen Pickleball Panthers logo unavailable" [ref=e1981]: KP
+            - generic [ref=e1982]:
+              - generic [ref=e1983]:
+                - generic [ref=e1984]:
+                  - paragraph [ref=e1985]: Pickleball · County Kildare
+                  - heading "Kilcullen Pickleball Panthers" [level=3] [ref=e1986]
+                - generic [ref=e1987]: Unclaimed listing
+              - paragraph [ref=e1991]: Kilcullen Pickleball Panthers is listed in the RallyHub Club Directory for County Kildare. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e1992]:
+                - generic [ref=e1993]: 1 venue
+                - generic [ref=e1998]: Schedule pending
+                - generic [ref=e2001]: Kildare
+          - generic [ref=e2005]:
+            - generic [ref=e2006]: Kilcullen Community Centre
+            - generic [ref=e2008]:
+              - link "Claim this listing" [ref=e2009] [cursor=pointer]:
+                - /url: /directory/kilcullen-pickleball-panthers/claim
+              - button "Share Kilcullen Pickleball Panthers" [ref=e2014] [cursor=pointer]: Share
+              - link "View club" [ref=e2021] [cursor=pointer]:
+                - /url: /directory/kilcullen-pickleball-panthers
+        - article [ref=e2024]:
+          - generic [ref=e2025]:
+            - generic "Kildare Pickleball Assoc. logo unavailable" [ref=e2026]: KP
+            - generic [ref=e2027]:
+              - generic [ref=e2028]:
+                - generic [ref=e2029]:
+                  - paragraph [ref=e2030]: Pickleball · County Kildare
+                  - heading "Kildare Pickleball Assoc." [level=3] [ref=e2031]
+                - generic [ref=e2032]: Unclaimed listing
+              - paragraph [ref=e2036]: Kildare Pickleball Assoc. is listed in the RallyHub Club Directory for County Kildare. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2037]:
+                - generic [ref=e2038]: 1 venue
+                - generic [ref=e2043]: Schedule pending
+                - generic [ref=e2046]: Kildare
+          - generic [ref=e2050]:
+            - generic [ref=e2051]: Rosetown
+            - generic [ref=e2053]:
+              - link "Claim this listing" [ref=e2054] [cursor=pointer]:
+                - /url: /directory/kildare-pickleball-assoc/claim
+              - button "Share Kildare Pickleball Assoc." [ref=e2059] [cursor=pointer]: Share
+              - link "View club" [ref=e2066] [cursor=pointer]:
+                - /url: /directory/kildare-pickleball-assoc
+        - article [ref=e2069]:
+          - generic [ref=e2070]:
+            - generic "Killarney Pickleball Club logo unavailable" [ref=e2071]: KP
+            - generic [ref=e2072]:
+              - generic [ref=e2073]:
+                - generic [ref=e2074]:
+                  - paragraph [ref=e2075]: Pickleball · County Kerry
+                  - heading "Killarney Pickleball Club" [level=3] [ref=e2076]
+                - generic [ref=e2077]: Unclaimed listing
+              - paragraph [ref=e2081]: Killarney Pickleball Club is listed in the RallyHub Club Directory for County Kerry. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2082]:
+                - generic [ref=e2083]: 1 venue
+                - generic [ref=e2088]: Schedule pending
+                - generic [ref=e2091]: Kerry
+          - generic [ref=e2095]:
+            - generic [ref=e2096]: Park
+            - generic [ref=e2098]:
+              - link "Claim this listing" [ref=e2099] [cursor=pointer]:
+                - /url: /directory/killarney-pickleball-club/claim
+              - button "Share Killarney Pickleball Club" [ref=e2104] [cursor=pointer]: Share
+              - link "View club" [ref=e2111] [cursor=pointer]:
+                - /url: /directory/killarney-pickleball-club
+        - article [ref=e2114]:
+          - generic [ref=e2115]:
+            - generic "Killeshandra Pickleball Club logo unavailable" [ref=e2116]: KP
+            - generic [ref=e2117]:
+              - generic [ref=e2118]:
+                - generic [ref=e2119]:
+                  - paragraph [ref=e2120]: Pickleball · County Cavan
+                  - heading "Killeshandra Pickleball Club" [level=3] [ref=e2121]
+                - generic [ref=e2122]: Unclaimed listing
+              - paragraph [ref=e2126]: Killeshandra Pickleball Club is listed in the RallyHub Club Directory for County Cavan. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2127]:
+                - generic [ref=e2128]: 1 venue
+                - generic [ref=e2133]: Schedule pending
+                - generic [ref=e2136]: Cavan
+          - generic [ref=e2140]:
+            - generic [ref=e2141]: Portaliff Or Townparks
+            - generic [ref=e2143]:
+              - link "Claim this listing" [ref=e2144] [cursor=pointer]:
+                - /url: /directory/killeshandra-pickleball-club/claim
+              - button "Share Killeshandra Pickleball Club" [ref=e2149] [cursor=pointer]: Share
+              - link "View club" [ref=e2156] [cursor=pointer]:
+                - /url: /directory/killeshandra-pickleball-club
+        - article [ref=e2159]:
+          - generic [ref=e2160]:
+            - generic "Kingdom Pickleball Club logo unavailable" [ref=e2161]: KP
+            - generic [ref=e2162]:
+              - generic [ref=e2163]:
+                - generic [ref=e2164]:
+                  - paragraph [ref=e2165]: Pickleball · County Kerry
+                  - heading "Kingdom Pickleball Club" [level=3] [ref=e2166]
+                - generic [ref=e2167]: Unclaimed listing
+              - paragraph [ref=e2171]: Kingdom Pickleball Club is listed in the RallyHub Club Directory for County Kerry. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2172]:
+                - generic [ref=e2173]: 4 venues
+                - generic [ref=e2178]: Schedule pending
+                - generic [ref=e2181]: Kerry
+          - generic [ref=e2185]:
+            - generic [ref=e2186]:
+              - generic [ref=e2187]: Listowel
+              - generic [ref=e2188]: Ballinknockane
+              - generic [ref=e2189]: Burnham East
+              - generic [ref=e2190]: Cumann Iosaef
+            - generic [ref=e2191]:
+              - link "Claim this listing" [ref=e2192] [cursor=pointer]:
+                - /url: /directory/kingdom-pickleball-club/claim
+              - button "Share Kingdom Pickleball Club" [ref=e2197] [cursor=pointer]: Share
+              - link "View club" [ref=e2204] [cursor=pointer]:
+                - /url: /directory/kingdom-pickleball-club
+        - article [ref=e2207]:
+          - generic [ref=e2208]:
+            - generic "Kinsale Pickleball logo unavailable" [ref=e2209]: KP
+            - generic [ref=e2210]:
+              - generic [ref=e2211]:
+                - generic [ref=e2212]:
+                  - paragraph [ref=e2213]: Pickleball · County Cork
+                  - heading "Kinsale Pickleball" [level=3] [ref=e2214]
+                - generic [ref=e2215]: Unclaimed listing
+              - paragraph [ref=e2219]: Kinsale Pickleball is listed in the RallyHub Club Directory for County Cork. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2220]:
+                - generic [ref=e2221]: 1 venue
+                - generic [ref=e2226]: Schedule pending
+                - generic [ref=e2229]: Cork
+          - generic [ref=e2233]:
+            - generic [ref=e2234]: Cappagh
+            - generic [ref=e2236]:
+              - link "Claim this listing" [ref=e2237] [cursor=pointer]:
+                - /url: /directory/kinsale-pickleball/claim
+              - button "Share Kinsale Pickleball" [ref=e2242] [cursor=pointer]: Share
+              - link "View club" [ref=e2249] [cursor=pointer]:
+                - /url: /directory/kinsale-pickleball
+        - article [ref=e2252]:
+          - generic [ref=e2253]:
+            - generic "Kinvara Pickleball logo unavailable" [ref=e2254]: KP
+            - generic [ref=e2255]:
+              - generic [ref=e2256]:
+                - generic [ref=e2257]:
+                  - paragraph [ref=e2258]: Pickleball · County Galway
+                  - heading "Kinvara Pickleball" [level=3] [ref=e2259]
+                - generic [ref=e2260]: Unclaimed listing
+              - paragraph [ref=e2264]: Kinvara Pickleball is listed in the RallyHub Club Directory for County Galway. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2265]:
+                - generic [ref=e2266]: 1 venue
+                - generic [ref=e2271]: Schedule pending
+                - generic [ref=e2274]: Galway
+          - generic [ref=e2278]:
+            - generic [ref=e2279]: Kinvara Community Centre
+            - generic [ref=e2281]:
+              - link "Claim this listing" [ref=e2282] [cursor=pointer]:
+                - /url: /directory/kinvara-pickleball/claim
+              - button "Share Kinvara Pickleball" [ref=e2287] [cursor=pointer]: Share
+              - link "View club" [ref=e2294] [cursor=pointer]:
+                - /url: /directory/kinvara-pickleball
+        - article [ref=e2297]:
+          - generic [ref=e2298]:
+            - generic "Lecanvey Pickleball Club logo unavailable" [ref=e2299]: LP
+            - generic [ref=e2300]:
+              - generic [ref=e2301]:
+                - generic [ref=e2302]:
+                  - paragraph [ref=e2303]: Pickleball · County Mayo
+                  - heading "Lecanvey Pickleball Club" [level=3] [ref=e2304]
+                - generic [ref=e2305]: Unclaimed listing
+              - paragraph [ref=e2309]: Lecanvey Pickleball Club is listed in the RallyHub Club Directory for County Mayo. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2310]:
+                - generic [ref=e2311]: 1 venue
+                - generic [ref=e2316]: Schedule pending
+                - generic [ref=e2319]: Mayo
+          - generic [ref=e2323]:
+            - generic [ref=e2324]: Lecanvey community centre
+            - generic [ref=e2326]:
+              - link "Claim this listing" [ref=e2327] [cursor=pointer]:
+                - /url: /directory/lecanvey-pickleball-club/claim
+              - button "Share Lecanvey Pickleball Club" [ref=e2332] [cursor=pointer]: Share
+              - link "View club" [ref=e2339] [cursor=pointer]:
+                - /url: /directory/lecanvey-pickleball-club
+        - article [ref=e2342]:
+          - generic [ref=e2343]:
+            - generic "Leeside Pickleball logo unavailable" [ref=e2344]: LP
+            - generic [ref=e2345]:
+              - generic [ref=e2346]:
+                - generic [ref=e2347]:
+                  - paragraph [ref=e2348]: Pickleball · County Cork
+                  - heading "Leeside Pickleball" [level=3] [ref=e2349]
+                - generic [ref=e2350]: Unclaimed listing
+              - paragraph [ref=e2354]: Leeside Pickleball is listed in the RallyHub Club Directory for County Cork. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2355]:
+                - generic [ref=e2356]: 1 venue
+                - generic [ref=e2361]: Schedule pending
+                - generic [ref=e2364]: Cork
+          - generic [ref=e2368]:
+            - generic [ref=e2369]: Bishopstown
+            - generic [ref=e2371]:
+              - link "Claim this listing" [ref=e2372] [cursor=pointer]:
+                - /url: /directory/leeside-pickleball/claim
+              - button "Share Leeside Pickleball" [ref=e2377] [cursor=pointer]: Share
+              - link "View club" [ref=e2384] [cursor=pointer]:
+                - /url: /directory/leeside-pickleball
+        - article [ref=e2387]:
+          - generic [ref=e2388]:
+            - img "Limerick City Pickleball logo" [ref=e2389]
+            - generic [ref=e2390]:
+              - generic [ref=e2391]:
+                - generic [ref=e2392]:
+                  - paragraph [ref=e2393]: Pickleball · County Limerick
+                  - heading "Limerick City Pickleball" [level=3] [ref=e2394]
+                - generic [ref=e2395]: Unclaimed listing
+              - paragraph [ref=e2399]: Weekly indoor pickleball match play in Limerick City at St. Munchin’s College and the UL Sport Arena.
+              - generic [ref=e2400]:
+                - generic [ref=e2401]: 2 venues
+                - generic [ref=e2406]: 2 weekly sessions
+                - generic [ref=e2409]: Limerick
+          - generic [ref=e2413]:
+            - generic [ref=e2414]:
+              - generic [ref=e2415]: St. Munchin’s
+              - generic [ref=e2416]: UL Arena
+            - generic [ref=e2417]:
+              - link "Claim this listing" [ref=e2418] [cursor=pointer]:
+                - /url: /directory/limerick-city-pickleball/claim
+              - button "Share Limerick City Pickleball" [ref=e2423] [cursor=pointer]: Share
+              - link "View club" [ref=e2430] [cursor=pointer]:
+                - /url: /directory/limerick-city-pickleball
+        - article [ref=e2433]:
+          - generic [ref=e2434]:
+            - generic "Lisburn Pickleball Club logo unavailable" [ref=e2435]: LP
+            - generic [ref=e2436]:
+              - generic [ref=e2437]:
+                - generic [ref=e2438]:
+                  - paragraph [ref=e2439]: Pickleball · County Antrim
+                  - heading "Lisburn Pickleball Club" [level=3] [ref=e2440]
+                - generic [ref=e2441]: Unclaimed listing
+              - paragraph [ref=e2445]: Lisburn Pickleball Club is listed in the RallyHub Club Directory for County Antrim. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2446]:
+                - generic [ref=e2447]: 1 venue
+                - generic [ref=e2452]: Schedule pending
+                - generic [ref=e2455]: Antrim
+          - generic [ref=e2459]:
+            - generic [ref=e2460]: Lisburn Leisure Centre
+            - generic [ref=e2462]:
+              - link "Claim this listing" [ref=e2463] [cursor=pointer]:
+                - /url: /directory/lisburn-pickleball-club/claim
+              - button "Share Lisburn Pickleball Club" [ref=e2468] [cursor=pointer]: Share
+              - link "View club" [ref=e2475] [cursor=pointer]:
+                - /url: /directory/lisburn-pickleball-club
+        - article [ref=e2478]:
+          - generic [ref=e2479]:
+            - generic "Midleton Pickleball logo unavailable" [ref=e2480]: MP
+            - generic [ref=e2481]:
+              - generic [ref=e2482]:
+                - generic [ref=e2483]:
+                  - paragraph [ref=e2484]: Pickleball · County Cork
+                  - heading "Midleton Pickleball" [level=3] [ref=e2485]
+                - generic [ref=e2486]: Unclaimed listing
+              - paragraph [ref=e2490]: Midleton Pickleball is listed in the RallyHub Club Directory for County Cork. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2491]:
+                - generic [ref=e2492]: 1 venue
+                - generic [ref=e2497]: Schedule pending
+                - generic [ref=e2500]: Cork
+          - generic [ref=e2504]:
+            - generic [ref=e2505]: Midleton College
+            - generic [ref=e2507]:
+              - link "Claim this listing" [ref=e2508] [cursor=pointer]:
+                - /url: /directory/midleton-pickleball/claim
+              - button "Share Midleton Pickleball" [ref=e2513] [cursor=pointer]: Share
+              - link "View club" [ref=e2520] [cursor=pointer]:
+                - /url: /directory/midleton-pickleball
+        - article [ref=e2523]:
+          - generic [ref=e2524]:
+            - generic "Milltown Emper Moyvore Pickleball Club logo unavailable" [ref=e2525]: ME
+            - generic [ref=e2526]:
+              - generic [ref=e2527]:
+                - generic [ref=e2528]:
+                  - paragraph [ref=e2529]: Pickleball · County Westmeath
+                  - heading "Milltown Emper Moyvore Pickleball Club" [level=3] [ref=e2530]
+                - generic [ref=e2531]: Unclaimed listing
+              - paragraph [ref=e2535]: Milltown Emper Moyvore Pickleball Club is listed in the RallyHub Club Directory for County Westmeath. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2536]:
+                - generic [ref=e2537]: 1 venue
+                - generic [ref=e2542]: Schedule pending
+                - generic [ref=e2545]: Westmeath
+          - generic [ref=e2549]:
+            - generic [ref=e2550]: Rathconrath
+            - generic [ref=e2552]:
+              - link "Claim this listing" [ref=e2553] [cursor=pointer]:
+                - /url: /directory/milltown-emper-moyvore-pickleball-club/claim
+              - button "Share Milltown Emper Moyvore Pickleball Club" [ref=e2558] [cursor=pointer]: Share
+              - link "View club" [ref=e2565] [cursor=pointer]:
+                - /url: /directory/milltown-emper-moyvore-pickleball-club
+        - article [ref=e2568]:
+          - generic [ref=e2569]:
+            - generic "Moate Pickleball Club logo unavailable" [ref=e2570]: MP
+            - generic [ref=e2571]:
+              - generic [ref=e2572]:
+                - generic [ref=e2573]:
+                  - paragraph [ref=e2574]: Pickleball · County Westmeath
+                  - heading "Moate Pickleball Club" [level=3] [ref=e2575]
+                - generic [ref=e2576]: Unclaimed listing
+              - paragraph [ref=e2580]: Moate Pickleball Club is listed in the RallyHub Club Directory for County Westmeath. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2581]:
+                - generic [ref=e2582]: 1 venue
+                - generic [ref=e2587]: Schedule pending
+                - generic [ref=e2590]: Westmeath
+          - generic [ref=e2594]:
+            - generic [ref=e2595]: Moategranoge
+            - generic [ref=e2597]:
+              - link "Claim this listing" [ref=e2598] [cursor=pointer]:
+                - /url: /directory/moate-pickleball-club/claim
+              - button "Share Moate Pickleball Club" [ref=e2603] [cursor=pointer]: Share
+              - link "View club" [ref=e2610] [cursor=pointer]:
+                - /url: /directory/moate-pickleball-club
+        - article [ref=e2613]:
+          - generic [ref=e2614]:
+            - generic "Mostrim Pickleball logo unavailable" [ref=e2615]: MP
+            - generic [ref=e2616]:
+              - generic [ref=e2617]:
+                - generic [ref=e2618]:
+                  - paragraph [ref=e2619]: Pickleball · County Longford
+                  - heading "Mostrim Pickleball" [level=3] [ref=e2620]
+                - generic [ref=e2621]: Unclaimed listing
+              - paragraph [ref=e2625]: Mostrim Pickleball is listed in the RallyHub Club Directory for County Longford. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2626]:
+                - generic [ref=e2627]: 1 venue
+                - generic [ref=e2632]: Schedule pending
+                - generic [ref=e2635]: Longford
+          - generic [ref=e2639]:
+            - generic [ref=e2640]: St.Mary's Community Centre
+            - generic [ref=e2642]:
+              - link "Claim this listing" [ref=e2643] [cursor=pointer]:
+                - /url: /directory/mostrim-pickleball/claim
+              - button "Share Mostrim Pickleball" [ref=e2648] [cursor=pointer]: Share
+              - link "View club" [ref=e2655] [cursor=pointer]:
+                - /url: /directory/mostrim-pickleball
+        - article [ref=e2658]:
+          - generic [ref=e2659]:
+            - generic "Mullahoran Pickleball Club logo unavailable" [ref=e2660]: MP
+            - generic [ref=e2661]:
+              - generic [ref=e2662]:
+                - generic [ref=e2663]:
+                  - paragraph [ref=e2664]: Pickleball · County Cavan
+                  - heading "Mullahoran Pickleball Club" [level=3] [ref=e2665]
+                - generic [ref=e2666]: Unclaimed listing
+              - paragraph [ref=e2670]: Mullahoran Pickleball Club is listed in the RallyHub Club Directory for County Cavan. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2671]:
+                - generic [ref=e2672]: 1 venue
+                - generic [ref=e2677]: Schedule pending
+                - generic [ref=e2680]: Cavan
+          - generic [ref=e2684]:
+            - generic [ref=e2685]: Mullahoran GFC
+            - generic [ref=e2687]:
+              - link "Claim this listing" [ref=e2688] [cursor=pointer]:
+                - /url: /directory/mullahoran-pickleball-club/claim
+              - button "Share Mullahoran Pickleball Club" [ref=e2693] [cursor=pointer]: Share
+              - link "View club" [ref=e2700] [cursor=pointer]:
+                - /url: /directory/mullahoran-pickleball-club
+        - article [ref=e2703]:
+          - generic [ref=e2704]:
+            - generic "Multyfarnham Pickleball Club logo unavailable" [ref=e2705]: MP
+            - generic [ref=e2706]:
+              - generic [ref=e2707]:
+                - generic [ref=e2708]:
+                  - paragraph [ref=e2709]: Pickleball · County Westmeath
+                  - heading "Multyfarnham Pickleball Club" [level=3] [ref=e2710]
+                - generic [ref=e2711]: Unclaimed listing
+              - paragraph [ref=e2715]: Multyfarnham Pickleball Club is listed in the RallyHub Club Directory for County Westmeath. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2716]:
+                - generic [ref=e2717]: 1 venue
+                - generic [ref=e2722]: Schedule pending
+                - generic [ref=e2725]: Westmeath
+          - generic [ref=e2729]:
+            - generic [ref=e2730]: Multyfarnham Community Centre
+            - generic [ref=e2732]:
+              - link "Claim this listing" [ref=e2733] [cursor=pointer]:
+                - /url: /directory/multyfarnham-pickleball-club/claim
+              - button "Share Multyfarnham Pickleball Club" [ref=e2738] [cursor=pointer]: Share
+              - link "View club" [ref=e2745] [cursor=pointer]:
+                - /url: /directory/multyfarnham-pickleball-club
+        - article [ref=e2748]:
+          - generic [ref=e2749]:
+            - generic "Naas Pickleball logo unavailable" [ref=e2750]: NP
+            - generic [ref=e2751]:
+              - generic [ref=e2752]:
+                - generic [ref=e2753]:
+                  - paragraph [ref=e2754]: Pickleball · County Kildare
+                  - heading "Naas Pickleball" [level=3] [ref=e2755]
+                - generic [ref=e2756]: Unclaimed listing
+              - paragraph [ref=e2760]: Naas Pickleball is listed in the RallyHub Club Directory for County Kildare. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2761]:
+                - generic [ref=e2762]: 1 venue
+                - generic [ref=e2767]: Schedule pending
+                - generic [ref=e2770]: Kildare
+          - generic [ref=e2774]:
+            - generic [ref=e2775]: Meanscoil Iognaid Ris
+            - generic [ref=e2777]:
+              - link "Claim this listing" [ref=e2778] [cursor=pointer]:
+                - /url: /directory/naas-pickleball/claim
+              - button "Share Naas Pickleball" [ref=e2783] [cursor=pointer]: Share
+              - link "View club" [ref=e2790] [cursor=pointer]:
+                - /url: /directory/naas-pickleball
+        - article [ref=e2793]:
+          - generic [ref=e2794]:
+            - generic "Newport Pickleball logo unavailable" [ref=e2795]: NP
+            - generic [ref=e2796]:
+              - generic [ref=e2797]:
+                - generic [ref=e2798]:
+                  - paragraph [ref=e2799]: Pickleball · County Mayo
+                  - heading "Newport Pickleball" [level=3] [ref=e2800]
+                - generic [ref=e2801]: Unclaimed listing
+              - paragraph [ref=e2805]: Newport Pickleball is listed in the RallyHub Club Directory for County Mayo. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2806]:
+                - generic [ref=e2807]: 1 venue
+                - generic [ref=e2812]: Schedule pending
+                - generic [ref=e2815]: Mayo
+          - generic [ref=e2819]:
+            - generic [ref=e2820]: Burrishoole Community Centre
+            - generic [ref=e2822]:
+              - link "Claim this listing" [ref=e2823] [cursor=pointer]:
+                - /url: /directory/newport-pickleball/claim
+              - button "Share Newport Pickleball" [ref=e2828] [cursor=pointer]: Share
+              - link "View club" [ref=e2835] [cursor=pointer]:
+                - /url: /directory/newport-pickleball
+        - article [ref=e2838]:
+          - generic [ref=e2839]:
+            - generic "North Star Pickleball Club logo unavailable" [ref=e2840]: NS
+            - generic [ref=e2841]:
+              - generic [ref=e2842]:
+                - generic [ref=e2843]:
+                  - paragraph [ref=e2844]: Pickleball · County Dublin
+                  - heading "North Star Pickleball Club" [level=3] [ref=e2845]
+                - generic [ref=e2846]: Unclaimed listing
+              - paragraph [ref=e2850]: North Star Pickleball Club is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2851]:
+                - generic [ref=e2852]: 1 venue
+                - generic [ref=e2857]: Schedule pending
+                - generic [ref=e2860]: Dublin
+          - generic [ref=e2864]:
+            - generic [ref=e2865]: Two Locations - PSLC
+            - generic [ref=e2867]:
+              - link "Claim this listing" [ref=e2868] [cursor=pointer]:
+                - /url: /directory/north-star-pickleball-club/claim
+              - button "Share North Star Pickleball Club" [ref=e2873] [cursor=pointer]: Share
+              - link "View club" [ref=e2880] [cursor=pointer]:
+                - /url: /directory/north-star-pickleball-club
+        - article [ref=e2883]:
+          - generic [ref=e2884]:
+            - generic "Pickleball Arklow logo unavailable" [ref=e2885]: PA
+            - generic [ref=e2886]:
+              - generic [ref=e2887]:
+                - generic [ref=e2888]:
+                  - paragraph [ref=e2889]: Pickleball · County Wicklow
+                  - heading "Pickleball Arklow" [level=3] [ref=e2890]
+                - generic [ref=e2891]: Unclaimed listing
+              - paragraph [ref=e2895]: Pickleball Arklow is listed in the RallyHub Club Directory for County Wicklow. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2896]:
+                - generic [ref=e2897]: 1 venue
+                - generic [ref=e2902]: Schedule pending
+                - generic [ref=e2905]: Wicklow
+          - generic [ref=e2909]:
+            - generic [ref=e2910]: Coral Leisure Arklow
+            - generic [ref=e2912]:
+              - link "Claim this listing" [ref=e2913] [cursor=pointer]:
+                - /url: /directory/pickleball-arklow/claim
+              - button "Share Pickleball Arklow" [ref=e2918] [cursor=pointer]: Share
+              - link "View club" [ref=e2925] [cursor=pointer]:
+                - /url: /directory/pickleball-arklow
+        - article [ref=e2928]:
+          - generic [ref=e2929]:
+            - generic "Pickleball Iorrais logo unavailable" [ref=e2930]: PI
+            - generic [ref=e2931]:
+              - generic [ref=e2932]:
+                - generic [ref=e2933]:
+                  - paragraph [ref=e2934]: Pickleball · County Mayo
+                  - heading "Pickleball Iorrais" [level=3] [ref=e2935]
+                - generic [ref=e2936]: Unclaimed listing
+              - paragraph [ref=e2940]: Pickleball Iorrais is listed in the RallyHub Club Directory for County Mayo. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2941]:
+                - generic [ref=e2942]: 1 venue
+                - generic [ref=e2947]: Schedule pending
+                - generic [ref=e2950]: Mayo
+          - generic [ref=e2954]:
+            - generic [ref=e2955]: Belmullet Sports Complex
+            - generic [ref=e2957]:
+              - link "Claim this listing" [ref=e2958] [cursor=pointer]:
+                - /url: /directory/pickleball-iorrais/claim
+              - button "Share Pickleball Iorrais" [ref=e2963] [cursor=pointer]: Share
+              - link "View club" [ref=e2970] [cursor=pointer]:
+                - /url: /directory/pickleball-iorrais
+        - article [ref=e2973]:
+          - generic [ref=e2974]:
+            - generic "Pickleball South Dublin logo unavailable" [ref=e2975]: PS
+            - generic [ref=e2976]:
+              - generic [ref=e2977]:
+                - generic [ref=e2978]:
+                  - paragraph [ref=e2979]: Pickleball · County Dublin
+                  - heading "Pickleball South Dublin" [level=3] [ref=e2980]
+                - generic [ref=e2981]: Unclaimed listing
+              - paragraph [ref=e2985]: Pickleball South Dublin is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e2986]:
+                - generic [ref=e2987]: 1 venue
+                - generic [ref=e2992]: Schedule pending
+                - generic [ref=e2995]: Dublin
+          - generic [ref=e2999]:
+            - generic [ref=e3000]: Newpark Sports Centre
+            - generic [ref=e3002]:
+              - link "Claim this listing" [ref=e3003] [cursor=pointer]:
+                - /url: /directory/pickleball-south-dublin/claim
+              - button "Share Pickleball South Dublin" [ref=e3008] [cursor=pointer]: Share
+              - link "View club" [ref=e3015] [cursor=pointer]:
+                - /url: /directory/pickleball-south-dublin
+        - article [ref=e3018]:
+          - generic [ref=e3019]:
+            - generic "Pickleball Wexford logo unavailable" [ref=e3020]: PW
+            - generic [ref=e3021]:
+              - generic [ref=e3022]:
+                - generic [ref=e3023]:
+                  - paragraph [ref=e3024]: Pickleball · County Wexford
+                  - heading "Pickleball Wexford" [level=3] [ref=e3025]
+                - generic [ref=e3026]: Unclaimed listing
+              - paragraph [ref=e3030]: Pickleball Wexford is listed in the RallyHub Club Directory for County Wexford. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3031]:
+                - generic [ref=e3032]: 1 venue
+                - generic [ref=e3037]: Schedule pending
+                - generic [ref=e3040]: Wexford
+          - generic [ref=e3044]:
+            - generic [ref=e3045]: Wexford Town
+            - generic [ref=e3047]:
+              - link "Claim this listing" [ref=e3048] [cursor=pointer]:
+                - /url: /directory/pickleball-wexford/claim
+              - button "Share Pickleball Wexford" [ref=e3053] [cursor=pointer]: Share
+              - link "View club" [ref=e3060] [cursor=pointer]:
+                - /url: /directory/pickleball-wexford
+        - article [ref=e3063]:
+          - generic [ref=e3064]:
+            - generic "PicklePub Club logo unavailable" [ref=e3065]: PC
+            - generic [ref=e3066]:
+              - generic [ref=e3067]:
+                - generic [ref=e3068]:
+                  - paragraph [ref=e3069]: Pickleball · County Dublin
+                  - heading "PicklePub Club" [level=3] [ref=e3070]
+                - generic [ref=e3071]: Unclaimed listing
+              - paragraph [ref=e3075]: PicklePub Club is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3076]:
+                - generic [ref=e3077]: 1 venue
+                - generic [ref=e3082]: Schedule pending
+                - generic [ref=e3085]: Dublin
+          - generic [ref=e3089]:
+            - generic [ref=e3090]: Dublin
+            - generic [ref=e3092]:
+              - link "Claim this listing" [ref=e3093] [cursor=pointer]:
+                - /url: /directory/picklepub-club/claim
+              - button "Share PicklePub Club" [ref=e3098] [cursor=pointer]: Share
+              - link "View club" [ref=e3105] [cursor=pointer]:
+                - /url: /directory/picklepub-club
+        - article [ref=e3108]:
+          - generic [ref=e3109]:
+            - generic "Portarlington Pickleball logo unavailable" [ref=e3110]: PP
+            - generic [ref=e3111]:
+              - generic [ref=e3112]:
+                - generic [ref=e3113]:
+                  - paragraph [ref=e3114]: Pickleball · County Laois
+                  - heading "Portarlington Pickleball" [level=3] [ref=e3115]
+                - generic [ref=e3116]: Unclaimed listing
+              - paragraph [ref=e3120]: Portarlington Pickleball is listed in the RallyHub Club Directory for County Laois. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3121]:
+                - generic [ref=e3122]: 1 venue
+                - generic [ref=e3127]: Schedule pending
+                - generic [ref=e3130]: Laois
+          - generic [ref=e3134]:
+            - generic [ref=e3135]: Cooltederry
+            - generic [ref=e3137]:
+              - link "Claim this listing" [ref=e3138] [cursor=pointer]:
+                - /url: /directory/portarlington-pickleball/claim
+              - button "Share Portarlington Pickleball" [ref=e3143] [cursor=pointer]: Share
+              - link "View club" [ref=e3150] [cursor=pointer]:
+                - /url: /directory/portarlington-pickleball
+        - article [ref=e3153]:
+          - generic [ref=e3154]:
+            - generic "Rathdrum Pickleball logo unavailable" [ref=e3155]: RP
+            - generic [ref=e3156]:
+              - generic [ref=e3157]:
+                - generic [ref=e3158]:
+                  - paragraph [ref=e3159]: Pickleball · County Wicklow
+                  - heading "Rathdrum Pickleball" [level=3] [ref=e3160]
+                - generic [ref=e3161]: Unclaimed listing
+              - paragraph [ref=e3165]: Rathdrum Pickleball is listed in the RallyHub Club Directory for County Wicklow. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3166]:
+                - generic [ref=e3167]: 1 venue
+                - generic [ref=e3172]: Schedule pending
+                - generic [ref=e3175]: Wicklow
+          - generic [ref=e3179]:
+            - generic [ref=e3180]: Avodale GAA Club (Rathdrum)
+            - generic [ref=e3182]:
+              - link "Claim this listing" [ref=e3183] [cursor=pointer]:
+                - /url: /directory/rathdrum-pickleball/claim
+              - button "Share Rathdrum Pickleball" [ref=e3188] [cursor=pointer]: Share
+              - link "View club" [ref=e3195] [cursor=pointer]:
+                - /url: /directory/rathdrum-pickleball
+        - article [ref=e3198]:
+          - generic [ref=e3199]:
+            - generic "Rebel Pickleball logo unavailable" [ref=e3200]: RP
+            - generic [ref=e3201]:
+              - generic [ref=e3202]:
+                - generic [ref=e3203]:
+                  - paragraph [ref=e3204]: Pickleball · County Cork
+                  - heading "Rebel Pickleball" [level=3] [ref=e3205]
+                - generic [ref=e3206]: Unclaimed listing
+              - paragraph [ref=e3210]: Rebel Pickleball is listed in the RallyHub Club Directory for County Cork. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3211]:
+                - generic [ref=e3212]: 1 venue
+                - generic [ref=e3217]: Schedule pending
+                - generic [ref=e3220]: Cork
+          - generic [ref=e3224]:
+            - generic [ref=e3225]: Scoil Mhuire gan Smál
+            - generic [ref=e3227]:
+              - link "Claim this listing" [ref=e3228] [cursor=pointer]:
+                - /url: /directory/rebel-pickleball/claim
+              - button "Share Rebel Pickleball" [ref=e3233] [cursor=pointer]: Share
+              - link "View club" [ref=e3240] [cursor=pointer]:
+                - /url: /directory/rebel-pickleball
+        - article [ref=e3243]:
+          - generic [ref=e3244]:
+            - generic "Roundwood Pickleball Group logo unavailable" [ref=e3245]: RP
+            - generic [ref=e3246]:
+              - generic [ref=e3247]:
+                - generic [ref=e3248]:
+                  - paragraph [ref=e3249]: Pickleball · County Wicklow
+                  - heading "Roundwood Pickleball Group" [level=3] [ref=e3250]
+                - generic [ref=e3251]: Unclaimed listing
+              - paragraph [ref=e3255]: Roundwood Pickleball Group is listed in the RallyHub Club Directory for County Wicklow. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3256]:
+                - generic [ref=e3257]: 1 venue
+                - generic [ref=e3262]: Schedule pending
+                - generic [ref=e3265]: Wicklow
+          - generic [ref=e3269]:
+            - generic [ref=e3270]: AN TOCHAR G.A.A. CLUB ARÁS AN TOCHAR
+            - generic [ref=e3272]:
+              - link "Claim this listing" [ref=e3273] [cursor=pointer]:
+                - /url: /directory/roundwood-pickleball-group/claim
+              - button "Share Roundwood Pickleball Group" [ref=e3278] [cursor=pointer]: Share
+              - link "View club" [ref=e3285] [cursor=pointer]:
+                - /url: /directory/roundwood-pickleball-group
+        - article [ref=e3288]:
+          - generic [ref=e3289]:
+            - generic "Sandyford Pickleball Club logo unavailable" [ref=e3290]: SP
+            - generic [ref=e3291]:
+              - generic [ref=e3292]:
+                - generic [ref=e3293]:
+                  - paragraph [ref=e3294]: Pickleball · County Dublin
+                  - heading "Sandyford Pickleball Club" [level=3] [ref=e3295]
+                - generic [ref=e3296]: Unclaimed listing
+              - paragraph [ref=e3300]: Sandyford Pickleball Club is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3301]:
+                - generic [ref=e3302]: 1 venue
+                - generic [ref=e3307]: Schedule pending
+                - generic [ref=e3310]: Dublin
+          - generic [ref=e3314]:
+            - generic [ref=e3315]: St Benildus College Kilmacud Rd Uppe
+            - generic [ref=e3317]:
+              - link "Claim this listing" [ref=e3318] [cursor=pointer]:
+                - /url: /directory/sandyford-pickleball-club/claim
+              - button "Share Sandyford Pickleball Club" [ref=e3323] [cursor=pointer]: Share
+              - link "View club" [ref=e3330] [cursor=pointer]:
+                - /url: /directory/sandyford-pickleball-club
+        - article [ref=e3333]:
+          - generic [ref=e3334]:
+            - generic "Sligo Pickleball Club logo unavailable" [ref=e3335]: SP
+            - generic [ref=e3336]:
+              - generic [ref=e3337]:
+                - generic [ref=e3338]:
+                  - paragraph [ref=e3339]: Pickleball · County Sligo
+                  - heading "Sligo Pickleball Club" [level=3] [ref=e3340]
+                - generic [ref=e3341]: Unclaimed listing
+              - paragraph [ref=e3345]: Sligo Pickleball Club is listed in the RallyHub Club Directory for County Sligo. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3346]:
+                - generic [ref=e3347]: 1 venue
+                - generic [ref=e3352]: Schedule pending
+                - generic [ref=e3355]: Sligo
+          - generic [ref=e3359]:
+            - generic [ref=e3360]: Shannon Eighter
+            - generic [ref=e3362]:
+              - link "Claim this listing" [ref=e3363] [cursor=pointer]:
+                - /url: /directory/sligo-pickleball-club/claim
+              - button "Share Sligo Pickleball Club" [ref=e3368] [cursor=pointer]: Share
+              - link "View club" [ref=e3375] [cursor=pointer]:
+                - /url: /directory/sligo-pickleball-club
+        - article [ref=e3378]:
+          - generic [ref=e3379]:
+            - generic "Sligo Tennis Pickleball Club logo unavailable" [ref=e3380]: ST
+            - generic [ref=e3381]:
+              - generic [ref=e3382]:
+                - generic [ref=e3383]:
+                  - paragraph [ref=e3384]: Pickleball · County Sligo
+                  - heading "Sligo Tennis Pickleball Club" [level=3] [ref=e3385]
+                - generic [ref=e3386]: Unclaimed listing
+              - paragraph [ref=e3390]: Sligo Tennis Pickleball Club is listed in the RallyHub Club Directory for County Sligo. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3391]:
+                - generic [ref=e3392]: 1 venue
+                - generic [ref=e3397]: Schedule pending
+                - generic [ref=e3400]: Sligo
+          - generic [ref=e3404]:
+            - generic [ref=e3405]: Sligo Lawn Tennis Club
+            - generic [ref=e3407]:
+              - link "Claim this listing" [ref=e3408] [cursor=pointer]:
+                - /url: /directory/sligo-tennis-pickleball-club/claim
+              - button "Share Sligo Tennis Pickleball Club" [ref=e3413] [cursor=pointer]: Share
+              - link "View club" [ref=e3420] [cursor=pointer]:
+                - /url: /directory/sligo-tennis-pickleball-club
+        - article [ref=e3423]:
+          - generic [ref=e3424]:
+            - generic "South Kildare Pickleball logo unavailable" [ref=e3425]: SK
+            - generic [ref=e3426]:
+              - generic [ref=e3427]:
+                - generic [ref=e3428]:
+                  - paragraph [ref=e3429]: Pickleball · County Kildare
+                  - heading "South Kildare Pickleball" [level=3] [ref=e3430]
+                - generic [ref=e3431]: Unclaimed listing
+              - paragraph [ref=e3435]: South Kildare Pickleball is listed in the RallyHub Club Directory for County Kildare. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3436]:
+                - generic [ref=e3437]: 1 venue
+                - generic [ref=e3442]: Schedule pending
+                - generic [ref=e3445]: Kildare
+          - generic [ref=e3449]:
+            - generic [ref=e3450]: Crockanure Glebe
+            - generic [ref=e3452]:
+              - link "Claim this listing" [ref=e3453] [cursor=pointer]:
+                - /url: /directory/south-kildare-pickleball/claim
+              - button "Share South Kildare Pickleball" [ref=e3458] [cursor=pointer]: Share
+              - link "View club" [ref=e3465] [cursor=pointer]:
+                - /url: /directory/south-kildare-pickleball
+        - article [ref=e3468]:
+          - generic [ref=e3469]:
+            - generic "Southside Pickleball Club logo unavailable" [ref=e3470]: SP
+            - generic [ref=e3471]:
+              - generic [ref=e3472]:
+                - generic [ref=e3473]:
+                  - paragraph [ref=e3474]: Pickleball · County Dublin
+                  - heading "Southside Pickleball Club" [level=3] [ref=e3475]
+                - generic [ref=e3476]: Unclaimed listing
+              - paragraph [ref=e3480]: Southside Pickleball Club is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3481]:
+                - generic [ref=e3482]: 3 venues
+                - generic [ref=e3487]: Schedule pending
+                - generic [ref=e3490]: Dublin
+          - generic [ref=e3494]:
+            - generic [ref=e3495]:
+              - generic [ref=e3496]: Blackthorn
+              - generic [ref=e3497]: Kilmacud East
+              - generic [ref=e3498]: Kilmacud East
+            - generic [ref=e3499]:
+              - link "Claim this listing" [ref=e3500] [cursor=pointer]:
+                - /url: /directory/southside-pickleball-club/claim
+              - button "Share Southside Pickleball Club" [ref=e3505] [cursor=pointer]: Share
+              - link "View club" [ref=e3512] [cursor=pointer]:
+                - /url: /directory/southside-pickleball-club
+        - article [ref=e3515]:
+          - generic [ref=e3516]:
+            - generic "Sports Lab Pickleball logo unavailable" [ref=e3517]: SL
+            - generic [ref=e3518]:
+              - generic [ref=e3519]:
+                - generic [ref=e3520]:
+                  - paragraph [ref=e3521]: Pickleball · County Armagh
+                  - heading "Sports Lab Pickleball" [level=3] [ref=e3522]
+                - generic [ref=e3523]: Unclaimed listing
+              - paragraph [ref=e3527]: Sports Lab Pickleball is listed in the RallyHub Club Directory for County Armagh. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3528]:
+                - generic [ref=e3529]: 1 venue
+                - generic [ref=e3534]: Schedule pending
+                - generic [ref=e3537]: Armagh
+          - generic [ref=e3541]:
+            - generic [ref=e3542]: Sports Lab
+            - generic [ref=e3544]:
+              - link "Claim this listing" [ref=e3545] [cursor=pointer]:
+                - /url: /directory/sports-lab-pickleball/claim
+              - button "Share Sports Lab Pickleball" [ref=e3550] [cursor=pointer]: Share
+              - link "View club" [ref=e3557] [cursor=pointer]:
+                - /url: /directory/sports-lab-pickleball
+        - article [ref=e3560]:
+          - generic [ref=e3561]:
+            - generic "Stepaside Pickleball logo unavailable" [ref=e3562]: SP
+            - generic [ref=e3563]:
+              - generic [ref=e3564]:
+                - generic [ref=e3565]:
+                  - paragraph [ref=e3566]: Pickleball · County Dublin
+                  - heading "Stepaside Pickleball" [level=3] [ref=e3567]
+                - generic [ref=e3568]: Unclaimed listing
+              - paragraph [ref=e3572]: Stepaside Pickleball is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3573]:
+                - generic [ref=e3574]: 1 venue
+                - generic [ref=e3579]: Schedule pending
+                - generic [ref=e3582]: Dublin
+          - generic [ref=e3586]:
+            - generic [ref=e3587]: Murphystown
+            - generic [ref=e3589]:
+              - link "Claim this listing" [ref=e3590] [cursor=pointer]:
+                - /url: /directory/stepaside-pickleball/claim
+              - button "Share Stepaside Pickleball" [ref=e3595] [cursor=pointer]: Share
+              - link "View club" [ref=e3602] [cursor=pointer]:
+                - /url: /directory/stepaside-pickleball
+        - article [ref=e3605]:
+          - generic [ref=e3606]:
+            - generic "Terenure Pickleball Club logo unavailable" [ref=e3607]: TP
+            - generic [ref=e3608]:
+              - generic [ref=e3609]:
+                - generic [ref=e3610]:
+                  - paragraph [ref=e3611]: Pickleball · County Dublin
+                  - heading "Terenure Pickleball Club" [level=3] [ref=e3612]
+                - generic [ref=e3613]: Unclaimed listing
+              - paragraph [ref=e3617]: Terenure Pickleball Club is listed in the RallyHub Club Directory for County Dublin. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3618]:
+                - generic [ref=e3619]: 1 venue
+                - generic [ref=e3624]: Schedule pending
+                - generic [ref=e3627]: Dublin
+          - generic [ref=e3631]:
+            - generic [ref=e3632]: The Dome
+            - generic [ref=e3634]:
+              - link "Claim this listing" [ref=e3635] [cursor=pointer]:
+                - /url: /directory/terenure-pickleball-club/claim
+              - button "Share Terenure Pickleball Club" [ref=e3640] [cursor=pointer]: Share
+              - link "View club" [ref=e3647] [cursor=pointer]:
+                - /url: /directory/terenure-pickleball-club
+        - article [ref=e3650]:
+          - generic [ref=e3651]:
+            - generic "Tourmakeady Pickleball Club logo unavailable" [ref=e3652]: TP
+            - generic [ref=e3653]:
+              - generic [ref=e3654]:
+                - generic [ref=e3655]:
+                  - paragraph [ref=e3656]: Pickleball · County Mayo
+                  - heading "Tourmakeady Pickleball Club" [level=3] [ref=e3657]
+                - generic [ref=e3658]: Unclaimed listing
+              - paragraph [ref=e3662]: Tourmakeady Pickleball Club is listed in the RallyHub Club Directory for County Mayo. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3663]:
+                - generic [ref=e3664]: 1 venue
+                - generic [ref=e3669]: Schedule pending
+                - generic [ref=e3672]: Mayo
+          - generic [ref=e3676]:
+            - generic [ref=e3677]: Tourmkeady
+            - generic [ref=e3679]:
+              - link "Claim this listing" [ref=e3680] [cursor=pointer]:
+                - /url: /directory/tourmakeady-pickleball-club/claim
+              - button "Share Tourmakeady Pickleball Club" [ref=e3685] [cursor=pointer]: Share
+              - link "View club" [ref=e3692] [cursor=pointer]:
+                - /url: /directory/tourmakeady-pickleball-club
+        - article [ref=e3695]:
+          - generic [ref=e3696]:
+            - generic "Wallace Park Pickleball Club logo unavailable" [ref=e3697]: WP
+            - generic [ref=e3698]:
+              - generic [ref=e3699]:
+                - generic [ref=e3700]:
+                  - paragraph [ref=e3701]: Pickleball · County Antrim
+                  - heading "Wallace Park Pickleball Club" [level=3] [ref=e3702]
+                - generic [ref=e3703]: Unclaimed listing
+              - paragraph [ref=e3707]: Wallace Park Pickleball Club is listed in the RallyHub Club Directory for County Antrim. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3708]:
+                - generic [ref=e3709]: 1 venue
+                - generic [ref=e3714]: Schedule pending
+                - generic [ref=e3717]: Antrim
+          - generic [ref=e3721]:
+            - generic [ref=e3722]: Wallace Park Lisburn
+            - generic [ref=e3724]:
+              - link "Claim this listing" [ref=e3725] [cursor=pointer]:
+                - /url: /directory/wallace-park-pickleball-club/claim
+              - button "Share Wallace Park Pickleball Club" [ref=e3730] [cursor=pointer]: Share
+              - link "View club" [ref=e3737] [cursor=pointer]:
+                - /url: /directory/wallace-park-pickleball-club
+        - article [ref=e3740]:
+          - generic [ref=e3741]:
+            - generic "West Connemara Pickleball Club logo unavailable" [ref=e3742]: WC
+            - generic [ref=e3743]:
+              - generic [ref=e3744]:
+                - generic [ref=e3745]:
+                  - paragraph [ref=e3746]: Pickleball · County Galway
+                  - heading "West Connemara Pickleball Club" [level=3] [ref=e3747]
+                - generic [ref=e3748]: Unclaimed listing
+              - paragraph [ref=e3752]: West Connemara Pickleball Club is listed in the RallyHub Club Directory for County Galway. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3753]:
+                - generic [ref=e3754]: 1 venue
+                - generic [ref=e3759]: Schedule pending
+                - generic [ref=e3762]: Galway
+          - generic [ref=e3766]:
+            - generic [ref=e3767]: Ardbear
+            - generic [ref=e3769]:
+              - link "Claim this listing" [ref=e3770] [cursor=pointer]:
+                - /url: /directory/west-connemara-pickleball-club/claim
+              - button "Share West Connemara Pickleball Club" [ref=e3775] [cursor=pointer]: Share
+              - link "View club" [ref=e3782] [cursor=pointer]:
+                - /url: /directory/west-connemara-pickleball-club
+        - article [ref=e3785]:
+          - generic [ref=e3786]:
+            - generic "West Cork Pickleball Club logo unavailable" [ref=e3787]: WC
+            - generic [ref=e3788]:
+              - generic [ref=e3789]:
+                - generic [ref=e3790]:
+                  - paragraph [ref=e3791]: Pickleball · County Cork
+                  - heading "West Cork Pickleball Club" [level=3] [ref=e3792]
+                - generic [ref=e3793]: Unclaimed listing
+              - paragraph [ref=e3797]: West Cork Pickleball Club is listed in the RallyHub Club Directory for County Cork. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3798]:
+                - generic [ref=e3799]: 1 venue
+                - generic [ref=e3804]: Schedule pending
+                - generic [ref=e3807]: Cork
+          - generic [ref=e3811]:
+            - generic [ref=e3812]: Ballinacarriga Community Hall
+            - generic [ref=e3814]:
+              - link "Claim this listing" [ref=e3815] [cursor=pointer]:
+                - /url: /directory/west-cork-pickleball-club/claim
+              - button "Share West Cork Pickleball Club" [ref=e3820] [cursor=pointer]: Share
+              - link "View club" [ref=e3827] [cursor=pointer]:
+                - /url: /directory/west-cork-pickleball-club
+        - article [ref=e3830]:
+          - generic [ref=e3831]:
+            - generic "Westport Pickleball Club logo unavailable" [ref=e3832]: WP
+            - generic [ref=e3833]:
+              - generic [ref=e3834]:
+                - generic [ref=e3835]:
+                  - paragraph [ref=e3836]: Pickleball · County Mayo
+                  - heading "Westport Pickleball Club" [level=3] [ref=e3837]
+                - generic [ref=e3838]: Unclaimed listing
+              - paragraph [ref=e3842]: Westport Pickleball Club is listed in the RallyHub Club Directory for County Mayo. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3843]:
+                - generic [ref=e3844]: 1 venue
+                - generic [ref=e3849]: Schedule pending
+                - generic [ref=e3852]: Mayo
+          - generic [ref=e3856]:
+            - generic [ref=e3857]: Rice College Gym
+            - generic [ref=e3859]:
+              - link "Claim this listing" [ref=e3860] [cursor=pointer]:
+                - /url: /directory/westport-pickleball-club/claim
+              - button "Share Westport Pickleball Club" [ref=e3865] [cursor=pointer]: Share
+              - link "View club" [ref=e3872] [cursor=pointer]:
+                - /url: /directory/westport-pickleball-club
+        - article [ref=e3875]:
+          - generic [ref=e3876]:
+            - generic "Wicklow Pickleball logo unavailable" [ref=e3877]: WP
+            - generic [ref=e3878]:
+              - generic [ref=e3879]:
+                - generic [ref=e3880]:
+                  - paragraph [ref=e3881]: Pickleball · County Wicklow
+                  - heading "Wicklow Pickleball" [level=3] [ref=e3882]
+                - generic [ref=e3883]: Unclaimed listing
+              - paragraph [ref=e3887]: Wicklow Pickleball is listed in the RallyHub Club Directory for County Wicklow. This listing has not yet been claimed and can be updated by an authorised club representative.
+              - generic [ref=e3888]:
+                - generic [ref=e3889]: 6 venues
+                - generic [ref=e3894]: Schedule pending
+                - generic [ref=e3897]: Wicklow
+          - generic [ref=e3901]:
+            - generic [ref=e3902]:
+              - generic [ref=e3903]: Lugduff
+              - generic [ref=e3904]: Roundwood
+              - generic [ref=e3905]: Corballis Upper
+              - generic [ref=e3906]: Ferrybank
+            - generic [ref=e3907]:
+              - link "Claim this listing" [ref=e3908] [cursor=pointer]:
+                - /url: /directory/wicklow-pickleball/claim
+              - button "Share Wicklow Pickleball" [ref=e3913] [cursor=pointer]: Share
+              - link "View club" [ref=e3920] [cursor=pointer]:
+                - /url: /directory/wicklow-pickleball
+  - contentinfo [ref=e3923]:
+    - generic [ref=e3925]:
+      - generic [ref=e3926]:
+        - generic [ref=e3927]: RallyHub
+        - generic [ref=e3928]: PLAY • CONNECT • BELONG
+      - generic [ref=e3929]:
+        - link "Directory" [ref=e3930] [cursor=pointer]:
+          - /url: /directory
+        - link "Events" [ref=e3931] [cursor=pointer]:
+          - /url: /events
+        - link "Club Guide" [ref=e3932] [cursor=pointer]:
+          - /url: /directory/help
+        - link "About" [ref=e3933] [cursor=pointer]:
+          - /url: /about
+        - link "Contact" [ref=e3934] [cursor=pointer]:
+          - /url: /contact
+    - generic [ref=e3935]: © 2026 RallyHub All rights reserved.
+```
+
+# Test source
+
+```ts
+  1   | import { test, expect } from '@playwright/test';
+  2   | 
+  3   | const BASE_URL = 'http://127.0.0.1:5173';
+  4   | 
+  5   | const viewports = [
+  6   |   { name: 'desktop-1366', width: 1366, height: 768, touch: false },
+  7   |   { name: 'desktop-1920', width: 1920, height: 1080, touch: false },
+  8   |   { name: 'iphone-small', width: 375, height: 667, touch: true },
+  9   |   { name: 'iphone-standard', width: 390, height: 844, touch: true },
+  10  |   { name: 'android-large', width: 430, height: 932, touch: true },
+  11  |   { name: 'ipad-portrait', width: 768, height: 1024, touch: true },
+  12  |   { name: 'phone-landscape', width: 844, height: 390, touch: true },
+  13  | ];
+  14  | 
+  15  | async function assertNoHorizontalOverflow(page) {
+  16  |   const metrics = await page.evaluate(() => ({
+  17  |     viewport: window.innerWidth,
+  18  |     scrollWidth: document.documentElement.scrollWidth,
+  19  |   }));
+  20  |   expect(metrics.scrollWidth, `scrollWidth ${metrics.scrollWidth} exceeds viewport ${metrics.viewport}`).toBeLessThanOrEqual(metrics.viewport + 2);
+  21  | }
+  22  | 
+  23  | for (const config of viewports) {
+  24  |   test(`directory responsive journey - ${config.name}`, async ({ browser }) => {
+  25  |     const context = await browser.newContext({
+  26  |       baseURL: BASE_URL,
+  27  |       viewport: { width: config.width, height: config.height },
+  28  |       hasTouch: config.touch,
+  29  |       isMobile: config.touch && config.width < 600,
+  30  |     });
+  31  |     const page = await context.newPage();
+  32  |     const pageErrors = [];
+  33  |     page.on('pageerror', error => pageErrors.push(error.message));
+  34  | 
+  35  |     await page.goto('/directory');
+  36  |     await expect(page.getByRole('textbox', { name: 'Search club directory' })).toBeVisible();
+  37  |     await expect(page.getByRole('combobox', { name: 'Filter by county' })).toBeVisible();
+  38  |     await expect(page.getByRole('combobox', { name: 'Filter by day' })).toBeVisible();
+  39  |     await assertNoHorizontalOverflow(page);
+  40  | 
+  41  |     if (config.width < 1024) {
+  42  |       await page.getByRole('button', { name: 'Menu' }).click();
+  43  |       for (const label of ['Home', 'Directory', 'Events', 'Club Guide', 'About']) {
+> 44  |         await expect(page.getByRole('link', { name: label, exact: true })).toBeVisible();
+      |                                                                            ^ Error: expect(locator).toBeVisible() failed
+  45  |       }
+  46  |       await page.getByRole('button', { name: 'Menu' }).click();
+  47  |     }
+  48  | 
+  49  |     const search = page.getByRole('textbox', { name: 'Search club directory' });
+  50  |     await search.fill('Clare Pickleball');
+  51  |     await expect(page.getByRole('heading', { name: 'Clare Pickleball', exact: true })).toBeVisible();
+  52  | 
+  53  |     await page.getByRole('combobox', { name: 'Filter by county' }).selectOption({ label: 'Clare' });
+  54  |     await page.getByRole('combobox', { name: 'Filter by day' }).selectOption({ label: 'Monday' });
+  55  |     await expect(page.getByRole('heading', { name: 'Clare Pickleball', exact: true })).toBeVisible();
+  56  | 
+  57  |     await search.fill('definitely-no-such-rallyhub-club');
+  58  |     await expect(page.getByRole('heading', { name: 'No matching clubs yet' })).toBeVisible();
+  59  | 
+  60  |     await search.fill('');
+  61  |     await page.getByRole('combobox', { name: 'Filter by county' }).selectOption({ label: 'All counties' });
+  62  |     await page.getByRole('combobox', { name: 'Filter by day' }).selectOption({ label: 'Any day' });
+  63  |     await page.getByRole('button', { name: /map/i }).click();
+  64  |     await expect(page.getByRole('heading', { name: 'Club map' })).toBeVisible();
+  65  |     await expect(page.locator('.leaflet-marker-icon').first()).toBeVisible();
+  66  |     await assertNoHorizontalOverflow(page);
+  67  | 
+  68  |     expect(pageErrors).toEqual([]);
+  69  |     await context.close();
+  70  |   });
+  71  | }
+  72  | 
+  73  | test('public routes, deep links, refresh, back and forward remain usable', async ({ page }) => {
+  74  |   const routes = [
+  75  |     '/',
+  76  |     '/about',
+  77  |     '/contact',
+  78  |     '/events',
+  79  |     '/directory',
+  80  |     '/directory/help',
+  81  |     '/directory/quick-start',
+  82  |     '/directory/story',
+  83  |     '/directory/add',
+  84  |     '/pickleball-clubs/clare',
+  85  |     '/directory/clare-pickleball',
+  86  |     '/directory/clare-pickleball/claim',
+  87  |   ];
+  88  | 
+  89  |   for (const route of routes) {
+  90  |     await page.goto(route);
+  91  |     await expect(page.locator('body')).not.toContainText('Page Not Found');
+  92  |     await expect(page.locator('body')).not.toContainText('Application error');
+  93  |   }
+  94  | 
+  95  |   await page.goto('/directory');
+  96  |   const search = page.getByRole('textbox', { name: 'Search club directory' });
+  97  |   await search.fill('Clare Pickleball');
+  98  |   const clareCard = page.locator('article').filter({ hasText: 'Clare Pickleball' }).first();
+  99  |   await expect(clareCard).toBeVisible();
+  100 |   await clareCard.getByRole('link', { name: /View club/i }).click();
+  101 |   await expect(page).toHaveURL(/\/directory\/clare-pickleball$/);
+  102 |   await page.reload();
+  103 |   await expect(page.getByRole('heading', { name: 'Clare Pickleball', exact: true })).toBeVisible();
+  104 |   await page.goBack();
+  105 |   await expect(page.getByRole('textbox', { name: 'Search club directory' })).toBeVisible();
+  106 |   await page.goForward();
+  107 |   await expect(page).toHaveURL(/\/directory\/clare-pickleball$/);
+  108 | });
+  109 | 
+  110 | test('directory SEO uses canonical rallyhub.ie URLs', async ({ page }) => {
+  111 |   await page.goto('/directory');
+  112 |   await expect(page).toHaveTitle(/Pickleball Clubs in Ireland/i);
+  113 |   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://rallyhub.ie/directory');
+  114 |   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /club listings/i);
+  115 | 
+  116 |   await page.goto('/directory/clare-pickleball');
+  117 |   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://rallyhub.ie/directory/clare-pickleball');
+  118 | });
+  119 | 
+  120 | test('directory public-list request is deduplicated during search/filter interaction', async ({ browser }) => {
+  121 |   const context = await browser.newContext({ baseURL: BASE_URL });
+  122 |   const page = await context.newPage();
+  123 |   const directoryFunctionRequests = [];
+  124 |   page.on('request', request => {
+  125 |     if (/directoryListingProfile/i.test(request.url())) directoryFunctionRequests.push(request.url());
+  126 |   });
+  127 | 
+  128 |   await page.goto('/directory');
+  129 |   await expect(page.getByRole('textbox', { name: 'Search club directory' })).toBeVisible();
+  130 |   await page.waitForTimeout(1200);
+  131 |   const initialCount = directoryFunctionRequests.length;
+  132 | 
+  133 |   await page.getByRole('textbox', { name: 'Search club directory' }).fill('Dublin 15');
+  134 |   await page.getByRole('combobox', { name: 'Filter by county' }).selectOption({ label: 'Dublin' });
+  135 |   await page.getByRole('combobox', { name: 'Filter by day' }).selectOption({ label: 'Wednesday' });
+  136 |   await page.getByRole('button', { name: /sessions/i }).click();
+  137 |   await page.getByRole('button', { name: /map/i }).click();
+  138 |   await page.waitForTimeout(500);
+  139 | 
+  140 |   expect(initialCount).toBeLessThanOrEqual(1);
+  141 |   expect(directoryFunctionRequests.length).toBe(initialCount);
+  142 |   await context.close();
+  143 | });
+  144 | 
+```
