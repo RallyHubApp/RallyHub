@@ -540,7 +540,10 @@ export default function AdminPanel() {
     const q = directoryClubSearch.trim().toLowerCase();
     if (!q) return true;
     const contacts = (item.contacts || []).map(contact => `${contact.name} ${contact.phone} ${contact.email}`).join(' ');
-    return `${item.name} ${item.county} ${contacts}`.toLowerCase().includes(q);
+    const textMatch = `${item.name} ${item.county} ${contacts}`.toLowerCase().includes(q);
+    const qDigits = q.replace(/\D/g, '');
+    const phoneDigits = (item.contacts || []).map(contact => String(contact.phone || '').replace(/\D/g, '')).join(' ');
+    return textMatch || (qDigits.length >= 4 && phoneDigits.includes(qDigits));
   });
   const chooseDirectoryClubForInvite = (listing) => {
     setOwnerInvite({
