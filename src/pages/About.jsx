@@ -8,7 +8,7 @@ const LOGO='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041
 const CARD='/assets/about/';
 // About page imagery is locked to the signed-off About artwork, not the Home page imagery.
 const APPROVED_MASTER='/assets/about-locked/about-master-approved.png?v=20260921-locked';
-const APPROVED_HERO='/assets/about/about-hero-approved.png?v=20260922-crop';
+const APPROVED_HERO='/assets/about/about-hero-approved.png?v=20260922-finalcrop';
 
 const cards=[
  [MapPin,'Directory & Discovery','Find clubs, venues, sessions and events across Ireland.',CARD+'card-directory.webp'],
