@@ -176,7 +176,7 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
   </div>;
 }
 
-function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true, onQueue, canScore = true, formatNames }) {
+function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true, onQueue, canScore = true, formatNames = null }) {
   const [a, setA] = useState(match.score_a ?? '');
   const [b, setB] = useState(match.score_b ?? '');
   const [saving, setSaving] = useState(false);
