@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
+import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import { getClub } from '@/data/directorySeed';
 import { ArrowLeft, CalendarDays, Check, CheckCircle2, ExternalLink, Facebook, Globe2, Link2, Lightbulb, Lock, Mail, MapPin, MessageCircle, Phone, Share2, UserCheck, Users } from 'lucide-react';
 import Seo, { SITE_URL, absoluteUrl } from '@/components/public/Seo';
@@ -488,6 +489,7 @@ export default function PublicClubProfile() {
           </aside>
         </div>
       </main>
+      <div className="px-4 pb-4"><PublicCopyrightFooter maxWidthClass="max-w-6xl" /></div>
 
       <Dialog open={clubInterestOpen} onOpenChange={setClubInterestOpen}>
         <DialogContent className="sm:max-w-lg">
