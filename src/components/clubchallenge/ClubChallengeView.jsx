@@ -224,7 +224,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [logoUploading, setLogoUploading] = useState('');
   const [simLog, setSimLog] = useState([]);
   const [showcaseSelection, setShowcaseSelection] = useState({ aMale: '', aFemale: '', bMale: '', bFemale: '' });
-  const [replacement, setReplacement] = useState({ outgoingId: '', candidateId: '', incomingName: '', incomingGender: '', incomingSourcePlayerId: '', incomingParticipantType: '', reason: '', status: 'withdrawn' });
+  const [replacement, setReplacement] = useState({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
   const [lateArrival, setLateArrival] = useState({ participantId: '', round: 1 });
   const [eventDayAdjust, setEventDayAdjust] = useState({ courts: 0, availableMinutes: 0 });
   const [eventDayProposal, setEventDayProposal] = useState(null);
@@ -371,6 +371,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const poolPlayers = participants.filter(p => p.side === 'pool');
   const aPlayers = participants.filter(p => p.side === 'club_a');
   const bPlayers = participants.filter(p => p.side === 'club_b');
+  const aRotationPlayers = aPlayers.filter(p => (p.roster_role || 'rotation') === 'rotation' || p.reserve_activated);
+  const bRotationPlayers = bPlayers.filter(p => (p.roster_role || 'rotation') === 'rotation' || p.reserve_activated);
+  const aReservePlayers = aPlayers.filter(p => (p.roster_role || 'rotation') === 'reserve' && !p.reserve_activated);
+  const bReservePlayers = bPlayers.filter(p => (p.roster_role || 'rotation') === 'reserve' && !p.reserve_activated);
   const normalMatches = matches.filter(m => !m.is_showcase);
   const showcaseMatch = matches.find(m => m.is_showcase) || null;
   const locked = ['draw_approved', 'in_progress', 'paused', 'completed', 'archived'].includes(event?.status);
@@ -603,15 +607,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const calculateFormat = () => {
-    if (poolPlayers.length || !aPlayers.length || !bPlayers.length || aPlayers.length !== bPlayers.length) return null;
+    if (poolPlayers.length || !aRotationPlayers.length || !bRotationPlayers.length || aRotationPlayers.length !== bRotationPlayers.length) return null;
     try {
-      return calculateClubChallengeFormat({ clubAPlayerCount: aPlayers.length, clubBPlayerCount: bPlayers.length, courts: number(setup.courts), availableMinutes: number(setup.availableMinutes), playMinutes: number(setup.playMinutes), changeoverMinutes: number(setup.changeoverMinutes), includeBreak: setup.includeBreak, breakMinutes: number(setup.breakMinutes), breakAfterRound: number(setup.breakAfterRound) });
+      return calculateClubChallengeFormat({ clubAPlayerCount: aRotationPlayers.length, clubBPlayerCount: bRotationPlayers.length, courts: number(setup.courts), availableMinutes: number(setup.availableMinutes), playMinutes: number(setup.playMinutes), changeoverMinutes: number(setup.changeoverMinutes), includeBreak: setup.includeBreak, breakMinutes: number(setup.breakMinutes), breakAfterRound: number(setup.breakAfterRound) });
     } catch { return null; }
   };
   const formatInfo = calculateFormat();
   const previewFormatInfo = useMemo(() => {
-    const actualA = aPlayers.length;
-    const actualB = bPlayers.length;
+    const actualA = aRotationPlayers.length;
+    const actualB = bRotationPlayers.length;
     const plannedTotal = Math.max(8, Math.floor(number(setup.plannedPlayersTotal, 32) / 2) * 2);
     const plannedPerClub = plannedTotal / 2;
     const countA = actualA || plannedPerClub;
@@ -623,15 +627,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         breakMinutes: number(setup.breakMinutes), breakAfterRound: number(setup.breakAfterRound),
       });
     } catch { return null; }
-  }, [aPlayers.length, bPlayers.length, setup.plannedPlayersTotal, setup.courts, setup.availableMinutes, setup.playMinutes, setup.changeoverMinutes, setup.includeBreak, setup.breakMinutes, setup.breakAfterRound]);
+  }, [aRotationPlayers.length, bRotationPlayers.length, setup.plannedPlayersTotal, setup.courts, setup.availableMinutes, setup.playMinutes, setup.changeoverMinutes, setup.includeBreak, setup.breakMinutes, setup.breakAfterRound]);
 
   const generateDraw = async () => {
     if (!event || !canManageEvent || sportingActionRef.current) return;
-    if (aPlayers.length !== bPlayers.length || aPlayers.length < 4) { toast.error('For this draw, both clubs must have equal playable rosters of at least 4.'); return; }
+    if (aRotationPlayers.length !== bRotationPlayers.length || aRotationPlayers.length < 4) { toast.error('For this draw, both clubs must have equal Rotation squads of at least 4. Reserve numbers may differ.'); return; }
     setSaving(true); sportingActionRef.current = true; setHostAction('Generating draw and fairness report… one command sent');
     try {
-      const engA = [...aPlayers].sort((x, y) => x.event_rank - y.event_rank).map(p => ({ id: p.id, name: p.display_name, rank: p.event_rank, gender: p.gender }));
-      const engB = [...bPlayers].sort((x, y) => x.event_rank - y.event_rank).map(p => ({ id: p.id, name: p.display_name, rank: p.event_rank, gender: p.gender }));
+      const engA = [...aRotationPlayers].sort((x, y) => x.event_rank - y.event_rank).map(p => ({ id: p.id, name: p.display_name, rank: p.event_rank, gender: p.gender }));
+      const engB = [...bRotationPlayers].sort((x, y) => x.event_rank - y.event_rank).map(p => ({ id: p.id, name: p.display_name, rank: p.event_rank, gender: p.gender }));
       const fi = calculateClubChallengeFormat({ clubAPlayerCount: engA.length, clubBPlayerCount: engB.length, courts: number(setup.courts), availableMinutes: number(setup.availableMinutes), playMinutes: number(setup.playMinutes), changeoverMinutes: number(setup.changeoverMinutes), includeBreak: setup.includeBreak, breakMinutes: number(setup.breakMinutes), breakAfterRound: number(setup.breakAfterRound) });
       const schedule = generateClubChallengeFixtures({ clubAPlayers: engA, clubBPlayers: engB, courts: number(setup.courts), rounds: fi.recommendedRounds });
       const report = analyseClubChallengeFairness({ schedule, clubAPlayers: engA, clubBPlayers: engB });
@@ -1484,8 +1488,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               onImportSpond={setSpondImportSide}
               onAddManual={addManual}
               onSave={organiseTeams}
+              onSetRosterRole={setRosterRole}
             />
-            {formatInfo ? <div className="glass rounded-xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-center"><div><p className="text-xl font-bold">{formatInfo.recommendedRounds}</p><p className="text-[10px] text-muted-foreground">Rounds</p></div><div><p className="text-xl font-bold">{formatInfo.totalMatches}</p><p className="text-[10px] text-muted-foreground">Matches</p></div><div><p className="text-xl font-bold">{formatInfo.gamesRangeClubA.join('–')}</p><p className="text-[10px] text-muted-foreground">Games/player</p></div><div><p className="text-xl font-bold">{formatInfo.structuredMinutes}</p><p className="text-[10px] text-muted-foreground">Structured min</p></div><div><p className="text-xl font-bold">{formatInfo.remainingMinutes}</p><p className="text-[10px] text-muted-foreground">Contingency min</p></div></div> : participants.length > 0 && <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-700">Finish assigning every player, save the teams, and make the two team sizes equal before generating the draw.</div>}
+            {formatInfo ? <div className="glass rounded-xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-center"><div><p className="text-xl font-bold">{formatInfo.recommendedRounds}</p><p className="text-[10px] text-muted-foreground">Rounds</p></div><div><p className="text-xl font-bold">{formatInfo.totalMatches}</p><p className="text-[10px] text-muted-foreground">Matches</p></div><div><p className="text-xl font-bold">{formatInfo.gamesRangeClubA.join('–')}</p><p className="text-[10px] text-muted-foreground">Games/player</p></div><div><p className="text-xl font-bold">{formatInfo.structuredMinutes}</p><p className="text-[10px] text-muted-foreground">Structured min</p></div><div><p className="text-xl font-bold">{formatInfo.remainingMinutes}</p><p className="text-[10px] text-muted-foreground">Contingency min</p></div></div> : participants.length > 0 && <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-700">Finish assigning every player, save the teams, and make the two Rotation squads equal before generating the draw. Reserve numbers may differ.</div>}
             <Button data-testid="cc-generate-draw" onClick={generateDraw} disabled={locked || saving || !formatInfo} className="w-full h-11"><ListChecks className="w-4 h-4 mr-2" />Generate Draw & Fairness Report</Button>
           </>}
         </div>
