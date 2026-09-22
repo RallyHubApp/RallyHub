@@ -686,6 +686,7 @@ Deno.serve(async (req) => {
         county,
         sport: 'Pickleball',
         status: 'active',
+        visibility: 'public',
         base_json: JSON.stringify(baseListing),
         trusted_contacts_json: JSON.stringify([{ name: contactName, role: contactRole || null, email: contactEmail || null, phone: contactPhone }]),
         created_by_user_id: user.id,
@@ -1329,6 +1330,23 @@ Deno.serve(async (req) => {
         review_notes: reviewNotes || null,
       });
       return Response.json({ success: true, status: 'approved', listingSlug, accessId: access?.id || null });
+    }
+
+    if (action === 'set_visibility') {
+      if (user.role !== 'admin') return Response.json({ error:'Admin access required' }, { status:403 });
+      const listingSlug = String(body.listingSlug || '').trim();
+      const visibility = String(body.visibility || '').trim();
+      if (!listingSlug || !['public','preview_only'].includes(visibility)) return Response.json({ error:'listingSlug and valid visibility required' }, { status:400 });
+      const records = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
+      const record = records?.[0];
+      if (!record) return Response.json({ error:'Active database-backed listing not found' }, { status:404 });
+      const before = record.visibility || 'public';
+      await base44.asServiceRole.entities.DirectoryListingRecord.update(record.id, { visibility });
+      const now = new Date().toISOString();
+      try {
+        await base44.asServiceRole.entities.DirectoryListingAudit.create({ listing_slug:listingSlug, user_id:user.id, action:'listing_visibility_changed', occurred_at:now, before_json:JSON.stringify({ visibility:before }), after_json:JSON.stringify({ visibility }) });
+      } catch (auditError) { console.warn('Directory visibility audit write failed', auditError?.message || auditError); }
+      return Response.json({ success:true, listingSlug, visibility });
     }
 
     if (action === 'archive_listing') {
