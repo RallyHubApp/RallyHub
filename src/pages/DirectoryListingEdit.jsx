@@ -786,7 +786,7 @@ export default function DirectoryListingEdit() {
                 </div>
               </section>
 
-              {showEnhancements && <DirectorySpondPanel listingSlug={slug} clubName={baseClub?.name || ''} onImport={importSpondDirectoryData} />}
+              {showEnhancements && <DirectorySpondPanel listingSlug={slug} clubName={baseClub?.name || ''} onImport={importSpondDirectoryData} onSave={save} saveBusy={saving} hasUnsavedChanges={dirty} saved={saved} />}
 
               <section id="venues" className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
                 <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Venues</h2></div><p className="text-sm text-muted-foreground mt-1">Add every regular place where the club plays.</p></div><Button variant="outline" size="sm" onClick={addVenue} className="gap-1"><Plus className="w-4 h-4" /> Add venue</Button></div>
