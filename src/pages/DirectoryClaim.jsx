@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Seo from '@/components/public/Seo';
+import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 
 export default function DirectoryClaim() {
   const { slug } = useParams();
@@ -40,10 +41,11 @@ export default function DirectoryClaim() {
     if (seedClub) return;
     let active = true;
     setLoadingClub(true);
-    base44.functions.invoke('directoryListingProfile', { action: 'public_get', listingSlug: slug })
-      .then(res => {
-        if (!active || res.data?.error) return;
-        if (res.data?.base) setDynamicClub(res.data.base);
+    loadPublicDirectoryState()
+      .then(listings => {
+        if (!active) return;
+        const state = listings?.[slug];
+        if (state?.base) setDynamicClub(state.base);
       })
       .catch(() => {})
       .finally(() => { if (active) setLoadingClub(false); });
