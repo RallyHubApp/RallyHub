@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, CalendarDays, MapPin, Menu, Monitor, Rocket, Trophy, Users } from 'lucide-react';
 import Seo from '@/components/public/Seo';
+import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 
 const LOGO='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 const CARD='/assets/about/';
@@ -55,5 +56,6 @@ export default function About(){
   </section>
 
   <section className="relative mx-auto aspect-[1024/224] max-w-[1024px] overflow-hidden bg-[#06365f]"><img src={APPROVED_MASTER} alt="Join the RallyHub journey — let’s grow the game together" className="absolute bottom-0 left-0 w-full max-w-none"/><Link to="/contact" aria-label="Get in Touch" className="absolute bottom-[17%] left-[35%] h-[18%] w-[13%]"/><a href="https://wa.me/353878100333" target="_blank" rel="noopener noreferrer" aria-label="Contact Brian on WhatsApp" className="absolute bottom-[17%] left-[50%] h-[18%] w-[24%]"/></section>
+  <PublicCopyrightFooter maxWidthClass="max-w-[1024px]" />
  </main></div></>;
 }
