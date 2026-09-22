@@ -373,8 +373,6 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const bPlayers = participants.filter(p => p.side === 'club_b');
   const aRotationPlayers = aPlayers.filter(p => (p.roster_role || 'rotation') === 'rotation' || p.reserve_activated);
   const bRotationPlayers = bPlayers.filter(p => (p.roster_role || 'rotation') === 'rotation' || p.reserve_activated);
-  const aReservePlayers = aPlayers.filter(p => (p.roster_role || 'rotation') === 'reserve' && !p.reserve_activated);
-  const bReservePlayers = bPlayers.filter(p => (p.roster_role || 'rotation') === 'reserve' && !p.reserve_activated);
   const matchNames = (names, side) => (names || []).map(name => {
     const p = participants.find(x => x.side === side && x.display_name === name && !['withdrawn','injured','replaced'].includes(x.status));
     if (!p) return name;
@@ -1388,13 +1386,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const roundCount = new Set(normal.map(m => m.round_number)).size;
     return [
       ['Dummy roster', participants.length === 32],
-      ['16 + 16 clubs', aPlayers.length === 16 && bPlayers.length === 16],
+      ['16 + 16 rotation players', aRotationPlayers.length === 16 && bRotationPlayers.length === 16],
       ['12 rounds', roundCount === 12],
       ['48 matches', normal.length === 48],
       ['Fairness hard checks', !!fairness && fairness.equalGames && !fairness.duplicatePlayerRoundIssues && !fairness.sameClubIntegrityIssues],
       ['6 games each', !!fairness && fairness.minGames === 6 && fairness.maxGames === 6],
     ];
-  }, [matches, participants.length, aPlayers.length, bPlayers.length, fairness]);
+  }, [matches, participants.length, aRotationPlayers.length, bRotationPlayers.length, fairness]);
   const stageIndex = !event ? 0
     : event.status === 'draft' ? (participants.length ? 1 : 0)
     : event.status === 'draw_generated' || event.status === 'draw_approved' ? 2
@@ -1623,7 +1621,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                     {replacement.mode === 'cover' && <div className="lg:col-span-2"><Label className="text-xs">Existing rotation player to cover</Label><Select value={replacement.coverParticipantId} onValueChange={v => setReplacement(r => ({ ...r, coverParticipantId:v }))} disabled={playerControlBusy || !replacement.outgoingId}><SelectTrigger data-testid="cc-cover-player" className="mt-1 bg-secondary"><SelectValue placeholder="Choose cover player" /></SelectTrigger><SelectContent>{participants.filter(p => p.id !== replacement.outgoingId && p.side === participants.find(x=>x.id===replacement.outgoingId)?.side && ['active','late'].includes(p.status) && Number(p.available_from_round || 1) <= currentRound && ((p.roster_role || 'rotation') === 'rotation' || p.reserve_activated)).map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select></div>}
                     <div><Label className="text-xs">Note</Label><Input value={replacement.reason} onChange={e => setReplacement(r => ({ ...r, reason:e.target.value }))} placeholder="Optional note" className="mt-1 bg-secondary" /></div>
                   </div>
-                  {replacement.mode === 'reserve' && replacement.outgoingId && !participants.some(p => p.side === participants.find(x=>x.id===replacement.outgoingId)?.side && (p.roster_role || 'rotation') === 'reserve' && !p.reserve_activated && ['active','late'].includes(p.status)) && <p className="text-[11px] text-muted-foreground">No unused team reserve is available. Choose another route.</p>}
+                  {replacement.mode === 'reserve' && replacement.outgoingId && !participants.some(p => p.side === participants.find(x=>x.id===replacement.outgoingId)?.side && (p.roster_role || 'rotation') === 'reserve' && !p.reserve_activated && ['active','late'].includes(p.status) && Number(p.available_from_round || 1) <= currentRound) && <p className="text-[11px] text-muted-foreground">No unused team reserve is available from this round. Choose another route.</p>}
                   {replacement.mode === 'cover' && <p className="text-[11px] text-muted-foreground">RallyHub will use the chosen player wherever they are free. If they already have a fixture in the same round, a resting rotation player is inserted into the vacated slot so nobody can appear twice in one round.</p>}
                   <div className="flex flex-col sm:flex-row gap-2"><Button data-testid="cc-replace-player" className="w-full sm:w-auto" disabled={!canManageEvent || playerControlBusy || !replacement.outgoingId || ((replacement.mode || 'new') === 'new' && !replacement.incomingName.trim()) || (replacement.mode === 'reserve' && !replacement.reserveParticipantId) || (replacement.mode === 'cover' && !replacement.coverParticipantId)} onClick={applyReplacement}>{playerControlBusy ? 'Applying…' : replacement.mode === 'reserve' ? `Activate Reserve from Round ${currentRound}` : replacement.mode === 'cover' ? 'Use Cover & Rebalance' : `Replace from Round ${currentRound}`}</Button><Button variant="outline" className="w-full sm:w-auto" disabled={!canManageEvent || playerControlBusy || !replacement.outgoingId} onClick={withdrawWithoutReplacement}>Continue Short · No Replacement</Button></div>
                   {playerControlStatus && <div data-testid="cc-player-control-status" className={cn('rounded-lg border p-3 text-xs font-semibold', playerControlStatus.state === 'success' ? 'border-primary/30 bg-primary/10 text-primary' : playerControlStatus.state === 'error' ? 'border-destructive/30 bg-destructive/10 text-destructive' : 'border-amber-400/30 bg-amber-500/10 text-amber-700')}>{playerControlStatus.text}</div>}
