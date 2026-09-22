@@ -18,7 +18,7 @@ import Seo, { SITE_URL } from '@/components/public/Seo';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 const HERO_PHOTO = '/assets/rallyhub-home-hero.webp';
-const CLIFFS_PHOTO = '/assets/rallyhub-home-cliffs.webp';
+const FOOTER_PHOTO = '/assets/rallyhub-home-footer-pickleball.webp';
 
 const features = [
   {
@@ -223,13 +223,15 @@ export default function Landing() {
 
           <section className="relative bg-white">
             <div className="mx-auto max-w-[1380px] px-0 sm:px-7 lg:px-10 xl:px-12">
-              <div className="relative hidden lg:block">
-                <img
-                  src={CLIFFS_PHOTO}
-                  alt="Cliffs of Moher, County Clare"
-                  className="block h-auto w-[48%]"
-                />
-                <div className="absolute bottom-0 right-0 h-[78%] w-[61%] rounded-tl-[92px] bg-[#053c56]">
+              <div className="relative hidden overflow-hidden md:block">
+                <div className="aspect-[782/336] w-[48%]">
+                  <img
+                    src={FOOTER_PHOTO}
+                    alt="Pickleball players enjoying time together on court"
+                    className="h-full w-full object-cover object-center"
+                  />
+                </div>
+                <div className="absolute inset-y-0 right-0 w-[61%] rounded-tl-[92px] bg-[#053c56]">
                   <div className="grid h-full grid-cols-4 items-center text-center text-white">
                     {[
                       [Users,'People','Build connections'],
@@ -247,27 +249,27 @@ export default function Landing() {
                 </div>
               </div>
 
-              <div className="lg:hidden">
-                <img src={CLIFFS_PHOTO} alt="Cliffs of Moher, County Clare" className="block h-auto w-full"/>
-                <div className="hidden">
-                  {[
-                    [Users,'People','Build connections'],
-                    [MapPin,'Places','Find your club'],
-                    [CalendarDays,'Sessions','Play more'],
-                    [Trophy,'Community','Belong together'],
-                  ].map(([Icon,title,copy])=>(
-                    <div key={title} className="flex items-center gap-3 border-white/10 px-5 py-4 sm:block sm:border-r sm:text-center">
-                      <Icon className="h-5 w-5 shrink-0 sm:mx-auto"/>
-                      <div>
-                        <div className="text-[13px] font-bold">{title}</div>
+              <div className="overflow-hidden md:hidden">
+                <img
+                  src={FOOTER_PHOTO}
+                  alt="Pickleball players enjoying time together on court"
+                  className="block h-[210px] w-full object-cover object-center sm:h-[250px]"
+                />
+                <div className="relative -mt-9 rounded-tl-[48px] bg-[#053c56] pt-9 text-white">
+                  <div className="grid grid-cols-2 text-center sm:grid-cols-4">
+                    {[
+                      [Users,'People','Build connections'],
+                      [MapPin,'Places','Find your club'],
+                      [CalendarDays,'Sessions','Play more'],
+                      [Trophy,'Community','Belong together'],
+                    ].map(([Icon,title,copy])=>(
+                      <div key={title} className="px-3 py-5 sm:px-2 sm:py-6">
+                        <Icon className="mx-auto h-6 w-6"/>
+                        <div className="mt-1 text-[13px] font-bold">{title}</div>
                         <div className="text-[10px] text-white/75">{copy}</div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-center bg-[#053c56] py-3 text-[9px] font-semibold tracking-[.30em] text-white">
-                  PLAY <span className="mx-2 text-[#9ade42]">•</span> CONNECT <span className="mx-2 text-[#9ade42]">•</span> BELONG
-                  <span className="ml-4 h-7 w-7 rounded-full bg-[#d9ef30]"/>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
