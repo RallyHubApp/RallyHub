@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, CalendarDays, MapPin, Menu, Monitor, Rocket, Trophy, Users } from 'lucide-react';
+import { BarChart3, CalendarDays, ChevronRight, MapPin, Menu, Monitor, Rocket, Trophy, Users, X } from 'lucide-react';
 import Seo from '@/components/public/Seo';
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 
@@ -21,11 +21,22 @@ const cards=[
 ];
 
 function Header(){
- return <header className="h-[63px] border-b border-[#e5ecef] bg-white"><div className="mx-auto flex h-full max-w-[1024px] items-center px-[37px]">
+ const [menuOpen,setMenuOpen]=useState(false);
+ return <header className="relative z-50 h-[63px] border-b border-[#e5ecef] bg-white"><div className="mx-auto flex h-full max-w-[1024px] items-center px-4 sm:px-[37px]">
   <Link to="/" className="flex items-center gap-2"><img src={LOGO} alt="RallyHub logo" className="h-[51px] w-[51px] object-contain"/><div><div className="text-[27px] font-black leading-[.9] tracking-[-.045em] text-[#07184c]">Rally<span className="text-[#078e48]">Hub</span></div><div className="mt-[7px] text-[7px] font-bold tracking-[.29em] text-[#07184c]">PLAY <span className="text-[#078e48]">•</span> CONNECT <span className="text-[#078e48]">•</span> BELONG</div></div></Link>
-  <nav className="ml-auto hidden items-center gap-[28px] text-[11px] text-[#07184c] md:flex"><Link to="/">Home</Link><Link to="/directory">Directory</Link><Link to="/directory">Clubs</Link><Link to="/directory">Events</Link><Link to="/about" className="border-b-2 border-[#078e48] pb-[10px] text-[#078e48]">About</Link></nav>
-  <Link to="/directory/add" className="ml-[30px] hidden rounded-[6px] bg-[#078e48] px-[29px] py-[11px] text-[11px] font-bold text-white md:block">Get Started</Link><Menu className="ml-auto h-6 w-6 md:hidden"/>
- </div></header>
+  <nav className="ml-auto hidden items-center gap-[28px] text-[11px] text-[#07184c] md:flex"><Link to="/">Home</Link><Link to="/directory">Directory</Link><Link to="/directory">Clubs</Link><Link to="/events">Events</Link><Link to="/about" className="border-b-2 border-[#078e48] pb-[10px] text-[#078e48]">About</Link></nav>
+  <Link to="/directory/add" className="ml-[30px] hidden rounded-[6px] bg-[#078e48] px-[29px] py-[11px] text-[11px] font-bold text-white md:block">Get Started</Link>
+  <button type="button" aria-label="Open navigation menu" aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)} className="ml-auto flex h-10 w-10 items-center justify-center rounded-lg text-[#07184c] md:hidden">
+   {menuOpen?<X className="h-6 w-6"/>:<Menu className="h-6 w-6"/>}
+  </button>
+ </div>
+ {menuOpen&&<div className="absolute left-0 right-0 top-full border-t border-[#e5ecef] bg-white px-4 py-3 shadow-xl md:hidden">
+  <div className="mx-auto max-w-[1024px] space-y-1">
+   {[['Home','/'],['Directory','/directory'],['Clubs','/directory'],['Events','/events'],['About','/about']].map(([label,to])=><Link key={label} to={to} onClick={()=>setMenuOpen(false)} className="flex min-h-11 items-center justify-between rounded-lg px-3 py-3 text-sm font-semibold text-[#07184c] hover:bg-[#f4faf7]">{label}<ChevronRight className="h-4 w-4 text-[#078e48]"/></Link>)}
+   <Link to="/directory/add" onClick={()=>setMenuOpen(false)} className="mt-2 flex min-h-11 items-center justify-center rounded-lg bg-[#078e48] px-4 py-3 text-sm font-bold text-white">Get Started</Link>
+  </div>
+ </div>}
+ </header>
 }
 
 export default function About(){
