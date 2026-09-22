@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
       if (!outgoing || !reserve) return Response.json({ error:'Outgoing player and team reserve are required.' }, { status:400 });
       if (['withdrawn','injured','replaced'].includes(outgoing.status)) return Response.json({ error:'Outgoing participant is already inactive.' }, { status:409 });
       if (reserve.side !== outgoing.side || (reserve.roster_role || 'rotation') !== 'reserve') return Response.json({ error:'The selected replacement is not a reserve for the same team.' }, { status:409 });
-      if (['withdrawn','injured','replaced'].includes(reserve.status) || reserve.reserve_activated) return Response.json({ error:'That reserve is not currently available.' }, { status:409 });
+      if (['withdrawn','injured','replaced'].includes(reserve.status) || reserve.reserve_activated || Number(reserve.available_from_round || 1) > currentRound) return Response.json({ error:'That reserve is not currently available.' }, { status:409 });
       const sideKey = outgoing.side === 'club_a' ? 'club_a' : 'club_b';
       const idsKey = `${sideKey}_participant_ids`, namesKey = `${sideKey}_names`;
       const affected = normal.filter((m:any) => Number(m.round_number) >= currentRound && !TERMINAL.has(m.status) && (m[idsKey] || []).includes(outgoing.id));
@@ -222,7 +222,7 @@ Deno.serve(async (req) => {
       if (!outgoing || !cover) return Response.json({ error:'Outgoing player and cover player are required.' }, { status:400 });
       if (outgoing.id === cover.id || outgoing.side !== cover.side) return Response.json({ error:'Cover must be a different player from the same team.' }, { status:409 });
       if (['withdrawn','injured','replaced'].includes(outgoing.status)) return Response.json({ error:'Outgoing participant is already inactive.' }, { status:409 });
-      if (!['active','late'].includes(cover.status) || ((cover.roster_role || 'rotation') === 'reserve' && !cover.reserve_activated)) return Response.json({ error:'Choose an active rotation player as cover.' }, { status:409 });
+      if (!['active','late'].includes(cover.status) || Number(cover.available_from_round || 1) > currentRound || ((cover.roster_role || 'rotation') === 'reserve' && !cover.reserve_activated)) return Response.json({ error:'Choose a rotation player who is available from the current round.' }, { status:409 });
       const sideKey = outgoing.side === 'club_a' ? 'club_a' : 'club_b';
       const idsKey = `${sideKey}_participant_ids`, namesKey = `${sideKey}_names`;
       const future = normal.filter((m:any) => Number(m.round_number) >= currentRound && !TERMINAL.has(m.status));
@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
         let chosen:any = null;
         if (!scheduled.has(cover.id)) chosen = cover;
         else {
-          const candidates = eligible.filter((p:any) => p.id !== cover.id && !scheduled.has(p.id));
+          const candidates = eligible.filter((p:any) => p.id !== cover.id && !scheduled.has(p.id) && Number(p.available_from_round || 1) <= round);
           candidates.sort((a:any,b:any) => Number(assignmentCounts[a.id] || 0) - Number(assignmentCounts[b.id] || 0) || Math.abs(Number(a.event_rank||999)-Number(outgoing.event_rank||999)) - Math.abs(Number(b.event_rank||999)-Number(outgoing.event_rank||999)) || String(a.display_name).localeCompare(String(b.display_name)));
           chosen = candidates[0] || null;
         }
