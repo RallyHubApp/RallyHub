@@ -55,6 +55,28 @@
     "event_rank": {
       "type": "number"
     },
+    "roster_role": {
+      "type": "string",
+      "enum": [
+        "rotation",
+        "reserve"
+      ],
+      "default": "rotation"
+    },
+    "reserve_activated": {
+      "type": "boolean",
+      "default": false
+    },
+    "covering_for_participant_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "covered_by_participant_id": {
+      "type": "string"
+    },
     "status": {
       "type": "string",
       "enum": [
