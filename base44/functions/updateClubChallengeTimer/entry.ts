@@ -62,6 +62,19 @@ Deno.serve(async (req) => {
       next = { ...current, running: true, remaining_seconds: remainingNow, started_at: now.toISOString() };
     } else if (action === 'add_minute') {
       next = { ...current, running: !!current.running, remaining_seconds: remainingNow + 60, started_at: current.running ? now.toISOString() : null, phase: current.phase || 'play', round: Number(event.current_round || 1) };
+    } else if (action === 'adjust_break') {
+      if (String(current.phase || '') !== 'break') return Response.json({ error: 'Break timer is not active.' }, { status: 400 });
+      const deltaMinutes = Number(minutes);
+      if (!Number.isInteger(deltaMinutes) || deltaMinutes === 0 || Math.abs(deltaMinutes) > 60) return Response.json({ error: 'Break adjustment must be a whole number of minutes.' }, { status: 400 });
+      const adjustedSeconds = Math.max(0, Math.min(7200, remainingNow + (deltaMinutes * 60)));
+      next = {
+        ...current,
+        phase: 'break',
+        running: !!current.running && adjustedSeconds > 0,
+        remaining_seconds: adjustedSeconds,
+        started_at: current.running && adjustedSeconds > 0 ? now.toISOString() : null,
+        round: Number(event.current_round || 1),
+      };
     } else if (action === 'reset') {
       next = { phase: 'ready', running: false, remaining_seconds: Number(event.play_minutes || 10) * 60, started_at: null, round: Number(event.current_round || 1) };
     } else {
