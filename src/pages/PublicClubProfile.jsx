@@ -10,6 +10,7 @@ import { useAuth } from '@/lib/AuthContext';
 import PublicDirectoryLogo, { normaliseDirectoryAssetUrl } from '@/components/directory/PublicDirectoryLogo';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 
 const weekOrder = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const groupByDay = sessions => [...(sessions || [])]
@@ -71,12 +72,20 @@ export default function PublicClubProfile() {
       }
     } catch {}
 
-    base44.functions.invoke('directoryListingProfile', { action: previewMode ? 'private_get' : 'public_get', listingSlug: slug, refresh: Date.now() })
-      .then(res => {
-        if (!active || res.data?.error) return;
-        setDynamicBase(res.data?.base || null);
-        setPublicProfile(res.data?.profile || null);
-        setVerificationStatus(res.data?.verificationStatus || seedClub?.verificationStatus || 'unclaimed');
+    const request = previewMode
+      ? base44.functions.invoke('directoryListingProfile', { action: 'private_get', listingSlug: slug })
+          .then(res => {
+            if (res.data?.error) throw new Error(res.data.error);
+            return res.data || {};
+          })
+      : loadPublicDirectoryState().then(listings => listings?.[slug] || {});
+
+    request
+      .then(state => {
+        if (!active) return;
+        setDynamicBase(state?.base || null);
+        setPublicProfile(state?.profile || null);
+        setVerificationStatus(state?.verificationStatus || seedClub?.verificationStatus || 'unclaimed');
         try { sessionStorage.removeItem(`rallyhub-directory-profile-${slug}`); } catch {}
       })
       .catch(() => {})
