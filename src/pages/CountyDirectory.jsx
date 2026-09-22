@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Building2, CalendarDays, MapPin, PlusCircle } from 'lucide-react';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
+import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 import { directoryClubs, irelandCounties } from '@/data/directorySeed';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
@@ -138,6 +139,7 @@ export default function CountyDirectory() {
             </div>
           )}
         </main>
+        <div className="px-4 pb-4"><PublicCopyrightFooter maxWidthClass="max-w-6xl" /></div>
       </div>
     </>
   );
