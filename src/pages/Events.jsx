@@ -21,7 +21,24 @@ export default function Events() {
           </div>
         </section>
       </main>
-      <footer className="bg-[#053c56] text-white"><div className="mx-auto flex max-w-[1380px] flex-col items-center justify-between gap-4 px-5 py-6 sm:flex-row"><div><div className="font-black">RallyHub</div><div className="mt-1 text-[8px] font-bold tracking-[.30em]">PLAY • CONNECT • BELONG</div></div><nav className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[11px] font-bold text-white/85"><Link to="/">Home</Link><Link to="/directory">Directory</Link><Link to="/events">Events</Link><Link to="/directory/help">Club Guide</Link><Link to="/about">About</Link><Link to="/contact">Contact</Link></nav></div></footer>
+      <div className="px-4 sm:px-6 lg:px-10 xl:px-12">
+        <footer className="mx-auto w-full max-w-[1380px] overflow-hidden bg-[#053c56] text-white">
+          <div className="flex min-h-[70px] flex-col items-center justify-center gap-3 px-4 py-4 text-center sm:px-6 md:flex-row md:justify-between md:text-left lg:px-10 xl:px-12">
+            <div>
+              <div className="font-black">RallyHub</div>
+              <div className="mt-1 text-[8px] font-bold tracking-[.30em] text-white/90">PLAY • CONNECT • BELONG</div>
+            </div>
+            <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[11px] font-bold text-white/85">
+              <Link to="/">Home</Link>
+              <Link to="/directory">Directory</Link>
+              <Link to="/events">Events</Link>
+              <Link to="/directory/help">Club Guide</Link>
+              <Link to="/about">About</Link>
+              <Link to="/contact">Contact</Link>
+            </nav>
+          </div>
+        </footer>
+      </div>
     </div>
   </>;
 }
