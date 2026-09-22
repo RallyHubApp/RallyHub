@@ -78,7 +78,10 @@ check('host: teams and rankings use cross-column drag/drop', contains(ui,'DragDr
 check('host: team names are editable before saving', contains(ui,'Team name') && contains(ui,'Save Teams & Rankings'));
 check('host: team rank number is visually prominent', contains(ui,'rounded-full bg-primary text-primary-foreground'));
 check('host: team organisation is a single backend action', contains(ui,"action:'organise_teams'") && contains(participantFn,"action === 'organise_teams'"));
-check('host: draw is blocked until pool is empty and team sizes match', contains(ui,'poolPlayers.length') && contains(ui,'aPlayers.length !== bPlayers.length'));
+check('host: draw is blocked until pool is empty and Rotation squad sizes match', contains(ui,'poolPlayers.length') && contains(ui,'aRotationPlayers.length !== bRotationPlayers.length'));
+check('host: team builder distinguishes Rotation and Reserve players', contains(ui,'Rotation') && contains(ui,'Reserve') && contains(ui,"roster_role || 'rotation'"));
+check('host: Reserve numbers may differ without entering the scheduled draw', contains(ui,'Reserve numbers may differ') && contains(ui,'const aRotationPlayers') && contains(ui,'const bRotationPlayers'));
+check('host: rotation rankings are compacted after reserves are removed', contains(ui,'rank:i + 1'));
 check('Spond: Interclub import supports neutral Player Pool', contains(spondFn,"['pool','club_a','club_b'].includes(side)") && contains(spondFn,"Interclub Player Pool"));
 
 // 4. Busy-hall live operation.
@@ -126,12 +129,17 @@ check('scorer: score entry is capped to two digits in UI and backend', contains(
 
 // 7. What-if / disruption controls.
 check('what-if: replacement remains future-only', contains(participantFn,'effectiveRound'));
-check('what-if: replacement tap gives immediate visible acknowledgement', contains(ui,'Applying player replacement from Round') && contains(ui,'data-testid="cc-player-control-status"'));
+check('what-if: replacement tap gives immediate visible acknowledgement', contains(ui,'setPlayerControlStatus({ state:\'working\'') && contains(ui,'data-testid="cc-player-control-status"'));
+check('what-if: unused team reserve can be activated without creating a duplicate person', contains(participantFn,"action === 'activate_reserve'") && contains(participantFn,'reserve_activated:true') && contains(ui,'Activate team reserve'));
+check('what-if: existing rotation player can cover an outgoing player', contains(participantFn,"action === 'cover_existing'") && contains(ui,'Existing rotation player covers'));
+check('what-if: cover logic prevents the chosen player appearing twice in one round', contains(participantFn,'scheduled.has(cover.id)') && contains(participantFn,'!scheduled.has(p.id)'));
+check('what-if: cover conflicts use a resting same-team rotation player or stop safely', contains(participantFn,'No conflict-free cover arrangement is available') && contains(participantFn,'assignmentCounts'));
+check('what-if: activated reserves and cover players are visibly labelled without changing canonical names', contains(ui,'· Reserve') && contains(ui,'· Cover'));
 check('what-if: player-control changes are protected from duplicate taps', contains(ui,'playerControlBusy') && contains(ui,'sportingActionRef.current || playerControlBusy'));
 check('busy-hall UX: sticky host bar keeps round, timer and scores visible', contains(ui,'data-testid="cc-sticky-host-bar"') && contains(ui,"data-pinned={hostBarPinned ? 'true' : 'false'}") && contains(ui,"hostBarPinned && 'fixed z-20'") && contains(ui,'scores saved'));
 check('busy-hall UX: PA is collapsible during normal scoring', contains(ui,'id="cc-pa-panel"') && contains(ui,'Open only when you need the microphone or an announcement.'));
 check('busy-hall UX: player controls are separate and discoverable', contains(ui,'id="cc-player-controls"') && contains(ui,'Player Controls'));
-check('what-if: registered replacement candidates can be offered before manual entry', contains(participantFn,"'replacement_candidates'") && contains(ui,'Registered reserve / available player'));
+check('what-if: registered replacement candidates can be offered before manual entry', contains(participantFn,"'replacement_candidates'") && contains(ui,'Registered available player'));
 check('what-if: changeover is state-gated so it cannot replace the initial play timer', contains(ui,'changeoverAvailable') && contains(ui,'Start Play first. Changeover becomes available'));
 check('what-if: late arrival remains explicit', contains(participantFn,"'late_arrival'"));
 check('what-if: continue-short remains supported', contains(participantFn,"'continue_short'"));
