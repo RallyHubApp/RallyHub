@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Seo from '@/components/public/Seo';
+import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 
 const normalise = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -51,10 +52,10 @@ export default function AddDirectoryClub() {
 
   useEffect(() => {
     let active = true;
-    base44.functions.invoke('directoryListingProfile', { action: 'public_list' })
-      .then(res => {
-        if (!active || res.data?.error) return;
-        const known = Object.entries(res.data?.listings || {}).filter(([, state]) => state?.base).map(([slug, state]) => ({ ...state.base, slug }));
+    loadPublicDirectoryState()
+      .then(listings => {
+        if (!active) return;
+        const known = Object.entries(listings || {}).filter(([, state]) => state?.base).map(([slug, state]) => ({ ...state.base, slug }));
         setDynamicClubs(known);
       })
       .catch(() => {});
