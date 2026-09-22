@@ -1225,8 +1225,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
-  const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase);
-  const currentRoundSavedCount = currentMatches.filter(m => ['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status)).length;
+  const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase && m.status !== 'not_played');
+  const currentRoundSavedCount = currentMatches.filter(m => ['completed','draw','retired','forfeit','abandoned'].includes(m.status)).length;
   const currentRoundComplete = currentMatches.length > 0 && currentRoundSavedCount === currentMatches.length;
   const timerPhase = String(timerState?.phase || 'idle');
   const timerRunning = !!timerState?.running && timerRemaining > 0;
@@ -1397,10 +1397,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     : event.status === 'draw_generated' || event.status === 'draw_approved' ? 2
     : event.status === 'in_progress' || event.status === 'paused' ? 3
     : event.status === 'completed' || event.status === 'archived' ? 5 : 0;
-  const currentDisplayMatches = normalMatches.filter(m => m.round_number === currentRound).sort((a,b) => a.court_number - b.court_number);
-  const nextDisplayMatches = normalMatches.filter(m => m.round_number === currentRound + 1).sort((a,b) => a.court_number - b.court_number);
+  const currentDisplayMatches = normalMatches.filter(m => m.round_number === currentRound && m.status !== 'not_played').sort((a,b) => a.court_number - b.court_number);
+  const nextDisplayMatches = normalMatches.filter(m => m.round_number === currentRound + 1 && m.status !== 'not_played').sort((a,b) => a.court_number - b.court_number);
   const currentActiveIds = new Set(currentDisplayMatches.flatMap(m => [...(m.club_a_participant_ids || []), ...(m.club_b_participant_ids || [])]));
-  const currentSittingOut = participants.filter(p => ['active','late'].includes(p.status) && !currentActiveIds.has(p.id));
+  const currentSittingOut = participants.filter(p => (p.status === 'active' || (p.status === 'late' && Number(p.available_from_round || 1) <= currentRound)) && !currentActiveIds.has(p.id));
   const currentSittingOutA = currentSittingOut.filter(p => p.side === 'club_a');
   const currentSittingOutB = currentSittingOut.filter(p => p.side === 'club_b');
   const potCounts = potVotes.filter(v => v.valid !== false).reduce((a,v) => ({ ...a, [v.nominee_participant_id]: (a[v.nominee_participant_id] || 0) + 1 }), {});
