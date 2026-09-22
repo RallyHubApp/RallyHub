@@ -606,6 +606,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     }
   };
 
+  const setRosterRole = async (participantId, rosterRole) => {
+    if (!event || !canManageEvent) throw new Error('Event manager permission required.');
+    const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'set_roster_role', participantId, rosterRole });
+    if (res.data?.error) throw new Error(res.data.error);
+    await sync();
+    toast.success(`${res.data.participantName} set as ${res.data.rosterRole === 'reserve' ? 'Reserve' : 'Rotation'} player.`);
+    return res.data;
+  };
+
   const calculateFormat = () => {
     if (poolPlayers.length || !aRotationPlayers.length || !bRotationPlayers.length || aRotationPlayers.length !== bRotationPlayers.length) return null;
     try {
@@ -972,30 +981,48 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     window.setTimeout(() => window.print(), 100);
   };
   const applyReplacement = async () => {
-    if (!event || !canManageEvent || !replacement.outgoingId || !replacement.incomingName.trim()) { toast.error('Choose the outgoing player and enter the replacement name.'); return; }
+    if (!event || !canManageEvent || !replacement.outgoingId) { toast.error('Choose the player who is leaving.'); return; }
+    const outgoing = participants.find(p => p.id === replacement.outgoingId);
+    if (!outgoing) { toast.error('Choose the player who is leaving.'); return; }
+    const mode = replacement.mode || 'new';
+    const reserve = participants.find(p => p.id === replacement.reserveParticipantId);
+    const cover = participants.find(p => p.id === replacement.coverParticipantId);
+    const incomingName = mode === 'reserve' ? reserve?.display_name : mode === 'cover' ? cover?.display_name : replacement.incomingName.trim();
+    if (mode === 'new' && !incomingName) { toast.error('Enter or choose the replacement player.'); return; }
+    if (mode === 'reserve' && !reserve) { toast.error('Choose a team reserve.'); return; }
+    if (mode === 'cover' && !cover) { toast.error('Choose an existing rotation player to cover.'); return; }
     if (sportingActionRef.current || playerControlBusy) return;
-    const outgoingName = participants.find(p => p.id === replacement.outgoingId)?.display_name || 'Player';
-    const incomingName = replacement.incomingName.trim();
     sportingActionRef.current = true;
     setPlayerControlBusy(true);
-    setPlayerControlStatus({ state:'working', text:`Replacing ${outgoingName} with ${incomingName} from Round ${currentRound}…` });
-    setHostAction(`Applying player replacement from Round ${currentRound}… command sent`);
+    const workingText = mode === 'reserve'
+      ? `Activating reserve ${incomingName} for ${outgoing.display_name} from Round ${currentRound}…`
+      : mode === 'cover'
+        ? `Rebalancing future fixtures with ${incomingName} covering ${outgoing.display_name}…`
+        : `Replacing ${outgoing.display_name} with ${incomingName} from Round ${currentRound}…`;
+    setPlayerControlStatus({ state:'working', text:workingText });
+    setHostAction(`${workingText} command sent`);
     try {
+      const action = mode === 'reserve' ? 'activate_reserve' : mode === 'cover' ? 'cover_existing' : 'replace';
       const res = await base44.functions.invoke('manageClubChallengeParticipant', {
-        eventId:event.id, action:'replace', outgoingParticipantId:replacement.outgoingId,
+        eventId:event.id, action, outgoingParticipantId:replacement.outgoingId,
+        reserveParticipantId:replacement.reserveParticipantId, coverParticipantId:replacement.coverParticipantId,
         incomingName, incomingGender:replacement.incomingGender,
         incomingSourcePlayerId:replacement.incomingSourcePlayerId, incomingParticipantType:replacement.incomingParticipantType,
         reason:replacement.reason, withdrawalStatus:replacement.status,
       });
       if (res.data?.error) throw new Error(res.data.error);
-      const message = `${res.data.outgoingName} replaced by ${res.data.incomingName} from Round ${res.data.effectiveRound}. ${res.data.affected} future fixture${res.data.affected === 1 ? '' : 's'} updated; completed results unchanged.`;
-      setReplacement({ outgoingId:'', candidateId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
+      const message = mode === 'reserve'
+        ? `${res.data.incomingName} activated from the Reserve bench for ${res.data.outgoingName} from Round ${res.data.effectiveRound}. ${res.data.affected} future fixture${res.data.affected === 1 ? '' : 's'} updated.`
+        : mode === 'cover'
+          ? `${res.data.incomingName} is covering ${res.data.outgoingName} from Round ${res.data.effectiveRound}. ${res.data.coverGames} fixture${res.data.coverGames === 1 ? '' : 's'} go directly to the cover player${res.data.rebalanced ? `; ${res.data.rebalanced} conflict${res.data.rebalanced === 1 ? '' : 's'} safely rebalanced through resting rotation players` : ''}. Completed results unchanged.`
+          : `${res.data.outgoingName} replaced by ${res.data.incomingName} from Round ${res.data.effectiveRound}. ${res.data.affected} future fixture${res.data.affected === 1 ? '' : 's'} updated; completed results unchanged.`;
+      setReplacement({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
       setPlayerControlStatus({ state:'success', text:message });
       toast.success(message);
       await sync();
       await refetchReplacementCandidates();
     } catch (e) {
-      const message = e?.response?.data?.error || e?.message || 'Could not apply replacement';
+      const message = e?.response?.data?.error || e?.message || 'Could not apply player change';
       setPlayerControlStatus({ state:'error', text:message });
       toast.error(message);
     } finally {
@@ -1020,7 +1047,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       });
       if (res.data?.error) throw new Error(res.data.error);
       const message = `${res.data.outgoingName} withdrawn from Round ${res.data.effectiveRound}; ${res.data.affected} future match${res.data.affected === 1 ? '' : 'es'} marked Not Played.`;
-      setReplacement({ outgoingId:'', candidateId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
+      setReplacement({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
       setPlayerControlStatus({ state:'success', text:message });
       toast.success(message);
       await sync();
