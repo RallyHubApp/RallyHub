@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
+import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import Seo from '@/components/public/Seo';
 
 const PDF_URL = '/downloads/RallyHub_Directory_Explainer.pdf';
@@ -23,6 +24,7 @@ export default function DirectoryStory() {
           </object>
         </section>
       </main>
+      <div className="px-4 pb-4 sm:px-6 lg:px-10"><PublicCopyrightFooter maxWidthClass="max-w-[1120px]" /></div>
     </div>
   );
 }
