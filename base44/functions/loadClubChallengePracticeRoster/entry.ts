@@ -38,8 +38,8 @@ Deno.serve(async (req) => {
 
     const records:any[] = [];
     for (let i=1;i<=16;i++) {
-      records.push({ tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id, side:'club_a', display_name:`Club A Test ${String(i).padStart(2,'0')}`, event_rank:i, gender:i%2?'Male':'Female', status:'active', available_from_round:1, unique_identity_key:`gate3-club-a-${i}` });
-      records.push({ tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id, side:'club_b', display_name:`Club B Test ${String(i).padStart(2,'0')}`, event_rank:i, gender:i%2?'Male':'Female', status:'active', available_from_round:1, unique_identity_key:`gate3-club-b-${i}` });
+      records.push({ tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id, side:'club_a', display_name:`Club A Test ${String(i).padStart(2,'0')}`, event_rank:i, gender:i%2?'Male':'Female', roster_role:'rotation', status:'active', available_from_round:1, unique_identity_key:`gate3-club-a-${i}` });
+      records.push({ tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id, side:'club_b', display_name:`Club B Test ${String(i).padStart(2,'0')}`, event_rank:i, gender:i%2?'Male':'Female', roster_role:'rotation', status:'active', available_from_round:1, unique_identity_key:`gate3-club-b-${i}` });
     }
     await base44.asServiceRole.entities.ClubChallengeParticipant.bulkCreate(records);
     await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'draft', fairness_json:'', current_round:0, draw_approved_at:null, draw_approved_by:null, event_pack_stale:true });
