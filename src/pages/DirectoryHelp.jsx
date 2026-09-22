@@ -20,11 +20,11 @@ const faqs = [
   },
   {
     q: 'Can somebody from another club claim my listing?',
-    a: 'They can submit a claim request, but that does not give them editing access. RallyHub grants access only when the signed-in identity matches a trusted club contact, when a valid one-time invitation issued by RallyHub is used, or when a RallyHub administrator manually approves the request. Once a listing is already claimed, an unrelated user cannot take it over.'
+    a: 'They can submit a claim request, but that does not give them editing access. RallyHub checks trusted contact details and secure one-time invitations as verification signals, and Directory access is granted only after the request is approved. Once a listing is already claimed, an unrelated user cannot take it over.'
   },
   {
     q: 'What happens when I receive a RallyHub claim invitation?',
-    a: 'Open the secure invitation link. Sign in with your RallyHub account, or create one if this is your first time. RallyHub sends a six-digit code to verify a new account email. The trusted invitation is single-use and expires after 72 hours. If your verified email or mobile matches the invitation, you can continue without waiting for a second manual approval.'
+    a: 'Open the secure invitation link. Sign in with your RallyHub account, or create one if this is your first time. RallyHub sends a six-digit code to verify a new account email. The trusted invitation is single-use and expires after 72 hours. If your verified email or mobile matches the invitation, RallyHub verifies that the secure link was issued to you and sends your Directory access request for review. The link itself does not grant club-management or Directory access.'
   },
   {
     q: 'Can more than one person manage a club listing?',
