@@ -522,8 +522,7 @@ export default function PublicDirectory() {
           </div>
         </main>
 
-        <footer className="mt-4 bg-white">
-          <div className="h-[92px] bg-[url('/assets/rallyhub-home-cliffs.webp')] bg-cover bg-center sm:h-[118px]" />
+        <footer className="mt-4 bg-[#053c56] text-white">
           <div className="bg-[#053c56] text-white">
             <div className="mx-auto flex min-h-[70px] max-w-[1380px] flex-col items-center justify-center gap-3 px-4 py-4 text-center sm:px-6 md:flex-row md:justify-between md:text-left lg:px-10 xl:px-12">
               <div>
