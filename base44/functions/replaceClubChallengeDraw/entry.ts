@@ -32,9 +32,9 @@ Deno.serve(async (req) => {
 
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 120);
     const pmap = new Map(participants.map((p:any)=>[String(p.id),p]));
-    const clubA = participants.filter((p:any)=>p.side==='club_a' && !['replaced','withdrawn','injured'].includes(p.status));
-    const clubB = participants.filter((p:any)=>p.side==='club_b' && !['replaced','withdrawn','injured'].includes(p.status));
-    if (!clubA.length || clubA.length !== clubB.length) return Response.json({ error:'Both clubs require equal playable rosters before generating a draw.' }, { status:409 });
+    const clubA = participants.filter((p:any)=>p.side==='club_a' && !['replaced','withdrawn','injured'].includes(p.status) && ((p.roster_role || 'rotation') === 'rotation' || p.reserve_activated));
+    const clubB = participants.filter((p:any)=>p.side==='club_b' && !['replaced','withdrawn','injured'].includes(p.status) && ((p.roster_role || 'rotation') === 'rotation' || p.reserve_activated));
+    if (!clubA.length || clubA.length !== clubB.length) return Response.json({ error:'Both clubs require equal Rotation squads before generating a draw. Reserve numbers may differ.' }, { status:409 });
 
     const roundSeen = new Map<number, Set<string>>();
     const gamesA = new Map(clubA.map((p:any)=>[String(p.id),0]));
@@ -61,8 +61,10 @@ Deno.serve(async (req) => {
       });
     }
     const aCounts=[...gamesA.values()], bCounts=[...gamesB.values()];
-    if (Math.min(...aCounts)!==Math.max(...aCounts) || Math.min(...bCounts)!==Math.max(...bCounts)) return Response.json({ error:'Generated draw does not give equal games to every player.' }, { status:409 });
-    if (!fairness || fairness.duplicatePlayerRoundIssues || fairness.sameClubIntegrityIssues || fairness.equalGames !== true) return Response.json({ error:'Hard fairness checks must pass before the draw can be stored.' }, { status:409 });
+    const aSpread=Math.max(...aCounts)-Math.min(...aCounts), bSpread=Math.max(...bCounts)-Math.min(...bCounts);
+    if (aSpread > 1 || bSpread > 1) return Response.json({ error:'Generated draw gives an unfair game-count spread. Rotation players may differ by at most one game.' }, { status:409 });
+    const gamesBalanced = fairness && (fairness.balancedGames === true || fairness.equalGames === true || (Number(fairness.maxGames)-Number(fairness.minGames) <= 1));
+    if (!fairness || fairness.duplicatePlayerRoundIssues || fairness.sameClubIntegrityIssues || !gamesBalanced) return Response.json({ error:'Hard fairness checks must pass before the draw can be stored.' }, { status:409 });
 
     const existing = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300);
     if (existing.some((m:any)=>['completed','draw','retired','forfeit','abandoned'].includes(m.status))) return Response.json({ error:'Completed match history exists. Rebalance remaining fixtures instead of replacing the full draw.' }, { status:409 });
