@@ -138,6 +138,9 @@ Deno.serve(async (req) => {
       const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
       const row = rows?.[0] || null;
       const dynamic = dynamicRows?.[0] || null;
+      if (dynamic?.visibility === 'preview_only') {
+        return Response.json({ success:true, listingSlug, verificationStatus:'unclaimed', profile:null, base:null });
+      }
       const profile = parseJson(row?.public_json);
       const base = parseJson(dynamic?.base_json);
       if (!base && !profile && !dynamic) {
@@ -152,14 +155,15 @@ Deno.serve(async (req) => {
       const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ status: 'active' }, '-updated_at', 500);
       const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ status: 'active' }, '-granted_at', 500);
       const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500);
-      const verified = new Set((accesses || []).map((x:any) => x.listing_slug));
+      const hidden = new Set((dynamicRows || []).filter((x:any) => x.visibility === 'preview_only').map((x:any) => x.slug));
+      const verified = new Set((accesses || []).filter((x:any) => !hidden.has(x.listing_slug)).map((x:any) => x.listing_slug));
       const result:any = {};
       for (const row of dynamicRows || []) {
-        if (!row.slug || result[row.slug]) continue;
+        if (!row.slug || row.visibility === 'preview_only' || result[row.slug]) continue;
         result[row.slug] = { base: parseJson(row.base_json), profile: null, verificationStatus: verified.has(row.slug) ? 'verified' : 'unclaimed' };
       }
       for (const row of rows || []) {
-        if (!row.listing_slug) continue;
+        if (!row.listing_slug || hidden.has(row.listing_slug)) continue;
         const current = result[row.listing_slug] || { base: null, profile: null, verificationStatus: verified.has(row.listing_slug) ? 'verified' : 'unclaimed' };
         if (!current.profile) current.profile = parseJson(row.public_json);
         current.verificationStatus = verified.has(row.listing_slug) ? 'verified' : 'unclaimed';
@@ -173,6 +177,24 @@ Deno.serve(async (req) => {
 
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Sign in required' }, { status: 401 });
+
+    if (action === 'private_get') {
+      const listingSlug = clean(body.listingSlug, 180);
+      if (!listingSlug) return Response.json({ error:'listingSlug required' }, { status:400 });
+      let allowed = user.role === 'admin';
+      if (!allowed) {
+        const access = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, user_id:user.id, status:'active' });
+        allowed = !!access?.length;
+      }
+      if (!allowed) return Response.json({ error:'Directory editor access required' }, { status:403 });
+      const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status:'active' }, '-updated_at', 5);
+      const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
+      const row = rows?.[0] || null;
+      const dynamic = dynamicRows?.[0] || null;
+      const profile = parseJson(row?.public_json);
+      const base = parseJson(dynamic?.base_json);
+      return Response.json({ success:true, listingSlug, visibility:dynamic?.visibility || 'public', verificationStatus:await verifiedStatus(base44, listingSlug), profile, base });
+    }
 
     if (action === 'save') {
       const listingSlug = clean(body.listingSlug, 180);
