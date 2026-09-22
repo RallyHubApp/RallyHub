@@ -538,6 +538,7 @@ export default function PublicDirectory() {
               </div>
             </div>
           </div>
+          <div className="mx-auto flex min-h-[36px] max-w-[1380px] items-center justify-center border-t border-white/10 px-4 py-2 text-center text-[10px] font-medium text-white/70 sm:px-6 sm:text-[11px] lg:px-10 xl:px-12">© 2026 RallyHub All rights reserved.</div>
         </footer>
       </div>
     </>
