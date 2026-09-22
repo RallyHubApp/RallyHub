@@ -60,11 +60,68 @@ const phoneHref = (value:any) => {
 // per visitor. Writes invalidate the snapshot immediately.
 const PUBLIC_LIST_CACHE_TTL_MS = 60 * 1000;
 const PUBLIC_LIST_STALE_IF_BUSY_MS = 15 * 60 * 1000;
+const PUBLIC_GET_CACHE_TTL_MS = 60 * 1000;
+const PUBLIC_GET_STALE_IF_BUSY_MS = 15 * 60 * 1000;
 let publicListCache:any = null;
 let publicListInFlight:Promise<any> | null = null;
+const publicGetCache = new Map<string, any>();
+const publicGetInFlight = new Map<string, Promise<any>>();
 
 function invalidatePublicListCache() {
   publicListCache = null;
+}
+
+function invalidatePublicGetCache(listingSlug:string) {
+  publicGetCache.delete(listingSlug);
+}
+
+async function buildPublicClub(base44:any, listingSlug:string) {
+  const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5);
+  const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
+  const row = rows?.[0] || null;
+  const dynamic = dynamicRows?.[0] || null;
+  if (dynamic?.visibility === 'preview_only') {
+    return { success:true, listingSlug, verificationStatus:'unclaimed', profile:null, base:null };
+  }
+  const profile = parseJson(row?.public_json);
+  const base = parseJson(dynamic?.base_json);
+  const verificationStatus = await verifiedStatus(base44, listingSlug);
+  return { success:true, listingSlug, verificationStatus, profile, base };
+}
+
+async function getPublicClub(base44:any, listingSlug:string) {
+  const now = Date.now();
+  const cached = publicGetCache.get(listingSlug);
+  if (cached && now - cached.savedAt < PUBLIC_GET_CACHE_TTL_MS) return cached.data;
+  if (publicGetInFlight.has(listingSlug)) return publicGetInFlight.get(listingSlug);
+
+  const request = buildPublicClub(base44, listingSlug)
+    .then((data:any) => {
+      publicGetCache.set(listingSlug, { savedAt: Date.now(), data });
+      return data;
+    })
+    .catch((error:any) => {
+      const stale = publicGetCache.get(listingSlug);
+      if (stale && Date.now() - stale.savedAt < PUBLIC_GET_STALE_IF_BUSY_MS && isRateLimit(error)) return stale.data;
+      if (isRateLimit(error)) {
+        const fallback:any = publicDirectoryFallbackSnapshot[listingSlug] || {};
+        const data = {
+          success: true,
+          listingSlug,
+          verificationStatus: fallback.verificationStatus || 'unclaimed',
+          profile: fallback.profile || null,
+          base: fallback.base || null,
+          degraded: true,
+        };
+        publicGetCache.set(listingSlug, { savedAt: Date.now(), data });
+        return data;
+      }
+      throw error;
+    })
+    .finally(() => { publicGetInFlight.delete(listingSlug); });
+
+  publicGetInFlight.set(listingSlug, request);
+  return request;
 }
 
 async function buildPublicDirectoryList(base44:any) {
@@ -198,21 +255,11 @@ Deno.serve(async (req) => {
     if (action === 'public_get') {
       const listingSlug = clean(body.listingSlug, 180);
       if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
-      // Keep public discovery reads sequential. Base44 has practical burst limits and
-      // parallel provider calls multiply load when many visitors arrive together.
-      const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5);
-      const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
-      const row = rows?.[0] || null;
-      const dynamic = dynamicRows?.[0] || null;
-      if (dynamic?.visibility === 'preview_only') {
-        return Response.json({ success:true, listingSlug, verificationStatus:'unclaimed', profile:null, base:null });
-      }
-      const profile = parseJson(row?.public_json);
-      const base = parseJson(dynamic?.base_json);
-      if (!base && !profile && !dynamic) {
-        return Response.json({ success: true, listingSlug, verificationStatus: await verifiedStatus(base44, listingSlug), profile: null, base: null });
-      }
-      return Response.json({ success: true, listingSlug, verificationStatus: await verifiedStatus(base44, listingSlug), profile, base });
+      const data = await getPublicClub(base44, listingSlug);
+      return Response.json(
+        data,
+        { headers: { 'Cache-Control': 'public, max-age=30, stale-while-revalidate=300' } }
+      );
     }
 
     if (action === 'public_list') {
@@ -303,6 +350,7 @@ Deno.serve(async (req) => {
         console.warn('Directory listing audit write failed', auditError?.message || auditError);
       }
       invalidatePublicListCache();
+      invalidatePublicGetCache(listingSlug);
       return Response.json({ success: true, profile: publicProfile, updatedAt: now, id: record?.id || existing?.[0]?.id || null });
     }
 
