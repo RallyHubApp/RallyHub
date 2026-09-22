@@ -41,7 +41,8 @@ Deno.serve(async (req) => {
       if (!matches.length) return Response.json({ error:'No fixtures exist to approve.' }, { status:409 });
       let fairness:any = null;
       try { fairness = event.fairness_json ? JSON.parse(event.fairness_json) : null; } catch { fairness = null; }
-      if (!fairness || fairness.duplicatePlayerRoundIssues || fairness.sameClubIntegrityIssues || fairness.equalGames !== true) return Response.json({ error:'Hard fairness checks must pass before approval.' }, { status:409 });
+      const gamesBalanced = fairness && (fairness.balancedGames === true || fairness.equalGames === true || (Number(fairness.maxGames)-Number(fairness.minGames) <= 1));
+      if (!fairness || fairness.duplicatePlayerRoundIssues || fairness.sameClubIntegrityIssues || !gamesBalanced) return Response.json({ error:'Hard fairness checks must pass before approval.' }, { status:409 });
       const nextVersion = Number(event.draw_version || 0) + 1;
       const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'draw_approved', draw_version:nextVersion, draw_approved_at:now, draw_approved_by:user.id, event_pack_stale:false, event_pack_version:nextVersion, event_pack_generated_at:now });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'draw_approved', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({draw_version:nextVersion,match_count:matches.length}) });
