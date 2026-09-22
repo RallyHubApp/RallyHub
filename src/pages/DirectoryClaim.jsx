@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { getClub } from '@/data/directorySeed';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
+import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -260,6 +261,7 @@ export default function DirectoryClaim() {
           </aside>
         </div>
       </main>
+      <div className="px-4 pb-4"><PublicCopyrightFooter maxWidthClass="max-w-6xl" /></div>
       </div>
     </>
   );
