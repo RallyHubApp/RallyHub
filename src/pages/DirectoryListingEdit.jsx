@@ -213,7 +213,7 @@ export default function DirectoryListingEdit() {
   useEffect(() => {
     let active = true;
     setLoadingListing(true);
-    base44.functions.invoke('directoryListingProfile', { action: 'public_get', listingSlug: slug })
+    base44.functions.invoke('directoryListingProfile', { action: isAuthenticated ? 'private_get' : 'public_get', listingSlug: slug })
       .then(res => {
         if (!active || res.data?.error) return;
         const resolvedBase = seed || res.data?.base || null;
@@ -229,7 +229,7 @@ export default function DirectoryListingEdit() {
       .catch(err => { if (active) setError(err.message || 'Could not load this listing.'); })
       .finally(() => { if (active) setLoadingListing(false); });
     return () => { active = false; };
-  }, [slug, seed]);
+  }, [slug, seed, isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated || !baseClub) return;
