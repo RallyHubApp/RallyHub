@@ -10,7 +10,7 @@ test('directory search tolerates missing spaces and ranks Dublin 15', async ({ p
 
 test('directory has an interactive all-Ireland map view linked to club profiles', async ({ page }) => {
   await page.goto('/directory');
-  await page.getByRole('button', { name: 'Map', exact: true }).click();
+  await page.getByRole('button', { name: /map/i }).click();
   await expect(page.getByRole('heading', { name: 'Club map' })).toBeVisible();
   await expect(page.getByText('Explore clubs on the map')).toBeVisible();
   await expect(page.locator('.leaflet-marker-icon').first()).toBeVisible();
