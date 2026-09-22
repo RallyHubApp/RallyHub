@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
     const clubB = participants.filter((p:any)=>p.side==='club_b' && !['replaced','withdrawn','injured'].includes(p.status) && ((p.roster_role || 'rotation') === 'rotation' || p.reserve_activated));
     if (!clubA.length || clubA.length !== clubB.length) return Response.json({ error:'Both clubs require equal Rotation squads before generating a draw. Reserve numbers may differ.' }, { status:409 });
 
+    const clubAIds = new Set(clubA.map((p:any)=>String(p.id))), clubBIds = new Set(clubB.map((p:any)=>String(p.id)));
     const roundSeen = new Map<number, Set<string>>();
     const gamesA = new Map(clubA.map((p:any)=>[String(p.id),0]));
     const gamesB = new Map(clubB.map((p:any)=>[String(p.id),0]));
@@ -47,7 +48,7 @@ Deno.serve(async (req) => {
       if (!Number.isInteger(round) || round < 1 || !Number.isInteger(court) || court < 1 || aIds.length !== 2 || bIds.length !== 2) return Response.json({ error:`Invalid fixture at position ${i+1}.` }, { status:400 });
       const all = [...aIds,...bIds];
       if (new Set(all).size !== 4) return Response.json({ error:`A player appears twice in Round ${round}, Court ${court}.` }, { status:409 });
-      if (aIds.some(id=>pmap.get(id)?.side!=='club_a') || bIds.some(id=>pmap.get(id)?.side!=='club_b')) return Response.json({ error:`Club-side integrity failed in Round ${round}, Court ${court}.` }, { status:409 });
+      if (aIds.some(id=>pmap.get(id)?.side!=='club_a' || !clubAIds.has(id)) || bIds.some(id=>pmap.get(id)?.side!=='club_b' || !clubBIds.has(id))) return Response.json({ error:`Club-side or Rotation-squad integrity failed in Round ${round}, Court ${court}. Unactivated Reserves cannot appear in the draw.` }, { status:409 });
       const seen = roundSeen.get(round) || new Set<string>();
       if (all.some(id=>seen.has(id))) return Response.json({ error:`A player appears on more than one court in Round ${round}.` }, { status:409 });
       all.forEach(id=>seen.add(id)); roundSeen.set(round,seen);
