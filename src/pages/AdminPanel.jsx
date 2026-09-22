@@ -732,6 +732,7 @@ export default function AdminPanel() {
   const unlinkedCount = Math.max(0, clubPlayerCount - linkedCount);
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
+  const pendingDirectoryActionCount = pendingDirectoryClaims.length + pendingNewDirectoryRequests.length;
   const activeDirectoryAccesses = directoryVerification.accesses.filter(a => a.status === 'active');
   const activeClubAccessUserIds = new Set((allClubUserAccesses || []).filter(a => a.status === 'active').map(a => String(a.user_id)));
   const directoryOnlyUserIds = new Set(
@@ -799,8 +800,8 @@ export default function AdminPanel() {
           </TabsTrigger>
           <TabsTrigger value="directory" className="text-xs gap-1.5">
             <UserCheck className="w-3.5 h-3.5" /> Directory Claims
-            {(pendingDirectoryClaims.length + pendingNewDirectoryRequests.length + pendingDirectoryInvitations.length) > 0 && (
-              <span className="ml-1 bg-amber-400 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{pendingDirectoryClaims.length + pendingNewDirectoryRequests.length + pendingDirectoryInvitations.length}</span>
+            {pendingDirectoryActionCount > 0 && (
+              <span className="ml-1 bg-amber-400 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{pendingDirectoryActionCount}</span>
             )}
           </TabsTrigger>
           <TabsTrigger value="feedback" className="text-xs gap-1.5">
