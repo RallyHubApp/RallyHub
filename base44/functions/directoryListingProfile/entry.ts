@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { geocodeDirectoryVenues } from './geocode.ts';
+import { publicDirectoryFallbackSnapshot } from './publicFallbackSnapshot.ts';
 
 const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
 const isRateLimit = (error:any) => /rate limit|too many requests|\b429\b|temporar(?:y|ily) busy/i.test(String(error?.message || error || ''));
@@ -104,6 +105,12 @@ async function getPublicDirectoryList(base44:any) {
     .catch((error:any) => {
       if (stale && Date.now() - stale.savedAt < PUBLIC_LIST_STALE_IF_BUSY_MS && isRateLimit(error)) {
         return stale.listings;
+      }
+      if (isRateLimit(error)) {
+        // Last-resort launch resilience: return the last known-good public snapshot
+        // rather than failing a first-time visitor with a 503 during a traffic burst.
+        publicListCache = { savedAt: Date.now(), listings: publicDirectoryFallbackSnapshot, degraded: true };
+        return publicDirectoryFallbackSnapshot;
       }
       throw error;
     })
