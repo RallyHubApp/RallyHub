@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, HelpCircle, ShieldCheck, Upload, CalendarDays, ArrowLeft, BookOpen, FileText, Heart } from 'lucide-react';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
+import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import Seo from '@/components/public/Seo';
 
 const faqs = [
@@ -134,6 +135,7 @@ export default function DirectoryHelp() {
             <Link to="/directory?manage=1" className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Manage a listing</Link>
           </section>
         </main>
+        <div className="px-4 pb-4"><PublicCopyrightFooter maxWidthClass="max-w-6xl" /></div>
       </div>
     </>
   );
