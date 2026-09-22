@@ -28,6 +28,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
         {footer && (
           <p className="text-center text-sm text-muted-foreground mt-6">{footer}</p>
         )}
+        <p className="mt-8 border-t border-border pt-4 text-center text-[11px] text-muted-foreground">© 2026 RallyHub All rights reserved.</p>
       </div>
       </div>
     </>
