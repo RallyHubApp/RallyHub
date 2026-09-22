@@ -536,21 +536,29 @@ export default function AdminPanel() {
   })();
 
   const selectedOwnerInviteListing = directoryAdminListings.find(item => item.slug === ownerInvite.listingSlug) || null;
-  const filteredDirectoryAdminListings = directoryAdminListings.filter(item => {
+  const filteredDirectoryAdminListings = directoryAdminListings.flatMap(item => {
     const q = directoryClubSearch.trim().toLowerCase();
-    if (!q) return true;
-    const contacts = (item.contacts || []).map(contact => `${contact.name} ${contact.phone} ${contact.email}`).join(' ');
-    const textMatch = `${item.name} ${item.county} ${contacts}`.toLowerCase().includes(q);
+    if (!q) return [item];
     const qDigits = q.replace(/\D/g, '');
-    const phoneDigits = (item.contacts || []).map(contact => String(contact.phone || '').replace(/\D/g, '')).join(' ');
-    return textMatch || (qDigits.length >= 4 && phoneDigits.includes(qDigits));
+    const clubMatch = `${item.name} ${item.county}`.toLowerCase().includes(q);
+    const matchedContact = (item.contacts || []).find(contact => {
+      const text = `${contact.name} ${contact.phone} ${contact.email}`.toLowerCase();
+      const phoneDigits = String(contact.phone || '').replace(/\D/g, '');
+      return text.includes(q) || (qDigits.length >= 4 && phoneDigits.includes(qDigits));
+    });
+    return clubMatch || matchedContact ? [{ ...item, matchedContact: matchedContact || null }] : [];
   });
   const chooseDirectoryClubForInvite = (listing) => {
+    const contact = listing.matchedContact || {
+      name: listing.contactName || '',
+      phone: listing.contactPhone || '',
+      email: listing.contactEmail || '',
+    };
     setOwnerInvite({
       listingSlug: listing.slug,
-      contactName: listing.contactName || '',
-      contactPhone: listing.contactPhone || '',
-      contactEmail: listing.contactEmail || '',
+      contactName: contact.name || '',
+      contactPhone: contact.phone || '',
+      contactEmail: contact.email || '',
     });
     setOwnerInviteResult(null);
     setTimeout(() => document.getElementById('directory-claim-invite')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
@@ -1281,7 +1289,8 @@ export default function AdminPanel() {
                   const accesses = activeDirectoryAccesses.filter(access => access.listing_slug === listing.slug && access.status === 'active');
                   const pending = directoryInvitations.filter(invite => invite.listing_slug === listing.slug && ['pending','used'].includes(invite.status));
                   const status = accesses.length ? 'Claimed' : pending.length ? 'Invitation in progress' : 'Unclaimed';
-                  const contactSummary = [listing.contactName, listing.contactPhone, listing.contactEmail].filter(Boolean).join(' · ');
+                  const shownContact = listing.matchedContact || { name: listing.contactName, phone: listing.contactPhone, email: listing.contactEmail };
+                  const contactSummary = [shownContact.name, shownContact.phone, shownContact.email].filter(Boolean).join(' · ');
                   return <div key={listing.slug} className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/20">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold truncate">{listing.name}</p>
