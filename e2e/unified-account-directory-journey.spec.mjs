@@ -21,14 +21,12 @@ test('directory claim journey stays on one RallyHub account flow', async ({ page
   await expect(page.getByText('Create directory account', { exact: true })).toHaveCount(0);
 });
 
-test('quick start guide matches the unified account journey', async ({ page }) => {
+test('quick start guide exposes the approved guide and printable PDF', async ({ page }) => {
   await page.goto('/directory/quick-start');
 
-  await expect(page.getByRole('heading', { name: 'Sign in or create your RallyHub account' })).toBeVisible();
-  await expect(page.getByText('RallyHub uses one account.', { exact: false })).toBeVisible();
-  await expect(page.getByText('Create your RallyHub account', { exact: true })).toBeVisible();
-  await expect(page.getByText('One RallyHub account, separate permissions.', { exact: false })).toBeVisible();
-  await expect(page.getByText('Create your Directory account', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Approved RallyHub Directory Quick Start Guide', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Open \/ print PDF/i })).toHaveAttribute('href', '/downloads/RallyHub_Directory_Quick_Start_Guide.pdf');
+  await expect(page.locator('object[aria-label="RallyHub Directory Quick Start Guide"]')).toHaveAttribute('data', '/downloads/RallyHub_Directory_Quick_Start_Guide.pdf');
 });
 
 test('directory help explains one account with separate permissions', async ({ page }) => {
