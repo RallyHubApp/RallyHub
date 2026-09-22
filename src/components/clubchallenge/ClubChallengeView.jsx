@@ -1207,9 +1207,27 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase);
     const unresolved = currentMatches.filter(m => !['completed', 'draw', 'retired', 'forfeit', 'abandoned', 'not_played'].includes(m.status));
     if (unresolved.length) { toast.error(`${unresolved.length} result${unresolved.length === 1 ? '' : 's'} still missing in Round ${currentRound}.`); return; }
-    sportingActionRef.current = true; setHostAction(currentRound < Math.max(...rounds) ? `Preparing Round ${currentRound + 1}… command sent` : `Finalising ${INTERCLUB_EVENT_LABEL}… command sent`);
+    const maxRound = Math.max(...rounds);
+    const scheduledBreak = !!event?.include_break && Number(currentRound) === Number(event?.break_after_round || 0) && currentRound < maxRound;
+    if (scheduledBreak && timerPhase !== 'break') {
+      setRoundActionStatus({ state:'working', text:`Round ${currentRound} saved. Starting ${Number(event.break_minutes || 20)}-minute break…` });
+      await unlockHallAudio();
+      const ok = await timerAction('start', 'break');
+      if (ok) {
+        const message = `Round ${currentRound} saved ✓ · ${Number(event.break_minutes || 20)}-minute break started`;
+        setRoundActionStatus({ state:'success', text:message });
+        toast.success(message);
+        speak(`Round ${currentRound} saved. Your ${Number(event.break_minutes || 20)} minute break starts now. Please make sure all scores are in. Enjoy your break.`, { signal:'start' });
+        requestWakeLock();
+      } else setRoundActionStatus({ state:'error', text:'Could not start the scheduled break.' });
+      return;
+    }
+    if (scheduledBreak && timerPhase === 'break' && timerRemaining > 0) {
+      toast.info(`Break in progress · ${fmtTimer(timerRemaining)} remaining. The host can shorten it or end it early.`);
+      return;
+    }
+    sportingActionRef.current = true; setRoundActionStatus({ state:'working', text:currentRound < maxRound ? `Round ${currentRound} saved. Preparing Round ${currentRound + 1}…` : `Finalising ${INTERCLUB_EVENT_LABEL}…` }); setHostAction(currentRound < maxRound ? `Preparing Round ${currentRound + 1}… command sent` : `Finalising ${INTERCLUB_EVENT_LABEL}… command sent`);
     try {
-      const maxRound = Math.max(...rounds);
       if (currentRound < maxRound) {
         const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1 });
         if (res.data?.error) { toast.error(res.data.error); return; }
@@ -1217,7 +1235,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         const nextMatches = normalMatches.filter(m => m.round_number === nextRound);
         const activeIds = new Set(nextMatches.flatMap(m => [...(m.club_a_participant_ids || []), ...(m.club_b_participant_ids || [])]));
         const restingCount = participants.filter(p => ['active','late'].includes(p.status) && !activeIds.has(p.id)).length;
-        toast.success(`Round ${nextRound} ready · ${nextMatches.length} courts · ${restingCount} players resting`);
+        const message = `Round ${currentRound} saved ✓ · Round ${nextRound} ready · ${nextMatches.length} courts · ${restingCount} players resting`;
+        setRoundActionStatus({ state:'success', text:message });
+        toast.success(message);
         await refetchEvent();
       } else {
         if (resolvedNormalCount !== normalMatches.length) { toast.error('All normal match results must be resolved before the event can finish.'); return; }
@@ -1228,7 +1248,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         }
         await finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Interclub Challenge matches.');
       }
-    } catch (e) { await refetchEvent(); toast.error(e?.response?.data?.error || e?.message || `Could not advance ${INTERCLUB_EVENT_LABEL}`); }
+    } catch (e) { const message = e?.response?.data?.error || e?.message || `Could not advance ${INTERCLUB_EVENT_LABEL}`; setRoundActionStatus({ state:'error', text:message }); await refetchEvent(); toast.error(message); }
     finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
@@ -1237,7 +1257,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const currentRoundComplete = currentMatches.length > 0 && currentRoundSavedCount === currentMatches.length;
   const timerPhase = String(timerState?.phase || 'idle');
   const timerRunning = !!timerState?.running && timerRemaining > 0;
-  const timerPaused = !!timerState && !timerState?.running && timerRemaining > 0 && timerPhase === 'play';
+  const timerPaused = !!timerState && !timerState?.running && timerRemaining > 0 && ['play','changeover','break'].includes(timerPhase);
+  const scheduledBreakHere = !!event?.include_break && Number(currentRound) === Number(event?.break_after_round || 0);
+  const breakActive = scheduledBreakHere && timerPhase === 'break';
   const playFinished = timerPhase === 'play' && timerRemaining <= 0;
   const changeoverAvailable = timerPhase === 'play' && (!timerState?.running || timerRemaining <= 0);
   const outgoingPlayer = participants.find(p => p.id === replacement.outgoingId) || null;
