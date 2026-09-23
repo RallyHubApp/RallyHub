@@ -1306,6 +1306,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const completed = ['completed','archived'].includes(event?.status);
     const selection = { ...printSelection, final: completed ? printSelection.final : false };
     if (!Object.values(selection).some(Boolean)) { toast.error('Choose at least one sheet to print.'); return; }
+
+    if (selection.briefing && event?.pot_enabled && !publicLinks?.votingUrl) {
+      const links = await ensurePublicLinks({ quiet:true });
+      if (!links?.votingUrl) { toast.error('Could not prepare the voting QR. Printing has been cancelled.'); return; }
+      await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+    }
+
     await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_generated_at: new Date().toISOString() });
     await refetchEvent();
     setPrintPackOpen(false);
@@ -1317,7 +1324,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     document.body.classList.add('rh-printing-interclub');
     if (scoreOnly) document.body.classList.add('rh-printing-score-only');
     window.addEventListener('afterprint', cleanupPrintMode, { once:true });
-    window.setTimeout(() => window.print(), 200);
+    window.setTimeout(() => window.print(), 250);
   };
   const applyReplacement = async () => {
     if (!event || !canManageEvent || !replacement.outgoingId) { toast.error('Choose the player who is leaving.'); return; }
@@ -1873,7 +1880,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     <div data-testid="cc-root" className="space-y-4 print:space-y-0">
       {hostAction && <div className="print:hidden sticky top-2 z-40 rounded-xl border-2 border-primary/40 bg-background/95 p-3 shadow-lg"><p className="text-sm font-bold text-primary">{hostAction}</p><p className="text-xs text-muted-foreground mt-1">RallyHub has accepted your tap. Keep this screen open; the control stays locked until the action resolves.</p></div>}
       {typeof document !== 'undefined' && event && ['draw_approved','in_progress','paused','completed','archived'].includes(event.status) ? createPortal(
-        <div className="rhpp-print-host"><InterclubPrintPack event={event} tournament={tournament} matches={matches} participants={participants} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} sections={printSelection} /></div>,
+        <div className="rhpp-print-host"><InterclubPrintPack event={event} tournament={tournament} matches={matches} participants={participants} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} sections={printSelection} votingUrl={publicLinks?.votingUrl || ''} /></div>,
         document.body
       ) : null}
       {printPackOpen && <div className="print:hidden fixed inset-0 z-[100] bg-black/55 flex items-center justify-center p-4" onMouseDown={e => { if (e.target === e.currentTarget) setPrintPackOpen(false); }}>
