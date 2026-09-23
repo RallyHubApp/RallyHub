@@ -112,30 +112,85 @@ Deno.serve(async (req) => {
       playersByRound.set(Number(m.round_number), seen);
     }
 
+    // Claim a short-lived server-side schedule lock only after the proposal has
+    // passed validation. Overlapping requests race for this token; after a short
+    // settle window only the request whose token remains authoritative may write.
+    const lockToken = crypto.randomUUID();
+    const lockUntil = new Date(Date.now() + 5000).toISOString();
+    await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
+      schedule_adjustment_lock_token: lockToken,
+      schedule_adjustment_lock_until: lockUntil,
+    });
+    await new Promise(resolve => setTimeout(resolve, 75));
+    const lockedRows = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:event.id });
+    const lockedEvent = lockedRows?.[0];
+    if (!lockedEvent || String(lockedEvent.schedule_adjustment_lock_token || '') !== lockToken) {
+      return Response.json({ error:'Another court/time adjustment won the update race. Refresh to see the authoritative schedule.' }, { status:409 });
+    }
+    const releaseLock = async () => {
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
+        schedule_adjustment_lock_token:'',
+        schedule_adjustment_lock_until:'1970-01-01T00:00:00.000Z',
+      });
+    };
+    if (Number(lockedEvent.current_round || 1) !== currentRound) {
+      await releaseLock();
+      return Response.json({ error:'The live round changed while this schedule proposal was being applied. Refresh and review again.' }, { status:409 });
+    }
+    if (cleanProposalKey && String(lockedEvent.last_schedule_adjustment_key || '') === cleanProposalKey) {
+      await releaseLock();
+      return Response.json({ success:true, event:lockedEvent, changed:0, dropped:0, alreadyApplied:true });
+    }
+
+    // Re-read fixtures after obtaining the lock. A score may have been saved while
+    // the organiser was reviewing the proposal; completed history must never move.
+    const freshMatches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300);
+    const freshById = new Map(freshMatches.filter((m:any) => !m.is_showcase).map((m:any) => [String(m.id),m]));
     for (const c of changeList) {
-      const m:any = byId.get(String(c.id));
+      const m:any = freshById.get(String(c.id));
+      if (!m || TERMINAL.has(m.status) || Number(m.round_number) < currentRound) {
+        await releaseLock();
+        return Response.json({ error:'A fixture changed while this proposal was being confirmed. Refresh and review the schedule again.' }, { status:409 });
+      }
+    }
+    for (const id of dropSet) {
+      const m:any = freshById.get(String(id));
+      if (!m || TERMINAL.has(m.status) || Number(m.round_number) < currentRound) {
+        await releaseLock();
+        return Response.json({ error:'A fixture changed while this proposal was being confirmed. Refresh and review the schedule again.' }, { status:409 });
+      }
+    }
+
+    for (const c of changeList) {
+      const m:any = freshById.get(String(c.id));
       await base44.asServiceRole.entities.ClubChallengeMatch.update(m.id, {
         round_number: Number(c.newRound), court_number: Number(c.newCourt), revision: Number(m.revision || 0) + 1,
       });
     }
     for (const id of dropSet) {
-      const m:any = byId.get(id);
+      const m:any = freshById.get(String(id));
       await base44.asServiceRole.entities.ClubChallengeMatch.update(m.id, {
-        status: 'not_played', winner: 'none', revision: Number(m.revision || 0) + 1,
+        status:'not_played', winner:'none', revision:Number(m.revision || 0) + 1,
       });
     }
 
-    const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
-      courts: nextCourts, available_minutes: nextMinutes, event_pack_stale: true,
-    });
+    const eventUpdate:any = {
+      courts:nextCourts,
+      available_minutes:nextMinutes,
+      event_pack_stale:true,
+      schedule_adjustment_lock_token:'',
+      schedule_adjustment_lock_until:'1970-01-01T00:00:00.000Z',
+    };
+    if (cleanProposalKey) eventUpdate.last_schedule_adjustment_key = cleanProposalKey;
+    const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, eventUpdate);
     const now = new Date().toISOString();
     await base44.asServiceRole.entities.ClubChallengeAudit.create({
-      tenant_id: event.tenant_id, challenge_event_id: event.id, action: 'event_day_schedule_adjusted', user_id: user.id, occurred_at: now,
-      old_value_json: JSON.stringify({ courts: event.courts, available_minutes: event.available_minutes }),
-      new_value_json: JSON.stringify({ courts: nextCourts, available_minutes: nextMinutes, changes:changeList, dropIds: [...dropSet] }),
-      note: 'Organiser confirmed court/time disruption proposal; completed fixtures preserved.',
+      tenant_id:event.tenant_id, challenge_event_id:event.id, action:'event_day_schedule_adjusted', user_id:user.id, occurred_at:now,
+      old_value_json:JSON.stringify({ courts:event.courts, available_minutes:event.available_minutes, planned_rounds:plannedRounds }),
+      new_value_json:JSON.stringify({ courts:nextCourts, available_minutes:nextMinutes, planned_rounds:plannedRounds, changes:changeList, dropIds:[...dropSet], proposalKey:cleanProposalKey || undefined }),
+      note:'Organiser confirmed court/time disruption proposal; completed fixtures and approved round limit preserved.',
     });
-    return Response.json({ success: true, event: updated, changed: changeList.length, dropped: dropSet.size, alreadyApplied:false });
+    return Response.json({ success:true, event:updated, changed:changeList.length, dropped:dropSet.size, alreadyApplied:false });
   } catch (error) {
     return Response.json({ error: error?.message || 'Unexpected schedule adjustment error' }, { status: 500 });
   }
