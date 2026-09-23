@@ -1244,7 +1244,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1 });
         if (res.data?.error) { toast.error(res.data.error); return; }
         const nextRound = currentRound + 1;
-        const nextMatches = normalMatches.filter(m => m.round_number === nextRound);
+        const nextMatches = normalMatches.filter(m => m.round_number === nextRound && m.status !== 'not_played');
         const activeIds = new Set(nextMatches.flatMap(m => [...(m.club_a_participant_ids || []), ...(m.club_b_participant_ids || [])]));
         const restingCount = participants.filter(p => ['active','late'].includes(p.status) && !activeIds.has(p.id)).length;
         const message = `Round ${currentRound} saved ✓ · Round ${nextRound} ready · ${nextMatches.length} courts · ${restingCount} players resting`;
