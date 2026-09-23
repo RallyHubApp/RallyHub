@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Check, CheckCircle2, ChevronDown, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Upload, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
-import { getRallyHubPaLevel, listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
+import { getRallyHubPaLevel, listRallyHubMicrophones, playRallyHubSignal, primeRallyHubHallSpeech, setRallyHubPaGain, speakRallyHubHall, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
 import { INTERCLUB_EVENT_LABEL, INTERCLUB_INTERNAL_FORMAT, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
 import InterclubSpondImportModal from '@/components/clubchallenge/InterclubSpondImportModal';
 import InterclubPrintPack from '@/components/clubchallenge/InterclubPrintPack';
@@ -900,8 +900,21 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const ctx = await unlockRallyHubAudio();
       setAudioReady(!!ctx && ctx.state === 'running');
       if (test) {
+        const testPhrase = 'Sound check. RallyHub Interclub ready.';
+        // Start generating the hall-grade voice immediately while the cue plays.
+        // If the provider is unavailable, speakRallyHubHall automatically falls
+        // back to the device/browser voice so Test Sound still works.
+        const prepared = primeRallyHubHallSpeech(testPhrase, { eventId:event?.id || '' });
         playRallyHubSignal(ctx, 'start', hallVolume);
-        window.setTimeout(() => speakRallyHub('Sound check. RallyHub Interclub ready.', { volume: hallVolume, voiceMode, voices }), 450);
+        window.setTimeout(async () => {
+          await prepared;
+          await speakRallyHubHall(testPhrase, {
+            volume:hallVolume,
+            eventId:event?.id || '',
+            voiceMode,
+            voices,
+          });
+        }, 450);
         if ('vibrate' in navigator) navigator.vibrate(120);
       }
       return ctx;
@@ -963,9 +976,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const ctx = window.__rallyhubAudioContext || null;
     if (signal) playRallyHubSignal(ctx, signal, hallVolume);
     if (!text || paActive || voiceMode === 'off') return !!signal;
-    const spoken = speakRallyHub(text, { volume: hallVolume, voiceMode, voices });
-    if (spoken) setLastAnnouncement(text);
-    return spoken;
+    void speakRallyHubHall(text, {
+      volume:hallVolume,
+      eventId:event?.id || '',
+      voiceMode,
+      voices,
+    }).then(spoken => {
+      if (spoken) setLastAnnouncement(text);
+    });
+    return true;
   };
   React.useEffect(() => {
     const changedAt = showcaseMatch?.side_change_at || '';
@@ -988,58 +1007,54 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!text || announcementSpeaking) return;
     if (paActive) { toast.info('Turn off Live PA before playing a RallyHub voice announcement.'); return; }
     setAnnouncementSpeaking(true);
-    setAnnouncementStatus('Attention chime…');
+    setAnnouncementStatus('Preparing hall voice…');
     try {
       const ctx = await unlockHallAudio();
       if (!ctx) throw new Error('RallyHub audio is not available in this browser.');
 
+      // Generate/normalise the voice while the attention chime plays so the
+      // network round trip is normally hidden behind the cue.
+      const prepared = primeRallyHubHallSpeech(text, { eventId:event?.id || '' });
       playRallyHubSignal(ctx, 'announcement', hallVolume);
-      window.setTimeout(() => {
-        let started = false;
-        const watchdog = window.setTimeout(() => {
-          if (started) return;
-          window.speechSynthesis?.cancel?.();
-          setAnnouncementSpeaking(false);
-          setAnnouncementStatus('Voice did not start — text kept for retry.');
-          toast.error('The device voice did not start. Your announcement text has been kept.');
-        }, 4500);
-        const ok = speakRallyHub(text, {
-          volume: hallVolume,
-          voiceMode: 'rallyhub_default',
-          voices,
-          onStart: () => {
-            started = true;
-            window.clearTimeout(watchdog);
-            setAnnouncementStatus('Speaking…');
-          },
-          onEnd: () => {
-            window.clearTimeout(watchdog);
-            if (!started) {
-              setAnnouncementSpeaking(false);
-              setAnnouncementStatus('Voice did not audibly start — text kept for retry.');
-              toast.error('The browser ended the voice without starting it. Your text has been kept.');
-              return;
-            }
-            setLastAnnouncement(text);
-            setAnnouncementDraft('');
+      await Promise.all([
+        prepared,
+        new Promise(resolve => window.setTimeout(resolve, 2350)),
+      ]);
+
+      let started = false;
+      const ok = await speakRallyHubHall(text, {
+        volume:hallVolume,
+        eventId:event?.id || '',
+        voiceMode:'rallyhub_default',
+        voices,
+        onStart:() => {
+          started = true;
+          setAnnouncementStatus('Speaking…');
+        },
+        onEnd:() => {
+          if (!started) {
             setAnnouncementSpeaking(false);
-            setAnnouncementStatus('Announcement played.');
-            toast.success('Announcement played.');
-          },
-          onError: () => {
-            window.clearTimeout(watchdog);
-            setAnnouncementSpeaking(false);
-            setAnnouncementStatus('Voice playback failed — text kept for retry.');
-            toast.error('Voice playback failed. Your announcement text has been kept.');
-          },
-        });
-        if (!ok) {
-          window.clearTimeout(watchdog);
+            setAnnouncementStatus('Voice did not audibly start — text kept for retry.');
+            toast.error('The hall voice ended without starting. Your announcement text has been kept.');
+            return;
+          }
+          setLastAnnouncement(text);
+          setAnnouncementDraft('');
           setAnnouncementSpeaking(false);
-          setAnnouncementStatus('Text-to-speech is unavailable — text kept for retry.');
-          toast.error('Text-to-speech is unavailable in this browser.');
-        }
-      }, 2450);
+          setAnnouncementStatus('Announcement played.');
+          toast.success('Announcement played.');
+        },
+        onError:() => {
+          setAnnouncementSpeaking(false);
+          setAnnouncementStatus('Voice playback failed — text kept for retry.');
+          toast.error('Voice playback failed. Your announcement text has been kept.');
+        },
+      });
+      if (!ok) {
+        setAnnouncementSpeaking(false);
+        setAnnouncementStatus('Hall voice unavailable — text kept for retry.');
+        toast.error('Hall voice is unavailable. Your announcement text has been kept.');
+      }
     } catch (error) {
       setAnnouncementSpeaking(false);
       setAnnouncementStatus('Announcement could not start — text kept for retry.');
