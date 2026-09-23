@@ -52,10 +52,22 @@ export default function Dashboard() {
     enabled: !!currentUser
   });
 
-  const { data: pendingApprovalCount = 0 } = useQuery({
-    queryKey: ['pending-approval-count'],
+  const { data: pendingMembershipApprovalCount = 0 } = useQuery({
+    queryKey: ['pending-membership-approval-count'],
     queryFn: async () => {
       const res = await base44.functions.invoke('adminUserTools', { action: 'pending_approval_count' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return Number(res.data?.pendingCount || 0);
+    },
+    enabled: currentUser?.role === 'admin',
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true
+  });
+
+  const { data: pendingDirectoryApprovalCount = 0 } = useQuery({
+    queryKey: ['pending-directory-approval-count'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('directoryClaim', { action: 'pending_admin_count' });
       if (res.data?.error) throw new Error(res.data.error);
       return Number(res.data?.pendingCount || 0);
     },
@@ -82,30 +94,52 @@ export default function Dashboard() {
         </Link>
       </PageHeader>
 
-      {currentUser?.role === 'admin' && pendingApprovalCount > 0 && (
-        <Link
-          to="/app/admin?tab=approvals"
-          className="block rounded-xl border border-amber-400/40 bg-amber-500/10 p-4 hover:bg-amber-500/15 transition-colors"
-          aria-label={`Review ${pendingApprovalCount} pending approvals`}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-400/20 flex items-center justify-center shrink-0">
-              <BellRing className="w-5 h-5 text-amber-300" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-foreground">
-                {pendingApprovalCount} {pendingApprovalCount === 1 ? 'approval needs' : 'approvals need'} your attention
-              </p>
-              <p className="text-sm text-muted-foreground">Tap here to review the pending RallyHub users.</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="min-w-7 h-7 px-2 rounded-full bg-amber-400 text-black text-sm font-black flex items-center justify-center">
-                {pendingApprovalCount}
-              </span>
-              <ArrowRight className="w-4 h-4 text-amber-300" />
-            </div>
-          </div>
-        </Link>
+      {currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0) && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {pendingMembershipApprovalCount > 0 && (
+            <Link
+              to="/app/admin?tab=approvals"
+              className="block rounded-xl border border-amber-400/40 bg-amber-500/10 p-4 hover:bg-amber-500/15 transition-colors"
+              aria-label={`Review ${pendingMembershipApprovalCount} pending membership approvals`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-400/20 flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5 text-amber-300" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-foreground">Membership approvals</p>
+                  <p className="text-sm text-muted-foreground">{pendingMembershipApprovalCount} {pendingMembershipApprovalCount === 1 ? 'approval needs' : 'approvals need'} your attention.</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="min-w-7 h-7 px-2 rounded-full bg-amber-400 text-black text-sm font-black flex items-center justify-center">{pendingMembershipApprovalCount}</span>
+                  <ArrowRight className="w-4 h-4 text-amber-300" />
+                </div>
+              </div>
+            </Link>
+          )}
+
+          {pendingDirectoryApprovalCount > 0 && (
+            <Link
+              to="/app/admin?tab=directory"
+              className="block rounded-xl border border-emerald-400/40 bg-emerald-500/10 p-4 hover:bg-emerald-500/15 transition-colors"
+              aria-label={`Review ${pendingDirectoryApprovalCount} pending Directory approvals`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-400/20 flex items-center justify-center shrink-0">
+                  <BellRing className="w-5 h-5 text-emerald-300" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-foreground">Directory approvals</p>
+                  <p className="text-sm text-muted-foreground">{pendingDirectoryApprovalCount} {pendingDirectoryApprovalCount === 1 ? 'approval needs' : 'approvals need'} your attention.</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="min-w-7 h-7 px-2 rounded-full bg-emerald-400 text-black text-sm font-black flex items-center justify-center">{pendingDirectoryApprovalCount}</span>
+                  <ArrowRight className="w-4 h-4 text-emerald-300" />
+                </div>
+              </div>
+            </Link>
+          )}
+        </div>
       )}
 
       {/* Stats */}
