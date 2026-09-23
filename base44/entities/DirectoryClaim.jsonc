@@ -34,6 +34,13 @@
       "type": "boolean",
       "default": false
     },
+    "identity_admin_confirmed_by_user_id": {
+      "type": "string"
+    },
+    "identity_admin_confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "network_updates_opt_in": {
       "type": "boolean",
       "default": false
