@@ -18,8 +18,9 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, clubAMaleId, clubAFemaleId, clubBMaleId, clubBFemaleId, mode = 'tiebreak' } = body;
+    const { eventId, clubAMaleId, clubAFemaleId, clubBMaleId, clubBFemaleId, mode = 'tiebreak', targetPoints = 11, winBy = 1 } = body;
     if (!['tiebreak','exhibition'].includes(mode)) return Response.json({ error:'Invalid Showcase mode.' }, { status:400 });
+    if (![11,15].includes(Number(targetPoints)) || ![1,2].includes(Number(winBy))) return Response.json({ error:'Showcase Final format must be 11 or 15 points, win by 1 or 2.' }, { status:400 });
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
     if (!event) return Response.json({ error:'Interclub Challenge event not found' }, { status:404 });
@@ -69,6 +70,7 @@ Deno.serve(async (req) => {
       club_a_participant_ids:[aM.id,aF.id], club_b_participant_ids:[bM.id,bF.id],
       club_a_names:[aM.display_name,aF.display_name], club_b_names:[bM.display_name,bF.display_name],
       status:'scheduled', winner:'none', revision:0, correction_count:0, is_showcase:true, showcase_mode:mode,
+      showcase_target_points:Number(targetPoints), showcase_win_by:Number(winBy), score_a:0, score_b:0, side_change_announced:false,
     });
     const now = new Date().toISOString();
     await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
@@ -80,7 +82,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.ClubChallengeAudit.create({
       tenant_id:event.tenant_id, challenge_event_id:event.id, match_id:created.id,
       action:mode === 'exhibition' ? 'showcase_exhibition_created' : 'showcase_final_created', user_id:user.id, occurred_at:now,
-      new_value_json:JSON.stringify({ club_a:created.club_a_names, club_b:created.club_b_names, mode, points_applied:mode === 'tiebreak' ? Number(event.showcase_points || 0) : 0 }),
+      new_value_json:JSON.stringify({ club_a:created.club_a_names, club_b:created.club_b_names, mode, target_points:Number(targetPoints), win_by:Number(winBy), points_applied:mode === 'tiebreak' ? Number(event.showcase_points || 0) : 0 }),
       note:mode === 'exhibition' ? 'Optional Showcase Final created as an exhibition; it does not affect the Interclub result.' : 'Showcase Final created as the event tiebreak.',
     });
     return Response.json({ success:true, match:created, mode });
