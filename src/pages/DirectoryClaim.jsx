@@ -24,6 +24,8 @@ export default function DirectoryClaim() {
   const [claimantRole, setClaimantRole] = useState('');
   const [claimantPhone, setClaimantPhone] = useState('');
   const [claimantMessage, setClaimantMessage] = useState('');
+  const [publicNameOptOut, setPublicNameOptOut] = useState(false);
+  const [publicPhoneOptOut, setPublicPhoneOptOut] = useState(false);
   const [networkUpdatesOptIn, setNetworkUpdatesOptIn] = useState(false);
   const [status, setStatus] = useState(null);
   const [loadingStatus, setLoadingStatus] = useState(false);
@@ -92,6 +94,8 @@ export default function DirectoryClaim() {
         claimantRole,
         claimantPhone,
         claimantMessage,
+        publicNameOptOut,
+        publicPhoneOptOut,
         networkUpdatesOptIn,
         inviteToken,
       });
@@ -206,8 +210,9 @@ export default function DirectoryClaim() {
                 {error && <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
                 <div className="space-y-2">
-                  <Label htmlFor="claimantName">Your name</Label>
-                  <Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} required maxLength={160} />
+                  <Label htmlFor="claimantName">Your full name <span className="text-destructive">*</span></Label>
+                  <Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} placeholder="First name and surname" required maxLength={160} autoComplete="name" />
+                  <p className="text-xs text-muted-foreground"><strong className="text-foreground">This must be your own personal name.</strong> Do not enter the club name, “Chairperson”, “Secretary” or another role here. RallyHub needs to know who is requesting control of the listing.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="claimantRole">Your role or connection to the club</Label>
@@ -219,8 +224,23 @@ export default function DirectoryClaim() {
                   <p className="text-xs text-muted-foreground">This is your signed-in RallyHub email. We use it for verification and contact about this listing.</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="claimantPhone">Mobile number</Label>
-                  <Input id="claimantPhone" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="Your contact number" required maxLength={80} />
+                  <Label htmlFor="claimantPhone">Your mobile number <span className="text-destructive">*</span></Label>
+                  <Input id="claimantPhone" type="tel" inputMode="tel" autoComplete="tel" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="Your personal contact number" required maxLength={80} />
+                  <p className="text-xs text-muted-foreground">Required privately for identity verification, even if you choose not to show it on the public Directory listing.</p>
+                </div>
+                <div className="rounded-xl border border-border bg-background/30 p-4 space-y-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Public listing privacy</p>
+                    <p className="text-xs text-muted-foreground mt-1">Your full name and mobile are always visible privately to RallyHub administrators for verification. These choices tell us what you do not want displayed publicly.</p>
+                  </div>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" checked={publicNameOptOut} onChange={e => setPublicNameOptOut(e.target.checked)} className="mt-0.5 h-4 w-4 accent-primary" />
+                    <span className="text-sm"><strong>Do not display my name publicly</strong><span className="block text-xs text-muted-foreground mt-0.5">RallyHub will still retain your real name privately for verification and account security.</span></span>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" checked={publicPhoneOptOut} onChange={e => setPublicPhoneOptOut(e.target.checked)} className="mt-0.5 h-4 w-4 accent-primary" />
+                    <span className="text-sm"><strong>Do not display my mobile number publicly</strong><span className="block text-xs text-muted-foreground mt-0.5">RallyHub will still retain your mobile privately so the Directory claim can be checked and supported.</span></span>
+                  </label>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="claimantMessage">Anything that will help us verify you <span className="text-muted-foreground font-normal">(optional)</span></Label>
@@ -246,9 +266,9 @@ export default function DirectoryClaim() {
                 <h2 className="font-bold">How verification works</h2>
               </div>
               <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                <p><strong className="text-foreground">1.</strong> We use your signed-in account identity.</p>
-                <p><strong className="text-foreground">2.</strong> RallyHub compares it privately with trusted contact information already associated with the listing.</p>
-                <p><strong className="text-foreground">3.</strong> If we cannot verify you safely, a RallyHub administrator reviews the request.</p>
+                <p><strong className="text-foreground">1.</strong> You must provide your real full name and a working mobile number.</p>
+                <p><strong className="text-foreground">2.</strong> We use your signed-in email and compare the details privately with trusted club information.</p>
+                <p><strong className="text-foreground">3.</strong> An email match is supporting evidence only. A RallyHub administrator must still be able to identify the person requesting access.</p>
               </div>
             </div>
             <div className="glass rounded-2xl p-5">
