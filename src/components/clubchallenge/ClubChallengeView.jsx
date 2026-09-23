@@ -1452,16 +1452,18 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
   const structuralChecks = useMemo(() => {
     const normal = matches.filter(m => !m.is_showcase);
-    const roundCount = new Set(normal.map(m => m.round_number)).size;
+    const terminal = ['completed','draw','retired','forfeit','abandoned','not_played'];
+    const playableBeyondPlan = normal.filter(m => plannedRounds > 0 && Number(m.round_number) > plannedRounds && !terminal.includes(m.status)).length;
     return [
       ['Dummy roster', participants.length === 32],
       ['16 + 16 rotation players', aRotationPlayers.length === 16 && bRotationPlayers.length === 16],
-      ['12 rounds', roundCount === 12],
-      ['48 matches', normal.length === 48],
+      ['12 approved rounds', plannedRounds === 12],
+      ['No playable fixture beyond approved plan', playableBeyondPlan === 0],
+      ['48 original matches retained', normal.length === 48],
       ['Fairness hard checks', !!fairness && fairness.equalGames && !fairness.duplicatePlayerRoundIssues && !fairness.sameClubIntegrityIssues],
-      ['6 games each', !!fairness && fairness.minGames === 6 && fairness.maxGames === 6],
+      ['Original draw · 6 games each', !!fairness && fairness.minGames === 6 && fairness.maxGames === 6],
     ];
-  }, [matches, participants.length, aRotationPlayers.length, bRotationPlayers.length, fairness]);
+  }, [matches, participants.length, aRotationPlayers.length, bRotationPlayers.length, fairness, plannedRounds]);
   const stageIndex = !event ? 0
     : event.status === 'draft' ? (participants.length ? 1 : 0)
     : event.status === 'draw_generated' || event.status === 'draw_approved' ? 2
