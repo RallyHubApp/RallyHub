@@ -1349,6 +1349,185 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, sent: true, to: sent.to, subject: sent.subject });
     }
 
+    if (action === 'update_verified_identity') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const accessId = String(body.accessId || '').trim();
+      const fullName = String(body.fullName || '').trim().slice(0, 160);
+      const mobile = String(body.mobile || '').trim().slice(0, 80);
+      if (!accessId) return Response.json({ error: 'accessId required' }, { status: 400 });
+      if (!looksLikePersonalFullName(fullName)) {
+        return Response.json({ error: 'Enter the person’s real full name (first name and surname).' }, { status: 400 });
+      }
+      if (!looksLikeUsableMobile(mobile)) {
+        return Response.json({ error: 'Enter a valid private mobile / WhatsApp number.' }, { status: 400 });
+      }
+      const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ id: accessId });
+      const access = accesses?.[0] || null;
+      if (!access || access.status !== 'active') return Response.json({ error: 'Active Directory access not found' }, { status: 404 });
+      const users = await base44.asServiceRole.entities.User.filter({ id: access.user_id });
+      const targetUser = users?.[0] || null;
+      if (!targetUser) return Response.json({ error: 'Directory user account not found' }, { status: 404 });
+
+      await base44.asServiceRole.entities.User.update(targetUser.id, {
+        full_name: fullName,
+        directory_mobile: mobile,
+      });
+
+      const claims = await base44.asServiceRole.entities.DirectoryClaim.filter({
+        listing_slug: access.listing_slug,
+        claimant_user_id: access.user_id,
+      }, '-created_date', 50);
+      const latestClaim = claims?.[0] || null;
+      if (latestClaim && (typeof body.publicNameOptOut === 'boolean' || typeof body.publicPhoneOptOut === 'boolean')) {
+        await base44.asServiceRole.entities.DirectoryClaim.update(latestClaim.id, {
+          ...(typeof body.publicNameOptOut === 'boolean' ? { public_name_opt_out: body.publicNameOptOut } : {}),
+          ...(typeof body.publicPhoneOptOut === 'boolean' ? { public_phone_opt_out: body.publicPhoneOptOut } : {}),
+        });
+      }
+
+      try {
+        await base44.asServiceRole.entities.AuditLog.create({
+          tenant_id: 'platform',
+          user_id: user.id,
+          action: 'directory_verified_identity_updated',
+          entity_type: 'User',
+          entity_id: targetUser.id,
+          scope_type: 'DirectoryListing',
+          scope_id: access.listing_slug,
+          after_state: JSON.stringify({ fullName, mobile, accessId }),
+          reason: 'Super Admin corrected the private verified Directory contact identity.',
+        });
+      } catch {}
+
+      return Response.json({ success: true, userId: targetUser.id, fullName, mobile, email: targetUser.email || null });
+    }
+
+    if (action === 'directory_broadcast_email') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const subject = String(body.subject || '').trim().slice(0, 180);
+      const message = String(body.message || '').trim().slice(0, 6000);
+      const audience = body.audience === 'opted_in' ? 'opted_in' : 'service';
+      const testOnly = body.testOnly === true;
+      if (!subject) return Response.json({ error: 'Broadcast subject is required' }, { status: 400 });
+      if (!message) return Response.json({ error: 'Broadcast message is required' }, { status: 400 });
+
+      const escapeHtml = (value = '') => String(value || '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+
+      if (testOnly) {
+        const to = normaliseEmail(user.email || '');
+        if (!to) return Response.json({ error: 'Your admin account has no email address for the test send.' }, { status: 400 });
+        const testText = message
+          .replaceAll('{{first_name}}', String(user.full_name || 'Brian').split(/\s+/)[0])
+          .replaceAll('{{name}}', String(user.full_name || 'Brian'))
+          .replaceAll('{{clubs}}', 'Test Directory clubs');
+        const htmlMessage = escapeHtml(testText).replace(/\n/g, '<br>');
+        await sendWithConfiguredEmailTransport(
+          base44,
+          { scopeType: 'platform', purpose: 'directory' },
+          {
+            to,
+            subject: `[TEST] ${subject}`,
+            textBody: testText,
+            htmlBody: `<!doctype html><html><body style="margin:0;background:#f4f8f5;font-family:Arial,Helvetica,sans-serif;color:#0c1e35;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" style="max-width:640px;background:#fff;border:1px solid #dfe9e2;border-radius:18px;"><tr><td style="padding:28px 32px;border-top:7px solid #159447;"><div style="font-size:28px;font-weight:800;">Rally<span style="color:#159447;">Hub</span></div><div style="font-size:11px;letter-spacing:2.2px;color:#66737f;margin:3px 0 22px;">PLAY • CONNECT • BELONG</div><div style="font-size:15px;line-height:1.7;">${htmlMessage}</div></td></tr></table></td></tr></table></body></html>`,
+          },
+        );
+        return Response.json({ success: true, testOnly: true, sent: 1, to });
+      }
+
+      const [accesses, users, claims] = await Promise.all([
+        base44.asServiceRole.entities.DirectoryListingAccess.filter({ status: 'active' }, '-granted_at', 500),
+        base44.asServiceRole.entities.User.list('-created_date', 500),
+        base44.asServiceRole.entities.DirectoryClaim.list('-created_date', 500),
+      ]);
+      const usersById = new Map((users || []).map((row:any) => [String(row.id), row]));
+      const accessByUser = new Map();
+      for (const access of accesses || []) {
+        const key = String(access.user_id || '');
+        if (!key) continue;
+        if (!accessByUser.has(key)) accessByUser.set(key, []);
+        accessByUser.get(key).push(access);
+      }
+      const latestClaimByUser = new Map();
+      for (const claim of claims || []) {
+        const key = String(claim.claimant_user_id || '');
+        if (key && !latestClaimByUser.has(key)) latestClaimByUser.set(key, claim);
+      }
+
+      const recipients = [];
+      for (const [userId, userAccesses] of accessByUser.entries()) {
+        const target = usersById.get(userId);
+        const email = normaliseEmail(target?.email || '');
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) continue;
+        const latestClaim = latestClaimByUser.get(userId);
+        if (audience === 'opted_in' && latestClaim?.network_updates_opt_in !== true) continue;
+        const clubs = [...new Set((userAccesses || []).map((access:any) => String(access.listing_name_snapshot || access.listing_slug || '').trim()).filter(Boolean))];
+        recipients.push({ userId, email, name: String(target?.full_name || target?.display_name || '').trim(), clubs });
+      }
+
+      const uniqueRecipients = [...new Map(recipients.map(row => [row.email, row])).values()].slice(0, 300);
+      let sent = 0;
+      let failed = 0;
+      const failures = [];
+      for (let i = 0; i < uniqueRecipients.length; i += 5) {
+        const batch = uniqueRecipients.slice(i, i + 5);
+        const results = await Promise.all(batch.map(async recipient => {
+          const firstName = recipient.name.split(/\s+/)[0] || 'there';
+          const personalised = message
+            .replaceAll('{{first_name}}', firstName)
+            .replaceAll('{{name}}', recipient.name || firstName)
+            .replaceAll('{{clubs}}', recipient.clubs.join(', ') || 'your Directory listing');
+          const htmlMessage = escapeHtml(personalised).replace(/\n/g, '<br>');
+          try {
+            await sendWithConfiguredEmailTransport(
+              base44,
+              { scopeType: 'platform', purpose: 'directory' },
+              {
+                to: recipient.email,
+                subject,
+                textBody: personalised,
+                htmlBody: `<!doctype html><html><body style="margin:0;background:#f4f8f5;font-family:Arial,Helvetica,sans-serif;color:#0c1e35;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" style="max-width:640px;background:#fff;border:1px solid #dfe9e2;border-radius:18px;"><tr><td style="padding:28px 32px;border-top:7px solid #159447;"><div style="font-size:28px;font-weight:800;">Rally<span style="color:#159447;">Hub</span></div><div style="font-size:11px;letter-spacing:2.2px;color:#66737f;margin:3px 0 22px;">PLAY • CONNECT • BELONG</div><div style="font-size:15px;line-height:1.7;">${htmlMessage}</div><p style="font-size:12px;color:#66737f;margin-top:26px;">RallyHub Directory · rallyhub.ie</p></td></tr></table></td></tr></table></body></html>`,
+              },
+            );
+            return { ok: true };
+          } catch (error) {
+            return { ok: false, email: recipient.email, error: error?.message || 'Send failed' };
+          }
+        }));
+        for (const result of results) {
+          if (result.ok) sent += 1;
+          else {
+            failed += 1;
+            if (failures.length < 10) failures.push({ email: result.email, error: result.error });
+          }
+        }
+      }
+
+      try {
+        await base44.asServiceRole.entities.AuditLog.create({
+          tenant_id: 'platform',
+          user_id: user.id,
+          action: 'directory_contact_broadcast_sent',
+          entity_type: 'DirectoryListingAccess',
+          entity_id: 'verified-directory-contacts',
+          scope_type: 'DirectoryBroadcast',
+          scope_id: audience,
+          after_state: JSON.stringify({ subject, audience, recipientCount: uniqueRecipients.length, sent, failed }),
+          reason: 'Super Admin sent a Directory contact broadcast email.',
+        });
+      } catch {}
+
+      return Response.json({
+        success: true,
+        audience,
+        recipientCount: uniqueRecipients.length,
+        sent,
+        failed,
+        failures,
+      });
+    }
+
     if (action === 'review') {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
       const claimId = String(body.claimId || '').trim();
