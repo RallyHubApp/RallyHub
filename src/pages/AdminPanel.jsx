@@ -22,7 +22,7 @@ export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
-  const allowedAdminTabs = ['approvals', 'membership', 'preview', 'directory', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['approvals', 'membership', 'preview', 'directory', 'directory-contacts', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
   const queryClient = useQueryClient();
@@ -86,6 +86,12 @@ export default function AdminPanel() {
   const [resendInviteBusy, setResendInviteBusy] = useState('');
   const [resendPreview, setResendPreview] = useState(null);
   const [welcomeBusy, setWelcomeBusy] = useState('');
+  const [directoryContactSearch, setDirectoryContactSearch] = useState('');
+  const [editingDirectoryContact, setEditingDirectoryContact] = useState(null);
+  const [directoryContactEditForm, setDirectoryContactEditForm] = useState({ fullName: '', mobile: '' });
+  const [savingDirectoryIdentity, setSavingDirectoryIdentity] = useState(false);
+  const [directoryBroadcast, setDirectoryBroadcast] = useState({ subject: '', message: '', audience: 'service' });
+  const [directoryBroadcastBusy, setDirectoryBroadcastBusy] = useState('');
   const [updatingFeedbackId, setUpdatingFeedbackId] = useState('');
 
   const { data: players = [] } = useQuery({
@@ -929,7 +935,7 @@ Brian`;
 
   return (
     <div className="space-y-6">
-      <PageHeader title={activeAdminTab === 'directory' ? 'Directory Admin' : 'Admin Panel'} description={activeAdminTab === 'directory' ? 'Directory ownership, invitations, claims and listing access' : 'Site owner control panel'}>
+      <PageHeader title={activeAdminTab === 'directory' ? 'Directory Admin' : activeAdminTab === 'directory-contacts' ? 'Directory Contacts' : 'Admin Panel'} description={activeAdminTab === 'directory' ? 'Directory ownership, invitations, claims and listing access' : activeAdminTab === 'directory-contacts' ? 'Private verified owner and editor contact register' : 'Site owner control panel'}>
         <Badge className="bg-destructive/20 text-destructive gap-1.5">
           <Shield className="w-3 h-3" /> Admin Only
         </Badge>
@@ -975,6 +981,9 @@ Brian`;
             {pendingDirectoryActionCount > 0 && (
               <span className="ml-1 bg-amber-400 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{pendingDirectoryActionCount}</span>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="directory-contacts" className="text-xs gap-1.5">
+            <Users className="w-3.5 h-3.5" /> Directory Contacts
           </TabsTrigger>
           <TabsTrigger value="feedback" className="text-xs gap-1.5">
             <MessageCircle className="w-3.5 h-3.5" /> Feedback
