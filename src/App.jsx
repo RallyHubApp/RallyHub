@@ -34,6 +34,7 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import PublicClubChallengeDisplay from '@/pages/PublicClubChallengeDisplay';
 import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
+import PublicClubChallengeShowcaseScorer from '@/pages/PublicClubChallengeShowcaseScorer';
 import KotcHostSession from '@/pages/KotcHostSession';
 import PublicKotcResults from '@/pages/PublicKotcResults';
 import PublicKotcScorer from '@/pages/PublicKotcScorer';
@@ -201,6 +202,7 @@ function App() {
             <Route path="/t/:id" element={<PublicTournament />} />
             <Route path="/club-challenge/display/:token" element={<PublicClubChallengeDisplay />} />
             <Route path="/club-challenge/vote/:token" element={<PublicClubChallengeVote />} />
+            <Route path="/club-challenge/showcase-score/:token" element={<PublicClubChallengeShowcaseScorer />} />
             <Route path="/kotc-results/:token" element={<PublicKotcResults />} />
             <Route path="/kotc-live/:token" element={<PublicKotcResults />} />
             <Route path="/kotc-score/:token" element={<PublicKotcScorer />} />
