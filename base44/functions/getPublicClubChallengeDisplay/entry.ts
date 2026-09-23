@@ -29,6 +29,8 @@ Deno.serve(async (req) => {
     const safeMatches = matches.map((m:any) => ({
       id:m.id, round_number:m.round_number, court_number:m.court_number, status:m.status, winner:m.winner,
       score_a:m.score_a, score_b:m.score_b, is_showcase:!!m.is_showcase,
+      showcase_mode:m.showcase_mode, showcase_target_points:m.showcase_target_points, showcase_win_by:m.showcase_win_by,
+      side_change_at:m.side_change_at || null,
       club_a_participant_ids:m.club_a_participant_ids || [], club_b_participant_ids:m.club_b_participant_ids || [],
       club_a_names:(m.club_a_participant_ids || []).map((id:string) => pmap.get(id) || 'Player'),
       club_b_names:(m.club_b_participant_ids || []).map((id:string) => pmap.get(id) || 'Player'),
