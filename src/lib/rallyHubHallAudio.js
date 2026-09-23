@@ -1,3 +1,7 @@
+import { base44 } from '@/api/base44Client';
+
+const amplifiedSpeechCache = new Map();
+
 export function getRallyHubAudioContext() {
   if (typeof window === 'undefined') return null;
   const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -165,6 +169,148 @@ export function speakRallyHub(text, options = {}) {
     window.speechSynthesis.speak(utterance);
   }, 0);
   return true;
+}
+
+function base64ToArrayBuffer(base64) {
+  const binary = window.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+async function getAmplifiedSpeechBuffer(text, eventId = '') {
+  const ctx = await unlockRallyHubAudio();
+  if (!ctx) throw new Error('RallyHub audio is not available in this browser.');
+  const key = `${eventId || 'global'}::${String(text || '').trim()}`;
+  if (amplifiedSpeechCache.has(key)) return amplifiedSpeechCache.get(key);
+
+  const pending = (async () => {
+    const response = await base44.functions.invoke('generateHallSpeech', {
+      text:String(text || '').trim(),
+      eventId:eventId || undefined,
+    });
+    const payload = response?.data || {};
+    if (!payload?.audio_base64) {
+      const error = new Error(payload?.error || 'Amplified hall speech was not returned.');
+      error.code = payload?.code || 'TTS_UNAVAILABLE';
+      throw error;
+    }
+    const arrayBuffer = base64ToArrayBuffer(payload.audio_base64);
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+    return { audioBuffer, provider:payload.provider || 'generated', voice:payload.voice || '' };
+  })();
+
+  amplifiedSpeechCache.set(key, pending);
+  try {
+    return await pending;
+  } catch (error) {
+    amplifiedSpeechCache.delete(key);
+    throw error;
+  }
+}
+
+function stopGeneratedHallSpeech() {
+  const state = typeof window !== 'undefined' ? window.__rallyhubGeneratedHallVoice : null;
+  if (!state) return false;
+  try { state.source?.stop?.(); } catch {}
+  try { state.source?.disconnect?.(); } catch {}
+  try { state.preGain?.disconnect?.(); } catch {}
+  try { state.compressor?.disconnect?.(); } catch {}
+  try { state.outputGain?.disconnect?.(); } catch {}
+  window.__rallyhubGeneratedHallVoice = null;
+  return true;
+}
+
+export async function primeRallyHubHallSpeech(texts, { eventId = '' } = {}) {
+  const queue = [...new Set((Array.isArray(texts) ? texts : [texts]).map(v => String(v || '').trim()).filter(Boolean))];
+  if (!queue.length) return true;
+  const workers = Array.from({ length:Math.min(3, queue.length) }, async () => {
+    while (queue.length) {
+      const text = queue.shift();
+      try { await getAmplifiedSpeechBuffer(text, eventId); } catch { /* browser voice remains the fallback */ }
+    }
+  });
+  await Promise.all(workers);
+  return true;
+}
+
+export async function speakRallyHubHall(text, {
+  volume = 1,
+  eventId = '',
+  voiceMode = 'rallyhub_default',
+  voices = [],
+  fallback = true,
+  onStart,
+  onEnd,
+  onError,
+} = {}) {
+  if (!text || voiceMode === 'off') return false;
+  try {
+    const ctx = await unlockRallyHubAudio();
+    if (!ctx) throw new Error('RallyHub audio is not available in this browser.');
+    const { audioBuffer, provider } = await getAmplifiedSpeechBuffer(text, eventId);
+
+    stopGeneratedHallSpeech();
+    window.speechSynthesis?.cancel?.();
+
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+
+    // Broadcast-style loudness stage: push speech into a fast limiter so its
+    // average level is much closer to music/video sources without clipping.
+    const preGain = ctx.createGain();
+    preGain.gain.setValueAtTime(Math.max(0.01, Math.min(3.2, 2.25 * Math.max(0, Math.min(1, Number(volume) || 0)))), ctx.currentTime);
+
+    const compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.setValueAtTime(-18, ctx.currentTime);
+    compressor.knee.setValueAtTime(8, ctx.currentTime);
+    compressor.ratio.setValueAtTime(10, ctx.currentTime);
+    compressor.attack.setValueAtTime(0.002, ctx.currentTime);
+    compressor.release.setValueAtTime(0.12, ctx.currentTime);
+
+    const outputGain = ctx.createGain();
+    outputGain.gain.setValueAtTime(0.96, ctx.currentTime);
+
+    source.connect(preGain);
+    preGain.connect(compressor);
+    compressor.connect(outputGain);
+    outputGain.connect(ctx.destination);
+
+    window.__rallyhubGeneratedHallVoice = { source, preGain, compressor, outputGain, provider };
+    window.__rallyhubHallVoiceEngine = 'amplified';
+    source.onended = () => {
+      if (window.__rallyhubGeneratedHallVoice?.source === source) window.__rallyhubGeneratedHallVoice = null;
+      try { source.disconnect(); } catch {}
+      try { preGain.disconnect(); } catch {}
+      try { compressor.disconnect(); } catch {}
+      try { outputGain.disconnect(); } catch {}
+      onEnd?.();
+    };
+    source.start();
+    onStart?.();
+    return true;
+  } catch (error) {
+    window.__rallyhubHallVoiceEngine = 'browser-fallback';
+    if (!fallback) {
+      onError?.(error);
+      return false;
+    }
+    const ok = speakRallyHub(text, {
+      volume,
+      voiceMode,
+      voices,
+      onStart,
+      onEnd,
+      onError,
+    });
+    if (!ok) onError?.(error);
+    return ok;
+  }
+}
+
+export function getRallyHubHallVoiceEngine() {
+  if (typeof window === 'undefined') return 'unknown';
+  return window.__rallyhubHallVoiceEngine || 'not-tested';
 }
 
 export function speakRallyHubAsync(text, { volume = 1, voiceMode = 'rallyhub_default', voices = [] } = {}) {
@@ -367,5 +513,6 @@ export function stopRallyHubPA() {
 
 export function stopAllRallyHubAudio() {
   stopRallyHubPA();
+  stopGeneratedHallSpeech();
   if (typeof window !== 'undefined') window.speechSynthesis?.cancel?.();
 }
