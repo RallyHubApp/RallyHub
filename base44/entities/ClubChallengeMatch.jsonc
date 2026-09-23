@@ -118,6 +118,10 @@
     "side_change_announced": {
       "type": "boolean",
       "default": false
+    },
+    "side_change_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
