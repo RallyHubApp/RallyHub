@@ -1,6 +1,6 @@
 import React from 'react';
 
-const RALLYHUB_MARK_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const RALLYHUB_LOGO_URL = '/assets/rallyhub-logo-approved.webp';
 const NAVY = '#0b2e59';
 const BLUE = '#07558d';
 const GREEN = '#0b914a';
@@ -32,11 +32,7 @@ function shortGender(value) {
 
 function RallyHubBrand({ small=false }) {
   return <div className={small ? 'rhpp-brand rhpp-brand-small' : 'rhpp-brand'}>
-    <img src={RALLYHUB_MARK_URL} alt="RallyHub" />
-    <div className="rhpp-brand-type">
-      <div className="rhpp-wordmark"><span>Rally</span><b>Hub</b></div>
-      <div className="rhpp-strap">PLAY <i>•</i> CONNECT <i>•</i> BELONG</div>
-    </div>
+    <img src={RALLYHUB_LOGO_URL} alt="RallyHub · Play Connect Belong" />
   </div>;
 }
 
@@ -333,7 +329,7 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
       }
       .rhpp-root{font-family:Arial,Helvetica,sans-serif;color:${NAVY};background:#fff}
       .rhpp-page{position:relative;width:210mm;height:297mm;box-sizing:border-box;padding:6mm 7mm 18mm;background:#fff;color:${NAVY};overflow:hidden;border:.25mm solid #d7e6f2}
-      .rhpp-brand{display:flex;align-items:center;gap:2mm;min-width:0}.rhpp-brand img{width:13mm;height:13mm;object-fit:contain;display:block}.rhpp-brand-type{min-width:0}.rhpp-wordmark{font-size:19pt;line-height:.9;font-weight:900;letter-spacing:-.04em;color:#07184c;white-space:nowrap}.rhpp-wordmark b{color:${GREEN}}.rhpp-strap{font-size:4.8pt;font-weight:800;letter-spacing:.22em;margin-top:1.2mm;white-space:nowrap}.rhpp-strap i{font-style:normal;color:${GREEN}}.rhpp-brand-small img{width:9mm;height:9mm}.rhpp-brand-small .rhpp-wordmark{font-size:13pt}.rhpp-brand-small .rhpp-strap{font-size:3.5pt;margin-top:.7mm;letter-spacing:.18em}
+      .rhpp-brand{display:flex;align-items:center;min-width:0}.rhpp-brand img{width:52mm;height:auto;object-fit:contain;display:block}.rhpp-brand-small img{width:34mm;height:auto}
       .rhpp-header{height:27mm;display:grid;grid-template-columns:56mm 1fr 31mm;align-items:start;gap:2mm;border-bottom:.45mm solid ${GREEN};padding:1mm 2mm 2.2mm;box-sizing:border-box;margin-bottom:2mm}.rhpp-header-schedule{grid-template-columns:60mm 1fr}.rhpp-header-schedule .rhpp-heading{text-align:right;padding-right:1mm}.rhpp-heading{text-align:center}.rhpp-kicker{font-size:10pt;font-weight:900;letter-spacing:.04em;line-height:1}.rhpp-heading h1{font-size:13pt;line-height:1.02;margin:.7mm 0 0;font-weight:900}.rhpp-heading h2{font-size:9.2pt;line-height:1.05;margin:1mm 0 0;color:#0a64a8;font-weight:800}.rhpp-heading p,.rhpp-score-heading p{font-size:5.8pt;margin:1.2mm 0 0;color:#294b6d;font-weight:600}.rhpp-heading p span,.rhpp-score-heading p span{margin:0 1mm}.rhpp-script-tag{text-align:center;font-family:cursive;font-style:italic;font-weight:800;font-size:9pt;line-height:.9;color:#063c79;padding-top:1mm;transform:rotate(-5deg)}.rhpp-script-tag span{display:block;width:19mm;border-bottom:1.2mm solid #69b92f;transform:rotate(-8deg);margin:1.2mm auto 0}
       .rhpp-score-header{height:31mm;display:grid;grid-template-columns:43mm 1fr 43mm;gap:2mm;align-items:center;border-bottom:.35mm solid #b9d3e4;margin-bottom:2mm}.rhpp-score-heading{text-align:center}.rhpp-score-heading .rhpp-brand{justify-content:center;margin-bottom:.8mm}.rhpp-score-heading .rhpp-kicker{font-size:9pt}.rhpp-score-heading h1{font-size:13pt;margin:.6mm 0 0;line-height:1}.rhpp-score-heading h2{font-size:8pt;color:#0a64a8;margin:.8mm 0 0}.rhpp-score-team{display:flex;align-items:center;gap:2mm;font-size:8.5pt;font-weight:900;line-height:1.05}.rhpp-score-team img{width:15mm;height:15mm;object-fit:contain;border-radius:50%;background:#fff}.rhpp-score-team-b{justify-content:flex-end;text-align:right}
       .rhpp-footer{position:absolute;left:7mm;right:7mm;bottom:4mm;height:12mm}.rhpp-wave{position:absolute;left:0;right:0;top:-1mm;width:100%;height:7mm}.rhpp-footer-row{position:absolute;left:0;right:0;bottom:0;height:8mm;display:flex;align-items:flex-end;gap:2mm}.rhpp-footer-source{font-size:4.6pt;color:#35607d}.rhpp-footer-copy{margin-left:auto;font-size:4.6pt;color:#315579;white-space:nowrap}.rhpp-footer-copy strong{color:#07184c}.rhpp-footer-copy strong span{color:${GREEN}}.rhpp-footer-copy i{font-style:normal;margin:0 .7mm}
