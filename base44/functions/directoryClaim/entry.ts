@@ -1395,13 +1395,16 @@ Deno.serve(async (req) => {
       const nameMatch = trustedContacts.some(c => normaliseName(c.name) && normaliseName(c.name) === normaliseName(fullName));
       const phoneMatch = trustedContacts.some(c => c.phone && phoneLooksSame(c.phone, mobile));
 
+      const confirmedAt = new Date().toISOString();
       await base44.asServiceRole.entities.DirectoryClaim.update(claim.id, {
         claimant_name: fullName,
         claimant_phone: mobile,
         email_match: emailMatch,
         name_match: nameMatch,
         phone_match: phoneMatch,
-        match_method: 'manual_review',
+        match_method: 'admin_identity_confirmed',
+        identity_admin_confirmed_by_user_id: user.id,
+        identity_admin_confirmed_at: confirmedAt,
       });
       if (claim.claimant_user_id) {
         const users = await base44.asServiceRole.entities.User.filter({ id: claim.claimant_user_id });
@@ -1426,7 +1429,21 @@ Deno.serve(async (req) => {
           reason: 'Super Admin corrected private verification details after independently confirming the claimant identity. Approval remains a separate action.',
         });
       } catch {}
-      return Response.json({ success: true, claimId: claim.id, fullName, mobile, emailMatch, nameMatch, phoneMatch });
+      const refreshedClaims = await base44.asServiceRole.entities.DirectoryClaim.filter({ id: claim.id });
+      return Response.json({
+        success: true,
+        claim: refreshedClaims?.[0] || {
+          ...claim,
+          claimant_name: fullName,
+          claimant_phone: mobile,
+          email_match: emailMatch,
+          name_match: nameMatch,
+          phone_match: phoneMatch,
+          match_method: 'admin_identity_confirmed',
+          identity_admin_confirmed_by_user_id: user.id,
+          identity_admin_confirmed_at: confirmedAt,
+        },
+      });
     }
 
     if (action === 'update_verified_identity') {
@@ -1619,6 +1636,20 @@ Deno.serve(async (req) => {
       const claims = await base44.asServiceRole.entities.DirectoryClaim.filter({ id: claimId });
       const claim = claims[0];
       if (!claim) return Response.json({ error: 'Claim not found' }, { status: 404 });
+      if (decision === 'approved' && claim.status === 'approved') {
+        const existingAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({
+          listing_slug: claim.listing_slug,
+          user_id: claim.claimant_user_id,
+          status: 'active',
+        });
+        return Response.json({
+          success: true,
+          status: 'approved',
+          alreadyApproved: true,
+          accessId: existingAccess?.[0]?.id || null,
+          welcomeEmail: { sent: 0, skipped: true, alreadySent: true },
+        });
+      }
       const listing = await resolveListing(base44, claim.listing_slug);
       if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
       if (decision === 'approved') {
