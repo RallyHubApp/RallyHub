@@ -1222,6 +1222,32 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, claims, accesses, listingRequests, listingRecords, invitations });
     }
 
+    if (action === 'send_welcome_email') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const accessId = String(body.accessId || '').trim();
+      if (!accessId) return Response.json({ error: 'accessId required' }, { status: 400 });
+      const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ id: accessId });
+      const access = accesses?.[0] || null;
+      if (!access || access.status !== 'active') return Response.json({ error: 'Active Directory access not found' }, { status: 404 });
+      const listing = await resolveListing(base44, access.listing_slug);
+      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+      const users = await base44.asServiceRole.entities.User.filter({ id: access.user_id });
+      const targetUser = users?.[0] || null;
+      if (!targetUser) return Response.json({ error: 'Directory user account not found' }, { status: 404 });
+
+      let recipientName = targetUser.full_name || targetUser.display_name || '';
+      let recipientEmail = targetUser.email || '';
+      if (!recipientName || !recipientEmail) {
+        const claims = await base44.asServiceRole.entities.DirectoryClaim.filter({ listing_slug: access.listing_slug }, '-created_date', 100);
+        const matchingClaim = (claims || []).find(c => String(c.claimant_user_id || '') === String(access.user_id || '')) || null;
+        recipientName = recipientName || matchingClaim?.claimant_name || '';
+        recipientEmail = recipientEmail || matchingClaim?.claimant_email || '';
+      }
+      const sent = await sendDirectoryWelcomeEmail(base44, { listing, recipientName, recipientEmail });
+      if (!sent.sent) return Response.json({ error: sent.error || 'Welcome email could not be sent.' }, { status: 400 });
+      return Response.json({ success: true, sent: true, to: sent.to, subject: sent.subject });
+    }
+
     if (action === 'review') {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
       const claimId = String(body.claimId || '').trim();
