@@ -221,32 +221,37 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
     setStatus({state:'working',text:`All unassigned players moved to ${to === 'club_a' ? nameA : nameB}. Save Teams & Rankings to confirm.`});
   };
   const lane = (id, title, ids, teamName, setTeamName) => (
-    <Droppable droppableId={id}>
-      {(provided, snapshot) => <div data-testid={`cc-team-lane-${id}`} ref={provided.innerRef} {...provided.droppableProps} className={cn('rounded-xl border bg-card p-3 min-h-[18rem] transition-colors', snapshot.isDraggingOver ? 'border-primary bg-primary/5' : 'border-border')}>
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div className="min-w-0 flex-1">
-            {id === 'pool' ? <><p className="text-sm font-semibold">Unassigned Player Pool</p><p className="text-[10px] text-muted-foreground">Use this only for players who are not yet assigned. Import Clare and Galway directly into their own team panels.</p></> :
-              <><Label className="text-[10px]">Team name</Label><Input data-testid={`cc-team-name-${id}`} value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" />
-                <div className="grid grid-cols-2 gap-1.5 mt-2">
-                  <Button type="button" variant="outline" size="sm" className="h-8 px-2 text-[10px]" onClick={() => onImportSpond?.(id)} disabled={locked || busy || dirty}><Download className="w-3 h-3 mr-1" />Import Spond</Button>
-                  <label className={cn('h-8 rounded-md border border-input bg-background px-2 text-[10px] font-medium inline-flex items-center justify-center cursor-pointer hover:bg-accent hover:text-accent-foreground', (locked || busy || dirty) && 'opacity-50 pointer-events-none')}>
-                    <Upload className="w-3 h-3 mr-1" />Import CSV
-                    <input type="file" accept=".csv,text/csv,.txt,text/plain" className="hidden" disabled={locked || busy || dirty} onChange={async e => { const file=e.target.files?.[0]; e.target.value=''; if (!file) return; setStatus({state:'working',text:`Importing ${file.name} into ${teamName}…`}); try { const result=await onImportCsv?.(id,file); setStatus({state:'success',text:`${result?.created || 0} player${Number(result?.created || 0)===1?'':'s'} imported into ${teamName}${result?.skipped ? ` · ${result.skipped} duplicate${result.skipped===1?'':'s'} skipped` : ''}.`}); } catch (err) { setStatus({state:'error',text:err?.message || 'Could not import CSV.'}); } }} />
-                  </label>
-                </div>
-                {lanes.pool.length > 0 && <button type="button" onClick={() => moveAllPool(id)} disabled={locked || busy || dirty} className="mt-1.5 text-[10px] text-primary hover:underline disabled:opacity-40">Move all {lanes.pool.length} unassigned players to this team</button>}
-              </>}
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <Badge variant="outline">{ids.length}</Badge>
-            {id !== 'pool' && (() => { const g=genderStats(ids); return <div className="flex flex-wrap justify-end gap-1 text-[9px]"><span className="rounded-full bg-blue-500/10 px-1.5 py-0.5 font-semibold text-blue-700">M {g.male}</span><span className="rounded-full bg-pink-500/10 px-1.5 py-0.5 font-semibold text-pink-700">F {g.female}</span>{g.unset>0&&<span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 font-semibold text-amber-700">Not set {g.unset}</span>}</div>; })()}
-          </div>
+    <div data-testid={`cc-team-lane-${id}`} className="rounded-xl border border-border bg-card p-3 min-h-[18rem] transition-colors">
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="min-w-0 flex-1">
+          {id === 'pool' ? <><p className="text-sm font-semibold">Unassigned Player Pool</p><p className="text-[10px] text-muted-foreground">Use this only for players who are not yet assigned. Import Clare and Galway directly into their own team panels.</p></> :
+            <><Label className="text-[10px]">Team name</Label><Input data-testid={`cc-team-name-${id}`} value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" />
+              <div className="grid grid-cols-2 gap-1.5 mt-2">
+                <Button type="button" variant="outline" size="sm" className="h-8 px-2 text-[10px]" onClick={() => onImportSpond?.(id)} disabled={locked || busy || dirty}><Download className="w-3 h-3 mr-1" />Import Spond</Button>
+                <label className={cn('h-8 rounded-md border border-input bg-background px-2 text-[10px] font-medium inline-flex items-center justify-center cursor-pointer hover:bg-accent hover:text-accent-foreground', (locked || busy || dirty) && 'opacity-50 pointer-events-none')}>
+                  <Upload className="w-3 h-3 mr-1" />Import CSV
+                  <input type="file" accept=".csv,text/csv,.txt,text/plain" className="hidden" disabled={locked || busy || dirty} onChange={async e => { const file=e.target.files?.[0]; e.target.value=''; if (!file) return; setStatus({state:'working',text:`Importing ${file.name} into ${teamName}…`}); try { const result=await onImportCsv?.(id,file); setStatus({state:'success',text:`${result?.created || 0} player${Number(result?.created || 0)===1?'':'s'} imported into ${teamName}${result?.skipped ? ` · ${result.skipped} duplicate${result.skipped===1?'':'s'} skipped` : ''}.`}); } catch (err) { setStatus({state:'error',text:err?.message || 'Could not import CSV.'}); } }} />
+                </label>
+              </div>
+              {lanes.pool.length > 0 && <button type="button" onClick={() => moveAllPool(id)} disabled={locked || busy || dirty} className="mt-1.5 text-[10px] text-primary hover:underline disabled:opacity-40">Move all {lanes.pool.length} unassigned players to this team</button>}
+            </>}
         </div>
-        {id === 'pool' && <div className="space-y-2 mb-3">
-          <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => onImportSpond?.('pool')} disabled={locked || busy || dirty}><Download className="w-3.5 h-3.5 mr-1" />Import Unassigned Spond Players</Button>
-          <div className="grid grid-cols-[1fr_auto] gap-2"><Input placeholder="Add player manually" value={manualPool} onChange={e=>setManualPool(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addPool()} disabled={locked || busy || dirty} className="h-9 bg-secondary" /><Button type="button" size="sm" onClick={addPool} disabled={locked || busy || dirty || !manualPool.trim()}><Plus className="w-4 h-4" /></Button></div>
-        </div>}
-        <div className="space-y-1 max-h-[34rem] overflow-auto">
+        <div className="flex flex-col items-end gap-1">
+          <Badge variant="outline">{ids.length}</Badge>
+          {id !== 'pool' && (() => { const g=genderStats(ids); return <div className="flex flex-wrap justify-end gap-1 text-[9px]"><span className="rounded-full bg-blue-500/10 px-1.5 py-0.5 font-semibold text-blue-700">M {g.male}</span><span className="rounded-full bg-pink-500/10 px-1.5 py-0.5 font-semibold text-pink-700">F {g.female}</span>{g.unset>0&&<span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 font-semibold text-amber-700">Not set {g.unset}</span>}</div>; })()}
+        </div>
+      </div>
+      {id === 'pool' && <div className="space-y-2 mb-3">
+        <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => onImportSpond?.('pool')} disabled={locked || busy || dirty}><Download className="w-3.5 h-3.5 mr-1" />Import Unassigned Spond Players</Button>
+        <div className="grid grid-cols-[1fr_auto] gap-2"><Input placeholder="Add player manually" value={manualPool} onChange={e=>setManualPool(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addPool()} disabled={locked || busy || dirty} className="h-9 bg-secondary" /><Button type="button" size="sm" onClick={addPool} disabled={locked || busy || dirty || !manualPool.trim()}><Plus className="w-4 h-4" /></Button></div>
+      </div>}
+      <Droppable droppableId={id}>
+        {(provided, snapshot) => <div
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          className={cn('space-y-1 max-h-[34rem] min-h-[8rem] overflow-y-auto overscroll-contain rounded-lg p-0.5 transition-colors', snapshot.isDraggingOver && 'bg-primary/5 ring-1 ring-primary/30')}
+          style={{ scrollBehavior:'smooth' }}
+        >
           {ids.map((pid, i) => {
             const p = byId.get(pid);
             if (!p) return null;
@@ -262,9 +267,9 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
           })}
           {provided.placeholder}
           {!ids.length && <div className="rounded-lg border border-dashed border-border p-5 text-center text-xs text-muted-foreground">{id === 'pool' ? 'Import Spond attendees here' : 'Drag players here'}</div>}
-        </div>
-      </div>}
-    </Droppable>
+        </div>}
+      </Droppable>
+    </div>
   );
 
   const roleOf = id => byId.get(id)?.roster_role || 'rotation';
