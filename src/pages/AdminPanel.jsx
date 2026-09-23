@@ -1062,11 +1062,20 @@ Brian`;
         mobile: pendingDirectoryIdentityForm.mobile,
       });
       if (res.data?.error) throw new Error(res.data.error);
+      if (res.data?.claim) {
+        queryClient.setQueryData(['directory-verification'], current => {
+          if (!current) return current;
+          return {
+            ...current,
+            claims: (current.claims || []).map(claim => claim.id === res.data.claim.id ? res.data.claim : claim),
+          };
+        });
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey:['directory-verification'] }),
         queryClient.invalidateQueries({ queryKey:['all-users'] }),
       ]);
-      toast.success('Private verification details corrected. The claim is still waiting for your approval.');
+      toast.success('Private identity confirmed. You can now approve the Directory claim.');
       setEditingPendingDirectoryClaim(null);
     } catch (error) {
       toast.error(error?.message || 'Could not correct the verification details');
@@ -1091,9 +1100,9 @@ Brian`;
       const latestClaim = userClaims[0] || null;
       const existing = byUser.get(userId) || {
         userId,
-        fullName: accessUser?.full_name || accessUser?.display_name || latestClaim?.claimant_name || '',
-        email: accessUser?.email || latestClaim?.claimant_email || '',
-        mobile: accessUser?.directory_mobile || latestClaim?.claimant_phone || '',
+        fullName: latestClaim?.claimant_name || accessUser?.full_name || accessUser?.display_name || '',
+        email: latestClaim?.claimant_email || accessUser?.email || '',
+        mobile: latestClaim?.claimant_phone || accessUser?.directory_mobile || '',
         networkUpdatesOptIn: latestClaim?.network_updates_opt_in === true,
         publicNameOptOut: latestClaim?.public_name_opt_out === true,
         publicPhoneOptOut: latestClaim?.public_phone_opt_out === true,
