@@ -36,16 +36,29 @@ export default function PublicClubChallengeShowcaseScorer(){
 
   const act=async(action)=>{
     if(!data?.match || busy) return;
+    const before={...data.match};
+    const next={...before};
+    if(action==='inc_a') next.score_a=Number(before.score_a||0)+1;
+    if(action==='dec_a') next.score_a=Math.max(0,Number(before.score_a||0)-1);
+    if(action==='inc_b') next.score_b=Number(before.score_b||0)+1;
+    if(action==='dec_b') next.score_b=Math.max(0,Number(before.score_b||0)-1);
+
     setBusy(action);
+    setData(d=>({...d,match:{...d.match,score_a:next.score_a,score_b:next.score_b}}));
+    try{ navigator.vibrate?.(25); }catch{}
+
     try{
-      const r=await base44.functions.invoke('updatePublicClubChallengeShowcaseScore',{token,action,expectedRevision:data.match.revision});
-      if(r.data?.conflict){ await load(); setNotice('Score changed on another device — refreshed'); return; }
+      const r=await base44.functions.invoke('updatePublicClubChallengeShowcaseScore',{token,action,expectedRevision:before.revision});
+      if(r.data?.conflict){ await load(); setNotice('Score changed on another device — resynchronised'); return; }
       if(r.data?.error) throw new Error(r.data.error);
       setData(d=>({...d,match:{...d.match,...r.data.match}}));
       if(r.data?.sideChange) speakChange();
       else if(r.data?.finished) setNotice('MATCH COMPLETE');
-    }catch(e){ setNotice(errText(e)); await load(); }
-    finally{ setBusy(''); }
+    }catch(e){
+      setData(d=>({...d,match:before}));
+      setNotice(`${errText(e)} · score restored`);
+      await load();
+    }finally{ setBusy(''); }
   };
 
   if(error&&!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center p-5 text-center"><div className="max-w-sm"><WifiOff className="mx-auto h-8 w-8"/><h1 className="mt-3 font-bold">Showcase scorer link unavailable</h1><p className="mt-2 text-sm text-muted-foreground">{error}</p></div></div>;
@@ -72,6 +85,7 @@ export default function PublicClubChallengeShowcaseScorer(){
           <p className="text-sm font-bold leading-tight">{club}</p>
           <p className="mt-1 min-h-8 text-[11px] leading-tight text-muted-foreground">{(names||[]).join(' & ')}</p>
           <p className="my-4 text-7xl font-black tabular-nums">{score}</p>
+          <div className="min-h-5 mb-2 text-[11px] font-semibold text-primary">{busy.endsWith(`_${side}`) ? 'Saving…' : ''}</div>
           <div className="grid grid-cols-2 gap-2">
             <Button aria-label={`Subtract point from ${club}`} aria-busy={busy===`dec_${side}`} variant="outline" className="h-16 text-xl" disabled={Number(score)<=0 || busy===`dec_${side}`} onClick={()=>act(`dec_${side}`)}><Minus className="h-7 w-7"/></Button>
             <Button aria-label={`Add point to ${club}`} aria-busy={busy===`inc_${side}`} className="h-16 text-xl" disabled={complete || busy===`inc_${side}`} onClick={()=>act(`inc_${side}`)}><Plus className="h-7 w-7"/></Button>
