@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Check, CheckCircle2, ChevronDown, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
+import { ArrowLeft, Check, CheckCircle2, ChevronDown, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import { getRallyHubPaLevel, listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
@@ -1279,7 +1279,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       toast.info(`Break in progress · ${fmtTimer(timerRemaining)} remaining. The host can shorten it or end it early.`);
       return;
     }
-    sportingActionRef.current = true; setRoundActionStatus({ state:'working', text:currentRound < maxRound ? `Round ${currentRound} saved. Preparing Round ${currentRound + 1}…` : `Finalising ${INTERCLUB_EVENT_LABEL}…` }); setHostAction(currentRound < maxRound ? `Preparing Round ${currentRound + 1}… command sent` : `Finalising ${INTERCLUB_EVENT_LABEL}… command sent`);
+    sportingActionRef.current = true; setRoundActionStatus({ state:'working', text:currentRound < maxRound ? `Round ${currentRound} saved. Preparing Round ${currentRound + 1}…` : 'Normal rounds complete. Opening final options…' }); setHostAction(currentRound < maxRound ? `Preparing Round ${currentRound + 1}… command sent` : 'Opening final options…');
     try {
       if (currentRound < maxRound) {
         const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1 });
@@ -1296,10 +1296,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         if (resolvedNormalCount !== normalMatches.length) { toast.error('All normal match results must be resolved before the event can finish.'); return; }
         if (score.clubA === score.clubB) {
           toast.info('Normal Interclub points are tied. Choose Showcase Final, metrics, or overall draw in Results.');
-          setTab('results');
-          return;
+        } else if (event.showcase_enabled) {
+          toast.info('Normal rounds are complete. Choose Optional Showcase Final or confirm the Interclub winner in Results.');
+        } else {
+          toast.info('Normal rounds are complete. Review and confirm the final result in Results.');
         }
-        await finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Interclub Challenge matches.');
+        setTab('results');
+        return;
       }
     } catch (e) { const message = e?.response?.data?.error || e?.message || `Could not advance ${INTERCLUB_EVENT_LABEL}`; setRoundActionStatus({ state:'error', text:message }); await refetchEvent(); toast.error(message); }
     finally { sportingActionRef.current = false; setHostAction(''); }
@@ -1676,7 +1679,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                   <Button size="sm" variant="outline" onClick={() => { const panel = document.getElementById('cc-player-controls'); if (panel instanceof HTMLDetailsElement) { panel.open = true; panel.scrollIntoView({ behavior:'smooth', block:'center' }); } }}><Users className="w-4 h-4 mr-1" />Players</Button>
                   {!['completed','archived'].includes(event.status) && (breakActive ? <Button size="sm" variant="destructive" disabled={!canManageEvent} onClick={timerRemaining > 0 ? endBreakEarly : advanceRound}>{timerRemaining > 0 ? `End Break → R${currentRound + 1}` : `Prepare R${currentRound + 1}`}</Button> : <>
                     {currentRoundComplete && currentRound >= plannedRounds && event.showcase_enabled && score.clubA !== score.clubB && !showcaseMatch && <Button size="sm" variant="outline" disabled={!canManageEvent} onClick={openOptionalShowcase}>Optional Showcase</Button>}
-                    <Button size="sm" disabled={!canManageEvent || !currentRoundComplete} onClick={advanceRound}>{currentRoundComplete ? (scheduledBreakHere && currentRound < plannedRounds ? `Complete R${currentRound} → ${event.break_minutes}-min Break` : currentRound < plannedRounds ? `Complete Round ${currentRound}` : 'Finalise') : `${Math.max(0,currentMatches.length-currentRoundSavedCount)} score${Math.max(0,currentMatches.length-currentRoundSavedCount)===1?'':'s'} to save`}</Button>
+                    <Button size="sm" disabled={!canManageEvent || !currentRoundComplete} onClick={advanceRound}>{currentRoundComplete ? (scheduledBreakHere && currentRound < plannedRounds ? `Complete R${currentRound} → ${event.break_minutes}-min Break` : currentRound < plannedRounds ? `Complete Round ${currentRound}` : 'Review Final Options') : `${Math.max(0,currentMatches.length-currentRoundSavedCount)} score${Math.max(0,currentMatches.length-currentRoundSavedCount)===1?'':'s'} to save`}</Button>
                   </>)}
                 </div>
               </div>
@@ -1710,8 +1713,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               {roundActionStatus && <div className={cn('rounded-lg border px-3 py-2 text-xs font-semibold flex items-center gap-2', roundActionStatus.state === 'success' ? 'border-green-500/40 bg-green-500/10 text-green-500' : roundActionStatus.state === 'error' ? 'border-red-500/50 bg-red-500/10 text-red-500' : 'border-primary/30 bg-primary/5 text-primary')}>{roundActionStatus.state === 'working' ? <RefreshCw className="w-4 h-4 animate-spin" /> : roundActionStatus.state === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}<span>{roundActionStatus.text}</span></div>}
               {!['completed','archived'].includes(event.status) && (breakActive ? <Button className="w-full h-12" variant="destructive" disabled={!canManageEvent} onClick={timerRemaining > 0 ? endBreakEarly : advanceRound}>{timerRemaining > 0 ? `Break in progress · End Early & Prepare Round ${currentRound + 1}` : `Break complete · Prepare Round ${currentRound + 1}`}</Button> : currentRoundComplete && currentRound >= plannedRounds && event.showcase_enabled && score.clubA !== score.clubB && !showcaseMatch ? <div className="grid gap-2 sm:grid-cols-2">
                 <Button variant="outline" className="h-12" disabled={!canManageEvent} onClick={openOptionalShowcase}><Trophy className="w-4 h-4 mr-2" />Play Optional Showcase Final</Button>
-                <Button className="h-12" disabled={!canManageEvent} onClick={advanceRound}><CheckCircle2 className="w-4 h-4 mr-2" />Finalise {INTERCLUB_EVENT_LABEL}</Button>
-              </div> : <Button className="w-full h-12" disabled={!canManageEvent || !currentRoundComplete} onClick={advanceRound}>{currentRoundComplete ? (scheduledBreakHere && currentRound < plannedRounds ? `Complete Round ${currentRound} & Start ${event.break_minutes}-min Break` : currentRound < plannedRounds ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Finalise {INTERCLUB_EVENT_LABEL}</>) : `Save all ${currentMatches.length} results to complete Round ${currentRound}`}</Button>)}
+                <Button className="h-12" disabled={!canManageEvent} onClick={advanceRound}><CheckCircle2 className="w-4 h-4 mr-2" />Review & Finalise</Button>
+              </div> : <Button className="w-full h-12" disabled={!canManageEvent || !currentRoundComplete} onClick={advanceRound}>{currentRoundComplete ? (scheduledBreakHere && currentRound < plannedRounds ? `Complete Round ${currentRound} & Start ${event.break_minutes}-min Break` : currentRound < plannedRounds ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Review Final Options</>) : `Save all ${currentMatches.length} results to complete Round ${currentRound}`}</Button>)}
             </div>
 
             <details id="cc-pa-panel" data-testid="cc-audio-pa-controller" className={cn('rounded-xl border overflow-hidden', paActive ? 'border-red-500/60 bg-red-500/5' : 'border-border bg-card')}>
@@ -1841,6 +1844,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
       {tab === 'results' && (
         <div className="space-y-4">
+          <div className="flex items-center justify-start">
+            <Button variant="outline" onClick={() => setTab('live')}><ArrowLeft className="w-4 h-4 mr-2" />Back to Live Event</Button>
+          </div>
           {score.completedMatches > 0 ? (
             <>
               <div className="rounded-xl border border-border bg-card p-5 sm:p-8 text-center">
