@@ -13,6 +13,31 @@ import { Textarea } from '@/components/ui/textarea';
 import Seo from '@/components/public/Seo';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 
+const invalidIdentityWords = new Set([
+  'chair','chairperson','chairman','chairwoman','secretary','treasurer','organiser','organizer',
+  'owner','admin','administrator','committee','club','pickleball','contact','manager','captain','team'
+]);
+
+const looksLikePersonalFullName = value => {
+  const cleaned = String(value || '').trim().toLowerCase()
+    .replace(/[^a-z0-9' -]+/g, ' ')
+    .replace(/\s+/g, ' ');
+  const parts = cleaned.split(' ').filter(Boolean);
+  return parts.length >= 2 && !parts.some(part => invalidIdentityWords.has(part));
+};
+
+const looksLikeUsableMobile = value => {
+  const digits = String(value || '').replace(/\D/g, '');
+  return digits.length >= 8 && digits.length <= 15;
+};
+
+const requestErrorMessage = err =>
+  err?.response?.data?.error ||
+  err?.data?.error ||
+  err?.body?.error ||
+  err?.message ||
+  'Could not submit your verification request.';
+
 export default function DirectoryClaim() {
   const { slug } = useParams();
   const location = useLocation();
@@ -76,11 +101,19 @@ export default function DirectoryClaim() {
     if (!isAuthenticated || !club) return;
     let active = true;
     setLoadingStatus(true);
-    base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: club.slug })
+    base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: club.slug, inviteToken })
       .then(res => {
         if (!active) return;
         if (res.data?.error) throw new Error(res.data.error);
         setStatus(res.data);
+        const invitedName = res.data?.secureInvitation?.contactName || '';
+        const invitedPhone = res.data?.secureInvitation?.contactPhone || '';
+        if (!res.data?.claim && invitedName && looksLikePersonalFullName(invitedName) && !looksLikePersonalFullName(user?.full_name || user?.display_name || '')) {
+          setClaimantName(invitedName);
+        }
+        if (!res.data?.claim && invitedPhone && !looksLikeUsableMobile(user?.directory_mobile || '')) {
+          setClaimantPhone(invitedPhone);
+        }
       })
       .catch(err => {
         if (active) setError(err.message || 'Could not load verification status.');
@@ -89,7 +122,7 @@ export default function DirectoryClaim() {
         if (active) setLoadingStatus(false);
       });
     return () => { active = false; };
-  }, [isAuthenticated, club]);
+  }, [isAuthenticated, club, inviteToken, user]);
 
   if (loadingClub && !club) return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10 max-w-4xl"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
   if (!club) return <Navigate to="/directory" replace />;
@@ -97,6 +130,23 @@ export default function DirectoryClaim() {
   const submitClaim = async (event) => {
     event.preventDefault();
     setError('');
+
+    if (!looksLikePersonalFullName(claimantName)) {
+      setError('Please enter your own full name — first name and surname — in the name field. Do not use the club name or account name.');
+      document.getElementById('claimantName')?.focus();
+      return;
+    }
+    if (!String(claimantRole || '').trim()) {
+      setError('Please enter your role or connection to the club.');
+      document.getElementById('claimantRole')?.focus();
+      return;
+    }
+    if (!looksLikeUsableMobile(claimantPhone)) {
+      setError('Please enter a valid mobile number for private identity verification.');
+      document.getElementById('claimantPhone')?.focus();
+      return;
+    }
+
     setSubmitting(true);
     try {
       const updatingPending = status?.claim?.status === 'pending' && editingPending;
@@ -121,7 +171,10 @@ export default function DirectoryClaim() {
         setStatus(refreshed.data || res.data);
       }
     } catch (err) {
-      setError(err.message || 'Could not submit your verification request.');
+      const message = requestErrorMessage(err);
+      setError(message === 'Request failed with status code 400'
+        ? 'Please check your full name, role and mobile number. Your full name must be your own first name and surname, not the club or account name.'
+        : message);
     } finally {
       setSubmitting(false);
     }
@@ -232,8 +285,8 @@ export default function DirectoryClaim() {
 
                 <div className="space-y-2">
                   <Label htmlFor="claimantName">Your full name <span className="text-destructive">*</span></Label>
-                  <Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} placeholder="First name and surname" required maxLength={160} autoComplete="name" />
-                  <p className="text-xs text-muted-foreground"><strong className="text-foreground">This must be your own personal name.</strong> Do not enter the club name, “Chairperson”, “Secretary” or another role here. RallyHub needs to know who is requesting control of the listing.</p>
+                  <Input id="claimantName" value={claimantName} onChange={e => { setClaimantName(e.target.value); if (error) setError(''); }} placeholder="First name and surname" required maxLength={160} autoComplete="name" aria-invalid={!!claimantName && !looksLikePersonalFullName(claimantName)} />
+                  <p className="text-xs text-muted-foreground"><strong className="text-foreground">This must be your own personal name.</strong> For example, if the RallyHub account was created as “dublin15pickleball”, replace that with your real first name and surname. Do not enter the club name or your role here.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="claimantRole">Your role or connection to the club</Label>
