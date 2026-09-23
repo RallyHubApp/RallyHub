@@ -116,7 +116,7 @@ function ClubBadge({ name, logo, primary, secondary }) {
   );
 }
 
-function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImportSpond, onImportCsv, onAddManual, onSave, onSetRosterRole }) {
+function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy, onImportSpond, onImportCsv, onAddManual, onSave, onSetRosterRole, onDirtyChange }) {
   const active = participants.filter(p => !['replaced','withdrawn','injured'].includes(p.status));
   const signature = active.map(p => `${p.id}:${p.side}:${p.event_rank}:${p.roster_role || 'rotation'}`).sort().join('|');
   const makeLanes = () => ({
@@ -124,19 +124,57 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
     club_a: active.filter(p => p.side === 'club_a').sort((a,b)=>(a.event_rank||999)-(b.event_rank||999)).map(p => p.id),
     club_b: active.filter(p => p.side === 'club_b').sort((a,b)=>(a.event_rank||999)-(b.event_rank||999)).map(p => p.id),
   });
-  const [lanes, setLanes] = useState(makeLanes);
-  const [nameA, setNameA] = useState(clubAName || 'Team A');
-  const [nameB, setNameB] = useState(clubBName || 'Team B');
-  const [dirty, setDirty] = useState(false);
-  const [status, setStatus] = useState(null);
+  const draftKey = eventId ? `rallyhub-interclub-team-draft:${eventId}` : '';
+  const participantIdSignature = active.map(p => String(p.id)).sort().join('|');
+  const readDraft = () => {
+    if (!draftKey) return null;
+    try {
+      const draft = JSON.parse(sessionStorage.getItem(draftKey) || 'null');
+      if (!draft || draft.participantIdSignature !== participantIdSignature) return null;
+      const allDraftIds = [...(draft.lanes?.pool || []), ...(draft.lanes?.club_a || []), ...(draft.lanes?.club_b || [])].map(String).sort().join('|');
+      if (allDraftIds !== participantIdSignature) return null;
+      return draft;
+    } catch { return null; }
+  };
+  const initialDraft = readDraft();
+  const [lanes, setLanes] = useState(() => initialDraft?.lanes || makeLanes());
+  const [nameA, setNameA] = useState(() => initialDraft?.nameA || clubAName || 'Team A');
+  const [nameB, setNameB] = useState(() => initialDraft?.nameB || clubBName || 'Team B');
+  const [dirty, setDirty] = useState(() => !!initialDraft);
+  const [status, setStatus] = useState(() => initialDraft ? {state:'working',text:'Recovered your unsaved team allocation and ranking draft.'} : null);
   const [manualPool, setManualPool] = useState('');
 
   React.useEffect(() => {
-    setLanes(makeLanes());
-    setNameA(clubAName || 'Team A');
-    setNameB(clubBName || 'Team B');
-    setDirty(false);
-  }, [signature, clubAName, clubBName]);
+    const draft = readDraft();
+    if (draft) {
+      setLanes(draft.lanes);
+      setNameA(draft.nameA || clubAName || 'Team A');
+      setNameB(draft.nameB || clubBName || 'Team B');
+      setDirty(true);
+      setStatus({state:'working',text:'Recovered your unsaved team allocation and ranking draft.'});
+    } else {
+      setLanes(makeLanes());
+      setNameA(clubAName || 'Team A');
+      setNameB(clubBName || 'Team B');
+      setDirty(false);
+    }
+  }, [signature, clubAName, clubBName, eventId]);
+
+  React.useEffect(() => {
+    onDirtyChange?.(dirty);
+    if (!draftKey || !dirty) return;
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify({
+        participantIdSignature,
+        lanes,
+        nameA,
+        nameB,
+        savedAt:new Date().toISOString(),
+      }));
+    } catch {}
+  }, [dirty, lanes, nameA, nameB, participantIdSignature, draftKey, onDirtyChange]);
+
+  React.useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
 
   const byId = new Map(active.map(p => [p.id, p]));
   const genderStats = ids => {
@@ -164,6 +202,7 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
     setStatus({state:'working',text:'Saving teams and rankings…'});
     try {
       await onSave?.({ poolIds:lanes.pool, clubAIds:lanes.club_a, clubBIds:lanes.club_b, clubAName:nameA, clubBName:nameB });
+      if (draftKey) { try { sessionStorage.removeItem(draftKey); } catch {} }
       setDirty(false);
       setStatus({state:'success',text:`Teams saved · ${lanes.club_a.length} in ${nameA} · ${lanes.club_b.length} in ${nameB}${lanes.pool.length ? ` · ${lanes.pool.length} still in Player Pool` : ''}.`});
     } catch (e) {
