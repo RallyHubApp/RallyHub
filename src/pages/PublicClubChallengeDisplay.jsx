@@ -35,6 +35,33 @@ export default function PublicClubChallengeDisplay(){
   const remaining=timer.running&&timer.started_at?Math.max(0,Number(timer.remaining_seconds||0)-Math.floor((now-new Date(timer.started_at).getTime())/1000)):Number(timer.remaining_seconds||0);
   const scheduledBreakHere=!!event.include_break&&round===Number(event.break_after_round||0), breakActive=scheduledBreakHere&&String(timer.phase||'')==='break';
   const sideChangeRecent=!!showcase?.side_change_at&&(now-new Date(showcase.side_change_at).getTime())<20000;
+
+  if(showcaseActive) return <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 flex flex-col">
+    {disconnected&&<div className="mb-3 rounded-lg bg-yellow-500 text-black px-4 py-3 font-semibold text-center"><WifiOff className="inline w-4 h-4 mr-2"/>Connection lost — showing last known score. RallyHub will resynchronise automatically.</div>}
+    <header className="text-center shrink-0">
+      <p className="text-xs sm:text-sm uppercase tracking-[.28em] text-primary font-black">{INTERCLUB_MODULE_NAME} · Showcase Final</p>
+      <div className="mt-2 flex flex-wrap justify-center gap-2"><Badge>{showcase.showcase_mode==='exhibition'?'OPTIONAL SHOWCASE · EXHIBITION':'SHOWCASE TIEBREAK'}</Badge><Badge variant="outline">First to {showcase.showcase_target_points||11} · win by {showcase.showcase_win_by||1}</Badge></div>
+      <p className="mt-2 text-sm text-muted-foreground">Interclub result: {event.club_a_name} {s.a}–{s.b} {event.club_b_name}{showcase.showcase_mode==='exhibition'?' · unchanged by this exhibition':''}</p>
+    </header>
+    <main className="flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-8 py-4 min-h-0">
+      <section className="h-full rounded-3xl border bg-card flex flex-col items-center justify-center p-4 sm:p-8 text-center" style={{borderTopWidth:'10px',borderTopColor:event.club_a_primary_colour||'#2563eb'}}>
+        {event.club_a_logo_url&&<img src={event.club_a_logo_url} alt={`${event.club_a_name} logo`} className="w-20 h-20 sm:w-32 sm:h-32 lg:w-40 lg:h-40 object-contain rounded-2xl bg-white p-2 shadow-sm"/>}
+        <h2 className="mt-3 text-xl sm:text-3xl lg:text-4xl font-black">{event.club_a_name}</h2>
+        <p className="mt-2 text-sm sm:text-lg lg:text-xl text-muted-foreground font-semibold">{(showcase.club_a_names||[]).join(' & ')}</p>
+        <p className="mt-4 sm:mt-6 text-[clamp(5rem,18vw,14rem)] leading-none font-black tabular-nums">{showcase.score_a??0}</p>
+      </section>
+      <div className="text-center self-center"><p className="text-xs sm:text-lg font-bold uppercase tracking-[.25em] text-muted-foreground">vs</p></div>
+      <section className="h-full rounded-3xl border bg-card flex flex-col items-center justify-center p-4 sm:p-8 text-center" style={{borderTopWidth:'10px',borderTopColor:event.club_b_primary_colour||'#7f1d1d'}}>
+        {event.club_b_logo_url&&<img src={event.club_b_logo_url} alt={`${event.club_b_name} logo`} className="w-20 h-20 sm:w-32 sm:h-32 lg:w-40 lg:h-40 object-contain rounded-2xl bg-white p-2 shadow-sm"/>}
+        <h2 className="mt-3 text-xl sm:text-3xl lg:text-4xl font-black">{event.club_b_name}</h2>
+        <p className="mt-2 text-sm sm:text-lg lg:text-xl text-muted-foreground font-semibold">{(showcase.club_b_names||[]).join(' & ')}</p>
+        <p className="mt-4 sm:mt-6 text-[clamp(5rem,18vw,14rem)] leading-none font-black tabular-nums">{showcase.score_b??0}</p>
+      </section>
+    </main>
+    {sideChangeRecent&&<div className="shrink-0 rounded-2xl bg-red-600 px-4 py-4 sm:py-5 text-center text-3xl sm:text-5xl font-black text-white shadow-xl">CHANGE ENDS</div>}
+    {showcase.status==='completed'&&<div className="shrink-0 rounded-2xl border border-primary/40 bg-primary/10 px-4 py-4 text-center text-xl sm:text-3xl font-black">{showcase.winner==='club_a'?event.club_a_name:event.club_b_name} won the Showcase {showcase.score_a}–{showcase.score_b}</div>}
+  </div>;
+
   return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8 space-y-6">
     {disconnected&&<div className="sticky top-2 z-20 rounded-lg bg-yellow-500 text-black px-4 py-3 font-semibold text-center"><WifiOff className="inline w-4 h-4 mr-2"/>Connection lost — showing last known state. RallyHub will resynchronise automatically.</div>}
     <header className="text-center"><p className="text-xs uppercase tracking-[.25em] text-primary font-bold">{INTERCLUB_MODULE_NAME} · Hall Display</p><h1 className="text-3xl sm:text-6xl font-bold mt-3">{event.club_a_name} <span className="text-primary">{s.a} – {s.b}</span> {event.club_b_name}</h1><div className="flex justify-center gap-2 mt-4"><Badge className={breakActive?'bg-red-600 text-white':''} variant={breakActive?'default':'outline'}>{breakActive?'BREAK':plannedRounds?`Round ${round}/${plannedRounds}`:`Round ${round}`}</Badge><Badge variant="outline">{String(timer.phase||'idle').toUpperCase()}</Badge><Badge className="text-lg tabular-nums">{fmt(remaining)}</Badge></div></header>
