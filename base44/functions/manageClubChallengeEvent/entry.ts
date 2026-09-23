@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
     const { eventId, action, round, label } = body;
-    if (!eventId || !['archive','reopen','set_round_label','approve_draw','start'].includes(action)) return Response.json({ error:'Invalid Interclub Challenge event action.' }, { status:400 });
+    if (!eventId || !['archive','reopen','set_round_label','approve_draw','unlock_draw','start'].includes(action)) return Response.json({ error:'Invalid Interclub Challenge event action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -47,6 +47,27 @@ Deno.serve(async (req) => {
       const plannedRounds = Number(event.planned_rounds || 0) > 0 ? Number(event.planned_rounds) : Math.max(0, ...matches.filter((m:any)=>!m.is_showcase).map((m:any)=>Number(m.round_number || 0)));
       const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'draw_approved', planned_rounds:plannedRounds, draw_version:nextVersion, draw_approved_at:now, draw_approved_by:user.id, event_pack_stale:false, event_pack_version:nextVersion, event_pack_generated_at:now });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'draw_approved', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({draw_version:nextVersion,match_count:matches.length}) });
+      return Response.json({ success:true, event:updated });
+    }
+
+    if (action === 'unlock_draw') {
+      if (event.status !== 'draw_approved') return Response.json({ error:'Only an approved, not-yet-started draw can be unlocked.' }, { status:409 });
+      const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
+        status:'draw_generated',
+        event_pack_stale:true,
+        draw_approved_at:null,
+        draw_approved_by:null,
+      });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({
+        tenant_id:event.tenant_id,
+        challenge_event_id:event.id,
+        action:'draw_unlocked_for_changes',
+        user_id:user.id,
+        occurred_at:now,
+        old_value_json:JSON.stringify({status:'draw_approved',draw_version:event.draw_version}),
+        new_value_json:JSON.stringify({status:'draw_generated',event_pack_stale:true}),
+        note:'Approved draw unlocked before event start so teams or rankings can be amended.',
+      });
       return Response.json({ success:true, event:updated });
     }
 
