@@ -44,7 +44,8 @@ Deno.serve(async (req) => {
       const gamesBalanced = fairness && (fairness.balancedGames === true || fairness.equalGames === true || (Number(fairness.maxGames)-Number(fairness.minGames) <= 1));
       if (!fairness || fairness.duplicatePlayerRoundIssues || fairness.sameClubIntegrityIssues || !gamesBalanced) return Response.json({ error:'Hard fairness checks must pass before approval.' }, { status:409 });
       const nextVersion = Number(event.draw_version || 0) + 1;
-      const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'draw_approved', draw_version:nextVersion, draw_approved_at:now, draw_approved_by:user.id, event_pack_stale:false, event_pack_version:nextVersion, event_pack_generated_at:now });
+      const plannedRounds = Number(event.planned_rounds || 0) > 0 ? Number(event.planned_rounds) : Math.max(0, ...matches.filter((m:any)=>!m.is_showcase).map((m:any)=>Number(m.round_number || 0)));
+      const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'draw_approved', planned_rounds:plannedRounds, draw_version:nextVersion, draw_approved_at:now, draw_approved_by:user.id, event_pack_stale:false, event_pack_version:nextVersion, event_pack_generated_at:now });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'draw_approved', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({draw_version:nextVersion,match_count:matches.length}) });
       return Response.json({ success:true, event:updated });
     }
@@ -53,10 +54,12 @@ Deno.serve(async (req) => {
       if (event.status !== 'draw_approved') return Response.json({ error:'Interclub Challenge draw must be approved before starting.' }, { status:409 });
       const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300);
       if (!matches.length) return Response.json({ error:'No approved fixtures found.' }, { status:409 });
+      const plannedRounds = Number(event.planned_rounds || 0) > 0 ? Number(event.planned_rounds) : Math.max(0, ...matches.filter((m:any)=>!m.is_showcase).map((m:any)=>Number(m.round_number || 0)));
       const initialTimer = { phase:'ready', running:false, remaining_seconds:Number(event.play_minutes || 10) * 60, started_at:null, round:1 };
       const initialTimerRevision = Number(event.timer_revision || 0) + 1;
       const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
         status:'in_progress',
+        planned_rounds:plannedRounds,
         current_round:1,
         timer_state_json:JSON.stringify(initialTimer),
         timer_revision:initialTimerRevision,
