@@ -1799,17 +1799,31 @@ Brian`;
                       <p className="text-xs text-muted-foreground break-all mt-1">Email: {claim.claimant_email || '—'} · Mobile: {claim.claimant_phone || '—'}</p>
                       <p className="text-[11px] text-muted-foreground mt-2">Email matching is supporting evidence only. Approval still requires an identifiable person and a usable mobile number.</p>
                     </div>
-                    {sourceInvite && (
-                      <div className="rounded-lg border border-amber-400/25 bg-amber-400/5 p-3 mt-2 text-xs">
-                        <p className="font-semibold text-foreground">Original secure invitation</p>
-                        <p className="text-muted-foreground mt-1">
-                          Sent to: {sourceInvite.contact_name || '(name not recorded)'}
-                          {sourceInvite.contact_email ? ` · ${sourceInvite.contact_email}` : ''}
-                          {sourceInvite.contact_phone ? ` · ${sourceInvite.contact_phone}` : ''}
-                        </p>
-                        <p className="text-muted-foreground mt-1">Compare this with the claimant’s private identity above before approving, particularly if the link may have been forwarded.</p>
-                      </div>
-                    )}
+                    {sourceInvite && (() => {
+                      const invitePhoneDigits = String(sourceInvite.contact_phone || '').replace(/\D/g, '');
+                      const claimPhoneDigits = String(claim.claimant_phone || '').replace(/\D/g, '');
+                      const invitePhoneMatches = invitePhoneDigits && claimPhoneDigits &&
+                        invitePhoneDigits.slice(-9) === claimPhoneDigits.slice(-9);
+                      const inviteWasUsedByClaimant = sourceInvite.status === 'used' &&
+                        String(sourceInvite.used_by_user_id || '') === String(claim.claimant_user_id || '');
+                      return (
+                        <div className={`rounded-lg border p-3 mt-2 text-xs ${inviteWasUsedByClaimant ? 'border-green-400/25 bg-green-400/5' : 'border-amber-400/40 bg-amber-400/10'}`}>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-foreground">{inviteWasUsedByClaimant ? 'Original secure invitation used' : 'Related secure invitation — not used for this claim'}</p>
+                            {!inviteWasUsedByClaimant && <Badge variant="outline" className="border-amber-400/50 text-amber-400">Check identity</Badge>}
+                          </div>
+                          <p className="text-muted-foreground mt-1">
+                            Sent to: {sourceInvite.contact_name || '(name not recorded)'}
+                            {sourceInvite.contact_email ? ` · ${sourceInvite.contact_email}` : ''}
+                            {sourceInvite.contact_phone ? ` · ${sourceInvite.contact_phone}` : ''}
+                          </p>
+                          {!inviteWasUsedByClaimant && <p className="text-amber-500 mt-1 font-medium">This pending claim was created without consuming that secure invitation, so do not assume the claimant is the invited person.</p>}
+                          {sourceInvite.contact_phone && claim.claimant_phone && !invitePhoneMatches && (
+                            <p className="text-destructive mt-1 font-medium">Mobile mismatch: invitation {sourceInvite.contact_phone} · claim {claim.claimant_phone}</p>
+                          )}
+                        </div>
+                      );
+                    })()}
                     {claim.claimant_message && <p className="text-xs text-muted-foreground mt-2">“{claim.claimant_message}”</p>}
                     <div className="flex flex-wrap gap-2 pt-2">
                       <Badge variant="outline" className={claim.email_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Email match (supporting): {claim.email_match ? 'Yes' : 'No'}</Badge>
@@ -1821,7 +1835,13 @@ Brian`;
                     </div>
                     {!identityComplete && <p className="text-xs text-destructive mt-2 font-medium">Approval is blocked until the claimant supplies their own full name and a valid mobile number.</p>}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <Button size="sm" variant="outline" onClick={() => {
+                      setEditingPendingDirectoryClaim(claim);
+                      setPendingDirectoryIdentityForm({ fullName: claim.claimant_name || '', mobile: claim.claimant_phone || '' });
+                    }} className="gap-1">
+                      <Pencil className="w-3.5 h-3.5" /> Correct verification details
+                    </Button>
                     <Button size="sm" disabled={reviewingDirectoryClaim === claim.id || !identityComplete} onClick={() => reviewDirectoryClaim(claim.id, 'approved')} className="gap-1" title={!identityComplete ? 'A real full name and valid mobile number are required before approval' : undefined}>
                       <CheckCircle className="w-3.5 h-3.5" /> {reviewingDirectoryClaim === claim.id ? '…' : 'Approve directory only'}
                     </Button>
@@ -1832,6 +1852,37 @@ Brian`;
                 </div>
               );})}
             </div>
+
+            <Dialog open={!!editingPendingDirectoryClaim} onOpenChange={open => { if (!open && !savingPendingDirectoryIdentity) setEditingPendingDirectoryClaim(null); }}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Correct pending verification details</DialogTitle>
+                  <DialogDescription>
+                    Use this only after you have independently confirmed who the person is. Correcting the private identity does not approve the claim and does not change the club’s public contact label.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label>Real full name</Label>
+                    <Input value={pendingDirectoryIdentityForm.fullName} onChange={e => setPendingDirectoryIdentityForm(v => ({ ...v, fullName:e.target.value }))} placeholder="First name and surname" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Private mobile / WhatsApp</Label>
+                    <Input type="tel" value={pendingDirectoryIdentityForm.mobile} onChange={e => setPendingDirectoryIdentityForm(v => ({ ...v, mobile:e.target.value }))} />
+                  </div>
+                  <div className="rounded-lg border border-border bg-background/40 p-3 text-xs text-muted-foreground">
+                    Account email: <strong className="text-foreground">{editingPendingDirectoryClaim?.claimant_email || '—'}</strong><br />
+                    Club: <strong className="text-foreground">{editingPendingDirectoryClaim?.listing_name_snapshot || '—'}</strong>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setEditingPendingDirectoryClaim(null)} disabled={savingPendingDirectoryIdentity}>Cancel</Button>
+                    <Button type="button" onClick={savePendingDirectoryIdentity} disabled={savingPendingDirectoryIdentity || !pendingDirectoryIdentityForm.fullName.trim() || !pendingDirectoryIdentityForm.mobile.trim()}>
+                      {savingPendingDirectoryIdentity ? 'Saving…' : 'Save correction'}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Owner invitations awaiting acceptance {pendingDirectoryInvitations.length ? `· ${pendingDirectoryInvitations.length}` : ''}</p>
