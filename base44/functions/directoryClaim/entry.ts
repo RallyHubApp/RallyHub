@@ -1357,6 +1357,17 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'This person needs to open the secure claim link and sign in once before you can approve owner access.' }, { status: 409 });
       }
 
+      const targetUsers = await base44.asServiceRole.entities.User.filter({ id: targetUserId });
+      const targetUser = targetUsers?.[0] || null;
+      const verificationName = matchingClaim?.claimant_name || targetUser?.full_name || targetUser?.display_name || '';
+      const verificationPhone = matchingClaim?.claimant_phone || targetUser?.directory_mobile || '';
+      if (!looksLikePersonalFullName(verificationName)) {
+        return Response.json({ error: 'This Directory invitation cannot be approved until the person provides their own full name (first name and surname).' }, { status: 409 });
+      }
+      if (!looksLikeUsableMobile(verificationPhone)) {
+        return Response.json({ error: 'This Directory invitation cannot be approved until the person provides a valid mobile number for identity verification.' }, { status: 409 });
+      }
+
       const now = new Date().toISOString();
       const existingListingAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: invitation.listing_slug, status: 'active' });
       const grantedRole = invitation.access_role === 'editor' || existingListingAccess?.length ? 'editor' : 'owner';
@@ -1389,8 +1400,6 @@ Deno.serve(async (req) => {
         occurred_at: now,
         after_json: JSON.stringify({ role: grantedRole, source: 'admin_approved_invitation', accessId: access?.id || null, targetUserId }),
       });
-      const targetUsers = await base44.asServiceRole.entities.User.filter({ id: targetUserId });
-      const targetUser = targetUsers?.[0] || null;
       const welcomeEmail = await trySendDirectoryWelcomeEmail(base44, {
         listing,
         recipientName: matchingClaim?.claimant_name || invitation.contact_name || targetUser?.full_name || targetUser?.display_name || '',
