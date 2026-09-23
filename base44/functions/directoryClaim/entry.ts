@@ -317,6 +317,94 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   return { sent: 1, to, claimUrl };
 }
 
+async function sendDirectoryWelcomeEmail(base44, { listing, recipientName = '', recipientEmail = '' }) {
+  const to = normaliseEmail(recipientEmail);
+  if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+    return { sent: 0, error: 'A valid Directory owner/editor email is required.' };
+  }
+  const firstName = String(recipientName || '').trim().split(/\s+/)[0] || 'there';
+  const clubName = String(listing?.name || listing?.slug || 'your club').trim();
+  const listingSlug = String(listing?.slug || '').trim();
+  const manageUrl = `https://rallyhub.ie/directory/${encodeURIComponent(listingSlug)}/edit`;
+  const helpUrl = 'https://rallyhub.ie/directory/help';
+  const subject = `Welcome to RallyHub – your ${clubName} Directory listing is ready`;
+  const textBody = `Hi ${firstName},
+
+Thanks for connecting with RallyHub and taking ownership of the ${clubName} Directory listing.
+
+Your listing is now ready for you to manage. You can check or update the club description, public contact details, venues and regular sessions at any time.
+
+Manage your listing:
+${manageUrl}
+
+Using Spond? You can connect your club’s Spond account under Enhanced listing. RallyHub can scan your upcoming Spond events and bring in your regular venues and session times, which should save you quite a bit of work.
+
+Club Guide & Help:
+${helpUrl}
+
+If there is anything we can do to help, just reply to this email or WhatsApp Brian on 087 810 0333.
+
+We’re building the Directory with clubs, so if you have any thoughts, suggestions or ideas about how we could make it better, please let us know. You can use the Feedback button inside RallyHub, or simply send Brian a text or voice note on WhatsApp — whatever is easiest.
+
+And if you notice a club, venue or regular session that is missing from the Directory, or anything that doesn’t look quite right, please let us know. We know there are still clubs and groups around the country that we may not have identified yet, and we’d be delighted to contact them and invite them to join the Directory.
+
+Thanks again for being part of it.
+
+Yours in sport,
+
+Brian Moore
+RallyHub
+087 810 0333
+https://rallyhub.ie`;
+  const htmlBody = `<!doctype html>
+<html><body style="margin:0;background:#f4f8f5;font-family:Arial,Helvetica,sans-serif;color:#0c1e35;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f8f5;padding:24px 12px;"><tr><td align="center">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border-radius:20px;overflow:hidden;border:1px solid #dfe9e2;">
+<tr><td style="padding:28px 32px 18px;border-top:7px solid #159447;"><div style="font-size:28px;font-weight:800;">Rally<span style="color:#159447;">Hub</span></div><div style="font-size:11px;letter-spacing:2.2px;color:#66737f;margin-top:3px;">PLAY • CONNECT • BELONG</div></td></tr>
+<tr><td style="padding:6px 32px 30px;">
+<p style="font-size:18px;margin:0 0 16px;">Hi ${firstName},</p>
+<p style="font-size:15px;line-height:1.65;margin:0 0 16px;">Thanks for connecting with RallyHub and taking ownership of the <strong>${clubName}</strong> Directory listing.</p>
+<p style="font-size:15px;line-height:1.65;color:#55636f;margin:0 0 20px;">Your listing is now ready for you to manage. You can check or update the club description, public contact details, venues and regular sessions at any time.</p>
+<table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 22px;"><tr><td bgcolor="#159447" style="border-radius:10px;"><a href="${manageUrl}" style="display:inline-block;padding:14px 22px;color:#fff;text-decoration:none;font-weight:700;font-size:15px;">Manage your listing</a></td></tr></table>
+<div style="background:#eef9f1;border:1px solid #d7eadc;border-radius:14px;padding:16px 18px;margin-bottom:20px;"><div style="font-weight:700;margin-bottom:6px;">Using Spond?</div><div style="font-size:14px;line-height:1.55;color:#55636f;">Open <strong>Enhanced listing</strong> to connect your club’s Spond account. RallyHub can scan your upcoming events and bring in regular venues and session times, which should save you quite a bit of work.</div></div>
+<p style="font-size:15px;line-height:1.65;margin:0 0 16px;">If there is anything we can do to help, just reply to this email or WhatsApp Brian on <strong>087 810 0333</strong>.</p>
+<p style="font-size:15px;line-height:1.65;color:#55636f;margin:0 0 16px;">We’re building the Directory with clubs, so if you have thoughts, suggestions or ideas about how we could make it better, please use the <strong>Feedback</strong> button inside RallyHub, or send Brian a text or voice note on WhatsApp — whatever is easiest.</p>
+<p style="font-size:15px;line-height:1.65;color:#55636f;margin:0 0 18px;">If you notice a <strong>club, venue or regular session missing from the Directory</strong>, or anything that doesn’t look quite right, please let us know. We’d be delighted to follow it up and invite any missing clubs or groups to be included.</p>
+<p style="font-size:14px;line-height:1.8;margin:0 0 18px;"><a href="${helpUrl}" style="color:#159447;font-weight:700;">Club Guide &amp; Help</a></p>
+<p style="font-size:15px;line-height:1.5;margin:0 0 4px;">Thanks again for being part of it.<br><br>Yours in sport,</p>
+<p style="font-size:22px;font-style:italic;font-weight:700;margin:0 0 2px;">Brian Moore</p>
+<p style="font-size:13px;color:#66737f;margin:0;">RallyHub · 087 810 0333 · <a href="https://rallyhub.ie" style="color:#159447;text-decoration:none;">RallyHub.ie</a></p>
+</td></tr></table></td></tr></table></body></html>`;
+  await sendWithConfiguredEmailTransport(
+    base44,
+    { scopeType: 'platform', purpose: 'directory' },
+    { to, subject, textBody, htmlBody },
+  );
+  try {
+    await base44.asServiceRole.entities.AuditLog.create({
+      tenant_id: 'platform',
+      user_id: 'system',
+      action: 'directory_welcome_email_sent',
+      entity_type: 'DirectoryListing',
+      entity_id: listingSlug.slice(0, 220),
+      scope_type: 'DirectoryListing',
+      scope_id: listingSlug.slice(0, 220),
+      after_state: JSON.stringify({ recipient: to, listingSlug }),
+      reason: 'RallyHub Directory welcome email sent after access was granted or manually resent by an administrator.',
+    });
+  } catch {}
+  return { sent: 1, to, subject };
+}
+
+async function trySendDirectoryWelcomeEmail(base44, args) {
+  try {
+    return await sendDirectoryWelcomeEmail(base44, args);
+  } catch (error) {
+    console.warn('Directory welcome email failed without blocking access approval', error?.message || error);
+    return { sent: 0, error: error?.message || 'Welcome email could not be sent.' };
+  }
+}
+
 async function sendAdminDirectoryEmail(base44, { user, subject, body, kind, contextId }) {
   try {
     const auditAction = 'credit_guard_directory_email';
@@ -1156,6 +1244,7 @@ Deno.serve(async (req) => {
         review_notes: reviewNotes || null,
       });
 
+      let welcomeEmail = null;
       if (decision === 'approved') {
         const existingListingAccess = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: claim.listing_slug, status: 'active' });
         await grantAccess(base44, {
@@ -1166,8 +1255,13 @@ Deno.serve(async (req) => {
           role: existingListingAccess?.length ? 'editor' : 'owner',
           notes: reviewNotes || 'Manually verified by RallyHub administrator.',
         });
+        welcomeEmail = await trySendDirectoryWelcomeEmail(base44, {
+          listing,
+          recipientName: claim.claimant_name,
+          recipientEmail: claim.claimant_email,
+        });
       }
-      return Response.json({ success: true, status: decision });
+      return Response.json({ success: true, status: decision, welcomeEmail });
     }
 
     if (action === 'approve_invitation') {
@@ -1230,7 +1324,14 @@ Deno.serve(async (req) => {
         occurred_at: now,
         after_json: JSON.stringify({ role: grantedRole, source: 'admin_approved_invitation', accessId: access?.id || null, targetUserId }),
       });
-      return Response.json({ success: true, status: 'approved', role: grantedRole, accessId: access?.id || null });
+      const targetUsers = await base44.asServiceRole.entities.User.filter({ id: targetUserId });
+      const targetUser = targetUsers?.[0] || null;
+      const welcomeEmail = await trySendDirectoryWelcomeEmail(base44, {
+        listing,
+        recipientName: matchingClaim?.claimant_name || invitation.contact_name || targetUser?.full_name || targetUser?.display_name || '',
+        recipientEmail: matchingClaim?.claimant_email || invitation.contact_email || targetUser?.email || '',
+      });
+      return Response.json({ success: true, status: 'approved', role: grantedRole, accessId: access?.id || null, welcomeEmail });
     }
 
     if (action === 'review_new') {
@@ -1349,7 +1450,12 @@ Deno.serve(async (req) => {
         reviewed_at: now,
         review_notes: reviewNotes || null,
       });
-      return Response.json({ success: true, status: 'approved', listingSlug, accessId: access?.id || null });
+      const welcomeEmail = await trySendDirectoryWelcomeEmail(base44, {
+        listing,
+        recipientName: request.claimant_name,
+        recipientEmail: request.claimant_email,
+      });
+      return Response.json({ success: true, status: 'approved', listingSlug, accessId: access?.id || null, welcomeEmail });
     }
 
     if (action === 'set_visibility') {
