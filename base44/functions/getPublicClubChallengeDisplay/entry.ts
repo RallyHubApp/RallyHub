@@ -37,8 +37,10 @@ Deno.serve(async (req) => {
       id:event.id, status:event.status, club_a_name:event.club_a_name, club_b_name:event.club_b_name,
       club_a_logo_url:event.club_a_logo_url, club_b_logo_url:event.club_b_logo_url,
       club_a_primary_colour:event.club_a_primary_colour, club_b_primary_colour:event.club_b_primary_colour,
-      current_round:event.current_round, timer_state_json:event.timer_state_json, timer_revision:event.timer_revision,
-      play_minutes:event.play_minutes, changeover_minutes:event.changeover_minutes, junior_display_mode:!!event.junior_display_mode,
+      current_round:event.current_round, planned_rounds:event.planned_rounds, timer_state_json:event.timer_state_json, timer_revision:event.timer_revision,
+      play_minutes:event.play_minutes, changeover_minutes:event.changeover_minutes,
+      include_break:!!event.include_break, break_minutes:event.break_minutes, break_after_round:event.break_after_round,
+      junior_display_mode:!!event.junior_display_mode,
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
     }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
