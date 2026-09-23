@@ -81,6 +81,8 @@ Deno.serve(async (req) => {
       }
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
         showcase_club_a_male_id:aMale?.id || '', showcase_club_a_female_id:aFemale?.id || '', showcase_club_b_male_id:bMale?.id || '', showcase_club_b_female_id:bFemale?.id || '',
+        showcase_club_a_player_1_id:aMale?.id || '', showcase_club_a_player_2_id:aFemale?.id || '',
+        showcase_club_b_player_1_id:bMale?.id || '', showcase_club_b_player_2_id:bFemale?.id || '',
       });
     }
 
