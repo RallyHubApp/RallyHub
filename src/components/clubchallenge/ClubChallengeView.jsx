@@ -448,6 +448,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-votes', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeVote.filter({ challenge_event_id: event.id }, '-cast_at', 200) : [],
     enabled: isAdmin && !!event?.id && !!event?.pot_enabled,
+    refetchInterval: isAdmin && event?.pot_status === 'open' ? 2000 : false,
   });
 
   React.useEffect(() => {
@@ -1819,8 +1820,19 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const currentSittingOut = participants.filter(p => (p.status === 'active' || (p.status === 'late' && Number(p.available_from_round || 1) <= currentRound)) && !currentActiveIds.has(p.id));
   const currentSittingOutA = currentSittingOut.filter(p => p.side === 'club_a');
   const currentSittingOutB = currentSittingOut.filter(p => p.side === 'club_b');
-  const potCounts = potVotes.filter(v => v.valid !== false).reduce((a,v) => ({ ...a, [v.nominee_participant_id]: (a[v.nominee_participant_id] || 0) + 1 }), {});
-  const potWinnerNames = (event?.pot_winner_participant_ids || []).map(id => participants.find(p => p.id === id)?.display_name).filter(Boolean);
+  const validPotVotes = potVotes.filter(v => v.valid !== false);
+  const potCounts = validPotVotes.reduce((a,v) => ({ ...a, [v.nominee_participant_id]: (a[v.nominee_participant_id] || 0) + 1 }), {});
+  const potBallotCount = new Set(validPotVotes.map(v => v.voter_identity_key).filter(Boolean)).size;
+  const potTeamVoteCount = validPotVotes.length;
+  const potWinnerIds = event?.pot_winner_participant_ids || [];
+  const potWinnersA = potWinnerIds.map(id => participants.find(p => p.id === id)).filter(p => p?.side === 'club_a');
+  const potWinnersB = potWinnerIds.map(id => participants.find(p => p.id === id)).filter(p => p?.side === 'club_b');
+  const potRemainingSeconds = event?.pot_status === 'open' && event?.pot_vote_closes_at
+    ? Math.max(0, Math.ceil((Date.parse(event.pot_vote_closes_at) - timerNow) / 1000))
+    : null;
+  const potCountdownText = potRemainingSeconds === null
+    ? 'Manual close'
+    : `${Math.floor(potRemainingSeconds / 60)}:${String(potRemainingSeconds % 60).padStart(2, '0')}`;
   const showcaseDisplayActive = !!showcaseMatch && ['scheduled','in_progress','completed'].includes(showcaseMatch.status);
   const showcaseSideChangeRecent = !!showcaseMatch?.side_change_at && (timerNow - new Date(showcaseMatch.side_change_at).getTime()) < 20000;
 
