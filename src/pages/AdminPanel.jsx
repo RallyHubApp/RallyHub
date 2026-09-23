@@ -889,6 +889,13 @@ Brian`;
   const complimentaryActiveCount = clubMembershipRelationships.filter(r => r.status === 'active' && r.membership_category === 'complimentary').length;
   const pendingMemberCount = clubMembershipRelationships.filter(r => r.status === 'pending').length;
   const unlinkedCount = Math.max(0, clubPlayerCount - linkedCount);
+  const directoryClaimIdentityLooksComplete = claim => {
+    const name = String(claim?.claimant_name || '').trim().toLowerCase().replace(/[^a-z0-9' -]+/g, ' ').replace(/\s+/g, ' ');
+    const parts = name.split(' ').filter(Boolean);
+    const blocked = new Set(['chair','chairperson','chairman','chairwoman','secretary','treasurer','organiser','organizer','owner','admin','administrator','committee','club','pickleball','contact','manager','captain','team']);
+    const phoneDigits = String(claim?.claimant_phone || '').replace(/\D/g, '');
+    return parts.length >= 2 && !parts.some(part => blocked.has(part)) && phoneDigits.length >= 8 && phoneDigits.length <= 15;
+  };
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
   const pendingDirectoryActionCount = pendingDirectoryClaims.length + pendingNewDirectoryRequests.length;
@@ -1562,22 +1569,36 @@ Brian`;
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Pending verification</p>
               {pendingDirectoryClaims.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No directory claims are waiting for review.</p>
-              ) : pendingDirectoryClaims.map(claim => (
+              ) : pendingDirectoryClaims.map(claim => {
+                const identityComplete = directoryClaimIdentityLooksComplete(claim);
+                return (
                 <div key={claim.id} className="glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="min-w-0 space-y-1">
-                    <p className="font-semibold text-foreground">{claim.listing_name_snapshot}</p>
-                    <p className="text-sm text-foreground">{claim.claimant_name || '(no name)'} <span className="text-muted-foreground">· {claim.claimant_role || 'role not supplied'}</span></p>
-                    <p className="text-xs text-muted-foreground break-all">{claim.claimant_email}{claim.claimant_phone ? ` · ${claim.claimant_phone}` : ''}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-foreground">{claim.listing_name_snapshot}</p>
+                      <Badge variant="outline" className={identityComplete ? 'border-green-400/40 text-green-400' : 'border-destructive/40 text-destructive'}>
+                        {identityComplete ? 'Identity details supplied' : 'Identity incomplete'}
+                      </Badge>
+                    </div>
+                    <div className="rounded-lg border border-border/70 bg-background/30 p-3 mt-2">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Private identity for verification</p>
+                      <p className="text-sm text-foreground mt-1"><strong>{claim.claimant_name || '(no personal name supplied)'}</strong> <span className="text-muted-foreground">· {claim.claimant_role || 'role not supplied'}</span></p>
+                      <p className="text-xs text-muted-foreground break-all mt-1">Email: {claim.claimant_email || '—'} · Mobile: {claim.claimant_phone || '—'}</p>
+                      <p className="text-[11px] text-muted-foreground mt-2">Email matching is supporting evidence only. Approval still requires an identifiable person and a usable mobile number.</p>
+                    </div>
                     {claim.claimant_message && <p className="text-xs text-muted-foreground mt-2">“{claim.claimant_message}”</p>}
                     <div className="flex flex-wrap gap-2 pt-2">
-                      <Badge variant="outline" className={claim.email_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Email match: {claim.email_match ? 'Yes' : 'No'}</Badge>
+                      <Badge variant="outline" className={claim.email_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Email match (supporting): {claim.email_match ? 'Yes' : 'No'}</Badge>
                       <Badge variant="outline" className={claim.name_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Name match: {claim.name_match ? 'Yes' : 'No'}</Badge>
                       <Badge variant="outline" className={claim.phone_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Phone match: {claim.phone_match ? 'Yes' : 'No'}</Badge>
+                      <Badge variant="outline">Public name: {claim.public_name_opt_out ? 'Keep private' : 'No opt-out'}</Badge>
+                      <Badge variant="outline">Public mobile: {claim.public_phone_opt_out ? 'Keep private' : 'No opt-out'}</Badge>
                       <Badge variant="outline" className={claim.network_updates_opt_in ? 'border-primary/40 text-primary' : 'border-border text-muted-foreground'}>Network updates: {claim.network_updates_opt_in ? 'Opted in' : 'No'}</Badge>
                     </div>
+                    {!identityComplete && <p className="text-xs text-destructive mt-2 font-medium">Approval is blocked until the claimant supplies their own full name and a valid mobile number.</p>}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Button size="sm" disabled={reviewingDirectoryClaim === claim.id} onClick={() => reviewDirectoryClaim(claim.id, 'approved')} className="gap-1">
+                    <Button size="sm" disabled={reviewingDirectoryClaim === claim.id || !identityComplete} onClick={() => reviewDirectoryClaim(claim.id, 'approved')} className="gap-1" title={!identityComplete ? 'A real full name and valid mobile number are required before approval' : undefined}>
                       <CheckCircle className="w-3.5 h-3.5" /> {reviewingDirectoryClaim === claim.id ? '…' : 'Approve directory only'}
                     </Button>
                     <Button size="sm" variant="outline" disabled={reviewingDirectoryClaim === claim.id} onClick={() => reviewDirectoryClaim(claim.id, 'rejected')} className="gap-1 text-destructive border-destructive/30">
@@ -1585,7 +1606,7 @@ Brian`;
                     </Button>
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
 
             <div className="space-y-2">
