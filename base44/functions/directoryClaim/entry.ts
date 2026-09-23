@@ -1210,16 +1210,17 @@ Deno.serve(async (req) => {
 
     if (action === 'list_admin') {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
-      const [claims, accesses, listingRequests, listingRecords, invitations] = await Promise.all([
+      const [claims, accesses, listingRequests, listingRecords, listingProfiles, invitations] = await Promise.all([
         base44.asServiceRole.entities.DirectoryClaim.list('-created_date', 300),
         base44.asServiceRole.entities.DirectoryListingAccess.list('-created_date', 300),
         base44.asServiceRole.entities.DirectoryListingRequest.list('-created_date', 300),
         base44.asServiceRole.entities.DirectoryListingRecord.list('-published_at', 500),
+        base44.asServiceRole.entities.DirectoryListingProfile.list('-updated_at', 500),
         base44.asServiceRole.entities.DirectoryClaimInvitation.list('-created_date', 300),
       ]);
       const directoryUserIds = [...new Set((accesses || []).filter((a:any) => a.status === 'active' && a.user_id).map((a:any) => String(a.user_id)))];
       await Promise.all(directoryUserIds.map((id:string) => hardenDirectoryOnlyAccount(base44, id)));
-      return Response.json({ success: true, claims, accesses, listingRequests, listingRecords, invitations });
+      return Response.json({ success: true, claims, accesses, listingRequests, listingRecords, listingProfiles, invitations });
     }
 
     if (action === 'send_welcome_email') {
