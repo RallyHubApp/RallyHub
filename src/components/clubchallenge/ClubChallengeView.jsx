@@ -367,6 +367,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [hallVolume, setHallVolume] = useState(() => { const v = Number(localStorage.getItem('cc-hall-volume')); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; });
   const [audioReady, setAudioReady] = useState(false);
   const [hallVoiceEngine, setHallVoiceEngine] = useState('not-tested');
+  const [hallVoiceSource, setHallVoiceSource] = useState(() => localStorage.getItem('cc-hall-voice-source') === 'browser' ? 'browser' : 'amplified');
   const [paActive, setPaActive] = useState(false);
   const [paStarting, setPaStarting] = useState(false);
   const [paInputLevel, setPaInputLevel] = useState(0);
@@ -573,6 +574,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, []);
   React.useEffect(() => { localStorage.setItem('cc-voice-mode', voiceMode); }, [voiceMode]);
   React.useEffect(() => { localStorage.setItem('cc-hall-volume', String(hallVolume)); }, [hallVolume]);
+  React.useEffect(() => { localStorage.setItem('cc-hall-voice-source', hallVoiceSource); }, [hallVoiceSource]);
   React.useEffect(() => { localStorage.setItem('cc-pa-gain', String(paGain)); if (paActive) setRallyHubPaGain(paGain); }, [paGain, paActive]);
   React.useEffect(() => { localStorage.setItem('cc-pa-mic-id', selectedMicId); }, [selectedMicId]);
   React.useEffect(() => {
@@ -905,7 +907,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         // Start generating the hall-grade voice immediately while the cue plays.
         // If the provider is unavailable, speakRallyHubHall automatically falls
         // back to the device/browser voice so Test Sound still works.
-        const prepared = primeRallyHubHallSpeech(testPhrase, { eventId:event?.id || '' });
+        const prepared = hallVoiceSource === 'amplified'
+          ? primeRallyHubHallSpeech(testPhrase, { eventId:event?.id || '' })
+          : Promise.resolve(true);
         playRallyHubSignal(ctx, 'start', hallVolume);
         window.setTimeout(async () => {
           await prepared;
@@ -914,6 +918,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             eventId:event?.id || '',
             voiceMode,
             voices,
+            engineMode:hallVoiceSource,
             onEngine:setHallVoiceEngine,
           });
         }, 450);
@@ -934,7 +939,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           'Match complete',
           'Change ends',
         ];
-        void primeRallyHubHallSpeech(commonHallPhrases, { eventId:event?.id || '' });
+        if (hallVoiceSource === 'amplified') void primeRallyHubHallSpeech(commonHallPhrases, { eventId:event?.id || '' });
         if ('vibrate' in navigator) navigator.vibrate(120);
       }
       return ctx;
@@ -1001,6 +1006,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       eventId:event?.id || '',
       voiceMode,
       voices,
+      engineMode:hallVoiceSource,
       onEngine:setHallVoiceEngine,
     }).then(spoken => {
       if (spoken) setLastAnnouncement(text);
@@ -1035,7 +1041,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
       // Generate/normalise the voice while the attention chime plays so the
       // network round trip is normally hidden behind the cue.
-      const prepared = primeRallyHubHallSpeech(text, { eventId:event?.id || '' });
+      const prepared = hallVoiceSource === 'amplified'
+        ? primeRallyHubHallSpeech(text, { eventId:event?.id || '' })
+        : Promise.resolve(true);
       playRallyHubSignal(ctx, 'announcement', hallVolume);
       await Promise.all([
         prepared,
@@ -1048,6 +1056,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         eventId:event?.id || '',
         voiceMode:'rallyhub_default',
         voices,
+        engineMode:hallVoiceSource,
         onEngine:setHallVoiceEngine,
         onStart:() => {
           started = true;
@@ -1086,7 +1095,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const roundLabel = round => roundLabels[round] || `Round ${round}`;
 
   React.useEffect(() => {
-    if (!audioReady || !event?.id || voiceMode === 'off') return;
+    if (!audioReady || !event?.id || voiceMode === 'off' || hallVoiceSource !== 'amplified') return;
     const label = roundLabels[currentRound] || `Round ${currentRound}`;
     const phrases = [
       `${label}. Start round.`,
@@ -1096,7 +1105,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       phrases.push(`${label} finished. Your ${Number(event?.break_minutes || 20)} minute break is next. Please give in your scores.`);
     }
     void primeRallyHubHallSpeech(phrases, { eventId:event.id });
-  }, [audioReady, currentRound, event?.id, event?.include_break, event?.break_after_round, event?.break_minutes, roundLabels, voiceMode]);
+  }, [audioReady, currentRound, event?.id, event?.include_break, event?.break_after_round, event?.break_minutes, roundLabels, voiceMode, hallVoiceSource]);
 
   const saveRoundLabel = async round => {
     if (!event || !canManageEvent) return;
