@@ -1349,6 +1349,63 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, sent: true, to: sent.to, subject: sent.subject });
     }
 
+    if (action === 'admin_update_pending_claim_identity') {
+      if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
+      const claimId = String(body.claimId || '').trim();
+      const fullName = String(body.fullName || '').trim().slice(0, 160);
+      const mobile = String(body.mobile || '').trim().slice(0, 80);
+      if (!claimId) return Response.json({ error: 'claimId required' }, { status: 400 });
+      if (!looksLikePersonalFullName(fullName)) {
+        return Response.json({ error: 'Enter the person’s real full name (first name and surname).' }, { status: 400 });
+      }
+      if (!looksLikeUsableMobile(mobile)) {
+        return Response.json({ error: 'Enter a valid private mobile / WhatsApp number.' }, { status: 400 });
+      }
+      const claims = await base44.asServiceRole.entities.DirectoryClaim.filter({ id: claimId });
+      const claim = claims?.[0] || null;
+      if (!claim || claim.status !== 'pending') return Response.json({ error: 'Pending Directory claim not found' }, { status: 404 });
+      const listing = await resolveListing(base44, claim.listing_slug);
+      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+
+      const trustedContacts = listing.contacts || [];
+      const emailMatch = trustedContacts.some(c => normaliseEmail(c.email) && normaliseEmail(c.email) === normaliseEmail(claim.claimant_email));
+      const nameMatch = trustedContacts.some(c => normaliseName(c.name) && normaliseName(c.name) === normaliseName(fullName));
+      const phoneMatch = trustedContacts.some(c => c.phone && phoneLooksSame(c.phone, mobile));
+
+      await base44.asServiceRole.entities.DirectoryClaim.update(claim.id, {
+        claimant_name: fullName,
+        claimant_phone: mobile,
+        email_match: emailMatch,
+        name_match: nameMatch,
+        phone_match: phoneMatch,
+        match_method: 'manual_review',
+      });
+      if (claim.claimant_user_id) {
+        const users = await base44.asServiceRole.entities.User.filter({ id: claim.claimant_user_id });
+        const targetUser = users?.[0] || null;
+        if (targetUser) {
+          await base44.asServiceRole.entities.User.update(targetUser.id, {
+            full_name: fullName,
+            directory_mobile: mobile,
+          });
+        }
+      }
+      try {
+        await base44.asServiceRole.entities.AuditLog.create({
+          tenant_id: 'platform',
+          user_id: user.id,
+          action: 'directory_pending_identity_corrected',
+          entity_type: 'DirectoryClaim',
+          entity_id: claim.id,
+          scope_type: 'DirectoryListing',
+          scope_id: claim.listing_slug,
+          after_state: JSON.stringify({ fullName, mobile, emailMatch, nameMatch, phoneMatch }),
+          reason: 'Super Admin corrected private verification details after independently confirming the claimant identity. Approval remains a separate action.',
+        });
+      } catch {}
+      return Response.json({ success: true, claimId: claim.id, fullName, mobile, emailMatch, nameMatch, phoneMatch });
+    }
+
     if (action === 'update_verified_identity') {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
       const accessId = String(body.accessId || '').trim();
