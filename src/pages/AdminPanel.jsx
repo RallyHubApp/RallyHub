@@ -557,15 +557,11 @@ export default function AdminPanel() {
       };
       if (!latestContact.name && !latestContact.phone && !latestContact.email) continue;
       const existing = bySlug.get(profileRow.listing_slug) || { slug: profileRow.listing_slug, name: profileRow.listing_slug, county: '', contacts: [] };
-      const priorContacts = Array.isArray(existing.contacts) ? existing.contacts : [];
-      const dedupedPrior = priorContacts.filter(contact =>
-        String(contact?.name || '').trim() !== latestContact.name ||
-        String(contact?.phone || '').trim() !== latestContact.phone ||
-        String(contact?.email || '').trim().toLowerCase() !== latestContact.email.toLowerCase()
-      );
       bySlug.set(profileRow.listing_slug, {
         ...existing,
-        contacts: [latestContact, ...dedupedPrior],
+        // A saved profile contact replaces the imported contact for outreach.
+        // Do not keep stale imported names/numbers available in the invite search.
+        contacts: [latestContact],
         contactName: latestContact.name,
         contactPhone: latestContact.phone,
         contactEmail: latestContact.email,
