@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200);
     const pmap = new Map(participants.map((p:any) => [p.id, maskName(p.display_name, !!event.junior_display_mode)]));
-    const safeParticipants = participants.filter((p:any) => ['active','late'].includes(p.status)).map((p:any) => ({ id:p.id, display_name:pmap.get(p.id) || 'Player' }));
+    const safeParticipants = participants.filter((p:any) => ['active','late'].includes(p.status)).map((p:any) => ({ id:p.id, display_name:pmap.get(p.id) || 'Player', status:p.status, available_from_round:p.available_from_round }));
     const safeMatches = matches.map((m:any) => ({
       id:m.id, round_number:m.round_number, court_number:m.court_number, status:m.status, winner:m.winner,
       score_a:m.score_a, score_b:m.score_b, is_showcase:!!m.is_showcase,
