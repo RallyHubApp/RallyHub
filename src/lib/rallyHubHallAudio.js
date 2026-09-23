@@ -239,6 +239,7 @@ export async function speakRallyHubHall(text, {
   eventId = '',
   voiceMode = 'rallyhub_default',
   voices = [],
+  engineMode = 'amplified',
   fallback = true,
   onStart,
   onEnd,
@@ -246,6 +247,20 @@ export async function speakRallyHubHall(text, {
   onEngine,
 } = {}) {
   if (!text || voiceMode === 'off') return false;
+
+  if (engineMode === 'browser') {
+    window.__rallyhubHallVoiceEngine = 'browser';
+    onEngine?.('browser');
+    return speakRallyHub(text, {
+      volume,
+      voiceMode,
+      voices,
+      onStart,
+      onEnd,
+      onError,
+    });
+  }
+
   try {
     const ctx = await unlockRallyHubAudio();
     if (!ctx) throw new Error('RallyHub audio is not available in this browser.');
