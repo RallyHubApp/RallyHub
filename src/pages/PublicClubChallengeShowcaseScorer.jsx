@@ -34,6 +34,18 @@ export default function PublicClubChallengeShowcaseScorer(){
     window.setTimeout(()=>setNotice(''),10000);
   };
 
+  const speakComplete=()=>{
+    setNotice('MATCH COMPLETE');
+    try{ navigator.vibrate?.([80,60,120]); }catch{}
+    if('speechSynthesis' in window){
+      try{
+        window.speechSynthesis.cancel();
+        const u=new SpeechSynthesisUtterance('Match complete');
+        u.rate=0.9; window.speechSynthesis.speak(u);
+      }catch{}
+    }
+  };
+
   const act=async(action)=>{
     if(!data?.match || busy) return;
     const before={...data.match};
@@ -53,7 +65,7 @@ export default function PublicClubChallengeShowcaseScorer(){
       if(r.data?.error) throw new Error(r.data.error);
       setData(d=>({...d,match:{...d.match,...r.data.match}}));
       if(r.data?.sideChange) speakChange();
-      else if(r.data?.finished) setNotice('MATCH COMPLETE');
+      if(r.data?.finished) speakComplete();
     }catch(e){
       setData(d=>({...d,match:before}));
       setNotice(`${errText(e)} · score restored`);
