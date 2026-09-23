@@ -1209,33 +1209,55 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!event || !canManageEvent || !['open','closed'].includes(status)) return;
     try {
       const action = status === 'open' ? 'open' : 'close';
-      const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action });
+      const payload = { eventId:event.id, action };
+      if (status === 'open') payload.durationMinutes = potDuration === 'manual' ? null : Number(potDuration);
+      const res = await base44.functions.invoke('updateClubChallengePot', payload);
       if (res.data?.error) { toast.error(res.data.error); return; }
-      await refetchEvent();
-      toast.success(status === 'open' ? 'Player of Tournament voting is open.' : 'Voting closed. Totals remain hidden until reveal.');
+      potAutoCloseRef.current = '';
+      await Promise.all([refetchEvent(), isAdmin ? refetchPotVotes() : Promise.resolve()]);
+      toast.success(status === 'open'
+        ? `Players of the Tournament voting is open${potDuration === 'manual' ? ' until you close it' : ` for ${potDuration} minutes`}.`
+        : 'Voting closed. Totals remain hidden until reveal.');
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not update voting status'); }
   };
-  const castPotVote = async () => {
-    if (!event || event.pot_status !== 'open' || !potVoterId || !potNomineeId) return;
-    if (potVoterId === potNomineeId) { toast.error('Players cannot vote for themselves.'); return; }
+
+  const extendPotVoting = async () => {
+    if (!event || !canManageEvent || event.pot_status !== 'open') return;
     try {
-      const res = await base44.functions.invoke('castClubChallengePotVote', { eventId:event.id, voterParticipantId:potVoterId, nomineeParticipantId:potNomineeId });
+      const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'extend', extraMinutes:5 });
       if (res.data?.error) { toast.error(res.data.error); return; }
-      setPotNomineeId('');
-      if (isAdmin) await refetchPotVotes();
-      toast.success('Vote recorded. Live totals remain hidden.');
-    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not record vote'); }
+      await refetchEvent();
+      toast.success('Voting extended by 5 minutes.');
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not extend voting'); }
   };
-  const preparePublicLinks = async () => {
-    if (!event || !hasManagePermission) return;
+
+  const resetPotVoting = async () => {
+    if (!event || !canManageEvent) return;
+    if (!window.confirm('Reset Player of the Tournament voting? All current test ballots will be invalidated and the vote will return to Closed.')) return;
+    try {
+      const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'reset' });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      await Promise.all([refetchEvent(), isAdmin ? refetchPotVotes() : Promise.resolve()]);
+      toast.success(`Voting reset. ${Number(res.data?.invalidatedVotes || 0)} recorded team vote${Number(res.data?.invalidatedVotes || 0) === 1 ? '' : 's'} cleared from the live count.`);
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reset voting'); }
+  };
+
+  const ensurePublicLinks = async ({ quiet = false } = {}) => {
+    if (!event || !hasManagePermission) return null;
     try {
       const res = await base44.functions.invoke('manageClubChallengePublicLinks', { eventId:event.id });
-      if (res.data?.error) { toast.error(res.data.error); return; }
+      if (res.data?.error) { if (!quiet) toast.error(res.data.error); return null; }
       const origin = window.location.origin;
-      setPublicLinks({ ...res.data, displayUrl:`${origin}/club-challenge/display/${res.data.displayToken}`, votingUrl:`${origin}/club-challenge/vote/${res.data.votingToken}` });
-      toast.success('Public Hall Display and POT voting links are ready.');
-    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not prepare public links'); }
+      const links = { ...res.data, displayUrl:`${origin}/club-challenge/display/${res.data.displayToken}`, votingUrl:`${origin}/club-challenge/vote/${res.data.votingToken}` };
+      setPublicLinks(links);
+      if (!quiet) toast.success('Public Hall Display and Players of the Tournament voting links are ready.');
+      return links;
+    } catch (e) {
+      if (!quiet) toast.error(e?.response?.data?.error || e?.message || 'Could not prepare public links');
+      return null;
+    }
   };
+  const preparePublicLinks = () => ensurePublicLinks();
 
   const prepareShowcaseScorerLink = async () => {
     if (!event || !showcaseMatch || !hasManagePermission) return;
