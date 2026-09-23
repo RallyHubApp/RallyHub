@@ -330,7 +330,7 @@ async function sendDirectoryWelcomeEmail(base44, { listing, recipientName = '', 
   const subject = `Welcome to RallyHub – your ${clubName} Directory listing is ready`;
   const textBody = `Hi ${firstName},
 
-Thanks for connecting with RallyHub and taking ownership of the ${clubName} Directory listing.
+Thanks for connecting with RallyHub. Your access to the ${clubName} Directory listing is now ready.
 
 Your listing is now ready for you to manage. You can check or update the club description, public contact details, venues and regular sessions at any time.
 
@@ -363,7 +363,7 @@ https://rallyhub.ie`;
 <tr><td style="padding:28px 32px 18px;border-top:7px solid #159447;"><div style="font-size:28px;font-weight:800;">Rally<span style="color:#159447;">Hub</span></div><div style="font-size:11px;letter-spacing:2.2px;color:#66737f;margin-top:3px;">PLAY • CONNECT • BELONG</div></td></tr>
 <tr><td style="padding:6px 32px 30px;">
 <p style="font-size:18px;margin:0 0 16px;">Hi ${firstName},</p>
-<p style="font-size:15px;line-height:1.65;margin:0 0 16px;">Thanks for connecting with RallyHub and taking ownership of the <strong>${clubName}</strong> Directory listing.</p>
+<p style="font-size:15px;line-height:1.65;margin:0 0 16px;">Thanks for connecting with RallyHub. Your access to the <strong>${clubName}</strong> Directory listing is now ready.</p>
 <p style="font-size:15px;line-height:1.65;color:#55636f;margin:0 0 20px;">Your listing is now ready for you to manage. You can check or update the club description, public contact details, venues and regular sessions at any time.</p>
 <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 22px;"><tr><td bgcolor="#159447" style="border-radius:10px;"><a href="${manageUrl}" style="display:inline-block;padding:14px 22px;color:#fff;text-decoration:none;font-weight:700;font-size:15px;">Manage your listing</a></td></tr></table>
 <div style="background:#eef9f1;border:1px solid #d7eadc;border-radius:14px;padding:16px 18px;margin-bottom:20px;"><div style="font-weight:700;margin-bottom:6px;">Using Spond?</div><div style="font-size:14px;line-height:1.55;color:#55636f;">Open <strong>Enhanced listing</strong> to connect your club’s Spond account. RallyHub can scan your upcoming events and bring in regular venues and session times, which should save you quite a bit of work.</div></div>
