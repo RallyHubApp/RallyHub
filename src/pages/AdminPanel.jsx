@@ -1195,7 +1195,12 @@ Brian`;
           <TabsTrigger value="preview" className="text-xs gap-1.5">
             <Eye className="w-3.5 h-3.5" /> Member Preview
           </TabsTrigger>
-          <TabsTrigger value="directory" className="text-xs gap-1.5">
+          <TabsTrigger value="directory" className="text-xs gap-1.5" onClick={() => {
+            if (activeAdminTab !== 'directory' || pendingDirectoryActionCount <= 0) return;
+            const target = document.querySelector('[data-directory-action="pending-claim"][data-has-pending="true"]')
+              || document.querySelector('[data-directory-action="new-club"][data-has-pending="true"]');
+            target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}>
             <UserCheck className="w-3.5 h-3.5" /> Directory Claims
             {pendingDirectoryActionCount > 0 && (
               <span className="ml-1 bg-amber-400 text-black text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{pendingDirectoryActionCount}</span>
