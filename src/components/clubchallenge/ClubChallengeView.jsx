@@ -394,6 +394,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [potNomineeId, setPotNomineeId] = useState('');
   const [publicLinks, setPublicLinks] = useState(null);
   const [spondImportSide, setSpondImportSide] = useState('');
+  const [teamsDirty, setTeamsDirty] = useState(false);
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: hostClub } = useQuery({
@@ -1737,6 +1738,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             const current = index === stageIndex;
             return (
               <button key={id} data-testid={`cc-tab-${id}`} onClick={() => {
+                if (tab === 'teams' && teamsDirty && id !== 'teams') { toast.warning('Save Teams & Rankings before leaving Teams. Your unsaved allocation and ranking draft is protected on this device.'); return; }
                 if (id === 'teams' && !event) { toast.info('Save Setup first, then Teams will open.'); return; }
                 if (id === 'draw' && !matches.length) { toast.info('Generate the draw from Teams first.'); return; }
                 if (id === 'live' && !['in_progress','paused','completed','archived'].includes(event?.status)) { toast.info(`Approve the draw and start the ${INTERCLUB_EVENT_LABEL} first.`); return; }
@@ -1809,6 +1811,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <Button data-testid="cc-load-practice" variant="outline" className="w-full sm:w-auto min-h-11" onClick={loadTestRoster} disabled={locked || saving || !canManageEvent}><Users className="w-4 h-4 mr-2" />Practice with 32 Test Players</Button>
             </div>
             <TeamBuilder
+              eventId={event.id}
               participants={participants}
               clubAName={setup.clubAName}
               clubBName={setup.clubBName}
@@ -1819,6 +1822,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               onAddManual={addManual}
               onSave={organiseTeams}
               onSetRosterRole={setRosterRole}
+              onDirtyChange={setTeamsDirty}
             />
             {formatInfo ? <div className="glass rounded-xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-center"><div><p className="text-xl font-bold">{formatInfo.recommendedRounds}</p><p className="text-[10px] text-muted-foreground">Rounds</p></div><div><p className="text-xl font-bold">{formatInfo.totalMatches}</p><p className="text-[10px] text-muted-foreground">Matches</p></div><div><p className="text-xl font-bold">{formatInfo.gamesRangeClubA.join('–')}</p><p className="text-[10px] text-muted-foreground">Games/player</p></div><div><p className="text-xl font-bold">{formatInfo.structuredMinutes}</p><p className="text-[10px] text-muted-foreground">Structured min</p></div><div><p className="text-xl font-bold">{formatInfo.remainingMinutes}</p><p className="text-[10px] text-muted-foreground">Contingency min</p></div></div> : participants.length > 0 && <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-700">Finish assigning every player, save the teams, and make the two Rotation squads equal before generating the draw. Reserve numbers may differ.</div>}
             <Button data-testid="cc-generate-draw" onClick={generateDraw} disabled={locked || saving || !formatInfo} className="w-full h-11"><ListChecks className="w-4 h-4 mr-2" />Generate Draw & Fairness Report</Button>
