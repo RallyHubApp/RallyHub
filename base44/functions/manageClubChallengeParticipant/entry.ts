@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, rosterRole, reserveParticipantId, coverParticipantId } = body;
-    if (!eventId || !['replace','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','reorder','organise_teams','replacement_candidates','set_roster_role'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
+    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, players, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, rosterRole, reserveParticipantId, coverParticipantId } = body;
+    if (!eventId || !['replace','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','bulk_add_manual','reorder','organise_teams','replacement_candidates','set_roster_role'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -82,6 +82,52 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_added_manual', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({participant_id:created.id,side,name:cleanName}) });
       return Response.json({ success:true, participant:created });
+    }
+
+    if (action === 'bulk_add_manual') {
+      if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Players can only be imported before the draw is approved.' }, { status:409 });
+      if (!['club_a','club_b'].includes(side)) return Response.json({ error:'Choose Clare or Galway as the import destination.' }, { status:400 });
+      const rows = Array.isArray(players) ? players.slice(0,200) : [];
+      if (!rows.length) return Response.json({ error:'No CSV players were supplied.' }, { status:400 });
+      const normalise = (value:any) => String(value || '').trim().toLowerCase().replace(/\s+/g,' ');
+      const existing = new Set(participants.filter((p:any) => ['active','late'].includes(p.status)).map((p:any) => normalise(p.display_name)));
+      const sidePlayers = participants.filter((p:any) => p.side === side && !['replaced'].includes(p.status));
+      const created:any[] = [];
+      const skipped:string[] = [];
+      for (const row of rows) {
+        const cleanName = String(row?.displayName || row?.name || '').trim().replace(/\s+/g,' ').slice(0,120);
+        const identity = normalise(cleanName);
+        if (!cleanName || existing.has(identity)) { if (cleanName) skipped.push(cleanName); continue; }
+        const rawGender = String(row?.gender || '').trim();
+        const gender = /^(f|female|woman|women)$/i.test(rawGender) ? 'Female' : /^(m|male|man|men)$/i.test(rawGender) ? 'Male' : rawGender.slice(0,40);
+        const participant = await base44.asServiceRole.entities.ClubChallengeParticipant.create({
+          tenant_id:event.tenant_id,
+          challenge_event_id:event.id,
+          tournament_id:event.tournament_id,
+          side,
+          display_name:cleanName,
+          gender:gender || undefined,
+          event_rank:sidePlayers.length + created.length + 1,
+          roster_role:'rotation',
+          status:'active',
+          available_from_round:1,
+          unique_identity_key:`csv-${side}-${crypto.randomUUID().slice(0,12)}`,
+        });
+        created.push(participant);
+        existing.add(identity);
+      }
+      if (created.length) {
+        await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+        await base44.asServiceRole.entities.ClubChallengeAudit.create({
+          tenant_id:event.tenant_id,
+          challenge_event_id:event.id,
+          action:'participants_imported_csv',
+          user_id:user.id,
+          occurred_at:now,
+          new_value_json:JSON.stringify({side,created:created.map((p:any)=>({id:p.id,name:p.display_name})),skipped}),
+        });
+      }
+      return Response.json({ success:true, created:created.length, skipped:skipped.length, skippedNames:skipped });
     }
 
     if (action === 'set_roster_role') {
