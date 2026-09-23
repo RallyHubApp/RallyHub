@@ -223,7 +223,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [simulating, setSimulating] = useState(false);
   const [logoUploading, setLogoUploading] = useState('');
   const [simLog, setSimLog] = useState([]);
-  const [showcaseSelection, setShowcaseSelection] = useState({ aMale: '', aFemale: '', bMale: '', bFemale: '' });
+  const [showcaseSelection, setShowcaseSelection] = useState({ a1: '', a2: '', b1: '', b2: '' });
   const [showcaseFormat, setShowcaseFormat] = useState({ targetPoints: 11, winBy: 1 });
   const [showcaseScorerLink, setShowcaseScorerLink] = useState('');
   const [replacement, setReplacement] = useState({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
@@ -340,12 +340,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   React.useEffect(() => {
     if (!event) return;
     setShowcaseSelection({
-      aMale: event.showcase_club_a_male_id || '',
-      aFemale: event.showcase_club_a_female_id || '',
-      bMale: event.showcase_club_b_male_id || '',
-      bFemale: event.showcase_club_b_female_id || '',
+      a1: event.showcase_club_a_player_1_id || event.showcase_club_a_male_id || '',
+      a2: event.showcase_club_a_player_2_id || event.showcase_club_a_female_id || '',
+      b1: event.showcase_club_b_player_1_id || event.showcase_club_b_male_id || '',
+      b2: event.showcase_club_b_player_2_id || event.showcase_club_b_female_id || '',
     });
-  }, [event?.id, event?.showcase_club_a_male_id, event?.showcase_club_a_female_id, event?.showcase_club_b_male_id, event?.showcase_club_b_female_id]);
+  }, [event?.id, event?.showcase_club_a_player_1_id, event?.showcase_club_a_player_2_id, event?.showcase_club_b_player_1_id, event?.showcase_club_b_player_2_id, event?.showcase_club_a_male_id, event?.showcase_club_a_female_id, event?.showcase_club_b_male_id, event?.showcase_club_b_female_id]);
 
   React.useEffect(() => {
     if (!event) return;
@@ -1220,15 +1220,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!event?.showcase_enabled) { toast.error('Showcase Final is not enabled in Setup.'); return; }
     const showcaseMode = score.clubA === score.clubB ? 'tiebreak' : 'exhibition';
     if (showcaseMode === 'tiebreak' && Number(event.showcase_points || 0) <= 0) { toast.error('Showcase tiebreak points must be greater than zero.'); return; }
-    const ids = [showcaseSelection.aMale, showcaseSelection.aFemale, showcaseSelection.bMale, showcaseSelection.bFemale];
-    if (ids.some(id => !id)) { toast.error('Nominate one male and one female player from each club.'); return; }
+    const ids = [showcaseSelection.a1, showcaseSelection.a2, showcaseSelection.b1, showcaseSelection.b2];
+    if (ids.some(id => !id) || new Set(ids).size !== 4) { toast.error('Select two distinct players from each club.'); return; }
     try {
       const res = await base44.functions.invoke('createClubChallengeShowcase', {
         eventId: event.id,
-        clubAMaleId: showcaseSelection.aMale,
-        clubAFemaleId: showcaseSelection.aFemale,
-        clubBMaleId: showcaseSelection.bMale,
-        clubBFemaleId: showcaseSelection.bFemale,
+        clubAPlayer1Id: showcaseSelection.a1,
+        clubAPlayer2Id: showcaseSelection.a2,
+        clubBPlayer1Id: showcaseSelection.b1,
+        clubBPlayer2Id: showcaseSelection.b2,
         mode: showcaseMode,
         targetPoints: Number(showcaseFormat.targetPoints),
         winBy: Number(showcaseFormat.winBy),
@@ -1903,9 +1903,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                       <p className="text-xs font-semibold">2. Select the players</p>
                       <div className="grid lg:grid-cols-2 gap-4">
                         {[
-                          ['club_a', event.club_a_name, aPlayers, 'aMale', 'aFemale'],
-                          ['club_b', event.club_b_name, bPlayers, 'bMale', 'bFemale'],
-                        ].map(([side, clubName, list, maleKey, femaleKey]) => <div key={side} className="rounded-lg bg-secondary/40 p-4 space-y-3"><p className="text-xs font-semibold">{clubName}</p><div><Label className="text-xs">Male nominee</Label><Select value={showcaseSelection[maleKey]} onValueChange={v => setShowcaseSelection(s => ({ ...s, [maleKey]: v }))}><SelectTrigger className="mt-1 bg-secondary"><SelectValue placeholder="Select male player" /></SelectTrigger><SelectContent>{list.filter(p => genderKey(p.gender) === 'male' && !['withdrawn','injured','replaced'].includes(p.status)).map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select></div><div><Label className="text-xs">Female nominee</Label><Select value={showcaseSelection[femaleKey]} onValueChange={v => setShowcaseSelection(s => ({ ...s, [femaleKey]: v }))}><SelectTrigger className="mt-1 bg-secondary"><SelectValue placeholder="Select female player" /></SelectTrigger><SelectContent>{list.filter(p => genderKey(p.gender) === 'female' && !['withdrawn','injured','replaced'].includes(p.status)).map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select></div></div>)}
+                          ['club_a', event.club_a_name, aPlayers, 'a1', 'a2'],
+                          ['club_b', event.club_b_name, bPlayers, 'b1', 'b2'],
+                        ].map(([side, clubName, list, player1Key, player2Key]) => {
+                          const eligible = list.filter(p => !['withdrawn','injured','replaced'].includes(p.status));
+                          return <div key={side} className="rounded-lg bg-secondary/40 p-4 space-y-3"><p className="text-xs font-semibold">{clubName}</p><div><Label className="text-xs">Player 1</Label><Select value={showcaseSelection[player1Key]} onValueChange={v => setShowcaseSelection(s => ({ ...s, [player1Key]: v }))}><SelectTrigger className="mt-1 bg-secondary"><SelectValue placeholder="Select player" /></SelectTrigger><SelectContent>{eligible.filter(p => p.id !== showcaseSelection[player2Key]).map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select></div><div><Label className="text-xs">Player 2</Label><Select value={showcaseSelection[player2Key]} onValueChange={v => setShowcaseSelection(s => ({ ...s, [player2Key]: v }))}><SelectTrigger className="mt-1 bg-secondary"><SelectValue placeholder="Select player" /></SelectTrigger><SelectContent>{eligible.filter(p => p.id !== showcaseSelection[player1Key]).map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select></div></div>;
+                        })}
                       </div>
                       <Button className="w-full" onClick={createShowcaseFinal}>{score.clubA === score.clubB ? 'Create Tiebreak Showcase Final' : 'Create Optional Showcase Final'}</Button>
                     </>
