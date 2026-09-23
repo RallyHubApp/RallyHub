@@ -397,8 +397,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [lastAnnouncement, setLastAnnouncement] = useState('');
   const [compressedTimer, setCompressedTimer] = useState({ running: false, step: -1, text: 'Not run' });
   const [displayMode, setDisplayMode] = useState(false);
-  const [potVoterId, setPotVoterId] = useState('');
-  const [potNomineeId, setPotNomineeId] = useState('');
+  const [potDuration, setPotDuration] = useState('10');
+  const potAutoCloseRef = React.useRef('');
   const [publicLinks, setPublicLinks] = useState(null);
   const [spondImportSide, setSpondImportSide] = useState('');
   const [teamsDirty, setTeamsDirty] = useState(false);
