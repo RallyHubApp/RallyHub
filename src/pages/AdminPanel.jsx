@@ -85,6 +85,7 @@ export default function AdminPanel() {
   const [approvingDirectoryInvitation, setApprovingDirectoryInvitation] = useState('');
   const [resendInviteBusy, setResendInviteBusy] = useState('');
   const [resendPreview, setResendPreview] = useState(null);
+  const [welcomeBusy, setWelcomeBusy] = useState('');
   const [updatingFeedbackId, setUpdatingFeedbackId] = useState('');
 
   const { data: players = [] } = useQuery({
@@ -405,7 +406,10 @@ export default function AdminPanel() {
       const res = await base44.functions.invoke('directoryClaim', { action: 'review', claimId, decision });
       if (res.data?.error) throw new Error(res.data.error);
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
-      toast.success(decision === 'approved' ? 'Directory claim approved' : 'Directory claim rejected');
+      if (decision === 'approved') {
+        toast.success(res.data?.welcomeEmail?.sent ? 'Directory claim approved and welcome email sent' : 'Directory claim approved');
+        if (res.data?.welcomeEmail?.error) toast.warning(`Access was approved, but the welcome email was not sent: ${res.data.welcomeEmail.error}`);
+      } else toast.success('Directory claim rejected');
     } catch (error) {
       toast.error(error.message || 'Could not update directory claim');
     } finally {
@@ -419,7 +423,10 @@ export default function AdminPanel() {
       const res = await base44.functions.invoke('directoryClaim', { action: 'review_new', requestId, decision });
       if (res.data?.error) throw new Error(res.data.error);
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
-      toast.success(decision === 'approved' ? 'New club published and editor access granted' : 'New club request rejected');
+      if (decision === 'approved') {
+        toast.success(res.data?.welcomeEmail?.sent ? 'New club published, access granted and welcome email sent' : 'New club published and access granted');
+        if (res.data?.welcomeEmail?.error) toast.warning(`Access was granted, but the welcome email was not sent: ${res.data.welcomeEmail.error}`);
+      } else toast.success('New club request rejected');
     } catch (error) {
       toast.error(error.message || 'Could not update new club request');
     } finally {
@@ -479,7 +486,8 @@ export default function AdminPanel() {
       const res = await base44.functions.invoke('directoryClaim', { action: 'approve_invitation', invitationId });
       if (res.data?.error) throw new Error(res.data.error);
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
-      toast.success(`Directory ${accessRole === 'editor' ? 'editor' : 'owner'} access approved`);
+      toast.success(res.data?.welcomeEmail?.sent ? `Directory ${accessRole === 'editor' ? 'editor' : 'owner'} access approved and welcome email sent` : `Directory ${accessRole === 'editor' ? 'editor' : 'owner'} access approved`);
+      if (res.data?.welcomeEmail?.error) toast.warning(`Access was approved, but the welcome email was not sent: ${res.data.welcomeEmail.error}`);
     } catch (error) {
       toast.error(error.message || 'Could not approve this directory invitation yet');
     } finally {
@@ -583,6 +591,66 @@ export default function AdminPanel() {
       digits = `${niCounties.has(String(county || '').trim()) ? '44' : '353'}${digits.slice(1)}`;
     }
     return digits;
+  };
+
+  const directoryWelcomePhone = (access, accessUser) => {
+    if (accessUser?.directory_mobile) return accessUser.directory_mobile;
+    const claim = (directoryVerification.claims || []).find(c =>
+      String(c.claimant_user_id || '') === String(access?.user_id || '') &&
+      String(c.listing_slug || '') === String(access?.listing_slug || '')
+    );
+    if (claim?.claimant_phone) return claim.claimant_phone;
+    const invite = (directoryVerification.invitations || []).find(i =>
+      String(i.used_by_user_id || '') === String(access?.user_id || '') &&
+      String(i.listing_slug || '') === String(access?.listing_slug || '')
+    );
+    return invite?.contact_phone || '';
+  };
+
+  const directoryWelcomeWhatsAppMessage = (access, accessUser) => {
+    const firstName = String(accessUser?.full_name || accessUser?.display_name || '').trim().split(/\s+/)[0] || 'there';
+    const clubName = access?.listing_name_snapshot || directoryAdminListings.find(x => x.slug === access?.listing_slug)?.name || 'your club';
+    const manageUrl = `https://rallyhub.ie/directory/${encodeURIComponent(access?.listing_slug || '')}/edit`;
+    return `Hi ${firstName},
+
+Thanks for connecting with RallyHub. Your *${clubName}* Directory access is now ready.
+
+You can manage the listing here:
+${manageUrl}
+
+If you use *Spond*, open *Enhanced listing*. You can connect your club’s Spond account, scan your upcoming events and import your regular venues and session times, which should save you a good bit of work.
+
+If you need any help, just message me here. And if you have any thoughts or suggestions for making the Directory better, send me a text or voice note anytime, or use the Feedback button inside RallyHub.
+
+Also, if you spot any *clubs, venues or regular sessions missing from the Directory*, please let me know. We’d be delighted to follow them up and invite them to be included.
+
+Thanks again.
+
+Brian`;
+  };
+
+  const sendDirectoryWelcomeAgain = async (access, accessUser) => {
+    if (!access?.id) return;
+    setWelcomeBusy(`email:${access.id}`);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', { action:'send_welcome_email', accessId:access.id });
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success(`Welcome email sent to ${res.data?.to || accessUser?.email || 'Directory contact'}`);
+    } catch (error) {
+      toast.error(error?.message || 'Could not send the welcome email');
+    } finally {
+      setWelcomeBusy('');
+    }
+  };
+
+  const openDirectoryWelcomeWhatsApp = (access, accessUser) => {
+    const phone = directoryWelcomePhone(access, accessUser);
+    if (!phone) return toast.error('No mobile number is saved for this Directory contact');
+    const county = directoryAdminListings.find(x => x.slug === access?.listing_slug)?.county || '';
+    const digits = whatsappDigitsForInvite(phone, county);
+    if (!digits) return toast.error('The saved mobile number is not valid for WhatsApp');
+    const message = directoryWelcomeWhatsAppMessage(access, accessUser);
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   };
 
   const createOwnerWhatsAppInvite = async () => {
@@ -1534,14 +1602,23 @@ export default function AdminPanel() {
               ) : activeDirectoryAccesses.map(access => {
                 const accessUser = allUsers.find(u => u.id === access.user_id);
                 return (
-                  <div key={access.id} className="glass rounded-lg p-3 flex items-center justify-between gap-3">
+                  <div key={access.id} className="glass rounded-lg p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-medium text-foreground">{access.listing_name_snapshot || access.listing_slug}</p><Badge variant="outline">{access.role === 'owner' ? 'Primary Owner' : 'Directory Editor'}</Badge></div>
                       <p className="text-xs text-muted-foreground truncate">{accessUser?.full_name || accessUser?.display_name || accessUser?.email || access.user_id}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">{accessUser?.email || 'No email'}{directoryWelcomePhone(access, accessUser) ? ` · ${directoryWelcomePhone(access, accessUser)}` : ''}</p>
                     </div>
-                    <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30" disabled={revokingDirectoryAccess === access.id} onClick={() => revokeDirectoryAccess(access.id)}>
-                      {revokingDirectoryAccess === access.id ? 'Revoking…' : 'Revoke directory access'}
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <Button size="sm" variant="outline" className="h-8 text-xs gap-1" disabled={welcomeBusy === `email:${access.id}` || !accessUser?.email} onClick={() => sendDirectoryWelcomeAgain(access, accessUser)}>
+                        <Mail className="w-3.5 h-3.5" /> {welcomeBusy === `email:${access.id}` ? 'Sending…' : 'Send welcome email'}
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-8 text-xs gap-1" disabled={!directoryWelcomePhone(access, accessUser)} onClick={() => openDirectoryWelcomeWhatsApp(access, accessUser)}>
+                        <MessageCircle className="w-3.5 h-3.5" /> WhatsApp welcome
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-8 text-xs text-destructive border-destructive/30" disabled={revokingDirectoryAccess === access.id} onClick={() => revokeDirectoryAccess(access.id)}>
+                        {revokingDirectoryAccess === access.id ? 'Revoking…' : 'Revoke directory access'}
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
