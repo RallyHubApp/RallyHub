@@ -12,10 +12,22 @@ function validClubChallengeGrant(a:any, tenantId:string) {
   return !!a && a.active === true && String(a.tenant_id || '') === String(tenantId || '');
 }
 
-function validateScore(scoreA, scoreB, event) {
+function validateScore(scoreA, scoreB, event, match) {
   const a = Number(scoreA), b = Number(scoreB);
   if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) return 'Scores must be non-negative whole numbers.';
   if (a > 99 || b > 99) return 'Scores must be between 0 and 99.';
+  if (match?.is_showcase) {
+    const target = Number(match.showcase_target_points || 11);
+    const winBy = Number(match.showcase_win_by || 1);
+    if (![11,15].includes(target) || ![1,2].includes(winBy)) return 'Invalid Showcase Final format.';
+    if (a === b) return 'Showcase Final requires a winner.';
+    const winner = Math.max(a,b), loser = Math.min(a,b);
+    if (winner < target) return `Winner must reach at least ${target}.`;
+    if (winner - loser < winBy) return `Winner must win by ${winBy}.`;
+    if (winBy === 1 && winner !== target) return `First to ${target}, win by 1, must finish when a team reaches ${target}.`;
+    if (winBy === 2 && winner > target && winner - loser !== 2) return 'Extended Showcase play must finish as soon as a team leads by 2.';
+    return null;
+  }
   if (event.normal_match_type === 'timed') {
     if (a === b && event.timed_draws_allowed === false) return 'This timed format requires a winner.';
     return null;
@@ -69,12 +81,8 @@ Deno.serve(async (req) => {
       }, { status: 409 });
     }
 
-    const validationError = validateScore(scoreA, scoreB, event);
+    const validationError = validateScore(scoreA, scoreB, event, match);
     if (validationError) return Response.json({ error: validationError }, { status: 400 });
-    if (match.is_showcase && Number(scoreA) === Number(scoreB)) {
-      return Response.json({ error: 'Showcase Final requires a winner.' }, { status: 400 });
-    }
-
     const a = Number(scoreA), b = Number(scoreB);
     const winner = a === b ? 'draw' : a > b ? 'club_a' : 'club_b';
     const isCorrection = ['completed', 'draw'].includes(match.status);
