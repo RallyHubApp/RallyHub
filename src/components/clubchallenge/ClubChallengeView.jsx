@@ -808,7 +808,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!completedAt || lastShowcaseCompleteRef.current === completedAt) return;
     lastShowcaseCompleteRef.current = completedAt;
     if (showcaseMatch.scored_at && Date.now() - new Date(showcaseMatch.scored_at).getTime() > 30000) return;
-    speak('Match complete', { signal:'success' });
+    speak('Match complete', { signal:'end' });
   }, [showcaseMatch?.status, showcaseMatch?.scored_at, showcaseMatch?.revision]);
   const announceCustom = async () => {
     const text = announcementDraft.trim();
