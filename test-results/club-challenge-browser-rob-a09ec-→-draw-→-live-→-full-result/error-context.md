@@ -12,396 +12,195 @@
 # Error details
 
 ```
-Error: practice_roster_ms should be <= 1500ms but was 1539ms
+Error: expect(locator).toBeVisible() failed
 
-expect(received).toBeLessThanOrEqual(expected)
+Locator: getByText('Replace / Withdraw a Player')
+Expected: visible
+Timeout: 3000ms
+Error: element(s) not found
 
-Expected: <= 1500
-Received:    1539
+Call log:
+  - Expect "toBeVisible" getByText('Replace / Withdraw a Player') with timeout 3000ms
+  - waiting for getByText('Replace / Withdraw a Player')
+
 ```
 
-# Page snapshot
-
 ```yaml
-- generic [ref=e2]:
-  - main [ref=e3]:
-    - generic [ref=e4]:
-      - generic [ref=e5]:
-        - generic [ref=e11]:
-          - paragraph [ref=e12]: RallyHub Interclub
-          - paragraph [ref=e13]: "Interclub Challenge · Status: draft"
-        - generic [ref=e14]:
-          - generic [ref=e15]:
-            - generic [ref=e16]:
-              - generic [ref=e17]: CL
-              - generic [ref=e18]: Clare Pickleball Club
-            - generic [ref=e19]: vs
-            - generic [ref=e20]:
-              - generic [ref=e21]: GA
-              - generic [ref=e22]: Galway Pickleball
-          - button "Public Links / QR" [ref=e23] [cursor=pointer]
-      - generic [ref=e25]:
-        - button [ref=e26] [cursor=pointer]
-        - button "2 Teams" [ref=e31] [cursor=pointer]:
-          - generic [ref=e32]: "2"
-          - text: Teams
-        - button "3 Draw" [ref=e33] [cursor=pointer]:
-          - generic [ref=e34]: "3"
-          - text: Draw
-        - button "4 Live Event" [ref=e35] [cursor=pointer]:
-          - generic [ref=e36]: "4"
-          - text: Live Event
-        - button "5 Simulator" [ref=e37] [cursor=pointer]:
-          - generic [ref=e38]: "5"
-          - text: Simulator
-        - button "6 Results" [ref=e39] [cursor=pointer]:
-          - generic [ref=e40]: "6"
-          - text: Results
-      - generic [ref=e42]:
-        - generic [ref=e43]:
-          - generic [ref=e44]:
-            - paragraph [ref=e45]: Participants
-            - paragraph [ref=e46]: Event ranks are independent of permanent RallyHub skill ratings.
-          - button "Practice with 32 Test Players" [ref=e47] [cursor=pointer]
-        - generic [ref=e48]:
-          - generic [ref=e50]:
-            - generic [ref=e51]:
-              - paragraph [ref=e52]: Build the two teams
-              - paragraph [ref=e53]: Drag players into the teams, rank them, then mark each team member as Rotation or Reserve. Rotation players are included in the draw; Reserves travel with the team but stay outside the scheduled rotation until activated.
-            - generic [ref=e54]:
-              - generic [ref=e55]: 32 players
-              - generic [ref=e56]: "A: 16 rotation · 0 reserve"
-              - generic [ref=e57]: "B: 16 rotation · 0 reserve"
-              - generic [ref=e58]: Rotation squads balanced
-          - generic [ref=e59]:
-            - generic [ref=e60]:
-              - generic [ref=e61]:
-                - generic [ref=e62]:
-                  - paragraph [ref=e63]: Player Pool
-                  - paragraph [ref=e64]: Import both Spond events here, then drag players into the teams.
-                - generic [ref=e65]: "0"
-              - generic [ref=e66]:
-                - button "Import Spond Event" [ref=e67] [cursor=pointer]
-                - generic [ref=e68]:
-                  - textbox "Add player manually" [ref=e69]
-                  - button [disabled]
-              - generic [ref=e70]: Import Spond attendees here
-            - generic [ref=e72]:
-              - generic [ref=e73]:
-                - generic [ref=e74]:
-                  - text: Team name
-                  - textbox [ref=e75]: Clare Pickleball Club
-                  - button "Import a Spond event directly to this team" [ref=e76] [cursor=pointer]
-                - generic [ref=e77]: "16"
-              - generic [ref=e78]:
-                - generic [ref=e79]:
-                  - button [ref=e80] [cursor=pointer]
-                  - generic [ref=e88]: "1"
-                  - generic [ref=e89]: Club A Test 01
-                  - combobox [ref=e90] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e93]: Male
-                - generic [ref=e94]:
-                  - button [ref=e95] [cursor=pointer]
-                  - generic [ref=e103]: "2"
-                  - generic [ref=e104]: Club A Test 02
-                  - combobox [ref=e105] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e108]: Female
-                - generic [ref=e109]:
-                  - button [ref=e110] [cursor=pointer]
-                  - generic [ref=e118]: "3"
-                  - generic [ref=e119]: Club A Test 03
-                  - combobox [ref=e120] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e123]: Male
-                - generic [ref=e124]:
-                  - button [ref=e125] [cursor=pointer]
-                  - generic [ref=e133]: "4"
-                  - generic [ref=e134]: Club A Test 04
-                  - combobox [ref=e135] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e138]: Female
-                - generic [ref=e139]:
-                  - button [ref=e140] [cursor=pointer]
-                  - generic [ref=e148]: "5"
-                  - generic [ref=e149]: Club A Test 05
-                  - combobox [ref=e150] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e153]: Male
-                - generic [ref=e154]:
-                  - button [ref=e155] [cursor=pointer]
-                  - generic [ref=e163]: "6"
-                  - generic [ref=e164]: Club A Test 06
-                  - combobox [ref=e165] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e168]: Female
-                - generic [ref=e169]:
-                  - button [ref=e170] [cursor=pointer]
-                  - generic [ref=e178]: "7"
-                  - generic [ref=e179]: Club A Test 07
-                  - combobox [ref=e180] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e183]: Male
-                - generic [ref=e184]:
-                  - button [ref=e185] [cursor=pointer]
-                  - generic [ref=e193]: "8"
-                  - generic [ref=e194]: Club A Test 08
-                  - combobox [ref=e195] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e198]: Female
-                - generic [ref=e199]:
-                  - button [ref=e200] [cursor=pointer]
-                  - generic [ref=e208]: "9"
-                  - generic [ref=e209]: Club A Test 09
-                  - combobox [ref=e210] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e213]: Male
-                - generic [ref=e214]:
-                  - button [ref=e215] [cursor=pointer]
-                  - generic [ref=e223]: "10"
-                  - generic [ref=e224]: Club A Test 10
-                  - combobox [ref=e225] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e228]: Female
-                - generic [ref=e229]:
-                  - button [ref=e230] [cursor=pointer]
-                  - generic [ref=e238]: "11"
-                  - generic [ref=e239]: Club A Test 11
-                  - combobox [ref=e240] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e243]: Male
-                - generic [ref=e244]:
-                  - button [ref=e245] [cursor=pointer]
-                  - generic [ref=e253]: "12"
-                  - generic [ref=e254]: Club A Test 12
-                  - combobox [ref=e255] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e258]: Female
-                - generic [ref=e259]:
-                  - button [ref=e260] [cursor=pointer]
-                  - generic [ref=e268]: "13"
-                  - generic [ref=e269]: Club A Test 13
-                  - combobox [ref=e270] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e273]: Male
-                - generic [ref=e274]:
-                  - button [ref=e275] [cursor=pointer]
-                  - generic [ref=e283]: "14"
-                  - generic [ref=e284]: Club A Test 14
-                  - combobox [ref=e285] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e288]: Female
-                - generic [ref=e289]:
-                  - button [ref=e290] [cursor=pointer]
-                  - generic [ref=e298]: "15"
-                  - generic [ref=e299]: Club A Test 15
-                  - combobox [ref=e300] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e303]: Male
-                - generic [ref=e304]:
-                  - button [ref=e305] [cursor=pointer]
-                  - generic [ref=e313]: "16"
-                  - generic [ref=e314]: Club A Test 16
-                  - combobox [ref=e315] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e318]: Female
-            - generic [ref=e319]:
-              - generic [ref=e320]:
-                - generic [ref=e321]:
-                  - text: Team name
-                  - textbox [ref=e322]: Galway Pickleball
-                  - button "Import a Spond event directly to this team" [ref=e323] [cursor=pointer]
-                - generic [ref=e324]: "16"
-              - generic [ref=e325]:
-                - generic [ref=e326]:
-                  - button [ref=e327] [cursor=pointer]
-                  - generic [ref=e335]: "1"
-                  - generic [ref=e336]: Club B Test 01
-                  - combobox [ref=e337] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e340]: Male
-                - generic [ref=e341]:
-                  - button [ref=e342] [cursor=pointer]
-                  - generic [ref=e350]: "2"
-                  - generic [ref=e351]: Club B Test 02
-                  - combobox [ref=e352] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e355]: Female
-                - generic [ref=e356]:
-                  - button [ref=e357] [cursor=pointer]
-                  - generic [ref=e365]: "3"
-                  - generic [ref=e366]: Club B Test 03
-                  - combobox [ref=e367] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e370]: Male
-                - generic [ref=e371]:
-                  - button [ref=e372] [cursor=pointer]
-                  - generic [ref=e380]: "4"
-                  - generic [ref=e381]: Club B Test 04
-                  - combobox [ref=e382] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e385]: Female
-                - generic [ref=e386]:
-                  - button [ref=e387] [cursor=pointer]
-                  - generic [ref=e395]: "5"
-                  - generic [ref=e396]: Club B Test 05
-                  - combobox [ref=e397] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e400]: Male
-                - generic [ref=e401]:
-                  - button [ref=e402] [cursor=pointer]
-                  - generic [ref=e410]: "6"
-                  - generic [ref=e411]: Club B Test 06
-                  - combobox [ref=e412] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e415]: Female
-                - generic [ref=e416]:
-                  - button [ref=e417] [cursor=pointer]
-                  - generic [ref=e425]: "7"
-                  - generic [ref=e426]: Club B Test 07
-                  - combobox [ref=e427] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e430]: Male
-                - generic [ref=e431]:
-                  - button [ref=e432] [cursor=pointer]
-                  - generic [ref=e440]: "8"
-                  - generic [ref=e441]: Club B Test 08
-                  - combobox [ref=e442] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e445]: Female
-                - generic [ref=e446]:
-                  - button [ref=e447] [cursor=pointer]
-                  - generic [ref=e455]: "9"
-                  - generic [ref=e456]: Club B Test 09
-                  - combobox [ref=e457] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e460]: Male
-                - generic [ref=e461]:
-                  - button [ref=e462] [cursor=pointer]
-                  - generic [ref=e470]: "10"
-                  - generic [ref=e471]: Club B Test 10
-                  - combobox [ref=e472] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e475]: Female
-                - generic [ref=e476]:
-                  - button [ref=e477] [cursor=pointer]
-                  - generic [ref=e485]: "11"
-                  - generic [ref=e486]: Club B Test 11
-                  - combobox [ref=e487] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e490]: Male
-                - generic [ref=e491]:
-                  - button [ref=e492] [cursor=pointer]
-                  - generic [ref=e500]: "12"
-                  - generic [ref=e501]: Club B Test 12
-                  - combobox [ref=e502] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e505]: Female
-                - generic [ref=e506]:
-                  - button [ref=e507] [cursor=pointer]
-                  - generic [ref=e515]: "13"
-                  - generic [ref=e516]: Club B Test 13
-                  - combobox [ref=e517] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e520]: Male
-                - generic [ref=e521]:
-                  - button [ref=e522] [cursor=pointer]
-                  - generic [ref=e530]: "14"
-                  - generic [ref=e531]: Club B Test 14
-                  - combobox [ref=e532] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e535]: Female
-                - generic [ref=e536]:
-                  - button [ref=e537] [cursor=pointer]
-                  - generic [ref=e545]: "15"
-                  - generic [ref=e546]: Club B Test 15
-                  - combobox [ref=e547] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e550]: Male
-                - generic [ref=e551]:
-                  - button [ref=e552] [cursor=pointer]
-                  - generic [ref=e560]: "16"
-                  - generic [ref=e561]: Club B Test 16
-                  - combobox [ref=e562] [cursor=pointer]:
-                    - generic: Rotation
-                  - generic [ref=e565]: Female
-          - generic [ref=e566]:
-            - generic [ref=e567]: "Ready: 16 rotation players per club."
-            - button "Save Teams & Rankings" [disabled]
-        - generic [ref=e568]:
-          - generic [ref=e569]:
-            - paragraph [ref=e570]: "12"
-            - paragraph [ref=e571]: Rounds
-          - generic [ref=e572]:
-            - paragraph [ref=e573]: "48"
-            - paragraph [ref=e574]: Matches
-          - generic [ref=e575]:
-            - paragraph [ref=e576]: 6–6
-            - paragraph [ref=e577]: Games/player
-          - generic [ref=e578]:
-            - paragraph [ref=e579]: "164"
-            - paragraph [ref=e580]: Structured min
-          - generic [ref=e581]:
-            - paragraph [ref=e582]: "16"
-            - paragraph [ref=e583]: Contingency min
-        - button "Generate Draw & Fairness Report" [ref=e584] [cursor=pointer]
-  - region "Notifications alt+T":
-    - list:
-      - listitem [ref=e585]:
-        - generic [ref=e589]: 32 practice players loaded. You can now rehearse the full setup and draw journey.
-      - listitem [ref=e591]:
-        - generic [ref=e595]: Interclub Challenge setup saved
+- main:
+  - img
+  - paragraph: RallyHub Interclub
+  - paragraph: "Interclub Challenge · Status: in progress"
+  - text: CL Clare Blue vs CL Clare Gold
+  - button "Hall Display"
+  - button "Public Links / QR"
+  - button "Print Event Pack v1"
+  - button "Setup":
+    - img
+    - text: Setup
+  - button "Teams":
+    - img
+    - text: Teams
+  - button "Draw":
+    - img
+    - text: Draw
+  - button "4 Live Event"
+  - button "5 Simulator"
+  - button "6 Results"
+  - text: Round 1/12 09:58
+  - strong: 1/4
+  - text: scores saved
+  - button "PA":
+    - img
+    - text: PA
+  - button "Players":
+    - img
+    - text: Players
+  - button "3 scores to save" [disabled]
+  - paragraph: Live Event
+  - paragraph: Round 1 of 12
+  - paragraph: Clare Blue 2 – 0 Clare Gold
+  - text: 1W 0D 0W
+  - paragraph: Round at a Glance
+  - paragraph: On court, resting and up next — all in one place.
+  - text: R1
+  - paragraph: Court 1 · NOW
+  - paragraph: Club A Test 02 & Club A Test 01
+  - paragraph: vs
+  - paragraph: Club B Test 01 & Club B Test 02
+  - paragraph: Court 2 · NOW
+  - paragraph: Club A Test 03 & Club A Test 04
+  - paragraph: vs
+  - paragraph: Club B Test 03 & Club B Test 04
+  - paragraph: Court 3 · NOW
+  - paragraph: Club A Test 05 & Club A Test 06
+  - paragraph: vs
+  - paragraph: Club B Test 05 & Club B Test 06
+  - paragraph: Court 4 · NOW
+  - paragraph: Club A Test 07 & Club A Test 08
+  - paragraph: vs
+  - paragraph: Club B Test 07 & Club B Test 08
+  - paragraph: Resting this round
+  - paragraph: Clare Blue
+  - text: Club A Test 09 Club A Test 10 Club A Test 11 Club A Test 12 Club A Test 13 Club A Test 14 Club A Test 15 Club A Test 16
+  - paragraph: Clare Gold
+  - text: Club B Test 09 Club B Test 10 Club B Test 11 Club B Test 12 Club B Test 13 Club B Test 14 Club B Test 15 Club B Test 16
+  - paragraph: Up next · Round 2
+  - paragraph: Court 1 · NEXT
+  - paragraph: Club A Test 09 & Club A Test 10
+  - paragraph: vs
+  - paragraph: Club B Test 09 & Club B Test 10
+  - paragraph: Court 2 · NEXT
+  - paragraph: Club A Test 11 & Club A Test 12
+  - paragraph: vs
+  - paragraph: Club B Test 11 & Club B Test 12
+  - paragraph: Court 3 · NEXT
+  - paragraph: Club A Test 13 & Club A Test 14
+  - paragraph: vs
+  - paragraph: Club B Test 13 & Club B Test 14
+  - paragraph: Court 4 · NEXT
+  - paragraph: Club A Test 15 & Club A Test 16
+  - paragraph: vs
+  - paragraph: Club B Test 15 & Club B Test 16
+  - paragraph: Round Timer
+  - paragraph: Round 1 of 12
+  - text: play
+  - paragraph: 09:58
+  - paragraph: This round
+  - paragraph: Adjust before play or while paused.
+  - button "Reduce this round by one minute" [disabled]:
+    - img
+  - paragraph: 10:00
+  - button "Add one minute to this round" [disabled]:
+    - img
+  - button "Pause"
+  - button "Changeover" [disabled]
+  - button "+1 minute"
+  - group: Round options
+  - paragraph: Round 1 Scores
+  - paragraph: Enter each court result as it comes in — you do not need to wait for the timer to finish.
+  - text: 1/4 saved Court 1 R1
+  - paragraph: Clare Blue
+  - paragraph: Club A Test 02 & Club A Test 01
+  - textbox "Clare Blue score": "11"
+  - paragraph: Clare Gold
+  - paragraph: Club B Test 01 & Club B Test 02
+  - textbox "Clare Gold score": "8"
+  - button "Update Result"
+  - paragraph: Saved · Clare Blue win
+  - text: Court 2 R1
+  - paragraph: Clare Blue
+  - paragraph: Club A Test 03 & Club A Test 04
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Club B Test 03 & Club B Test 04
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - text: Court 3 R1
+  - paragraph: Clare Blue
+  - paragraph: Club A Test 05 & Club A Test 06
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Club B Test 05 & Club B Test 06
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - text: Court 4 R1
+  - paragraph: Clare Blue
+  - paragraph: Club A Test 07 & Club A Test 08
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Club B Test 07 & Club B Test 08
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - button "Save all 4 results to complete Round 1" [disabled]
+  - group:
+    - paragraph: PA & Announcements
+    - paragraph: Open only when you need the microphone or an announcement.
+    - text: AUDIO READY
+    - img
+  - group:
+    - paragraph: Player Controls
+    - paragraph: Injury, withdrawal, replacement or late arrival.
+    - img
+    - paragraph: Player Change
+    - paragraph: Choose how RallyHub should handle an injury or early departure. Completed results stay unchanged; only future unplayed fixtures can change.
+    - text: Player leaving
+    - combobox: Choose player
+    - text: Replacement route
+    - combobox [disabled]: New / registered replacement
+    - text: Reason
+    - combobox: Withdrawn / unavailable
+    - text: Registered available player
+    - combobox [disabled]: Type a replacement manually
+    - text: Replacement name
+    - textbox "Name"
+    - text: Gender
+    - combobox: Inherit outgoing player
+    - text: Note
+    - textbox "Optional note"
+    - button "Replace from Round 1" [disabled]
+    - button "Continue Short · No Replacement" [disabled]
+    - paragraph: Late Arrival
+    - paragraph: Set the first round a player is available. RallyHub will flag that the remaining draw may need review.
+    - combobox: Player
+    - spinbutton: "1"
+    - button "Set Round" [disabled]
+  - group:
+    - paragraph: Court & Time Changes
+    - paragraph: Use this if you lose or gain a court, or if less event time remains than planned.
+    - img
+- region "Notifications alt+T":
+  - list:
+    - listitem:
+      - img
+      - text: Score saved
+    - listitem:
+      - img
+      - text: Interclub Challenge started
 ```
 
 # Test source
 
 ```ts
-  135 |         next={...current,running:false,started_at:null};
-  136 |       } else if (body.action === 'resume') {
-  137 |         next={...current,running:true,started_at:now()};
-  138 |       } else if (body.action === 'reset') {
-  139 |         next={phase:'ready',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round:Number(model.event.current_round||1)};
-  140 |       } else if (body.action === 'set_round_minutes') {
-  141 |         next={phase:'ready',running:false,remaining_seconds:Number(body.minutes)*60,started_at:null,round:Number(model.event.current_round||1)};
-  142 |       } else if (body.action === 'add_minute') {
-  143 |         next={...current,remaining_seconds:Number(current.remaining_seconds||0)+60};
-  144 |       }
-  145 |       model.event.timer_revision=Number(model.event.timer_revision||0)+1;
-  146 |       model.event.timer_state_json=JSON.stringify(next);
-  147 |       return { success:true, event:model.event, state:next, server_now:now() };
-  148 |     }
-  149 | 
-  150 |     if (name === 'updateClubChallengeRound') {
-  151 |       await sleep(260);
-  152 |       const round=Number(body.nextRound);const nextTimer={phase:'ready',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round};
-  153 |       Object.assign(model.event,{current_round:round,status:'in_progress',timer_state_json:JSON.stringify(nextTimer),timer_revision:Number(model.event.timer_revision||0)+1});
-  154 |       return {success:true,event:model.event,timer_state:nextTimer,timer_revision:model.event.timer_revision};
-  155 |     }
-  156 | 
-  157 |     if (name === 'updateClubChallengeSchedule') {
-  158 |       await sleep(420);
-  159 |       for(const c of body.changes||[]){const m=model.matches.find(x=>x.id===c.id);if(m)Object.assign(m,{round_number:Number(c.newRound),court_number:Number(c.newCourt),revision:Number(m.revision||0)+1});}
-  160 |       for(const matchId of body.dropIds||[]){const m=model.matches.find(x=>x.id===matchId);if(m)Object.assign(m,{status:'not_played',winner:'none',revision:Number(m.revision||0)+1});}
-  161 |       Object.assign(model.event,{courts:Number(body.courts),available_minutes:Number(body.availableMinutes),event_pack_stale:true});
-  162 |       return {success:true,event:model.event,changed:(body.changes||[]).length,dropped:(body.dropIds||[]).length,alreadyApplied:false};
-  163 |     }
-  164 | 
-  165 |     if (name === 'saveClubChallengeScore') {
-  166 |       await sleep(260);
-  167 |       const match=model.matches.find(m=>m.id===body.matchId); if(!match)return {error:'Match not found'};
-  168 |       if(Number(body.expectedRevision||0)!==Number(match.revision||0))return {conflict:true,error:'Revision conflict',match};
-  169 |       const a=Number(body.scoreA),b=Number(body.scoreB);Object.assign(match,{score_a:a,score_b:b,winner:a===b?'draw':a>b?'club_a':'club_b',status:a===b?'draw':'completed',revision:Number(match.revision||0)+1,scored_by_user_id:model.user.id,scored_at:now()});
-  170 |       return {success:true,match};
-  171 |     }
-  172 | 
-  173 |     if (name === 'populateClubChallengePracticeScenario') {
-  174 |       await sleep(650);
-  175 |       const normal=model.matches.filter(m=>!m.is_showcase).sort((a,b)=>a.round_number-b.round_number||a.court_number-b.court_number);
-  176 |       normal.forEach((m,i)=>Object.assign(m,{status:'completed',score_a:i%2===0?11:8,score_b:i%2===0?8:11,winner:i%2===0?'club_a':'club_b',revision:Number(m.revision||0)+1,scored_by_user_id:model.user.id,scored_at:now()}));
-  177 |       if(model.event.showcase_enabled){const a=model.participants.filter(p=>p.side==='club_a'),b=model.participants.filter(p=>p.side==='club_b');model.matches.push({id:'cc-showcase',tenant_id:model.event.tenant_id,challenge_event_id:model.event.id,tournament_id:model.event.tournament_id,draw_version:model.event.draw_version,round_number:13,court_number:1,match_number:49,club_a_participant_ids:[a[0].id,a[1].id],club_b_participant_ids:[b[0].id,b[1].id],club_a_names:[a[0].display_name,a[1].display_name],club_b_names:[b[0].display_name,b[1].display_name],status:'completed',score_a:15,score_b:13,winner:'club_a',revision:1,correction_count:0,is_showcase:true,scored_by_user_id:model.user.id,scored_at:now()});}
-  178 |       const winner=model.participants[0];model.votes=model.participants.filter(p=>p.id!==winner.id).slice(0,8).map((p,i)=>({id:`vote-${i+1}`,tenant_id:model.event.tenant_id,challenge_event_id:model.event.id,voter_identity_key:`practice:${p.id}`,voter_participant_id:p.id,nominee_participant_id:winner.id,access_route:'guest',cast_at:now(),valid:true}));
-  179 |       const maxRound=Math.max(...normal.map(m=>Number(m.round_number||0)));Object.assign(model.event,{status:'completed',current_round:maxRound,finalised_at:now(),showcase_resolution_method:'showcase_final',showcase_resolved_winner:'club_a',pot_status:'revealed',pot_winner_participant_ids:[winner.id],pot_revealed_at:now(),timer_state_json:JSON.stringify({phase:'play',running:false,remaining_seconds:0,started_at:null,round:maxRound}),timer_revision:Number(model.event.timer_revision||0)+1});model.tournament.status='Completed';
   180 |       return {success:true,normalMatches:normal.length,showcase:true,practiceVotes:model.votes.length,winner:'club_a'};
   181 |     }
   182 | 
@@ -457,8 +256,7 @@ Received:    1539
   232 |   });
   233 | }
   234 | 
-> 235 | function metric(report,name,value,max){report[name]=value;expect(value,`${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);}
-      |                                                                                                                            ^ Error: practice_roster_ms should be <= 1500ms but was 1539ms
+  235 | function metric(report,name,value,max){report[name]=value;expect(value,`${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);}
   236 | async function expectNoHorizontalOverflow(page){const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);expect(overflow,'mobile page should not require horizontal body scrolling').toBeLessThanOrEqual(1);}
   237 | 
   238 | test.use({ viewport:{width:390,height:844} });
@@ -503,7 +301,8 @@ Received:    1539
   277 |   expect(await page.getByTestId('cc-score-r1-c1-a').getAttribute('maxlength')).toBe('2');await page.getByTestId('cc-score-r1-c1-a').fill('11');await page.getByTestId('cc-score-r1-c1-b').fill('8');started=Date.now();await page.getByTestId('cc-save-score-r1-c1').click();await expect(page.getByTestId('cc-score-card-r1-c1')).toContainText('Saved ·',{timeout:1500});metric(report,'single_score_save_ms',Date.now()-started,1200);
   278 | 
   279 |   const savedR1C1=model.matches.find(m=>m.round_number===1&&m.court_number===1);const outgoingName=savedR1C1.club_a_names[0];const historicalNames=[...savedR1C1.club_a_names];
-  280 |   await page.getByRole('button',{name:'Players',exact:true}).click();await expect(page.getByText('Replace / Withdraw a Player')).toBeVisible();await page.getByTestId('cc-replacement-outgoing').click();await page.getByRole('option',{name:new RegExp(`^${outgoingName.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')} ·`)}).click();await page.getByTestId('cc-replacement-name').fill('Replacement Test');
+> 280 |   await page.getByRole('button',{name:'Players',exact:true}).click();await expect(page.getByText('Replace / Withdraw a Player')).toBeVisible();await page.getByTestId('cc-replacement-outgoing').click();await page.getByRole('option',{name:new RegExp(`^${outgoingName.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')} ·`)}).click();await page.getByTestId('cc-replacement-name').fill('Replacement Test');
+      |                                                                                                                                  ^ Error: expect(locator).toBeVisible() failed
   281 |   const replaceBefore=model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='replace').length;started=Date.now();await page.getByTestId('cc-replace-player').click();await expect(page.getByText('Applying player replacement from Round 1… command sent')).toBeVisible({timeout:300});metric(report,'replacement_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-player-control-status')).toContainText('replaced by Replacement Test',{timeout:1800});expect(model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='replace').length-replaceBefore).toBe(1);expect(savedR1C1.club_a_names).toEqual(historicalNames);expect(model.matches.some(m=>m.round_number>1&&(m.club_a_names||[]).includes('Replacement Test'))).toBe(true);report.replacement_future_only=true;
   282 | 
   283 |   for(const court of [2,3,4]){await page.getByTestId(`cc-score-r1-c${court}-a`).fill('11');await page.getByTestId(`cc-score-r1-c${court}-b`).fill('7');await page.getByTestId(`cc-save-score-r1-c${court}`).click();await expect(page.getByTestId(`cc-score-card-r1-c${court}`)).toContainText('Saved ·',{timeout:1500});}
