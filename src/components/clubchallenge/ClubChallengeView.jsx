@@ -201,7 +201,7 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
             return <Draggable key={p.id} draggableId={p.id} index={i} isDragDisabled={locked || busy}>
               {(dragProvided, dragSnapshot) => <div data-testid={`cc-team-player-${p.id}`} ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn('flex items-center gap-2 rounded-lg border border-border bg-secondary/60 p-2 min-h-11', dragSnapshot.isDragging && 'border-primary bg-primary/10 shadow-lg')}>
                 <div data-testid={`cc-team-drag-${p.id}`} {...dragProvided.dragHandleProps} className="w-9 h-9 -ml-1 flex items-center justify-center rounded-md touch-none shrink-0 text-muted-foreground active:bg-primary/10"><GripVertical className="w-5 h-5" /></div>
-                {id !== 'pool' && <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>}
+                {id !== 'pool' && <span className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>}
                 <span className="text-xs text-foreground flex-1 truncate">{p.display_name}</span>
                 {id !== 'pool' && <Select value={p.roster_role || 'rotation'} onValueChange={async value => { setStatus({state:'working',text:`Updating ${p.display_name}…`}); try { await onSetRosterRole?.(p.id, value); setStatus({state:'success',text:`${p.display_name} set as ${value === 'reserve' ? 'Reserve' : 'Rotation'} player.`}); } catch (e) { setStatus({state:'error',text:e?.message || 'Could not update roster role.'}); } }} disabled={locked || busy || dirty}><SelectTrigger className="h-8 w-[102px] bg-background text-[10px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="rotation">Rotation</SelectItem><SelectItem value="reserve">Reserve</SelectItem></SelectContent></Select>}
                 {p.gender && <span className="text-[10px] text-muted-foreground">{p.gender}</span>}
@@ -662,6 +662,29 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) {
       toast.error(e?.response?.data?.error || e?.message || 'Could not add player');
       throw e;
+    }
+  };
+
+  const importCsv = async (side, file) => {
+    if (!event || !file || !canManageEvent) throw new Error('Event manager permission required.');
+    const text = await file.text();
+    const players = parseCsvPlayers(text);
+    if (!players.length) throw new Error('No player names could be read from that CSV. Use a Name column, or First Name and Last Name columns.');
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+        eventId:event.id,
+        action:'bulk_add_manual',
+        side,
+        players,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      await sync();
+      toast.success(`${res.data?.created || 0} CSV player${Number(res.data?.created || 0)===1?'':'s'} imported directly into ${side === 'club_a' ? event.club_a_name : event.club_b_name}.`);
+      return res.data;
+    } catch (e) {
+      const message = e?.response?.data?.error || e?.message || 'Could not import CSV';
+      toast.error(message);
+      throw new Error(message);
     }
   };
 
@@ -1740,6 +1763,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               locked={locked}
               busy={saving || !!hostAction}
               onImportSpond={setSpondImportSide}
+              onImportCsv={importCsv}
               onAddManual={addManual}
               onSave={organiseTeams}
               onSetRosterRole={setRosterRole}
