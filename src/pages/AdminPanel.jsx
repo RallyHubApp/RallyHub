@@ -1148,7 +1148,32 @@ Brian`;
     !directoryOnlyUserIds.has(String(u.id))
   );
   const pendingPlatformApprovalCount = platformApprovalUsers.filter(u => !u.approval_status || u.approval_status === 'pending').length;
-  const directoryInvitations = (directoryVerification.invitations || []).filter(invite => invite.status === 'pending').slice(0, 50);
+  const directoryInvitationStillOutstanding = invite => {
+    if (invite?.status !== 'pending') return false;
+    const expiresAt = Date.parse(String(invite.expires_at || ''));
+    if (Number.isFinite(expiresAt) && expiresAt <= Date.now()) return false;
+
+    const inviteName = String(invite.contact_name || '').trim().toLowerCase();
+    const invitePhone = String(invite.contact_phone || '').replace(/\D/g, '');
+    const approvedClaim = (directoryVerification.claims || []).find(claim => {
+      if (claim.status !== 'approved' || claim.listing_slug !== invite.listing_slug) return false;
+      const hasActiveAccess = activeDirectoryAccesses.some(access =>
+        access.listing_slug === claim.listing_slug &&
+        String(access.user_id || '') === String(claim.claimant_user_id || '')
+      );
+      if (!hasActiveAccess) return false;
+      const claimName = String(claim.claimant_name || '').trim().toLowerCase();
+      const claimPhone = String(claim.claimant_phone || '').replace(/\D/g, '');
+      const sameName = inviteName && claimName && inviteName === claimName;
+      const samePhone = invitePhone && claimPhone &&
+        invitePhone.slice(-9) === claimPhone.slice(-9);
+      const sameUser = invite.used_by_user_id &&
+        String(invite.used_by_user_id) === String(claim.claimant_user_id || '');
+      return sameUser || samePhone || sameName;
+    });
+    return !approvedClaim;
+  };
+  const directoryInvitations = (directoryVerification.invitations || []).filter(directoryInvitationStillOutstanding).slice(0, 50);
   const pendingDirectoryInvitations = directoryInvitations;
   const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active');
   const filteredMembershipRows = membershipRows.filter(row => {
