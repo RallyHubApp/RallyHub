@@ -1209,8 +1209,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_generated_at: new Date().toISOString() });
     await refetchEvent();
     setPrintPackOpen(false);
-    const cleanupPrintMode = () => document.body.classList.remove('rh-printing-interclub');
+    const scoreOnly = selection.score && !selection.schedule && !selection.roster && !selection.briefing && !selection.final;
+    const cleanupPrintMode = () => {
+      document.body.classList.remove('rh-printing-interclub');
+      document.body.classList.remove('rh-printing-score-only');
+    };
     document.body.classList.add('rh-printing-interclub');
+    if (scoreOnly) document.body.classList.add('rh-printing-score-only');
     window.addEventListener('afterprint', cleanupPrintMode, { once:true });
     window.setTimeout(() => window.print(), 200);
   };
