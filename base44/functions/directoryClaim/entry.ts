@@ -429,6 +429,29 @@ async function trySendDirectoryWelcomeEmail(base44, args) {
   }
 }
 
+async function trySendDirectoryWelcomeEmailOnce(base44, args) {
+  const listingSlug = String(args?.listing?.slug || '').trim();
+  const recipientEmail = normaliseEmail(args?.recipientEmail || '');
+  if (listingSlug) {
+    try {
+      const logs = await base44.asServiceRole.entities.AuditLog.filter({
+        action: 'directory_welcome_email_sent',
+        scope_id: listingSlug,
+      }, '-created_date', 20);
+      const alreadySent = (logs || []).some(row => {
+        try {
+          const payload = row?.after_state ? JSON.parse(row.after_state) : null;
+          return !recipientEmail || normaliseEmail(payload?.recipient || '') === recipientEmail;
+        } catch {
+          return false;
+        }
+      });
+      if (alreadySent) return { sent: 0, skipped: true, alreadySent: true };
+    } catch {}
+  }
+  return trySendDirectoryWelcomeEmail(base44, args);
+}
+
 async function sendAdminDirectoryEmail(base44, { user, subject, body, kind, contextId }) {
   try {
     const auditAction = 'credit_guard_directory_email';
