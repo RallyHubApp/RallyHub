@@ -1,4 +1,5 @@
 import React from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import RALLYHUB_LOGO_BASE64 from '@/assets/rallyhub-logo-approved.b64?raw';
 
 const RALLYHUB_LOGO_URL = `data:image/webp;base64,${RALLYHUB_LOGO_BASE64.trim()}`;
@@ -253,7 +254,7 @@ function RuleCard({ n, title, children }) {
   return <div className="rhpp-rule"><div className="rhpp-rule-number">{n}</div><div><h3>{n}. {title}</h3>{children}</div></div>;
 }
 
-function BriefingPage({ event, tournament, roundsCount, courtsCount }) {
+function BriefingPage({ event, tournament, roundsCount, courtsCount, votingUrl }) {
   const format = event.normal_match_type === 'timed'
     ? `Timed rounds · ${event.play_minutes || 0} minutes${event.timed_draws_allowed === false ? ' · no draws' : ' · draws allowed'}`
     : `First to ${event.normal_target_points || 11} · win by ${event.normal_win_by || 1}`;
@@ -315,7 +316,7 @@ function FinalResultPage({ event, tournament, score, overallScore, showcaseMatch
   </Page>;
 }
 
-export default function InterclubPrintPack({ event, tournament, matches=[], participants=[], score, overallScore, showcaseMatch, sections }) {
+export default function InterclubPrintPack({ event, tournament, matches=[], participants=[], score, overallScore, showcaseMatch, sections, votingUrl='' }) {
   if (!event) return null;
   const roundsCount = Math.max(Number(event.planned_rounds || 0), ...matches.filter(m => !m.is_showcase && Number(m.round_number || 0) <= Number(event.planned_rounds || 9999)).map(m => Number(m.round_number || 0)), 1);
   const rounds = Array.from({length:roundsCount},(_,i)=>i+1);
@@ -367,7 +368,7 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
     {selected.score && scorePages.map((rs,i)=><MasterScorePage key={`score-${i}`} event={event} tournament={tournament} matches={playable} rounds={rs} courts={courts} />)}
     {selected.schedule && schedulePages.map((rs,i)=><MasterSchedulePage key={`schedule-${i}`} event={event} tournament={tournament} matches={playable} participants={participants} rounds={rs} lastScheduledById={lastScheduledById} pageIndex={i} totalPages={schedulePages.length} />)}
     {selected.roster && <TeamRosterPage event={event} tournament={tournament} participants={participants} roundsCount={roundsCount} courtsCount={courts.length} />}
-    {selected.briefing && <BriefingPage event={event} tournament={tournament} roundsCount={roundsCount} courtsCount={courts.length} />}
+    {selected.briefing && <BriefingPage event={event} tournament={tournament} roundsCount={roundsCount} courtsCount={courts.length} votingUrl={votingUrl} />}
     {selected.final && ['completed','archived'].includes(event.status) && <FinalResultPage event={event} tournament={tournament} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} courtsCount={courts.length} roundsCount={roundsCount} />}
   </div>;
 }
