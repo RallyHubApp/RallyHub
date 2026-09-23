@@ -219,6 +219,7 @@ function sanitiseProfile(input:any) {
   })).filter((s:any) => s.venueId && s.start));
 
   return {
+    name: nullable(input?.name, 220),
     description: nullable(input?.description, 1600),
     membershipStatus: nullable(input?.membershipStatus, 240),
     guestPolicy: nullable(input?.guestPolicy, 1800),
@@ -316,6 +317,30 @@ Deno.serve(async (req) => {
         record = await base44.asServiceRole.entities.DirectoryListingProfile.create({
           listing_slug: listingSlug, public_json: publicJson, status: 'active', updated_by_user_id: user.id, updated_at: now,
         });
+      }
+
+      // Keep the editable display name aligned with database-backed listings while
+      // deliberately preserving the stable listing slug / URL.
+      if (publicProfile?.name) {
+        try {
+          const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
+          const dynamic = dynamicRows?.[0];
+          if (dynamic) {
+            const base = parseJson(dynamic.base_json) || {};
+            await base44.asServiceRole.entities.DirectoryListingRecord.update(dynamic.id, {
+              name: publicProfile.name,
+              base_json: JSON.stringify({ ...base, name: publicProfile.name }),
+            });
+          }
+          const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' }, '-granted_at', 100);
+          for (const access of accesses || []) {
+            if (access.listing_name_snapshot !== publicProfile.name) {
+              await base44.asServiceRole.entities.DirectoryListingAccess.update(access.id, { listing_name_snapshot: publicProfile.name });
+            }
+          }
+        } catch (nameSyncError) {
+          console.warn('Directory display-name sync failed', nameSyncError?.message || nameSyncError);
+        }
       }
 
       // For database-backed listings curated by a RallyHub Super Admin, keep the
