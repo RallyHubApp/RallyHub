@@ -29,6 +29,7 @@ export default function DirectoryClaim() {
   const [networkUpdatesOptIn, setNetworkUpdatesOptIn] = useState(false);
   const [status, setStatus] = useState(null);
   const [loadingStatus, setLoadingStatus] = useState(false);
+  const [editingPending, setEditingPending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -61,6 +62,17 @@ export default function DirectoryClaim() {
   }, [user]);
 
   useEffect(() => {
+    const claim = status?.claim;
+    if (!claim) return;
+    setClaimantName(claim.claimant_name || '');
+    setClaimantRole(claim.claimant_role || '');
+    setClaimantPhone(claim.claimant_phone || '');
+    setClaimantMessage(claim.claimant_message || '');
+    setPublicNameOptOut(claim.public_name_opt_out === true);
+    setPublicPhoneOptOut(claim.public_phone_opt_out === true);
+  }, [status?.claim]);
+
+  useEffect(() => {
     if (!isAuthenticated || !club) return;
     let active = true;
     setLoadingStatus(true);
@@ -87,8 +99,9 @@ export default function DirectoryClaim() {
     setError('');
     setSubmitting(true);
     try {
+      const updatingPending = status?.claim?.status === 'pending' && editingPending;
       const res = await base44.functions.invoke('directoryClaim', {
-        action: 'submit',
+        action: updatingPending ? 'update_pending_claim' : 'submit',
         listingSlug: club.slug,
         claimantName,
         claimantRole,
@@ -100,8 +113,13 @@ export default function DirectoryClaim() {
         inviteToken: status?.claim?.status === 'rejected' ? '' : inviteToken,
       });
       if (res.data?.error) throw new Error(res.data.error);
-      const refreshed = await base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: club.slug });
-      setStatus(refreshed.data || res.data);
+      if (updatingPending) {
+        setStatus(res.data);
+        setEditingPending(false);
+      } else {
+        const refreshed = await base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: club.slug });
+        setStatus(refreshed.data || res.data);
+      }
     } catch (err) {
       setError(err.message || 'Could not submit your verification request.');
     } finally {
@@ -189,15 +207,18 @@ export default function DirectoryClaim() {
                   </Link>
                 </div>
               </div>
-            ) : pending ? (
+            ) : pending && !editingPending ? (
               <div className="mt-8 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-6">
                 <div className="flex items-center gap-2 text-amber-300">
                   <Clock3 className="w-5 h-5" />
                   <h2 className="font-bold">Verification requested</h2>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  We could not automatically confirm your connection to this club. RallyHub has sent the verification request to an administrator for review. You do not need to email us separately, and the administrator contact address is not disclosed.
+                  You are already signed in and this request is waiting for RallyHub approval. If any of the verification details are incomplete or incorrect, you can update them now without creating another account.
                 </p>
+                <Button type="button" variant="outline" className="mt-4" onClick={() => setEditingPending(true)}>
+                  Update verification details
+                </Button>
               </div>
             ) : (
               <form onSubmit={submitClaim} className="mt-8 space-y-5">
@@ -252,9 +273,12 @@ export default function DirectoryClaim() {
                     <strong className="text-foreground">Keep me connected with RallyHub.</strong> I’m happy to receive occasional directory, club-network and RallyHub updates by email. I can opt out at any time.
                   </span>
                 </label>
-                <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
-                  {submitting ? 'Submitting…' : (inviteToken ? 'Submit for review' : 'Request directory access')}
-                </Button>
+                <div className="flex flex-wrap gap-3">
+                  <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
+                    {submitting ? 'Submitting…' : (editingPending ? 'Save updated verification details' : (inviteToken ? 'Submit for review' : 'Request directory access'))}
+                  </Button>
+                  {editingPending && <Button type="button" variant="outline" onClick={() => setEditingPending(false)} disabled={submitting}>Cancel</Button>}
+                </div>
               </form>
             )}
           </section>
