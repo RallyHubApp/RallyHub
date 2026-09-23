@@ -71,9 +71,10 @@ Deno.serve(async (req) => {
     if (existing.some((m:any)=>['completed','draw','retired','forfeit','abandoned'].includes(m.status))) return Response.json({ error:'Completed match history exists. Rebalance remaining fixtures instead of replacing the full draw.' }, { status:409 });
     for (const m of existing) await base44.asServiceRole.entities.ClubChallengeMatch.delete(m.id);
     await base44.asServiceRole.entities.ClubChallengeMatch.bulkCreate(cleaned);
-    const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'draw_generated', fairness_json:JSON.stringify(fairness), current_round:0, event_pack_stale:true });
-    await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'draw_generated', user_id:user.id, occurred_at:new Date().toISOString(), new_value_json:JSON.stringify({match_count:cleaned.length,round_count:roundSeen.size,next_draw_version:Number(event.draw_version||0)+1}) });
-    return Response.json({ success:true, event:updated, match_count:cleaned.length, round_count:roundSeen.size });
+    const plannedRounds = Math.max(0, ...cleaned.map((m:any) => Number(m.round_number || 0)));
+    const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'draw_generated', fairness_json:JSON.stringify(fairness), planned_rounds:plannedRounds, current_round:0, event_pack_stale:true });
+    await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'draw_generated', user_id:user.id, occurred_at:new Date().toISOString(), new_value_json:JSON.stringify({match_count:cleaned.length,round_count:plannedRounds,next_draw_version:Number(event.draw_version||0)+1}) });
+    return Response.json({ success:true, event:updated, match_count:cleaned.length, round_count:plannedRounds });
   } catch (error) {
     return Response.json({ error:error?.message || 'Unexpected draw-generation error' }, { status:500 });
   }
