@@ -32,6 +32,26 @@ function phoneLooksSame(a = '', b = '') {
   return tail >= 8 && aa.slice(-tail) === bb.slice(-tail);
 }
 
+const NON_PERSON_NAME_WORDS = new Set([
+  'chair', 'chairperson', 'chairman', 'chairwoman', 'secretary', 'treasurer',
+  'organiser', 'organizer', 'owner', 'admin', 'administrator', 'committee',
+  'club', 'pickleball', 'contact', 'manager', 'captain', 'team'
+]);
+
+function looksLikePersonalFullName(value = '') {
+  const raw = String(value || '').trim();
+  const normalised = normaliseName(raw);
+  const parts = normalised.split(' ').filter(Boolean);
+  if (parts.length < 2) return false;
+  if (parts.some(part => NON_PERSON_NAME_WORDS.has(part))) return false;
+  return parts.every(part => /^[a-z][a-z0-9'-]*$/i.test(part));
+}
+
+function looksLikeUsableMobile(value = '') {
+  const digits = phoneDigits(value);
+  return digits.length >= 8 && digits.length <= 15;
+}
+
 function randomInviteToken() {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
@@ -555,10 +575,18 @@ Deno.serve(async (req) => {
       const claimantRole = String(body.claimantRole || '').trim().slice(0, 160);
       const claimantPhone = String(body.claimantPhone || '').trim().slice(0, 80);
       const claimantMessage = String(body.claimantMessage || '').trim().slice(0, 1500);
+      const publicNameOptOut = body.publicNameOptOut === true;
+      const publicPhoneOptOut = body.publicPhoneOptOut === true;
       const networkUpdatesOptIn = body.networkUpdatesOptIn === true;
-      if (!claimantName) return Response.json({ error: 'Your name is required' }, { status: 400 });
+      if (!claimantName) return Response.json({ error: 'Your full name is required' }, { status: 400 });
+      if (!looksLikePersonalFullName(claimantName)) {
+        return Response.json({ error: 'Please enter your own full name (first name and surname), not a club name or role such as Chairperson.' }, { status: 400 });
+      }
       if (!claimantRole) return Response.json({ error: 'Your role or connection to the club is required' }, { status: 400 });
       if (!claimantPhone) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
+      if (!looksLikeUsableMobile(claimantPhone)) {
+        return Response.json({ error: 'Please enter a valid mobile number that RallyHub can use privately to verify your identity.' }, { status: 400 });
+      }
 
       // Keep the Directory identity on the account for future claims. This does not
       // create any RallyHub Club, tenant, player or tournament access.
@@ -623,6 +651,8 @@ Deno.serve(async (req) => {
         claimant_email: user.email,
         claimant_phone: claimantPhone || null,
         claimant_message: claimantMessage || null,
+        public_name_opt_out: publicNameOptOut,
+        public_phone_opt_out: publicPhoneOptOut,
         status: autoVerified ? 'auto_verified' : 'pending',
         match_method: autoVerified ? 'platform_admin_identity' : 'manual_review',
         email_match: emailMatch,
@@ -1262,6 +1292,14 @@ Deno.serve(async (req) => {
       if (!claim) return Response.json({ error: 'Claim not found' }, { status: 404 });
       const listing = await resolveListing(base44, claim.listing_slug);
       if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+      if (decision === 'approved') {
+        if (!looksLikePersonalFullName(claim.claimant_name)) {
+          return Response.json({ error: 'This claim cannot be approved until the claimant provides their own full name (first name and surname), not a club or role label.' }, { status: 409 });
+        }
+        if (!looksLikeUsableMobile(claim.claimant_phone)) {
+          return Response.json({ error: 'This claim cannot be approved until the claimant provides a valid mobile number for identity verification.' }, { status: 409 });
+        }
+      }
 
       await base44.asServiceRole.entities.DirectoryClaim.update(claim.id, {
         status: decision,
