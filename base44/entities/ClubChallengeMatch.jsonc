@@ -101,6 +101,13 @@
     "is_showcase": {
       "type": "boolean",
       "default": false
+    },
+    "showcase_mode": {
+      "type": "string",
+      "enum": [
+        "tiebreak",
+        "exhibition"
+      ]
     }
   },
   "required": [
