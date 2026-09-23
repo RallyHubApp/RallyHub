@@ -666,6 +666,7 @@ export default function DirectoryListingEdit() {
                   <div>
                     <div className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-primary" /><h2 className="font-bold">Start with four things</h2></div>
                     <p className="text-sm text-muted-foreground mt-2">1. Check the club description · 2. Check the public contact · 3. Check the main venue · 4. Check the regular sessions. That is enough for a useful listing. Everything else is optional.</p>
+                    <p className="text-sm text-muted-foreground mt-2"><span className="font-bold text-foreground">Using Spond?</span> Open <span className="font-semibold text-foreground">Enhanced listing</span> to connect Spond and automatically import your club’s events and regular sessions.</p>
                   </div>
                   <Link to="/directory/help"><Button type="button" variant="outline" className="gap-2"><HelpCircle className="w-4 h-4" /> Open help guide</Button></Link>
                 </div>
