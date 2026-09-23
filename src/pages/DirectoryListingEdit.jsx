@@ -767,9 +767,9 @@ export default function DirectoryListingEdit() {
 
               <section id="contact" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Public club contact</h2></div>
-                <p className="text-sm text-muted-foreground">These details are shown publicly. For an unclaimed admin-curated listing, the contact email is also the trusted email used to verify the representative when you send the claim invitation.</p>
+                <p className="text-sm text-muted-foreground">These details are shown publicly and are separate from the private verified owner/editor identity held by RallyHub. Use whatever public label suits the club, for example “Chairperson”, “Rackets Coach”, “Club Contact” or a person’s name.</p>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>Contact name</Label><Input value={form.contact?.name || ''} onChange={e => setContact('name', e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Public contact label / name</Label><Input value={form.contact?.name || ''} onChange={e => setContact('name', e.target.value)} placeholder="e.g. Chairperson, Club Contact, Debbie Brown" /><p className="text-xs text-muted-foreground">This does not change the privately verified RallyHub account holder.</p></div>
                   <div className="space-y-2"><Label>Contact email</Label><Input type="email" value={form.contact?.email || ''} onChange={e => setContact('email', e.target.value)} /></div>
                   <div className="space-y-2"><Label>Contact phone</Label><Input value={form.contact?.phone || ''} onChange={e => setContactPhone(e.target.value)} placeholder="e.g. 087 123 4567" /></div>
                   <div className="space-y-2">
