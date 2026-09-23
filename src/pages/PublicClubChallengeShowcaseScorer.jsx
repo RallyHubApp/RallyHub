@@ -73,15 +73,15 @@ export default function PublicClubChallengeShowcaseScorer(){
           <p className="mt-1 min-h-8 text-[11px] leading-tight text-muted-foreground">{(names||[]).join(' & ')}</p>
           <p className="my-4 text-7xl font-black tabular-nums">{score}</p>
           <div className="grid grid-cols-2 gap-2">
-            <Button aria-label={`Subtract point from ${club}`} variant="outline" className="h-16 text-xl" disabled={busy||Number(score)<=0} onClick={()=>act(`dec_${side}`)}><Minus className="h-7 w-7"/></Button>
-            <Button aria-label={`Add point to ${club}`} className="h-16 text-xl" disabled={busy||complete} onClick={()=>act(`inc_${side}`)}><Plus className="h-7 w-7"/></Button>
+            <Button aria-label={`Subtract point from ${club}`} aria-busy={busy===`dec_${side}`} variant="outline" className="h-16 text-xl" disabled={Number(score)<=0 || busy===`dec_${side}`} onClick={()=>act(`dec_${side}`)}><Minus className="h-7 w-7"/></Button>
+            <Button aria-label={`Add point to ${club}`} aria-busy={busy===`inc_${side}`} className="h-16 text-xl" disabled={complete || busy===`inc_${side}`} onClick={()=>act(`inc_${side}`)}><Plus className="h-7 w-7"/></Button>
           </div>
         </div>)}
       </div>
 
       {complete&&<div className="rounded-2xl border border-primary/40 bg-primary/10 p-5 text-center"><Trophy className="mx-auto h-6 w-6 text-primary"/><p className="mt-2 text-lg font-bold">Showcase Final complete</p><p className="text-sm text-muted-foreground">{match.winner==='club_a'?event.club_a_name:event.club_b_name} won {match.score_a}–{match.score_b}</p><p className="mt-2 text-xs text-muted-foreground">If the last point was entered by mistake, use the minus button to correct it before the host finalises the event.</p></div>}
 
-      <Button variant="outline" className="w-full h-12" onClick={load}><RefreshCw className="mr-2 h-4 w-4"/>Refresh score</Button>
+      <p className="text-center text-[11px] text-muted-foreground">Score synchronises automatically. Use − on the relevant team to correct a mistaken point.</p>
     </div>
   </div>;
 }
