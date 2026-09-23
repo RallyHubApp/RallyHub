@@ -1,0 +1,56 @@
+const fs=require('fs');
+const React=require('react');
+const {renderToStaticMarkup}=require('react-dom/server');
+const {chromium}=require('playwright');
+const PrintPack=require('./.tmp-interclub-printpack.cjs').default;
+
+const namesA=['Mark Ramos','Darragh Broderick','Trevor Glynn','Caroline McDonnell','Fergal Kennedy','claire mcdonagh','Dawna Ramos','Ciaran Agnew','Raquel McNamara','Louisa Casey','Caitriona Queally','Thomas Byrne','Paul Abando','Oonagh Minogue','Maureen Keane','Carmel Taylor'];
+const namesB=['Davy Claw','ger bermingham','Sai Madhukar Raghunathan','Sharmaine O’Connor','John Taylor','Kim Abando','Hughie Connolly','David Rundle','Breda Collins','Emer Connolly','Ann Doran',"Mary Frances D'Arcy",'Ruth Sheridan','Olivia Chambers','Annette Collins','Deirdre Browne'];
+const participants=[
+ ...namesA.map((n,i)=>({id:'a'+i,display_name:n,side:'club_a',event_rank:i+1,roster_role:'rotation',status:'active',gender:i%2?'Female':'Male'})),
+ ...namesB.map((n,i)=>({id:'b'+i,display_name:n,side:'club_b',event_rank:i+1,roster_role:'rotation',status:'active',gender:i%2?'Female':'Male'})),
+];
+const matches=[];
+for(let r=1;r<=12;r++){
+ const offset=r%2?0:8;
+ for(let c=0;c<4;c++){
+  const ai=[offset+c*2,offset+c*2+1];
+  const bi=[offset+((c+1)%4)*2,offset+((c+1)%4)*2+1];
+  matches.push({id:'m'+r+'-'+c,round_number:r,court_number:c+1,status:'scheduled',is_showcase:false,
+   club_a_participant_ids:ai.map(i=>'a'+i),club_b_participant_ids:bi.map(i=>'b'+i),
+   club_a_names:ai.map(i=>namesA[i]),club_b_names:bi.map(i=>namesB[i])});
+ }
+}
+const event={status:'draw_approved',club_a_name:'Banner Strikers',club_b_name:'Banner Smashers',
+ club_a_logo_url:'',club_b_logo_url:'',club_a_primary_colour:'#2563eb',club_a_secondary_colour:'#facc15',
+ club_b_primary_colour:'#7f1d1d',club_b_secondary_colour:'#f8fafc',courts:4,planned_rounds:12,
+ include_break:true,break_after_round:6,break_minutes:20,normal_match_type:'timed',play_minutes:10,
+ timed_draws_allowed:true,win_points:2,draw_points:1};
+const tournament={location:"St Joseph's, Doora Barefield",start_date:'2026-09-24'};
+const html='<!doctype html><html><head><meta charset="utf-8"></head><body>'+renderToStaticMarkup(React.createElement(PrintPack,{event,tournament,matches,participants,score:{matchesWonA:0,matchesWonB:0,draws:0,gamePointsA:0,gamePointsB:0,gamePointDifference:0},overallScore:{clubA:0,clubB:0}}))+'</body></html>';
+fs.writeFileSync('.tmp-printpack.html',html);
+(async()=>{
+ const browser=await chromium.launch({headless:true});
+ const page=await browser.newPage({viewport:{width:794,height:1123}});
+ await page.setContent(html,{waitUntil:'load'});
+ await page.emulateMedia({media:'print'});
+ const metrics=await page.$$eval('.rhpp-page',(els)=>els.map((el,i)=>({
+  page:i+1,className:el.className,clientHeight:el.clientHeight,scrollHeight:el.scrollHeight,
+  overflow:el.scrollHeight-el.clientHeight,rectHeight:Math.round(el.getBoundingClientRect().height*100)/100
+ })));
+ const score=await page.$eval('.rhpp-score-page',el=>({
+  pageHeight:el.clientHeight,
+  header:Math.round(el.querySelector('.rhpp-score-header').getBoundingClientRect().height),
+  table:Math.round(el.querySelector('.rhpp-score-table').getBoundingClientRect().height),
+  bottom:Math.round(el.querySelector('.rhpp-score-bottom').getBoundingClientRect().height),
+  footer:Math.round(el.querySelector('.rhpp-footer').getBoundingClientRect().height)
+ }));
+ const schedule=await page.$eval('.rhpp-schedule-page',el=>({
+  header:Math.round(el.querySelector('.rhpp-header').getBoundingClientRect().height),
+  rounds:[...el.querySelectorAll('.rhpp-round-block')].map(x=>Math.round(x.getBoundingClientRect().height)),
+  footer:Math.round(el.querySelector('.rhpp-footer').getBoundingClientRect().height)
+ }));
+ await page.pdf({path:'.tmp-printpack.pdf',format:'A4',printBackground:true,margin:{top:'0',right:'0',bottom:'0',left:'0'}});
+ console.log(JSON.stringify({metrics,score,schedule},null,2));
+ await browser.close();
+})();
