@@ -13,10 +13,6 @@ function validClubChallengeGrant(a:any, tenantId:string) {
 }
 
 function token(prefix:string) { return `${prefix}_${crypto.randomUUID().replaceAll('-','')}`; }
-// New participant voting codes use 64 bits of random entropy. Existing issued
-// codes remain valid until links/codes are regenerated, avoiding disruption to
-// an event already in progress.
-function voterCode() { return crypto.randomUUID().replaceAll('-','').slice(0,16).toUpperCase(); }
 
 Deno.serve(async (req) => {
   try {
@@ -45,20 +41,17 @@ Deno.serve(async (req) => {
     const display = existingDisplay?.[0] || await base44.asServiceRole.entities.ClubChallengeDisplayToken.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, token:token('ccd'), active:true, created_at:now });
     const voting = existingVoting?.[0] || await base44.asServiceRole.entities.ClubChallengeVotingToken.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, token:token('ccv'), active:true, created_at:now });
 
-    const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
-    const voterCodes:any[] = [];
-    for (const p of participants) {
-      if (!['active','late'].includes(p.status)) continue;
-      let code = p.guest_access_token;
-      if (!code) {
-        code = voterCode();
-        await base44.asServiceRole.entities.ClubChallengeParticipant.update(p.id, { guest_access_token:code });
-      }
-      voterCodes.push({ participantId:p.id, displayName:p.display_name, side:p.side, code });
-    }
+    await base44.asServiceRole.entities.ClubChallengeAudit.create({
+      tenant_id:event.tenant_id,
+      challenge_event_id:event.id,
+      action:'public_links_issued',
+      user_id:user.id,
+      occurred_at:now,
+      new_value_json:JSON.stringify({ display_token_id:display.id, voting_token_id:voting.id }),
+      note:'Public Hall Display and open event Player of the Tournament voting links prepared.'
+    });
 
-    await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'public_links_issued', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({ display_token_id:display.id, voting_token_id:voting.id, voter_codes:voterCodes.length }), note:'Public Hall Display and POT voting links prepared.' });
-    return Response.json({ success:true, displayToken:display.token, votingToken:voting.token, voterCodes });
+    return Response.json({ success:true, displayToken:display.token, votingToken:voting.token });
   } catch (error) {
     return Response.json({ error:error?.message || 'Unexpected public-link error' }, { status:500 });
   }
