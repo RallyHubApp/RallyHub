@@ -257,9 +257,12 @@ export async function startRallyHubPA({ volume = 1, deviceId = '' } = {}) {
         deviceId: { exact: deviceId },
       }
     : {
+        // For the built-in laptop mic, keep browser echo/noise processing but
+        // disable AGC. AGC was audibly pumping room noise and raising hiss
+        // between words when the PA return was a Bluetooth speaker.
         echoCancellation: { ideal: true },
         noiseSuppression: { ideal: true },
-        autoGainControl: { ideal: true },
+        autoGainControl: { ideal: false },
         channelCount: { ideal: 1 },
       };
 
@@ -280,22 +283,37 @@ export async function startRallyHubPA({ volume = 1, deviceId = '' } = {}) {
   highPass.frequency.setValueAtTime(90, ctx.currentTime);
   highPass.Q.setValueAtTime(0.7, ctx.currentTime);
 
+  // Remove low rumble and gently roll off the top end. The latter helps the
+  // built-in mic + Bluetooth speaker path sound less brittle and reduces hiss
+  // without noticeably dulling speech.
+  const lowPass = ctx.createBiquadFilter();
+  lowPass.type = 'lowpass';
+  lowPass.frequency.setValueAtTime(7600, ctx.currentTime);
+  lowPass.Q.setValueAtTime(0.55, ctx.currentTime);
+
   const compressor = ctx.createDynamicsCompressor();
-  compressor.threshold.setValueAtTime(-20, ctx.currentTime);
-  compressor.knee.setValueAtTime(12, ctx.currentTime);
-  compressor.ratio.setValueAtTime(4, ctx.currentTime);
-  compressor.attack.setValueAtTime(0.004, ctx.currentTime);
-  compressor.release.setValueAtTime(0.18, ctx.currentTime);
+  // Gentle speech control only. The previous 4:1 compression made background
+  // noise and Bluetooth return more obvious between phrases.
+  compressor.threshold.setValueAtTime(-14, ctx.currentTime);
+  compressor.knee.setValueAtTime(18, ctx.currentTime);
+  compressor.ratio.setValueAtTime(2.2, ctx.currentTime);
+  compressor.attack.setValueAtTime(0.012, ctx.currentTime);
+  compressor.release.setValueAtTime(0.28, ctx.currentTime);
 
   const gain = ctx.createGain();
-  gain.gain.setValueAtTime(Math.max(0, Math.min(1.5, Number(volume) || 0)), ctx.currentTime);
+  const targetGain = Math.max(0, Math.min(1.5, Number(volume) || 0));
+  // Fade in instead of connecting the microphone at full gain, which avoids the
+  // startup thump/bang heard when the host enables Live PA.
+  gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, targetGain), ctx.currentTime + 0.18);
 
   const analyser = ctx.createAnalyser();
   analyser.fftSize = 256;
   analyser.smoothingTimeConstant = 0.7;
 
   source.connect(highPass);
-  highPass.connect(compressor);
+  highPass.connect(lowPass);
+  lowPass.connect(compressor);
   compressor.connect(gain);
   compressor.connect(analyser);
   gain.connect(ctx.destination);
@@ -307,6 +325,7 @@ export async function startRallyHubPA({ volume = 1, deviceId = '' } = {}) {
     stream,
     source,
     highPass,
+    lowPass,
     compressor,
     gain,
     analyser,
@@ -337,6 +356,7 @@ export function stopRallyHubPA() {
   if (!state) return false;
   try { state.source?.disconnect?.(); } catch {}
   try { state.highPass?.disconnect?.(); } catch {}
+  try { state.lowPass?.disconnect?.(); } catch {}
   try { state.compressor?.disconnect?.(); } catch {}
   try { state.analyser?.disconnect?.(); } catch {}
   try { state.gain?.disconnect?.(); } catch {}
