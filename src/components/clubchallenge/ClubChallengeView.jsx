@@ -1874,6 +1874,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                   <div><p className="text-sm font-semibold">{score.clubA === score.clubB ? 'Showcase / Tiebreak Final' : 'Optional Showcase Final'}</p><p className="text-xs text-muted-foreground mt-1">{score.clubA === score.clubB ? `Nominate one male and one female player from each club. The winner receives ${event.showcase_points} Interclub points and decides the tied event.` : 'Nominate one male and one female player from each club. This is an exhibition match only: it is recorded in RallyHub but does not add points or change the Interclub winner.'}</p></div>
                   {!showcaseMatch ? (
                     <>
+                      <div className="rounded-lg bg-secondary/40 p-4">
+                        <p className="text-xs font-semibold">1. Choose the Showcase format</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">The Showcase is points-based, not timed. Choose the format before selecting the four players.</p>
+                        <div className="mt-3 grid grid-cols-2 gap-3">
+                          <div><Label className="text-xs">Play to</Label><Select value={String(showcaseFormat.targetPoints)} onValueChange={v => setShowcaseFormat(s => ({ ...s, targetPoints:Number(v) }))}><SelectTrigger className="mt-1 bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="11">11 points</SelectItem><SelectItem value="15">15 points</SelectItem></SelectContent></Select></div>
+                          <div><Label className="text-xs">Win by</Label><Select value={String(showcaseFormat.winBy)} onValueChange={v => setShowcaseFormat(s => ({ ...s, winBy:Number(v) }))}><SelectTrigger className="mt-1 bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">1 point</SelectItem><SelectItem value="2">2 points</SelectItem></SelectContent></Select></div>
+                        </div>
+                        <p className="mt-3 text-xs font-semibold text-primary">First to {showcaseFormat.targetPoints} · win by {showcaseFormat.winBy} · change ends at {Number(showcaseFormat.targetPoints) === 15 ? 8 : 6}</p>
+                      </div>
+                      <p className="text-xs font-semibold">2. Select the players</p>
                       <div className="grid lg:grid-cols-2 gap-4">
                         {[
                           ['club_a', event.club_a_name, aPlayers, 'aMale', 'aFemale'],
@@ -1884,7 +1894,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                     </>
                   ) : (
                     <div className="space-y-3">
-                      <ScoreCard key={`${showcaseMatch.id}-${showcaseMatch.revision}`} match={showcaseMatch} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={sync} networkOnline={networkOnline} onQueue={queueOfflineScore} canScore={canScoreEvent} />
+                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center">
+                        <div className="flex flex-wrap justify-center gap-2"><Badge variant="outline">{showcaseMatch.showcase_mode === 'exhibition' ? 'Exhibition' : 'Tiebreak'}</Badge><Badge variant="outline">First to {showcaseMatch.showcase_target_points || 11} · win by {showcaseMatch.showcase_win_by || 1}</Badge></div>
+                        <p className="mt-3 text-4xl font-black tabular-nums">{showcaseMatch.score_a ?? 0} – {showcaseMatch.score_b ?? 0}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{(showcaseMatch.club_a_names || []).join(' & ')} vs {(showcaseMatch.club_b_names || []).join(' & ')}</p>
+                      </div>
+                      {!showcaseScorerLink ? <Button variant="outline" className="w-full" onClick={prepareShowcaseScorerLink}>Prepare Referee Scorer Link / QR</Button> : <div className="rounded-xl border border-border bg-secondary/30 p-4 flex flex-col sm:flex-row gap-4 items-center"><QRCodeSVG value={showcaseScorerLink} size={112}/><div className="min-w-0 flex-1"><p className="text-sm font-semibold">Referee live scorer</p><p className="mt-1 text-[10px] text-muted-foreground break-all">{showcaseScorerLink}</p><p className="mt-2 text-xs text-muted-foreground">Open this on the referee’s phone. The +/− score updates the Hall Display live and gives the change-ends alert at {Number(showcaseMatch.showcase_target_points || 11) === 15 ? 8 : 6}.</p><div className="mt-2 flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(showcaseScorerLink)}>Copy scorer link</Button><Button size="sm" variant="outline" onClick={() => window.open(showcaseScorerLink,'_blank','noopener,noreferrer')}>Open scorer</Button></div></div></div>}
+                      <details className="rounded-lg border border-border bg-secondary/20">
+                        <summary className="cursor-pointer px-4 py-3 text-xs font-semibold">Host fallback · enter final score manually</summary>
+                        <div className="border-t border-border p-3"><ScoreCard key={`${showcaseMatch.id}-${showcaseMatch.revision}`} match={showcaseMatch} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={sync} networkOnline={networkOnline} onQueue={queueOfflineScore} canScore={canScoreEvent} /></div>
+                      </details>
                       {['completed'].includes(showcaseMatch.status) && <Button className="w-full" disabled={!canFinaliseEvent} onClick={finaliseShowcase}>{showcaseMatch.showcase_mode === 'exhibition' ? `Finalise ${INTERCLUB_EVENT_LABEL} · Showcase stays exhibition only` : `Apply ${event.showcase_points} Points & Finalise ${INTERCLUB_EVENT_LABEL}`}</Button>}
                     </div>
                   )}
