@@ -1880,15 +1880,91 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           </div>
           {score.completedMatches > 0 ? (
             <>
-              <div className="rounded-xl border border-border bg-card p-5 sm:p-8 text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto"><Trophy className="w-6 h-6 text-primary" /></div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary mt-4">{['completed','archived'].includes(event?.status) ? 'Final Result' : 'Current Result'}</p>
-                <p className="text-2xl sm:text-3xl font-bold mt-2 break-words">{event?.club_a_name} {overallScore.clubA}–{overallScore.clubB} {event?.club_b_name}</p>
-                {['completed','archived'].includes(event?.status) && <div className="mt-3"><Badge className="bg-primary/10 text-primary">{event.showcase_resolved_winner === 'draw' ? 'Overall Draw' : `Winner: ${event.showcase_resolved_winner === 'club_b' ? event.club_b_name : event.club_a_name}`}</Badge>{event.showcase_resolved_winner !== 'draw' && <p className="text-xs text-muted-foreground mt-2">Runner-up: {event.showcase_resolved_winner === 'club_b' ? event.club_a_name : event.club_b_name}</p>}{hasManagePermission && <div className="mt-4">{event.status === 'completed' ? <Button variant="outline" onClick={archiveEvent}>Archive Interclub Challenge</Button> : <Button variant="outline" onClick={reopenEvent}>Reopen Archived Interclub Challenge</Button>}</div>}</div>}
-                <div className="flex flex-wrap justify-center gap-2 mt-4"><Badge variant="outline">{score.completedMatches} normal results</Badge><Badge variant="outline">{score.matchesWonA} {event?.club_a_name} wins</Badge><Badge variant="outline">{score.draws} draws</Badge><Badge variant="outline">{score.matchesWonB} {event?.club_b_name} wins</Badge></div>
-                <div className="grid grid-cols-3 gap-2 mt-4 max-w-lg mx-auto text-center"><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointsA}</p><p className="text-[10px] text-muted-foreground">{event?.club_a_name} game points</p></div><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointDifference >= 0 ? '+' : ''}{score.gamePointDifference}</p><p className="text-[10px] text-muted-foreground">A point differential</p></div><div className="rounded-lg bg-secondary p-3"><p className="font-bold">{score.gamePointsB}</p><p className="text-[10px] text-muted-foreground">{event?.club_b_name} game points</p></div></div>
-                {showcaseMatch && ['completed'].includes(showcaseMatch.status) && <p className="text-xs text-primary mt-4">{showcaseMatch.showcase_mode === 'exhibition' ? `Optional Showcase Final: ${showcaseMatch.winner === 'club_a' ? event?.club_a_name : event?.club_b_name} won · exhibition only, Interclub result unchanged` : `Showcase Final: ${showcaseMatch.winner === 'club_a' ? event?.club_a_name : event?.club_b_name} +${event?.showcase_points} points`}</p>}
-                {!['completed','archived'].includes(event?.status) && <p className="text-xs text-yellow-400 mt-4">Provisional — results are saved, but the event has not yet been finalised.</p>}
+              <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                <div className="border-b border-border bg-secondary/20 px-4 py-4 sm:px-6">
+                  <div className="flex flex-col items-center justify-center gap-2 text-center">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10"><Trophy className="h-5 w-5 text-primary" /></div>
+                    <p className="text-[11px] font-black uppercase tracking-[.24em] text-primary">RallyHub Interclub</p>
+                    <p className="text-sm font-semibold uppercase tracking-wider text-foreground">{['completed','archived'].includes(event?.status) ? 'Final Result' : 'Interclub Result'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 p-3 sm:gap-5 sm:p-6">
+                  <div className="flex min-w-0 flex-col items-center justify-center rounded-2xl border bg-background/70 p-3 text-center sm:p-5" style={{borderTopWidth:'6px',borderTopColor:event?.club_a_primary_colour || '#2563eb'}}>
+                    {event?.club_a_logo_url ? <img src={event.club_a_logo_url} alt={`${event.club_a_name} logo`} className="h-16 w-16 rounded-xl bg-white object-contain p-1.5 shadow-sm sm:h-24 sm:w-24" /> : <div className="h-16 w-16 rounded-xl bg-secondary sm:h-24 sm:w-24" />}
+                    <p className="mt-3 max-w-full break-words text-sm font-black leading-tight sm:text-xl">{event?.club_a_name}</p>
+                    <p className="mt-2 text-[clamp(3.5rem,10vw,7rem)] font-black leading-none tabular-nums">{overallScore.clubA}</p>
+                  </div>
+
+                  <div className="flex min-w-[3.5rem] flex-col items-center justify-center text-center sm:min-w-[6rem]">
+                    <span className="text-xs font-bold uppercase tracking-[.22em] text-muted-foreground">vs</span>
+                    <span className="mt-2 text-3xl font-black text-muted-foreground sm:text-5xl">–</span>
+                  </div>
+
+                  <div className="flex min-w-0 flex-col items-center justify-center rounded-2xl border bg-background/70 p-3 text-center sm:p-5" style={{borderTopWidth:'6px',borderTopColor:event?.club_b_primary_colour || '#7f1d1d'}}>
+                    {event?.club_b_logo_url ? <img src={event.club_b_logo_url} alt={`${event.club_b_name} logo`} className="h-16 w-16 rounded-xl bg-white object-contain p-1.5 shadow-sm sm:h-24 sm:w-24" /> : <div className="h-16 w-16 rounded-xl bg-secondary sm:h-24 sm:w-24" />}
+                    <p className="mt-3 max-w-full break-words text-sm font-black leading-tight sm:text-xl">{event?.club_b_name}</p>
+                    <p className="mt-2 text-[clamp(3.5rem,10vw,7rem)] font-black leading-none tabular-nums">{overallScore.clubB}</p>
+                  </div>
+                </div>
+
+                <div className="border-t border-border px-4 py-5 sm:px-6">
+                  <div className="mx-auto grid max-w-3xl grid-cols-3 gap-2 text-center">
+                    <div className="rounded-xl bg-secondary/50 p-3">
+                      <p className="text-2xl font-black tabular-nums sm:text-3xl">{score.matchesWonA}</p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{event?.club_a_name} wins</p>
+                    </div>
+                    <div className="rounded-xl bg-secondary/50 p-3">
+                      <p className="text-2xl font-black tabular-nums sm:text-3xl">{score.draws}</p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Draws</p>
+                    </div>
+                    <div className="rounded-xl bg-secondary/50 p-3">
+                      <p className="text-2xl font-black tabular-nums sm:text-3xl">{score.matchesWonB}</p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{event?.club_b_name} wins</p>
+                    </div>
+                  </div>
+
+                  <div className="mx-auto mt-3 grid max-w-3xl grid-cols-3 gap-2 text-center">
+                    <div className="rounded-xl border border-border p-3">
+                      <p className="text-xl font-black tabular-nums sm:text-2xl">{score.gamePointsA}</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground">Game points</p>
+                    </div>
+                    <div className="rounded-xl border border-border p-3">
+                      <p className="text-xl font-black tabular-nums sm:text-2xl">{score.gamePointDifference >= 0 ? '+' : ''}{score.gamePointDifference}</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground">{event?.club_a_name} differential</p>
+                    </div>
+                    <div className="rounded-xl border border-border p-3">
+                      <p className="text-xl font-black tabular-nums sm:text-2xl">{score.gamePointsB}</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground">Game points</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    <Badge variant="outline">{score.completedMatches} normal results</Badge>
+                    {['completed','archived'].includes(event?.status) && <Badge className="bg-primary/10 text-primary">{event.showcase_resolved_winner === 'draw' ? 'Overall Draw' : `Winner · ${event.showcase_resolved_winner === 'club_b' ? event.club_b_name : event.club_a_name}`}</Badge>}
+                  </div>
+
+                  {showcaseMatch && ['completed'].includes(showcaseMatch.status) && (
+                    <div className="mx-auto mt-5 max-w-3xl rounded-xl border border-primary/20 bg-primary/5 p-4 text-center">
+                      <p className="text-[10px] font-black uppercase tracking-[.18em] text-primary">{showcaseMatch.showcase_mode === 'exhibition' ? 'Optional Showcase Final · Exhibition' : 'Showcase Tiebreak Final'}</p>
+                      <p className="mt-2 text-lg font-black sm:text-xl">{event?.club_a_name} <span className="tabular-nums">{showcaseMatch.score_a ?? 0}–{showcaseMatch.score_b ?? 0}</span> {event?.club_b_name}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{(showcaseMatch.club_a_names || []).join(' & ')} vs {(showcaseMatch.club_b_names || []).join(' & ')}</p>
+                      <p className="mt-2 text-xs font-semibold">{showcaseMatch.showcase_mode === 'exhibition' ? 'Exhibition only · the Interclub result above is unchanged' : `${showcaseMatch.winner === 'club_a' ? event?.club_a_name : event?.club_b_name} won the tiebreak Showcase`}</p>
+                    </div>
+                  )}
+
+                  {['completed','archived'].includes(event?.status) ? (
+                    <div className="mt-5 text-center">
+                      <p className="text-xs font-semibold text-primary">Finalised Interclub result</p>
+                      {event?.finalised_at && <p className="mt-1 text-[10px] text-muted-foreground">{new Date(event.finalised_at).toLocaleString('en-IE', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</p>}
+                      {hasManagePermission && <div className="mt-4">{event.status === 'completed' ? <Button variant="outline" onClick={archiveEvent}>Archive Interclub Challenge</Button> : <Button variant="outline" onClick={reopenEvent}>Reopen Archived Interclub Challenge</Button>}</div>}
+                    </div>
+                  ) : (
+                    <div className="mt-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-center">
+                      <p className="text-xs font-semibold text-amber-600">Provisional · all results are saved, but the Interclub has not yet been finalised</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {resolvedNormalCount === normalMatches.length && !['completed','archived'].includes(event?.status) && score.clubA !== score.clubB && (
@@ -1919,7 +1995,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
               {canManageEvent && resolvedNormalCount === normalMatches.length && event?.showcase_enabled && !['completed','archived'].includes(event?.status) && (
                 <div id="showcase-final-panel" className="rounded-xl border border-border bg-card p-5 space-y-4">
-                  <div><p className="text-sm font-semibold">{score.clubA === score.clubB ? 'Showcase / Tiebreak Final' : 'Optional Showcase Final'}</p><p className="text-xs text-muted-foreground mt-1">{score.clubA === score.clubB ? `Nominate one male and one female player from each club. The winner receives ${event.showcase_points} Interclub points and decides the tied event.` : 'Nominate one male and one female player from each club. This is an exhibition match only: it is recorded in RallyHub but does not add points or change the Interclub winner.'}</p></div>
+                  <div><p className="text-sm font-semibold">{score.clubA === score.clubB ? 'Showcase / Tiebreak Final' : 'Optional Showcase Final'}</p><p className="text-xs text-muted-foreground mt-1">{score.clubA === score.clubB ? `Select any two eligible players from each club. The winner receives ${event.showcase_points} Interclub points and decides the tied event.` : 'Select any two eligible players from each club. This is an exhibition match only: it is recorded in RallyHub but does not add points or change the Interclub winner.'}</p></div>
                   {!showcaseMatch ? (
                     <>
                       <div className="rounded-lg bg-secondary/40 p-4">
