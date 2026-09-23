@@ -28,7 +28,7 @@ export default function PublicClubChallengeDisplay(){
   const {event,matches,participants=[]}=data, s=score(matches,event), round=Number(event.current_round||1), plannedRounds=Number(event.planned_rounds||0);
   const current=matches.filter(m=>!m.is_showcase&&m.status!=='not_played'&&m.round_number===round), next=matches.filter(m=>!m.is_showcase&&m.status!=='not_played'&&m.round_number===round+1&&(!plannedRounds||round+1<=plannedRounds));
   const activeIds=new Set(current.flatMap(m=>[...(m.club_a_participant_ids||[]),...(m.club_b_participant_ids||[])]));
-  const resting=participants.filter(p=>(p.status==='active'||(p.status==='late'&&Number(p.available_from_round||1)<=round))&&!activeIds.has(p.id));
+  const resting=participants.filter(p=>((!p.status||p.status==='active')||(p.status==='late'&&Number(p.available_from_round||1)<=round))&&!activeIds.has(p.id));
   let timer={}; try{timer=event.timer_state_json?JSON.parse(event.timer_state_json):{};}catch{}
   const remaining=timer.running&&timer.started_at?Math.max(0,Number(timer.remaining_seconds||0)-Math.floor((now-new Date(timer.started_at).getTime())/1000)):Number(timer.remaining_seconds||0);
   const scheduledBreakHere=!!event.include_break&&round===Number(event.break_after_round||0), breakActive=scheduledBreakHere&&String(timer.phase||'')==='break';
