@@ -120,7 +120,7 @@ export default function Dashboard() {
 
           {pendingDirectoryApprovalCount > 0 && (
             <Link
-              to="/app/admin?tab=directory"
+              to="/app/admin?tab=directory&focus=pending-actions"
               className="block rounded-xl border border-emerald-400/40 bg-emerald-500/10 p-4 hover:bg-emerald-500/15 transition-colors"
               aria-label={`Review ${pendingDirectoryApprovalCount} pending Directory approvals`}
             >
