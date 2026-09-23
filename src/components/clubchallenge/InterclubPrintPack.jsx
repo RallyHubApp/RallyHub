@@ -326,9 +326,12 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
   return <div className="rhpp-root">
     <style>{`
       @page { size:A4 portrait; margin:0; }
+      .rhpp-print-host{display:none}
       @media print {
-        html,body,#root { margin:0!important; padding:0!important; background:#fff!important; }
+        html,body { margin:0!important; padding:0!important; background:#fff!important; }
         body { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+        body.rh-printing-interclub > *:not(.rhpp-print-host){display:none!important}
+        body.rh-printing-interclub > .rhpp-print-host{display:block!important;position:absolute!important;left:0!important;top:0!important;width:210mm!important;margin:0!important;padding:0!important;background:#fff!important}
         .rhpp-page { break-inside:avoid-page!important; page-break-inside:avoid!important; break-after:page!important; page-break-after:always!important; }
         .rhpp-page:last-child { break-after:auto!important; page-break-after:auto!important; }
         .rhpp-score-page,.rhpp-score-grid,.rhpp-score-bottom,.rhpp-footer { break-inside:avoid!important; page-break-inside:avoid!important; }
