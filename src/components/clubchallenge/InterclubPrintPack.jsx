@@ -99,24 +99,23 @@ function PairNames({ names=[] }) {
 function MasterScorePage({ event, tournament, matches, rounds, courts }) {
   return <Page className="rhpp-score-page">
     <ScoreHeader event={event} tournament={tournament} />
-    <table className="rhpp-score-table">
-      <thead><tr><th className="rhpp-round-col">Round</th>{courts.map(c => <th key={c}>Court {c}</th>)}</tr></thead>
-      <tbody>
-        {rounds.map(round => <tr key={round}>
-          <td className="rhpp-round-number">{round}</td>
-          {courts.map(court => {
-            const m = fixtureFor(matches, round, court);
-            return <td key={court} className="rhpp-score-cell">
-              {m ? <>
-                <div className="rhpp-score-name"><PairNames names={m.club_a_names || []}/></div>
-                <div className="rhpp-score-boxes"><span /><b>v</b><span /></div>
-                <div className="rhpp-score-name"><PairNames names={m.club_b_names || []}/></div>
-              </> : <div className="rhpp-empty">No match</div>}
-            </td>;
-          })}
-        </tr>)}
-      </tbody>
-    </table>
+    <div className="rhpp-score-grid">
+      <div className="rhpp-score-grid-head rhpp-score-grid-round-head">Round</div>
+      {courts.map(c => <div key={`head-${c}`} className="rhpp-score-grid-head">Court {c}</div>)}
+      {rounds.map(round => <React.Fragment key={round}>
+        <div className="rhpp-round-number">{round}</div>
+        {courts.map(court => {
+          const m = fixtureFor(matches, round, court);
+          return <div key={court} className="rhpp-score-cell">
+            {m ? <>
+              <div className="rhpp-score-name"><PairNames names={m.club_a_names || []}/></div>
+              <div className="rhpp-score-boxes"><span /><b>v</b><span /></div>
+              <div className="rhpp-score-name"><PairNames names={m.club_b_names || []}/></div>
+            </> : <div className="rhpp-empty">No match</div>}
+          </div>;
+        })}
+      </React.Fragment>)}
+    </div>
     <div className="rhpp-score-bottom">
       <div className="rhpp-notes-box"><strong>Notes</strong><i/><i/><i/><i/></div>
       <div className="rhpp-reminders">
@@ -329,8 +328,9 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
       @media print {
         html,body,#root { margin:0!important; padding:0!important; background:#fff!important; }
         body { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
-        .rhpp-page { break-after:page!important; page-break-after:always!important; }
+        .rhpp-page { break-inside:avoid-page!important; page-break-inside:avoid!important; break-after:page!important; page-break-after:always!important; }
         .rhpp-page:last-child { break-after:auto!important; page-break-after:auto!important; }
+        .rhpp-score-page,.rhpp-score-grid,.rhpp-score-bottom,.rhpp-footer { break-inside:avoid!important; page-break-inside:avoid!important; }
       }
       .rhpp-root{font-family:Arial,Helvetica,sans-serif;color:${NAVY};background:#fff}
       .rhpp-page{position:relative;width:210mm;height:297mm;box-sizing:border-box;padding:6mm 7mm 18mm;background:#fff;color:${NAVY};overflow:hidden;border:.25mm solid #d7e6f2}
