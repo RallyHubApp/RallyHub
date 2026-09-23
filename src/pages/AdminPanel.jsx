@@ -73,6 +73,9 @@ export default function AdminPanel() {
   const [deletingUser, setDeletingUser] = useState(null);
   const [confirmDeleteUser, setConfirmDeleteUser] = useState(null);
   const [reviewingDirectoryClaim, setReviewingDirectoryClaim] = useState(null);
+  const [editingPendingDirectoryClaim, setEditingPendingDirectoryClaim] = useState(null);
+  const [pendingDirectoryIdentityForm, setPendingDirectoryIdentityForm] = useState({ fullName:'', mobile:'' });
+  const [savingPendingDirectoryIdentity, setSavingPendingDirectoryIdentity] = useState(false);
   const [reviewingNewDirectoryRequest, setReviewingNewDirectoryRequest] = useState(null);
   const [revokingDirectoryAccess, setRevokingDirectoryAccess] = useState(null);
   const [removingDirectoryListing, setRemovingDirectoryListing] = useState(null);
@@ -1015,12 +1018,45 @@ Brian`;
     const phoneDigits = String(claim?.claimant_phone || '').replace(/\D/g, '');
     return parts.length >= 2 && !parts.some(part => blocked.has(part)) && phoneDigits.length >= 8 && phoneDigits.length <= 15;
   };
-  const directoryInvitationUsedForClaim = claim =>
-    (directoryVerification.invitations || []).find(invite =>
-      String(invite.listing_slug || '') === String(claim?.listing_slug || '') &&
+  const directoryInvitationUsedForClaim = claim => {
+    const invitations = (directoryVerification.invitations || []).filter(invite =>
+      String(invite.listing_slug || '') === String(claim?.listing_slug || '')
+    );
+    const exactUsed = invitations.find(invite =>
       invite.status === 'used' &&
       String(invite.used_by_user_id || '') === String(claim?.claimant_user_id || '')
-    ) || null;
+    );
+    if (exactUsed) return exactUsed;
+    const claimEmail = String(claim?.claimant_email || '').trim().toLowerCase();
+    const emailRelated = invitations.find(invite =>
+      claimEmail && String(invite.contact_email || '').trim().toLowerCase() === claimEmail
+    );
+    return emailRelated || invitations[0] || null;
+  };
+  const savePendingDirectoryIdentity = async () => {
+    if (!editingPendingDirectoryClaim?.id) return;
+    setSavingPendingDirectoryIdentity(true);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', {
+        action:'admin_update_pending_claim_identity',
+        claimId: editingPendingDirectoryClaim.id,
+        fullName: pendingDirectoryIdentityForm.fullName,
+        mobile: pendingDirectoryIdentityForm.mobile,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey:['directory-verification'] }),
+        queryClient.invalidateQueries({ queryKey:['all-users'] }),
+      ]);
+      toast.success('Private verification details corrected. The claim is still waiting for your approval.');
+      setEditingPendingDirectoryClaim(null);
+    } catch (error) {
+      toast.error(error?.message || 'Could not correct the verification details');
+    } finally {
+      setSavingPendingDirectoryIdentity(false);
+    }
+  };
+
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
   const pendingDirectoryActionCount = pendingDirectoryClaims.length + pendingNewDirectoryRequests.length;
