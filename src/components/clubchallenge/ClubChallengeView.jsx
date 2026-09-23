@@ -49,7 +49,6 @@ const DEFAULT_SETUP = {
 
 function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
 function durationLabel(minutes) { const total = Math.max(0, Math.round(Number(minutes) || 0)); const h = Math.floor(total / 60); const m = total % 60; return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`; }
-function genderKey(value) { const v = String(value || '').trim().toLowerCase(); return v.startsWith('f') ? 'female' : v.startsWith('m') ? 'male' : ''; }
 function privacyName(name, junior) { if (!junior) return name || ''; const parts = String(name || '').trim().split(/\s+/).filter(Boolean); return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : (parts[0] || ''); }
 
 function ClubBadge({ name, logo, primary, secondary }) {
