@@ -366,6 +366,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [voices, setVoices] = useState([]);
   const [hallVolume, setHallVolume] = useState(() => { const v = Number(localStorage.getItem('cc-hall-volume')); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; });
   const [audioReady, setAudioReady] = useState(false);
+  const [hallVoiceEngine, setHallVoiceEngine] = useState('not-tested');
   const [paActive, setPaActive] = useState(false);
   const [paStarting, setPaStarting] = useState(false);
   const [paInputLevel, setPaInputLevel] = useState(0);
@@ -913,6 +914,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             eventId:event?.id || '',
             voiceMode,
             voices,
+            onEngine:setHallVoiceEngine,
           });
         }, 450);
 
@@ -999,6 +1001,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       eventId:event?.id || '',
       voiceMode,
       voices,
+      onEngine:setHallVoiceEngine,
     }).then(spoken => {
       if (spoken) setLastAnnouncement(text);
     });
@@ -1045,6 +1048,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         eventId:event?.id || '',
         voiceMode:'rallyhub_default',
         voices,
+        onEngine:setHallVoiceEngine,
         onStart:() => {
           started = true;
           setAnnouncementStatus('Speaking…');
