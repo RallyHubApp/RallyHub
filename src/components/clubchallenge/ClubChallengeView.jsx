@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, CheckCircle2, ChevronDown, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Users, VolumeX } from 'lucide-react';
+import { ArrowLeft, Check, CheckCircle2, ChevronDown, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Upload, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import { getRallyHubPaLevel, listRallyHubMicrophones, playRallyHubSignal, setRallyHubPaGain, speakRallyHub, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
@@ -54,6 +54,59 @@ function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n
 function durationLabel(minutes) { const total = Math.max(0, Math.round(Number(minutes) || 0)); const h = Math.floor(total / 60); const m = total % 60; return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`; }
 function privacyName(name, junior) { if (!junior) return name || ''; const parts = String(name || '').trim().split(/\s+/).filter(Boolean); return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : (parts[0] || ''); }
 
+function parseCsvPlayers(text) {
+  const source = String(text || '').replace(/^\uFEFF/, '');
+  const firstLine = source.split(/\r?\n/, 1)[0] || '';
+  const candidates = [',',';','\t'];
+  const delimiter = candidates.sort((a,b)=>(firstLine.split(b).length)-(firstLine.split(a).length))[0];
+  const rows = [];
+  let row = [], field = '', quoted = false;
+  for (let i=0;i<source.length;i++) {
+    const ch = source[i];
+    if (ch === '"') {
+      if (quoted && source[i+1] === '"') { field += '"'; i++; }
+      else quoted = !quoted;
+    } else if (ch === delimiter && !quoted) {
+      row.push(field.trim()); field = '';
+    } else if ((ch === '\n' || ch === '\r') && !quoted) {
+      if (ch === '\r' && source[i+1] === '\n') i++;
+      row.push(field.trim()); field = '';
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+    } else field += ch;
+  }
+  row.push(field.trim());
+  if (row.some(Boolean)) rows.push(row);
+  if (!rows.length) return [];
+
+  const normaliseHeader = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g,' ');
+  const headers = rows[0].map(normaliseHeader);
+  const indexOfAny = names => {
+    for (const name of names) {
+      const idx = headers.indexOf(name);
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+  const nameIdx = indexOfAny(['name','full name','player name','player','member name','participant','attendee']);
+  const firstIdx = indexOfAny(['first name','firstname','given name','forename']);
+  const lastIdx = indexOfAny(['last name','lastname','surname','family name']);
+  const genderIdx = indexOfAny(['gender','sex']);
+  const hasHeader = nameIdx >= 0 || firstIdx >= 0 || lastIdx >= 0 || genderIdx >= 0;
+  const dataRows = hasHeader ? rows.slice(1) : rows;
+  const seen = new Set();
+  return dataRows.map(cols => {
+    let displayName = nameIdx >= 0 ? cols[nameIdx] : '';
+    if (!displayName && (firstIdx >= 0 || lastIdx >= 0)) displayName = [firstIdx >= 0 ? cols[firstIdx] : '', lastIdx >= 0 ? cols[lastIdx] : ''].filter(Boolean).join(' ');
+    if (!displayName && !hasHeader) displayName = cols[0] || '';
+    displayName = String(displayName || '').trim().replace(/\s+/g,' ');
+    const key = displayName.toLowerCase();
+    if (!displayName || seen.has(key)) return null;
+    seen.add(key);
+    return { displayName, gender: genderIdx >= 0 ? String(cols[genderIdx] || '').trim() : '' };
+  }).filter(Boolean);
+}
+
 function ClubBadge({ name, logo, primary, secondary }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border border-border px-2.5 sm:px-3 py-2 bg-secondary/40 min-w-0 flex-1 sm:flex-none">
@@ -63,7 +116,7 @@ function ClubBadge({ name, logo, primary, secondary }) {
   );
 }
 
-function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImportSpond, onAddManual, onSave, onSetRosterRole }) {
+function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImportSpond, onImportCsv, onAddManual, onSave, onSetRosterRole }) {
   const active = participants.filter(p => !['replaced','withdrawn','injured'].includes(p.status));
   const signature = active.map(p => `${p.id}:${p.side}:${p.event_rank}:${p.roster_role || 'rotation'}`).sort().join('|');
   const makeLanes = () => ({
@@ -112,18 +165,33 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
     if (!name || busy || locked) return;
     try { await onAddManual?.('pool', name); setManualPool(''); } catch {}
   };
+  const moveAllPool = to => {
+    if (!lanes.pool.length || locked || busy) return;
+    setLanes(prev => ({ ...prev, [to]:[...prev[to], ...prev.pool], pool:[] }));
+    setDirty(true);
+    setStatus({state:'working',text:`All unassigned players moved to ${to === 'club_a' ? nameA : nameB}. Save Teams & Rankings to confirm.`});
+  };
   const lane = (id, title, ids, teamName, setTeamName) => (
     <Droppable droppableId={id}>
       {(provided, snapshot) => <div data-testid={`cc-team-lane-${id}`} ref={provided.innerRef} {...provided.droppableProps} className={cn('rounded-xl border bg-card p-3 min-h-[18rem] transition-colors', snapshot.isDraggingOver ? 'border-primary bg-primary/5' : 'border-border')}>
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="min-w-0 flex-1">
-            {id === 'pool' ? <><p className="text-sm font-semibold">Player Pool</p><p className="text-[10px] text-muted-foreground">Import both Spond events here, then drag players into the teams.</p></> :
-              <><Label className="text-[10px]">Team name</Label><Input data-testid={`cc-team-name-${id}`} value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" /><button type="button" onClick={() => onImportSpond?.(id)} disabled={locked || busy || dirty} className="mt-1 text-[10px] text-primary hover:underline disabled:opacity-40">Import a Spond event directly to this team</button></>}
+            {id === 'pool' ? <><p className="text-sm font-semibold">Unassigned Player Pool</p><p className="text-[10px] text-muted-foreground">Use this only for players who are not yet assigned. Import Clare and Galway directly into their own team panels.</p></> :
+              <><Label className="text-[10px]">Team name</Label><Input data-testid={`cc-team-name-${id}`} value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" />
+                <div className="grid grid-cols-2 gap-1.5 mt-2">
+                  <Button type="button" variant="outline" size="sm" className="h-8 px-2 text-[10px]" onClick={() => onImportSpond?.(id)} disabled={locked || busy || dirty}><Download className="w-3 h-3 mr-1" />Import Spond</Button>
+                  <label className={cn('h-8 rounded-md border border-input bg-background px-2 text-[10px] font-medium inline-flex items-center justify-center cursor-pointer hover:bg-accent hover:text-accent-foreground', (locked || busy || dirty) && 'opacity-50 pointer-events-none')}>
+                    <Upload className="w-3 h-3 mr-1" />Import CSV
+                    <input type="file" accept=".csv,text/csv,.txt,text/plain" className="hidden" disabled={locked || busy || dirty} onChange={async e => { const file=e.target.files?.[0]; e.target.value=''; if (!file) return; setStatus({state:'working',text:`Importing ${file.name} into ${teamName}…`}); try { const result=await onImportCsv?.(id,file); setStatus({state:'success',text:`${result?.created || 0} player${Number(result?.created || 0)===1?'':'s'} imported into ${teamName}${result?.skipped ? ` · ${result.skipped} duplicate${result.skipped===1?'':'s'} skipped` : ''}.`}); } catch (err) { setStatus({state:'error',text:err?.message || 'Could not import CSV.'}); } }} />
+                  </label>
+                </div>
+                {lanes.pool.length > 0 && <button type="button" onClick={() => moveAllPool(id)} disabled={locked || busy || dirty} className="mt-1.5 text-[10px] text-primary hover:underline disabled:opacity-40">Move all {lanes.pool.length} unassigned players to this team</button>}
+              </>}
           </div>
           <Badge variant="outline">{ids.length}</Badge>
         </div>
         {id === 'pool' && <div className="space-y-2 mb-3">
-          <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => onImportSpond?.('pool')} disabled={locked || busy || dirty}><Download className="w-3.5 h-3.5 mr-1" />Import Spond Event</Button>
+          <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => onImportSpond?.('pool')} disabled={locked || busy || dirty}><Download className="w-3.5 h-3.5 mr-1" />Import Unassigned Spond Players</Button>
           <div className="grid grid-cols-[1fr_auto] gap-2"><Input placeholder="Add player manually" value={manualPool} onChange={e=>setManualPool(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addPool()} disabled={locked || busy || dirty} className="h-9 bg-secondary" /><Button type="button" size="sm" onClick={addPool} disabled={locked || busy || dirty || !manualPool.trim()}><Plus className="w-4 h-4" /></Button></div>
         </div>}
         <div className="space-y-1 max-h-[34rem] overflow-auto">
@@ -156,7 +224,7 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
   return <div className="space-y-3">
     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div><p className="text-sm font-semibold">Build the two teams</p><p className="text-xs text-muted-foreground">Drag players into the teams, rank them, then mark each team member as Rotation or Reserve. Rotation players are included in the draw; Reserves travel with the team but stay outside the scheduled rotation until activated.</p></div>
+        <div><p className="text-sm font-semibold">Build the two teams</p><p className="text-xs text-muted-foreground">Import Spond or CSV directly into either team, then drag within each team to rank 1–16. Use the Player Pool only for genuinely unassigned players. Rotation players are included in the draw; Reserves stay outside the scheduled rotation until activated.</p></div>
         <div className="flex flex-wrap gap-2 text-xs"><Badge variant="outline">{active.length} players</Badge><Badge variant="outline">A: {rotationA} rotation · {reserveA} reserve</Badge><Badge variant="outline">B: {rotationB} rotation · {reserveB} reserve</Badge><Badge className={balanced && lanes.pool.length===0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-700'}>{lanes.pool.length===0 && balanced ? 'Rotation squads balanced' : `${lanes.pool.length} unassigned`}</Badge></div>
       </div>
     </div>
