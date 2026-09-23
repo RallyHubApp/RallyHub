@@ -896,6 +896,12 @@ Brian`;
     const phoneDigits = String(claim?.claimant_phone || '').replace(/\D/g, '');
     return parts.length >= 2 && !parts.some(part => blocked.has(part)) && phoneDigits.length >= 8 && phoneDigits.length <= 15;
   };
+  const directoryInvitationUsedForClaim = claim =>
+    (directoryVerification.invitations || []).find(invite =>
+      String(invite.listing_slug || '') === String(claim?.listing_slug || '') &&
+      invite.status === 'used' &&
+      String(invite.used_by_user_id || '') === String(claim?.claimant_user_id || '')
+    ) || null;
   const pendingDirectoryClaims = directoryVerification.claims.filter(c => c.status === 'pending');
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
   const pendingDirectoryActionCount = pendingDirectoryClaims.length + pendingNewDirectoryRequests.length;
@@ -1571,6 +1577,7 @@ Brian`;
                 <p className="text-xs text-muted-foreground py-4 px-1">No directory claims are waiting for review.</p>
               ) : pendingDirectoryClaims.map(claim => {
                 const identityComplete = directoryClaimIdentityLooksComplete(claim);
+                const sourceInvite = directoryInvitationUsedForClaim(claim);
                 return (
                 <div key={claim.id} className="glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="min-w-0 space-y-1">
@@ -1586,6 +1593,17 @@ Brian`;
                       <p className="text-xs text-muted-foreground break-all mt-1">Email: {claim.claimant_email || '—'} · Mobile: {claim.claimant_phone || '—'}</p>
                       <p className="text-[11px] text-muted-foreground mt-2">Email matching is supporting evidence only. Approval still requires an identifiable person and a usable mobile number.</p>
                     </div>
+                    {sourceInvite && (
+                      <div className="rounded-lg border border-amber-400/25 bg-amber-400/5 p-3 mt-2 text-xs">
+                        <p className="font-semibold text-foreground">Original secure invitation</p>
+                        <p className="text-muted-foreground mt-1">
+                          Sent to: {sourceInvite.contact_name || '(name not recorded)'}
+                          {sourceInvite.contact_email ? ` · ${sourceInvite.contact_email}` : ''}
+                          {sourceInvite.contact_phone ? ` · ${sourceInvite.contact_phone}` : ''}
+                        </p>
+                        <p className="text-muted-foreground mt-1">Compare this with the claimant’s private identity above before approving, particularly if the link may have been forwarded.</p>
+                      </div>
+                    )}
                     {claim.claimant_message && <p className="text-xs text-muted-foreground mt-2">“{claim.claimant_message}”</p>}
                     <div className="flex flex-wrap gap-2 pt-2">
                       <Badge variant="outline" className={claim.email_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Email match (supporting): {claim.email_match ? 'Yes' : 'No'}</Badge>
