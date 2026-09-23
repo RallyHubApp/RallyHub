@@ -1,6 +1,7 @@
 import React from 'react';
+import RALLYHUB_LOGO_BASE64 from '@/assets/rallyhub-logo-approved.b64?raw';
 
-const RALLYHUB_LOGO_URL = '/assets/rallyhub-logo-approved.webp';
+const RALLYHUB_LOGO_URL = `data:image/webp;base64,${RALLYHUB_LOGO_BASE64.trim()}`;
 const NAVY = '#0b2e59';
 const BLUE = '#07558d';
 const GREEN = '#0b914a';
