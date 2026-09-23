@@ -97,7 +97,7 @@ export default function DirectoryClaim() {
         publicNameOptOut,
         publicPhoneOptOut,
         networkUpdatesOptIn,
-        inviteToken,
+        inviteToken: status?.claim?.status === 'rejected' ? '' : inviteToken,
       });
       if (res.data?.error) throw new Error(res.data.error);
       const refreshed = await base44.functions.invoke('directoryClaim', { action: 'status', listingSlug: club.slug });
