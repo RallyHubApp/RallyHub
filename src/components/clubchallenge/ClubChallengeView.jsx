@@ -915,6 +915,24 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             voices,
           });
         }, 450);
+
+        // Once the host deliberately runs the sound check, warm the short phrases
+        // that must fire instantly during play. This does not alter the event clock.
+        const commonHallPhrases = [
+          'One minute remaining.',
+          'Thirty seconds.',
+          'Ten seconds.',
+          'Thirty seconds until the next round.',
+          '5', '4', '3', '2', '1',
+          'Round finished. Please give your scores.',
+          'Changeover finished. Next round ready.',
+          'Event paused.',
+          'Break resumed.',
+          'Changeover resumed.',
+          'Match complete',
+          'Change ends',
+        ];
+        void primeRallyHubHallSpeech(commonHallPhrases, { eventId:event?.id || '' });
         if ('vibrate' in navigator) navigator.vibrate(120);
       }
       return ctx;
@@ -2010,7 +2028,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               {paMicLabel && paActive && <p className="text-[11px] text-muted-foreground"><strong>Active microphone:</strong> {paMicLabel}{selectedMicId !== 'default' ? ' · external mic direct mode' : ''}</p>}
               {paActive && <div className="rounded-lg bg-secondary/40 px-3 py-2"><div className="flex items-center justify-between gap-3"><Label className="text-xs">Mic input</Label><span className="text-[10px] text-muted-foreground">Speak into the selected mic — this bar should move</span></div><div className="mt-2 h-2 rounded-full bg-background overflow-hidden border border-border"><div className="h-full bg-primary transition-[width] duration-100" style={{ width:`${Math.max(2, Math.round(paInputLevel * 100))}%` }} /></div></div>}
               {paError && <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">{paError}</div>}
-              <div className="space-y-2"><p className="text-xs font-semibold">Voice announcements</p><div className="flex flex-col md:flex-row gap-2"><Button className="w-full md:w-36 md:shrink-0" variant="outline" disabled={!announcementDraft.trim() || paActive || announcementSpeaking} onClick={announceCustom}><Megaphone className="w-4 h-4 mr-2" />{announcementSpeaking ? 'Speaking…' : 'Announce'}</Button><Input type="text" name="rallyhub-announcement-text" autoComplete="off" inputMode="text" aria-autocomplete="none" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" value={announcementDraft} onChange={e => { setAnnouncementDraft(e.target.value); if (!announcementSpeaking) setAnnouncementStatus(''); }} onKeyDown={e => { if (e.key === 'Enter' && !announcementSpeaking) announceCustom(); }} placeholder="Announcement text…" className="bg-secondary" disabled={announcementSpeaking} /><Button variant="outline" className="w-full md:w-32 md:shrink-0" disabled={!lastAnnouncement || paActive || announcementSpeaking} onClick={() => speak(lastAnnouncement, { signal:'warning' })}>Repeat Last</Button></div>{announcementStatus && <p className="text-[11px] text-muted-foreground">{announcementStatus}</p>}</div></div>
+              <div className="space-y-2"><p className="text-xs font-semibold">Voice announcements</p><div className="flex flex-col md:flex-row gap-2"><Button className="w-full md:w-36 md:shrink-0" variant="outline" disabled={!announcementDraft.trim() || paActive || announcementSpeaking} onClick={announceCustom}><Megaphone className="w-4 h-4 mr-2" />{announcementSpeaking ? 'Speaking…' : 'Announce'}</Button><Input type="text" name="rallyhub-announcement-text" autoComplete="off" inputMode="text" aria-autocomplete="none" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" value={announcementDraft} onChange={e => { setAnnouncementDraft(e.target.value); if (!announcementSpeaking) setAnnouncementStatus(''); }} onKeyDown={e => { if (e.key === 'Enter' && !announcementSpeaking) announceCustom(); }} placeholder="Announcement text…" className="bg-secondary" disabled={announcementSpeaking} /><Button variant="outline" className="w-full md:w-32 md:shrink-0" disabled={!lastAnnouncement || paActive || announcementSpeaking} onClick={() => speak(lastAnnouncement, { signal:'warning' })}>Repeat Last</Button></div>{announcementStatus && <p className="text-[11px] text-muted-foreground">{announcementStatus}</p>}<p className="text-[10px] text-muted-foreground">Amplified hall announcements use an AI-generated announcer voice. If that service is unavailable, RallyHub automatically falls back to the device voice.</p></div></div>
             </details>
 
             <details id="cc-player-controls" className="rounded-xl border border-border bg-card overflow-hidden">
