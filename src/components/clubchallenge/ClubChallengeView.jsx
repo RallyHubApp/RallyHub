@@ -1413,6 +1413,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       showcase_resolution_method: 'none', showcase_resolved_winner: 'none',
       showcase_club_a_male_id: null, showcase_club_a_female_id: null,
       showcase_club_b_male_id: null, showcase_club_b_female_id: null,
+      showcase_club_a_player_1_id: null, showcase_club_a_player_2_id: null,
+      showcase_club_b_player_1_id: null, showcase_club_b_player_2_id: null,
     });
     await base44.entities.Tournament.update(tournament.id, { status: 'Draft', finalised_at: null });
     return normal.map(m => ({ ...m, status: 'scheduled', score_a: null, score_b: null, winner: 'none', revision: 0 }));
