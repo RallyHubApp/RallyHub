@@ -1876,6 +1876,146 @@ Brian`;
           </div>
         </TabsContent>
 
+        {/* ── DIRECTORY CONTACT REGISTER ── */}
+        <TabsContent value="directory-contacts" className="mt-4">
+          <div className="space-y-5">
+            <div className="glass rounded-xl p-4 sm:p-5 border border-primary/20">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <h3 className="font-bold text-foreground">Private verified Directory contact register</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This is the RallyHub record of the real people behind Directory ownership and editing access. It is separate from the public club contact label, so a club can publish “Chairperson”, “Rackets Coach” or “Club Contact” while RallyHub privately retains the verified person’s full name, email and mobile / WhatsApp.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-3">
+              <div className="glass rounded-xl p-4"><p className="text-2xl font-black">{directoryContactRows.length}</p><p className="text-xs text-muted-foreground mt-1">Verified people</p></div>
+              <div className="glass rounded-xl p-4"><p className="text-2xl font-black">{directoryContactsWithEmail}</p><p className="text-xs text-muted-foreground mt-1">With email</p></div>
+              <div className="glass rounded-xl p-4"><p className="text-2xl font-black">{optedInDirectoryContacts}</p><p className="text-xs text-muted-foreground mt-1">Opted in to general/network updates</p></div>
+            </div>
+
+            <div className="glass rounded-xl p-4 sm:p-5 space-y-4">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                <div>
+                  <h3 className="font-bold text-foreground">Directory owners & editors</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Search by real name, email, mobile, club, county, role or public contact label.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={copyDirectoryWhatsAppNumbers} disabled={!directoryContactRows.length} className="gap-2"><Copy className="w-4 h-4" /> Copy WhatsApp numbers</Button>
+                  <Button type="button" variant="outline" onClick={downloadDirectoryContactsCsv} disabled={!directoryContactRows.length}>Export CSV</Button>
+                </div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input value={directoryContactSearch} onChange={e => setDirectoryContactSearch(e.target.value)} placeholder="Search name, email, mobile or club…" className="pl-9" />
+              </div>
+              <p className="text-xs text-muted-foreground">Showing {filteredDirectoryContactRows.length} of {directoryContactRows.length} verified people.</p>
+
+              {filteredDirectoryContactRows.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No verified Directory contacts match that search.</div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredDirectoryContactRows.map(row => {
+                    const identityComplete = directoryClaimIdentityLooksComplete({ claimant_name: row.fullName, claimant_phone: row.mobile });
+                    return (
+                      <div key={row.userId} className="rounded-xl border border-border bg-background/25 p-4">
+                        <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-bold text-foreground">{row.fullName || '(name needs correction)'}</p>
+                              <Badge variant="outline" className={identityComplete ? 'border-green-400/40 text-green-400' : 'border-destructive/40 text-destructive'}>{identityComplete ? 'Verified identity recorded' : 'Identity needs correction'}</Badge>
+                              {row.networkUpdatesOptIn && <Badge variant="outline" className="border-primary/40 text-primary">Network updates opt-in</Badge>}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1 break-all">{row.email || 'No email'}{row.mobile ? ` · ${row.mobile}` : ' · No mobile'}</p>
+                            <div className="mt-3 space-y-2">
+                              {row.clubs.map(club => (
+                                <div key={`${row.userId}:${club.slug}`} className="rounded-lg border border-border/70 bg-background/30 px-3 py-2">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-sm font-semibold">{club.name}</span>
+                                    <Badge variant="outline">{club.role}</Badge>
+                                    {club.county && <span className="text-xs text-muted-foreground">{club.county}</span>}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1">Public contact label: <strong className="text-foreground">{club.publicLabel || 'Not set'}</strong></p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 shrink-0">
+                            <Button type="button" size="sm" variant="outline" onClick={() => openDirectoryContactEditor(row)} className="gap-1"><Pencil className="w-3.5 h-3.5" /> Edit private identity</Button>
+                            <Button type="button" size="sm" variant="outline" disabled={!row.email} onClick={() => { if (row.email) window.location.href = `mailto:${row.email}`; }} className="gap-1"><Mail className="w-3.5 h-3.5" /> Email</Button>
+                            <Button type="button" size="sm" variant="outline" disabled={!row.mobile} onClick={() => openDirectoryContactWhatsApp(row)} className="gap-1"><MessageCircle className="w-3.5 h-3.5" /> WhatsApp</Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/20">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Directory broadcast email</p>
+                <h3 className="text-lg font-bold text-foreground mt-1">Message verified Directory contacts</h3>
+                <p className="text-sm text-muted-foreground mt-1">Each person receives an individual email; addresses are never exposed to other recipients. Send a test to yourself before the full broadcast.</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Audience</Label>
+                <select value={directoryBroadcast.audience} onChange={e => setDirectoryBroadcast(v => ({ ...v, audience:e.target.value }))} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                  <option value="service">All verified owners & editors ({directoryContactsWithEmail}) — Directory/service messages only</option>
+                  <option value="opted_in">Opted-in contacts only ({optedInDirectoryContacts}) — general/network updates</option>
+                </select>
+                <p className="text-xs text-muted-foreground">{directoryBroadcast.audience === 'service' ? 'Use this for messages necessary to operate or support the RallyHub Directory.' : 'Use this for broader RallyHub, club-network or promotional updates. Only contacts who opted in are included.'}</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <Input value={directoryBroadcast.subject} onChange={e => setDirectoryBroadcast(v => ({ ...v, subject:e.target.value }))} maxLength={180} placeholder="RallyHub Directory update" />
+              </div>
+              <div className="space-y-2">
+                <Label>Message</Label>
+                <textarea value={directoryBroadcast.message} onChange={e => setDirectoryBroadcast(v => ({ ...v, message:e.target.value }))} rows={10} maxLength={6000} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-6 font-sans" placeholder={"Hi {{first_name}},\n\nA quick update from RallyHub…"} />
+                <p className="text-xs text-muted-foreground">Optional personalisation: <code>{'{{first_name}}'}</code>, <code>{'{{name}}'}</code> and <code>{'{{clubs}}'}</code>.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" onClick={() => sendDirectoryBroadcast(true)} disabled={!!directoryBroadcastBusy || !directoryBroadcast.subject.trim() || !directoryBroadcast.message.trim()} className="gap-2"><Mail className="w-4 h-4" /> {directoryBroadcastBusy === 'test' ? 'Sending test…' : 'Send test to me'}</Button>
+                <Button type="button" onClick={() => sendDirectoryBroadcast(false)} disabled={!!directoryBroadcastBusy || !directoryBroadcast.subject.trim() || !directoryBroadcast.message.trim()} className="gap-2"><Send className="w-4 h-4" /> {directoryBroadcastBusy === 'send' ? 'Sending broadcast…' : 'Send broadcast'}</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">WhatsApp is not automatically broadcast by RallyHub. Use <strong>Copy WhatsApp numbers</strong> above for a manually managed WhatsApp broadcast list.</p>
+            </div>
+
+            <Dialog open={!!editingDirectoryContact} onOpenChange={open => { if (!open && !savingDirectoryIdentity) setEditingDirectoryContact(null); }}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit private Directory identity</DialogTitle>
+                  <DialogDescription>This is the verified person behind the Directory access. It does not change any public club contact label, public email or public phone number.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label>Full name</Label>
+                    <Input value={directoryContactEditForm.fullName} onChange={e => setDirectoryContactEditForm(v => ({ ...v, fullName:e.target.value }))} placeholder="First name and surname" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Private mobile / WhatsApp</Label>
+                    <Input type="tel" value={directoryContactEditForm.mobile} onChange={e => setDirectoryContactEditForm(v => ({ ...v, mobile:e.target.value }))} placeholder="e.g. 087 123 4567" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Account email</Label>
+                    <Input value={editingDirectoryContact?.email || ''} readOnly className="bg-background/40 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground">Email is the signed-in account identity and is not changed from this contact editor.</p>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setEditingDirectoryContact(null)} disabled={savingDirectoryIdentity}>Cancel</Button>
+                    <Button type="button" onClick={saveDirectoryContactIdentity} disabled={savingDirectoryIdentity || !directoryContactEditForm.fullName.trim() || !directoryContactEditForm.mobile.trim()}>{savingDirectoryIdentity ? 'Saving…' : 'Save private identity'}</Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </TabsContent>
+
         {/* ── CLUB FEEDBACK TAB ── */}
         <TabsContent value="feedback" className="mt-4">
           <div className="space-y-4">
