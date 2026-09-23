@@ -986,6 +986,17 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not prepare public links'); }
   };
 
+  const prepareShowcaseScorerLink = async () => {
+    if (!event || !showcaseMatch || !hasManagePermission) return;
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeShowcaseScorerLink', { eventId:event.id });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      const url = `${window.location.origin}/club-challenge/showcase-score/${res.data.token}`;
+      setShowcaseScorerLink(url);
+      toast.success('Secure Showcase scorer link is ready.');
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not prepare Showcase scorer link'); }
+  };
+
   const revealPot = async () => {
     if (!event || !canManageEvent) return;
     try {
