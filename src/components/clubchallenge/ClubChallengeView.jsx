@@ -29,6 +29,8 @@ import {
   scoreFromMatchRecords,
 } from '@/lib/clubChallengeWorkflow.js';
 
+const RALLYHUB_LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+
 const TABS = [
   ['setup', 'Setup'],
   ['teams', 'Teams'],
@@ -1882,29 +1884,36 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             <>
               <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                 <div className="border-b border-border bg-secondary/20 px-4 py-4 sm:px-6">
-                  <div className="flex flex-col items-center justify-center gap-2 text-center">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10"><Trophy className="h-5 w-5 text-primary" /></div>
-                    <p className="text-[11px] font-black uppercase tracking-[.24em] text-primary">RallyHub Interclub</p>
-                    <p className="text-sm font-semibold uppercase tracking-wider text-foreground">{['completed','archived'].includes(event?.status) ? 'Final Result' : 'Interclub Result'}</p>
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div className="flex items-center gap-2.5">
+                      <img src={RALLYHUB_LOGO_URL} alt="RallyHub logo" className="h-10 w-10 object-contain sm:h-11 sm:w-11" />
+                      <div className="text-left">
+                        <div className="text-xl font-black leading-none tracking-[-.04em] text-[#081342]">Rally<span className="text-[#078e48]">Hub</span></div>
+                        <div className="mt-1 text-[6px] font-bold tracking-[.27em] text-[#0c1e53]">PLAY <span className="text-[#0b914a]">•</span> CONNECT <span className="text-[#0b914a]">•</span> BELONG</div>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-[11px] font-black uppercase tracking-[.24em] text-primary">RallyHub Interclub</p>
+                    <p className="mt-1 text-sm font-semibold uppercase tracking-wider text-foreground">{['completed','archived'].includes(event?.status) ? 'Final Result' : 'Interclub Result'}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 p-3 sm:gap-5 sm:p-6">
-                  <div className="flex min-w-0 flex-col items-center justify-center rounded-2xl border bg-background/70 p-3 text-center sm:p-5" style={{borderTopWidth:'6px',borderTopColor:event?.club_a_primary_colour || '#2563eb'}}>
-                    {event?.club_a_logo_url ? <img src={event.club_a_logo_url} alt={`${event.club_a_name} logo`} className="h-16 w-16 rounded-xl bg-white object-contain p-1.5 shadow-sm sm:h-24 sm:w-24" /> : <div className="h-16 w-16 rounded-xl bg-secondary sm:h-24 sm:w-24" />}
-                    <p className="mt-3 max-w-full break-words text-sm font-black leading-tight sm:text-xl">{event?.club_a_name}</p>
-                    <p className="mt-2 text-[clamp(3.5rem,10vw,7rem)] font-black leading-none tabular-nums">{overallScore.clubA}</p>
+                  <div className="flex min-w-0 flex-col items-center justify-center rounded-2xl border bg-background/70 p-3 text-center sm:p-4" style={{borderTopWidth:'6px',borderTopColor:event?.club_a_primary_colour || '#2563eb'}}>
+                    {event?.club_a_logo_url ? <img src={event.club_a_logo_url} alt={`${event.club_a_name} logo`} className="h-14 w-14 rounded-xl bg-white object-contain p-1.5 shadow-sm sm:h-20 sm:w-20" /> : <div className="h-14 w-14 rounded-xl bg-secondary sm:h-20 sm:w-20" />}
+                    <p className="mt-2 max-w-full break-words text-sm font-black leading-tight sm:text-xl">{event?.club_a_name}</p>
+                    <p className="mt-1 text-[clamp(3rem,8vw,5.5rem)] font-black leading-none tabular-nums">{overallScore.clubA}</p>
+                    <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Interclub points</p>
                   </div>
 
-                  <div className="flex min-w-[3.5rem] flex-col items-center justify-center text-center sm:min-w-[6rem]">
-                    <span className="text-xs font-bold uppercase tracking-[.22em] text-muted-foreground">vs</span>
-                    <span className="mt-2 text-3xl font-black text-muted-foreground sm:text-5xl">–</span>
+                  <div className="flex min-w-[3.5rem] items-center justify-center text-center sm:min-w-[6rem]">
+                    <span className="text-xs font-black uppercase tracking-[.28em] text-muted-foreground sm:text-sm">VS</span>
                   </div>
 
-                  <div className="flex min-w-0 flex-col items-center justify-center rounded-2xl border bg-background/70 p-3 text-center sm:p-5" style={{borderTopWidth:'6px',borderTopColor:event?.club_b_primary_colour || '#7f1d1d'}}>
-                    {event?.club_b_logo_url ? <img src={event.club_b_logo_url} alt={`${event.club_b_name} logo`} className="h-16 w-16 rounded-xl bg-white object-contain p-1.5 shadow-sm sm:h-24 sm:w-24" /> : <div className="h-16 w-16 rounded-xl bg-secondary sm:h-24 sm:w-24" />}
-                    <p className="mt-3 max-w-full break-words text-sm font-black leading-tight sm:text-xl">{event?.club_b_name}</p>
-                    <p className="mt-2 text-[clamp(3.5rem,10vw,7rem)] font-black leading-none tabular-nums">{overallScore.clubB}</p>
+                  <div className="flex min-w-0 flex-col items-center justify-center rounded-2xl border bg-background/70 p-3 text-center sm:p-4" style={{borderTopWidth:'6px',borderTopColor:event?.club_b_primary_colour || '#7f1d1d'}}>
+                    {event?.club_b_logo_url ? <img src={event.club_b_logo_url} alt={`${event.club_b_name} logo`} className="h-14 w-14 rounded-xl bg-white object-contain p-1.5 shadow-sm sm:h-20 sm:w-20" /> : <div className="h-14 w-14 rounded-xl bg-secondary sm:h-20 sm:w-20" />}
+                    <p className="mt-2 max-w-full break-words text-sm font-black leading-tight sm:text-xl">{event?.club_b_name}</p>
+                    <p className="mt-1 text-[clamp(3rem,8vw,5.5rem)] font-black leading-none tabular-nums">{overallScore.clubB}</p>
+                    <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Interclub points</p>
                   </div>
                 </div>
 
@@ -1931,7 +1940,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                     </div>
                     <div className="rounded-xl border border-border p-3">
                       <p className="text-xl font-black tabular-nums sm:text-2xl">{score.gamePointDifference >= 0 ? '+' : ''}{score.gamePointDifference}</p>
-                      <p className="mt-1 text-[10px] text-muted-foreground">{event?.club_a_name} differential</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground">Point differential</p>
                     </div>
                     <div className="rounded-xl border border-border p-3">
                       <p className="text-xl font-black tabular-nums sm:text-2xl">{score.gamePointsB}</p>
@@ -1940,7 +1949,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                   </div>
 
                   <div className="mt-4 flex flex-wrap justify-center gap-2">
-                    <Badge variant="outline">{score.completedMatches} normal results</Badge>
+                    <Badge variant="outline">{score.completedMatches} Interclub matches</Badge>
                     {['completed','archived'].includes(event?.status) && <Badge className="bg-primary/10 text-primary">{event.showcase_resolved_winner === 'draw' ? 'Overall Draw' : `Winner · ${event.showcase_resolved_winner === 'club_b' ? event.club_b_name : event.club_a_name}`}</Badge>}
                   </div>
 
@@ -1949,14 +1958,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                       <p className="text-[10px] font-black uppercase tracking-[.18em] text-primary">{showcaseMatch.showcase_mode === 'exhibition' ? 'Optional Showcase Final · Exhibition' : 'Showcase Tiebreak Final'}</p>
                       <p className="mt-2 text-lg font-black sm:text-xl">{event?.club_a_name} <span className="tabular-nums">{showcaseMatch.score_a ?? 0}–{showcaseMatch.score_b ?? 0}</span> {event?.club_b_name}</p>
                       <p className="mt-1 text-xs text-muted-foreground">{(showcaseMatch.club_a_names || []).join(' & ')} vs {(showcaseMatch.club_b_names || []).join(' & ')}</p>
+                      <p className="mt-2 text-[11px] font-semibold text-muted-foreground">First to {showcaseMatch.showcase_target_points || 11} · win by {showcaseMatch.showcase_win_by || 1}</p>
                       <p className="mt-2 text-xs font-semibold">{showcaseMatch.showcase_mode === 'exhibition' ? 'Exhibition only · the Interclub result above is unchanged' : `${showcaseMatch.winner === 'club_a' ? event?.club_a_name : event?.club_b_name} won the tiebreak Showcase`}</p>
                     </div>
                   )}
 
                   {['completed','archived'].includes(event?.status) ? (
-                    <div className="mt-5 text-center">
-                      <p className="text-xs font-semibold text-primary">Finalised Interclub result</p>
-                      {event?.finalised_at && <p className="mt-1 text-[10px] text-muted-foreground">{new Date(event.finalised_at).toLocaleString('en-IE', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</p>}
+                    <div className="mt-5 rounded-xl border border-primary/25 bg-primary/10 px-4 py-4 text-center">
+                      <p className="text-[10px] font-black uppercase tracking-[.18em] text-primary">Final Result</p>
+                      <p className="mt-1 text-base font-black sm:text-lg">{event.showcase_resolved_winner === 'draw' ? 'Interclub finished as an overall draw' : `${event.showcase_resolved_winner === 'club_b' ? event.club_b_name : event.club_a_name} winners`}</p>
+                      {event?.finalised_at && <p className="mt-1 text-[10px] text-muted-foreground">Finalised {new Date(event.finalised_at).toLocaleString('en-IE', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</p>}
                       {hasManagePermission && <div className="mt-4">{event.status === 'completed' ? <Button variant="outline" onClick={archiveEvent}>Archive Interclub Challenge</Button> : <Button variant="outline" onClick={reopenEvent}>Reopen Archived Interclub Challenge</Button>}</div>}
                     </div>
                   ) : (
