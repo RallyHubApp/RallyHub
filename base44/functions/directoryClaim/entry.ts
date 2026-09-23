@@ -1680,7 +1680,7 @@ Deno.serve(async (req) => {
           role: existingListingAccess?.length ? 'editor' : 'owner',
           notes: reviewNotes || 'Manually verified by RallyHub administrator.',
         });
-        welcomeEmail = await trySendDirectoryWelcomeEmail(base44, {
+        welcomeEmail = await trySendDirectoryWelcomeEmailOnce(base44, {
           listing,
           recipientName: claim.claimant_name,
           recipientEmail: claim.claimant_email,
@@ -1760,7 +1760,7 @@ Deno.serve(async (req) => {
         occurred_at: now,
         after_json: JSON.stringify({ role: grantedRole, source: 'admin_approved_invitation', accessId: access?.id || null, targetUserId }),
       });
-      const welcomeEmail = await trySendDirectoryWelcomeEmail(base44, {
+      const welcomeEmail = await trySendDirectoryWelcomeEmailOnce(base44, {
         listing,
         recipientName: matchingClaim?.claimant_name || invitation.contact_name || targetUser?.full_name || targetUser?.display_name || '',
         recipientEmail: matchingClaim?.claimant_email || invitation.contact_email || targetUser?.email || '',
@@ -1884,7 +1884,7 @@ Deno.serve(async (req) => {
         reviewed_at: now,
         review_notes: reviewNotes || null,
       });
-      const welcomeEmail = await trySendDirectoryWelcomeEmail(base44, {
+      const welcomeEmail = await trySendDirectoryWelcomeEmailOnce(base44, {
         listing,
         recipientName: request.claimant_name,
         recipientEmail: request.claimant_email,
