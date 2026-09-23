@@ -234,6 +234,16 @@
     },
     "planned_rounds": {
       "type": "number"
+    },
+    "last_schedule_adjustment_key": {
+      "type": "string"
+    },
+    "schedule_adjustment_lock_token": {
+      "type": "string"
+    },
+    "schedule_adjustment_lock_until": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
