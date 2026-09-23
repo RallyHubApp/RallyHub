@@ -35,7 +35,8 @@ Deno.serve(async (req) => {
     if (!Number.isInteger(round) || round < 1) return Response.json({ error: 'Invalid round' }, { status: 400 });
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id: event.id }, 'round_number', 200);
     const normal = matches.filter((m:any) => !m.is_showcase);
-    const maxRound = Math.max(0, ...normal.map((m:any) => Number(m.round_number || 0)));
+    const storedPlannedRounds = Number(event.planned_rounds || 0);
+    const maxRound = storedPlannedRounds > 0 ? storedPlannedRounds : Math.max(0, ...normal.map((m:any) => Number(m.round_number || 0)));
     if (round > maxRound) return Response.json({ error: 'Round exceeds approved schedule' }, { status: 400 });
     const previousRound = Math.max(1, round - 1);
     const unresolved = normal.filter((m:any) => Number(m.round_number) === previousRound && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status));
