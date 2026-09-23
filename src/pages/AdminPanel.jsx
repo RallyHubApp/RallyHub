@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -25,7 +25,25 @@ export default function AdminPanel() {
   const allowedAdminTabs = ['approvals', 'membership', 'preview', 'directory', 'directory-contacts', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
+  const directoryFocus = searchParams.get('focus');
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (activeAdminTab !== 'directory' || directoryFocus !== 'pending-actions') return;
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      const target = document.querySelector('[data-directory-action="pending-claim"][data-has-pending="true"]')
+        || document.querySelector('[data-directory-action="new-club"][data-has-pending="true"]');
+      if (target) {
+        window.clearInterval(timer);
+        window.requestAnimationFrame(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      } else if (attempts >= 50) {
+        window.clearInterval(timer);
+      }
+    }, 100);
+    return () => window.clearInterval(timer);
+  }, [activeAdminTab, directoryFocus]);
   const [assetUploading, setAssetUploading] = useState(false);
   const [assetUploadUrl, setAssetUploadUrl] = useState('');
   const [assetName, setAssetName] = useState('');
@@ -1157,7 +1175,11 @@ Brian`;
         </GlassCard>
       </div>
 
-      <Tabs value={activeAdminTab} onValueChange={value => setSearchParams(value === 'approvals' ? {} : { tab: value })}>
+      <Tabs value={activeAdminTab} onValueChange={value => {
+        if (value === 'approvals') return setSearchParams({});
+        if (value === 'directory' && pendingDirectoryActionCount > 0) return setSearchParams({ tab: 'directory', focus: 'pending-actions' });
+        setSearchParams({ tab: value });
+      }}>
         <TabsList className="bg-secondary flex-wrap h-auto gap-1">
           <TabsTrigger value="approvals" className="text-xs gap-1.5">
             <Clock className="w-3.5 h-3.5" /> Club Access Approvals
@@ -1725,7 +1747,7 @@ Brian`;
               {ownerInviteResult?.channel === 'email-sent' && <div className="rounded-xl border border-green-400/25 bg-green-400/5 p-4 text-sm">Email invitation sent successfully.</div>}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 scroll-mt-24" data-directory-action="new-club" data-has-pending={pendingNewDirectoryRequests.length > 0 ? "true" : "false"}>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">New club requests</p>
               {pendingNewDirectoryRequests.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No new clubs are waiting to be added.</p>
@@ -1777,7 +1799,7 @@ Brian`;
               ))}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 scroll-mt-24" data-directory-action="pending-claim" data-has-pending={pendingDirectoryClaims.length > 0 ? "true" : "false"}>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Pending verification</p>
               {pendingDirectoryClaims.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No directory claims are waiting for review.</p>
