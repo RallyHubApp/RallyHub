@@ -59,7 +59,8 @@ Deno.serve(async (req) => {
     const existing = matches.find((m:any) => m.is_showcase);
     if (existing && ['completed','draw'].includes(existing.status)) return Response.json({ error:'The Showcase Final has already been scored.' }, { status:409 });
     if (existing) await base44.asServiceRole.entities.ClubChallengeMatch.delete(existing.id);
-    const maxRound = normal.length ? Math.max(...normal.map((m:any) => Number(m.round_number || 0))) : 0;
+    const storedPlannedRounds = Number(event.planned_rounds || 0);
+    const maxRound = storedPlannedRounds > 0 ? storedPlannedRounds : (normal.length ? Math.max(...normal.map((m:any) => Number(m.round_number || 0))) : 0);
     const created = await base44.asServiceRole.entities.ClubChallengeMatch.create({
       tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id,
       draw_version:event.draw_version || 0, round_number:maxRound + 1, court_number:1, match_number:normal.length + 1,
