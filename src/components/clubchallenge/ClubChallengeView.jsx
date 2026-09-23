@@ -1275,10 +1275,27 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try {
       const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'reveal' });
       if (res.data?.error) { toast.error(res.data.error); return; }
-      await refetchEvent();
-      toast.success(Number(res.data?.winnerCount || 0) > 1 ? 'Joint Player of Tournament result revealed.' : 'Player of Tournament result revealed.');
+      await Promise.all([refetchEvent(), isAdmin ? refetchPotVotes() : Promise.resolve()]);
+      toast.success('Players of the Tournament results revealed.');
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reveal voting result'); }
   };
+
+  React.useEffect(() => {
+    if (!event?.id || event.pot_status !== 'open' || !event.pot_vote_closes_at || !canManageEvent) return;
+    const closesAt = Date.parse(event.pot_vote_closes_at);
+    if (!Number.isFinite(closesAt) || closesAt > timerNow) return;
+    const key = `${event.id}:${event.pot_vote_closes_at}`;
+    if (potAutoCloseRef.current === key) return;
+    potAutoCloseRef.current = key;
+    base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'close' })
+      .then(async res => {
+        if (!res.data?.error) {
+          await Promise.all([refetchEvent(), isAdmin ? refetchPotVotes() : Promise.resolve()]);
+          toast.success('Voting closed automatically. Results remain hidden until reveal.');
+        }
+      })
+      .catch(() => {});
+  }, [event?.id, event?.pot_status, event?.pot_vote_closes_at, timerNow, canManageEvent, isAdmin]);
   const printEventPack = () => {
     if (!event || !['draw_approved','in_progress','paused','completed'].includes(event.status) || !normalMatches.length) { toast.error('Approve the draw before producing the Event Pack.'); return; }
     if (event.event_pack_stale) { toast.error('This pack is OUT OF DATE because fixtures changed. Re-approve the draw before printing a new authoritative pack.'); return; }
