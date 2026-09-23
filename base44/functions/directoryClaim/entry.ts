@@ -52,6 +52,27 @@ function looksLikeUsableMobile(value = '') {
   return digits.length >= 8 && digits.length <= 15;
 }
 
+async function closeResolvedPendingInvitations(base44, { claim, userId }) {
+  if (!claim?.listing_slug) return;
+  const pendingInvitations = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({
+    listing_slug: claim.listing_slug,
+    status: 'pending',
+  }, '-created_date', 100);
+  const claimEmail = normaliseEmail(claim.claimant_email || '');
+  const claimName = normaliseName(claim.claimant_name || '');
+  for (const invite of pendingInvitations || []) {
+    const sameUser = invite.used_by_user_id && String(invite.used_by_user_id) === String(userId || '');
+    const samePhone = invite.contact_phone && claim.claimant_phone && phoneLooksSame(invite.contact_phone, claim.claimant_phone);
+    const sameName = invite.contact_name && claimName && normaliseName(invite.contact_name) === claimName;
+    const sameEmailAndName = invite.contact_email && claimEmail &&
+      normaliseEmail(invite.contact_email) === claimEmail && sameName;
+    if (!sameUser && !samePhone && !sameEmailAndName) continue;
+    await base44.asServiceRole.entities.DirectoryClaimInvitation.update(invite.id, {
+      status: 'revoked',
+    });
+  }
+}
+
 function randomInviteToken() {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
@@ -1679,6 +1700,10 @@ Deno.serve(async (req) => {
           grantedByUserId: user.id,
           role: existingListingAccess?.length ? 'editor' : 'owner',
           notes: reviewNotes || 'Manually verified by RallyHub administrator.',
+        });
+        await closeResolvedPendingInvitations(base44, {
+          claim,
+          userId: claim.claimant_user_id,
         });
         welcomeEmail = await trySendDirectoryWelcomeEmailOnce(base44, {
           listing,
