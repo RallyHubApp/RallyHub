@@ -17,6 +17,13 @@
     "nominee_participant_id": {
       "type": "string"
     },
+    "ballot_side": {
+      "type": "string",
+      "enum": [
+        "club_a",
+        "club_b"
+      ]
+    },
     "access_route": {
       "type": "string",
       "enum": [
@@ -41,7 +48,6 @@
     "tenant_id",
     "challenge_event_id",
     "voter_identity_key",
-    "voter_participant_id",
     "nominee_participant_id",
     "access_route",
     "cast_at"
