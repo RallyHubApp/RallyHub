@@ -1118,7 +1118,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const keep = unresolvedInPlan.slice(0, slots);
     const drop = [...unresolvedInPlan.slice(slots), ...unresolvedBeyondPlan];
     const changes = keep.map((m,i) => ({ id:m.id, oldRound:m.round_number, oldCourt:m.court_number, newRound:Number(currentRound) + Math.floor(i/courts), newCourt:(i%courts)+1 })).filter(x=>x.oldRound!==x.newRound || x.oldCourt!==x.newCourt);
-    const proposal = { courts, minutes, block, plannedRounds, roundCapacity, unresolved: unresolvedInPlan.length + unresolvedBeyondPlan.length, keepIds: keep.map(m=>m.id), dropIds: drop.map(m=>m.id), changes };
+    const proposalKey = [event?.id, currentRound, courts, minutes, plannedRounds, ...changes.map(c=>`${c.id}:${c.newRound}:${c.newCourt}`), ...drop.map(m=>`drop:${m.id}`)].join('|');
+    const proposal = { courts, minutes, block, plannedRounds, roundCapacity, unresolved: unresolvedInPlan.length + unresolvedBeyondPlan.length, keepIds: keep.map(m=>m.id), dropIds: drop.map(m=>m.id), changes, proposalKey };
     setEventDayProposal(proposal);
     toast.info(`${keep.length} future matches fit within the approved ${plannedRounds}-round event; ${drop.length} would be marked Not Played. Review before confirming.`);
   };
@@ -1136,6 +1137,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         availableMinutes: proposal.minutes,
         changes: proposal.changes,
         dropIds: proposal.dropIds,
+        proposalKey: proposal.proposalKey,
       });
       if (res.data?.error) throw new Error(res.data.error);
       const changed = Number(res.data?.changed ?? proposal.changes.length);
