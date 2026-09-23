@@ -1061,6 +1061,27 @@ Deno.serve(async (req) => {
       const listingSlug = String(body.listingSlug || '').trim();
       const listing = await resolveListing(base44, listingSlug);
       if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+      const inviteToken = String(body.inviteToken || '').trim().slice(0, 200);
+      let secureInvitation:any = null;
+      if (inviteToken) {
+        try {
+          const tokenHash = await hashInviteToken(inviteToken);
+          const invitations = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({
+            listing_slug: listingSlug,
+            token_hash: tokenHash,
+            status: 'pending',
+          });
+          const invitation = invitations?.[0] || null;
+          if (invitation && invitation.expires_at && Date.parse(invitation.expires_at) >= Date.now()) {
+            secureInvitation = {
+              contactName: invitation.contact_name || null,
+              contactPhone: invitation.contact_phone || null,
+              contactEmail: invitation.contact_email || null,
+              channel: invitation.channel || null,
+            };
+          }
+        } catch {}
+      }
       const [claims, accesses, allListingAccesses] = await Promise.all([
         base44.asServiceRole.entities.DirectoryClaim.filter({ listing_slug: listingSlug, claimant_user_id: user.id }),
         base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, user_id: user.id }),
@@ -1075,6 +1096,7 @@ Deno.serve(async (req) => {
         hasAccess: !!access,
         accessRole: access?.role || null,
         canManageAccess: user.role === 'admin' || access?.role === 'owner',
+        secureInvitation,
       });
     }
 
