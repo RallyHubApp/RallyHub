@@ -44,6 +44,8 @@ Deno.serve(async (req) => {
     const normal = matches.filter((m:any) => !m.is_showcase);
     const byId = new Map(normal.map((m:any) => [m.id, m]));
     const currentRound = Math.max(1, Number(event.current_round || 1));
+    const storedPlannedRounds = Number(event.planned_rounds || 0);
+    const plannedRounds = storedPlannedRounds > 0 ? storedPlannedRounds : Math.max(currentRound, ...normal.map((m:any) => Number(m.round_number || 0)));
     const changeList = Array.isArray(changes) ? changes : [];
     const changeIds = new Set<string>();
     const dropSet = new Set((dropIds || []).map(String));
@@ -66,8 +68,8 @@ Deno.serve(async (req) => {
       if (!m) return Response.json({ error: 'Proposal contains a match outside this event.' }, { status: 400 });
       if (TERMINAL.has(m.status) || Number(m.round_number) < currentRound) return Response.json({ error: 'Completed or historical fixtures cannot be changed.' }, { status: 409 });
       const newRound = Number(c.newRound), newCourt = Number(c.newCourt);
-      if (!Number.isInteger(newRound) || newRound < currentRound || !Number.isInteger(newCourt) || newCourt < 1 || newCourt > nextCourts) {
-        return Response.json({ error: 'Proposal contains an invalid future round/court position.' }, { status: 400 });
+      if (!Number.isInteger(newRound) || newRound < currentRound || newRound > plannedRounds || !Number.isInteger(newCourt) || newCourt < 1 || newCourt > nextCourts) {
+        return Response.json({ error: `Proposal contains an invalid future round/court position. The approved event ends at Round ${plannedRounds}.` }, { status: 400 });
       }
       changeIds.add(id);
     }
@@ -84,9 +86,12 @@ Deno.serve(async (req) => {
         const c = (changes || []).find((x:any) => String(x.id) === String(m.id));
         return c ? { ...m, round_number: Number(c.newRound), court_number: Number(c.newCourt) } : m;
       });
+    const beyondPlan = proposed.filter((m:any) => Number(m.round_number) > plannedRounds && !TERMINAL.has(m.status));
+    if (beyondPlan.length) return Response.json({ error:`${beyondPlan.length} future fixture(s) would remain beyond approved Round ${plannedRounds}. Drop or reschedule them within the approved event.` }, { status:409 });
+
     const slotKeys = new Set<string>();
     const playersByRound = new Map<number, Set<string>>();
-    for (const m:any of proposed.filter((x:any) => Number(x.round_number) >= currentRound && !TERMINAL.has(x.status))) {
+    for (const m:any of proposed.filter((x:any) => Number(x.round_number) >= currentRound && Number(x.round_number) <= plannedRounds && !TERMINAL.has(x.status))) {
       const slot = `${m.round_number}:${m.court_number}`;
       if (slotKeys.has(slot)) return Response.json({ error: 'Proposal puts two matches in the same round/court slot.' }, { status: 409 });
       slotKeys.add(slot);
