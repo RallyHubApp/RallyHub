@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { flushSync } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
@@ -1209,7 +1209,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_generated_at: new Date().toISOString() });
     await refetchEvent();
     setPrintPackOpen(false);
-    window.setTimeout(() => window.print(), 150);
+    const cleanupPrintMode = () => document.body.classList.remove('rh-printing-interclub');
+    document.body.classList.add('rh-printing-interclub');
+    window.addEventListener('afterprint', cleanupPrintMode, { once:true });
+    window.setTimeout(() => window.print(), 200);
   };
   const applyReplacement = async () => {
     if (!event || !canManageEvent || !replacement.outgoingId) { toast.error('Choose the player who is leaving.'); return; }
@@ -1753,7 +1756,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   return (
     <div data-testid="cc-root" className="space-y-4 print:space-y-0">
       {hostAction && <div className="print:hidden sticky top-2 z-40 rounded-xl border-2 border-primary/40 bg-background/95 p-3 shadow-lg"><p className="text-sm font-bold text-primary">{hostAction}</p><p className="text-xs text-muted-foreground mt-1">RallyHub has accepted your tap. Keep this screen open; the control stays locked until the action resolves.</p></div>}
-      {event && ['draw_approved','in_progress','paused','completed','archived'].includes(event.status) && <div className="hidden print:block"><InterclubPrintPack event={event} tournament={tournament} matches={matches} participants={participants} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} sections={printSelection} /></div>}
+      {typeof document !== 'undefined' && event && ['draw_approved','in_progress','paused','completed','archived'].includes(event.status) ? createPortal(
+        <div className="rhpp-print-host"><InterclubPrintPack event={event} tournament={tournament} matches={matches} participants={participants} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} sections={printSelection} /></div>,
+        document.body
+      ) : null}
       {printPackOpen && <div className="print:hidden fixed inset-0 z-[100] bg-black/55 flex items-center justify-center p-4" onMouseDown={e => { if (e.target === e.currentTarget) setPrintPackOpen(false); }}>
         <div className="w-full max-w-lg rounded-2xl border border-border bg-background shadow-2xl p-5 sm:p-6">
           <div className="flex items-start justify-between gap-3 mb-4">
