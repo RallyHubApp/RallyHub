@@ -161,12 +161,12 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
-  const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [], listingRecords: [], invitations: [] } } = useQuery({
+  const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [], listingRecords: [], listingProfiles: [], invitations: [] } } = useQuery({
     queryKey: ['directory-verification'],
     queryFn: async () => {
       const res = await base44.functions.invoke('directoryClaim', { action: 'list_admin' });
       if (res.data?.error) throw new Error(res.data.error);
-      return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [], listingRecords: res.data?.listingRecords || [], invitations: res.data?.invitations || [] }; 
+      return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [], listingRecords: res.data?.listingRecords || [], listingProfiles: res.data?.listingProfiles || [], invitations: res.data?.invitations || [] }; 
     },
     enabled: canAccessAdmin
   });
@@ -538,6 +538,37 @@ export default function AdminPanel() {
         contactName: preferredContact.name || existing.contactName || '',
         contactPhone: preferredContact.phone || existing.contactPhone || '',
         contactEmail: preferredContact.email || existing.contactEmail || '',
+      });
+    }
+
+    // The editable Directory profile is the authoritative current public contact.
+    // Overlay it last so a club contact edited after import (for example Dublin 15)
+    // is used for new email/WhatsApp invitations instead of the original seed contact.
+    for (const profileRow of directoryVerification.listingProfiles || []) {
+      if (!profileRow?.listing_slug || profileRow.status !== 'active') continue;
+      let publicProfile = null;
+      try { publicProfile = profileRow.public_json ? JSON.parse(profileRow.public_json) : null; } catch { publicProfile = null; }
+      const currentContact = publicProfile?.contact || null;
+      if (!currentContact) continue;
+      const latestContact = {
+        name: String(currentContact.name || '').trim(),
+        phone: String(currentContact.phone || '').trim(),
+        email: String(currentContact.email || '').trim(),
+      };
+      if (!latestContact.name && !latestContact.phone && !latestContact.email) continue;
+      const existing = bySlug.get(profileRow.listing_slug) || { slug: profileRow.listing_slug, name: profileRow.listing_slug, county: '', contacts: [] };
+      const priorContacts = Array.isArray(existing.contacts) ? existing.contacts : [];
+      const dedupedPrior = priorContacts.filter(contact =>
+        String(contact?.name || '').trim() !== latestContact.name ||
+        String(contact?.phone || '').trim() !== latestContact.phone ||
+        String(contact?.email || '').trim().toLowerCase() !== latestContact.email.toLowerCase()
+      );
+      bySlug.set(profileRow.listing_slug, {
+        ...existing,
+        contacts: [latestContact, ...dedupedPrior],
+        contactName: latestContact.name,
+        contactPhone: latestContact.phone,
+        contactEmail: latestContact.email,
       });
     }
     return [...bySlug.values()].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
