@@ -244,6 +244,30 @@
     "schedule_adjustment_lock_until": {
       "type": "string",
       "format": "date-time"
+    },
+    "showcase_club_a_player_1_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "showcase_club_a_player_2_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "showcase_club_b_player_1_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "showcase_club_b_player_2_id": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "required": [
