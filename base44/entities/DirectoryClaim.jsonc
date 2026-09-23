@@ -26,6 +26,14 @@
     "claimant_message": {
       "type": "string"
     },
+    "public_name_opt_out": {
+      "type": "boolean",
+      "default": false
+    },
+    "public_phone_opt_out": {
+      "type": "boolean",
+      "default": false
+    },
     "network_updates_opt_in": {
       "type": "boolean",
       "default": false
@@ -86,6 +94,7 @@
     "listing_slug",
     "listing_name_snapshot",
     "claimant_user_id",
+    "claimant_name",
     "claimant_email",
     "claimant_phone",
     "status"
