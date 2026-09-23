@@ -1936,7 +1936,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                   <div className="mx-auto mt-3 grid max-w-3xl grid-cols-3 gap-2 text-center">
                     <div className="rounded-xl border border-border p-3">
                       <p className="text-xl font-black tabular-nums sm:text-2xl">{score.gamePointsA}</p>
-                      <p className="mt-1 text-[10px] text-muted-foreground">Game points</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground">Points scored</p>
                     </div>
                     <div className="rounded-xl border border-border p-3">
                       <p className="text-xl font-black tabular-nums sm:text-2xl">{score.gamePointDifference >= 0 ? '+' : ''}{score.gamePointDifference}</p>
@@ -1944,7 +1944,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                     </div>
                     <div className="rounded-xl border border-border p-3">
                       <p className="text-xl font-black tabular-nums sm:text-2xl">{score.gamePointsB}</p>
-                      <p className="mt-1 text-[10px] text-muted-foreground">Game points</p>
+                      <p className="mt-1 text-[10px] text-muted-foreground">Points scored</p>
                     </div>
                   </div>
 
