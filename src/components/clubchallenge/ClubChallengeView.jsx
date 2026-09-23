@@ -1105,14 +1105,22 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const proposeEventDayAdjustment = () => {
     setEventDayAdjustmentStatus(null);
     const courts = Number(eventDayAdjust.courts || event?.courts || 0), minutes = Number(eventDayAdjust.availableMinutes || event?.available_minutes || 0);
-    if (!courts || !minutes || !rounds.length) { toast.error('Enter available courts and remaining event minutes.'); return; }
-    const unresolved = normalMatches.filter(m => m.round_number >= currentRound && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status)).sort((a,b)=>(a.round_number-b.round_number)||(a.court_number-b.court_number));
-    const block = Number(event.play_minutes||10) + Number(event.changeover_minutes||2), slots = Math.max(0, Math.floor(minutes / Math.max(1, block)) * courts);
-    const keep = unresolved.slice(0, slots), drop = unresolved.slice(slots);
-    const changes = keep.map((m,i) => ({ id:m.id, oldRound:m.round_number, oldCourt:m.court_number, newRound:currentRound + Math.floor(i/courts), newCourt:(i%courts)+1 })).filter(x=>x.oldRound!==x.newRound || x.oldCourt!==x.newCourt);
-    const proposal = { courts, minutes, block, unresolved: unresolved.length, keepIds: keep.map(m=>m.id), dropIds: drop.map(m=>m.id), changes };
+    if (!courts || !minutes || !plannedRounds) { toast.error('Enter available courts and remaining event minutes.'); return; }
+    const terminal = ['completed','draw','retired','forfeit','abandoned','not_played'];
+    const unresolvedInPlan = normalMatches.filter(m => Number(m.round_number) >= Number(currentRound) && Number(m.round_number) <= plannedRounds && !terminal.includes(m.status)).sort((a,b)=>(a.round_number-b.round_number)||(a.court_number-b.court_number));
+    const unresolvedBeyondPlan = normalMatches.filter(m => Number(m.round_number) > plannedRounds && !terminal.includes(m.status)).sort((a,b)=>(a.round_number-b.round_number)||(a.court_number-b.court_number));
+    const block = Number(event.play_minutes||10) + Number(event.changeover_minutes||2);
+    const remainingBreakMinutes = event?.include_break && Number(currentRound) <= Number(event.break_after_round || 0) && Number(event.break_after_round || 0) < plannedRounds ? Number(event.break_minutes || 0) : 0;
+    const timeRoundCapacity = Math.max(0, Math.floor(Math.max(0, minutes - remainingBreakMinutes) / Math.max(1, block)));
+    const plannedRoundCapacity = Math.max(0, plannedRounds - Number(currentRound) + 1);
+    const roundCapacity = Math.min(timeRoundCapacity, plannedRoundCapacity);
+    const slots = roundCapacity * courts;
+    const keep = unresolvedInPlan.slice(0, slots);
+    const drop = [...unresolvedInPlan.slice(slots), ...unresolvedBeyondPlan];
+    const changes = keep.map((m,i) => ({ id:m.id, oldRound:m.round_number, oldCourt:m.court_number, newRound:Number(currentRound) + Math.floor(i/courts), newCourt:(i%courts)+1 })).filter(x=>x.oldRound!==x.newRound || x.oldCourt!==x.newCourt);
+    const proposal = { courts, minutes, block, plannedRounds, roundCapacity, unresolved: unresolvedInPlan.length + unresolvedBeyondPlan.length, keepIds: keep.map(m=>m.id), dropIds: drop.map(m=>m.id), changes };
     setEventDayProposal(proposal);
-    toast.info(`${keep.length} future matches fit; ${drop.length} would be marked Not Played. Review before confirming.`);
+    toast.info(`${keep.length} future matches fit within the approved ${plannedRounds}-round event; ${drop.length} would be marked Not Played. Review before confirming.`);
   };
   const confirmEventDayAdjustment = async () => {
     if (!eventDayProposal || !canManageEvent || eventDayAdjustmentBusy || sportingActionRef.current) return;
