@@ -391,7 +391,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const resolvedNormalCount = useMemo(() => normalMatches.filter(m => ['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status)).length, [normalMatches]);
   const unresolvedNormalCount = normalMatches.length - resolvedNormalCount;
   const overallScore = useMemo(() => {
-    if (!showcaseMatch || !['completed','draw'].includes(showcaseMatch.status) || !['club_a','club_b'].includes(showcaseMatch.winner)) return score;
+    if (!showcaseMatch || showcaseMatch.showcase_mode === 'exhibition' || !['completed','draw'].includes(showcaseMatch.status) || !['club_a','club_b'].includes(showcaseMatch.winner)) return score;
     return applyShowcasePoints(score, { winner: showcaseMatch.winner === 'club_a' ? 'clubA' : 'clubB', points: Number(event?.showcase_points || 0) });
   }, [score, showcaseMatch, event?.showcase_points]);
   const rounds = [...new Set(normalMatches.map(m => Number(m.round_number)).filter(r => !plannedRounds || r <= plannedRounds))].sort((a, b) => a - b);
@@ -1189,8 +1189,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const createShowcaseFinal = async () => {
     if (!canManageEvent) return;
     if (!event?.showcase_enabled) { toast.error('Showcase Final is not enabled in Setup.'); return; }
-    if (score.clubA !== score.clubB) { toast.error('The Showcase tiebreak is only needed when normal Interclub points are level.'); return; }
-    if (Number(event.showcase_points || 0) <= 0) { toast.error('Showcase Final points must be greater than zero.'); return; }
+    const showcaseMode = score.clubA === score.clubB ? 'tiebreak' : 'exhibition';
+    if (showcaseMode === 'tiebreak' && Number(event.showcase_points || 0) <= 0) { toast.error('Showcase tiebreak points must be greater than zero.'); return; }
     const ids = [showcaseSelection.aMale, showcaseSelection.aFemale, showcaseSelection.bMale, showcaseSelection.bFemale];
     if (ids.some(id => !id)) { toast.error('Nominate one male and one female player from each club.'); return; }
     try {
@@ -1200,9 +1200,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         clubAFemaleId: showcaseSelection.aFemale,
         clubBMaleId: showcaseSelection.bMale,
         clubBFemaleId: showcaseSelection.bFemale,
+        mode: showcaseMode,
       });
       if (res.data?.error) { toast.error(res.data.error); return; }
-      toast.success('Showcase Final created');
+      toast.success(showcaseMode === 'exhibition' ? 'Optional Showcase Final created · exhibition only' : 'Showcase tiebreak created');
       await sync(); setTab('results');
     } catch (e) {
       toast.error(e?.response?.data?.error || e?.message || 'Could not create Showcase Final');
@@ -1211,7 +1212,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const finaliseShowcase = async () => {
     if (!showcaseMatch || !['completed'].includes(showcaseMatch.status) || !['club_a','club_b'].includes(showcaseMatch.winner)) { toast.error('Save the Showcase Final result first.'); return; }
+    if (showcaseMatch.showcase_mode === 'exhibition') {
+      await finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Optional Showcase Final played as an exhibition; normal Interclub result unchanged.');
+      return;
+    }
     await finaliseEvent(showcaseMatch.winner, 'showcase_final', `Showcase Final worth ${event.showcase_points} Interclub points decided the tied event.`);
+  };
+
+  const openOptionalShowcase = () => {
+    setTab('results');
+    window.setTimeout(() => document.getElementById('showcase-final-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }), 50);
   };
 
   const advanceRound = async () => {
