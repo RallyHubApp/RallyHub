@@ -2226,11 +2226,62 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             <Button variant="outline" onClick={() => setTab('live')}><ArrowLeft className="w-4 h-4 mr-2" />Back to Live Event</Button>
           </div>
           {event?.pot_enabled && <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><p className="text-sm font-semibold">Player of the Tournament</p><p className="text-xs text-muted-foreground">One vote per participant · no self-voting · totals hidden while voting is open.</p></div><Badge variant="outline">{event.pot_status || 'closed'}</Badge></div>
-            {canManageEvent && <div className="flex flex-wrap gap-2">{event.pot_status !== 'open' && event.pot_status !== 'revealed' && <Button variant="outline" onClick={() => setPotStatus('open')}>Open Voting</Button>}{event.pot_status === 'open' && <Button variant="outline" onClick={() => setPotStatus('closed')}>Close Voting</Button>}{event.pot_status === 'closed' && <Button onClick={revealPot}>Reveal Result</Button>}</div>}
-            {event.pot_status === 'open' && <div className="grid md:grid-cols-[1fr_1fr_auto] gap-2 items-end"><div><Label className="text-xs">Voting player</Label><Select value={potVoterId} onValueChange={setPotVoterId}><SelectTrigger className="mt-1 bg-secondary"><SelectValue placeholder="Select your name" /></SelectTrigger><SelectContent>{participants.filter(p => ['active','late'].includes(p.status)).map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select></div><div><Label className="text-xs">Your Player of Tournament</Label><Select value={potNomineeId} onValueChange={setPotNomineeId}><SelectTrigger className="mt-1 bg-secondary"><SelectValue placeholder="Select player" /></SelectTrigger><SelectContent>{participants.filter(p => p.status !== 'replaced' && p.id !== potVoterId).map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select></div><Button onClick={castPotVote} disabled={!potVoterId || !potNomineeId}>Cast Vote</Button></div>}
-            {event.pot_status !== 'revealed' && <p className="text-xs text-muted-foreground">{isAdmin ? `${potVotes.length} vote${potVotes.length === 1 ? '' : 's'} securely recorded. ` : 'Votes are securely recorded. '}Individual totals are hidden.</p>}
-            {event.pot_status === 'revealed' && <div className="rounded-lg bg-primary/10 p-4 text-center"><Trophy className="w-5 h-5 text-primary mx-auto" /><p className="font-bold mt-2">{potWinnerNames.length > 1 ? 'Joint Players of the Tournament' : 'Player of the Tournament'}</p><p className="text-lg mt-1">{potWinnerNames.join(' & ') || 'No valid votes'}</p>{isAdmin && potWinnerNames.map(name => { const p = participants.find(x => x.display_name === name); return <p key={name} className="text-xs text-muted-foreground">{name}: {potCounts[p?.id] || 0} votes</p>; })}</div>}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">Players of the Tournament</p>
+                <p className="text-xs text-muted-foreground">One winner from each team · one ballot per phone/browser · results hidden until reveal.</p>
+              </div>
+              <Badge variant="outline">{event.pot_status || 'closed'}</Badge>
+            </div>
+
+            {canManageEvent && event.pot_status === 'closed' && <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+              <div className="sm:w-48">
+                <Label className="text-xs">Voting window</Label>
+                <Select value={potDuration} onValueChange={setPotDuration}>
+                  <SelectTrigger className="mt-1 bg-secondary"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 minutes</SelectItem>
+                    <SelectItem value="10">10 minutes</SelectItem>
+                    <SelectItem value="15">15 minutes</SelectItem>
+                    <SelectItem value="manual">Manual close</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={() => setPotStatus('open')}>Open Voting</Button>
+              {potTeamVoteCount > 0 && <Button variant="outline" onClick={revealPot}>Reveal Results</Button>}
+              {potTeamVoteCount > 0 && <Button variant="ghost" onClick={resetPotVoting}>Reset Voting</Button>}
+            </div>}
+
+            {event.pot_status === 'open' && <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div><p className="text-xs uppercase tracking-wider font-bold text-primary">Voting open</p><p className="text-2xl font-black tabular-nums mt-1">{potCountdownText}</p></div>
+                {canManageEvent && <div className="flex flex-wrap gap-2">
+                  {event.pot_vote_closes_at && <Button variant="outline" onClick={extendPotVoting}>+5 Minutes</Button>}
+                  <Button variant="outline" onClick={() => setPotStatus('closed')}>Close Now</Button>
+                </div>}
+              </div>
+            </div>}
+
+            {event.pot_status !== 'revealed' && <div className="text-xs text-muted-foreground">
+              {isAdmin ? <><strong className="text-foreground">{potBallotCount}</strong> ballot{potBallotCount === 1 ? '' : 's'} received · <strong className="text-foreground">{potTeamVoteCount}</strong> team vote{potTeamVoteCount === 1 ? '' : 's'} recorded. </> : 'Votes are securely recorded. '}
+              Individual choices and running totals remain hidden.
+            </div>}
+
+            {event.pot_status === 'revealed' && <div className="grid sm:grid-cols-2 gap-3">
+              <div className="rounded-xl bg-primary/10 p-4 text-center">
+                <Trophy className="w-5 h-5 text-primary mx-auto" />
+                <p className="text-xs text-muted-foreground mt-2">{event.club_a_name}</p>
+                <p className="font-bold mt-1">{potWinnersA.length ? potWinnersA.map(p => p.display_name).join(' & ') : 'No valid votes'}</p>
+                {isAdmin && potWinnersA.map(p => <p key={p.id} className="text-xs text-muted-foreground mt-1">{potCounts[p.id] || 0} vote{(potCounts[p.id] || 0) === 1 ? '' : 's'}</p>)}
+              </div>
+              <div className="rounded-xl bg-primary/10 p-4 text-center">
+                <Trophy className="w-5 h-5 text-primary mx-auto" />
+                <p className="text-xs text-muted-foreground mt-2">{event.club_b_name}</p>
+                <p className="font-bold mt-1">{potWinnersB.length ? potWinnersB.map(p => p.display_name).join(' & ') : 'No valid votes'}</p>
+                {isAdmin && potWinnersB.map(p => <p key={p.id} className="text-xs text-muted-foreground mt-1">{potCounts[p.id] || 0} vote{(potCounts[p.id] || 0) === 1 ? '' : 's'}</p>)}
+              </div>
+              {canManageEvent && <div className="sm:col-span-2 text-center"><Button variant="outline" onClick={resetPotVoting}>Reset Voting</Button></div>}
+            </div>}
           </div>}
           {score.completedMatches > 0 ? (
             <>
