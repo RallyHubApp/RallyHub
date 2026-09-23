@@ -400,6 +400,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [publicLinks, setPublicLinks] = useState(null);
   const [spondImportSide, setSpondImportSide] = useState('');
   const [teamsDirty, setTeamsDirty] = useState(false);
+  const [printPackOpen, setPrintPackOpen] = useState(false);
+  const [printSelection, setPrintSelection] = useState({ score:true, schedule:false, roster:false, briefing:false, final:false });
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: hostClub } = useQuery({
@@ -1195,12 +1197,19 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       toast.success(Number(res.data?.winnerCount || 0) > 1 ? 'Joint Player of Tournament result revealed.' : 'Player of Tournament result revealed.');
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reveal voting result'); }
   };
-  const printEventPack = async () => {
+  const printEventPack = () => {
     if (!event || !['draw_approved','in_progress','paused','completed'].includes(event.status) || !normalMatches.length) { toast.error('Approve the draw before producing the Event Pack.'); return; }
     if (event.event_pack_stale) { toast.error('This pack is OUT OF DATE because fixtures changed. Re-approve the draw before printing a new authoritative pack.'); return; }
+    setPrintPackOpen(true);
+  };
+  const confirmPrintEventPack = async () => {
+    const completed = ['completed','archived'].includes(event?.status);
+    const selection = { ...printSelection, final: completed ? printSelection.final : false };
+    if (!Object.values(selection).some(Boolean)) { toast.error('Choose at least one sheet to print.'); return; }
     await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_generated_at: new Date().toISOString() });
     await refetchEvent();
-    window.setTimeout(() => window.print(), 100);
+    setPrintPackOpen(false);
+    window.setTimeout(() => window.print(), 150);
   };
   const applyReplacement = async () => {
     if (!event || !canManageEvent || !replacement.outgoingId) { toast.error('Choose the player who is leaving.'); return; }
@@ -1744,7 +1753,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   return (
     <div data-testid="cc-root" className="space-y-4 print:space-y-0">
       {hostAction && <div className="print:hidden sticky top-2 z-40 rounded-xl border-2 border-primary/40 bg-background/95 p-3 shadow-lg"><p className="text-sm font-bold text-primary">{hostAction}</p><p className="text-xs text-muted-foreground mt-1">RallyHub has accepted your tap. Keep this screen open; the control stays locked until the action resolves.</p></div>}
-      {event && ['draw_approved','in_progress','paused','completed','archived'].includes(event.status) && <div className="hidden print:block"><InterclubPrintPack event={event} tournament={tournament} matches={matches} participants={participants} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} /></div>}
+      {event && ['draw_approved','in_progress','paused','completed','archived'].includes(event.status) && <div className="hidden print:block"><InterclubPrintPack event={event} tournament={tournament} matches={matches} participants={participants} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} sections={printSelection} /></div>}
       <div className="print:hidden glass rounded-xl p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 min-w-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><ShieldCheck className="w-5 h-5 text-primary" /></div>
