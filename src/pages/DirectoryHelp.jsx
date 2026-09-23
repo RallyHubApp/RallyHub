@@ -52,7 +52,25 @@ const faqs = [
   },
   {
     q: 'What is Spond connection for?',
-    a: 'It is optional. Clubs using Spond can connect their group and use upcoming Spond events to help populate venues and regular session times. You can ignore it completely if your club does not use Spond.'
+    a: 'It is optional. Clubs using Spond can connect their club group, scan upcoming Spond events and import regular venues and session times into the RallyHub Directory. You can ignore it completely if your club does not use Spond.'
+  },
+  {
+    q: 'How do I connect my club to Spond?',
+    a: (
+      <div className="space-y-3">
+        <ol className="list-decimal pl-5 space-y-2">
+          <li>Open <strong>Manage listing</strong> and choose <strong>Enhanced listing</strong>.</li>
+          <li>Go to <strong>Spond connection</strong>.</li>
+          <li>Enter the email address and password for the club’s Spond account and press <strong>Connect Spond</strong>. RallyHub uses the password only to establish a temporary Spond session in your browser and does not save it.</li>
+          <li>Choose the correct <strong>Spond club group</strong>. RallyHub will try to match the group automatically.</li>
+          <li>Press <strong>Scan upcoming events</strong>.</li>
+          <li>Review the sessions RallyHub finds. Repeating sessions are selected automatically, and you can change the selection before importing.</li>
+          <li>Press <strong>Import selected sessions</strong>.</li>
+          <li>Review the imported venues and sessions, then press <strong>Save changes</strong> to publish them to the Directory.</li>
+        </ol>
+        <p>You can disconnect Spond at any time. Disconnecting does not remove venues or sessions you have already published.</p>
+      </div>
+    )
   }
 ];
 
@@ -101,12 +119,12 @@ export default function DirectoryHelp() {
                 [ShieldCheck, 'Claim safely', 'Use the invitation or request access. Directory access is verified separately from RallyHub Club.'],
                 [CheckCircle2, 'Check basics', 'Confirm the description, public contact and main venue.'],
                 [CalendarDays, 'Check sessions', 'Add or duplicate regular sessions. RallyHub sorts them into weekly order.'],
-                [Upload, 'Enhance later', 'Logo, social links, prices, extra venues and Spond are optional enhancements.'],
+                [Upload, 'Enhance later', <>Logo, social links, prices and extra venues are optional enhancements. <strong className="text-foreground">Using Spond?</strong> Connect your club’s Spond account to scan upcoming events and import regular venues and session times.</>],
               ].map(([Icon,title,copy]) => (
                 <div key={title} className="rounded-xl border border-border bg-background/35 p-4">
                   <Icon className="w-5 h-5 text-primary" />
                   <h2 className="font-bold mt-3">{title}</h2>
-                  <p className="text-sm text-muted-foreground mt-1">{copy}</p>
+                  <div className="text-sm text-muted-foreground mt-1">{copy}</div>
                 </div>
               ))}
             </div>
@@ -121,7 +139,7 @@ export default function DirectoryHelp() {
                     <span>{item.q}</span>
                     <span className="text-primary text-xl leading-none group-open:rotate-45 transition-transform">+</span>
                   </summary>
-                  <p className="mt-3 pr-8 text-sm leading-6 text-muted-foreground">{item.a}</p>
+                  <div className="mt-3 pr-8 text-sm leading-6 text-muted-foreground">{item.a}</div>
                 </details>
               ))}
             </div>
