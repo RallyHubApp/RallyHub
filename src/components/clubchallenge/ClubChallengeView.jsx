@@ -1754,12 +1754,52 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     <div data-testid="cc-root" className="space-y-4 print:space-y-0">
       {hostAction && <div className="print:hidden sticky top-2 z-40 rounded-xl border-2 border-primary/40 bg-background/95 p-3 shadow-lg"><p className="text-sm font-bold text-primary">{hostAction}</p><p className="text-xs text-muted-foreground mt-1">RallyHub has accepted your tap. Keep this screen open; the control stays locked until the action resolves.</p></div>}
       {event && ['draw_approved','in_progress','paused','completed','archived'].includes(event.status) && <div className="hidden print:block"><InterclubPrintPack event={event} tournament={tournament} matches={matches} participants={participants} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} sections={printSelection} /></div>}
+      {printPackOpen && <div className="print:hidden fixed inset-0 z-[100] bg-black/55 flex items-center justify-center p-4" onMouseDown={e => { if (e.target === e.currentTarget) setPrintPackOpen(false); }}>
+        <div className="w-full max-w-lg rounded-2xl border border-border bg-background shadow-2xl p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div><h2 className="text-lg font-bold">Choose sheets to print</h2><p className="text-xs text-muted-foreground mt-1">Only the sheets you select will be sent to the printer.</p></div>
+            <button type="button" className="text-muted-foreground hover:text-foreground text-xl leading-none px-2" onClick={() => setPrintPackOpen(false)} aria-label="Close">×</button>
+          </div>
+          <div className="space-y-2">
+            {[
+              { key:'score', label:'Master Score Sheet', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)), note:'Blank score boxes for use during the event' },
+              { key:'schedule', label:'Master Schedule / Court Assignment', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)), note:'Two rounds per A4 page' },
+              { key:'roster', label:'Team Roster & Reserves', pages:1, note:'Players, rankings, reserves and event information' },
+              { key:'briefing', label:'Event Briefing & Rules', pages:1, note:'Operational rules for the event' },
+              { key:'final', label:'Final Result / Sign-off', pages:1, note:['completed','archived'].includes(event?.status) ? 'Completed result and signatures' : 'Available after the event is completed', disabled:!['completed','archived'].includes(event?.status) },
+            ].map(item => <label key={item.key} className={cn('flex items-start gap-3 rounded-xl border p-3 transition-colors', item.disabled ? 'opacity-50 cursor-not-allowed bg-muted/30' : 'cursor-pointer hover:bg-secondary/40', printSelection[item.key] && !item.disabled ? 'border-primary/50 bg-primary/5' : 'border-border')}>
+              <input type="checkbox" className="mt-1 h-4 w-4 accent-current" checked={!!printSelection[item.key] && !item.disabled} disabled={item.disabled} onChange={e => setPrintSelection(prev => ({ ...prev, [item.key]:e.target.checked }))} />
+              <span className="flex-1 min-w-0"><span className="flex items-center justify-between gap-3"><strong className="text-sm">{item.label}</strong><span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">{item.pages} page{item.pages === 1 ? '' : 's'}</span></span><span className="block text-[11px] text-muted-foreground mt-1">{item.note}</span></span>
+            </label>)}
+          </div>
+          <div className="mt-4 rounded-xl bg-secondary/40 px-3 py-2 flex items-center justify-between gap-3 text-sm">
+            <span>Selected print total</span>
+            <strong>{(
+              (printSelection.score ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)) : 0) +
+              (printSelection.schedule ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)) : 0) +
+              (printSelection.roster ? 1 : 0) +
+              (printSelection.briefing ? 1 : 0) +
+              (printSelection.final && ['completed','archived'].includes(event?.status) ? 1 : 0)
+            )} page{(
+              (printSelection.score ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)) : 0) +
+              (printSelection.schedule ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)) : 0) +
+              (printSelection.roster ? 1 : 0) +
+              (printSelection.briefing ? 1 : 0) +
+              (printSelection.final && ['completed','archived'].includes(event?.status) ? 1 : 0)
+            ) === 1 ? '' : 's'}</strong>
+          </div>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 mt-5">
+            <Button variant="outline" onClick={() => setPrintPackOpen(false)}>Cancel</Button>
+            <Button onClick={confirmPrintEventPack}>Print selected sheets</Button>
+          </div>
+        </div>
+      </div>}
       <div className="print:hidden glass rounded-xl p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 min-w-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><ShieldCheck className="w-5 h-5 text-primary" /></div>
           <div><p className="font-semibold text-foreground">{INTERCLUB_MODULE_NAME}</p><p className="text-xs text-muted-foreground">{event ? `${INTERCLUB_EVENT_LABEL} · Status: ${event.status.replaceAll('_', ' ')}` : `Configure an ${INTERCLUB_EVENT_LABEL}`}</p></div>
         </div>
-        {event && <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center"><div className="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} logo={event.club_a_logo_url} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} logo={event.club_b_logo_url} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>{!networkOnline && <Badge className="bg-yellow-500/10 text-yellow-400">OFFLINE · not saved</Badge>}{pendingScores.length > 0 && <><Badge variant="outline">{pendingScores.length} unsynchronised</Badge>{networkOnline && <Button variant="outline" size="sm" onClick={retryPendingScores}>Retry Sync</Button>}</>}{['in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={() => setDisplayMode(true)}>Hall Display</Button>}{hasManagePermission && <Button variant="outline" size="sm" onClick={preparePublicLinks}>Public Links / QR</Button>}{['draw_approved','in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={printEventPack}>{event.event_pack_stale ? 'Print Event Pack · OUT OF DATE' : `Print Event Pack v${event.event_pack_version || event.draw_version || 1}`}</Button>}</div>}
+        {event && <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center"><div className="grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} logo={event.club_a_logo_url} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} logo={event.club_b_logo_url} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>{!networkOnline && <Badge className="bg-yellow-500/10 text-yellow-400">OFFLINE · not saved</Badge>}{pendingScores.length > 0 && <><Badge variant="outline">{pendingScores.length} unsynchronised</Badge>{networkOnline && <Button variant="outline" size="sm" onClick={retryPendingScores}>Retry Sync</Button>}</>}{['in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={() => setDisplayMode(true)}>Hall Display</Button>}{hasManagePermission && <Button variant="outline" size="sm" onClick={preparePublicLinks}>Public Links / QR</Button>}{['draw_approved','in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={printEventPack}>{event.event_pack_stale ? 'Print Sheets · OUT OF DATE' : `Print Sheets · Pack v${event.event_pack_version || event.draw_version || 1}`}</Button>}</div>}
       </div>
 
       {publicLinks && <div className="print:hidden rounded-xl border border-primary/20 bg-card p-4 space-y-4"><div><p className="text-sm font-semibold">Public {INTERCLUB_MODULE_NAME} Links</p><p className="text-xs text-muted-foreground">Use the Hall Display link on a TV/tablet. Players can scan the POT QR and use their personal 8-character code.</p></div><div className="grid md:grid-cols-2 gap-4"><div className="rounded-lg bg-secondary/40 p-4 flex gap-4 items-center"><QRCodeSVG value={publicLinks.displayUrl} size={104}/><div className="min-w-0"><p className="text-xs font-semibold">Hall Display</p><p className="text-[10px] text-muted-foreground break-all mt-1">{publicLinks.displayUrl}</p><Button size="sm" variant="outline" className="mt-2" onClick={() => navigator.clipboard?.writeText(publicLinks.displayUrl)}>Copy link</Button></div></div><div className="rounded-lg bg-secondary/40 p-4 flex gap-4 items-center"><QRCodeSVG value={publicLinks.votingUrl} size={104}/><div className="min-w-0"><p className="text-xs font-semibold">Player of Tournament Voting</p><p className="text-[10px] text-muted-foreground break-all mt-1">{publicLinks.votingUrl}</p><Button size="sm" variant="outline" className="mt-2" onClick={() => navigator.clipboard?.writeText(publicLinks.votingUrl)}>Copy link</Button></div></div></div>{event.pot_enabled && <details className="rounded-lg border border-border p-3"><summary className="text-xs font-semibold cursor-pointer">Player voting access codes ({publicLinks.voterCodes?.length || 0})</summary><div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-3">{(publicLinks.voterCodes||[]).map(v=><div key={v.participantId} className="rounded bg-secondary/50 p-2 text-xs"><p className="truncate">{privacyName(v.displayName, !!event.junior_display_mode)}</p><p className="font-mono font-bold tracking-wider text-primary">{v.code}</p></div>)}</div></details>}</div>}
