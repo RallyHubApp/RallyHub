@@ -298,6 +298,7 @@ export default function DirectoryListingEdit() {
 
   const validate = () => {
     const issues = [];
+    if (!String(form?.name || '').trim()) issues.push('Add the public club name.');
     if (!String(form?.description || '').trim()) issues.push('Add a short public club description.');
     if (!isValidEmail(form?.contact?.email)) issues.push('The club contact email is not valid.');
     [
@@ -383,7 +384,7 @@ export default function DirectoryListingEdit() {
       const claimUrl = res.data?.claimUrl;
       if (!claimUrl) throw new Error('Could not create the secure claim link.');
       const firstName = contactName.split(/\s+/)[0] || 'there';
-      const clubName = baseClub?.name || 'your club';
+      const clubName = form?.name || baseClub?.name || 'your club';
       const message = `Hi ${firstName},\n\nI’m getting in touch because I’ve put together a *free RallyHub Directory listing for ${clubName}* as part of a wider effort to improve information on pickleball clubs around Ireland, following David Molloy’s request for help updating the national club map.\n\nRallyHub started as a father-and-son project between Conall and me, originally to solve some of the practical things we needed for Clare Pickleball. It has grown from there, and the first public phase is the *RallyHub Club Directory* — helping players find clubs, venues and regular sessions around Ireland.\n\nI’ve already created the *${clubName}* listing, so most of the work is done. I’d simply like you to have a look, claim the listing and correct or add anything that needs updating.\n\nOnce verified, you’ll become the *Primary Directory Owner* for ${clubName}, which means you can manage the club’s public Directory information directly.\n\n*The Directory listing is completely free.*\nThere is no subscription, no catch and no obligation to use any other RallyHub services.\n\nRallyHub is also developing other optional club tools around session management, King of the Court, tournaments and events, but those are separate from your free Directory listing.\n\n*Your secure claim link:*\n${claimUrl}\n\nThe link is personal to you, can only be used once and expires after 72 hours.\n\nIf you’d like to have a quick look at RallyHub first:\n\n*About RallyHub:*\nhttps://rallyhub.ie/about\n\n*1-page Directory Explainer:*\nhttps://rallyhub.ie/directory/story\n\n*Club Guide & Help:*\nhttps://rallyhub.ie/directory/help\n\n*Quick Start Guide:*\nhttps://rallyhub.ie/directory/quick-start\n\nThere is also a *Feedback* area inside RallyHub, and I’m always happy to hear suggestions about what would genuinely be useful to clubs.\n\nIf you have any difficulty claiming the listing, just WhatsApp or call me.\n\nYours in sport,\n*Brian Moore*\n📱 087 810 0333\n🌐 https://rallyhub.ie`;
       window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
       setInviteMessage(`Secure WhatsApp claim invitation opened for ${rawPhone}. The link expires in 72 hours and can only be used once.`);
@@ -618,13 +619,13 @@ export default function DirectoryListingEdit() {
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
                   <div className="min-w-0">
                     <p className="text-xs uppercase tracking-wider text-primary font-semibold">{user?.role === 'admin' && !isClaimed ? 'Super Admin · Unclaimed listing' : access?.accessRole === 'owner' ? 'Primary Directory Owner' : 'Verified Directory Editor'}</p>
-                    <h1 className="text-3xl sm:text-4xl font-black mt-1 truncate">{baseClub.name}</h1>
+                    <h1 className="text-3xl sm:text-4xl font-black mt-1 truncate">{form.name || baseClub.name}</h1>
                     <div className="flex flex-wrap gap-2 mt-3 text-xs text-muted-foreground">
                       <span className="rounded-full border border-border px-2.5 py-1">County {baseClub.county}</span>
                       <span className="rounded-full border border-border px-2.5 py-1">{form.venues?.length || 0} venues</span>
                       <span className="rounded-full border border-border px-2.5 py-1">{form.sessions?.length || 0} weekly sessions</span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-3 max-w-2xl">Keep the public listing accurate. Club name and county are locked to protect the directory identity.</p>
+                    <p className="text-sm text-muted-foreground mt-3 max-w-2xl">Keep the public listing accurate. The displayed club name can be corrected at any time; the underlying RallyHub URL stays fixed so existing links and ownership are not affected. County remains fixed.</p>
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
                     <Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><ExternalLink className="w-4 h-4" /> View public listing</Button>
@@ -672,13 +673,14 @@ export default function DirectoryListingEdit() {
                 </div>
               </section>
 
-              {isClaimed && <DirectoryAccessPanel listingSlug={slug} clubName={baseClub?.name || 'this club'} county={baseClub?.county || ''} />}
-              {isClaimed && <RallyHubClubPreviewLock listingSlug={slug} clubName={baseClub?.name || 'this club'} />}
-              {isClaimed && <ClubFeedbackPanel listingSlug={slug} clubName={baseClub?.name || 'this club'} />}
+              {isClaimed && <DirectoryAccessPanel listingSlug={slug} clubName={form?.name || baseClub?.name || 'this club'} county={baseClub?.county || ''} />}
+              {isClaimed && <RallyHubClubPreviewLock listingSlug={slug} clubName={form?.name || baseClub?.name || 'this club'} />}
+              {isClaimed && <ClubFeedbackPanel listingSlug={slug} clubName={form?.name || baseClub?.name || 'this club'} />}
 
               <section id="basics" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><Info className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Public club information</h2></div>
                 <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2 sm:col-span-2"><Label>Club name</Label><Input value={form.name || ''} onChange={e => setField('name', e.target.value)} maxLength={220} placeholder="e.g. Dalkey Pickleball Club" /><p className="text-xs text-muted-foreground">This changes the public heading only. The RallyHub listing link stays the same.</p></div>
                   <div className="space-y-2 sm:col-span-2"><Label>Club description</Label><Textarea value={form.description || ''} onChange={e => setField('description', e.target.value)} rows={4} placeholder="Tell players what your club is about, where you play and who you welcome." /><p className="text-xs text-muted-foreground">This is the main introduction players see in search and on your club page. Claim/unclaimed status is controlled automatically by RallyHub and does not need to be typed here.</p></div>
                   <div className="sm:col-span-2 rounded-xl border border-border bg-background/35 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div><p className="font-semibold">Optional club details</p><p className="text-xs text-muted-foreground mt-1">Website, social links, joining information and attendance policy can all be added later. If your club uses Spond, you can also connect your Spond account here to bring your regular venues and session times into RallyHub instead of entering them manually.</p></div>
