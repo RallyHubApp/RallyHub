@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { eventId, courts, availableMinutes, changes = [], dropIds = [] } = body;
+    const { eventId, courts, availableMinutes, changes = [], dropIds = [], proposalKey = '' } = body;
     if (!eventId) return Response.json({ error: 'eventId required' }, { status: 400 });
     const nextCourts = Number(courts), nextMinutes = Number(availableMinutes);
     if (!Number.isInteger(nextCourts) || nextCourts < 1 || !Number.isFinite(nextMinutes) || nextMinutes < 1) {
@@ -39,6 +39,15 @@ Deno.serve(async (req) => {
       allowed = tournamentAccess.some((a:any) => ['event_manager','event_host'].includes(a.role)) || ccAccess.some((a:any) => ['owner','organiser'].includes(a.role));
     }
     if (!allowed) return Response.json({ error: 'Event manager permission required' }, { status: 403 });
+
+    const cleanProposalKey = String(proposalKey || '').trim().slice(0, 4000);
+    if (cleanProposalKey && String(event.last_schedule_adjustment_key || '') === cleanProposalKey) {
+      return Response.json({ success:true, event, changed:0, dropped:0, alreadyApplied:true });
+    }
+    const existingLockUntil = Date.parse(String(event.schedule_adjustment_lock_until || ''));
+    if (event.schedule_adjustment_lock_token && Number.isFinite(existingLockUntil) && existingLockUntil > Date.now()) {
+      return Response.json({ error:'Another court/time adjustment is already being applied. Refresh before trying again.' }, { status:409 });
+    }
 
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id: event.id }, 'round_number', 300);
     const normal = matches.filter((m:any) => !m.is_showcase);
