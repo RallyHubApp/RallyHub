@@ -1819,6 +1819,7 @@ Brian`;
                 <p className="text-xs text-muted-foreground py-4 px-1">No directory claims are waiting for review.</p>
               ) : pendingDirectoryClaims.map(claim => {
                 const identityComplete = directoryClaimIdentityLooksComplete(claim);
+                const adminIdentityConfirmed = !!claim.identity_admin_confirmed_at;
                 const sourceInvite = directoryInvitationUsedForClaim(claim);
                 return (
                 <div key={claim.id} className="glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -1826,7 +1827,7 @@ Brian`;
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold text-foreground">{claim.listing_name_snapshot}</p>
                       <Badge variant="outline" className={identityComplete ? 'border-green-400/40 text-green-400' : 'border-destructive/40 text-destructive'}>
-                        {identityComplete ? 'Identity details supplied' : 'Identity incomplete'}
+                        {adminIdentityConfirmed ? 'Private identity confirmed by Super Admin' : identityComplete ? 'Identity details supplied' : 'Identity incomplete'}
                       </Badge>
                     </div>
                     <div className="rounded-lg border border-border/70 bg-background/30 p-3 mt-2">
@@ -1846,15 +1847,17 @@ Brian`;
                         <div className={`rounded-lg border p-3 mt-2 text-xs ${inviteWasUsedByClaimant ? 'border-green-400/25 bg-green-400/5' : 'border-amber-400/40 bg-amber-400/10'}`}>
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="font-semibold text-foreground">{inviteWasUsedByClaimant ? 'Original secure invitation used' : 'Related secure invitation — not used for this claim'}</p>
-                            {!inviteWasUsedByClaimant && <Badge variant="outline" className="border-amber-400/50 text-amber-400">Check identity</Badge>}
+                            {!inviteWasUsedByClaimant && !adminIdentityConfirmed && <Badge variant="outline" className="border-amber-400/50 text-amber-400">Check identity</Badge>}
+                            {!inviteWasUsedByClaimant && adminIdentityConfirmed && <Badge variant="outline" className="border-green-400/40 text-green-400">Admin verified separately</Badge>}
                           </div>
                           <p className="text-muted-foreground mt-1">
                             Sent to: {sourceInvite.contact_name || '(name not recorded)'}
                             {sourceInvite.contact_email ? ` · ${sourceInvite.contact_email}` : ''}
                             {sourceInvite.contact_phone ? ` · ${sourceInvite.contact_phone}` : ''}
                           </p>
-                          {!inviteWasUsedByClaimant && <p className="text-amber-500 mt-1 font-medium">This pending claim was created without consuming that secure invitation, so do not assume the claimant is the invited person.</p>}
-                          {sourceInvite.contact_phone && claim.claimant_phone && !invitePhoneMatches && (
+                          {!inviteWasUsedByClaimant && !adminIdentityConfirmed && <p className="text-amber-500 mt-1 font-medium">This pending claim was created without consuming that secure invitation, so do not assume the claimant is the invited person.</p>}
+                          {!inviteWasUsedByClaimant && adminIdentityConfirmed && <p className="text-muted-foreground mt-1">The invitation was not used for this claim, but the private identity has since been independently confirmed by Super Admin.</p>}
+                          {sourceInvite.contact_phone && claim.claimant_phone && !invitePhoneMatches && !adminIdentityConfirmed && (
                             <p className="text-destructive mt-1 font-medium">Mobile mismatch: invitation {sourceInvite.contact_phone} · claim {claim.claimant_phone}</p>
                           )}
                         </div>
@@ -1862,9 +1865,15 @@ Brian`;
                     })()}
                     {claim.claimant_message && <p className="text-xs text-muted-foreground mt-2">“{claim.claimant_message}”</p>}
                     <div className="flex flex-wrap gap-2 pt-2">
-                      <Badge variant="outline" className={claim.email_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Email match (supporting): {claim.email_match ? 'Yes' : 'No'}</Badge>
-                      <Badge variant="outline" className={claim.name_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Name match: {claim.name_match ? 'Yes' : 'No'}</Badge>
-                      <Badge variant="outline" className={claim.phone_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Phone match: {claim.phone_match ? 'Yes' : 'No'}</Badge>
+                      {adminIdentityConfirmed ? (
+                        <Badge variant="outline" className="border-green-400/40 text-green-400">Admin verification is the approval basis</Badge>
+                      ) : (
+                        <>
+                          <Badge variant="outline" className={claim.email_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Known email match: {claim.email_match ? 'Yes' : 'No'}</Badge>
+                          <Badge variant="outline" className={claim.name_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Imported contact name match: {claim.name_match ? 'Yes' : 'No'}</Badge>
+                          <Badge variant="outline" className={claim.phone_match ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground'}>Imported contact phone match: {claim.phone_match ? 'Yes' : 'No'}</Badge>
+                        </>
+                      )}
                       <Badge variant="outline">Public name: {claim.public_name_opt_out ? 'Keep private' : 'No opt-out'}</Badge>
                       <Badge variant="outline">Public mobile: {claim.public_phone_opt_out ? 'Keep private' : 'No opt-out'}</Badge>
                       <Badge variant="outline" className={claim.network_updates_opt_in ? 'border-primary/40 text-primary' : 'border-border text-muted-foreground'}>Network updates: {claim.network_updates_opt_in ? 'Opted in' : 'No'}</Badge>
