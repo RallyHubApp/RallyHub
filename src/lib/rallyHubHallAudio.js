@@ -243,6 +243,7 @@ export async function speakRallyHubHall(text, {
   onStart,
   onEnd,
   onError,
+  onEngine,
 } = {}) {
   if (!text || voiceMode === 'off') return false;
   try {
@@ -278,6 +279,7 @@ export async function speakRallyHubHall(text, {
 
     window.__rallyhubGeneratedHallVoice = { source, preGain, compressor, outputGain, provider };
     window.__rallyhubHallVoiceEngine = 'amplified';
+    onEngine?.('amplified');
     source.onended = () => {
       if (window.__rallyhubGeneratedHallVoice?.source === source) window.__rallyhubGeneratedHallVoice = null;
       try { source.disconnect(); } catch {}
@@ -291,6 +293,7 @@ export async function speakRallyHubHall(text, {
     return true;
   } catch (error) {
     window.__rallyhubHallVoiceEngine = 'browser-fallback';
+    onEngine?.('browser-fallback');
     if (!fallback) {
       onError?.(error);
       return false;
