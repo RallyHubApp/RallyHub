@@ -593,6 +593,20 @@ export default function AdminPanel() {
     return digits;
   };
 
+  const directoryWelcomeEmail = (access, accessUser) => {
+    if (accessUser?.email) return accessUser.email;
+    const claim = (directoryVerification.claims || []).find(c =>
+      String(c.claimant_user_id || '') === String(access?.user_id || '') &&
+      String(c.listing_slug || '') === String(access?.listing_slug || '')
+    );
+    if (claim?.claimant_email) return claim.claimant_email;
+    const invite = (directoryVerification.invitations || []).find(i =>
+      String(i.used_by_user_id || '') === String(access?.user_id || '') &&
+      String(i.listing_slug || '') === String(access?.listing_slug || '')
+    );
+    return invite?.contact_email || '';
+  };
+
   const directoryWelcomePhone = (access, accessUser) => {
     if (accessUser?.directory_mobile) return accessUser.directory_mobile;
     const claim = (directoryVerification.claims || []).find(c =>
@@ -635,7 +649,7 @@ Brian`;
     try {
       const res = await base44.functions.invoke('directoryClaim', { action:'send_welcome_email', accessId:access.id });
       if (res.data?.error) throw new Error(res.data.error);
-      toast.success(`Welcome email sent to ${res.data?.to || accessUser?.email || 'Directory contact'}`);
+      toast.success(`Welcome email sent to ${res.data?.to || directoryWelcomeEmail(access, accessUser) || 'Directory contact'}`);
     } catch (error) {
       toast.error(error?.message || 'Could not send the welcome email');
     } finally {
@@ -1606,10 +1620,10 @@ Brian`;
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-medium text-foreground">{access.listing_name_snapshot || access.listing_slug}</p><Badge variant="outline">{access.role === 'owner' ? 'Primary Owner' : 'Directory Editor'}</Badge></div>
                       <p className="text-xs text-muted-foreground truncate">{accessUser?.full_name || accessUser?.display_name || accessUser?.email || access.user_id}</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">{accessUser?.email || 'No email'}{directoryWelcomePhone(access, accessUser) ? ` · ${directoryWelcomePhone(access, accessUser)}` : ''}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">{directoryWelcomeEmail(access, accessUser) || 'No email'}{directoryWelcomePhone(access, accessUser) ? ` · ${directoryWelcomePhone(access, accessUser)}` : ''}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 shrink-0">
-                      <Button size="sm" variant="outline" className="h-8 text-xs gap-1" disabled={welcomeBusy === `email:${access.id}` || !accessUser?.email} onClick={() => sendDirectoryWelcomeAgain(access, accessUser)}>
+                      <Button size="sm" variant="outline" className="h-8 text-xs gap-1" disabled={welcomeBusy === `email:${access.id}` || !directoryWelcomeEmail(access, accessUser)} onClick={() => sendDirectoryWelcomeAgain(access, accessUser)}>
                         <Mail className="w-3.5 h-3.5" /> {welcomeBusy === `email:${access.id}` ? 'Sending…' : 'Send welcome email'}
                       </Button>
                       <Button size="sm" variant="outline" className="h-8 text-xs gap-1" disabled={!directoryWelcomePhone(access, accessUser)} onClick={() => openDirectoryWelcomeWhatsApp(access, accessUser)}>
