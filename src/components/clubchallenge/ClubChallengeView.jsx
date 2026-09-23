@@ -261,6 +261,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const sportingActionRef = React.useRef(false);
   const lastTimerAnnouncementRef = React.useRef(new Set());
   const lastShowcaseSideChangeRef = React.useRef('');
+  const lastShowcaseCompleteRef = React.useRef('');
   const wakeLockRef = React.useRef(null);
   const [roundLabels, setRoundLabels] = useState({});
   const [lastAnnouncement, setLastAnnouncement] = useState('');
@@ -800,6 +801,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (Date.now() - new Date(changedAt).getTime() > 30000) return;
     speak('Change ends', { signal:'warning' });
   }, [showcaseMatch?.side_change_at]);
+
+  React.useEffect(() => {
+    if (showcaseMatch?.status !== 'completed') return;
+    const completedAt = showcaseMatch.scored_at || (showcaseMatch.id + ':' + showcaseMatch.revision);
+    if (!completedAt || lastShowcaseCompleteRef.current === completedAt) return;
+    lastShowcaseCompleteRef.current = completedAt;
+    if (showcaseMatch.scored_at && Date.now() - new Date(showcaseMatch.scored_at).getTime() > 30000) return;
+    speak('Match complete', { signal:'success' });
+  }, [showcaseMatch?.status, showcaseMatch?.scored_at, showcaseMatch?.revision]);
   const announceCustom = async () => {
     const text = announcementDraft.trim();
     if (!text || announcementSpeaking) return;
