@@ -306,7 +306,7 @@ function FinalResultPage({ event, tournament, score, overallScore, showcaseMatch
   </Page>;
 }
 
-export default function InterclubPrintPack({ event, tournament, matches=[], participants=[], score, overallScore, showcaseMatch }) {
+export default function InterclubPrintPack({ event, tournament, matches=[], participants=[], score, overallScore, showcaseMatch, sections }) {
   if (!event) return null;
   const roundsCount = Math.max(Number(event.planned_rounds || 0), ...matches.filter(m => !m.is_showcase && Number(m.round_number || 0) <= Number(event.planned_rounds || 9999)).map(m => Number(m.round_number || 0)), 1);
   const rounds = Array.from({length:roundsCount},(_,i)=>i+1);
@@ -321,6 +321,7 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
   });
   const scorePages = chunk(rounds, 12);
   const schedulePages = chunk(rounds, 2);
+  const selected = sections || { score:true, schedule:true, roster:true, briefing:true, final:true };
 
   return <div className="rhpp-root">
     <style>{`
@@ -346,10 +347,10 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
       .rhpp-result-layout{display:grid;grid-template-columns:1fr 57mm;gap:3mm}.rhpp-team-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:3mm}.rhpp-team-score-grid>div{height:59mm;border:.35mm solid #bfd5e4;border-top:1.2mm solid;border-radius:2mm;padding:3mm;text-align:center;box-sizing:border-box;background:#f5fbff}.rhpp-team-score-grid>div.b{background:#fff7f7}.rhpp-team-score-grid img{width:15mm;height:15mm;object-fit:contain;display:block;margin:0 auto 1mm}.rhpp-team-score-grid strong{display:block;font-size:8.5pt}.rhpp-team-score-grid b{display:block;font-size:31pt;line-height:1;margin:2mm 0}.rhpp-team-score-grid small{font-size:6pt}.rhpp-result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:2mm;margin-top:2.5mm}.rhpp-result-stats>div{border:.25mm solid #b7cad8;border-radius:1.5mm;padding:2mm;text-align:center}.rhpp-result-stats b{display:block;font-size:13pt}.rhpp-result-stats span{display:block;font-size:5.5pt}.rhpp-showcase-result{margin-top:3mm;background:#eff9ef;border:.3mm solid #aad7b1;border-radius:2mm;padding:3mm;text-align:center}.rhpp-showcase-result>*{display:block}.rhpp-showcase-result strong{font-size:7pt;color:#087e42}.rhpp-showcase-result b{font-size:8.5pt;margin-top:1mm}.rhpp-showcase-result span,.rhpp-showcase-result small{font-size:5.6pt;margin-top:.7mm}.rhpp-winner{margin-top:4mm;text-align:center;font-size:9pt}.rhpp-signoff{background:#eff8fd;border-radius:2mm;padding:3mm;font-size:6pt}.rhpp-signoff h3{font-size:8pt;margin:0 0 2mm}.rhpp-signoff h3:not(:first-child){margin-top:6mm}.rhpp-signoff p{margin:1.5mm 0}.rhpp-signoff label{display:grid;grid-template-columns:auto 1fr;gap:2mm;margin-top:5mm}.rhpp-signoff i{border-bottom:.25mm solid #7894aa}
     `}</style>
 
-    {scorePages.map((rs,i)=><MasterScorePage key={`score-${i}`} event={event} tournament={tournament} matches={playable} rounds={rs} courts={courts} />)}
-    {schedulePages.map((rs,i)=><MasterSchedulePage key={`schedule-${i}`} event={event} tournament={tournament} matches={playable} participants={participants} rounds={rs} lastScheduledById={lastScheduledById} pageIndex={i} totalPages={schedulePages.length} />)}
-    <TeamRosterPage event={event} tournament={tournament} participants={participants} roundsCount={roundsCount} courtsCount={courts.length} />
-    <BriefingPage event={event} tournament={tournament} roundsCount={roundsCount} courtsCount={courts.length} />
-    {['completed','archived'].includes(event.status) && <FinalResultPage event={event} tournament={tournament} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} courtsCount={courts.length} roundsCount={roundsCount} />}
+    {selected.score && scorePages.map((rs,i)=><MasterScorePage key={`score-${i}`} event={event} tournament={tournament} matches={playable} rounds={rs} courts={courts} />)}
+    {selected.schedule && schedulePages.map((rs,i)=><MasterSchedulePage key={`schedule-${i}`} event={event} tournament={tournament} matches={playable} participants={participants} rounds={rs} lastScheduledById={lastScheduledById} pageIndex={i} totalPages={schedulePages.length} />)}
+    {selected.roster && <TeamRosterPage event={event} tournament={tournament} participants={participants} roundsCount={roundsCount} courtsCount={courts.length} />}
+    {selected.briefing && <BriefingPage event={event} tournament={tournament} roundsCount={roundsCount} courtsCount={courts.length} />}
+    {selected.final && ['completed','archived'].includes(event.status) && <FinalResultPage event={event} tournament={tournament} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} courtsCount={courts.length} roundsCount={roundsCount} />}
   </div>;
 }
