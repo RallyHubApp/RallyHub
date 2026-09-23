@@ -283,10 +283,39 @@ Deno.serve(async (req) => {
     if (['withdrawn','injured','replaced'].includes(p.status)) return Response.json({ error:'Inactive participant cannot be marked as a late arrival.' }, { status:409 });
     const round = Math.max(currentRound, Number(fromRound || currentRound));
     if (!Number.isInteger(round) || round < 1) return Response.json({ error:'Valid available-from round required.' }, { status:400 });
+
+    // A late-arrival flag must be reflected in the generated fixtures immediately.
+    // Any unresolved match before the player's available round is impossible to play,
+    // so remove it from playable status rather than leaving the host able to score it.
+    // Historical/terminal results are never rewritten here.
+    const unavailableFixtures = normal.filter((m:any) =>
+      Number(m.round_number) >= currentRound
+      && Number(m.round_number) < round
+      && !TERMINAL.has(m.status)
+      && ([...(m.club_a_participant_ids || []), ...(m.club_b_participant_ids || [])].includes(p.id))
+    );
+    for (const m of unavailableFixtures) {
+      await base44.asServiceRole.entities.ClubChallengeMatch.update(m.id, {
+        status:'not_played',
+        winner:'none',
+        revision:Number(m.revision || 0) + 1,
+      });
+    }
+
     await base44.asServiceRole.entities.ClubChallengeParticipant.update(p.id, { status:'late', available_from_round:round });
     await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { event_pack_stale:true });
-    await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'late_arrival_set', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({participant_id:p.id,available_from_round:round}) });
-    return Response.json({ success:true, participantName:p.display_name, fromRound:round });
+    await base44.asServiceRole.entities.ClubChallengeAudit.create({
+      tenant_id:event.tenant_id,
+      challenge_event_id:event.id,
+      action:'late_arrival_set',
+      user_id:user.id,
+      occurred_at:now,
+      new_value_json:JSON.stringify({participant_id:p.id,available_from_round:round,fixtures_not_played:unavailableFixtures.length}),
+      note:unavailableFixtures.length
+        ? `Late arrival enforced: ${unavailableFixtures.length} pre-arrival fixture${unavailableFixtures.length === 1 ? '' : 's'} marked not played.`
+        : 'Late arrival recorded; no unresolved pre-arrival fixtures required changing.',
+    });
+    return Response.json({ success:true, participantName:p.display_name, fromRound:round, affected:unavailableFixtures.length });
   } catch (error) {
     return Response.json({ error:error?.message || 'Unexpected participant-management error' }, { status:500 });
   }
