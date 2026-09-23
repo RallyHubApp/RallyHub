@@ -261,6 +261,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const timerCommandRef = React.useRef(false);
   const sportingActionRef = React.useRef(false);
   const lastTimerAnnouncementRef = React.useRef(new Set());
+  const lastShowcaseSideChangeRef = React.useRef('');
   const wakeLockRef = React.useRef(null);
   const [roundLabels, setRoundLabels] = useState({});
   const [lastAnnouncement, setLastAnnouncement] = useState('');
@@ -304,6 +305,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-matches', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeMatch.filter({ challenge_event_id: event.id }, 'round_number', 200) : [],
     enabled: isAdmin && !!event?.id,
+    refetchInterval: isAdmin && event && Number(event.current_round || 0) >= Number(event.planned_rounds || 9999) ? 2000 : false,
   });
   const matches = isAdmin ? adminMatches : secureState?.matches || [];
   const refetchEvent = isAdmin ? refetchAdminEvent : refetchSecureState;
@@ -792,6 +794,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (spoken) setLastAnnouncement(text);
     return spoken;
   };
+  React.useEffect(() => {
+    const changedAt = showcaseMatch?.side_change_at || '';
+    if (!changedAt || lastShowcaseSideChangeRef.current === changedAt) return;
+    lastShowcaseSideChangeRef.current = changedAt;
+    speak('Change ends', { signal:'warning' });
+  }, [showcaseMatch?.side_change_at]);
   const announceCustom = async () => {
     const text = announcementDraft.trim();
     if (!text || announcementSpeaking) return;
