@@ -1353,7 +1353,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
   const simulateCurrentRound = () => simulateMatches(currentMatches, `Round ${currentRound}`);
   const resetDummyRecords = async () => {
-    const normal = matches.filter(m => !m.is_showcase);
+    const normal = matches.filter(m => !m.is_showcase && (!plannedRounds || Number(m.round_number) <= plannedRounds));
     const showcase = matches.filter(m => m.is_showcase);
     for (const m of showcase) await base44.entities.ClubChallengeMatch.delete(m.id);
     for (let i = 0; i < normal.length; i += 8) {
@@ -1379,7 +1379,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       setSimulating(false);
       const success = await simulateMatches(resetMatches, label, mode);
       if (!success) return;
-      const maxRound = Math.max(...resetMatches.map(m => m.round_number));
+      const maxRound = plannedRounds || Math.max(...resetMatches.map(m => m.round_number));
       await base44.entities.ClubChallengeEvent.update(event.id, { status: 'in_progress', current_round: maxRound });
       await sync();
       const planned = resetMatches.map((m, i) => {
@@ -1621,7 +1621,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 style={hostBarPinned ? { top: hostBarGeometry.top, left: hostBarGeometry.left, width: hostBarGeometry.width } : undefined}
               >
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                <Badge className={breakActive ? 'bg-red-600 text-white' : 'bg-primary/10 text-primary'}>{breakActive ? 'BREAK' : `Round ${currentRound}/${Math.max(...rounds)}`}</Badge>
+                <Badge className={breakActive ? 'bg-red-600 text-white' : 'bg-primary/10 text-primary'}>{breakActive ? 'BREAK' : `Round ${currentRound}/${plannedRounds}`}</Badge>
                 <div className="font-bold tabular-nums text-lg sm:text-xl">{fmtTimer(timerRemaining)}</div>
                 <div className="text-xs text-muted-foreground"><strong className="text-foreground">{currentRoundSavedCount}/{currentMatches.length}</strong> scores saved</div>
                 <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -1637,7 +1637,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">Round at a Glance</p><p className="text-xs text-muted-foreground">On court, resting and up next — all in one place.</p></div><Badge variant="outline">R{currentRound}</Badge></div><div className="grid md:grid-cols-2 xl:grid-cols-4 gap-2">{currentDisplayMatches.map(m=><div key={`now-${m.id}`} className="rounded-lg border border-primary/20 bg-primary/5 p-3"><p className="text-xs font-bold text-primary">Court {m.court_number} · NOW</p><p className="text-xs font-semibold mt-2">{matchNames(m.club_a_names, 'club_a')}</p><p className="text-[10px] text-muted-foreground my-1">vs</p><p className="text-xs font-semibold">{matchNames(m.club_b_names, 'club_b')}</p></div>)}</div>{currentSittingOut.length>0&&<div><p className="text-xs font-semibold">Resting this round</p><div className="grid md:grid-cols-2 gap-2 mt-2"><div className="rounded-lg border border-border bg-secondary/30 p-3"><p className="text-xs font-bold text-primary">{event.club_a_name}</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">{currentSittingOutA.map(p=><div key={p.id} className="rounded-md bg-secondary px-2.5 py-1.5 text-xs font-medium">{p.display_name}</div>)}</div></div><div className="rounded-lg border border-border bg-secondary/30 p-3"><p className="text-xs font-bold text-primary">{event.club_b_name}</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">{currentSittingOutB.map(p=><div key={p.id} className="rounded-md bg-secondary px-2.5 py-1.5 text-xs font-medium">{p.display_name}</div>)}</div></div></div></div>}{nextDisplayMatches.length>0&&<div><p className="text-xs font-semibold">Up next · Round {currentRound+1}</p><div className="grid md:grid-cols-2 xl:grid-cols-4 gap-2 mt-2">{nextDisplayMatches.map(m=><div key={`next-${m.id}`} className="rounded-lg border border-border bg-secondary/40 p-3"><p className="text-xs font-bold">Court {m.court_number} · NEXT</p><p className="text-xs font-semibold mt-2">{matchNames(m.club_a_names, 'club_a')}</p><p className="text-[10px] text-muted-foreground my-1">vs</p><p className="text-xs font-semibold">{matchNames(m.club_b_names, 'club_b')}</p></div>)}</div></div>}</div>
             <div className="rounded-xl border border-primary/25 bg-card p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between gap-3">
-                <div><p className="text-sm font-semibold">{breakActive ? 'Break Timer' : 'Round Timer'}</p><p className="text-xs text-muted-foreground">{breakActive ? `${event.break_minutes}-minute scheduled break · Round ${currentRound + 1} waits` : `Round ${currentRound} of ${Math.max(...rounds)}`}</p></div>
+                <div><p className="text-sm font-semibold">{breakActive ? 'Break Timer' : 'Round Timer'}</p><p className="text-xs text-muted-foreground">{breakActive ? `${event.break_minutes}-minute scheduled break · Round ${currentRound + 1} waits` : `Round ${currentRound} of ${plannedRounds}`}</p></div>
                 <Badge variant="outline">{['idle','ready'].includes(String(timerState?.phase || 'ready')) ? 'ready' : String(timerState?.phase || 'ready').replaceAll('_',' ')}</Badge>
               </div>
               <div className="text-center py-1"><p className="text-5xl sm:text-6xl font-bold tabular-nums tracking-tight">{fmtTimer(timerRemaining)}</p></div>
