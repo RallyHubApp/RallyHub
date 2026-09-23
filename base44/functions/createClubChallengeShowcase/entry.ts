@@ -18,7 +18,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, clubAMaleId, clubAFemaleId, clubBMaleId, clubBFemaleId } = body;
+    const { eventId, clubAMaleId, clubAFemaleId, clubBMaleId, clubBFemaleId, mode = 'tiebreak' } = body;
+    if (!['tiebreak','exhibition'].includes(mode)) return Response.json({ error:'Invalid Showcase mode.' }, { status:400 });
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
     if (!event) return Response.json({ error:'Interclub Challenge event not found' }, { status:404 });
@@ -31,7 +32,7 @@ Deno.serve(async (req) => {
     }
     if (!allowed) return Response.json({ error:'Event manager permission required' }, { status:403 });
     if (!event.showcase_enabled) return Response.json({ error:'Showcase Final is not enabled.' }, { status:409 });
-    if (Number(event.showcase_points || 0) <= 0) return Response.json({ error:'Showcase Final points must be greater than zero.' }, { status:409 });
+    if (mode === 'tiebreak' && Number(event.showcase_points || 0) <= 0) return Response.json({ error:'Showcase Final points must be greater than zero.' }, { status:409 });
 
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200);
     const normal = matches.filter((m:any) => !m.is_showcase);
@@ -43,7 +44,8 @@ Deno.serve(async (req) => {
       else if (m.winner === 'club_b') { clubB += Number(event.win_points ?? 2); clubA += Number(event.loss_points ?? 0); }
       else if (m.winner === 'draw') { clubA += Number(event.draw_points ?? 1); clubB += Number(event.draw_points ?? 1); }
     }
-    if (clubA !== clubB) return Response.json({ error:'Showcase Final is only valid when normal Interclub Challenge points are tied.' }, { status:409 });
+    if (mode === 'tiebreak' && clubA !== clubB) return Response.json({ error:'Tiebreak Showcase Final is only valid when normal Interclub points are tied.' }, { status:409 });
+    if (mode === 'exhibition' && clubA === clubB) return Response.json({ error:'A tied Interclub result needs a tiebreak decision, not an exhibition Showcase.' }, { status:409 });
 
     const ids = [clubAMaleId, clubAFemaleId, clubBMaleId, clubBFemaleId];
     if (ids.some(id => !id) || new Set(ids).size !== 4) return Response.json({ error:'Nominate four distinct players: one male and one female from each club.' }, { status:400 });
@@ -66,20 +68,22 @@ Deno.serve(async (req) => {
       draw_version:event.draw_version || 0, round_number:maxRound + 1, court_number:1, match_number:normal.length + 1,
       club_a_participant_ids:[aM.id,aF.id], club_b_participant_ids:[bM.id,bF.id],
       club_a_names:[aM.display_name,aF.display_name], club_b_names:[bM.display_name,bF.display_name],
-      status:'scheduled', winner:'none', revision:0, correction_count:0, is_showcase:true,
+      status:'scheduled', winner:'none', revision:0, correction_count:0, is_showcase:true, showcase_mode:mode,
     });
     const now = new Date().toISOString();
     await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
       showcase_club_a_male_id:aM.id, showcase_club_a_female_id:aF.id,
       showcase_club_b_male_id:bM.id, showcase_club_b_female_id:bF.id,
-      showcase_resolution_method:'showcase_final', showcase_resolved_winner:'none',
+      showcase_resolution_method:mode === 'tiebreak' ? 'showcase_final' : 'none',
+      showcase_resolved_winner:'none',
     });
     await base44.asServiceRole.entities.ClubChallengeAudit.create({
       tenant_id:event.tenant_id, challenge_event_id:event.id, match_id:created.id,
-      action:'showcase_final_created', user_id:user.id, occurred_at:now,
-      new_value_json:JSON.stringify({ club_a:created.club_a_names, club_b:created.club_b_names, points:event.showcase_points }),
+      action:mode === 'exhibition' ? 'showcase_exhibition_created' : 'showcase_final_created', user_id:user.id, occurred_at:now,
+      new_value_json:JSON.stringify({ club_a:created.club_a_names, club_b:created.club_b_names, mode, points_applied:mode === 'tiebreak' ? Number(event.showcase_points || 0) : 0 }),
+      note:mode === 'exhibition' ? 'Optional Showcase Final created as an exhibition; it does not affect the Interclub result.' : 'Showcase Final created as the event tiebreak.',
     });
-    return Response.json({ success:true, match:created });
+    return Response.json({ success:true, match:created, mode });
   } catch (error) {
     return Response.json({ error:error?.message || 'Unexpected Showcase Final error' }, { status:500 });
   }
