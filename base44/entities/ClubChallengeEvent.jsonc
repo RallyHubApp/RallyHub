@@ -209,8 +209,31 @@
       }
     },
     "pot_revealed_at": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "date-time"
+    },
+    "pot_vote_opened_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "pot_vote_closes_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "pot_vote_duration_minutes": {
+      "type": [
+        "number",
+        "null"
+      ]
     },
     "draw_version": {
       "type": "number",
@@ -253,7 +276,10 @@
       "format": "date-time"
     },
     "finalised_at": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "date-time"
     },
     "planned_rounds": {
@@ -263,10 +289,16 @@
       "type": "string"
     },
     "schedule_adjustment_lock_token": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "schedule_adjustment_lock_until": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "date-time"
     }
   },
