@@ -108,6 +108,16 @@
         "tiebreak",
         "exhibition"
       ]
+    },
+    "showcase_target_points": {
+      "type": "number"
+    },
+    "showcase_win_by": {
+      "type": "number"
+    },
+    "side_change_announced": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [
