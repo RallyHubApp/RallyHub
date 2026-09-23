@@ -700,6 +700,119 @@ Brian`;
     window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   };
 
+  const openDirectoryContactEditor = row => {
+    if (!row?.accesses?.length) return;
+    setEditingDirectoryContact(row);
+    setDirectoryContactEditForm({
+      fullName: row.fullName || '',
+      mobile: row.mobile || '',
+    });
+  };
+
+  const saveDirectoryContactIdentity = async () => {
+    const accessId = editingDirectoryContact?.accesses?.[0]?.id;
+    if (!accessId) return;
+    setSavingDirectoryIdentity(true);
+    try {
+      const res = await base44.functions.invoke('directoryClaim', {
+        action: 'update_verified_identity',
+        accessId,
+        fullName: directoryContactEditForm.fullName,
+        mobile: directoryContactEditForm.mobile,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['all-users'] }),
+        queryClient.invalidateQueries({ queryKey: ['directory-verification'] }),
+      ]);
+      toast.success('Private Directory identity updated');
+      setEditingDirectoryContact(null);
+    } catch (error) {
+      toast.error(error?.message || 'Could not update the private Directory identity');
+    } finally {
+      setSavingDirectoryIdentity(false);
+    }
+  };
+
+  const openDirectoryContactWhatsApp = row => {
+    if (!row?.mobile) return toast.error('No private mobile / WhatsApp number is saved for this contact');
+    const county = row?.clubs?.[0]?.county || '';
+    const digits = whatsappDigitsForInvite(row.mobile, county);
+    if (!digits) return toast.error('The saved mobile number is not valid for WhatsApp');
+    window.open(`https://wa.me/${digits}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const downloadDirectoryContactsCsv = () => {
+    const headings = ['Full name','Email','Mobile / WhatsApp','Clubs','Roles','Network updates opt-in'];
+    const rows = directoryContactRows.map(row => [
+      row.fullName || '',
+      row.email || '',
+      row.mobile || '',
+      row.clubs.map(club => club.name).join(' | '),
+      row.clubs.map(club => `${club.name}: ${club.role}`).join(' | '),
+      row.networkUpdatesOptIn ? 'Yes' : 'No',
+    ]);
+    const csv = [headings, ...rows]
+      .map(cols => cols.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rallyhub-directory-contacts-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const copyDirectoryWhatsAppNumbers = async () => {
+    const numbers = [...new Set(directoryContactRows.map(row => row.mobile).filter(Boolean))];
+    if (!numbers.length) return toast.error('No private mobile numbers are available');
+    try {
+      await navigator.clipboard.writeText(numbers.join('\n'));
+      toast.success(`${numbers.length} Directory contact number${numbers.length === 1 ? '' : 's'} copied`);
+    } catch {
+      toast.error('Could not copy the Directory contact numbers');
+    }
+  };
+
+  const sendDirectoryBroadcast = async (testOnly = false) => {
+    const subject = directoryBroadcast.subject.trim();
+    const message = directoryBroadcast.message.trim();
+    if (!subject || !message) return toast.error('Enter both a subject and message');
+    if (!testOnly) {
+      const targetCount = directoryBroadcast.audience === 'opted_in'
+        ? directoryContactRows.filter(row => row.email && row.networkUpdatesOptIn).length
+        : directoryContactRows.filter(row => row.email).length;
+      const audienceLabel = directoryBroadcast.audience === 'opted_in'
+        ? 'verified Directory contacts who opted in to general/network updates'
+        : 'all verified Directory owners and editors';
+      const confirmed = window.confirm(`Send this email to ${targetCount} ${audienceLabel}?\n\nA test send first is recommended.`);
+      if (!confirmed) return;
+    }
+    setDirectoryBroadcastBusy(testOnly ? 'test' : 'send');
+    try {
+      const res = await base44.functions.invoke('directoryClaim', {
+        action: 'directory_broadcast_email',
+        subject,
+        message,
+        audience: directoryBroadcast.audience,
+        testOnly,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      if (testOnly) {
+        toast.success(`Test email sent to ${res.data?.to || 'your admin email'}`);
+      } else {
+        toast.success(`Directory broadcast complete: ${res.data?.sent || 0} sent${res.data?.failed ? `, ${res.data.failed} failed` : ''}`);
+      }
+    } catch (error) {
+      toast.error(error?.message || 'Could not send the Directory broadcast');
+    } finally {
+      setDirectoryBroadcastBusy('');
+    }
+  };
+
   const createOwnerWhatsAppInvite = async () => {
     if (!ownerInvite.listingSlug || !selectedOwnerInviteListing) return toast.error('Choose a club first');
     if (!ownerInvite.contactPhone.trim()) return toast.error('Enter the mobile number for WhatsApp');
