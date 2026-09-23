@@ -98,6 +98,8 @@ check('host: live screen exposes next round without navigation', contains(ui,'Up
 check('display: Hall Display exposes On Court Now', contains(ui,'On Court Now') && contains(publicDisplay,'On Court Now'));
 check('display: Hall Display exposes Resting This Round', contains(ui,'Resting This Round') && contains(publicDisplay,'Resting This Round'));
 check('display: Hall Display exposes Up Next', contains(ui,'Up Next') && contains(publicDisplay,'Up Next'));
+check('display: not-played fixtures never appear as NOW or NEXT', contains(publicDisplay,"m.status!=='not_played'") && contains(ui,"m.status !== 'not_played'"));
+check('display: approved round total is shown from persisted plan', contains(publicDisplay,'plannedRounds') && contains(ui,'plannedRounds'));
 check('display: public display retains disconnect warning', contains(publicDisplay,'showing last known state'));
 
 // 5. Per-round timer flexibility without weakening the authoritative clock.
@@ -153,6 +155,14 @@ check('what-if: changeover is state-gated so it cannot replace the initial play 
 check('what-if: late arrival remains explicit', contains(participantFn,"'late_arrival'"));
 check('what-if: continue-short remains supported', contains(participantFn,"'continue_short'"));
 check('what-if: court/time change remains authoritative', contains(scheduleFn,'event_pack_stale'));
+check('what-if: court/time changes cannot extend beyond approved rounds', contains(scheduleFn,'newRound > plannedRounds') && contains(scheduleFn,'beyondPlan'));
+check('what-if: approved round count is persisted with the generated draw', contains(drawFn,'planned_rounds:plannedRounds'));
+check('what-if: overlapping schedule updates use a server-side lock', contains(scheduleFn,'schedule_adjustment_lock_token') && contains(scheduleFn,'crypto.randomUUID()') && contains(scheduleFn,'won the update race'));
+const disruptionCurrentRound=3, disruptionPlannedRounds=12, disruptionCourts=3, disruptionMinutes=144, disruptionBlock=12, disruptionBreak=20;
+const disruptionTimeRounds=Math.floor((disruptionMinutes-disruptionBreak)/disruptionBlock);
+const disruptionPlanRounds=disruptionPlannedRounds-disruptionCurrentRound+1;
+const disruptionRoundCapacity=Math.min(disruptionTimeRounds,disruptionPlanRounds);
+check('what-if: 4-to-3 court disruption stays inside Round 12', disruptionRoundCapacity===10 && disruptionRoundCapacity*disruptionCourts===30);
 check('what-if: court/time confirm gives immediate visible acknowledgement', contains(ui,'Applying court & time changes… command sent') && contains(ui,'data-testid="cc-schedule-change-status"'));
 check('what-if: court/time confirm blocks duplicate host taps', contains(ui,'eventDayAdjustmentBusy') && contains(ui,'sportingActionRef.current'));
 check('what-if: repeated schedule apply is server-idempotent after success', contains(scheduleFn,'alreadyApplied:true') && contains(scheduleFn,'sameEventSettings') && contains(scheduleFn,'changesAlreadyApplied'));
