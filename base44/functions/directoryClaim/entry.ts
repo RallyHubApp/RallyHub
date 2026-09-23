@@ -107,6 +107,10 @@ function publicClaim(claim) {
     listing_name_snapshot: claim.listing_name_snapshot,
     claimant_name: claim.claimant_name,
     claimant_role: claim.claimant_role,
+    claimant_phone: claim.claimant_phone || null,
+    claimant_message: claim.claimant_message || null,
+    public_name_opt_out: claim.public_name_opt_out === true,
+    public_phone_opt_out: claim.public_phone_opt_out === true,
     status: claim.status,
     created_date: claim.created_date,
     reviewed_at: claim.reviewed_at,
@@ -536,6 +540,72 @@ Deno.serve(async (req) => {
         ...(user.role === 'admin' || existingClubAccess?.length ? {} : { account_scope: 'directory', approval_status: 'pending' }),
       });
       return Response.json({ success: true, fullName, mobile });
+    }
+
+    if (action === 'update_pending_claim') {
+      const listingSlug = String(body.listingSlug || '').trim();
+      const listing = await resolveListing(base44, listingSlug);
+      if (!listing) return Response.json({ error: 'Directory listing not found' }, { status: 404 });
+      const claims = await base44.asServiceRole.entities.DirectoryClaim.filter({
+        listing_slug: listingSlug,
+        claimant_user_id: user.id,
+        status: 'pending',
+      }, '-created_date', 20);
+      const claim = claims?.[0] || null;
+      if (!claim) return Response.json({ error: 'No pending Directory verification request was found for this account.' }, { status: 404 });
+
+      const claimantName = String(body.claimantName || '').trim().slice(0, 160);
+      const claimantRole = String(body.claimantRole || '').trim().slice(0, 160);
+      const claimantPhone = String(body.claimantPhone || '').trim().slice(0, 80);
+      const claimantMessage = String(body.claimantMessage || '').trim().slice(0, 1500);
+      const publicNameOptOut = body.publicNameOptOut === true;
+      const publicPhoneOptOut = body.publicPhoneOptOut === true;
+      const networkUpdatesOptIn = body.networkUpdatesOptIn === true;
+
+      if (!looksLikePersonalFullName(claimantName)) {
+        return Response.json({ error: 'Please enter your own full name (first name and surname), not a club name or role such as Chairperson.' }, { status: 400 });
+      }
+      if (!claimantRole) return Response.json({ error: 'Your role or connection to the club is required' }, { status: 400 });
+      if (!looksLikeUsableMobile(claimantPhone)) {
+        return Response.json({ error: 'Please enter a valid mobile number that RallyHub can use privately to verify your identity.' }, { status: 400 });
+      }
+
+      const userEmail = normaliseEmail(user.email);
+      const trustedContacts = listing.contacts || [];
+      const emailMatch = trustedContacts.some(c => normaliseEmail(c.email) && normaliseEmail(c.email) === userEmail);
+      const nameMatch = trustedContacts.some(c => normaliseName(c.name) && normaliseName(c.name) === normaliseName(claimantName));
+      const phoneMatch = trustedContacts.some(c => c.phone && phoneLooksSame(c.phone, claimantPhone));
+      const now = new Date().toISOString();
+
+      await base44.asServiceRole.entities.User.update(user.id, {
+        full_name: claimantName,
+        directory_mobile: claimantPhone,
+      });
+      await base44.asServiceRole.entities.DirectoryClaim.update(claim.id, {
+        claimant_name: claimantName,
+        claimant_role: claimantRole,
+        claimant_phone: claimantPhone,
+        claimant_message: claimantMessage || null,
+        public_name_opt_out: publicNameOptOut,
+        public_phone_opt_out: publicPhoneOptOut,
+        email_match: emailMatch,
+        name_match: nameMatch,
+        phone_match: phoneMatch,
+        network_updates_opt_in: networkUpdatesOptIn,
+        network_updates_opted_in_at: networkUpdatesOptIn ? (claim.network_updates_opted_in_at || now) : null,
+        match_method: 'manual_review',
+      });
+
+      await sendAdminDirectoryEmail(base44, {
+        user,
+        subject: `Directory verification details updated – ${listing.name}`,
+        body: `A pending RallyHub Directory verification request has been updated.\n\nClub: ${listing.name}\nName: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\nPublic name: ${publicNameOptOut ? 'Keep private' : 'No opt-out'}\nPublic mobile: ${publicPhoneOptOut ? 'Keep private' : 'No opt-out'}\n\nReview this request in RallyHub Admin → Directory.\nhttps://rallyhub.ie/app/admin?tab=directory`,
+        kind: 'claim_updated',
+        contextId: claim.id,
+      });
+
+      const refreshed = await base44.asServiceRole.entities.DirectoryClaim.filter({ id: claim.id });
+      return Response.json({ success: true, status: 'pending', claim: publicClaim(refreshed?.[0] || claim), hasAccess: false });
     }
 
     if (action === 'submit') {
