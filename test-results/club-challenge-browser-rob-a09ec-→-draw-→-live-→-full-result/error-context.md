@@ -14,19 +14,21 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('Replace / Withdraw a Player')
+Locator: getByText('Applying player replacement from Round 1… command sent')
 Expected: visible
-Timeout: 3000ms
+Timeout: 300ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('Replace / Withdraw a Player') with timeout 3000ms
-  - waiting for getByText('Replace / Withdraw a Player')
+  - Expect "toBeVisible" getByText('Applying player replacement from Round 1… command sent') with timeout 300ms
+  - waiting for getByText('Applying player replacement from Round 1… command sent')
 
 ```
 
 ```yaml
 - main:
+  - paragraph: Replacing Club A Test 02 with Replacement Test from Round 1… command sent
+  - paragraph: RallyHub has accepted your tap. Keep this screen open; the control stays locked until the action resolves.
   - img
   - paragraph: RallyHub Interclub
   - paragraph: "Interclub Challenge · Status: in progress"
@@ -164,7 +166,7 @@ Call log:
     - paragraph: Player Change
     - paragraph: Choose how RallyHub should handle an injury or early departure. Completed results stay unchanged; only future unplayed fixtures can change.
     - text: Player leaving
-    - combobox: Choose player
+    - combobox [disabled]: Club A Test 02 · Clare Blue
     - text: Replacement route
     - combobox [disabled]: New / registered replacement
     - text: Reason
@@ -172,17 +174,18 @@ Call log:
     - text: Registered available player
     - combobox [disabled]: Type a replacement manually
     - text: Replacement name
-    - textbox "Name"
+    - textbox "Name" [disabled]: Replacement Test
     - text: Gender
     - combobox: Inherit outgoing player
     - text: Note
     - textbox "Optional note"
-    - button "Replace from Round 1" [disabled]
+    - button "Applying…" [disabled]
     - button "Continue Short · No Replacement" [disabled]
+    - text: Replacing Club A Test 02 with Replacement Test from Round 1…
     - paragraph: Late Arrival
     - paragraph: Set the first round a player is available. RallyHub will flag that the remaining draw may need review.
-    - combobox: Player
-    - spinbutton: "1"
+    - combobox [disabled]: Player
+    - spinbutton [disabled]: "1"
     - button "Set Round" [disabled]
   - group:
     - paragraph: Court & Time Changes
@@ -201,7 +204,6 @@ Call log:
 # Test source
 
 ```ts
-  180 |       return {success:true,normalMatches:normal.length,showcase:true,practiceVotes:model.votes.length,winner:'club_a'};
   181 |     }
   182 | 
   183 |     if (name === 'updateClubChallengePot') {
@@ -301,9 +303,9 @@ Call log:
   277 |   expect(await page.getByTestId('cc-score-r1-c1-a').getAttribute('maxlength')).toBe('2');await page.getByTestId('cc-score-r1-c1-a').fill('11');await page.getByTestId('cc-score-r1-c1-b').fill('8');started=Date.now();await page.getByTestId('cc-save-score-r1-c1').click();await expect(page.getByTestId('cc-score-card-r1-c1')).toContainText('Saved ·',{timeout:1500});metric(report,'single_score_save_ms',Date.now()-started,1200);
   278 | 
   279 |   const savedR1C1=model.matches.find(m=>m.round_number===1&&m.court_number===1);const outgoingName=savedR1C1.club_a_names[0];const historicalNames=[...savedR1C1.club_a_names];
-> 280 |   await page.getByRole('button',{name:'Players',exact:true}).click();await expect(page.getByText('Replace / Withdraw a Player')).toBeVisible();await page.getByTestId('cc-replacement-outgoing').click();await page.getByRole('option',{name:new RegExp(`^${outgoingName.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')} ·`)}).click();await page.getByTestId('cc-replacement-name').fill('Replacement Test');
-      |                                                                                                                                  ^ Error: expect(locator).toBeVisible() failed
-  281 |   const replaceBefore=model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='replace').length;started=Date.now();await page.getByTestId('cc-replace-player').click();await expect(page.getByText('Applying player replacement from Round 1… command sent')).toBeVisible({timeout:300});metric(report,'replacement_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-player-control-status')).toContainText('replaced by Replacement Test',{timeout:1800});expect(model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='replace').length-replaceBefore).toBe(1);expect(savedR1C1.club_a_names).toEqual(historicalNames);expect(model.matches.some(m=>m.round_number>1&&(m.club_a_names||[]).includes('Replacement Test'))).toBe(true);report.replacement_future_only=true;
+  280 |   await page.getByRole('button',{name:'Players',exact:true}).click();await expect(page.getByText('Player Controls',{exact:true})).toBeVisible();await page.getByTestId('cc-replacement-outgoing').click();await page.getByRole('option',{name:new RegExp(`^${outgoingName.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')} ·`)}).click();await page.getByTestId('cc-replacement-name').fill('Replacement Test');
+> 281 |   const replaceBefore=model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='replace').length;started=Date.now();await page.getByTestId('cc-replace-player').click();await expect(page.getByText('Applying player replacement from Round 1… command sent')).toBeVisible({timeout:300});metric(report,'replacement_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-player-control-status')).toContainText('replaced by Replacement Test',{timeout:1800});expect(model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='replace').length-replaceBefore).toBe(1);expect(savedR1C1.club_a_names).toEqual(historicalNames);expect(model.matches.some(m=>m.round_number>1&&(m.club_a_names||[]).includes('Replacement Test'))).toBe(true);report.replacement_future_only=true;
+      |                                                                                                                                                                                                                                                                                        ^ Error: expect(locator).toBeVisible() failed
   282 | 
   283 |   for(const court of [2,3,4]){await page.getByTestId(`cc-score-r1-c${court}-a`).fill('11');await page.getByTestId(`cc-score-r1-c${court}-b`).fill('7');await page.getByTestId(`cc-save-score-r1-c${court}`).click();await expect(page.getByTestId(`cc-score-card-r1-c${court}`)).toContainText('Saved ·',{timeout:1500});}
   284 |   started=Date.now();await page.getByRole('button',{name:'Complete Round 1 & Go to Round 2'}).click();await expect(page.getByText('Preparing Round 2… command sent')).toBeVisible({timeout:300});metric(report,'round_advance_ack_ms',Date.now()-started,350);await expect(page.getByText('Round 2/12',{exact:true})).toBeVisible({timeout:1800});await expect(page.getByText('ready',{exact:true})).toBeVisible();await expect(page.getByText('10:00').first()).toBeVisible();await expect(page.getByText('0/4').first()).toBeVisible();report.round_transition_timer_reset=true;
