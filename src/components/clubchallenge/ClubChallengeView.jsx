@@ -224,6 +224,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [logoUploading, setLogoUploading] = useState('');
   const [simLog, setSimLog] = useState([]);
   const [showcaseSelection, setShowcaseSelection] = useState({ aMale: '', aFemale: '', bMale: '', bFemale: '' });
+  const [showcaseFormat, setShowcaseFormat] = useState({ targetPoints: 11, winBy: 1 });
+  const [showcaseScorerLink, setShowcaseScorerLink] = useState('');
   const [replacement, setReplacement] = useState({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
   const [lateArrival, setLateArrival] = useState({ participantId: '', round: 1 });
   const [eventDayAdjust, setEventDayAdjust] = useState({ courts: 0, availableMinutes: 0 });
@@ -385,6 +387,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const scheduleMaxRound = normalMatches.length ? Math.max(...normalMatches.map(m => Number(m.round_number || 0))) : 0;
   const plannedRounds = Number(event?.planned_rounds || 0) > 0 ? Number(event.planned_rounds) : scheduleMaxRound;
   const showcaseMatch = matches.find(m => m.is_showcase) || null;
+  React.useEffect(() => {
+    if (!showcaseMatch) return;
+    setShowcaseFormat({
+      targetPoints: Number(showcaseMatch.showcase_target_points || 11),
+      winBy: Number(showcaseMatch.showcase_win_by || 1),
+    });
+  }, [showcaseMatch?.id, showcaseMatch?.showcase_target_points, showcaseMatch?.showcase_win_by]);
   const locked = ['draw_approved', 'in_progress', 'paused', 'completed', 'archived'].includes(event?.status);
   const fairness = useMemo(() => { try { return event?.fairness_json ? JSON.parse(event.fairness_json) : null; } catch { return null; } }, [event?.fairness_json]);
   const score = useMemo(() => scoreFromMatchRecords(normalMatches, { winPoints: event?.win_points ?? 2, drawPoints: event?.draw_points ?? 1, lossPoints: event?.loss_points ?? 0 }), [normalMatches, event?.win_points, event?.draw_points, event?.loss_points]);
@@ -1201,6 +1210,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         clubBMaleId: showcaseSelection.bMale,
         clubBFemaleId: showcaseSelection.bFemale,
         mode: showcaseMode,
+        targetPoints: Number(showcaseFormat.targetPoints),
+        winBy: Number(showcaseFormat.winBy),
       });
       if (res.data?.error) { toast.error(res.data.error); return; }
       toast.success(showcaseMode === 'exhibition' ? 'Optional Showcase Final created · exhibition only' : 'Showcase tiebreak created');
