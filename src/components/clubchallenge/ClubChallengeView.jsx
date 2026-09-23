@@ -382,6 +382,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     return name;
   }).join(' & ');
   const normalMatches = matches.filter(m => !m.is_showcase);
+  const scheduleMaxRound = normalMatches.length ? Math.max(...normalMatches.map(m => Number(m.round_number || 0))) : 0;
+  const plannedRounds = Number(event?.planned_rounds || 0) > 0 ? Number(event.planned_rounds) : scheduleMaxRound;
   const showcaseMatch = matches.find(m => m.is_showcase) || null;
   const locked = ['draw_approved', 'in_progress', 'paused', 'completed', 'archived'].includes(event?.status);
   const fairness = useMemo(() => { try { return event?.fairness_json ? JSON.parse(event.fairness_json) : null; } catch { return null; } }, [event?.fairness_json]);
@@ -392,7 +394,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!showcaseMatch || !['completed','draw'].includes(showcaseMatch.status) || !['club_a','club_b'].includes(showcaseMatch.winner)) return score;
     return applyShowcasePoints(score, { winner: showcaseMatch.winner === 'club_a' ? 'clubA' : 'clubB', points: Number(event?.showcase_points || 0) });
   }, [score, showcaseMatch, event?.showcase_points]);
-  const rounds = [...new Set(normalMatches.map(m => m.round_number))].sort((a, b) => a - b);
+  const rounds = [...new Set(normalMatches.map(m => Number(m.round_number)).filter(r => !plannedRounds || r <= plannedRounds))].sort((a, b) => a - b);
   const currentRound = event?.current_round || 1;
   const timerState = useMemo(() => { try { return event?.timer_state_json ? JSON.parse(event.timer_state_json) : null; } catch { return null; } }, [event?.timer_state_json]);
   const timerRemaining = useMemo(() => {
