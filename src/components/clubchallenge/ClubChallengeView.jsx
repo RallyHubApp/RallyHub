@@ -139,6 +139,16 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
   }, [signature, clubAName, clubBName]);
 
   const byId = new Map(active.map(p => [p.id, p]));
+  const genderStats = ids => {
+    let male = 0, female = 0, unset = 0;
+    ids.forEach(pid => {
+      const value = String(byId.get(pid)?.gender || '').trim().toLowerCase();
+      if (value.startsWith('m')) male++;
+      else if (value.startsWith('f')) female++;
+      else unset++;
+    });
+    return { male, female, unset };
+  };
   const handleDragEnd = result => {
     if (!result.destination || locked || busy) return;
     const from = result.source.droppableId;
@@ -188,7 +198,10 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
                 {lanes.pool.length > 0 && <button type="button" onClick={() => moveAllPool(id)} disabled={locked || busy || dirty} className="mt-1.5 text-[10px] text-primary hover:underline disabled:opacity-40">Move all {lanes.pool.length} unassigned players to this team</button>}
               </>}
           </div>
-          <Badge variant="outline">{ids.length}</Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge variant="outline">{ids.length}</Badge>
+            {id !== 'pool' && (() => { const g=genderStats(ids); return <div className="flex flex-wrap justify-end gap-1 text-[9px]"><span className="rounded-full bg-blue-500/10 px-1.5 py-0.5 font-semibold text-blue-700">M {g.male}</span><span className="rounded-full bg-pink-500/10 px-1.5 py-0.5 font-semibold text-pink-700">F {g.female}</span>{g.unset>0&&<span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 font-semibold text-amber-700">Not set {g.unset}</span>}</div>; })()}
+          </div>
         </div>
         {id === 'pool' && <div className="space-y-2 mb-3">
           <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => onImportSpond?.('pool')} disabled={locked || busy || dirty}><Download className="w-3.5 h-3.5 mr-1" />Import Unassigned Spond Players</Button>
@@ -204,7 +217,7 @@ function TeamBuilder({ participants, clubAName, clubBName, locked, busy, onImpor
                 {id !== 'pool' && <span className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>}
                 <span className="text-xs text-foreground flex-1 truncate">{p.display_name}</span>
                 {id !== 'pool' && <Select value={p.roster_role || 'rotation'} onValueChange={async value => { setStatus({state:'working',text:`Updating ${p.display_name}…`}); try { await onSetRosterRole?.(p.id, value); setStatus({state:'success',text:`${p.display_name} set as ${value === 'reserve' ? 'Reserve' : 'Rotation'} player.`}); } catch (e) { setStatus({state:'error',text:e?.message || 'Could not update roster role.'}); } }} disabled={locked || busy || dirty}><SelectTrigger className="h-8 w-[102px] bg-background text-[10px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="rotation">Rotation</SelectItem><SelectItem value="reserve">Reserve</SelectItem></SelectContent></Select>}
-                {p.gender && <span className="text-[10px] text-muted-foreground">{p.gender}</span>}
+                {id !== 'pool' && <span className={cn('min-w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0', String(p.gender || '').toLowerCase().startsWith('m') ? 'bg-blue-500/10 text-blue-700' : String(p.gender || '').toLowerCase().startsWith('f') ? 'bg-pink-500/10 text-pink-700' : 'bg-amber-500/10 text-amber-700')} title={p.gender || 'Gender not set'}>{String(p.gender || '').toLowerCase().startsWith('m') ? 'M' : String(p.gender || '').toLowerCase().startsWith('f') ? 'F' : '?'}</span>}
               </div>}
             </Draggable>;
           })}
