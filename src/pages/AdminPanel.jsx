@@ -1025,6 +1025,54 @@ Brian`;
   const pendingNewDirectoryRequests = directoryVerification.listingRequests.filter(r => r.status === 'pending');
   const pendingDirectoryActionCount = pendingDirectoryClaims.length + pendingNewDirectoryRequests.length;
   const activeDirectoryAccesses = directoryVerification.accesses.filter(a => a.status === 'active');
+  const directoryContactRows = (() => {
+    const byUser = new Map();
+    for (const access of activeDirectoryAccesses) {
+      const userId = String(access.user_id || '');
+      if (!userId) continue;
+      const accessUser = allUsers.find(u => String(u.id) === userId) || null;
+      const userClaims = (directoryVerification.claims || [])
+        .filter(claim => String(claim.claimant_user_id || '') === userId)
+        .sort((a, b) => Date.parse(String(b.created_date || '')) - Date.parse(String(a.created_date || '')));
+      const latestClaim = userClaims[0] || null;
+      const existing = byUser.get(userId) || {
+        userId,
+        fullName: accessUser?.full_name || accessUser?.display_name || latestClaim?.claimant_name || '',
+        email: accessUser?.email || latestClaim?.claimant_email || '',
+        mobile: accessUser?.directory_mobile || latestClaim?.claimant_phone || '',
+        networkUpdatesOptIn: latestClaim?.network_updates_opt_in === true,
+        publicNameOptOut: latestClaim?.public_name_opt_out === true,
+        publicPhoneOptOut: latestClaim?.public_phone_opt_out === true,
+        accesses: [],
+        clubs: [],
+      };
+      const listing = directoryAdminListings.find(item => item.slug === access.listing_slug) || null;
+      const publicLabel = listing?.contactName || '';
+      existing.accesses.push(access);
+      existing.clubs.push({
+        slug: access.listing_slug,
+        name: access.listing_name_snapshot || listing?.name || access.listing_slug,
+        county: listing?.county || '',
+        role: access.role === 'owner' ? 'Primary Owner' : 'Directory Editor',
+        publicLabel,
+      });
+      byUser.set(userId, existing);
+    }
+    return [...byUser.values()].sort((a, b) => String(a.fullName || a.email).localeCompare(String(b.fullName || b.email)));
+  })();
+  const filteredDirectoryContactRows = directoryContactRows.filter(row => {
+    const q = directoryContactSearch.trim().toLowerCase();
+    if (!q) return true;
+    const haystack = [
+      row.fullName,
+      row.email,
+      row.mobile,
+      ...row.clubs.flatMap(club => [club.name, club.county, club.role, club.publicLabel]),
+    ].map(value => String(value || '').toLowerCase()).join(' ');
+    return haystack.includes(q);
+  });
+  const directoryContactsWithEmail = directoryContactRows.filter(row => row.email).length;
+  const optedInDirectoryContacts = directoryContactRows.filter(row => row.email && row.networkUpdatesOptIn).length;
   const activeClubAccessUserIds = new Set((allClubUserAccesses || []).filter(a => a.status === 'active').map(a => String(a.user_id)));
   const directoryOnlyUserIds = new Set(
     activeDirectoryAccesses
