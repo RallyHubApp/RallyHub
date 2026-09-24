@@ -17,7 +17,18 @@ Deno.serve(async (req) => {
     if (!event) return Response.json({ error:'Interclub event not found.' }, { status:404 });
     return Response.json({
       success:true,
-      event:{ id:event.id, club_a_name:event.club_a_name, club_b_name:event.club_b_name, status:event.status },
+      event:{
+        id:event.id,
+        status:event.status,
+        club_a_name:event.club_a_name,
+        club_a_logo_url:event.club_a_logo_url || '',
+        club_a_primary_colour:event.club_a_primary_colour || '',
+        club_a_secondary_colour:event.club_a_secondary_colour || '',
+        club_b_name:event.club_b_name,
+        club_b_logo_url:event.club_b_logo_url || '',
+        club_b_primary_colour:event.club_b_primary_colour || '',
+        club_b_secondary_colour:event.club_b_secondary_colour || ''
+      },
       match:{
         id:match.id, club_a_names:match.club_a_names, club_b_names:match.club_b_names,
         score_a:Number(match.score_a || 0), score_b:Number(match.score_b || 0), status:match.status,
