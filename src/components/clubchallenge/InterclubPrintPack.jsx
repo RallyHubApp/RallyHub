@@ -1,10 +1,16 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-const RALLYHUB_LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+import rallyHubLogoApprovedBase64 from '@/assets/rallyhub-logo-approved.b64?raw';
+const RALLYHUB_LOGO_URL = `data:image/webp;base64,${rallyHubLogoApprovedBase64.trim()}`;
 const NAVY = '#0b2e59';
 const BLUE = '#07558d';
 const GREEN = '#0b914a';
 const COPYRIGHT = '© 2026 RallyHub. All rights reserved.';
+const BANNER_BASH_EVENT_ID = '6ab3d84c8bbc3bc6e171ba03';
+const BANNER_BASH_HANDOVERS = [
+  { fromId:'6ab54584a11f03c7c756e1e2', toId:'6ab3d96b313295df91137364', toName:'Paul Abando', effectiveRound:7 },
+  { fromId:'6ab3d9445de8cec8d48d4016', toId:'6ab54629e298576e27f05a70', toName:'Margaret Fegan', effectiveRound:7 },
+];
 
 function chunk(items, size) {
   const out = [];
@@ -53,7 +59,7 @@ function StandardHeader({ event, tournament, title, schedule=false }) {
   </header>;
 }
 
-function ScoreHeader({ event, tournament }) {
+function ScoreHeader({ event, tournament, title='Master Score Sheet' }) {
   const team = (name, logo, sideClass) => <div className={'rhpp-score-team '+sideClass}>
     {logo && <img src={logo} alt="" />}
     <strong>{name}</strong>
@@ -64,7 +70,7 @@ function ScoreHeader({ event, tournament }) {
       <div className="rhpp-score-heading">
         <div className="rhpp-kicker">INTERCLUB</div>
         <h1>{event.club_a_name} vs {event.club_b_name}</h1>
-        <h2>Master Score Sheet</h2>
+        <h2>{title}</h2>
       </div>
       <ScriptTagline />
     </div>
@@ -104,9 +110,9 @@ function PairNames({ names=[] }) {
   return <>{names.join(' & ') || '—'}</>;
 }
 
-function MasterScorePage({ event, tournament, matches, rounds, courts }) {
+function MasterScorePage({ event, tournament, matches, rounds, courts, title='Master Score Sheet' }) {
   return <Page className="rhpp-score-page">
-    <ScoreHeader event={event} tournament={tournament} />
+    <ScoreHeader event={event} tournament={tournament} title={title} />
     <div className="rhpp-score-grid">
       <div className="rhpp-score-grid-head rhpp-score-grid-round-head">Round</div>
       {courts.map(c => <div key={`head-${c}`} className="rhpp-score-grid-head">Court {c}</div>)}
@@ -133,6 +139,32 @@ function MasterScorePage({ event, tournament, matches, rounds, courts }) {
     </div>
     <Footer scoreSheet />
   </Page>;
+}
+
+function applyPlannedPrintHandovers(event, matches) {
+  if (event?.id !== BANNER_BASH_EVENT_ID) return matches;
+  return matches.map(match => {
+    if (Number(match.round_number || 0) < 7) return match;
+    const next = {
+      ...match,
+      club_a_names:[...(match.club_a_names || [])],
+      club_b_names:[...(match.club_b_names || [])],
+      club_a_participant_ids:[...(match.club_a_participant_ids || [])],
+      club_b_participant_ids:[...(match.club_b_participant_ids || [])],
+    };
+    BANNER_BASH_HANDOVERS.forEach(h => {
+      for (const side of ['a','b']) {
+        const idsKey = `club_${side}_participant_ids`;
+        const namesKey = `club_${side}_names`;
+        const idx = next[idsKey].indexOf(h.fromId);
+        if (idx >= 0 && Number(match.round_number || 0) >= h.effectiveRound) {
+          next[idsKey][idx] = h.toId;
+          next[namesKey][idx] = h.toName;
+        }
+      }
+    });
+    return next;
+  });
 }
 
 function participantAvailableInRound(p, round, lastScheduledById) {
@@ -339,7 +371,9 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
   });
   const scorePages = chunk(rounds, 12);
   const schedulePages = chunk(rounds, 2);
-  const selected = sections || { score:true, schedule:true, roster:true, briefing:true, final:true };
+  const selected = sections || { score:true, handoverScore:false, schedule:true, roster:true, briefing:true, final:true };
+  const hasBannerBashHandoverCopy = event.id === BANNER_BASH_EVENT_ID;
+  const plannedHandoverPlayable = hasBannerBashHandoverCopy ? applyPlannedPrintHandovers(event, playable) : playable;
 
   return <div className="rhpp-root">
     <style>{`
@@ -364,7 +398,7 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
       .rhpp-brand{display:flex;align-items:center;min-width:0}.rhpp-brand img{width:52mm;height:auto;object-fit:contain;display:block}.rhpp-brand-small img{width:34mm;height:auto}
       .rhpp-header{height:27mm;display:grid;grid-template-columns:56mm 1fr 31mm;align-items:start;gap:2mm;border-bottom:.45mm solid ${GREEN};padding:1mm 2mm 2.2mm;box-sizing:border-box;margin-bottom:2mm}.rhpp-header-schedule{grid-template-columns:60mm 1fr}.rhpp-header-schedule .rhpp-heading{text-align:right;padding-right:1mm}.rhpp-heading{text-align:center}.rhpp-kicker{font-size:10pt;font-weight:900;letter-spacing:.04em;line-height:1}.rhpp-heading h1{font-size:13pt;line-height:1.02;margin:.7mm 0 0;font-weight:900}.rhpp-heading h2{font-size:9.2pt;line-height:1.05;margin:1mm 0 0;color:#0a64a8;font-weight:800}.rhpp-heading p,.rhpp-score-heading p{font-size:5.8pt;margin:1.2mm 0 0;color:#294b6d;font-weight:600}.rhpp-heading p span,.rhpp-score-heading p span{margin:0 1mm}.rhpp-script-tag{text-align:center;font-family:cursive;font-style:italic;font-weight:800;font-size:9pt;line-height:.9;color:#063c79;padding-top:1mm;transform:rotate(-5deg)}.rhpp-script-tag span{display:block;width:19mm;border-bottom:1.2mm solid #69b92f;transform:rotate(-8deg);margin:1.2mm auto 0}
       .rhpp-score-header{height:28mm;border-bottom:.35mm solid #b9d3e4;margin-bottom:1.8mm}.rhpp-score-top{height:17mm;display:grid;grid-template-columns:62mm 1fr 36mm;gap:2mm;align-items:start}.rhpp-score-top>.rhpp-brand img{width:54mm}.rhpp-score-heading{text-align:center}.rhpp-score-heading .rhpp-kicker{font-size:9.5pt}.rhpp-score-heading h1{font-size:14pt;margin:.4mm 0 0;line-height:1}.rhpp-score-heading h2{font-size:8.5pt;color:#0a64a8;margin:.6mm 0 0}.rhpp-score-team-row{height:9mm;display:grid;grid-template-columns:70mm 1fr 70mm;align-items:center;gap:2mm}.rhpp-score-team-row>p{text-align:center;font-size:6.2pt;margin:0;color:#294b6d;font-weight:600}.rhpp-score-team-row>p span{margin:0 1mm}.rhpp-score-team{display:flex;align-items:center;gap:2mm;font-size:8.5pt;font-weight:900;line-height:1.05}.rhpp-score-team img{width:8.5mm;height:8.5mm;object-fit:contain;border-radius:50%;background:#fff}.rhpp-score-team-b{justify-content:flex-end;text-align:right}
-      .rhpp-footer{position:absolute;left:7mm;right:7mm;bottom:3.5mm;height:14mm}.rhpp-wave{position:absolute;left:0;right:0;top:-1mm;width:100%;height:7mm}.rhpp-footer-row{position:absolute;left:0;right:0;bottom:0;height:9mm;display:grid;grid-template-columns:42mm 1fr 76mm;align-items:end;gap:2mm}.rhpp-footer-row .rhpp-brand-small img{width:31mm}.rhpp-score-footer{position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;height:9.5mm!important;margin-top:2mm;overflow:hidden;break-inside:avoid!important;page-break-inside:avoid!important}.rhpp-score-footer .rhpp-wave{top:0;height:4.6mm}.rhpp-score-footer .rhpp-footer-row{height:6mm}.rhpp-score-footer .rhpp-brand-small img{width:27mm}.rhpp-footer-tagline{text-align:center;font-size:5.1pt;font-style:italic;font-weight:700;color:#0b3e79}.rhpp-footer-tagline span{color:${GREEN};margin:0 .7mm}.rhpp-footer-right{text-align:right;min-width:0}.rhpp-footer-source{display:block;font-size:4.3pt;color:#35607d;margin-bottom:.7mm}.rhpp-footer-copy{display:block;font-size:4.6pt;color:#315579;white-space:nowrap}.rhpp-footer-copy strong{color:#07184c}.rhpp-footer-copy strong span{color:${GREEN}}.rhpp-footer-copy i{font-style:normal;margin:0 .7mm}
+      .rhpp-footer{position:absolute;left:7mm;right:7mm;bottom:3.5mm;height:14mm}.rhpp-wave{position:absolute;left:0;right:0;top:-1mm;width:100%;height:7mm}.rhpp-footer-row{position:absolute;left:0;right:0;bottom:0;height:9mm;display:grid;grid-template-columns:42mm 1fr 76mm;align-items:end;gap:2mm}.rhpp-footer-row .rhpp-brand-small img{width:31mm}.rhpp-score-footer{position:absolute!important;left:7mm!important;right:7mm!important;bottom:2.8mm!important;height:9.5mm!important;margin:0!important;overflow:visible!important;break-inside:avoid!important;page-break-inside:avoid!important}.rhpp-score-footer .rhpp-wave{top:0;height:4.6mm}.rhpp-score-footer .rhpp-footer-row{height:6mm}.rhpp-score-footer .rhpp-brand-small img{width:27mm}.rhpp-footer-tagline{text-align:center;font-size:5.1pt;font-style:italic;font-weight:700;color:#0b3e79}.rhpp-footer-tagline span{color:${GREEN};margin:0 .7mm}.rhpp-footer-right{text-align:right;min-width:0}.rhpp-footer-source{display:block;font-size:4.3pt;color:#35607d;margin-bottom:.7mm}.rhpp-footer-copy{display:block;font-size:4.6pt;color:#315579;white-space:nowrap}.rhpp-footer-copy strong{color:#07184c}.rhpp-footer-copy strong span{color:${GREEN}}.rhpp-footer-copy i{font-style:normal;margin:0 .7mm}
       .rhpp-score-grid{display:grid;grid-template-columns:10mm repeat(4,minmax(0,1fr));grid-template-rows:6.2mm repeat(12,10mm);width:100%;height:126.2mm;box-sizing:border-box;border-left:.25mm solid #88abc4;border-top:.25mm solid #88abc4;overflow:hidden}.rhpp-score-grid-head{background:${BLUE};color:#fff;border-right:.25mm solid #d7e7f2;border-bottom:.25mm solid #d7e7f2;display:flex;align-items:center;justify-content:center;font-size:7pt;font-weight:800}.rhpp-score-grid-round-head{font-size:6.5pt}.rhpp-round-number{border-right:.25mm solid #88abc4;border-bottom:.25mm solid #88abc4;display:flex;align-items:center;justify-content:center;text-align:center;font-size:10.5pt;font-weight:900;background:#eef8fd;min-width:0;min-height:0;overflow:hidden}.rhpp-score-cell{border-right:.25mm solid #88abc4;border-bottom:.25mm solid #88abc4;display:flex;align-items:center;justify-content:center;padding:.45mm .8mm;box-sizing:border-box;min-width:0;min-height:0;overflow:hidden}.rhpp-score-match{width:100%;display:grid;grid-template-columns:minmax(0,1fr) 17mm minmax(0,1fr);align-items:center;gap:1mm}.rhpp-score-name{font-size:7pt;line-height:1.05;min-width:0;max-height:8.6mm;overflow:hidden;display:flex;align-items:center;font-weight:700;overflow-wrap:anywhere}.rhpp-score-name-a{text-align:right;justify-content:flex-end}.rhpp-score-name-b{text-align:left;justify-content:flex-start}.rhpp-score-boxes{display:flex;justify-content:center;align-items:center;gap:.9mm;flex:none}.rhpp-score-boxes span{width:5.5mm;height:5.5mm;border:.4mm solid #52728d;border-radius:.7mm;display:inline-block}.rhpp-score-boxes b{font-size:6.5pt}.rhpp-empty{color:#8399ab;font-style:italic}.rhpp-score-bottom{display:grid;grid-template-columns:1.25fr .95fr;gap:2.5mm;margin-top:1.6mm;height:18mm}.rhpp-notes-box,.rhpp-reminders{height:18mm;background:#f1f8fc;border-radius:2mm;padding:1.4mm 2mm;box-sizing:border-box;font-size:6pt}.rhpp-notes-box strong,.rhpp-reminders strong{font-size:6.8pt}.rhpp-notes-box i{display:block;border-bottom:.25mm solid #567998;height:2.8mm}.rhpp-reminders ul{margin:1mm 0 0;padding-left:4mm;line-height:1.35}
       .rhpp-schedule-stack{display:grid;gap:2.2mm}.rhpp-round-block{border:.25mm solid #8ab5d4;border-radius:1mm;overflow:hidden;background:#fff}.rhpp-round-band{height:7mm;background:linear-gradient(90deg,#07558d,#0d4d82);color:#fff;font-size:11pt;font-weight:900;display:flex;align-items:center;padding:0 3mm}.rhpp-court-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.4mm;padding:1.5mm}.rhpp-court-card{border:.3mm solid #63a6d2;border-radius:.6mm;overflow:hidden}.rhpp-court-head{height:5.8mm;background:#d8effc;font-size:7.7pt;font-weight:900;display:flex;align-items:center;justify-content:center}.rhpp-court-body{height:16.5mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:.6mm 1mm;box-sizing:border-box;font-size:5.9pt;font-weight:700;line-height:1.14}.rhpp-court-body em{font-style:normal;font-size:5pt;color:#405b72;margin:.3mm 0}
       .rhpp-rest-wrap{margin:0 1.5mm 1.5mm;border:.25mm solid #8ab5d4}.rhpp-rest-title{height:6mm;background:#d8effc;font-size:7.5pt;font-weight:900;display:flex;align-items:center;padding:0 2mm}.rhpp-rest-heads,.rhpp-rest-row{display:grid;grid-template-columns:1fr 1fr}.rhpp-rest-heads strong{height:5.5mm;background:#dff2c9;border:.2mm solid #7eb5d6;display:flex;align-items:center;justify-content:center;font-size:6.4pt}.rhpp-rest-row span{height:4.15mm;border:.2mm solid #bad0df;border-top:0;padding:0 2mm;display:flex;align-items:center;font-size:5.45pt}.rhpp-break{height:7mm;margin:1.5mm;background:#dff2c9;color:#073866;font-size:7.4pt;font-weight:900;display:flex;align-items:center;justify-content:center}.rhpp-page-number{position:absolute;right:7mm;bottom:13mm;font-size:4.5pt;color:#7890a3}
@@ -374,6 +408,7 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
     `}</style>
 
     {selected.score && scorePages.map((rs,i)=><MasterScorePage key={`score-${i}`} event={event} tournament={tournament} matches={playable} rounds={rs} courts={courts} />)}
+    {selected.handoverScore && hasBannerBashHandoverCopy && scorePages.map((rs,i)=><MasterScorePage key={`handover-score-${i}`} event={event} tournament={tournament} matches={plannedHandoverPlayable} rounds={rs} courts={courts} title="Master Score Sheet · 8:30 Handover Copy" />)}
     {selected.schedule && schedulePages.map((rs,i)=><MasterSchedulePage key={`schedule-${i}`} event={event} tournament={tournament} matches={playable} participants={participants} rounds={rs} lastScheduledById={lastScheduledById} pageIndex={i} totalPages={schedulePages.length} />)}
     {selected.roster && <TeamRosterPage event={event} tournament={tournament} participants={participants} roundsCount={roundsCount} courtsCount={courts.length} />}
     {selected.briefing && <BriefingPage event={event} tournament={tournament} roundsCount={roundsCount} courtsCount={courts.length} displayUrl={displayUrl} votingUrl={votingUrl} />}
