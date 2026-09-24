@@ -836,37 +836,26 @@ Brian`;
 
   const createOwnerWhatsAppInvite = async () => {
     if (!ownerInvite.listingSlug || !selectedOwnerInviteListing) return toast.error('Choose a club first');
+    const activeAccess = activeDirectoryAccesses.find(a => a.listing_slug === ownerInvite.listingSlug && a.status === 'active' && a.role === 'owner') || activeDirectoryAccesses.find(a => a.listing_slug === ownerInvite.listingSlug && a.status === 'active');
+    if (activeAccess) {
+      const accessUser = allUsers.find(u => u.id === activeAccess.user_id);
+      const phone = directoryWelcomePhone(activeAccess, accessUser);
+      if (!phone) return toast.error('No mobile number is saved for this Directory contact');
+      setOwnerInviteResult({ channel: 'whatsapp', clubName: selectedOwnerInviteListing.name, phone, county: selectedOwnerInviteListing.county, message: directoryWelcomeWhatsAppMessage(activeAccess, accessUser) });
+      return toast.success('WhatsApp message ready — review the text below');
+    }
     if (!ownerInvite.contactPhone.trim()) return toast.error('Enter the mobile number for WhatsApp');
     setOwnerInviteBusy('whatsapp');
     setOwnerInviteResult(null);
     try {
-      const res = await base44.functions.invoke('directoryClaim', {
-        action: 'create_claim_invite',
-        listingSlug: ownerInvite.listingSlug,
-        contactName: ownerInvite.contactName,
-        contactPhone: ownerInvite.contactPhone,
-        contactEmail: ownerInvite.contactEmail,
-        channel: 'whatsapp',
-      });
+      const res = await base44.functions.invoke('directoryClaim', { action: 'create_claim_invite', listingSlug: ownerInvite.listingSlug, contactName: ownerInvite.contactName, contactPhone: ownerInvite.contactPhone, contactEmail: ownerInvite.contactEmail, channel: 'whatsapp' });
       if (res.data?.error) throw new Error(res.data.error);
-      const message = ownerInviteWhatsAppMessage({
-        claimUrl: res.data.claimUrl,
-        clubName: selectedOwnerInviteListing.name,
-        contactName: ownerInvite.contactName,
-      });
-      setOwnerInviteResult({
-        channel: 'whatsapp',
-        claimUrl: res.data.claimUrl,
-        expiresAt: res.data.expiresAt,
-        message,
-        clubName: selectedOwnerInviteListing.name,
-        phone: ownerInvite.contactPhone,
-        county: selectedOwnerInviteListing.county,
-      });
+      const message = ownerInviteWhatsAppMessage({ claimUrl: res.data.claimUrl, clubName: selectedOwnerInviteListing.name, contactName: ownerInvite.contactName });
+      setOwnerInviteResult({ channel: 'whatsapp', claimUrl: res.data.claimUrl, expiresAt: res.data.expiresAt, message, clubName: selectedOwnerInviteListing.name, phone: ownerInvite.contactPhone, county: selectedOwnerInviteListing.county });
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
       toast.success('Secure owner invitation created — review the WhatsApp message below');
     } catch (error) {
-      toast.error(error.message || 'Could not create the WhatsApp invitation');
+      toast.error(error?.response?.data?.error || error.message || 'Could not create the WhatsApp invitation');
     } finally {
       setOwnerInviteBusy('');
     }

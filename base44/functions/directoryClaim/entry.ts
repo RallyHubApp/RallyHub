@@ -1378,7 +1378,7 @@ Deno.serve(async (req) => {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
       const [claims, accesses, listingRequests, listingRecords, listingProfiles, invitations] = await Promise.all([
         base44.asServiceRole.entities.DirectoryClaim.list('-created_date', 300),
-        base44.asServiceRole.entities.DirectoryListingAccess.list('-created_date', 300),
+        base44.asServiceRole.entities.DirectoryListingAccess.list('-created_date', 1000),
         base44.asServiceRole.entities.DirectoryListingRequest.list('-created_date', 300),
         base44.asServiceRole.entities.DirectoryListingRecord.list('-published_at', 500),
         base44.asServiceRole.entities.DirectoryListingProfile.list('-updated_at', 500),
