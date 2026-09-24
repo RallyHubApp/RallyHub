@@ -5,9 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, WifiOff } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
-import RALLYHUB_LOGO_BASE64 from '@/assets/rallyhub-logo-approved.b64?raw';
-
-const RALLYHUB_LOGO_URL = `data:image/webp;base64,${RALLYHUB_LOGO_BASE64.trim()}`;
+const RALLYHUB_LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 const RALLYHUB_MARK_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 
 function score(matches, event) {

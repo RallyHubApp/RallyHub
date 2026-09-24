@@ -922,7 +922,7 @@ Brian`;
     if (!resendPreview?.phone || !resendPreview?.message) return;
     const digits = whatsappDigitsForInvite(resendPreview.phone, resendPreview.county);
     if (!digits) return toast.error('The mobile number is not valid for WhatsApp');
-    window.location.href = `whatsapp://send?phone=${digits}&text=${encodeURIComponent(resendPreview.message)}`;
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(resendPreview.message)}`, '_blank', 'noopener,noreferrer');
   };
 
   const testClareMailGateway = async () => {
@@ -951,8 +951,7 @@ Brian`;
     if (!ownerInviteResult?.message || !ownerInviteResult?.phone) return;
     const digits = whatsappDigitsForInvite(ownerInviteResult.phone, ownerInviteResult.county);
     if (!digits) return toast.error('The mobile number is not valid for WhatsApp');
-    const appUrl = `whatsapp://send?phone=${digits}&text=${encodeURIComponent(ownerInviteResult.message)}`;
-    window.location.href = appUrl;
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(ownerInviteResult.message)}`, '_blank', 'noopener,noreferrer');
   };
 
   const connectMemberAccount = async (targetUser, player, confirmNameMismatch = false) => {
