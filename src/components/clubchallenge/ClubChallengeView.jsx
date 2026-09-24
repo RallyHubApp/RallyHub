@@ -456,7 +456,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [spondImportSide, setSpondImportSide] = useState('');
   const [teamsDirty, setTeamsDirty] = useState(false);
   const [printPackOpen, setPrintPackOpen] = useState(false);
-  const [printSelection, setPrintSelection] = useState({ score:true, schedule:false, roster:false, briefing:false, final:false });
+  const [printSelection, setPrintSelection] = useState({ score:true, handoverScore:false, schedule:false, roster:false, briefing:false, final:false });
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: venueOptions = [], refetch: refetchVenueOptions } = useQuery({
@@ -1486,7 +1486,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await base44.entities.ClubChallengeEvent.update(event.id, { event_pack_generated_at: new Date().toISOString() });
     await refetchEvent();
     setPrintPackOpen(false);
-    const scoreOnly = selection.score && !selection.schedule && !selection.roster && !selection.briefing && !selection.final;
+    const selectedScoreSheets = Number(!!selection.score) + Number(!!selection.handoverScore);
+    const scoreOnly = selectedScoreSheets === 1 && !selection.schedule && !selection.roster && !selection.briefing && !selection.final;
     const cleanupPrintMode = () => {
       document.body.classList.remove('rh-printing-interclub');
       document.body.classList.remove('rh-printing-score-only');
@@ -2096,6 +2097,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           <div className="space-y-2">
             {[
               { key:'score', label:'Master Score Sheet', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)), note:'Blank score boxes for use during the event' },
+              ...(event?.id === '6ab3d84c8bbc3bc6e171ba03' ? [{ key:'handoverScore', label:'Master Score Sheet · 8:30 Handover Copy', pages:1, note:'Tonight only: Rounds 7–12 show Paul for John and Margaret for Kim' }] : []),
               { key:'schedule', label:'Master Schedule / Court Assignment', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)), note:'Two rounds per A4 page' },
               { key:'roster', label:'Team Roster & Reserves', pages:1, note:'Players, rankings, reserves and event information' },
               { key:'briefing', label:'Event Briefing & Rules', pages:1, note:'Operational rules for the event' },
@@ -2109,12 +2111,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             <span>Selected print total</span>
             <strong>{(
               (printSelection.score ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)) : 0) +
+              (printSelection.handoverScore && event?.id === '6ab3d84c8bbc3bc6e171ba03' ? 1 : 0) +
               (printSelection.schedule ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)) : 0) +
               (printSelection.roster ? 1 : 0) +
               (printSelection.briefing ? 1 : 0) +
               (printSelection.final && ['completed','archived'].includes(event?.status) ? 1 : 0)
             )} page{(
               (printSelection.score ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)) : 0) +
+              (printSelection.handoverScore && event?.id === '6ab3d84c8bbc3bc6e171ba03' ? 1 : 0) +
               (printSelection.schedule ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)) : 0) +
               (printSelection.roster ? 1 : 0) +
               (printSelection.briefing ? 1 : 0) +
