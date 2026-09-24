@@ -33,12 +33,27 @@ Deno.serve(async (req) => {
     if (!allowed) return Response.json({ error:'Event manager permission required' }, { status:403 });
 
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
+    const resolveRosterSource = async (requestedSide:any) => {
+      if (!['club_a','club_b'].includes(requestedSide)) return null;
+      const tournamentClubs = await base44.asServiceRole.entities.TournamentClub.filter({ tournament_id:event.tournament_id }, 'side', 20);
+      if (tournamentClubs?.length) {
+        const sideCode = requestedSide === 'club_a' ? 'A' : 'B';
+        const linked = tournamentClubs.find((row:any) => String(row.side || '').toUpperCase() === sideCode);
+        if (linked) {
+          if (linked.source_type !== 'rallyhub_club' || !linked.club_id) return null;
+          return { clubId:String(linked.club_id), tenantId:String(linked.participant_tenant_id || event.tenant_id), clubName:String(linked.club_name_snapshot || '') };
+        }
+      }
+      if (!event.host_club_id) return null;
+      return { clubId:String(event.host_club_id), tenantId:String(event.tenant_id), clubName:'' };
+    };
 
     if (action === 'club_player_candidates') {
       if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Club players can only be selected before the draw is approved.' }, { status:409 });
-      if (!event.host_club_id) return Response.json({ success:true, candidates:[] });
+      const source = await resolveRosterSource(side);
+      if (!source) return Response.json({ success:true, candidates:[] });
       const normalise = (value:any) => String(value || '').trim().toLowerCase().replace(/\s+/g,' ');
-      const clubPlayers = await base44.asServiceRole.entities.Player.filter({ tenant_id:event.tenant_id, club_id:event.host_club_id }, 'full_name', 500);
+      const clubPlayers = await base44.asServiceRole.entities.Player.filter({ tenant_id:source.tenantId, club_id:source.clubId }, 'full_name', 500);
       const existingPlayerIds = new Set(participants.filter((p:any) => ['active','late'].includes(p.status) && p.source_player_id).map((p:any) => String(p.source_player_id)));
       const existingNames = new Set(participants.filter((p:any) => ['active','late'].includes(p.status)).map((p:any) => normalise(p.display_name)));
       const allowedTypes = new Set(['member','guest','booking_only','waiting_list']);
@@ -93,12 +108,13 @@ Deno.serve(async (req) => {
     if (action === 'add_club_player') {
       if (!preDrawStatus) return Response.json({ error:'Club players can only be added before the draw is approved.' }, { status:409 });
       if (!['pool','club_a','club_b'].includes(side)) return Response.json({ error:'Valid player group required.' }, { status:400 });
-      if (!playerId || !event.host_club_id) return Response.json({ error:'Choose a RallyHub club player.' }, { status:400 });
-      const clubPlayers = await base44.asServiceRole.entities.Player.filter({ id:playerId, tenant_id:event.tenant_id, club_id:event.host_club_id });
+      const source = await resolveRosterSource(side);
+      if (!playerId || !source) return Response.json({ error:'Choose an available RallyHub club player for this team.' }, { status:400 });
+      const clubPlayers = await base44.asServiceRole.entities.Player.filter({ id:playerId, tenant_id:source.tenantId, club_id:source.clubId });
       const player = clubPlayers?.[0];
       if (!player || String(player.status || 'Active').toLowerCase() !== 'active' || String(player.relationship_status || 'active').toLowerCase() !== 'active') return Response.json({ error:'That RallyHub club player is not currently available.' }, { status:409 });
       if (participants.some((p:any) => ['active','late'].includes(p.status) && (String(p.source_player_id || '') === String(player.id) || normalise(p.display_name) === normalise(player.full_name)))) return Response.json({ error:'That player is already in this Interclub roster.' }, { status:409 });
-      const clubs = await base44.asServiceRole.entities.Club.filter({ id:event.host_club_id });
+      const clubs = await base44.asServiceRole.entities.Club.filter({ id:source.clubId });
       const hostClub = clubs?.[0] || null;
       const allowedTypes = new Set(['member','guest','booking_only','waiting_list']);
       const participantType = allowedTypes.has(String(player.relationship_type || 'member')) ? String(player.relationship_type || 'member') : 'member';
@@ -111,8 +127,8 @@ Deno.serve(async (req) => {
         source_player_id:player.id,
         display_name:String(player.full_name || '').trim(),
         participant_type:participantType,
-        represented_club_id:event.host_club_id,
-        represented_club_name:hostClub?.name || player.club || '',
+        represented_club_id:source.clubId,
+        represented_club_name:hostClub?.name || source.clubName || player.club || '',
         email:player.email || '',
         gender:player.gender || '',
         age_category:player.age_group || '',
