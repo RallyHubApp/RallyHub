@@ -12,333 +12,408 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Error: draw_ack_ms should be <= 250ms but was 671ms
 
-Locator: getByText('Player Pool', { exact: true })
-Expected: visible
-Timeout: 3000ms
-Error: element(s) not found
+expect(received).toBeLessThanOrEqual(expected)
 
-Call log:
-  - Expect "toBeVisible" getByText('Player Pool', { exact: true }) with timeout 3000ms
-  - waiting for getByText('Player Pool', { exact: true })
-
+Expected: <= 250
+Received:    671
 ```
 
+# Page snapshot
+
 ```yaml
-- main:
-  - img
-  - paragraph: RallyHub Interclub
-  - paragraph: "Interclub Challenge · Status: draft"
-  - text: CL Clare Pickleball Club vs GA Galway Pickleball
-  - button "Public Links / QR"
-  - button "Setup":
-    - img
-    - text: Setup
-  - button "2 Teams"
-  - button "3 Draw"
-  - button "4 Live Event"
-  - button "5 Simulator"
-  - button "6 Results"
-  - paragraph: Participants
-  - paragraph: Event ranks are independent of permanent RallyHub skill ratings.
-  - button "Practice with 32 Test Players":
-    - img
-    - text: Practice with 32 Test Players
-  - paragraph: Build the two teams
-  - paragraph: Import Spond or CSV directly into either team, then drag within each team to rank 1–16. Use the Player Pool only for genuinely unassigned players. Rotation players are included in the draw; Reserves stay outside the scheduled rotation until activated.
-  - text: "32 players A: 16 rotation · 0 reserve B: 16 rotation · 0 reserve Rotation squads balanced"
-  - paragraph: Unassigned Player Pool
-  - paragraph: Use this only for players who are not yet assigned. Add or import players directly into their team panels where possible.
-  - text: "0"
-  - button "Import Unassigned Spond Players":
-    - img
-    - text: Import Unassigned Spond Players
-  - textbox "Add player manually"
-  - button [disabled]:
-    - img
-  - text: Import Spond attendees here Team name
-  - textbox: Clare Pickleball Club
-  - img
-  - paragraph: Roster controls
-  - img
-  - textbox "Search RallyHub club players"
-  - textbox "Guest name"
-  - combobox: Gender optional
-  - button "Add Guest" [disabled]
-  - paragraph: Club players keep their RallyHub identity. A typed guest is event-only and does not become a club member.
-  - button "Import Spond":
-    - img
-    - text: Import Spond
-  - img
-  - text: Import CSV 16 M 8 F 8
-  - button:
-    - img
-  - text: 1 Club A Test 01
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club A Test 01 from roster":
-    - img
-  - button:
-    - img
-  - text: 2 Club A Test 02
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club A Test 02 from roster":
-    - img
-  - button:
-    - img
-  - text: 3 Club A Test 03
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club A Test 03 from roster":
-    - img
-  - button:
-    - img
-  - text: 4 Club A Test 04
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club A Test 04 from roster":
-    - img
-  - button:
-    - img
-  - text: 5 Club A Test 05
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club A Test 05 from roster":
-    - img
-  - button:
-    - img
-  - text: 6 Club A Test 06
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club A Test 06 from roster":
-    - img
-  - button:
-    - img
-  - text: 7 Club A Test 07
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club A Test 07 from roster":
-    - img
-  - button:
-    - img
-  - text: 8 Club A Test 08
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club A Test 08 from roster":
-    - img
-  - button:
-    - img
-  - text: 9 Club A Test 09
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club A Test 09 from roster":
-    - img
-  - button:
-    - img
-  - text: 10 Club A Test 10
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club A Test 10 from roster":
-    - img
-  - button:
-    - img
-  - text: 11 Club A Test 11
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club A Test 11 from roster":
-    - img
-  - button:
-    - img
-  - text: 12 Club A Test 12
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club A Test 12 from roster":
-    - img
-  - button:
-    - img
-  - text: 13 Club A Test 13
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club A Test 13 from roster":
-    - img
-  - button:
-    - img
-  - text: 14 Club A Test 14
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club A Test 14 from roster":
-    - img
-  - button:
-    - img
-  - text: 15 Club A Test 15
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club A Test 15 from roster":
-    - img
-  - button:
-    - img
-  - text: 16 Club A Test 16
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club A Test 16 from roster":
-    - img
-  - text: Team name
-  - textbox: Galway Pickleball
-  - img
-  - paragraph: Roster controls
-  - img
-  - textbox "Search RallyHub club players"
-  - textbox "Guest name"
-  - combobox: Gender optional
-  - button "Add Guest" [disabled]
-  - paragraph: Club players keep their RallyHub identity. A typed guest is event-only and does not become a club member.
-  - button "Import Spond":
-    - img
-    - text: Import Spond
-  - img
-  - text: Import CSV 16 M 8 F 8
-  - button:
-    - img
-  - text: 1 Club B Test 01
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club B Test 01 from roster":
-    - img
-  - button:
-    - img
-  - text: 2 Club B Test 02
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club B Test 02 from roster":
-    - img
-  - button:
-    - img
-  - text: 3 Club B Test 03
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club B Test 03 from roster":
-    - img
-  - button:
-    - img
-  - text: 4 Club B Test 04
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club B Test 04 from roster":
-    - img
-  - button:
-    - img
-  - text: 5 Club B Test 05
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club B Test 05 from roster":
-    - img
-  - button:
-    - img
-  - text: 6 Club B Test 06
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club B Test 06 from roster":
-    - img
-  - button:
-    - img
-  - text: 7 Club B Test 07
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club B Test 07 from roster":
-    - img
-  - button:
-    - img
-  - text: 8 Club B Test 08
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club B Test 08 from roster":
-    - img
-  - button:
-    - img
-  - text: 9 Club B Test 09
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club B Test 09 from roster":
-    - img
-  - button:
-    - img
-  - text: 10 Club B Test 10
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club B Test 10 from roster":
-    - img
-  - button:
-    - img
-  - text: 11 Club B Test 11
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club B Test 11 from roster":
-    - img
-  - button:
-    - img
-  - text: 12 Club B Test 12
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club B Test 12 from roster":
-    - img
-  - button:
-    - img
-  - text: 13 Club B Test 13
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club B Test 13 from roster":
-    - img
-  - button:
-    - img
-  - text: 14 Club B Test 14
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club B Test 14 from roster":
-    - img
-  - button:
-    - img
-  - text: 15 Club B Test 15
-  - combobox: Rotation
-  - text: M
-  - button "Remove Club B Test 15 from roster":
-    - img
-  - button:
-    - img
-  - text: 16 Club B Test 16
-  - combobox: Rotation
-  - text: F
-  - button "Remove Club B Test 16 from roster":
-    - img
-  - text: "Ready: 16 rotation players per club."
-  - button "Save Teams & Rankings" [disabled]
-  - paragraph: "12"
-  - paragraph: Rounds
-  - paragraph: "48"
-  - paragraph: Matches
-  - paragraph: 6–6
-  - paragraph: Games/player
-  - paragraph: "164"
-  - paragraph: Structured min
-  - paragraph: "16"
-  - paragraph: Contingency min
-  - button "Generate Draw & Fairness Report":
-    - img
-    - text: Generate Draw & Fairness Report
-- region "Notifications alt+T":
-  - list:
-    - listitem:
-      - img
-      - text: 32 practice players loaded. You can now rehearse the full setup and draw journey.
-    - listitem:
-      - img
-      - text: Interclub Challenge setup saved
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - main [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - paragraph [ref=e6]: Generating draw and fairness report… one command sent
+          - paragraph [ref=e7]: RallyHub has accepted your tap. Keep this screen open; the control stays locked until the action resolves.
+        - generic [ref=e8]:
+          - generic [ref=e14]:
+            - paragraph [ref=e15]: RallyHub Interclub
+            - paragraph [ref=e16]: "Interclub Challenge · Status: draft"
+          - generic [ref=e17]:
+            - generic [ref=e18]:
+              - generic [ref=e19]:
+                - generic [ref=e20]: CL
+                - generic [ref=e21]: Clare Blue
+              - generic [ref=e22]: vs
+              - generic [ref=e23]:
+                - generic [ref=e24]: CL
+                - generic [ref=e25]: Clare Gold
+            - button "Public Links / QR" [ref=e26] [cursor=pointer]
+        - generic [ref=e28]:
+          - button [ref=e29] [cursor=pointer]
+          - button "2 Teams" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]: "2"
+            - text: Teams
+          - button "3 Draw" [ref=e36] [cursor=pointer]:
+            - generic [ref=e37]: "3"
+            - text: Draw
+          - button "4 Live Event" [ref=e38] [cursor=pointer]:
+            - generic [ref=e39]: "4"
+            - text: Live Event
+          - button "5 Simulator" [ref=e40] [cursor=pointer]:
+            - generic [ref=e41]: "5"
+            - text: Simulator
+          - button "6 Results" [ref=e42] [cursor=pointer]:
+            - generic [ref=e43]: "6"
+            - text: Results
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - paragraph [ref=e48]: Participants
+              - paragraph [ref=e49]: Event ranks are independent of permanent RallyHub skill ratings.
+            - button "Practice with 32 Test Players" [disabled]
+          - generic [ref=e50]:
+            - generic [ref=e52]:
+              - generic [ref=e53]:
+                - paragraph [ref=e54]: Build the two teams
+                - paragraph [ref=e55]: Import Spond or CSV directly into either team, then drag within each team to rank 1–16. Use the Player Pool only for genuinely unassigned players. Rotation players are included in the draw; Reserves stay outside the scheduled rotation until activated.
+              - generic [ref=e56]:
+                - generic [ref=e57]: 32 players
+                - generic [ref=e58]: "A: 16 rotation · 0 reserve"
+                - generic [ref=e59]: "B: 16 rotation · 0 reserve"
+                - generic [ref=e60]: Rotation squads balanced
+            - generic [ref=e61]:
+              - generic [ref=e62]:
+                - generic [ref=e63]:
+                  - generic [ref=e64]:
+                    - paragraph [ref=e65]: Unassigned Player Pool
+                    - paragraph [ref=e66]: Use this only for players who are not yet assigned. Add or import players directly into their team panels where possible.
+                  - generic [ref=e67]: "0"
+                - generic [ref=e69]:
+                  - button "Import Unassigned Spond Players" [disabled]
+                  - generic [ref=e70]:
+                    - textbox "Add player manually" [disabled] [ref=e71]
+                    - button [disabled]
+                - generic [ref=e72]: Import Spond attendees here
+              - generic [ref=e74]:
+                - generic [ref=e75]:
+                  - generic [ref=e76]:
+                    - text: Team name
+                    - textbox [disabled] [ref=e77]: Clare Blue
+                    - generic [ref=e78]:
+                      - paragraph [ref=e83]: Roster controls
+                      - textbox "Search RallyHub club players" [disabled] [ref=e88]
+                      - generic [ref=e89]:
+                        - textbox "Guest name" [disabled] [ref=e90]
+                        - combobox [disabled] [ref=e91]:
+                          - generic: Gender optional
+                        - button "Add Guest" [disabled]
+                      - paragraph [ref=e94]: Club players keep their RallyHub identity. A typed guest is event-only and does not become a club member.
+                    - generic [ref=e95]:
+                      - button "Import Spond" [disabled]
+                      - generic: Import CSV
+                  - generic [ref=e96]:
+                    - generic [ref=e97]: "16"
+                    - generic [ref=e98]:
+                      - generic [ref=e99]: M 8
+                      - generic [ref=e100]: F 8
+                - generic [ref=e101]:
+                  - generic [ref=e102]:
+                    - generic [ref=e111]: "1"
+                    - generic [ref=e112]: Club A Test 02
+                    - combobox [disabled] [ref=e113]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e116]: F
+                    - button "Remove Club A Test 02 from roster" [disabled] [ref=e117]
+                  - generic [ref=e121]:
+                    - generic [ref=e130]: "2"
+                    - generic [ref=e131]: Club A Test 01
+                    - combobox [disabled] [ref=e132]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e135]: M
+                    - button "Remove Club A Test 01 from roster" [disabled] [ref=e136]
+                  - generic [ref=e140]:
+                    - generic [ref=e149]: "3"
+                    - generic [ref=e150]: Club A Test 03
+                    - combobox [disabled] [ref=e151]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e154]: M
+                    - button "Remove Club A Test 03 from roster" [disabled] [ref=e155]
+                  - generic [ref=e159]:
+                    - generic [ref=e168]: "4"
+                    - generic [ref=e169]: Club A Test 04
+                    - combobox [disabled] [ref=e170]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e173]: F
+                    - button "Remove Club A Test 04 from roster" [disabled] [ref=e174]
+                  - generic [ref=e178]:
+                    - generic [ref=e187]: "5"
+                    - generic [ref=e188]: Club A Test 05
+                    - combobox [disabled] [ref=e189]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e192]: M
+                    - button "Remove Club A Test 05 from roster" [disabled] [ref=e193]
+                  - generic [ref=e197]:
+                    - generic [ref=e206]: "6"
+                    - generic [ref=e207]: Club A Test 06
+                    - combobox [disabled] [ref=e208]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e211]: F
+                    - button "Remove Club A Test 06 from roster" [disabled] [ref=e212]
+                  - generic [ref=e216]:
+                    - generic [ref=e225]: "7"
+                    - generic [ref=e226]: Club A Test 07
+                    - combobox [disabled] [ref=e227]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e230]: M
+                    - button "Remove Club A Test 07 from roster" [disabled] [ref=e231]
+                  - generic [ref=e235]:
+                    - generic [ref=e244]: "8"
+                    - generic [ref=e245]: Club A Test 08
+                    - combobox [disabled] [ref=e246]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e249]: F
+                    - button "Remove Club A Test 08 from roster" [disabled] [ref=e250]
+                  - generic [ref=e254]:
+                    - generic [ref=e263]: "9"
+                    - generic [ref=e264]: Club A Test 09
+                    - combobox [disabled] [ref=e265]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e268]: M
+                    - button "Remove Club A Test 09 from roster" [disabled] [ref=e269]
+                  - generic [ref=e273]:
+                    - generic [ref=e282]: "10"
+                    - generic [ref=e283]: Club A Test 10
+                    - combobox [disabled] [ref=e284]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e287]: F
+                    - button "Remove Club A Test 10 from roster" [disabled] [ref=e288]
+                  - generic [ref=e292]:
+                    - generic [ref=e301]: "11"
+                    - generic [ref=e302]: Club A Test 11
+                    - combobox [disabled] [ref=e303]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e306]: M
+                    - button "Remove Club A Test 11 from roster" [disabled] [ref=e307]
+                  - generic [ref=e311]:
+                    - generic [ref=e320]: "12"
+                    - generic [ref=e321]: Club A Test 12
+                    - combobox [disabled] [ref=e322]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e325]: F
+                    - button "Remove Club A Test 12 from roster" [disabled] [ref=e326]
+                  - generic [ref=e330]:
+                    - generic [ref=e339]: "13"
+                    - generic [ref=e340]: Club A Test 13
+                    - combobox [disabled] [ref=e341]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e344]: M
+                    - button "Remove Club A Test 13 from roster" [disabled] [ref=e345]
+                  - generic [ref=e349]:
+                    - generic [ref=e358]: "14"
+                    - generic [ref=e359]: Club A Test 14
+                    - combobox [disabled] [ref=e360]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e363]: F
+                    - button "Remove Club A Test 14 from roster" [disabled] [ref=e364]
+                  - generic [ref=e368]:
+                    - generic [ref=e377]: "15"
+                    - generic [ref=e378]: Club A Test 15
+                    - combobox [disabled] [ref=e379]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e382]: M
+                    - button "Remove Club A Test 15 from roster" [disabled] [ref=e383]
+                  - generic [ref=e387]:
+                    - generic [ref=e396]: "16"
+                    - generic [ref=e397]: Club A Test 16
+                    - combobox [disabled] [ref=e398]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e401]: F
+                    - button "Remove Club A Test 16 from roster" [disabled] [ref=e402]
+              - generic [ref=e406]:
+                - generic [ref=e407]:
+                  - generic [ref=e408]:
+                    - text: Team name
+                    - textbox [disabled] [ref=e409]: Clare Gold
+                    - generic [ref=e410]:
+                      - paragraph [ref=e415]: Roster controls
+                      - textbox "Search RallyHub club players" [disabled] [ref=e420]
+                      - generic [ref=e421]:
+                        - textbox "Guest name" [disabled] [ref=e422]
+                        - combobox [disabled] [ref=e423]:
+                          - generic: Gender optional
+                        - button "Add Guest" [disabled]
+                      - paragraph [ref=e426]: Club players keep their RallyHub identity. A typed guest is event-only and does not become a club member.
+                    - generic [ref=e427]:
+                      - button "Import Spond" [disabled]
+                      - generic: Import CSV
+                  - generic [ref=e428]:
+                    - generic [ref=e429]: "16"
+                    - generic [ref=e430]:
+                      - generic [ref=e431]: M 8
+                      - generic [ref=e432]: F 8
+                - generic [ref=e433]:
+                  - generic [ref=e434]:
+                    - generic [ref=e443]: "1"
+                    - generic [ref=e444]: Club B Test 01
+                    - combobox [disabled] [ref=e445]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e448]: M
+                    - button "Remove Club B Test 01 from roster" [disabled] [ref=e449]
+                  - generic [ref=e453]:
+                    - generic [ref=e462]: "2"
+                    - generic [ref=e463]: Club B Test 02
+                    - combobox [disabled] [ref=e464]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e467]: F
+                    - button "Remove Club B Test 02 from roster" [disabled] [ref=e468]
+                  - generic [ref=e472]:
+                    - generic [ref=e481]: "3"
+                    - generic [ref=e482]: Club B Test 03
+                    - combobox [disabled] [ref=e483]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e486]: M
+                    - button "Remove Club B Test 03 from roster" [disabled] [ref=e487]
+                  - generic [ref=e491]:
+                    - generic [ref=e500]: "4"
+                    - generic [ref=e501]: Club B Test 04
+                    - combobox [disabled] [ref=e502]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e505]: F
+                    - button "Remove Club B Test 04 from roster" [disabled] [ref=e506]
+                  - generic [ref=e510]:
+                    - generic [ref=e519]: "5"
+                    - generic [ref=e520]: Club B Test 05
+                    - combobox [disabled] [ref=e521]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e524]: M
+                    - button "Remove Club B Test 05 from roster" [disabled] [ref=e525]
+                  - generic [ref=e529]:
+                    - generic [ref=e538]: "6"
+                    - generic [ref=e539]: Club B Test 06
+                    - combobox [disabled] [ref=e540]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e543]: F
+                    - button "Remove Club B Test 06 from roster" [disabled] [ref=e544]
+                  - generic [ref=e548]:
+                    - generic [ref=e557]: "7"
+                    - generic [ref=e558]: Club B Test 07
+                    - combobox [disabled] [ref=e559]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e562]: M
+                    - button "Remove Club B Test 07 from roster" [disabled] [ref=e563]
+                  - generic [ref=e567]:
+                    - generic [ref=e576]: "8"
+                    - generic [ref=e577]: Club B Test 08
+                    - combobox [disabled] [ref=e578]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e581]: F
+                    - button "Remove Club B Test 08 from roster" [disabled] [ref=e582]
+                  - generic [ref=e586]:
+                    - generic [ref=e595]: "9"
+                    - generic [ref=e596]: Club B Test 09
+                    - combobox [disabled] [ref=e597]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e600]: M
+                    - button "Remove Club B Test 09 from roster" [disabled] [ref=e601]
+                  - generic [ref=e605]:
+                    - generic [ref=e614]: "10"
+                    - generic [ref=e615]: Club B Test 10
+                    - combobox [disabled] [ref=e616]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e619]: F
+                    - button "Remove Club B Test 10 from roster" [disabled] [ref=e620]
+                  - generic [ref=e624]:
+                    - generic [ref=e633]: "11"
+                    - generic [ref=e634]: Club B Test 11
+                    - combobox [disabled] [ref=e635]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e638]: M
+                    - button "Remove Club B Test 11 from roster" [disabled] [ref=e639]
+                  - generic [ref=e643]:
+                    - generic [ref=e652]: "12"
+                    - generic [ref=e653]: Club B Test 12
+                    - combobox [disabled] [ref=e654]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e657]: F
+                    - button "Remove Club B Test 12 from roster" [disabled] [ref=e658]
+                  - generic [ref=e662]:
+                    - generic [ref=e671]: "13"
+                    - generic [ref=e672]: Club B Test 13
+                    - combobox [disabled] [ref=e673]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e676]: M
+                    - button "Remove Club B Test 13 from roster" [disabled] [ref=e677]
+                  - generic [ref=e681]:
+                    - generic [ref=e690]: "14"
+                    - generic [ref=e691]: Club B Test 14
+                    - combobox [disabled] [ref=e692]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e695]: F
+                    - button "Remove Club B Test 14 from roster" [disabled] [ref=e696]
+                  - generic [ref=e700]:
+                    - generic [ref=e709]: "15"
+                    - generic [ref=e710]: Club B Test 15
+                    - combobox [disabled] [ref=e711]:
+                      - generic: Rotation
+                    - generic "Male" [ref=e714]: M
+                    - button "Remove Club B Test 15 from roster" [disabled] [ref=e715]
+                  - generic [ref=e719]:
+                    - generic [ref=e728]: "16"
+                    - generic [ref=e729]: Club B Test 16
+                    - combobox [disabled] [ref=e730]:
+                      - generic: Rotation
+                    - generic "Female" [ref=e733]: F
+                    - button "Remove Club B Test 16 from roster" [disabled] [ref=e734]
+            - generic [ref=e738]:
+              - generic [ref=e739]: "Ready: 16 rotation players per club."
+              - button "Saving…" [disabled]
+            - generic [ref=e740]: Teams saved · 16 in Clare Blue · 16 in Clare Gold.
+          - generic [ref=e741]:
+            - generic [ref=e742]:
+              - paragraph [ref=e743]: "12"
+              - paragraph [ref=e744]: Rounds
+            - generic [ref=e745]:
+              - paragraph [ref=e746]: "48"
+              - paragraph [ref=e747]: Matches
+            - generic [ref=e748]:
+              - paragraph [ref=e749]: 6–6
+              - paragraph [ref=e750]: Games/player
+            - generic [ref=e751]:
+              - paragraph [ref=e752]: "164"
+              - paragraph [ref=e753]: Structured min
+            - generic [ref=e754]:
+              - paragraph [ref=e755]: "16"
+              - paragraph [ref=e756]: Contingency min
+          - button "Generate Draw & Fairness Report" [disabled]
+    - region "Notifications alt+T":
+      - list:
+        - listitem [ref=e757]:
+          - generic [ref=e761]: 48 fixtures generated
+        - listitem [ref=e763]:
+          - generic [ref=e767]: Teams saved · 16 vs 16
+        - listitem [ref=e769]:
+          - generic [ref=e773]: 32 practice players loaded. You can now rehearse the full setup and draw journey.
+  - generic [ref=e775]: You have dropped the item. You have moved the item from position 2 to position 1
 ```
 
 # Test source
 
 ```ts
+  135 |         next={...current,running:false,started_at:null};
+  136 |       } else if (body.action === 'resume') {
+  137 |         next={...current,running:true,started_at:now()};
+  138 |       } else if (body.action === 'reset') {
+  139 |         next={phase:'ready',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round:Number(model.event.current_round||1)};
+  140 |       } else if (body.action === 'set_round_minutes') {
+  141 |         next={phase:'ready',running:false,remaining_seconds:Number(body.minutes)*60,started_at:null,round:Number(model.event.current_round||1)};
+  142 |       } else if (body.action === 'add_minute') {
+  143 |         next={...current,remaining_seconds:Number(current.remaining_seconds||0)+60};
+  144 |       }
+  145 |       model.event.timer_revision=Number(model.event.timer_revision||0)+1;
+  146 |       model.event.timer_state_json=JSON.stringify(next);
+  147 |       return { success:true, event:model.event, state:next, server_now:now() };
+  148 |     }
+  149 | 
+  150 |     if (name === 'updateClubChallengeRound') {
+  151 |       await sleep(260);
+  152 |       const round=Number(body.nextRound);const nextTimer={phase:'ready',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round};
+  153 |       Object.assign(model.event,{current_round:round,status:'in_progress',timer_state_json:JSON.stringify(nextTimer),timer_revision:Number(model.event.timer_revision||0)+1});
   154 |       return {success:true,event:model.event,timer_state:nextTimer,timer_revision:model.event.timer_revision};
   155 |     }
   156 | 
@@ -420,7 +495,8 @@ Call log:
   232 |   });
   233 | }
   234 | 
-  235 | function metric(report,name,value,max){report[name]=value;expect(value,`${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);}
+> 235 | function metric(report,name,value,max){report[name]=value;expect(value,`${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);}
+      |                                                                                                                            ^ Error: draw_ack_ms should be <= 250ms but was 671ms
   236 | async function expectNoHorizontalOverflow(page){const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);expect(overflow,'mobile page should not require horizontal body scrolling').toBeLessThanOrEqual(1);}
   237 | 
   238 | test.use({ viewport:{width:390,height:844} });
@@ -439,8 +515,7 @@ Call log:
   251 |   started=Date.now();await page.getByTestId('cc-load-practice').click();await expect(page.getByText('Club A Test 01')).toBeVisible({timeout:1800});metric(report,'practice_roster_ms',Date.now()-started,1500);expect(model.participants.length).toBe(32);
   252 |   await expect(page.getByText('12').first()).toBeVisible();await expectNoHorizontalOverflow(page);
   253 | 
-> 254 |   await expect(page.getByText('Build the two teams')).toBeVisible();await expect(page.getByText('Player Pool',{exact:true})).toBeVisible();
-      |                                                                                                                              ^ Error: expect(locator).toBeVisible() failed
+  254 |   await expect(page.getByText('Build the two teams')).toBeVisible();await expect(page.getByText('Unassigned Player Pool',{exact:true})).toBeVisible();
   255 |   const organiseBefore=model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='organise_teams').length;
   256 |   await page.getByTestId('cc-team-name-club_a').fill('Clare Blue');await page.getByTestId('cc-team-name-club_b').fill('Clare Gold');
   257 |   const drag=page.getByTestId('cc-team-drag-cc-a-2');await drag.focus();await drag.press('Space');await drag.press('ArrowUp');await drag.press('Space');
