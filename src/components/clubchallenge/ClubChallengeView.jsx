@@ -434,6 +434,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [announcementStatus, setAnnouncementStatus] = useState('');
   const [playerControlBusy, setPlayerControlBusy] = useState(false);
   const [playerControlStatus, setPlayerControlStatus] = useState(null);
+  const [quickReserveOutgoing, setQuickReserveOutgoing] = useState({});
   const [hostAction, setHostAction] = useState('');
   const [roundActionStatus, setRoundActionStatus] = useState(null);
   const hostBarAnchorRef = React.useRef(null);
@@ -1508,6 +1509,40 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     window.addEventListener('afterprint', cleanupPrintMode, { once:true });
     window.setTimeout(() => window.print(), 250);
   };
+  const activateReserveQuick = async (reserveId, outgoingId) => {
+    if (!event || !canManageEvent || !reserveId || !outgoingId || playerControlBusy || sportingActionRef.current) return;
+    const reserve = participants.find(p => p.id === reserveId);
+    const outgoing = participants.find(p => p.id === outgoingId);
+    if (!reserve || !outgoing || reserve.side !== outgoing.side) { toast.error('Choose the outgoing player from the same team as the reserve.'); return; }
+    sportingActionRef.current = true;
+    setPlayerControlBusy(true);
+    setPlayerControlStatus({ state:'working', text:`Putting ${reserve.display_name} in for ${outgoing.display_name} from Round ${currentRound}…` });
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+        eventId:event.id,
+        action:'activate_reserve',
+        outgoingParticipantId:outgoing.id,
+        reserveParticipantId:reserve.id,
+        withdrawalStatus:'withdrawn',
+        reason:'Team reserve handover',
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      const message = `${res.data.incomingName} is now in for ${res.data.outgoingName} from Round ${res.data.effectiveRound}. ${res.data.affected} future fixture${res.data.affected === 1 ? '' : 's'} updated; completed results unchanged.`;
+      setPlayerControlStatus({ state:'success', text:message });
+      setQuickReserveOutgoing(q => ({ ...q, [reserve.id]:'' }));
+      toast.success(message);
+      await sync();
+    } catch (e) {
+      const message = e?.response?.data?.error || e?.message || 'Could not activate reserve';
+      setPlayerControlStatus({ state:'error', text:message });
+      toast.error(message);
+      await sync();
+    } finally {
+      sportingActionRef.current = false;
+      setPlayerControlBusy(false);
+    }
+  };
+
   const applyReplacement = async () => {
     if (!event || !canManageEvent || !replacement.outgoingId) { toast.error('Choose the player who is leaving.'); return; }
     const outgoing = participants.find(p => p.id === replacement.outgoingId);
@@ -1846,6 +1881,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const changeoverAvailable = timerPhase === 'play' && (!timerState?.running || timerRemaining <= 0);
   const outgoingPlayer = participants.find(p => p.id === replacement.outgoingId) || null;
   const availableReplacementCandidates = replacementCandidates.filter(c => !outgoingPlayer || c.side === outgoingPlayer.side);
+  const unusedTeamReserves = participants.filter(p => ['club_a','club_b'].includes(p.side) && (p.roster_role || 'rotation') === 'reserve' && !p.reserve_activated && ['active','late'].includes(p.status) && Number(p.available_from_round || 1) <= currentRound);
   const gate3ParticipantIds = new Set(participants.filter(p => String(p.unique_identity_key || '').startsWith('gate3-')).map(p => p.id));
   const isGate3TestEvent = gate3ParticipantIds.size >= 8 && participants.every(p => String(p.unique_identity_key || '').startsWith('gate3-') || (p.replacement_for_participant_id && gate3ParticipantIds.has(p.replacement_for_participant_id)));
   const addSimLog = (message, status = 'info') => setSimLog(log => [{ at: new Date().toLocaleTimeString('en-IE'), message, status }, ...log].slice(0, 12));
@@ -2359,6 +2395,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             <details id="cc-player-controls" className="rounded-xl border border-border bg-card overflow-hidden">
               <summary className="cursor-pointer list-none p-4 sm:p-5 flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">Player Controls</p><p className="text-xs text-muted-foreground">Injury, withdrawal, replacement or late arrival.</p></div><ChevronDown className="w-4 h-4 text-muted-foreground" /></summary>
               <div className="border-t border-border p-4 sm:p-5 space-y-4">
+                {unusedTeamReserves.length > 0 && <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-3"><div><p className="text-sm font-bold">Quick Reserve Handover</p><p className="text-xs text-muted-foreground mt-1">For a planned reserve change: choose the player coming off, then press the handover button. Only future unplayed fixtures change.</p></div><div className="grid md:grid-cols-2 gap-3">{unusedTeamReserves.map(reserve => { const sameSidePlayers = participants.filter(p => p.side === reserve.side && p.id !== reserve.id && ['active','late'].includes(p.status) && ((p.roster_role || 'rotation') === 'rotation' || p.reserve_activated)); const selected = quickReserveOutgoing[reserve.id] || ''; return <div key={reserve.id} className="rounded-lg border border-border bg-card p-3 space-y-2"><div><p className="text-xs text-muted-foreground">Reserve ready · {reserve.side === 'club_a' ? event.club_a_name : event.club_b_name}</p><p className="font-bold">{reserve.display_name}</p></div><Select value={selected} onValueChange={v => setQuickReserveOutgoing(q => ({ ...q, [reserve.id]:v }))} disabled={playerControlBusy}><SelectTrigger data-testid={`cc-quick-reserve-outgoing-${reserve.id}`} className="bg-secondary"><SelectValue placeholder="Who is coming off?" /></SelectTrigger><SelectContent>{sameSidePlayers.map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select><Button data-testid={`cc-quick-reserve-activate-${reserve.id}`} className="w-full" disabled={!selected || playerControlBusy} onClick={() => activateReserveQuick(reserve.id, selected)}>Put {reserve.display_name} In Now</Button></div>; })}</div></div>}
                 <div className="rounded-lg bg-secondary/30 p-4 space-y-3">
                   <div><p className="text-sm font-semibold">Player Change</p><p className="text-xs text-muted-foreground">Choose how RallyHub should handle an injury or early departure. Completed results stay unchanged; only future unplayed fixtures can change.</p></div>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-2">
