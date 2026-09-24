@@ -562,6 +562,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const canScoreEvent = !!permissions.canScore && !eventReadOnly;
   const canFinaliseEvent = !!permissions.canFinalise && !eventReadOnly;
   const displayOnly = !!permissions.displayOnly;
+  const { data: clubPlayerCandidates = [], refetch: refetchClubPlayerCandidates, isFetching: clubPlayerCandidatesLoading } = useQuery({
+    queryKey: ['club-challenge-club-player-candidates', event?.id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'club_player_candidates' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.candidates || [];
+    },
+    enabled: !!event?.id && canManageEvent && ['draft','draw_generated'].includes(event?.status),
+    staleTime: 15000,
+  });
   const { data: replacementCandidates = [], refetch: refetchReplacementCandidates } = useQuery({
     queryKey: ['club-challenge-replacement-candidates', event?.id],
     queryFn: async () => {
@@ -793,17 +803,52 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setSaving(false);
   };
 
-  const addManual = async (side, overrideName = '') => {
-    const name = String(overrideName || '').trim();
-    if (!event || !name || !canManageEvent) return;
+  const addClubPlayer = async (side, playerId) => {
+    if (!event || !playerId || !canManageEvent) throw new Error('Event manager permission required.');
     try {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'add_manual', side, displayName:name });
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'add_club_player', side, playerId });
       if (res.data?.error) throw new Error(res.data.error);
       await sync();
+      await refetchClubPlayerCandidates();
+      toast.success(`${res.data?.participant?.display_name || 'Club player'} added to the roster.`);
       return res.data;
     } catch (e) {
-      toast.error(e?.response?.data?.error || e?.message || 'Could not add player');
-      throw e;
+      const message = e?.response?.data?.error || e?.message || 'Could not add club player';
+      toast.error(message);
+      throw new Error(message);
+    }
+  };
+
+  const addGuest = async (side, displayName, gender = '') => {
+    const name = String(displayName || '').trim();
+    if (!event || !name || !canManageEvent) throw new Error('Guest name and event manager permission are required.');
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'add_guest', side, displayName:name, incomingGender:gender });
+      if (res.data?.error) throw new Error(res.data.error);
+      await sync();
+      await refetchClubPlayerCandidates();
+      toast.success(`${name} added as an event guest.`);
+      return res.data;
+    } catch (e) {
+      const message = e?.response?.data?.error || e?.message || 'Could not add guest';
+      toast.error(message);
+      throw new Error(message);
+    }
+  };
+
+  const removePreDrawPlayer = async participantId => {
+    if (!event || !participantId || !canManageEvent) throw new Error('Event manager permission required.');
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'remove_pre_draw', participantId });
+      if (res.data?.error) throw new Error(res.data.error);
+      await sync();
+      await refetchClubPlayerCandidates();
+      toast.success(`${res.data?.removedName || 'Player'} removed from the pre-draw roster.`);
+      return res.data;
+    } catch (e) {
+      const message = e?.response?.data?.error || e?.message || 'Could not remove player';
+      toast.error(message);
+      throw new Error(message);
     }
   };
 
@@ -2180,9 +2225,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               clubBName={setup.clubBName}
               locked={locked}
               busy={saving || !!hostAction}
+              clubPlayerCandidates={clubPlayerCandidates}
+              clubPlayerCandidatesLoading={clubPlayerCandidatesLoading}
               onImportSpond={setSpondImportSide}
               onImportCsv={importCsv}
-              onAddManual={addManual}
+              onAddClubPlayer={addClubPlayer}
+              onAddGuest={addGuest}
+              onRemovePlayer={removePreDrawPlayer}
               onSave={organiseTeams}
               onSetRosterRole={setRosterRole}
               onDirtyChange={setTeamsDirty}
