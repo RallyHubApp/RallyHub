@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, WifiOff } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
 import RALLYHUB_LOGO_BASE64 from '@/assets/rallyhub-logo-approved.b64?raw';
 
 const RALLYHUB_LOGO_URL = `data:image/webp;base64,${RALLYHUB_LOGO_BASE64.trim()}`;
@@ -20,7 +21,7 @@ function score(matches, event) {
 }
 function fmt(seconds){ const s=Math.max(0,Number(seconds||0)); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
 function PoweredByRallyHub(){ return <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground/70"><span>Powered by</span><img src={RALLYHUB_LOGO_URL} alt="RallyHub" className="h-4 w-auto object-contain opacity-80"/></div>; }
-function LiveEventBrand(){ return <div className="flex flex-col items-center justify-center"><div className="flex items-center gap-2"><img src={RALLYHUB_MARK_URL} alt="RallyHub logo" className="h-8 w-8 object-contain sm:h-9 sm:w-9"/><div className="text-left"><div className="text-lg sm:text-xl font-black leading-none tracking-[-.04em] text-[#081342]">Rally<span className="text-[#078e48]">Hub</span></div><div className="mt-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[.24em] text-[#0c1e53]">Interclub</div></div></div><p className="mt-2 text-[10px] sm:text-xs font-bold uppercase tracking-[.2em] text-muted-foreground">Live Event View</p></div>; }
+function LiveEventBrand(){ return <div className="flex flex-col items-center justify-center"><div className="flex items-center gap-2"><img src={RALLYHUB_MARK_URL} alt="RallyHub logo" className="h-8 w-8 object-contain sm:h-9 sm:w-9"/><div className="text-left"><div className="text-lg sm:text-xl font-black leading-none tracking-[-.04em] text-[#081342] dark:text-white">Rally<span className="text-[#078e48]">Hub</span></div><div className="mt-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[.24em] text-[#0c1e53] dark:text-slate-200">Interclub</div></div></div><p className="mt-2 text-[10px] sm:text-xs font-bold uppercase tracking-[.2em] text-muted-foreground">Live Event View</p></div>; }
 function VotingPrompt({ votingUrl, countdown, compact=false }){ if(!votingUrl) return null; return <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-center"><div><p className="text-sm sm:text-lg font-black uppercase tracking-[.16em] text-primary">Players of the Tournament voting open</p><p className="mt-1 text-2xl sm:text-4xl font-black tabular-nums">{countdown}</p><p className="mt-1 text-xs sm:text-sm text-muted-foreground">Scan the QR or tap Vote now.</p><a href={votingUrl} className="mt-2 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm">Vote now</a><a href={votingUrl} className="block mt-1 text-[10px] sm:text-xs text-primary underline underline-offset-2 break-all">Open voting link</a></div><div className="rounded-xl bg-white p-2 shadow-sm"><QRCodeSVG value={votingUrl} size={compact?86:104}/></div></div>; }
 
 export default function PublicClubChallengeDisplay(){
@@ -53,7 +54,7 @@ export default function PublicClubChallengeDisplay(){
   const completed=['completed','archived'].includes(event.status);
   const finalTitle=s.a===s.b?'Interclub Draw':`${s.a>s.b?event.club_a_name:event.club_b_name} win the Interclub`;
 
-  if(completed&&!showcaseActive) return <div className="min-h-screen bg-background text-foreground p-5 sm:p-10 flex flex-col justify-center">
+  if(completed&&!showcaseActive) return <div className="min-h-screen bg-background text-foreground p-5 sm:p-10 flex flex-col justify-center"><AppearanceQuickButton className="fixed right-3 top-3 z-40 h-10 px-2 sm:px-3"/>
     {disconnected&&<div className="mb-4 rounded-lg bg-yellow-500 text-black px-4 py-3 font-semibold text-center"><WifiOff className="inline w-4 h-4 mr-2"/>Connection lost — showing last known result.</div>}
     <div className="mx-auto w-full max-w-6xl text-center">
       <LiveEventBrand/><p className="mt-3 text-sm sm:text-lg uppercase tracking-[.28em] text-primary font-black">Final Result</p>
@@ -68,7 +69,7 @@ export default function PublicClubChallengeDisplay(){
     </div>
   </div>;
 
-  if(showcaseActive) return <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 flex flex-col">
+  if(showcaseActive) return <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 flex flex-col"><AppearanceQuickButton className="fixed right-3 top-3 z-40 h-10 px-2 sm:px-3"/>
     {disconnected&&<div className="mb-3 rounded-lg bg-yellow-500 text-black px-4 py-3 font-semibold text-center"><WifiOff className="inline w-4 h-4 mr-2"/>Connection lost — showing last known score. RallyHub will resynchronise automatically.</div>}
     {potOpen&&<div className="mb-3 rounded-2xl border-2 border-primary/40 bg-primary/10 px-4 py-3"><VotingPrompt votingUrl={votingUrl} countdown={potCountdown} compact /></div>}
     <header className="text-center shrink-0">
@@ -97,7 +98,7 @@ export default function PublicClubChallengeDisplay(){
     <PoweredByRallyHub />
   </div>;
 
-  return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8 space-y-6">
+  return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8 space-y-6"><AppearanceQuickButton className="fixed right-3 top-3 z-40 h-10 px-2 sm:px-3"/>
     {disconnected&&<div className="sticky top-2 z-20 rounded-lg bg-yellow-500 text-black px-4 py-3 font-semibold text-center"><WifiOff className="inline w-4 h-4 mr-2"/>Connection lost — showing last known state. RallyHub will resynchronise automatically.</div>}
     <header className="text-center"><LiveEventBrand/><div className="mt-3 grid grid-cols-2 sm:grid-cols-[1fr_auto_1fr] items-stretch gap-2 sm:gap-8"><div className="order-2 sm:order-1 flex items-center justify-center sm:justify-end gap-2 sm:gap-3 min-w-0 rounded-2xl border bg-card px-2 sm:px-3 py-2" style={{borderTopWidth:'6px',borderTopColor:event.club_a_primary_colour||'#2563eb',borderBottomWidth:'3px',borderBottomColor:event.club_a_secondary_colour||event.club_a_primary_colour||'#2563eb'}}>{event.club_a_logo_url&&<img src={event.club_a_logo_url} alt="" className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl bg-white object-contain p-1"/>}<span className="text-lg sm:text-4xl font-black truncate">{event.club_a_name}</span></div><div className="order-1 col-span-2 sm:order-2 sm:col-span-1 flex items-center justify-center gap-2 sm:gap-3 py-1"><span className="text-5xl sm:text-7xl font-black tabular-nums whitespace-nowrap" style={{color:event.club_a_primary_colour||'#2563eb'}}>{s.a}</span><span className="text-4xl sm:text-6xl font-black text-muted-foreground">–</span><span className="text-5xl sm:text-7xl font-black tabular-nums whitespace-nowrap" style={{color:event.club_b_primary_colour||'#7f1d1d'}}>{s.b}</span></div><div className="order-3 sm:order-3 flex items-center justify-center sm:justify-start gap-2 sm:gap-3 min-w-0 rounded-2xl border bg-card px-2 sm:px-3 py-2" style={{borderTopWidth:'6px',borderTopColor:event.club_b_primary_colour||'#7f1d1d',borderBottomWidth:'3px',borderBottomColor:event.club_b_secondary_colour||event.club_b_primary_colour||'#7f1d1d'}}><span className="text-lg sm:text-4xl font-black truncate">{event.club_b_name}</span>{event.club_b_logo_url&&<img src={event.club_b_logo_url} alt="" className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl bg-white object-contain p-1"/>}</div></div><div className="flex justify-center gap-2 mt-4"><Badge className={breakActive?'bg-red-600 text-white':''} variant={breakActive?'default':'outline'}>{breakActive?'BREAK':plannedRounds?`Round ${round}/${plannedRounds}`:`Round ${round}`}</Badge><Badge variant="outline">{String(timer.phase||'idle').toUpperCase()}</Badge><Badge className="text-lg tabular-nums">{fmt(remaining)}</Badge></div></header>
     {potOpen&&<div className="rounded-2xl border-2 border-primary/40 bg-primary/10 p-4"><VotingPrompt votingUrl={votingUrl} countdown={potCountdown}/></div>}
