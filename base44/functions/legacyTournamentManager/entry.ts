@@ -91,6 +91,9 @@ Deno.serve(async (req) => {
 
     if (action === 'get_state') {
       const playerIds = Array.isArray(tournament.player_ids) ? tournament.player_ids : [];
+      const clubs = tournament.host_club_id ? await base44.asServiceRole.entities.Club.filter({ id:tournament.host_club_id }) : [];
+      const club = clubs?.[0] || null;
+      const clubBrand = club ? { id:club.id, name:club.name, logo_url:club.logo_url || '', primary_colour:club.primary_colour || '', secondary_colour:club.secondary_colour || '' } : null;
       let players:any[] = [];
       if (playerIds.length) {
         const tenantPlayers = await base44.asServiceRole.entities.Player.filter({ tenant_id: tournament.tenant_id });
@@ -98,7 +101,7 @@ Deno.serve(async (req) => {
           .filter((p:any) => playerIds.includes(p.id))
           .map((p:any) => ({ id: p.id, full_name: p.full_name, skill_rating: p.skill_rating, avatar_url: p.avatar_url }));
       }
-      return Response.json({ success: true, tournament, players });
+      return Response.json({ success: true, tournament, players, club_brand:clubBrand });
     }
 
     if (action === 'register_player') {
