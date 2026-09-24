@@ -44,7 +44,7 @@ const TABS = [
 const DEFAULT_SETUP = {
   clubAName: 'Clare Pickleball Club', clubALogo: '', clubAPrimary: '#2563eb', clubASecondary: '#facc15',
   clubBName: 'Galway Pickleball', clubBLogo: '', clubBPrimary: '#7f1d1d', clubBSecondary: '#f8fafc',
-  courts: 4, plannedPlayersTotal: 32, availableMinutes: 180, playMinutes: 10, changeoverMinutes: 2,
+  venue: '', courts: 4, plannedPlayersTotal: 32, availableMinutes: 180, playMinutes: 10, changeoverMinutes: 2,
   includeBreak: true, breakMinutes: 20, breakAfterRound: 6,
   matchType: 'timed', target: 11, winBy: 1, drawsAllowed: true,
   compositionMode: 'open', showcaseEnabled: true, showcasePoints: 5, potEnabled: true, juniorDisplayMode: false,
@@ -345,7 +345,7 @@ function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true,
 
 export default function ClubChallengeView({ tournament, queryClient, isAdmin }) {
   const [tab, setTab] = useState('setup');
-  const [setup, setSetup] = useState(DEFAULT_SETUP);
+  const [setup, setSetup] = useState(() => ({ ...DEFAULT_SETUP, venue: tournament.location || '' }));
   const [saving, setSaving] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [logoUploading, setLogoUploading] = useState('');
@@ -406,6 +406,18 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [printSelection, setPrintSelection] = useState({ score:true, schedule:false, roster:false, briefing:false, final:false });
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
+  const { data: venueOptions = [], refetch: refetchVenueOptions } = useQuery({
+    queryKey: ['cc-venues', tournament.tenant_id || currentUser?.active_tenant_id, tournament.host_club_id || currentUser?.active_club_id],
+    queryFn: async () => {
+      const filters = { status:'active' };
+      const tenantId = tournament.tenant_id || currentUser?.active_tenant_id;
+      const clubId = tournament.host_club_id || currentUser?.active_club_id;
+      if (tenantId) filters.tenant_id = tenantId;
+      if (clubId) filters.club_id = clubId;
+      return await base44.entities.Venue.filter(filters, 'name', 100);
+    },
+    enabled: isAdmin && !!(tournament.tenant_id || currentUser?.active_tenant_id),
+  });
   const { data: hostClub } = useQuery({
     queryKey: ['cc-host-club', tournament.host_club_id || currentUser?.active_club_id],
     queryFn: async () => {
@@ -668,11 +680,24 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       }
     });
     try {
+      const venueName = String(setup.venue || '').trim();
+      let matchedVenue = venueOptions.find(v => String(v.name || '').trim().toLowerCase() === venueName.toLowerCase()) || null;
+      if (venueName && !matchedVenue) {
+        if (!hostClubId) throw new Error('Choose a host club before adding a new venue.');
+        matchedVenue = await base44.entities.Venue.create({ tenant_id: tenantId, club_id: hostClubId, name: venueName, status:'active' });
+        await refetchVenueOptions();
+      }
       if (event) await base44.entities.ClubChallengeEvent.update(event.id, { ...data, status: event.status, draw_version: event.draw_version || 0, current_round: event.current_round || 0 });
       else await base44.entities.ClubChallengeEvent.create(data);
-      if (!tournament.tenant_id || !tournament.host_club_id || tournament.format !== INTERCLUB_INTERNAL_FORMAT || !tournament.inter_club) {
-        await base44.entities.Tournament.update(tournament.id, { tenant_id: tenantId, host_club_id: hostClubId, format: INTERCLUB_INTERNAL_FORMAT, inter_club: true });
-      }
+      const tournamentUpdate = {
+        tenant_id: tenantId,
+        host_club_id: hostClubId,
+        format: INTERCLUB_INTERNAL_FORMAT,
+        inter_club: true,
+        location: venueName,
+        venue_id: matchedVenue?.id || null,
+      };
+      await base44.entities.Tournament.update(tournament.id, tournamentUpdate);
       toast.success(`${INTERCLUB_EVENT_LABEL} setup saved`);
       await sync();
       setTab('teams');
@@ -1981,6 +2006,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           </div>
           <div className="glass rounded-xl p-4 sm:p-5 space-y-4">
             <p className="text-sm font-semibold">Event Configuration</p>
+            <div>
+              <Label className="text-xs">Venue</Label>
+              <Input data-testid="cc-venue" list="cc-venue-options" value={setup.venue} onChange={e => setSetup(s => ({ ...s, venue:e.target.value }))} placeholder="Choose or type a venue" className="mt-1 bg-secondary" />
+              <datalist id="cc-venue-options">{venueOptions.map(v => <option key={v.id} value={v.name}>{v.address || ''}</option>)}</datalist>
+              <p className="text-[10px] text-muted-foreground mt-1">Choose a saved club venue, or type a new venue and RallyHub will save it for reuse.</p>
+            </div>
             <div className="grid sm:grid-cols-[220px_1fr] gap-3 items-end">
               <div><Label className="text-xs">Planned total players</Label><Input type="number" min="8" step="2" value={setup.plannedPlayersTotal} onChange={e => setSetup(s => ({ ...s, plannedPlayersTotal: e.target.value }))} className="mt-1 bg-secondary" /><p className="text-[10px] text-muted-foreground mt-1">Used for the setup estimate until the real rosters are entered. Split equally between clubs.</p></div>
               {previewFormatInfo && <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center"><p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Estimated event duration</p><p className="text-3xl font-bold mt-1">{durationLabel(previewFormatInfo.structuredMinutes)}</p><p className="text-xs text-muted-foreground mt-1">{previewFormatInfo.recommendedRounds} rounds × {previewFormatInfo.playMinutes + previewFormatInfo.changeoverMinutes} min block{previewFormatInfo.break.enabled ? ` + ${previewFormatInfo.break.minutes} min break` : ''} · {previewFormatInfo.remainingMinutes} min contingency</p></div>}
