@@ -76,6 +76,16 @@ Deno.serve(async (req) => {
       const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300);
       if (!matches.length) return Response.json({ error:'No approved fixtures found.' }, { status:409 });
       const plannedRounds = Number(event.planned_rounds || 0) > 0 ? Number(event.planned_rounds) : Math.max(0, ...matches.filter((m:any)=>!m.is_showcase).map((m:any)=>Number(m.round_number || 0)));
+      let clearedPotVotes = 0;
+      if (event.pot_enabled) {
+        const oldVotes = await base44.asServiceRole.entities.ClubChallengeVote.filter({ challenge_event_id:event.id }, '-cast_at', 500);
+        for (const vote of oldVotes) {
+          if (vote.valid !== false) {
+            await base44.asServiceRole.entities.ClubChallengeVote.update(vote.id, { valid:false, rejection_reason:'Cleared automatically when the live event started.' });
+            clearedPotVotes += 1;
+          }
+        }
+      }
       const initialTimer = { phase:'ready', running:false, remaining_seconds:Number(event.play_minutes || 10) * 60, started_at:null, round:1 };
       const initialTimerRevision = Number(event.timer_revision || 0) + 1;
       const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
@@ -84,9 +94,10 @@ Deno.serve(async (req) => {
         current_round:1,
         timer_state_json:JSON.stringify(initialTimer),
         timer_revision:initialTimerRevision,
+        ...(event.pot_enabled ? { pot_status:'closed', pot_vote_opened_at:null, pot_vote_closes_at:null, pot_revealed_at:null, pot_winner_participant_ids:[] } : {}),
       });
       await base44.asServiceRole.entities.Tournament.update(event.tournament_id, { status:'In Progress' });
-      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'event_started', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({current_round:1,match_count:matches.length,timer_state:initialTimer,timer_revision:initialTimerRevision}) });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'event_started', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({current_round:1,match_count:matches.length,timer_state:initialTimer,timer_revision:initialTimerRevision,pot_reset_to_closed:!!event.pot_enabled,cleared_pot_votes:clearedPotVotes}) });
       return Response.json({ success:true, event:updated });
     }
 
