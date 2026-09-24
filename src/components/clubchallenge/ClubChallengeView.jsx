@@ -120,7 +120,7 @@ function HallPoweredByRallyHub() {
   return <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground/70"><span>Powered by</span><img src={RALLYHUB_LOGO_URL} alt="RallyHub" className="h-4 w-auto object-contain opacity-80" /></div>;
 }
 
-function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy, clubPlayerCandidates = [], clubPlayerCandidatesLoading = false, onImportSpond, onImportCsv, onAddClubPlayer, onAddGuest, onRemovePlayer, onSave, onSetRosterRole, onDirtyChange }) {
+function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy, clubPlayerCandidatesBySide = { club_a:[], club_b:[] }, clubPlayerCandidatesLoading = false, onImportSpond, onImportCsv, onAddClubPlayer, onAddGuest, onRemovePlayer, onSave, onSetRosterRole, onDirtyChange }) {
   const active = participants.filter(p => !['replaced','withdrawn','injured'].includes(p.status));
   const signature = active.map(p => `${p.id}:${p.side}:${p.event_rank}:${p.roster_role || 'rotation'}`).sort().join('|');
   const makeLanes = () => ({
@@ -224,7 +224,7 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
   const filteredClubPlayers = side => {
     const term = String(clubSearch[side] || '').trim().toLowerCase();
     if (!term) return [];
-    return clubPlayerCandidates.filter(p => String(p.displayName || '').toLowerCase().includes(term)).slice(0, 8);
+    return (clubPlayerCandidatesBySide[side] || []).filter(p => String(p.displayName || '').toLowerCase().includes(term)).slice(0, 8);
   };
   const addClubPlayer = async (side, candidate) => {
     if (!candidate?.id || locked || busy || dirty) return;
@@ -562,12 +562,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const canScoreEvent = !!permissions.canScore && !eventReadOnly;
   const canFinaliseEvent = !!permissions.canFinalise && !eventReadOnly;
   const displayOnly = !!permissions.displayOnly;
-  const { data: clubPlayerCandidates = [], refetch: refetchClubPlayerCandidates, isFetching: clubPlayerCandidatesLoading } = useQuery({
+  const { data: clubPlayerCandidatesBySide = { club_a:[], club_b:[] }, refetch: refetchClubPlayerCandidates, isFetching: clubPlayerCandidatesLoading } = useQuery({
     queryKey: ['club-challenge-club-player-candidates', event?.id],
     queryFn: async () => {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'club_player_candidates' });
-      if (res.data?.error) throw new Error(res.data.error);
-      return res.data?.candidates || [];
+      const [aRes,bRes] = await Promise.all([
+        base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'club_player_candidates', side:'club_a' }),
+        base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'club_player_candidates', side:'club_b' }),
+      ]);
+      if (aRes.data?.error) throw new Error(aRes.data.error);
+      if (bRes.data?.error) throw new Error(bRes.data.error);
+      return { club_a:aRes.data?.candidates || [], club_b:bRes.data?.candidates || [] };
     },
     enabled: !!event?.id && canManageEvent && ['draft','draw_generated'].includes(event?.status),
     staleTime: 15000,
@@ -2225,7 +2229,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               clubBName={setup.clubBName}
               locked={locked}
               busy={saving || !!hostAction}
-              clubPlayerCandidates={clubPlayerCandidates}
+              clubPlayerCandidatesBySide={clubPlayerCandidatesBySide}
               clubPlayerCandidatesLoading={clubPlayerCandidatesLoading}
               onImportSpond={setSpondImportSide}
               onImportCsv={importCsv}
