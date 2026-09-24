@@ -4,7 +4,6 @@ import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, WifiOff } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
 import RALLYHUB_LOGO_BASE64 from '@/assets/rallyhub-logo-approved.b64?raw';
 
 const RALLYHUB_LOGO_URL = `data:image/webp;base64,${RALLYHUB_LOGO_BASE64.trim()}`;
