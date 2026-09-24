@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: club-challenge-browser-robot.spec.mjs >> Club Challenge mobile host robot: setup → practice → draw → live → full result
-- Location: e2e/club-challenge-browser-robot.spec.mjs:240:1
+- Name: club-challenge-browser-robot.spec.mjs >> Club Challenge public Hall Display robot: now/resting/next + disconnect truth
+- Location: e2e/club-challenge-browser-robot.spec.mjs:315:1
 
 # Error details
 
