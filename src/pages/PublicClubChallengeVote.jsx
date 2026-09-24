@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trophy, CheckCircle2, Clock3 } from 'lucide-react';
-import { INTERCLUB_EVENT_LABEL, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
+import { INTERCLUB_EVENT_LABEL, INTERCLUB_MODULE_NAME, interclubPublicUrl } from '@/lib/interclubBranding';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
 import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
 
@@ -65,6 +65,7 @@ export default function PublicClubChallengeVote(){
   const votingOpen = data?.event?.pot_status === 'open' && (!timed || remainingMs > 0);
   const aPlayers = (data?.participants || []).filter(p=>p.side === 'club_a');
   const bPlayers = (data?.participants || []).filter(p=>p.side === 'club_b');
+  const liveEventUrl = data?.event?.display_token ? interclubPublicUrl(`/club-challenge/display/${data.event.display_token}`) : '';
   const eventClubs = data ? [
     { id:'club_a', name:data.event.club_a_name, logo_url:data.event.club_a_logo_url, primary_colour:data.event.club_a_primary_colour, secondary_colour:data.event.club_a_secondary_colour },
     { id:'club_b', name:data.event.club_b_name, logo_url:data.event.club_b_logo_url, primary_colour:data.event.club_b_primary_colour, secondary_colour:data.event.club_b_secondary_colour },
@@ -99,6 +100,7 @@ export default function PublicClubChallengeVote(){
       <CheckCircle2 className="w-11 h-11 text-primary mx-auto mt-5"/>
       <h1 className="text-xl font-bold mt-3">Votes recorded</h1>
       <p className="text-sm text-muted-foreground mt-2">Thank you. Your Player of the Tournament choices for both teams have been securely recorded.</p>
+      {liveEventUrl && <a href={liveEventUrl} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-bold hover:bg-secondary">Back to Live Event</a>}
     </div>
   </div>;
 
@@ -157,6 +159,7 @@ export default function PublicClubChallengeVote(){
         <p className="text-xs text-muted-foreground text-center">Votes remain private. Results stay hidden until the host reveals them.</p>
       </>}
 
+      {liveEventUrl && <a href={liveEventUrl} className="w-full min-h-11 inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-bold hover:bg-secondary">Back to Live Event</a>}
       {data?.event.junior_display_mode && <p className="text-xs text-muted-foreground text-center">Junior privacy mode is active.</p>}
     </div>
   </div>;
