@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { CalendarDays, Crown, MapPin, Users, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
+import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
 
 function formatEventDate(dateValue) {
   if (!dateValue) return 'Date to be confirmed';
@@ -15,7 +16,7 @@ function formatEventDate(dateValue) {
   });
 }
 
-export default function PublicEventLanding({ tournament, players, callPublicRegister, onRefresh, liveIndicator }) {
+export default function PublicEventLanding({ tournament, players, callPublicRegister, onRefresh, liveIndicator, clubBrand=null }) {
   const [name, setName] = useState('');
   const [registering, setRegistering] = useState(false);
 
@@ -38,11 +39,11 @@ export default function PublicEventLanding({ tournament, players, callPublicRegi
   };
 
   return (
-    <div className="min-h-screen bg-background px-4 py-6">
+    <div className="min-h-screen bg-background text-foreground px-4 py-6"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
       <div className="max-w-2xl mx-auto space-y-5">
         <div className="glass rounded-3xl p-6 sm:p-8 border border-primary/10 glow-green">
-          <div className="flex items-center justify-between gap-3 mb-6">
-            <Badge className="bg-primary/15 text-primary border border-primary/20">RallyHub.ie Event</Badge>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+            <RallyHubPublicBrand moduleName={tournament.format || 'Tournament'} pageLabel="Event" club={clubBrand} align="left"/>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className={liveIndicator ? 'text-primary' : ''}>●</span>
               Awaiting start
