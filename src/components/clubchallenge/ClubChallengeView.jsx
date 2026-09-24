@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, CheckCircle2, ChevronDown, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, ShieldCheck, Trophy, Upload, Users, VolumeX } from 'lucide-react';
+import { ArrowLeft, Check, CheckCircle2, ChevronDown, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, Search, ShieldCheck, Trash2, Trophy, Upload, UserPlus, Users, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import { getRallyHubPaLevel, listRallyHubMicrophones, playRallyHubSignal, primeRallyHubHallSpeech, setRallyHubPaGain, speakRallyHubHall, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
@@ -120,7 +120,7 @@ function HallPoweredByRallyHub() {
   return <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground/70"><span>Powered by</span><img src={RALLYHUB_LOGO_URL} alt="RallyHub" className="h-4 w-auto object-contain opacity-80" /></div>;
 }
 
-function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy, onImportSpond, onImportCsv, onAddManual, onSave, onSetRosterRole, onDirtyChange }) {
+function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy, clubPlayerCandidates = [], clubPlayerCandidatesLoading = false, onImportSpond, onImportCsv, onAddClubPlayer, onAddGuest, onRemovePlayer, onSave, onSetRosterRole, onDirtyChange }) {
   const active = participants.filter(p => !['replaced','withdrawn','injured'].includes(p.status));
   const signature = active.map(p => `${p.id}:${p.side}:${p.event_rank}:${p.roster_role || 'rotation'}`).sort().join('|');
   const makeLanes = () => ({
@@ -147,6 +147,9 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
   const [dirty, setDirty] = useState(() => !!initialDraft);
   const [status, setStatus] = useState(() => initialDraft ? {state:'working',text:'Recovered your unsaved team allocation and ranking draft.'} : null);
   const [manualPool, setManualPool] = useState('');
+  const [clubSearch, setClubSearch] = useState({ club_a:'', club_b:'' });
+  const [guestDraft, setGuestDraft] = useState({ club_a:{name:'',gender:''}, club_b:{name:'',gender:''} });
+  const [rosterAction, setRosterAction] = useState('');
 
   React.useEffect(() => {
     const draft = readDraft();
@@ -215,8 +218,45 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
   };
   const addPool = async () => {
     const name = manualPool.trim();
-    if (!name || busy || locked) return;
-    try { await onAddManual?.('pool', name); setManualPool(''); } catch {}
+    if (!name || busy || locked || dirty) return;
+    try { setRosterAction('pool-guest'); await onAddGuest?.('pool', name, ''); setManualPool(''); } catch {} finally { setRosterAction(''); }
+  };
+  const filteredClubPlayers = side => {
+    const term = String(clubSearch[side] || '').trim().toLowerCase();
+    if (!term) return [];
+    return clubPlayerCandidates.filter(p => String(p.displayName || '').toLowerCase().includes(term)).slice(0, 8);
+  };
+  const addClubPlayer = async (side, candidate) => {
+    if (!candidate?.id || locked || busy || dirty) return;
+    try {
+      setRosterAction(`club-${side}-${candidate.id}`);
+      await onAddClubPlayer?.(side, candidate.id);
+      setClubSearch(s => ({ ...s, [side]:'' }));
+      setStatus({state:'success',text:`${candidate.displayName} added to ${side === 'club_a' ? nameA : nameB}.`});
+    } catch (e) { setStatus({state:'error',text:e?.message || 'Could not add club player.'}); }
+    finally { setRosterAction(''); }
+  };
+  const addGuest = async side => {
+    const draft = guestDraft[side] || {name:'',gender:''};
+    const name = String(draft.name || '').trim();
+    if (!name || locked || busy || dirty) return;
+    try {
+      setRosterAction(`guest-${side}`);
+      await onAddGuest?.(side, name, draft.gender || '');
+      setGuestDraft(s => ({ ...s, [side]:{name:'',gender:''} }));
+      setStatus({state:'success',text:`Guest ${name} added to ${side === 'club_a' ? nameA : nameB}.`});
+    } catch (e) { setStatus({state:'error',text:e?.message || 'Could not add guest.'}); }
+    finally { setRosterAction(''); }
+  };
+  const removePlayer = async p => {
+    if (!p?.id || locked || busy || dirty) return;
+    if (!window.confirm(`Remove ${p.display_name} from this pre-draw roster?`)) return;
+    try {
+      setRosterAction(`remove-${p.id}`);
+      await onRemovePlayer?.(p.id);
+      setStatus({state:'success',text:`${p.display_name} removed from the pre-draw roster.`});
+    } catch (e) { setStatus({state:'error',text:e?.message || 'Could not remove player.'}); }
+    finally { setRosterAction(''); }
   };
   const moveAllPool = to => {
     if (!lanes.pool.length || locked || busy) return;
@@ -228,8 +268,15 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
     <div data-testid={`cc-team-lane-${id}`} className="rounded-xl border border-border bg-card p-3 min-h-[18rem] transition-colors">
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="min-w-0 flex-1">
-          {id === 'pool' ? <><p className="text-sm font-semibold">Unassigned Player Pool</p><p className="text-[10px] text-muted-foreground">Use this only for players who are not yet assigned. Import Clare and Galway directly into their own team panels.</p></> :
+          {id === 'pool' ? <><p className="text-sm font-semibold">Unassigned Player Pool</p><p className="text-[10px] text-muted-foreground">Use this only for players who are not yet assigned. Add or import players directly into their team panels where possible.</p></> :
             <><Label className="text-[10px]">Team name</Label><Input data-testid={`cc-team-name-${id}`} value={teamName} onChange={e => { setTeamName(e.target.value); setDirty(true); setStatus(null); }} disabled={locked || busy} className="mt-1 h-9 bg-secondary font-semibold" />
+              <div className="mt-2 rounded-lg border border-primary/20 bg-primary/5 p-2.5 space-y-2">
+                <div className="flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5 text-primary"/><p className="text-[10px] font-bold uppercase tracking-wide">Roster controls</p></div>
+                <div className="relative"><Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground"/><Input data-testid={`cc-club-player-search-${id}`} value={clubSearch[id] || ''} onChange={e => setClubSearch(s => ({...s,[id]:e.target.value}))} placeholder="Search RallyHub club players" className="h-9 pl-8 bg-background text-xs" disabled={locked || busy || dirty}/></div>
+                {!!clubSearch[id]?.trim() && <div className="max-h-40 overflow-auto rounded-md border bg-background p-1 space-y-1">{clubPlayerCandidatesLoading ? <p className="p-2 text-[10px] text-muted-foreground">Loading club players…</p> : filteredClubPlayers(id).length ? filteredClubPlayers(id).map(c => <button data-testid={`cc-add-club-player-${id}-${c.id}`} type="button" key={c.id} disabled={locked || busy || dirty || !!rosterAction} onClick={() => addClubPlayer(id,c)} className="w-full flex items-center justify-between gap-2 rounded px-2 py-2 text-left text-xs hover:bg-secondary disabled:opacity-50"><span className="truncate">{c.displayName}</span><span className="shrink-0 text-[9px] text-muted-foreground">{c.relationshipType === 'member' ? 'Club member' : String(c.relationshipType || '').replaceAll('_',' ')}</span></button>) : <p className="p-2 text-[10px] text-muted-foreground">No available RallyHub club player matches that search.</p>}</div>}
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_112px_auto] gap-1.5"><Input data-testid={`cc-guest-name-${id}`} value={guestDraft[id]?.name || ''} onChange={e => setGuestDraft(s => ({...s,[id]:{...(s[id]||{}),name:e.target.value}}))} onKeyDown={e => { if (e.key === 'Enter') addGuest(id); }} placeholder="Guest name" className="h-9 bg-background text-xs" disabled={locked || busy || dirty}/><Select value={guestDraft[id]?.gender || 'not_set'} onValueChange={v => setGuestDraft(s => ({...s,[id]:{...(s[id]||{}),gender:v === 'not_set' ? '' : v}}))} disabled={locked || busy || dirty}><SelectTrigger className="h-9 bg-background text-[10px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not_set">Gender optional</SelectItem><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem><SelectItem value="Non-binary">Non-binary</SelectItem><SelectItem value="Prefer not to say">Prefer not to say</SelectItem></SelectContent></Select><Button data-testid={`cc-add-guest-${id}`} type="button" size="sm" className="h-9" disabled={locked || busy || dirty || !!rosterAction || !guestDraft[id]?.name?.trim()} onClick={() => addGuest(id)}>Add Guest</Button></div>
+                <p className="text-[9px] text-muted-foreground">Club players keep their RallyHub identity. A typed guest is event-only and does not become a club member.</p>
+              </div>
               <div className="grid grid-cols-2 gap-1.5 mt-2">
                 <Button type="button" variant="outline" size="sm" className="h-8 px-2 text-[10px]" onClick={() => onImportSpond?.(id)} disabled={locked || busy || dirty}><Download className="w-3 h-3 mr-1" />Import Spond</Button>
                 <label className={cn('h-8 rounded-md border border-input bg-background px-2 text-[10px] font-medium inline-flex items-center justify-center cursor-pointer hover:bg-accent hover:text-accent-foreground', (locked || busy || dirty) && 'opacity-50 pointer-events-none')}>
@@ -263,9 +310,10 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
               {(dragProvided, dragSnapshot) => <div data-testid={`cc-team-player-${p.id}`} ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn('flex items-center gap-2 rounded-lg border border-border bg-secondary/60 p-2 min-h-11', dragSnapshot.isDragging && 'border-primary bg-primary/10 shadow-lg')}>
                 <div data-testid={`cc-team-drag-${p.id}`} {...dragProvided.dragHandleProps} className="w-9 h-9 -ml-1 flex items-center justify-center rounded-md touch-none shrink-0 text-muted-foreground active:bg-primary/10"><GripVertical className="w-5 h-5" /></div>
                 {id !== 'pool' && <span className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>}
-                <span className="text-xs text-foreground flex-1 truncate">{p.display_name}</span>
+                <span className="text-xs text-foreground flex-1 truncate">{p.display_name}{p.participant_type === 'guest' ? <span className="ml-1 text-[9px] text-amber-700">· Guest</span> : null}</span>
                 {id !== 'pool' && <Select value={p.roster_role || 'rotation'} onValueChange={async value => { setStatus({state:'working',text:`Updating ${p.display_name}…`}); try { await onSetRosterRole?.(p.id, value); setStatus({state:'success',text:`${p.display_name} set as ${value === 'reserve' ? 'Reserve' : 'Rotation'} player.`}); } catch (e) { setStatus({state:'error',text:e?.message || 'Could not update roster role.'}); } }} disabled={locked || busy || dirty}><SelectTrigger className="h-8 w-[102px] bg-background text-[10px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="rotation">Rotation</SelectItem><SelectItem value="reserve">Reserve</SelectItem></SelectContent></Select>}
                 {id !== 'pool' && <span className={cn('min-w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0', String(p.gender || '').toLowerCase().startsWith('m') ? 'bg-blue-500/10 text-blue-700' : String(p.gender || '').toLowerCase().startsWith('f') ? 'bg-pink-500/10 text-pink-700' : 'bg-amber-500/10 text-amber-700')} title={p.gender || 'Gender not set'}>{String(p.gender || '').toLowerCase().startsWith('m') ? 'M' : String(p.gender || '').toLowerCase().startsWith('f') ? 'F' : '?'}</span>}
+                <button data-testid={`cc-remove-player-${p.id}`} type="button" title="Remove from pre-draw roster" aria-label={`Remove ${p.display_name} from roster`} disabled={locked || busy || dirty || !!rosterAction} onClick={() => removePlayer(p)} className="w-8 h-8 rounded-md inline-flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-30 shrink-0"><Trash2 className="w-3.5 h-3.5"/></button>
               </div>}
             </Draggable>;
           })}
