@@ -71,9 +71,18 @@ Deno.serve(async (req) => {
     }
 
     const now = new Date().toISOString();
-    const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'completed', finalised_at:now, showcase_resolution_method:method, showcase_resolved_winner:winner });
+    const completedTimer = { phase:'complete', running:false, remaining_seconds:0, started_at:null, round:Number(event.current_round || event.planned_rounds || 0) };
+    const nextTimerRevision = Number(event.timer_revision || 0) + 1;
+    const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
+      status:'completed',
+      finalised_at:now,
+      showcase_resolution_method:method,
+      showcase_resolved_winner:winner,
+      timer_state_json:JSON.stringify(completedTimer),
+      timer_revision:nextTimerRevision,
+    });
     await base44.asServiceRole.entities.Tournament.update(event.tournament_id, { status:'Completed', finalised_at:now });
-    await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'event_finalised', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({winner,method,normal_score_a:clubA,normal_score_b:clubB,overall_score_a:overallA,overall_score_b:overallB,game_points_a:gameA,game_points_b:gameB}) });
+    await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'event_finalised', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({winner,method,normal_score_a:clubA,normal_score_b:clubB,overall_score_a:overallA,overall_score_b:overallB,game_points_a:gameA,game_points_b:gameB,timer_stopped:true,timer_revision:nextTimerRevision}) });
     return Response.json({ success:true, event:updated, winner, clubA:overallA, clubB:overallB });
   } catch (error) {
     return Response.json({ error:error?.message || 'Unexpected finalisation error' }, { status:500 });
