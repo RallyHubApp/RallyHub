@@ -12,6 +12,16 @@ function validClubChallengeGrant(a:any, tenantId:string) {
   return !!a && a.active === true && String(a.tenant_id || '') === String(tenantId || '');
 }
 
+function secureRandomIndex(length:number) {
+  if (length <= 1) return 0;
+  const range = 0x100000000;
+  const limit = Math.floor(range / length) * length;
+  const values = new Uint32Array(1);
+  let value = range;
+  while (value >= limit) { crypto.getRandomValues(values); value = values[0]; }
+  return value % length;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -20,7 +30,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const { eventId, action } = body;
-    if (!['open','close','reveal','extend','reset'].includes(action)) return Response.json({ error:'Invalid POT action.' }, { status:400 });
+    if (!['open','close','reveal','extend','reset','tiebreak'].includes(action)) return Response.json({ error:'Invalid POT action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -65,6 +75,32 @@ Deno.serve(async (req) => {
       if (!Number.isFinite(extraMinutes)) return Response.json({ error:'Extension is invalid.' }, { status:400 });
       const currentClose = Math.max(Date.now(), Date.parse(event.pot_vote_closes_at));
       update = { pot_vote_closes_at:new Date(currentClose + extraMinutes * 60000).toISOString() };
+    } else if (action === 'tiebreak') {
+      if (event.pot_status !== 'closed') return Response.json({ error:'Voting must be closed before a tie-break.' }, { status:409 });
+      const side = String(body.side || '');
+      if (!['club_a','club_b'].includes(side)) return Response.json({ error:'Tie-break team is invalid.' }, { status:400 });
+      const [votes, participants] = await Promise.all([
+        base44.asServiceRole.entities.ClubChallengeVote.filter({ challenge_event_id:event.id }, '-cast_at', 500),
+        base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100)
+      ]);
+      const byId = new Map(participants.map((p:any) => [p.id, p]));
+      const sideCounts:any = {};
+      for (const vote of votes) {
+        if (vote.valid === false) continue;
+        const nominee:any = byId.get(vote.nominee_participant_id);
+        const voteSide = vote.ballot_side || nominee?.side;
+        if (!nominee || voteSide !== side) continue;
+        sideCounts[nominee.id] = (sideCounts[nominee.id] || 0) + 1;
+      }
+      const max = Math.max(0, ...Object.values(sideCounts).map(Number));
+      const tiedIds = Object.keys(sideCounts).filter(id => max > 0 && sideCounts[id] === max);
+      if (tiedIds.length < 2) return Response.json({ error:'There is no tied top vote to resolve for this team.' }, { status:409 });
+      const selectedId = tiedIds[secureRandomIndex(tiedIds.length)];
+      const existingIds = Array.isArray(event.pot_winner_participant_ids) ? event.pot_winner_participant_ids : [];
+      const keepOtherSide = existingIds.filter((id:string) => (byId.get(id) as any)?.side !== side);
+      update = { pot_status:'closed', pot_winner_participant_ids:[...keepOtherSide, selectedId], pot_revealed_at:null };
+      winnerCount = 1;
+      winnerSides = { [side]:[selectedId], candidates:tiedIds };
     } else if (action === 'reset') {
       const votes = await base44.asServiceRole.entities.ClubChallengeVote.filter({ challenge_event_id:event.id }, '-cast_at', 500);
       let invalidated = 0;
@@ -113,8 +149,20 @@ Deno.serve(async (req) => {
         const max = Math.max(0, ...Object.values(sideCounts).map(Number));
         return Object.keys(sideCounts).filter(id => max > 0 && sideCounts[id] === max);
       };
-      const clubAWinners = winnersFor('club_a');
-      const clubBWinners = winnersFor('club_b');
+      const clubATop = winnersFor('club_a');
+      const clubBTop = winnersFor('club_b');
+      const savedIds = Array.isArray(event.pot_winner_participant_ids) ? event.pot_winner_participant_ids : [];
+      const unresolved:string[] = [];
+      const resolveSide = (side:string, topIds:string[]) => {
+        if (topIds.length <= 1) return topIds;
+        const saved = savedIds.filter((id:string) => topIds.includes(id) && (byId.get(id) as any)?.side === side);
+        if (saved.length === 1) return saved;
+        unresolved.push(side);
+        return [];
+      };
+      const clubAWinners = resolveSide('club_a', clubATop);
+      const clubBWinners = resolveSide('club_b', clubBTop);
+      if (unresolved.length) return Response.json({ error:'A tied Player of the Tournament vote needs a coin toss before reveal.', code:'POT_TIEBREAK_REQUIRED', tiedSides:unresolved }, { status:409 });
       const winners = [...clubAWinners, ...clubBWinners];
       winnerCount = winners.length;
       winnerSides = { club_a:clubAWinners, club_b:clubBWinners };
@@ -129,9 +177,15 @@ Deno.serve(async (req) => {
       user_id:user.id,
       occurred_at:nowIso,
       old_value_json:JSON.stringify({ pot_status:event.pot_status, pot_vote_closes_at:event.pot_vote_closes_at || null }),
-      new_value_json:JSON.stringify({ pot_status:updated.pot_status, pot_vote_closes_at:updated.pot_vote_closes_at || null, winner_count:winnerCount }),
+      new_value_json:JSON.stringify({ pot_status:updated.pot_status, pot_vote_closes_at:updated.pot_vote_closes_at || null, winner_count:winnerCount, winner_sides:winnerSides }),
+      note:action === 'tiebreak' ? 'Random POT tie-break resolved server-side and saved before public reveal.' : undefined,
     });
 
+    if (action === 'tiebreak') {
+      const selectedId = Object.values(winnerSides || {}).flat().find((v:any) => typeof v === 'string') as string | undefined;
+      const selected = selectedId ? (await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ id:selectedId }))?.[0] : null;
+      return Response.json({ success:true, event:updated, winnerCount, winnerSides, selectedWinner:selected ? { id:selected.id, side:selected.side, display_name:selected.display_name } : null });
+    }
     return Response.json({ success:true, event:updated, winnerCount, winnerSides });
   } catch (error) {
     return Response.json({ error:error?.message || 'Unexpected POT update error' }, { status:500 });
