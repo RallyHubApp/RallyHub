@@ -251,7 +251,7 @@ test('Club Challenge mobile host robot: setup → practice → draw → live →
   started=Date.now();await page.getByTestId('cc-load-practice').click();await expect(page.getByText('Club A Test 01')).toBeVisible({timeout:1800});metric(report,'practice_roster_ms',Date.now()-started,1500);expect(model.participants.length).toBe(32);
   await expect(page.getByText('12').first()).toBeVisible();await expectNoHorizontalOverflow(page);
 
-  await expect(page.getByText('Build the two teams')).toBeVisible();await expect(page.getByText('Player Pool',{exact:true})).toBeVisible();
+  await expect(page.getByText('Build the two teams')).toBeVisible();await expect(page.getByText('Unassigned Player Pool',{exact:true})).toBeVisible();
   const organiseBefore=model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='organise_teams').length;
   await page.getByTestId('cc-team-name-club_a').fill('Clare Blue');await page.getByTestId('cc-team-name-club_b').fill('Clare Gold');
   const drag=page.getByTestId('cc-team-drag-cc-a-2');await drag.focus();await drag.press('Space');await drag.press('ArrowUp');await drag.press('Space');
