@@ -36,8 +36,8 @@ export function AppearanceSelector({ compact = false }) {
 }
 
 export function AppearanceQuickButton({ showLabel = true, className }) {
-  const { resolvedMode, cycleMode } = useAppearance();
-  const active = OPTIONS.find(option => option.id === resolvedMode) || OPTIONS[3];
+  const { mode, cycleMode } = useAppearance();
+  const active = OPTIONS.find(option => option.id === mode) || OPTIONS[0];
   const Icon = active.icon;
   return (
     <Button
@@ -45,7 +45,7 @@ export function AppearanceQuickButton({ showLabel = true, className }) {
       variant="outline"
       size="sm"
       onClick={cycleMode}
-      title="Change appearance: Light → Hall → Dark"
+      title="Change appearance: Auto → Light → Hall → Dark"
       aria-label={`Current appearance ${active.label}. Change appearance.`}
       className={cn('gap-1.5 border-border bg-card/80', className)}
     >
@@ -56,8 +56,8 @@ export function AppearanceQuickButton({ showLabel = true, className }) {
 }
 
 export function HostAppearanceControl() {
-  const { resolvedMode, cycleMode } = useAppearance();
-  const active = OPTIONS.find(option => option.id === resolvedMode) || OPTIONS[3];
+  const { mode, cycleMode } = useAppearance();
+  const active = OPTIONS.find(option => option.id === mode) || OPTIONS[0];
   const Icon = active.icon;
   return (
     <button
@@ -65,7 +65,7 @@ export function HostAppearanceControl() {
       onClick={cycleMode}
       className="fixed right-3 top-3 z-[1200] min-h-11 rounded-xl border-2 border-border bg-card px-3 py-2 text-foreground shadow-lg flex items-center gap-2 font-semibold text-xs hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       aria-label={`Host display appearance is ${active.label}. Tap to change.`}
-      title="Host appearance: Light → Hall → Dark"
+      title="Host appearance: Auto → Light → Hall → Dark"
     >
       <Icon className="w-4 h-4" />
       <span>{active.label}</span>
