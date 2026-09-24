@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, players, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, rosterRole, reserveParticipantId, coverParticipantId } = body;
-    if (!eventId || !['replace','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','bulk_add_manual','reorder','organise_teams','replacement_candidates','set_roster_role'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
+    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, players, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, rosterRole, reserveParticipantId, coverParticipantId, playerId } = body;
+    if (!eventId || !['replace','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','bulk_add_manual','reorder','organise_teams','replacement_candidates','set_roster_role','club_player_candidates','add_club_player','add_guest','remove_pre_draw'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -33,6 +33,24 @@ Deno.serve(async (req) => {
     if (!allowed) return Response.json({ error:'Event manager permission required' }, { status:403 });
 
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
+
+    if (action === 'club_player_candidates') {
+      if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Club players can only be selected before the draw is approved.' }, { status:409 });
+      if (!event.host_club_id) return Response.json({ success:true, candidates:[] });
+      const normalise = (value:any) => String(value || '').trim().toLowerCase().replace(/\s+/g,' ');
+      const clubPlayers = await base44.asServiceRole.entities.Player.filter({ tenant_id:event.tenant_id, club_id:event.host_club_id }, 'full_name', 500);
+      const existingPlayerIds = new Set(participants.filter((p:any) => ['active','late'].includes(p.status) && p.source_player_id).map((p:any) => String(p.source_player_id)));
+      const existingNames = new Set(participants.filter((p:any) => ['active','late'].includes(p.status)).map((p:any) => normalise(p.display_name)));
+      const allowedTypes = new Set(['member','guest','booking_only','waiting_list']);
+      const candidates = clubPlayers
+        .filter((p:any) => String(p.status || 'Active').toLowerCase() === 'active')
+        .filter((p:any) => String(p.relationship_status || 'active').toLowerCase() === 'active')
+        .filter((p:any) => allowedTypes.has(String(p.relationship_type || 'member')))
+        .filter((p:any) => !existingPlayerIds.has(String(p.id)) && !existingNames.has(normalise(p.full_name)))
+        .map((p:any) => ({ id:p.id, displayName:p.full_name, gender:p.gender || '', relationshipType:p.relationship_type || 'member' }))
+        .sort((a:any,b:any) => String(a.displayName).localeCompare(String(b.displayName)));
+      return Response.json({ success:true, candidates });
+    }
 
     if (action === 'replacement_candidates') {
       const normalise = (value:any) => String(value || '').trim().toLowerCase().replace(/\s+/g,' ');
@@ -69,6 +87,86 @@ Deno.serve(async (req) => {
     const normal = matches.filter((m:any) => !m.is_showcase);
     const currentRound = Math.max(1, Number(event.current_round || 1));
     const now = new Date().toISOString();
+    const normalise = (value:any) => String(value || '').trim().toLowerCase().replace(/\s+/g,' ');
+    const preDrawStatus = ['draft','draw_generated'].includes(event.status);
+
+    if (action === 'add_club_player') {
+      if (!preDrawStatus) return Response.json({ error:'Club players can only be added before the draw is approved.' }, { status:409 });
+      if (!['pool','club_a','club_b'].includes(side)) return Response.json({ error:'Valid player group required.' }, { status:400 });
+      if (!playerId || !event.host_club_id) return Response.json({ error:'Choose a RallyHub club player.' }, { status:400 });
+      const clubPlayers = await base44.asServiceRole.entities.Player.filter({ id:playerId, tenant_id:event.tenant_id, club_id:event.host_club_id });
+      const player = clubPlayers?.[0];
+      if (!player || String(player.status || 'Active').toLowerCase() !== 'active' || String(player.relationship_status || 'active').toLowerCase() !== 'active') return Response.json({ error:'That RallyHub club player is not currently available.' }, { status:409 });
+      if (participants.some((p:any) => ['active','late'].includes(p.status) && (String(p.source_player_id || '') === String(player.id) || normalise(p.display_name) === normalise(player.full_name)))) return Response.json({ error:'That player is already in this Interclub roster.' }, { status:409 });
+      const clubs = await base44.asServiceRole.entities.Club.filter({ id:event.host_club_id });
+      const hostClub = clubs?.[0] || null;
+      const allowedTypes = new Set(['member','guest','booking_only','waiting_list']);
+      const participantType = allowedTypes.has(String(player.relationship_type || 'member')) ? String(player.relationship_type || 'member') : 'member';
+      const sidePlayers = participants.filter((p:any) => p.side === side && !['replaced','withdrawn','injured'].includes(p.status));
+      const created = await base44.asServiceRole.entities.ClubChallengeParticipant.create({
+        tenant_id:event.tenant_id,
+        challenge_event_id:event.id,
+        tournament_id:event.tournament_id,
+        side,
+        source_player_id:player.id,
+        display_name:String(player.full_name || '').trim(),
+        participant_type:participantType,
+        represented_club_id:event.host_club_id,
+        represented_club_name:hostClub?.name || player.club || '',
+        email:player.email || '',
+        gender:player.gender || '',
+        age_category:player.age_group || '',
+        event_rank:sidePlayers.length + 1,
+        roster_role:'rotation',
+        status:'active',
+        available_from_round:1,
+        unique_identity_key:`player-${player.id}`,
+      });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'club_player_added_pre_draw', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({participant_id:created.id,source_player_id:player.id,side,name:created.display_name}) });
+      return Response.json({ success:true, participant:created });
+    }
+
+    if (action === 'add_guest') {
+      if (!preDrawStatus) return Response.json({ error:'Guests can only be added before the draw is approved.' }, { status:409 });
+      if (!['pool','club_a','club_b'].includes(side)) return Response.json({ error:'Valid player group required.' }, { status:400 });
+      const cleanName = String(displayName || '').trim().replace(/\s+/g,' ').slice(0,120);
+      if (!cleanName) return Response.json({ error:'Guest name required.' }, { status:400 });
+      if (participants.some((p:any) => ['active','late'].includes(p.status) && normalise(p.display_name) === normalise(cleanName))) return Response.json({ error:'That player name is already active in this Interclub roster.' }, { status:409 });
+      const sidePlayers = participants.filter((p:any) => p.side === side && !['replaced','withdrawn','injured'].includes(p.status));
+      const created = await base44.asServiceRole.entities.ClubChallengeParticipant.create({
+        tenant_id:event.tenant_id,
+        challenge_event_id:event.id,
+        tournament_id:event.tournament_id,
+        side,
+        display_name:cleanName,
+        participant_type:'guest',
+        gender:String(incomingGender || ''),
+        event_rank:sidePlayers.length + 1,
+        roster_role:'rotation',
+        status:'active',
+        available_from_round:1,
+        unique_identity_key:`guest-${side}-${crypto.randomUUID().slice(0,12)}`,
+      });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'guest_added_pre_draw', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({participant_id:created.id,side,name:created.display_name}) });
+      return Response.json({ success:true, participant:created });
+    }
+
+    if (action === 'remove_pre_draw') {
+      if (!preDrawStatus) return Response.json({ error:'Players can only be removed before the draw is approved.' }, { status:409 });
+      const p = participants.find((x:any) => x.id === participantId);
+      if (!p || ['replaced','withdrawn','injured'].includes(p.status)) return Response.json({ error:'Choose a current roster player.' }, { status:400 });
+      const oldValue = { participant_id:p.id, source_player_id:p.source_player_id || '', side:p.side, name:p.display_name, event_rank:p.event_rank, roster_role:p.roster_role || 'rotation', participant_type:p.participant_type || 'member' };
+      await base44.asServiceRole.entities.ClubChallengeParticipant.delete(p.id);
+      const remaining = participants
+        .filter((x:any) => x.id !== p.id && x.side === p.side && !['replaced','withdrawn','injured'].includes(x.status))
+        .sort((a:any,b:any) => Number(a.event_rank || 999) - Number(b.event_rank || 999));
+      for (let i=0;i<remaining.length;i++) if (Number(remaining[i].event_rank || 0) !== i + 1) await base44.asServiceRole.entities.ClubChallengeParticipant.update(remaining[i].id, { event_rank:i + 1 });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_removed_pre_draw', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify(oldValue) });
+      return Response.json({ success:true, removedName:p.display_name, side:p.side });
+    }
 
     if (action === 'add_manual') {
       if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Players can only be added before the draw is approved.' }, { status:409 });
