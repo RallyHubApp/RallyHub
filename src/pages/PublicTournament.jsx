@@ -14,6 +14,8 @@ import { generateNextRound, generateRound1, createKotcState, computeKotcLeaderbo
 import KotcRotationSummary from '@/components/kotc/KotcRotationSummary';
 import RoundTimer from '@/components/kotc/RoundTimer';
 import { base44 } from '@/api/base44Client';
+import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
+import RallyHubModuleBrand from '@/components/branding/RallyHubModuleBrand';
 
 const SCORE_FORMATS = [
   { value: 'timed_8', label: '8-min rounds', icon: Clock, desc: '8 min play + 2 min rest' },
@@ -460,7 +462,7 @@ export default function PublicTournament() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
         <div className="w-8 h-8 border-4 border-secondary border-t-primary rounded-full animate-spin" />
       </div>
     );
@@ -468,7 +470,7 @@ export default function PublicTournament() {
 
   if (!tournament) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
         <div className="text-center space-y-3">
           <Trophy className="w-12 h-12 text-muted-foreground/30 mx-auto" />
           <p className="text-foreground font-semibold">Tournament not found</p>
@@ -483,7 +485,7 @@ export default function PublicTournament() {
 
   if (isTournival) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-background text-foreground p-4"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
         <div className="max-w-lg mx-auto">
           <PublicTournivalView
             tournament={tournament}
@@ -499,7 +501,7 @@ export default function PublicTournament() {
 
   if (!isKotc) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
         <div className="text-center space-y-3">
           <Trophy className="w-12 h-12 text-muted-foreground/30 mx-auto" />
           <p className="text-foreground font-semibold">{tournament.name}</p>
@@ -534,7 +536,7 @@ export default function PublicTournament() {
 
   if (!state) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
         <p className="text-muted-foreground text-sm">No session data found.</p>
       </div>
     );
@@ -546,7 +548,7 @@ export default function PublicTournament() {
   // If the current round data is missing (e.g. save failed mid-rotation), show a recovery UI
   if (!currentRound && !isCompleted) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-background text-foreground p-4"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
         <div className="max-w-lg mx-auto space-y-4">
           <div className="glass rounded-xl p-4 flex items-center gap-3">
             <Crown className="w-5 h-5 text-yellow-400" />
@@ -704,7 +706,7 @@ export default function PublicTournament() {
   // Show rotation summary
   if (rotationSummary) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-background text-foreground p-4"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
         <div className="max-w-lg mx-auto">
           <div className="mb-4 flex items-center gap-2">
             <Crown className="w-5 h-5 text-yellow-400" />
@@ -722,8 +724,9 @@ export default function PublicTournament() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background text-foreground p-4"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
       <div className="max-w-lg mx-auto space-y-4">
+        <div className="flex justify-center"><RallyHubModuleBrand moduleName="King of the Court" pageLabel="Live Event"/></div>
         {/* Header */}
         <div className="glass rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
