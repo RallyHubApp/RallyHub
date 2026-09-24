@@ -1745,15 +1745,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (sportingActionRef.current) return;
     const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase);
     const unresolved = currentMatches.filter(m => !['completed', 'draw', 'retired', 'forfeit', 'abandoned', 'not_played'].includes(m.status));
-    if (unresolved.length) { toast.error(`${unresolved.length} result${unresolved.length === 1 ? '' : 's'} still missing in Round ${currentRound}.`); return; }
     const maxRound = plannedRounds;
     const scheduledBreak = !!event?.include_break && Number(currentRound) === Number(event?.break_after_round || 0) && currentRound < maxRound;
     if (scheduledBreak && timerPhase !== 'break') {
-      setRoundActionStatus({ state:'working', text:`Round ${currentRound} saved. Starting ${Number(event.break_minutes || 20)}-minute break…` });
+      setRoundActionStatus({ state:'working', text:`Round ${currentRound} play finished. Starting ${Number(event.break_minutes || 20)}-minute break${unresolved.length ? ` · ${unresolved.length} score${unresolved.length === 1 ? '' : 's'} can be entered during the break` : ''}…` });
       await unlockHallAudio();
       const ok = await timerAction('start', 'break');
       if (ok) {
-        const message = `Round ${currentRound} saved ✓ · ${Number(event.break_minutes || 20)}-minute break started`;
+        const message = `Round ${currentRound} play finished ✓ · ${Number(event.break_minutes || 20)}-minute break started${unresolved.length ? ` · ${unresolved.length} score${unresolved.length === 1 ? '' : 's'} still to enter` : ''}`;
         setRoundActionStatus({ state:'success', text:message });
         toast.success(message);
         speak(`Round ${currentRound} saved. Your ${Number(event.break_minutes || 20)} minute break starts now. Please make sure all scores are in. Enjoy your break.`, { signal:'start' });
@@ -1768,13 +1767,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     sportingActionRef.current = true; setRoundActionStatus({ state:'working', text:currentRound < maxRound ? `Round ${currentRound} saved. Preparing Round ${currentRound + 1}…` : 'Normal rounds complete. Opening final options…' }); setHostAction(currentRound < maxRound ? `Preparing Round ${currentRound + 1}… command sent` : 'Opening final options…');
     try {
       if (currentRound < maxRound) {
-        const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1 });
+        const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1, allowPendingScores:true });
         if (res.data?.error) { toast.error(res.data.error); return; }
         const nextRound = currentRound + 1;
         const nextMatches = normalMatches.filter(m => m.round_number === nextRound && m.status !== 'not_played');
         const activeIds = new Set(nextMatches.flatMap(m => [...(m.club_a_participant_ids || []), ...(m.club_b_participant_ids || [])]));
         const restingCount = participants.filter(p => ['active','late'].includes(p.status) && !activeIds.has(p.id)).length;
-        const message = `Round ${currentRound} saved ✓ · Round ${nextRound} ready · ${nextMatches.length} courts · ${restingCount} players resting`;
+        const message = `Round ${nextRound} ready · ${nextMatches.length} courts · ${restingCount} players resting${unresolved.length ? ` · ${unresolved.length} Round ${currentRound} score${unresolved.length === 1 ? '' : 's'} still to enter` : ''}`;
         setRoundActionStatus({ state:'success', text:message });
         toast.success(message);
         await refetchEvent();
@@ -1801,7 +1800,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setRoundActionStatus({ state:'working', text:`Ending break early and preparing Round ${nextRound}…` });
     setHostAction(`Ending break early → Round ${nextRound}… command sent`);
     try {
-      const res = await base44.functions.invoke('updateClubChallengeRound', { eventId:event.id, nextRound, skipBreak:true });
+      const res = await base44.functions.invoke('updateClubChallengeRound', { eventId:event.id, nextRound, skipBreak:true, allowPendingScores:true });
       if (res.data?.error) throw new Error(res.data.error);
       await refetchEvent();
       const message = `Break ended early · Round ${nextRound} ready`;
@@ -1828,12 +1827,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase && m.status !== 'not_played');
   const currentRoundSavedCount = currentMatches.filter(m => ['completed','draw','retired','forfeit','abandoned'].includes(m.status)).length;
   const currentRoundComplete = currentMatches.length > 0 && currentRoundSavedCount === currentMatches.length;
+  const terminalResultStatuses = ['completed','draw','retired','forfeit','abandoned','not_played'];
+  const pendingPastMatches = normalMatches.filter(m => Number(m.round_number) < Number(currentRound) && !terminalResultStatuses.includes(m.status)).sort((a,b)=>Number(a.round_number)-Number(b.round_number)||Number(a.court_number)-Number(b.court_number));
+  const allNormalResultsSaved = normalMatches.length > 0 && normalMatches.every(m => terminalResultStatuses.includes(m.status));
   const timerPhase = String(timerState?.phase || 'idle');
   const timerRunning = !!timerState?.running && timerRemaining > 0;
   const timerPaused = !!timerState && !timerState?.running && timerRemaining > 0 && ['play','changeover','break'].includes(timerPhase);
   const scheduledBreakHere = !!event?.include_break && Number(currentRound) === Number(event?.break_after_round || 0);
   const breakActive = scheduledBreakHere && timerPhase === 'break';
   const playFinished = timerPhase === 'play' && timerRemaining <= 0;
+  const canPrepareNextRound = currentRoundComplete || playFinished || (timerPhase === 'changeover' && !timerState?.running);
   const changeoverAvailable = timerPhase === 'play' && (!timerState?.running || timerRemaining <= 0);
   const outgoingPlayer = participants.find(p => p.id === replacement.outgoingId) || null;
   const availableReplacementCandidates = replacementCandidates.filter(c => !outgoingPlayer || c.side === outgoingPlayer.side);
