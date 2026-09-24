@@ -24,7 +24,15 @@ Deno.serve(async (req) => {
     if (!event || !['draw_approved','in_progress','paused','completed','archived'].includes(event.status)) return Response.json({ error:'Interclub Challenge display is not available.' }, { status:404 });
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200);
+    const votingTokens = event.pot_enabled
+      ? await base44.asServiceRole.entities.ClubChallengeVotingToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5)
+      : [];
+    const votingToken = votingTokens?.[0]?.token || null;
     const pmap = new Map(participants.map((p:any) => [p.id, maskName(p.display_name, !!event.junior_display_mode)]));
+    const potWinnerIds = event.pot_status === 'revealed' ? (event.pot_winner_participant_ids || []) : [];
+    const potWinners = potWinnerIds.map((id:string) => participants.find((p:any) => p.id === id)).filter(Boolean).map((p:any) => ({
+      id:p.id, side:p.side, display_name:maskName(p.display_name, !!event.junior_display_mode),
+    }));
     const safeParticipants = participants.filter((p:any) => ['active','late'].includes(p.status)).map((p:any) => ({ id:p.id, display_name:pmap.get(p.id) || 'Player', status:p.status, available_from_round:p.available_from_round }));
     const safeMatches = matches.map((m:any) => ({
       id:m.id, round_number:m.round_number, court_number:m.court_number, status:m.status, winner:m.winner,
@@ -44,6 +52,7 @@ Deno.serve(async (req) => {
       include_break:!!event.include_break, break_minutes:event.break_minutes, break_after_round:event.break_after_round,
       junior_display_mode:!!event.junior_display_mode,
       pot_enabled:!!event.pot_enabled, pot_status:event.pot_status, pot_vote_closes_at:event.pot_vote_closes_at || null,
+      pot_voting_token:event.pot_status === 'open' ? votingToken : null, pot_winners:potWinners,
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
     }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
