@@ -29,7 +29,16 @@
       "type": "string"
     },
     "logo_url": {
-      "type": "string"
+      "type": "string",
+      "description": "Club logo used across RallyHub tenant/player/event surfaces"
+    },
+    "primary_colour": {
+      "type": "string",
+      "description": "Primary club brand colour (prefer CSS hex, e.g. #2563eb)"
+    },
+    "secondary_colour": {
+      "type": "string",
+      "description": "Secondary club brand colour (prefer CSS hex, e.g. #facc15)"
     },
     "notes": {
       "type": "string"
