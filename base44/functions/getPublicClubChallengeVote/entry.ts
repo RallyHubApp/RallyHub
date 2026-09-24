@@ -33,7 +33,10 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { pot_status:'closed' });
     }
 
-    const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
+    const [participants, displayLinks] = await Promise.all([
+      base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100),
+      base44.asServiceRole.entities.ClubChallengeDisplayToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5)
+    ]);
     const nominees = participants
       .filter((p:any) => p.status !== 'replaced')
       .map((p:any) => ({
@@ -58,7 +61,8 @@ Deno.serve(async (req) => {
         pot_status:effectiveStatus,
         pot_vote_closes_at:event.pot_vote_closes_at || null,
         pot_vote_duration_minutes:event.pot_vote_duration_minutes ?? null,
-        junior_display_mode:!!event.junior_display_mode
+        junior_display_mode:!!event.junior_display_mode,
+        display_token:displayLinks?.[0]?.token || null
       },
       participants:nominees
     });
