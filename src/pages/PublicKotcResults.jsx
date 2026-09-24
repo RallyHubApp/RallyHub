@@ -10,6 +10,8 @@ import { ArrowLeft,Crown,Mail,Menu,Minimize2,MonitorUp,Pencil,RefreshCw,Save,Sha
 function message(e){return e?.response?.data?.error||e?.data?.error||e?.message||'Live KOTC view unavailable';}
 function fmt(v){const n=Math.max(0,Number(v||0));return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(Math.floor(n%60)).padStart(2,'0')}`;}
 function hasScore(match){return match.team_a_score!=null&&match.team_b_score!=null;}
+const RALLYHUB_MARK_URL='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+function KotcLiveBrand(){return <div className="flex flex-col items-center sm:items-start"><div className="flex items-center gap-2"><img src={RALLYHUB_MARK_URL} alt="RallyHub logo" className="h-8 w-8 object-contain sm:h-9 sm:w-9"/><div className="text-left"><div className="text-lg sm:text-xl font-black leading-none tracking-[-.04em] text-[#081342]">Rally<span className="text-[#078e48]">Hub</span></div><div className="mt-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[.2em] text-[#0c1e53]">King of the Court</div></div></div><p className="mt-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-[.2em] text-muted-foreground">Live Event View</p></div>;}
 
 function KotcPodium({podium=[],large=false}){
   const ranked=(podium||[]).slice(0,3).map((player,index)=>({...player,place:index+1}));
@@ -89,7 +91,7 @@ export default function PublicKotcResults(){
       {offline&&<div className="fixed top-2 left-1/2 -translate-x-1/2 z-40 rounded-lg bg-yellow-500 text-black px-4 py-3 font-semibold text-center"><WifiOff className="inline w-4 h-4 mr-2"/>Connection lost — showing last known state</div>}
       <main className="max-w-[1600px] mx-auto space-y-4">
         <header className="grid grid-cols-[1fr_auto] items-start gap-4">
-          <div className="min-w-0"><p className="text-xs uppercase tracking-[.25em] text-primary font-bold">King of the Court · Hall Display</p><h1 className="text-2xl sm:text-4xl font-bold mt-1 truncate">{data.session.name}</h1></div>
+          <div className="min-w-0"><KotcLiveBrand/><h1 className="text-2xl sm:text-4xl font-bold mt-2 truncate">{data.session.name}</h1></div>
           <Button variant="outline" size="sm" onClick={()=>toggleHall(false)} data-testid="exit-hall-display"><Minimize2 className="w-4 h-4 mr-1"/>Exit Display</Button>
         </header>
 
@@ -139,10 +141,11 @@ export default function PublicKotcResults(){
       </div>)}</div>
     </section>}
     <header className="glass rounded-xl p-5 text-center relative">
-      <div className="sm:absolute sm:right-3 sm:top-3"><Button variant="outline" size="sm" onClick={()=>toggleHall(true)} data-testid="enter-hall-display"><MonitorUp className="w-4 h-4 mr-1"/>Hall Display</Button></div>
-      <p className="text-[10px] uppercase tracking-[.22em] text-primary font-bold mt-3 sm:mt-0">King of the Court · {finished?'Final Results':'Live'}</p>
+      <div className="sm:absolute sm:right-3 sm:top-3"><Button variant="outline" size="sm" onClick={()=>toggleHall(true)} data-testid="enter-hall-display"><MonitorUp className="w-4 h-4 mr-1"/>Live Event View</Button></div>
+      <div className="flex justify-center"><KotcLiveBrand/></div>
       <Crown className="w-8 h-8 text-yellow-400 mx-auto mt-2 mb-1"/>
       <h1 className="text-xl sm:text-2xl font-bold">{data.session.name}</h1>
+      <p className="text-[10px] uppercase tracking-[.22em] text-primary font-bold mt-1">{finished?'Final Results':'Live'}</p>
       <div className="flex flex-wrap gap-2 justify-center mt-3"><Badge variant="outline">Round {data.session.current_round_number||'-'}</Badge><Badge variant="outline">{roundStatus||'WAITING'}</Badge>{data.session.scoring_mode==='timed'&&!finished&&<Badge className="text-base tabular-nums">{fmt(remaining)}</Badge>}<Badge variant="outline">{data.completed_rounds} round{data.completed_rounds===1?'':'s'} completed</Badge></div>
       <p className="text-xs text-muted-foreground mt-3">{finished?'These are the final saved results. This link remains available after the session.':'This page updates automatically as the host starts rounds and scores are saved.'}</p>
     </header>
