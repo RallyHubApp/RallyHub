@@ -33,7 +33,16 @@ Deno.serve(async (req) => {
     const potWinners = potWinnerIds.map((id:string) => participants.find((p:any) => p.id === id)).filter(Boolean).map((p:any) => ({
       id:p.id, side:p.side, display_name:maskName(p.display_name, !!event.junior_display_mode),
     }));
-    const safeParticipants = participants.filter((p:any) => ['active','late'].includes(p.status)).map((p:any) => ({ id:p.id, display_name:pmap.get(p.id) || 'Player', status:p.status, available_from_round:p.available_from_round }));
+    const safeParticipants = participants.filter((p:any) => ['active','late'].includes(p.status)).map((p:any) => ({
+      id:p.id,
+      display_name:pmap.get(p.id) || 'Player',
+      side:p.side,
+      event_rank:p.event_rank,
+      roster_role:p.roster_role || 'rotation',
+      reserve_activated:!!p.reserve_activated,
+      status:p.status,
+      available_from_round:p.available_from_round
+    }));
     const safeMatches = matches.map((m:any) => ({
       id:m.id, round_number:m.round_number, court_number:m.court_number, status:m.status, winner:m.winner,
       score_a:m.score_a, score_b:m.score_b, is_showcase:!!m.is_showcase,
