@@ -57,7 +57,7 @@ export default function PublicClubChallengeDisplay(){
   if(completed&&!showcaseActive) return <div className="min-h-screen bg-background text-foreground p-5 sm:p-10 flex flex-col justify-center">
     {disconnected&&<div className="mb-4 rounded-lg bg-yellow-500 text-black px-4 py-3 font-semibold text-center"><WifiOff className="inline w-4 h-4 mr-2"/>Connection lost — showing last known result.</div>}
     <div className="mx-auto w-full max-w-6xl text-center">
-      <p className="text-sm sm:text-lg uppercase tracking-[.28em] text-primary font-black">{INTERCLUB_MODULE_NAME} · Final Result</p>
+      <LiveEventBrand/><p className="mt-3 text-sm sm:text-lg uppercase tracking-[.28em] text-primary font-black">Final Result</p>
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-10">
         <div className="order-2 sm:order-1 flex flex-col items-center gap-3 rounded-3xl border bg-card p-4 sm:p-5" style={{borderTopWidth:'8px',borderTopColor:event.club_a_primary_colour||'#2563eb',borderBottomWidth:'4px',borderBottomColor:event.club_a_secondary_colour||event.club_a_primary_colour||'#2563eb'}}>{event.club_a_logo_url&&<img src={event.club_a_logo_url} alt={`${event.club_a_name} logo`} className="w-24 h-24 sm:w-36 sm:h-36 object-contain rounded-2xl bg-white p-2"/>}<h2 className="text-2xl sm:text-5xl font-black">{event.club_a_name}</h2></div>
         <div className="order-1 col-span-2 sm:order-2 sm:col-span-1"><p className="text-xs sm:text-base uppercase tracking-widest text-muted-foreground">FINAL</p><p className="mt-2 text-6xl sm:text-9xl font-black tabular-nums text-primary">{s.a}–{s.b}</p></div>
@@ -73,7 +73,7 @@ export default function PublicClubChallengeDisplay(){
     {disconnected&&<div className="mb-3 rounded-lg bg-yellow-500 text-black px-4 py-3 font-semibold text-center"><WifiOff className="inline w-4 h-4 mr-2"/>Connection lost — showing last known score. RallyHub will resynchronise automatically.</div>}
     {potOpen&&<div className="mb-3 rounded-2xl border-2 border-primary/40 bg-primary/10 px-4 py-3"><VotingPrompt votingUrl={votingUrl} countdown={potCountdown} compact /></div>}
     <header className="text-center shrink-0">
-      <p className="text-xs sm:text-sm uppercase tracking-[.28em] text-primary font-black">{INTERCLUB_MODULE_NAME} · Showcase Final</p>
+      <LiveEventBrand/><p className="mt-2 text-xs sm:text-sm uppercase tracking-[.28em] text-primary font-black">Showcase Final</p>
       <div className="mt-2 flex flex-wrap justify-center gap-2"><Badge>{showcase.showcase_mode==='exhibition'?'OPTIONAL SHOWCASE · EXHIBITION':'SHOWCASE TIEBREAK'}</Badge><Badge variant="outline">First to {showcase.showcase_target_points||11} · win by {showcase.showcase_win_by||1}</Badge></div>
       <p className="mt-2 text-sm text-muted-foreground">Interclub result: {event.club_a_name} {s.a}–{s.b} {event.club_b_name}{showcase.showcase_mode==='exhibition'?' · unchanged by this exhibition':''}</p>
     </header>
