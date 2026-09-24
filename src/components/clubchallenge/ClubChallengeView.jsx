@@ -948,8 +948,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const generateDraw = async () => {
     if (!event || !canManageEvent || sportingActionRef.current) return;
     if (aRotationPlayers.length !== bRotationPlayers.length || aRotationPlayers.length < 4) { toast.error('For this draw, both clubs must have equal Rotation squads of at least 4. Reserve numbers may differ.'); return; }
-    setSaving(true); sportingActionRef.current = true; setHostAction('Generating draw and fairness report… one command sent');
-    await new Promise(resolve => window.requestAnimationFrame(() => resolve()));
+    sportingActionRef.current = true;
+    flushSync(() => { setSaving(true); setHostAction('Generating draw and fairness report… one command sent'); });
     try {
       const engA = [...aRotationPlayers].sort((x, y) => x.event_rank - y.event_rank).map((p, i) => ({ id: p.id, name: p.display_name, rank:i + 1, gender: p.gender }));
       const engB = [...bRotationPlayers].sort((x, y) => x.event_rank - y.event_rank).map((p, i) => ({ id: p.id, name: p.display_name, rank:i + 1, gender: p.gender }));
