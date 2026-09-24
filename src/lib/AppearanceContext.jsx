@@ -11,9 +11,9 @@ function systemTheme() {
 
 export function AppearanceProvider({ children }) {
   const [mode, setModeState] = useState(() => {
-    if (typeof window === 'undefined') return 'dark';
+    if (typeof window === 'undefined') return 'auto';
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    return MODES.includes(saved) ? saved : 'dark';
+    return MODES.includes(saved) ? saved : 'auto';
   });
   const [system, setSystem] = useState(systemTheme);
 
@@ -43,8 +43,8 @@ export function AppearanceProvider({ children }) {
   };
 
   const cycleMode = () => {
-    const quickModes = ['light', 'hall', 'dark'];
-    const current = quickModes.includes(resolvedMode) ? resolvedMode : 'dark';
+    const quickModes = ['auto', 'light', 'hall', 'dark'];
+    const current = quickModes.includes(mode) ? mode : 'auto';
     const next = quickModes[(quickModes.indexOf(current) + 1) % quickModes.length];
     setMode(next);
   };
