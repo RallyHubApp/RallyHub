@@ -34,9 +34,14 @@ Deno.serve(async req=>{try{
    const shareToken=String(body.token||'');if(!shareToken)return Response.json({error:'Token required',runtimeVersion:RUNTIME_VERSION},{status:400});
    const share=(await retry('share read',()=>base44.asServiceRole.entities.KotcSessionShare.filter({token:shareToken,status:'active'})))?.[0];if(!share)return Response.json({error:'Results link is invalid or revoked.',runtimeVersion:RUNTIME_VERSION},{status:404});if(share.expires_at&&Date.parse(share.expires_at)<Date.now())return Response.json({error:'Results link has expired.',runtimeVersion:RUNTIME_VERSION},{status:410});
    const session=(await retry('session read',()=>base44.asServiceRole.entities.KotcSession.filter({id:share.session_id})))?.[0];if(!session)return Response.json({error:'Session not found.',runtimeVersion:RUNTIME_VERSION},{status:404});
-   const participants=await retry('participants read',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));
-   const matches=await retry('matches read',()=>base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id}));
-   const rounds=await retry('rounds read',()=>base44.asServiceRole.entities.KotcRound.filter({session_id:session.id}));
+   const [participants,matches,rounds,clubs]=await Promise.all([
+     retry('participants read',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id})),
+     retry('matches read',()=>base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id})),
+     retry('rounds read',()=>base44.asServiceRole.entities.KotcRound.filter({session_id:session.id})),
+     session.club_id ? retry('club branding read',()=>base44.asServiceRole.entities.Club.filter({id:session.club_id})) : Promise.resolve([])
+   ]);
+   const club=clubs?.[0]||null;
+   const clubBrand=club?{id:club.id,name:club.name,logo_url:club.logo_url||'',primary_colour:club.primary_colour||'',secondary_colour:club.secondary_colour||''}:null;
    const names=Object.fromEntries((participants||[]).map((p:any)=>[p.id,p.display_name]));
    const completedMatches=(matches||[]).filter((m:any)=>m.status==='completed');
    const publicMatches=completedMatches.sort((a:any,b:any)=>Number(a.round_number)-Number(b.round_number)||Number(a.ladder_court_rank)-Number(b.ladder_court_rank)).map((m:any)=>({round_number:m.round_number,court:m.ladder_court_rank,status:m.status,team_a:(m.team_a_participant_ids||[]).map((id:string)=>names[id]||'Player'),team_b:(m.team_b_participant_ids||[]).map((id:string)=>names[id]||'Player'),team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,result_method:m.result_method}));
@@ -51,7 +56,7 @@ Deno.serve(async req=>{try{
    let timer:any={};try{timer=session.timer_state_json?JSON.parse(session.timer_state_json):{};}catch{}if(timer.running&&timer.deadlineAt)timer.remainingSeconds=Math.max(0,Math.ceil((Date.parse(timer.deadlineAt)-Date.now())/1000));
    const table=standings(matches||[],participants||[]);
    // public_state is deliberately read-only. Do not write analytics on every spectator poll.
-   return Response.json({session:{name:session.name,status:session.status,current_round_number:finished?currentRound?.round_number:session.current_round_number,scoring_mode:session.scoring_mode,actual_session_end:session.actual_session_end},completed_rounds:completedRounds.length,current_round:currentRound?{round_number:currentRound.round_number,status:currentRound.status}:null,current_matches:currentMatches,bench,timer,standings:table,matches:publicMatches,podium:finished?table.slice(0,3):[],finished,poll_after_ms:finished?0:12000,runtimeVersion:RUNTIME_VERSION});
+   return Response.json({session:{name:session.name,status:session.status,current_round_number:finished?currentRound?.round_number:session.current_round_number,scoring_mode:session.scoring_mode,actual_session_end:session.actual_session_end},club_brand:clubBrand,completed_rounds:completedRounds.length,current_round:currentRound?{round_number:currentRound.round_number,status:currentRound.status}:null,current_matches:currentMatches,bench,timer,standings:table,matches:publicMatches,podium:finished?table.slice(0,3):[],finished,poll_after_ms:finished?0:12000,runtimeVersion:RUNTIME_VERSION});
  }
  const user=await base44.auth.me();if(!user)return Response.json({error:'Unauthorized',runtimeVersion:RUNTIME_VERSION},{status:401});
  if(action==='management_state'){
