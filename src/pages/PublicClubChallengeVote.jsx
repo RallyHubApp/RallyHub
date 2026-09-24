@@ -6,8 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trophy, CheckCircle2, Clock3 } from 'lucide-react';
 import { INTERCLUB_EVENT_LABEL } from '@/lib/interclubBranding';
-import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
-import RallyHubModuleBrand from '@/components/branding/RallyHubModuleBrand';
 
 function getDeviceId() {
   const key = 'rallyhub-pot-device-id';
@@ -89,20 +87,19 @@ export default function PublicClubChallengeVote(){
     }
   };
 
-  if (done) return <div className="min-h-screen bg-background text-foreground grid place-items-center p-6"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
+  if (done) return <div className="min-h-screen bg-background text-foreground grid place-items-center p-6">
     <div className="w-full max-w-md text-center rounded-2xl border border-border bg-card p-8 shadow-sm">
-      <RallyHubModuleBrand moduleName="Interclub" pageLabel="Players of the Tournament Voting" />
-      <CheckCircle2 className="w-11 h-11 text-primary mx-auto mt-5"/>
+      <CheckCircle2 className="w-11 h-11 text-primary mx-auto"/>
       <h1 className="text-xl font-bold mt-3">Votes recorded</h1>
       <p className="text-sm text-muted-foreground mt-2">Thank you. Your Player of the Tournament choices for both teams have been securely recorded.</p>
     </div>
   </div>;
 
-  return <div className="min-h-screen bg-background text-foreground p-4 grid place-items-center"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
+  return <div className="min-h-screen bg-background text-foreground p-4 grid place-items-center">
     <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 sm:p-7 space-y-5 shadow-sm">
       <div className="text-center">
-        <RallyHubModuleBrand moduleName="Interclub" pageLabel="Players of the Tournament Voting" />
-        <Trophy className="w-9 h-9 text-primary mx-auto mt-4"/>
+        <Trophy className="w-9 h-9 text-primary mx-auto"/>
+        <p className="text-xs uppercase tracking-wider text-primary font-bold mt-2">Players of the Tournament</p>
         <h1 className="text-xl font-bold mt-1">{data ? `${data.event.club_a_name} vs ${data.event.club_b_name}` : INTERCLUB_EVENT_LABEL}</h1>
         <p className="text-sm text-muted-foreground mt-2">Choose one player from each team.</p>
       </div>

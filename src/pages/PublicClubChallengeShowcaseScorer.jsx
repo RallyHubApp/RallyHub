@@ -4,8 +4,6 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Minus, Plus, RefreshCw, Trophy, WifiOff } from 'lucide-react';
-import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
-import RallyHubModuleBrand from '@/components/branding/RallyHubModuleBrand';
 
 function errText(e){ return e?.response?.data?.error || e?.data?.error || e?.message || 'Showcase scorer unavailable'; }
 
@@ -75,16 +73,16 @@ export default function PublicClubChallengeShowcaseScorer(){
     }finally{ setBusy(''); }
   };
 
-  if(error&&!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center p-5 text-center"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/><div className="max-w-sm"><RallyHubModuleBrand moduleName="Interclub" pageLabel="Showcase Scorer"/><WifiOff className="mx-auto mt-5 h-8 w-8"/><h1 className="mt-3 font-bold">Showcase scorer link unavailable</h1><p className="mt-2 text-sm text-muted-foreground">{error}</p></div></div>;
-  if(!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/><div className="text-center"><RallyHubModuleBrand moduleName="Interclub" pageLabel="Showcase Scorer"/><RefreshCw className="mx-auto mt-5 h-7 w-7 animate-spin"/></div></div>;
+  if(error&&!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center p-5 text-center"><div className="max-w-sm"><WifiOff className="mx-auto h-8 w-8"/><h1 className="mt-3 font-bold">Showcase scorer link unavailable</h1><p className="mt-2 text-sm text-muted-foreground">{error}</p></div></div>;
+  if(!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center"><RefreshCw className="h-7 w-7 animate-spin"/></div>;
 
   const {event,match}=data;
   const complete=match.status==='completed';
   const format=`First to ${match.showcase_target_points} · win by ${match.showcase_win_by}`;
-  return <div className="min-h-screen bg-background text-foreground p-3 sm:p-5"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
+  return <div className="min-h-screen bg-background text-foreground p-3 sm:p-5">
     <div className="mx-auto max-w-xl space-y-4">
       <header className="rounded-2xl border border-border bg-card p-4 text-center">
-        <RallyHubModuleBrand moduleName="Interclub" pageLabel="Showcase Scorer"/>
+        <p className="text-xs font-bold uppercase tracking-[.18em] text-primary">RallyHub Interclub · Showcase Scorer</p>
         <div className="mt-2 flex flex-wrap justify-center gap-2"><Badge variant="outline">{match.showcase_mode==='exhibition'?'Exhibition Showcase':'Tiebreak Showcase'}</Badge><Badge variant="outline">{format}</Badge></div>
         <p className="mt-3 text-xs text-muted-foreground">Tap + after each point. Use − immediately to correct a mistaken tap.</p>
       </header>

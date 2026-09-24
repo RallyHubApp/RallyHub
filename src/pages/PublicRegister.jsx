@@ -7,8 +7,6 @@ import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
-import RallyHubModuleBrand from '@/components/branding/RallyHubModuleBrand';
 
 export default function PublicRegister() {
   const tournamentId = window.location.pathname.split('/register/')[1];
@@ -67,7 +65,7 @@ export default function PublicRegister() {
 
   if (loading || isLoadingAuth) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-secondary border-t-primary rounded-full animate-spin" />
       </div>
     );
@@ -75,7 +73,7 @@ export default function PublicRegister() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="glass rounded-2xl p-6 max-w-sm w-full text-center space-y-4">
           <div className="w-12 h-12 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center mx-auto">
             <LogIn className="w-5 h-5 text-primary" />
@@ -92,7 +90,7 @@ export default function PublicRegister() {
 
   if (!tournament) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-3">
           <Trophy className="w-12 h-12 text-muted-foreground/30 mx-auto" />
           <p className="text-foreground font-semibold">Tournament not found</p>
@@ -103,8 +101,17 @@ export default function PublicRegister() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
-      <div className="mb-8"><RallyHubModuleBrand moduleName={tournament.format || 'Tournament'} pageLabel="Registration"/></div>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      {/* Brand header */}
+      <div className="mb-8 flex items-center gap-2.5">
+        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
+          <span className="text-primary font-black text-base leading-none">RH</span>
+        </div>
+        <div>
+          <span className="font-black text-lg text-foreground tracking-tight leading-none block">RallyHub</span>
+          <span className="text-[10px] text-primary/70 font-medium tracking-widest uppercase">Pickleball</span>
+        </div>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
