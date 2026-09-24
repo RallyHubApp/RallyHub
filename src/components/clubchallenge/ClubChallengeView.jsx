@@ -695,7 +695,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         format: INTERCLUB_INTERNAL_FORMAT,
         inter_club: true,
         location: venueName,
-        venue_id: matchedVenue?.id || null,
+        venue_id: matchedVenue?.id || undefined,
       };
       await base44.entities.Tournament.update(tournament.id, tournamentUpdate);
       toast.success(`${INTERCLUB_EVENT_LABEL} setup saved`);
