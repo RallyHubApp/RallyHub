@@ -12,12 +12,12 @@
 # Error details
 
 ```
-Error: draw_ack_ms should be <= 250ms but was 341ms
+Error: draw_ack_ms should be <= 250ms but was 328ms
 
 expect(received).toBeLessThanOrEqual(expected)
 
 Expected: <= 250
-Received:    341
+Received:    328
 ```
 
 # Page snapshot
@@ -384,11 +384,11 @@ Received:    341
     - region "Notifications alt+T":
       - list:
         - listitem [ref=e757]:
-          - generic [ref=e761]: 48 fixtures generated
+          - generic [ref=e761]: Teams saved · 16 vs 16
         - listitem [ref=e763]:
-          - generic [ref=e767]: Teams saved · 16 vs 16
+          - generic [ref=e767]: 32 practice players loaded. You can now rehearse the full setup and draw journey.
         - listitem [ref=e769]:
-          - generic [ref=e773]: 32 practice players loaded. You can now rehearse the full setup and draw journey.
+          - generic [ref=e773]: Interclub Challenge setup saved
   - generic [ref=e775]: You have dropped the item. You have moved the item from position 2 to position 1
 ```
 
@@ -496,7 +496,7 @@ Received:    341
   233 | }
   234 | 
 > 235 | function metric(report,name,value,max){report[name]=value;expect(value,`${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);}
-      |                                                                                                                            ^ Error: draw_ack_ms should be <= 250ms but was 341ms
+      |                                                                                                                            ^ Error: draw_ack_ms should be <= 250ms but was 328ms
   236 | async function expectNoHorizontalOverflow(page){const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);expect(overflow,'mobile page should not require horizontal body scrolling').toBeLessThanOrEqual(1);}
   237 | 
   238 | test.use({ viewport:{width:390,height:844} });
