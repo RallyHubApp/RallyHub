@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trophy, CheckCircle2, Clock3 } from 'lucide-react';
-import { INTERCLUB_EVENT_LABEL } from '@/lib/interclubBranding';
+import { INTERCLUB_EVENT_LABEL, INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
+import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
+import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
 
 function getDeviceId() {
   const key = 'rallyhub-pot-device-id';
@@ -63,6 +65,10 @@ export default function PublicClubChallengeVote(){
   const votingOpen = data?.event?.pot_status === 'open' && (!timed || remainingMs > 0);
   const aPlayers = (data?.participants || []).filter(p=>p.side === 'club_a');
   const bPlayers = (data?.participants || []).filter(p=>p.side === 'club_b');
+  const eventClubs = data ? [
+    { id:'club_a', name:data.event.club_a_name, logo_url:data.event.club_a_logo_url, primary_colour:data.event.club_a_primary_colour, secondary_colour:data.event.club_a_secondary_colour },
+    { id:'club_b', name:data.event.club_b_name, logo_url:data.event.club_b_logo_url, primary_colour:data.event.club_b_primary_colour, secondary_colour:data.event.club_b_secondary_colour },
+  ] : [];
 
   const cast = async()=>{
     if (savingRef.current || !clubA || !clubB || !votingOpen) return;
@@ -87,19 +93,20 @@ export default function PublicClubChallengeVote(){
     }
   };
 
-  if (done) return <div className="min-h-screen bg-background text-foreground grid place-items-center p-6">
+  if (done) return <div className="min-h-screen bg-background text-foreground grid place-items-center p-6"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
     <div className="w-full max-w-md text-center rounded-2xl border border-border bg-card p-8 shadow-sm">
-      <CheckCircle2 className="w-11 h-11 text-primary mx-auto"/>
+      <RallyHubPublicBrand moduleName={INTERCLUB_MODULE_NAME} pageLabel="Players of the Tournament Voting" clubs={eventClubs}/>
+      <CheckCircle2 className="w-11 h-11 text-primary mx-auto mt-5"/>
       <h1 className="text-xl font-bold mt-3">Votes recorded</h1>
       <p className="text-sm text-muted-foreground mt-2">Thank you. Your Player of the Tournament choices for both teams have been securely recorded.</p>
     </div>
   </div>;
 
-  return <div className="min-h-screen bg-background text-foreground p-4 grid place-items-center">
+  return <div className="min-h-screen bg-background text-foreground p-4 grid place-items-center"><AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
     <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 sm:p-7 space-y-5 shadow-sm">
       <div className="text-center">
-        <Trophy className="w-9 h-9 text-primary mx-auto"/>
-        <p className="text-xs uppercase tracking-wider text-primary font-bold mt-2">Players of the Tournament</p>
+        <RallyHubPublicBrand moduleName={INTERCLUB_MODULE_NAME} pageLabel="Players of the Tournament Voting" clubs={eventClubs}/>
+        <Trophy className="w-9 h-9 text-primary mx-auto mt-4"/>
         <h1 className="text-xl font-bold mt-1">{data ? `${data.event.club_a_name} vs ${data.event.club_b_name}` : INTERCLUB_EVENT_LABEL}</h1>
         <p className="text-sm text-muted-foreground mt-2">Choose one player from each team.</p>
       </div>
