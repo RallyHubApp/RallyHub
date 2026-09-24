@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, CheckCircle2, ChevronDown, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, Search, ShieldCheck, Trash2, Trophy, Upload, UserPlus, Users, VolumeX } from 'lucide-react';
+import { ArrowLeft, Check, CheckCircle2, ChevronDown, Clock, Download, GripVertical, ImagePlus, ListChecks, Megaphone, Mic, MicOff, Minus, Play, Plus, RefreshCw, Search, ShieldCheck, Trash2, Trophy, Upload, UserPlus, Users, Volume2, VolumeX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import { getRallyHubPaLevel, listRallyHubMicrophones, playRallyHubSignal, primeRallyHubHallSpeech, setRallyHubPaGain, speakRallyHubHall, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
@@ -417,6 +417,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [voiceMode, setVoiceMode] = useState(() => localStorage.getItem('cc-voice-mode') === 'off' ? 'off' : 'rallyhub_default');
   const [voices, setVoices] = useState([]);
   const [hallVolume, setHallVolume] = useState(() => { const v = Number(localStorage.getItem('cc-hall-volume')); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1; });
+  const [audioMuted, setAudioMuted] = useState(() => localStorage.getItem('cc-audio-muted') === 'true');
   const [audioReady, setAudioReady] = useState(false);
   const [hallVoiceEngine, setHallVoiceEngine] = useState('not-tested');
   const [hallVoiceSource, setHallVoiceSource] = useState(() => localStorage.getItem('cc-hall-voice-source') === 'browser' ? 'browser' : 'amplified');
@@ -442,6 +443,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const timerCommandRef = React.useRef(false);
   const sportingActionRef = React.useRef(false);
   const lastTimerAnnouncementRef = React.useRef(new Set());
+  const announcedRoundStartsRef = React.useRef(new Set());
   const lastShowcaseSideChangeRef = React.useRef('');
   const lastShowcaseCompleteRef = React.useRef('');
   const wakeLockRef = React.useRef(null);
@@ -654,6 +656,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, []);
   React.useEffect(() => { localStorage.setItem('cc-voice-mode', voiceMode); }, [voiceMode]);
   React.useEffect(() => { localStorage.setItem('cc-hall-volume', String(hallVolume)); }, [hallVolume]);
+  React.useEffect(() => { localStorage.setItem('cc-audio-muted', String(audioMuted)); }, [audioMuted]);
   React.useEffect(() => { localStorage.setItem('cc-hall-voice-source', hallVoiceSource); }, [hallVoiceSource]);
   React.useEffect(() => { localStorage.setItem('cc-pa-gain', String(paGain)); if (paActive) setRallyHubPaGain(paGain); }, [paGain, paActive]);
   React.useEffect(() => { localStorage.setItem('cc-pa-mic-id', selectedMicId); }, [selectedMicId]);
@@ -1123,9 +1126,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     stopAllRallyHubAudio();
     setPaInputLevel(0);
     setPaActive(false);
-    toast.info('Live PA and spoken RallyHub audio stopped.');
+    setAudioMuted(true);
+    toast.info('RallyHub event audio is OFF.');
+  };
+  const enableAudio = async () => {
+    setAudioMuted(false);
+    await unlockHallAudio();
+    toast.success('RallyHub event audio is ON.');
   };
   const speak = (text, { signal = null } = {}) => {
+    if (audioMuted) return false;
     const ctx = window.__rallyhubAudioContext || null;
     if (signal) playRallyHubSignal(ctx, signal, hallVolume);
     if (!text || paActive || voiceMode === 'off') return !!signal;
@@ -1266,7 +1276,17 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await unlockHallAudio();
     if (await timerAction('start', phase)) {
       lastTimerAnnouncementRef.current = new Set();
-      speak(phase === 'play' ? `${roundLabel(currentRound)}. Start round.` : phase === 'changeover' ? 'Changeover.' : `Your ${Number(event?.break_minutes || 20)} minute break starts now. Enjoy your break.`, { signal:'start' });
+      if (phase === 'play') {
+        if (!announcedRoundStartsRef.current.has(Number(currentRound))) {
+          announcedRoundStartsRef.current.add(Number(currentRound));
+          const label = roundLabel(currentRound);
+          speak(`${label}. Starting now. ${label}. Starting now.`, { signal:'start' });
+        }
+      } else if (phase === 'changeover') {
+        speak('Changeover starting now.', { signal:'start' });
+      } else {
+        speak(`Your ${Number(event?.break_minutes || 20)} minute break starts now. Enjoy your break.`, { signal:'start' });
+      }
       requestWakeLock();
     }
   };
@@ -1297,26 +1317,18 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       speak(text, { signal });
     };
     const prefix = `${currentRound}-${phase}`;
-    if (phase === 'play') {
-      if (timerRemaining === 60) announceOnce(`${prefix}-60`, 'One minute remaining.');
-      if (timerRemaining === 30) announceOnce(`${prefix}-30`, 'Thirty seconds.');
-      if (timerRemaining === 10) announceOnce(`${prefix}-10`, 'Ten seconds.');
-    } else if (phase === 'changeover') {
-      if (timerRemaining === 30) announceOnce(`${prefix}-30`, 'Thirty seconds until the next round.');
-      if (timerRemaining === 10) announceOnce(`${prefix}-10`, 'Ten seconds.');
-    }
     if (timerRemaining <= 5 && timerRemaining > 0) announceOnce(`${prefix}-count-${timerRemaining}`, String(timerRemaining));
     if (timerRemaining === 0) {
       const scheduledBreakAfterThisRound = event?.include_break && Number(currentRound) === Number(event?.break_after_round || 0);
       const endMessage = phase === 'play'
-        ? (scheduledBreakAfterThisRound ? `${roundLabel(currentRound)} finished. Your ${Number(event?.break_minutes || 20)} minute break is next. Please give in your scores.` : 'Round finished. Please give your scores.')
+        ? (scheduledBreakAfterThisRound ? `${roundLabel(currentRound)} finished. Please hand in your scores. Your ${Number(event?.break_minutes || 20)} minute break is next.` : `${roundLabel(currentRound)} finished. Please hand in your scores.`)
         : phase === 'changeover'
           ? 'Changeover finished. Next round ready.'
           : `Break finished. ${roundLabel(Number(currentRound) + 1)} is ready when the host is ready.`;
       announceOnce(`${prefix}-end`, endMessage, 'end');
       wakeLockRef.current?.release?.();
     }
-  }, [timerRemaining, timerState?.running, timerState?.phase, currentRound, hallVolume, voiceMode, voices, event?.include_break, event?.break_after_round, event?.break_minutes]);
+  }, [timerRemaining, timerState?.running, timerState?.phase, currentRound, hallVolume, voiceMode, voices, audioMuted, event?.include_break, event?.break_after_round, event?.break_minutes]);
   const runCompressedTimerAudioTest = async () => {
     if (compressedTimer.running) return;
     const steps = [
@@ -2276,6 +2288,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 <div className="font-bold tabular-nums text-lg sm:text-xl">{fmtTimer(timerRemaining)}</div>
                 <div className="text-xs text-muted-foreground"><strong className="text-foreground">{currentRoundSavedCount}/{currentMatches.length}</strong> scores saved</div>
                 <div className="ml-auto flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant={audioMuted ? 'destructive' : 'outline'} onClick={audioMuted ? enableAudio : silenceAudio}>{audioMuted ? <VolumeX className="w-4 h-4 mr-1" /> : <Volume2 className="w-4 h-4 mr-1" />}{audioMuted ? 'Audio OFF' : 'Audio ON'}</Button>
                   <Button size="sm" variant="outline" onClick={() => { const panel = document.getElementById('cc-pa-panel'); if (panel instanceof HTMLDetailsElement) { panel.open = true; panel.scrollIntoView({ behavior:'smooth', block:'center' }); } }}><Mic className="w-4 h-4 mr-1" />PA</Button>
                   <Button size="sm" variant="outline" onClick={() => { const panel = document.getElementById('cc-player-controls'); if (panel instanceof HTMLDetailsElement) { panel.open = true; panel.scrollIntoView({ behavior:'smooth', block:'center' }); } }}><Users className="w-4 h-4 mr-1" />Players</Button>
                   {!['completed','archived'].includes(event.status) && (breakActive ? <Button size="sm" variant="destructive" disabled={!canManageEvent} onClick={timerRemaining > 0 ? endBreakEarly : advanceRound}>{timerRemaining > 0 ? `End Break → R${currentRound + 1}` : `Prepare R${currentRound + 1}`}</Button> : <>
