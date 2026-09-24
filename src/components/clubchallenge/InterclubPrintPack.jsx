@@ -298,7 +298,7 @@ function BriefingPage({ event, tournament, roundsCount, courtsCount, displayUrl,
       <div className="rhpp-rule-column">
         <RuleCard n="3" title="Break"><ul>{event.include_break ? <><li>{event.break_minutes}-minute break after Round {event.break_after_round}</li><li>The host may shorten or end the break if needed</li><li>Be ready for Round {Number(event.break_after_round || 0)+1}</li></> : <li>No scheduled mid-event break</li>}</ul></RuleCard>
         <RuleCard n="4" title="Substitutions / Withdrawals"><ul><li>Tell the host immediately if you cannot continue</li><li>A reserve or approved replacement may be used</li><li>Future fixtures can be adjusted without changing completed results</li></ul></RuleCard>
-        <RuleCard n="5" title="Showcase Final (if included)"><ul><li>Separate points-based final, not a timed round</li><li>Host chooses 11 or 15, win by 1 or 2</li><li>Any two eligible players from each club may be selected</li><li>An exhibition Showcase does not change the Interclub result</li></ul></RuleCard>
+        <RuleCard n="5" title="Showcase Final (if included)"><ul><li>Each team selects two players of its choice to represent the team</li><li>Host chooses 11 or 15, win by 1 or 2</li><li>Any two eligible players from each club may be selected</li><li>An exhibition Showcase does not change the Interclub result</li></ul></RuleCard>
       </div>
     </div>
     {(displayUrl || (event.pot_enabled && votingUrl)) && <div className="rhpp-public-links">
