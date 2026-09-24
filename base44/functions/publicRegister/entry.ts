@@ -34,9 +34,12 @@ Deno.serve(async (req) => {
       player_count: Array.isArray(tournament.player_ids) ? tournament.player_ids.length : 0,
       status: tournament.status,
     };
+    const clubs = tournament.host_club_id ? await base44.asServiceRole.entities.Club.filter({ id:tournament.host_club_id }) : [];
+    const club = clubs?.[0] || null;
+    const clubBrand = club ? { id:club.id, name:club.name, logo_url:club.logo_url || '', primary_colour:club.primary_colour || '', secondary_colour:club.secondary_colour || '' } : null;
 
     if (body._probe) {
-      return Response.json({ success: true, tournament: tournamentInfo });
+      return Response.json({ success: true, tournament: tournamentInfo, club_brand:clubBrand });
     }
 
     if (tournament.status !== 'Registration Open') {
@@ -92,6 +95,7 @@ Deno.serve(async (req) => {
       success: true,
       alreadyRegistered: alreadyIn,
       tournament: { ...tournamentInfo, player_count: tournamentInfo.player_count + (alreadyIn ? 0 : 1) },
+      club_brand:clubBrand,
     });
   } catch (error) {
     console.error('publicRegister error', error?.message || error);
