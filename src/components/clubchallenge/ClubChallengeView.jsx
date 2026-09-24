@@ -402,6 +402,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [compressedTimer, setCompressedTimer] = useState({ running: false, step: -1, text: 'Not run' });
   const [displayMode, setDisplayMode] = useState(false);
   const [potDuration, setPotDuration] = useState('10');
+  const [potTiebreakUi, setPotTiebreakUi] = useState({});
   const potAutoCloseRef = React.useRef('');
   const [publicLinks, setPublicLinks] = useState(null);
   const [spondImportSide, setSpondImportSide] = useState('');
@@ -1315,8 +1316,36 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not prepare Showcase scorer link'); }
   };
 
+  const runPotTiebreak = async side => {
+    if (!event || !canManageEvent || event.pot_status !== 'closed') return;
+    const candidates = side === 'club_a' ? potTopA : potTopB;
+    if (candidates.length < 2) return;
+    setPotTiebreakUi(s => ({ ...s, [side]:{ running:true, display:candidates[0]?.display_name || '' } }));
+    try {
+      const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'tiebreak', side });
+      if (res.data?.error) { toast.error(res.data.error); setPotTiebreakUi(s => ({ ...s, [side]:{ running:false, display:'' } })); return; }
+      const selected = res.data?.selectedWinner;
+      let step = 0;
+      await new Promise(resolve => {
+        const timer = window.setInterval(() => {
+          step += 1;
+          const candidate = candidates[step % candidates.length];
+          setPotTiebreakUi(s => ({ ...s, [side]:{ running:true, display:candidate?.display_name || '' } }));
+          if (step >= 10) { window.clearInterval(timer); resolve(); }
+        }, 120);
+      });
+      setPotTiebreakUi(s => ({ ...s, [side]:{ running:false, display:selected?.display_name || 'Winner selected' } }));
+      await refetchEvent();
+      toast.success(`${side === 'club_a' ? event.club_a_name : event.club_b_name} tie-break winner selected. Reveal when ready.`);
+    } catch (e) {
+      setPotTiebreakUi(s => ({ ...s, [side]:{ running:false, display:'' } }));
+      toast.error(e?.response?.data?.error || e?.message || 'Could not run tie-break');
+    }
+  };
+
   const revealPot = async () => {
     if (!event || !canManageEvent) return;
+    if (potTieUnresolved) { toast.error('Resolve the tied vote with Coin Toss before revealing the result.'); return; }
     try {
       const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'reveal' });
       if (res.data?.error) { toast.error(res.data.error); return; }
@@ -1878,6 +1907,18 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const potWinnerIds = event?.pot_winner_participant_ids || [];
   const potWinnersA = potWinnerIds.map(id => participants.find(p => p.id === id)).filter(p => p?.side === 'club_a');
   const potWinnersB = potWinnerIds.map(id => participants.find(p => p.id === id)).filter(p => p?.side === 'club_b');
+  const potTopCandidates = side => {
+    const sidePlayers = participants.filter(p => p.side === side);
+    const max = Math.max(0, ...sidePlayers.map(p => Number(potCounts[p.id] || 0)));
+    return max > 0 ? sidePlayers.filter(p => Number(potCounts[p.id] || 0) === max) : [];
+  };
+  const potTopA = potTopCandidates('club_a');
+  const potTopB = potTopCandidates('club_b');
+  const potSavedA = potWinnersA[0] || null;
+  const potSavedB = potWinnersB[0] || null;
+  const potTieAUnresolved = event?.pot_status === 'closed' && potTopA.length > 1 && !potSavedA;
+  const potTieBUnresolved = event?.pot_status === 'closed' && potTopB.length > 1 && !potSavedB;
+  const potTieUnresolved = potTieAUnresolved || potTieBUnresolved;
   const potRemainingSeconds = event?.pot_status === 'open' && event?.pot_vote_closes_at
     ? Math.max(0, Math.ceil((Date.parse(event.pot_vote_closes_at) - timerNow) / 1000))
     : null;
@@ -2134,8 +2175,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                   <Button size="sm" variant="outline" onClick={() => { const panel = document.getElementById('cc-pa-panel'); if (panel instanceof HTMLDetailsElement) { panel.open = true; panel.scrollIntoView({ behavior:'smooth', block:'center' }); } }}><Mic className="w-4 h-4 mr-1" />PA</Button>
                   <Button size="sm" variant="outline" onClick={() => { const panel = document.getElementById('cc-player-controls'); if (panel instanceof HTMLDetailsElement) { panel.open = true; panel.scrollIntoView({ behavior:'smooth', block:'center' }); } }}><Users className="w-4 h-4 mr-1" />Players</Button>
                   {!['completed','archived'].includes(event.status) && (breakActive ? <Button size="sm" variant="destructive" disabled={!canManageEvent} onClick={timerRemaining > 0 ? endBreakEarly : advanceRound}>{timerRemaining > 0 ? `End Break → R${currentRound + 1}` : `Prepare R${currentRound + 1}`}</Button> : <>
-                    {currentRoundComplete && currentRound >= plannedRounds && event.showcase_enabled && score.clubA !== score.clubB && !showcaseMatch && <Button size="sm" variant="outline" disabled={!canManageEvent} onClick={openOptionalShowcase}>Optional Showcase</Button>}
-                    <Button size="sm" disabled={!canManageEvent || !currentRoundComplete} onClick={advanceRound}>{currentRoundComplete ? (scheduledBreakHere && currentRound < plannedRounds ? `Complete R${currentRound} → ${event.break_minutes}-min Break` : currentRound < plannedRounds ? `Complete Round ${currentRound}` : 'Review Final Options') : `${Math.max(0,currentMatches.length-currentRoundSavedCount)} score${Math.max(0,currentMatches.length-currentRoundSavedCount)===1?'':'s'} to save`}</Button>
+                    {currentRoundComplete && currentRound >= plannedRounds && event.showcase_enabled && score.clubA !== score.clubB && !showcaseMatch && <Button size="sm" variant="outline" disabled={!canManageEvent} onClick={openOptionalShowcase}>Play Optional Showcase Final</Button>}
+                    <Button size="sm" disabled={!canManageEvent || !currentRoundComplete} onClick={advanceRound}>{currentRoundComplete ? (scheduledBreakHere && currentRound < plannedRounds ? `Complete R${currentRound} → ${event.break_minutes}-min Break` : currentRound < plannedRounds ? `Complete Round ${currentRound}` : score.clubA !== score.clubB ? 'Finish Interclub & Go to Results' : 'Go to Tie Resolution') : `${Math.max(0,currentMatches.length-currentRoundSavedCount)} score${Math.max(0,currentMatches.length-currentRoundSavedCount)===1?'':'s'} to save`}</Button>
                   </>)}
                 </div>
               </div>
@@ -2170,7 +2211,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               {!['completed','archived'].includes(event.status) && (breakActive ? <Button className="w-full h-12" variant="destructive" disabled={!canManageEvent} onClick={timerRemaining > 0 ? endBreakEarly : advanceRound}>{timerRemaining > 0 ? `Break in progress · End Early & Prepare Round ${currentRound + 1}` : `Break complete · Prepare Round ${currentRound + 1}`}</Button> : currentRoundComplete && currentRound >= plannedRounds && event.showcase_enabled && score.clubA !== score.clubB && !showcaseMatch ? <div className="grid gap-2 sm:grid-cols-2">
                 <Button variant="outline" className="h-12" disabled={!canManageEvent} onClick={openOptionalShowcase}><Trophy className="w-4 h-4 mr-2" />Play Optional Showcase Final</Button>
                 <Button className="h-12" disabled={!canManageEvent} onClick={advanceRound}><CheckCircle2 className="w-4 h-4 mr-2" />Review & Finalise</Button>
-              </div> : <Button className="w-full h-12" disabled={!canManageEvent || !currentRoundComplete} onClick={advanceRound}>{currentRoundComplete ? (scheduledBreakHere && currentRound < plannedRounds ? `Complete Round ${currentRound} & Start ${event.break_minutes}-min Break` : currentRound < plannedRounds ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : <><Trophy className="w-4 h-4 mr-2" />Review Final Options</>) : `Save all ${currentMatches.length} results to complete Round ${currentRound}`}</Button>)}
+              </div> : currentRoundComplete && currentRound >= plannedRounds && score.clubA !== score.clubB && event.showcase_enabled && !showcaseMatch ? <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3"><div><p className="text-sm font-black">Round {plannedRounds} complete — what would you like to do?</p><p className="text-xs text-muted-foreground mt-1">The normal Interclub result is decided. The optional final is available only if time allows.</p></div><div className="grid sm:grid-cols-2 gap-2"><Button variant="outline" className="h-12" disabled={!canManageEvent} onClick={openOptionalShowcase}><Trophy className="w-4 h-4 mr-2" />Play Optional Showcase Final</Button><Button className="h-12" disabled={!canManageEvent} onClick={advanceRound}>Finish Interclub & Go to Results</Button></div></div> : <Button className="w-full h-12" disabled={!canManageEvent || !currentRoundComplete} onClick={advanceRound}>{currentRoundComplete ? (scheduledBreakHere && currentRound < plannedRounds ? `Complete Round ${currentRound} & Start ${event.break_minutes}-min Break` : currentRound < plannedRounds ? `Complete Round ${currentRound} & Go to Round ${currentRound + 1}` : score.clubA === score.clubB ? <><Trophy className="w-4 h-4 mr-2" />Go to Tie Resolution</> : <><Trophy className="w-4 h-4 mr-2" />Finish Interclub & Go to Results</>) : `Save all ${currentMatches.length} results to complete Round ${currentRound}`}</Button>)}
             </div>
 
             <details id="cc-pa-panel" data-testid="cc-audio-pa-controller" className={cn('rounded-xl border overflow-hidden', paActive ? 'border-red-500/60 bg-red-500/5' : 'border-border bg-card')}>
@@ -2327,7 +2368,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 </Select>
               </div>
               <Button onClick={() => setPotStatus('open')}>Open Voting</Button>
-              {potTeamVoteCount > 0 && <Button variant="outline" onClick={revealPot}>Reveal Results</Button>}
+              {potTeamVoteCount > 0 && <Button variant="outline" disabled={potTieUnresolved} onClick={revealPot}>Reveal Results</Button>}
               {potTeamVoteCount > 0 && <Button variant="ghost" onClick={resetPotVoting}>Reset Voting</Button>}
             </div>}
 
@@ -2345,6 +2386,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               {isAdmin ? <><strong className="text-foreground">{potBallotCount}</strong> ballot{potBallotCount === 1 ? '' : 's'} received · <strong className="text-foreground">{potTeamVoteCount}</strong> team vote{potTeamVoteCount === 1 ? '' : 's'} recorded. </> : 'Votes are securely recorded. '}
               Individual choices and running totals remain hidden.
             </div>}
+
+            {canManageEvent && event.pot_status === 'closed' && (potTopA.length > 1 || potTopB.length > 1) && <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 space-y-3"><div><p className="text-sm font-bold text-amber-600">Tie detected in Player of the Tournament voting</p><p className="text-xs text-muted-foreground mt-1">Use a private RallyHub Coin Toss to select one winner from the tied top vote. The selected name stays hidden from the Live Event View until you press Reveal Results.</p></div><div className="grid sm:grid-cols-2 gap-3">{[['club_a',event.club_a_name,potTopA,potSavedA],['club_b',event.club_b_name,potTopB,potSavedB]].map(([side,clubName,candidates,saved]) => candidates.length > 1 ? <div key={side} className="rounded-lg border border-border bg-card p-4 text-center"><p className="text-xs font-semibold">{clubName}</p><p className="mt-2 text-xs text-muted-foreground">{candidates.map(p=>p.display_name).join(' · ')}</p>{saved ? <div className="mt-3"><Badge variant="outline">Coin toss complete</Badge><p className="mt-2 font-black">{saved.display_name}</p><p className="text-[10px] text-muted-foreground">Saved privately · ready to reveal</p></div> : <><div className="mt-3 min-h-8 font-black text-primary">{potTiebreakUi[side]?.display || 'Tie unresolved'}</div><Button className="mt-2 w-full" variant="outline" disabled={potTiebreakUi[side]?.running} onClick={() => runPotTiebreak(side)}>{potTiebreakUi[side]?.running ? 'Shuffling…' : 'Coin Toss'}</Button></>}</div> : null)}</div>{potTieUnresolved ? <p className="text-xs text-amber-700">Resolve each tied team before Reveal Results becomes available.</p> : <div className="text-center"><Button onClick={revealPot}>Reveal Results</Button></div>}</div>}
 
             {event.pot_status === 'revealed' && <div className="grid sm:grid-cols-2 gap-3">
               <div className="rounded-xl bg-primary/10 p-4 text-center">
@@ -2462,11 +2505,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
               {resolvedNormalCount === normalMatches.length && !['completed','archived'].includes(event?.status) && score.clubA !== score.clubB && (
                 <div className="rounded-xl border border-border bg-card p-5">
-                  <p className="text-sm font-semibold">Clear Winner Ready</p>
-                  <p className="text-xs text-muted-foreground mt-1">All normal matches are complete and the Interclub result is decided. {event?.showcase_enabled ? 'You can finalise now, or play an optional Showcase Final as an exhibition if both clubs agree and time allows.' : ''}</p>
+                  <p className="text-sm font-semibold">Round {plannedRounds} complete — what would you like to do?</p>
+                  <p className="text-xs text-muted-foreground mt-1">The normal Interclub result is decided. {event?.showcase_enabled ? 'Play the optional Showcase Final only if time allows, or finish now and continue to the final result.' : 'Continue to the final result.'}</p>
                   <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                     {event?.showcase_enabled && !showcaseMatch && <Button variant="outline" disabled={!canManageEvent} onClick={() => document.getElementById('showcase-final-panel')?.scrollIntoView({ behavior:'smooth', block:'start' })}>Play Optional Showcase Final</Button>}
-                    <Button disabled={!canFinaliseEvent} onClick={() => finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Interclub Challenge matches.')}>{canFinaliseEvent ? 'Confirm Winner & Finalise' : 'Finalisation requires organiser permission'}</Button>
+                    <Button disabled={!canFinaliseEvent} onClick={() => finaliseEvent(score.clubA > score.clubB ? 'club_a' : 'club_b', 'none', 'Clear winner after normal Interclub Challenge matches.')}>{canFinaliseEvent ? 'Finish Interclub & Show Final Result' : 'Finalisation requires organiser permission'}</Button>
                   </div>
                 </div>
               )}
