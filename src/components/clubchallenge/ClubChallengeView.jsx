@@ -1058,12 +1058,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         // Once the host deliberately runs the sound check, warm the short phrases
         // that must fire instantly during play. This does not alter the event clock.
         const commonHallPhrases = [
-          'One minute remaining.',
-          'Thirty seconds.',
-          'Ten seconds.',
-          'Thirty seconds until the next round.',
           '5', '4', '3', '2', '1',
-          'Round finished. Please give your scores.',
+          'Round finished. Please hand in your scores.',
           'Changeover finished. Next round ready.',
           'Event paused.',
           'Break resumed.',
@@ -1333,8 +1329,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const runCompressedTimerAudioTest = async () => {
     if (compressedTimer.running) return;
     const steps = [
-      `${roundLabel(1)}. Play.`, `${roundLabel(1)} complete. Changeover.`, `${roundLabel(2)}. Play.`,
-      'Event paused.', `${roundLabel(2)}. Resume play.`, `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`, `${roundLabel(3)}. Play.`
+      `${roundLabel(1)}. Starting now. ${roundLabel(1)}. Starting now.`, '5', '4', '3', '2', '1', `${roundLabel(1)} finished. Please hand in your scores.`,
+      'Changeover starting now.', `${roundLabel(2)}. Starting now. ${roundLabel(2)}. Starting now.`,
+      'Event paused.', `${roundLabel(2)}. Resume play.`, `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`, `${roundLabel(3)}. Starting now. ${roundLabel(3)}. Starting now.`
     ];
     setCompressedTimer({ running: true, step: 0, text: steps[0] });
     for (let i = 0; i < steps.length; i += 1) {
@@ -1343,7 +1340,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       await new Promise(resolve => window.setTimeout(resolve, 1200));
     }
     setCompressedTimer({ running: false, step: steps.length - 1, text: 'PASS — compressed phase/announcement sequence completed' });
-    addSimLog('Compressed timer/audio: PLAY → CHANGEOVER → PLAY → PAUSE → RESUME → BREAK → PLAY completed', 'pass');
+    addSimLog('Compressed timer/audio: round start → 5-4-3-2-1 → scores prompt → changeover → pause/resume → break completed', 'pass');
   };
 
   const setPotStatus = async status => {
