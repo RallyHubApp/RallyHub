@@ -88,6 +88,13 @@
     "signatory_title": {
       "type": "string"
     },
+    "member_id_prefix": {
+      "type": "string"
+    },
+    "member_id_digits": {
+      "type": "number",
+      "default": 4
+    },
     "active_from": {
       "type": "string",
       "format": "date"
