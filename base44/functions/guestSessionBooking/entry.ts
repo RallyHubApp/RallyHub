@@ -166,60 +166,132 @@ Waiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted
 Venue: ${session.venue_address}, ${session.venue_eircode}
 Map: ${session.google_maps_url}${b.medical_note ? `\nEmergency note: ${b.medical_note}` : ''}`;
 }
-async function sendConfirmations(base44:any,session:any,booking:any){
-  if(booking.notification_sent_at && booking.guest_confirmation_sent_at) return booking;
+async function sendConfirmations(base44:any,session:any,booking:any,force=false){
+  if(!force && booking.notification_sent_at && booking.guest_confirmation_sent_at) return booking;
   const summary=hostText(session,booking);
   const now=new Date().toISOString();
   const updates:any={};
+  const club=(await clubBrand(base44,session.club_id))||{
+    name:'Clare Pickleball',
+    logo_url:'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/6e59058fc_ClarePBLogo.jpg',
+    primary_colour:'#2667f2',secondary_colour:'#facc15',
+  };
+  const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:session.tenant_id,clubId:session.club_id};
+  const amount=money(booking.amount,booking.currency||'EUR');
+  const dateLabel=formatDate(session.session_date);
+  const timeLabel=`${session.start_time}${session.end_time?'–'+session.end_time:''}`;
+  const paymentLabel=booking.payment_method==='cash'
+    ? (booking.payment_status==='paid'? `${amount} cash paid` : `${amount} cash on arrival`)
+    : `${amount} paid online`;
 
-  if(!booking.notification_sent_at && session.notification_email){
+  if((force||!booking.notification_sent_at) && session.notification_email){
     try{
-      await base44.asServiceRole.integrations.Core.SendEmail({
-        to:session.notification_email,
-        from_name:'RallyHub · Clare Pickleball',
-        subject:`[Guest Booking] ${booking.full_name} · ${session.venue_name} · ${session.session_date} ${session.start_time}`,
-        body:`A guest booking is confirmed in RallyHub.
+      const adminText=`New Clare Pickleball guest booking confirmed.
 
 ${summary}
 
 Guest email: ${booking.email}
 
-Copy/paste the block above into WhatsApp for the session host, or simply forward this email.
+Copy the host block above into WhatsApp, or forward this email.
 
-RallyHub Guest Bookings`,
+Clare Pickleball
+Powered by RallyHub`;
+      const adminHtml=emailShell({
+        club,
+        headline:'New guest booking confirmed',
+        preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
+        content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">A guest booking has been confirmed and payment status verified.</p>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 20px;">
+${detailRow('Guest',booking.full_name)}
+${detailRow('Email',booking.email)}
+${detailRow('Mobile',booking.mobile)}
+${detailRow('Session',`${dateLabel} · ${timeLabel}`)}
+${detailRow('Venue',session.venue_name)}
+${detailRow('Payment',paymentLabel)}
+${detailRow('Booking reference',booking.confirmation_code)}
+</table>
+<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#eef8f1;border:1px solid #b9e2c4;font-size:13px;line-height:1.55;color:#23452d;">
+<strong>Waiver and policies recorded</strong><br>
+Guest waiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted.
+</div>
+<div style="margin:0 0 8px;font-size:13px;font-weight:800;color:#172033;">Copy for the session host / WhatsApp</div>
+<div style="white-space:pre-wrap;margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#f7f9fc;border:1px solid #dfe5ee;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#172033;">${escapeHtml(summary)}</div>
+<p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">You can forward this email directly to the session host if preferred.</p>`,
+      });
+      await sendWithConfiguredEmailTransport(base44,scope,{
+        to:session.notification_email,
+        subject:`Guest booking confirmed · ${booking.full_name} · ${session.venue_name} · ${session.start_time}`,
+        textBody:adminText,
+        htmlBody:adminHtml,
       });
       updates.notification_sent_at=now;
     }catch(e){console.error('guest admin notification failed',e?.message||e)}
   }
 
-  if(!booking.guest_confirmation_sent_at && booking.email && booking.payment_method==='sumup' && booking.payment_status==='paid'){
+  const guestEligible=booking.email && (
+    (booking.payment_method==='sumup' && ['paid','partially_refunded','refunded'].includes(booking.payment_status))
+    || booking.payment_method==='cash'
+  );
+  if((force||!booking.guest_confirmation_sent_at) && guestEligible){
     try{
-      const paymentLine=booking.payment_method==='cash'
-        ? `Payment: €${Number(booking.amount).toFixed(2)} cash on arrival.`
-        : `Payment: €${Number(booking.amount).toFixed(2)} paid online.`;
-      await base44.asServiceRole.integrations.Core.SendEmail({
-        to:booking.email,
-        from_name:'Clare Pickleball via RallyHub',
-        subject:`Clare Pickleball guest booking confirmed · ${session.session_date} ${session.start_time}`,
-        body:`Hi ${booking.full_name},
+      const guestFirst=firstName(booking.full_name);
+      const guestText=`Hi ${guestFirst},
 
-Your Clare Pickleball guest session is confirmed.
+Thank you for your booking. Your ${club.name} guest session is confirmed.
 
-${formatDate(session.session_date)}
-${session.start_time}${session.end_time?'–'+session.end_time:''}
-${session.venue_name}
-${session.venue_address}, ${session.venue_eircode}
-Map: ${session.google_maps_url}
-
-${paymentLine}
+Session: ${dateLabel} · ${timeLabel}
+Venue: ${session.venue_name}
+Address: ${session.venue_address}, ${session.venue_eircode}
+Payment: ${paymentLabel}
 Booking reference: ${booking.confirmation_code}
 
-Cancellation policy: cancellations made less than 24 hours before the session are non-refundable.
+Google Maps:
+${session.google_maps_url}
 
-You have accepted the guest session waiver, Code of Conduct and privacy notice.
+Cancellation policy:
+Cancellations made less than 24 hours before the session are non-refundable.
 
-See you on court,
-Clare Pickleball`,
+Your guest waiver, Code of Conduct and privacy acknowledgement have been recorded.
+
+Thank you for your booking.
+
+Brian Moore
+Chairperson, Clare Pickleball
+
+Powered by RallyHub`;
+      const guestHtml=emailShell({
+        club,
+        headline:`Thanks for your booking, ${guestFirst}`,
+        preheader:`${dateLabel} · ${timeLabel} · ${session.venue_name}`,
+        content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Your guest session is confirmed. We look forward to welcoming you on court.</p>
+<div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+${detailRow('Date',dateLabel)}
+${detailRow('Time',timeLabel)}
+${detailRow('Venue',session.venue_name)}
+${detailRow('Address',`${session.venue_address}, ${session.venue_eircode}`)}
+${detailRow('Payment',paymentLabel)}
+${detailRow('Booking reference',booking.confirmation_code)}
+</table>
+</div>
+<div style="text-align:center;margin:0 0 22px;">
+<a href="${escapeHtml(session.google_maps_url)}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#078e48;color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;">View venue in Google Maps</a>
+</div>
+<div style="margin:0 0 18px;padding:14px 16px;border-radius:12px;background:#fff8ea;border:1px solid #f2d18a;font-size:13px;line-height:1.55;color:#624717;">
+<strong>Cancellation policy</strong><br>
+Cancellations made less than 24 hours before the session are non-refundable.
+</div>
+<p style="margin:0 0 22px;font-size:12px;line-height:1.55;color:#6b7280;">Your guest waiver, Code of Conduct and privacy acknowledgement have been recorded with this booking.</p>
+<p style="margin:0;font-size:15px;line-height:1.65;color:#374151;">Thank you for your booking.</p>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.5;color:#172033;"><strong>Brian Moore</strong><br>Chairperson<br>Clare Pickleball</p>`,
+      });
+      await sendWithConfiguredEmailTransport(base44,scope,{
+        to:booking.email,
+        subject:`${club.name} · Guest booking confirmed · ${dateLabel} ${session.start_time}`,
+        textBody:guestText,
+        htmlBody:guestHtml,
       });
       updates.guest_confirmation_sent_at=now;
     }catch(e){console.error('guest confirmation failed',e?.message||e)}
