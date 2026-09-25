@@ -310,6 +310,15 @@
         "null"
       ],
       "format": "date-time"
+    },
+    "pot_method": {
+      "type": "string",
+      "enum": [
+        "none",
+        "vote",
+        "points"
+      ],
+      "default": "none"
     }
   },
   "required": [
