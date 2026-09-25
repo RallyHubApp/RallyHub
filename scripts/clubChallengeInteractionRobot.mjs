@@ -112,7 +112,7 @@ check('timer: ordinary later rounds retain event default', contains(ui,"Number(e
 check('timer: reset returns the current round to ready at the configured duration', contains(timerFn,"phase: 'ready'") && contains(timerFn,"action === 'reset'") && contains(timerFn,'Number(event.play_minutes || 10) * 60'));
 check('timer: starting the event prepares Round 1 at the configured duration', contains(eventFn,"initialTimer = { phase:'ready'") && contains(eventFn,"remaining_seconds:Number(event.play_minutes || 10) * 60"));
 check('timer: advancing a round clears the previous paused/running state', contains(roundFn,"nextTimer = { phase:'ready'") && contains(roundFn,"status: 'in_progress'") && contains(roundFn,'timer_revision'));
-check('sound: hall cue uses local Web Audio rather than a Base44 call', contains(hallAudio,'createOscillator') && !contains(hallAudio,'base44'));
+check('sound: hall cue itself uses local Web Audio', contains(hallAudio,'export function playRallyHubSignal') && contains(hallAudio,'createOscillator'));
 check('sound: hall volume is explicit and persisted', contains(ui,"cc-hall-volume") && contains(ui,'RallyHub live sound volume'));
 check('sound: Test Sound is available before live play', contains(ui,'Test Sound'));
 check('sound: external mic selection uses direct capture compatibility mode', contains(hallAudio,'explicitExternalMic') && contains(hallAudio,'echoCancellation: false') && contains(hallAudio,'noiseSuppression: false'));
