@@ -6,11 +6,6 @@ const NAVY = '#0b2e59';
 const BLUE = '#07558d';
 const GREEN = '#0b914a';
 const COPYRIGHT = '© 2026 RallyHub. All rights reserved.';
-const BANNER_BASH_EVENT_ID = '6ab3d84c8bbc3bc6e171ba03';
-const BANNER_BASH_HANDOVERS = [
-  { fromId:'6ab54584a11f03c7c756e1e2', toId:'6ab3d96b313295df91137364', toName:'Paul Abando', effectiveRound:7 },
-  { fromId:'6ab3d9445de8cec8d48d4016', toId:'6ab54629e298576e27f05a70', toName:'Margaret Fegan', effectiveRound:7 },
-];
 
 function chunk(items, size) {
   const out = [];
@@ -141,10 +136,20 @@ function MasterScorePage({ event, tournament, matches, rounds, courts, title='Ma
   </Page>;
 }
 
-function applyPlannedPrintHandovers(event, matches) {
-  if (event?.id !== BANNER_BASH_EVENT_ID) return matches;
+function plannedPrintHandovers(participants=[]) {
+  return participants
+    .filter(p => p.replacement_for_participant_id && Number(p.replacement_effective_round || p.available_from_round || 0) > 0)
+    .map(p => ({
+      fromId:String(p.replacement_for_participant_id),
+      toId:String(p.id),
+      toName:p.display_name || 'Replacement player',
+      effectiveRound:Number(p.replacement_effective_round || p.available_from_round),
+    }));
+}
+
+function applyPlannedPrintHandovers(matches, handovers=[]) {
+  if (!handovers.length) return matches;
   return matches.map(match => {
-    if (Number(match.round_number || 0) < 7) return match;
     const next = {
       ...match,
       club_a_names:[...(match.club_a_names || [])],
@@ -152,12 +157,13 @@ function applyPlannedPrintHandovers(event, matches) {
       club_a_participant_ids:[...(match.club_a_participant_ids || [])],
       club_b_participant_ids:[...(match.club_b_participant_ids || [])],
     };
-    BANNER_BASH_HANDOVERS.forEach(h => {
+    handovers.forEach(h => {
+      if (Number(match.round_number || 0) < h.effectiveRound) return;
       for (const side of ['a','b']) {
         const idsKey = `club_${side}_participant_ids`;
         const namesKey = `club_${side}_names`;
         const idx = next[idsKey].indexOf(h.fromId);
-        if (idx >= 0 && Number(match.round_number || 0) >= h.effectiveRound) {
+        if (idx >= 0) {
           next[idsKey][idx] = h.toId;
           next[namesKey][idx] = h.toName;
         }
@@ -363,8 +369,10 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
   const scorePages = chunk(rounds, 12);
   const schedulePages = chunk(rounds, 2);
   const selected = sections || { score:true, handoverScore:false, schedule:true, roster:true, briefing:true, final:true };
-  const hasBannerBashHandoverCopy = event.id === BANNER_BASH_EVENT_ID;
-  const plannedHandoverPlayable = hasBannerBashHandoverCopy ? applyPlannedPrintHandovers(event, playable) : playable;
+  const handovers = plannedPrintHandovers(participants);
+  const hasPlannedHandoverCopy = handovers.length > 0;
+  const firstHandoverRound = hasPlannedHandoverCopy ? Math.min(...handovers.map(h => h.effectiveRound)) : null;
+  const plannedHandoverPlayable = hasPlannedHandoverCopy ? applyPlannedPrintHandovers(playable, handovers) : playable;
 
   return <div className="rhpp-root">
     <style>{`
@@ -400,7 +408,7 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
     `}</style>
 
     {selected.score && scorePages.map((rs,i)=><MasterScorePage key={`score-${i}`} event={event} tournament={tournament} matches={playable} rounds={rs} courts={courts} />)}
-    {selected.handoverScore && hasBannerBashHandoverCopy && scorePages.map((rs,i)=><MasterScorePage key={`handover-score-${i}`} event={event} tournament={tournament} matches={plannedHandoverPlayable} rounds={rs} courts={courts} title="Master Score Sheet · 8:30 Handover Copy" />)}
+    {selected.handoverScore && hasPlannedHandoverCopy && scorePages.map((rs,i)=><MasterScorePage key={`handover-score-${i}`} event={event} tournament={tournament} matches={plannedHandoverPlayable} rounds={rs} courts={courts} title={`Master Score Sheet · Handover from Round ${firstHandoverRound}`} />)}
     {selected.schedule && schedulePages.map((rs,i)=><MasterSchedulePage key={`schedule-${i}`} event={event} tournament={tournament} matches={playable} participants={participants} rounds={rs} lastScheduledById={lastScheduledById} pageIndex={i} totalPages={schedulePages.length} />)}
     {selected.roster && <><TeamRosterPage event={event} tournament={tournament} participants={participants} order="ranked" /><TeamRosterPage event={event} tournament={tournament} participants={participants} order="alphabetical" /></>}
     {selected.briefing && <BriefingPage event={event} tournament={tournament} roundsCount={roundsCount} courtsCount={courts.length} displayUrl={displayUrl} votingUrl={votingUrl} />}
