@@ -569,6 +569,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const hasManagePermission = !!permissions.canManage;
   const eventReadOnly = ['completed','archived'].includes(event?.status);
   const canManageEvent = !!permissions.canManage && !eventReadOnly;
+  const canManagePot = !!permissions.canManage && !!event && event.status !== 'archived';
   const canScoreEvent = !!permissions.canScore && !eventReadOnly;
   const canFinaliseEvent = !!permissions.canFinalise && !eventReadOnly;
   const displayOnly = !!permissions.displayOnly;
@@ -1361,7 +1362,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const setPotStatus = async status => {
-    if (!event || !canManageEvent || !['open','closed'].includes(status)) return;
+    if (!event || !canManagePot || !['open','closed'].includes(status)) return;
     try {
       const action = status === 'open' ? 'open' : 'close';
       const payload = { eventId:event.id, action };
@@ -1377,7 +1378,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const extendPotVoting = async () => {
-    if (!event || !canManageEvent || event.pot_status !== 'open') return;
+    if (!event || !canManagePot || event.pot_status !== 'open') return;
     try {
       const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'extend', extraMinutes:5 });
       if (res.data?.error) { toast.error(res.data.error); return; }
@@ -1387,7 +1388,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const resetPotVoting = async () => {
-    if (!event || !canManageEvent) return;
+    if (!event || !canManagePot) return;
     if (!window.confirm('Reset Player of the Tournament voting? All current test ballots will be invalidated and the vote will return to Closed.')) return;
     try {
       const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'reset' });
@@ -1440,7 +1441,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const runPotTiebreak = async side => {
-    if (!event || !canManageEvent || event.pot_status !== 'closed') return;
+    if (!event || !canManagePot || event.pot_status !== 'closed') return;
     const candidates = side === 'club_a' ? potTopA : potTopB;
     if (candidates.length < 2) return;
     setPotTiebreakUi(s => ({ ...s, [side]:{ running:true, display:candidates[0]?.display_name || '' } }));
@@ -1467,7 +1468,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   const revealPot = async () => {
-    if (!event || !canManageEvent) return;
+    if (!event || !canManagePot) return;
     if (potTieUnresolved) { toast.error('Resolve the tied vote with Coin Toss before revealing the result.'); return; }
     try {
       const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'reveal' });
@@ -1478,7 +1479,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   };
 
   React.useEffect(() => {
-    if (!event?.id || event.pot_status !== 'open' || !event.pot_vote_closes_at || !canManageEvent) return;
+    if (!event?.id || event.pot_status !== 'open' || !event.pot_vote_closes_at || !canManagePot) return;
     const closesAt = Date.parse(event.pot_vote_closes_at);
     if (!Number.isFinite(closesAt) || closesAt > timerNow) return;
     const key = `${event.id}:${event.pot_vote_closes_at}`;
@@ -1492,7 +1493,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         }
       })
       .catch(() => {});
-  }, [event?.id, event?.pot_status, event?.pot_vote_closes_at, timerNow, canManageEvent, isAdmin]);
+  }, [event?.id, event?.pot_status, event?.pot_vote_closes_at, timerNow, canManagePot, isAdmin]);
   const printEventPack = () => {
     if (!event || !['draw_approved','in_progress','paused','completed'].includes(event.status) || !normalMatches.length) { toast.error('Approve the draw before producing the Event Pack.'); return; }
     if (event.event_pack_stale) toast.warning('Event Pack is OUT OF DATE because fixtures changed. You can still open and review it; re-approve the draw before treating it as the current authoritative pack.');
@@ -2549,7 +2550,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <Badge variant="outline">{event.pot_status || 'closed'}</Badge>
             </div>
 
-            {canManageEvent && event.pot_status === 'closed' && <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+            {canManagePot && event.pot_status === 'closed' && <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
               <div className="sm:w-48">
                 <Label className="text-xs">Voting window</Label>
                 <Select value={potDuration} onValueChange={setPotDuration}>
@@ -2582,7 +2583,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               Individual choices and running totals remain hidden.
             </div>}
 
-            {canManageEvent && event.pot_status === 'closed' && (potTopA.length > 1 || potTopB.length > 1) && <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 space-y-3"><div><p className="text-sm font-bold text-amber-600">Tie detected in Player of the Tournament voting</p><p className="text-xs text-muted-foreground mt-1">Use a private RallyHub Coin Toss to select one winner from the tied top vote. The selected name stays hidden from the Live Event View until you press Reveal Results.</p></div><div className="grid sm:grid-cols-2 gap-3">{[['club_a',event.club_a_name,potTopA,potSavedA],['club_b',event.club_b_name,potTopB,potSavedB]].map(([side,clubName,candidates,saved]) => candidates.length > 1 ? <div key={side} className="rounded-lg border border-border bg-card p-4 text-center"><p className="text-xs font-semibold">{clubName}</p><p className="mt-2 text-xs text-muted-foreground">{candidates.map(p=>p.display_name).join(' · ')}</p>{saved ? <div className="mt-3"><Badge variant="outline">Coin toss complete</Badge><p className="mt-2 font-black">{saved.display_name}</p><p className="text-[10px] text-muted-foreground">Saved privately · ready to reveal</p></div> : <><div className="mt-3 min-h-8 font-black text-primary">{potTiebreakUi[side]?.display || 'Tie unresolved'}</div><Button className="mt-2 w-full" variant="outline" disabled={potTiebreakUi[side]?.running} onClick={() => runPotTiebreak(side)}>{potTiebreakUi[side]?.running ? 'Shuffling…' : 'Coin Toss'}</Button></>}</div> : null)}</div>{potTieUnresolved ? <p className="text-xs text-amber-700">Resolve each tied team before Reveal Results becomes available.</p> : <div className="text-center"><Button onClick={revealPot}>Reveal Results</Button></div>}</div>}
+            {canManagePot && event.pot_status === 'closed' && (potTopA.length > 1 || potTopB.length > 1) && <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 space-y-3"><div><p className="text-sm font-bold text-amber-600">Tie detected in Player of the Tournament voting</p><p className="text-xs text-muted-foreground mt-1">Use a private RallyHub Coin Toss to select one winner from the tied top vote. The selected name stays hidden from the Live Event View until you press Reveal Results.</p></div><div className="grid sm:grid-cols-2 gap-3">{[['club_a',event.club_a_name,potTopA,potSavedA],['club_b',event.club_b_name,potTopB,potSavedB]].map(([side,clubName,candidates,saved]) => candidates.length > 1 ? <div key={side} className="rounded-lg border border-border bg-card p-4 text-center"><p className="text-xs font-semibold">{clubName}</p><p className="mt-2 text-xs text-muted-foreground">{candidates.map(p=>p.display_name).join(' · ')}</p>{saved ? <div className="mt-3"><Badge variant="outline">Coin toss complete</Badge><p className="mt-2 font-black">{saved.display_name}</p><p className="text-[10px] text-muted-foreground">Saved privately · ready to reveal</p></div> : <><div className="mt-3 min-h-8 font-black text-primary">{potTiebreakUi[side]?.display || 'Tie unresolved'}</div><Button className="mt-2 w-full" variant="outline" disabled={potTiebreakUi[side]?.running} onClick={() => runPotTiebreak(side)}>{potTiebreakUi[side]?.running ? 'Shuffling…' : 'Coin Toss'}</Button></>}</div> : null)}</div>{potTieUnresolved ? <p className="text-xs text-amber-700">Resolve each tied team before Reveal Results becomes available.</p> : <div className="text-center"><Button onClick={revealPot}>Reveal Results</Button></div>}</div>}
 
             {event.pot_status === 'revealed' && <div className="grid sm:grid-cols-2 gap-3">
               <div className="rounded-xl bg-primary/10 p-4 text-center">
@@ -2597,7 +2598,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 <p className="font-bold mt-1">{potWinnersB.length ? potWinnersB.map(p => p.display_name).join(' & ') : 'No valid votes'}</p>
                 {isAdmin && potWinnersB.map(p => <p key={p.id} className="text-xs text-muted-foreground mt-1">{potCounts[p.id] || 0} vote{(potCounts[p.id] || 0) === 1 ? '' : 's'}</p>)}
               </div>
-              {canManageEvent && <div className="sm:col-span-2 text-center"><Button variant="outline" onClick={resetPotVoting}>Reset Voting</Button></div>}
+              {canManagePot && <div className="sm:col-span-2 text-center"><Button variant="outline" onClick={resetPotVoting}>Reset Voting</Button></div>}
             </div>}
           </div>}
           {score.completedMatches > 0 ? (
