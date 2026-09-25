@@ -39,6 +39,7 @@ export default function PublicClubChallengeDisplay(){
   const initialViewSetRef=React.useRef(false);
   const lastLoadAtRef=React.useRef(0);
   const loadInFlightRef=React.useRef(false);
+  const pollJitterRef=React.useRef(Math.floor(Math.random()*6000));
   React.useEffect(()=>{ dataRef.current=data; },[data]);
   const load=React.useCallback(async()=>{
     if(loadInFlightRef.current) return;
@@ -52,7 +53,7 @@ export default function PublicClubChallengeDisplay(){
     } catch(e){ if(dataRef.current) setDisconnected(true); else setError(e?.response?.data?.error||e?.message||'Display unavailable'); }
     finally { loadInFlightRef.current=false; }
   },[token]);
-  const pollMs=data?.matches?.some(m=>m.is_showcase)?10000:18000;
+  const pollMs=(data?.matches?.some(m=>m.is_showcase)?10000:18000)+pollJitterRef.current;
   React.useEffect(()=>{
     load();
     const poll=setInterval(()=>{ if(document.visibilityState==='visible') load(); },pollMs);
