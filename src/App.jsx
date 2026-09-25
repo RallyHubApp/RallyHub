@@ -53,7 +53,6 @@ import DirectoryQuickStart from '@/pages/DirectoryQuickStart';
 import TestClubEntry from '@/pages/TestClubEntry';
 import GuestBookings from '@/pages/GuestBookings';
 import MembershipConsole from '@/pages/MembershipConsole';
-import MembershipConsole from '@/pages/MembershipConsole';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -145,7 +144,6 @@ const AuthenticatedRoutes = () => (
       <Route path="my-profile" element={<MyProfile />} />
       <Route path="admin" element={<AdminPanel />} />
       <Route path="guest-bookings" element={<GuestBookings />} />
-      <Route path="membership" element={<MembershipConsole />} />
       <Route path="membership" element={<MembershipConsole />} />
     </Route>
     <Route path="*" element={<Navigate to="/app" replace />} />
