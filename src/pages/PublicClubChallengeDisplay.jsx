@@ -57,7 +57,7 @@ export default function PublicClubChallengeDisplay(){
   const potRemaining=Number.isFinite(potCloseMs)?Math.max(0,Math.ceil((potCloseMs-now)/1000)):null;
   const potOpen=!!event.pot_enabled&&event.pot_status==='open'&&(potRemaining===null||potRemaining>0);
   const potCountdown=potRemaining===null?'MANUAL CLOSE':`${Math.floor(potRemaining/60)}:${String(potRemaining%60).padStart(2,'0')}`;
-  const votingUrl=event.pot_voting_token?interclubPublicUrl(`/club-challenge/vote/${event.pot_voting_token}`):'';
+  const votingToken=event.pot_voting_token||'';
   const potWinners=Array.isArray(event.pot_winners)?event.pot_winners:[];
   const potWinnersA=potWinners.filter(p=>p.side==='club_a');
   const potWinnersB=potWinners.filter(p=>p.side==='club_b');
@@ -66,15 +66,33 @@ export default function PublicClubChallengeDisplay(){
   const alphabeticalTeamSort=(a,b)=>String(a.display_name||'').localeCompare(String(b.display_name||''),'en',{sensitivity:'base'});
   const teamAPlayers=participants.filter(p=>p.side==='club_a').sort(alphabeticalTeamSort);
   const teamBPlayers=participants.filter(p=>p.side==='club_b').sort(alphabeticalTeamSort);
+  const voteAPlayers=participants.filter(p=>p.side==='club_a'&&p.status!=='replaced').sort(alphabeticalTeamSort);
+  const voteBPlayers=participants.filter(p=>p.side==='club_b'&&p.status!=='replaced').sort(alphabeticalTeamSort);
   const resultMatches=matches.filter(m=>!m.is_showcase&&['completed','draw','retired','forfeit','abandoned'].includes(m.status)).sort((a,b)=>Number(a.round_number)-Number(b.round_number)||Number(a.court_number)-Number(b.court_number));
   const resultRounds=[...new Set(resultMatches.map(m=>Number(m.round_number)))].sort((a,b)=>a-b);
+  const courtsCount=Math.max(Number(event.courts||0),...matches.filter(m=>!m.is_showcase).map(m=>Number(m.court_number||0)),1);
+  const eventFormat=event.normal_match_type==='points'
+    ? `First to ${event.normal_target_points||11} · win by ${event.normal_win_by||1}`
+    : `Timed rounds · ${event.play_minutes||0} minutes · ${event.timed_draws_allowed===false?'no draws':'draws allowed'}`;
   const playerLabel = p => {
     if (p.reserve_activated && p.replacement_effective_round) return `Joined from Round ${p.replacement_effective_round}`;
     if (['withdrawn','replaced'].includes(p.status) && p.replacement_effective_round) return `Played through Round ${Math.max(1, Number(p.replacement_effective_round)-1)}`;
     if ((p.roster_role||'rotation')==='reserve') return 'Reserve';
     return '';
   };
-  const playerNav=<div className="sticky top-2 z-30 mx-auto mb-4 flex w-fit max-w-full items-center gap-1 rounded-full border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur"><button onClick={()=>setView('live')} className={`min-h-10 rounded-full px-4 text-sm font-bold ${view==='live'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}>{completed?'Final':'Live'}</button><button onClick={()=>setView('teams')} className={`min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='teams'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><Users className="w-4 h-4"/>Teams</button><button onClick={()=>setView('results')} className={`min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='results'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><ListChecks className="w-4 h-4"/>{completed?'Summary':'Results'}</button>{potOpen&&votingUrl&&<a href={votingUrl} className="min-h-10 rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground inline-flex items-center">Vote</a>}</div>;
+  const castIntegratedVote=async()=>{
+    if(voteSavingRef.current||!potOpen||!votingToken||!voteA||!voteB) return;
+    voteSavingRef.current=true; setVoteSaving(true); setVoteError('');
+    try {
+      const r=await base44.functions.invoke('castPublicClubChallengePotVote',{token:votingToken,clubANomineeParticipantId:voteA,clubBNomineeParticipantId:voteB,voterDeviceId:deviceId});
+      if(r.data?.error) throw new Error(r.data.error);
+      setVoteDone(true);
+    } catch(e) {
+      setVoteError(e?.response?.data?.error||e?.message||'Vote could not be recorded');
+      await load();
+    } finally { voteSavingRef.current=false; setVoteSaving(false); }
+  };
+  const playerNav=<div className="sticky top-2 z-30 mx-auto mb-4 flex w-full max-w-3xl items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur"><button onClick={()=>setView('live')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold ${view==='live'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}>{completed?'Final':'Live'}</button><button onClick={()=>setView('teams')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='teams'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><Users className="w-4 h-4"/>Teams</button><button onClick={()=>setView('info')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='info'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><Info className="w-4 h-4"/>Event Info</button><button onClick={()=>setView('results')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='results'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><ListChecks className="w-4 h-4"/>{completed?'Summary':'Results'}</button>{event.pot_enabled&&<button onClick={()=>setView('vote')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='vote'?'bg-primary text-primary-foreground':potOpen?'bg-primary/10 text-primary hover:bg-primary/20':'text-muted-foreground hover:bg-secondary'}`}><Trophy className="w-4 h-4"/>Vote{potOpen?' · Open':''}</button>}</div>;
 
   if(view==='teams') return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8"><AppearanceQuickButton className="fixed right-3 top-3 z-40 h-10 px-2 sm:px-3"/>{playerNav}<div className="mx-auto max-w-5xl"><LiveEventBrand pageLabel={completed?'Event Summary':'Live Event View'}/><h1 className="mt-4 text-center text-2xl sm:text-3xl font-black">Teams</h1><p className="mt-1 text-center text-sm text-muted-foreground">{completed?'Final team lists, including any substitutions':'Current team lists for this Interclub'}</p><div className="mt-6 grid md:grid-cols-2 gap-4">{[[event.club_a_name,event.club_a_logo_url,event.club_a_primary_colour,teamAPlayers],[event.club_b_name,event.club_b_logo_url,event.club_b_primary_colour,teamBPlayers]].map(([name,logo,colour,players])=><section key={name} className="rounded-2xl border bg-card p-4 sm:p-5" style={{borderTopWidth:'7px',borderTopColor:colour||'#2563eb'}}><div className="flex items-center gap-3">{logo&&<img src={logo} alt="" className="w-14 h-14 rounded-xl bg-white object-contain p-1"/>}<h2 className="text-xl font-black">{name}</h2></div><div className="mt-4 divide-y divide-border">{players.filter(p=>(p.roster_role||'rotation')!=='reserve'||p.reserve_activated||['withdrawn','replaced'].includes(p.status)).map(p=><div key={p.id} className="flex items-center justify-between gap-3 py-2.5"><span className="font-semibold">{p.display_name}</span>{playerLabel(p)&&<Badge variant="outline" className="shrink-0">{playerLabel(p)}</Badge>}</div>)}</div>{players.some(p=>(p.roster_role||'rotation')==='reserve'&&!p.reserve_activated)&&<div className="mt-4 rounded-lg bg-secondary/50 p-3"><p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Reserves</p>{players.filter(p=>(p.roster_role||'rotation')==='reserve'&&!p.reserve_activated).map(p=><p key={p.id} className="mt-2 font-semibold">{p.display_name}</p>)}</div>}</section>)}</div></div><PoweredByRallyHub /></div>;
 
