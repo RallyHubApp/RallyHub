@@ -353,6 +353,12 @@ Deno.serve(async(req)=>{
       if(!config)return Response.json({error:'Membership applications are not configured for this club.'},{status:404});
       const club=await clubBrand(base44,clubId,tenantId);
 
+      if(action==='admin_count'){
+        const apps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300);
+        const actionable=(apps||[]).filter((app:any)=>['submitted','pending_payment','payment_failed'].includes(String(app.status||''))&&app.payment_status!=='paid');
+        return Response.json({success:true,pendingCount:actionable.length,total:(apps||[]).length});
+      }
+
       if(action==='admin_list'){
         const apps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300);
         const rows=[];
