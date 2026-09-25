@@ -539,6 +539,38 @@ export default function MembershipConsole() {
     }
   };
 
+  const sendPreviewedCommunication = async channel => {
+    const application = communicationPreview?.application;
+    if (!application?.id) return;
+    if (channel === 'email') {
+      await runApplicationAction(application, 'admin_send_reminder', 'email');
+      setCommunicationPreview(null);
+      return;
+    }
+    const message = communicationPreview?.whatsapp?.message || '';
+    if (message) window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
+    setApplicationBusyId(application.id);
+    try {
+      const response = await base44.functions.invoke('membershipApplication', {
+        action: 'admin_send_reminder',
+        applicationId: application.id,
+        channel: 'whatsapp'
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      toast.success('WhatsApp reminder opened');
+      await Promise.all([
+        refetchApplications(),
+        queryClient.invalidateQueries({ queryKey: ['membership-console-list'] }),
+        queryClient.invalidateQueries({ queryKey: ['membership-application-attention-count'] })
+      ]);
+      setCommunicationPreview(null);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not record the WhatsApp reminder');
+    } finally {
+      setApplicationBusyId('');
+    }
+  };
+
   const copyApplicationPaymentLink = async application => {
     if (!application?.paymentUrl) return;
     try {
