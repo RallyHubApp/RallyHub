@@ -1176,6 +1176,7 @@ Brian`;
   const directoryRegisteredPeopleCount = directoryRegisteredUserIds.size;
   const directoryClaimRate = directoryAdminListings.length ? Math.round((claimedDirectoryListingCount / directoryAdminListings.length) * 100) : 0;
   const directoryNeedsAttentionCount = pendingDirectoryClaims.length + pendingNewDirectoryRequests.length;
+  const directoryAttentionTarget = pendingDirectoryClaims.length ? 'directory-pending-claims' : 'directory-pending-actions';
   const scrollToDirectorySection = id => {
     window.requestAnimationFrame(() => {
       document.getElementById(id)?.scrollIntoView({ behavior:'smooth', block:'start' });
@@ -1218,7 +1219,7 @@ Brian`;
             <p className="mt-1 text-xs sm:text-sm font-semibold">Registered people</p>
             <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{directoryContactRows.length} verified with access</p>
           </GlassCard>
-          <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-pending-actions')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-pending-actions'); } }} delay={0.12} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-destructive/40 hover:bg-destructive/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection(directoryAttentionTarget)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection(directoryAttentionTarget); } }} delay={0.12} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-destructive/40 hover:bg-destructive/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <p className="text-2xl sm:text-3xl font-black text-destructive">{directoryNeedsAttentionCount}</p>
             <p className="mt-1 text-xs sm:text-sm font-semibold">Needs attention</p>
             <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{pendingDirectoryClaims.length} claims · {pendingNewDirectoryRequests.length} new clubs</p>
