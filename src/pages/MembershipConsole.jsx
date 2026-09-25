@@ -719,6 +719,56 @@ export default function MembershipConsole() {
         </SheetContent>
       </Sheet>
 
+      <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add member</DialogTitle>
+            <DialogDescription>
+              RallyHub checks the active tenant for an existing person first. If this person already exists as a guest or player, the new club membership is attached to that identity instead of creating a duplicate.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div><Label>Full name</Label><Input className="mt-1" value={newMember.full_name} onChange={event => setNewMember(previous => ({ ...previous, full_name: event.target.value }))} /></div>
+            <div><Label>Email</Label><Input type="email" className="mt-1" value={newMember.primary_email} onChange={event => setNewMember(previous => ({ ...previous, primary_email: event.target.value }))} /></div>
+            <div><Label>Mobile</Label><Input className="mt-1" value={newMember.mobile} onChange={event => setNewMember(previous => ({ ...previous, mobile: event.target.value }))} /></div>
+            <div><Label>Date of birth</Label><Input type="date" className="mt-1" value={newMember.date_of_birth} onChange={event => setNewMember(previous => ({ ...previous, date_of_birth: event.target.value }))} /></div>
+            <div><Label>Membership ID</Label><Input className="mt-1" value={newMember.member_id} onChange={event => setNewMember(previous => ({ ...previous, member_id: event.target.value }))} /></div>
+            <div><Label>Membership season</Label><Input className="mt-1" value={newMember.membership_season} onChange={event => setNewMember(previous => ({ ...previous, membership_season: event.target.value }))} /></div>
+            <div><Label>Membership type</Label><Input className="mt-1" value={newMember.membership_type} onChange={event => setNewMember(previous => ({ ...previous, membership_type: event.target.value }))} /></div>
+            <div><Label>Membership fee</Label><Input type="number" min="0" step="0.01" className="mt-1" value={newMember.membership_fee} onChange={event => setNewMember(previous => ({ ...previous, membership_fee: event.target.value }))} /></div>
+            <div><Label>Membership status</Label><Select value={newMember.membership_status} onValueChange={value => setNewMember(previous => ({ ...previous, membership_status: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{(meta.membershipStatuses || []).map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Payment status</Label><Select value={newMember.payment_status} onValueChange={value => setNewMember(previous => ({ ...previous, payment_status: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{(meta.paymentStatuses || []).map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Relationship</Label><Select value={newMember.relationship_type} onValueChange={value => setNewMember(previous => ({ ...previous, relationship_type: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{(meta.relationshipTypes || []).map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Join date</Label><Input type="date" className="mt-1" value={newMember.join_date} onChange={event => setNewMember(previous => ({ ...previous, join_date: event.target.value }))} /></div>
+            <div><Label>Emergency contact</Label><Input className="mt-1" value={newMember.emergency_contact_name} onChange={event => setNewMember(previous => ({ ...previous, emergency_contact_name: event.target.value }))} /></div>
+            <div><Label>Emergency relationship</Label><Input className="mt-1" value={newMember.emergency_contact_relationship} onChange={event => setNewMember(previous => ({ ...previous, emergency_contact_relationship: event.target.value }))} /></div>
+            <div><Label>Emergency mobile</Label><Input className="mt-1" value={newMember.emergency_mobile} onChange={event => setNewMember(previous => ({ ...previous, emergency_mobile: event.target.value }))} /></div>
+            <div className="sm:col-span-2">
+              <Label>Sports</Label>
+              <div className="mt-2 grid sm:grid-cols-2 gap-2">
+                {(meta.sports || []).map(sport => {
+                  const checked = (newMember.sport_ids || []).includes(String(sport.id));
+                  return <label key={sport.id} className="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer hover:bg-secondary/40">
+                    <Checkbox checked={checked} onCheckedChange={value => setNewMember(previous => ({
+                      ...previous,
+                      sport_ids: value
+                        ? [...new Set([...(previous.sport_ids || []), String(sport.id)])]
+                        : (previous.sport_ids || []).filter(id => String(id) !== String(sport.id))
+                    }))} />
+                    <span className="text-sm font-medium">{sport.name}</span>
+                    {sport.is_primary ? <Badge variant="outline" className="ml-auto">Primary</Badge> : null}
+                  </label>;
+                })}
+              </div>
+            </div>
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50/60 dark:bg-amber-950/20 dark:border-amber-900 p-3 text-xs text-muted-foreground">
+            Identity safety: RallyHub matches against the active tenant before creating a Person. Ambiguous matches are stopped for manual review.
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setAddMemberOpen(false)}>Cancel</Button><Button onClick={createMember} disabled={saving}>{saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}{saving ? 'Adding…' : 'Add member'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
