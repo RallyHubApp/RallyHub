@@ -1009,6 +1009,47 @@ export default function MembershipConsole() {
         </SheetContent>
       </Sheet>
 
+      <Dialog open={!!communicationPreview} onOpenChange={open => { if (!open) setCommunicationPreview(null); }}>
+        <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Preview membership reminder</DialogTitle>
+            <DialogDescription>
+              Review exactly what will go out before you send it. You can still choose to send directly from the application row when you do not need a preview.
+            </DialogDescription>
+          </DialogHeader>
+          <Tabs value={previewChannel} onValueChange={setPreviewChannel}>
+            <TabsList>
+              <TabsTrigger value="email"><Mail className="w-3.5 h-3.5 mr-1.5" />Email</TabsTrigger>
+              <TabsTrigger value="whatsapp"><MessageCircle className="w-3.5 h-3.5 mr-1.5" />WhatsApp</TabsTrigger>
+            </TabsList>
+            <TabsContent value="email" className="pt-4 space-y-3">
+              <div className="rounded-lg border bg-secondary/20 p-3 text-xs">
+                <div><strong>To:</strong> {communicationPreview?.email?.to || communicationPreview?.application?.email || '—'}</div>
+                <div className="mt-1"><strong>Subject:</strong> {communicationPreview?.email?.subject || '—'}</div>
+              </div>
+              <div className="rounded-xl border bg-white overflow-hidden">
+                <iframe
+                  title="Membership reminder email preview"
+                  srcDoc={communicationPreview?.email?.htmlBody || ''}
+                  className="w-full h-[520px] bg-white"
+                />
+              </div>
+            </TabsContent>
+            <TabsContent value="whatsapp" className="pt-4">
+              <div className="rounded-xl border bg-secondary/20 p-4 text-sm leading-6 whitespace-pre-wrap">
+                {communicationPreview?.whatsapp?.message || 'No WhatsApp preview available.'}
+              </div>
+            </TabsContent>
+          </Tabs>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setCommunicationPreview(null)}>Close</Button>
+            {previewChannel === 'email'
+              ? <Button disabled={!!applicationBusyId} onClick={() => sendPreviewedCommunication('email')}><Mail className="w-4 h-4 mr-2" />Send email now</Button>
+              : <Button disabled={!!applicationBusyId} onClick={() => sendPreviewedCommunication('whatsapp')}><MessageCircle className="w-4 h-4 mr-2" />Open WhatsApp</Button>}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
