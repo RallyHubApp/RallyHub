@@ -1450,6 +1450,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not update voting status'); }
   };
 
+  const calculateHighestScorers = async () => {
+    if (!event || !canManagePot) return;
+    try {
+      const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'calculate_points' });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      await refetchEvent();
+      toast.success('Highest scoring player for each team calculated from the completed normal rounds.');
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not calculate highest scorers'); }
+  };
+
   const extendPotVoting = async () => {
     if (!event || !canManagePot || event.pot_status !== 'open') return;
     try {
@@ -1462,13 +1472,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const resetPotVoting = async () => {
     if (!event || !canManagePot) return;
-    if (!window.confirm('Reset Player of the Tournament voting? All current test ballots will be invalidated and the vote will return to Closed.')) return;
+    if (!window.confirm('Reset the player award choice? Any current voting ballots will be invalidated and you can choose Highest Scorers or Player Vote again.')) return;
     try {
       const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'reset' });
       if (res.data?.error) { toast.error(res.data.error); return; }
       await refetchEvent();
       if (isAdmin) await refetchPotVotes();
-      toast.success(`Voting reset. ${Number(res.data?.invalidatedVotes || 0)} recorded team vote${Number(res.data?.invalidatedVotes || 0) === 1 ? '' : 's'} cleared from the live count.`);
+      toast.success(`Player award reset. ${Number(res.data?.invalidatedVotes || 0)} recorded team vote${Number(res.data?.invalidatedVotes || 0) === 1 ? '' : 's'} cleared from the live count.`);
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reset voting'); }
   };
 
