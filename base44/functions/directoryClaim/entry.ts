@@ -120,6 +120,102 @@ function recentCount(rows:any[] = [], hours = 24) {
   }).length;
 }
 
+const RALLYHUB_EMAIL_LOGO = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const RALLYHUB_NAVY = '#07184c';
+const RALLYHUB_GREEN = '#078e48';
+
+function escapeHtml(value = '') {
+  return String(value || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function standardDirectorySignatureText() {
+  return 'Yours in sport,\nBrian Moore\nFounder, RallyHub\n087 810 0333\nhttps://rallyhub.ie';
+}
+
+function normaliseDirectorySignatureText(value = '') {
+  const raw = String(value || '').trim();
+  const body = raw.replace(/\n*Yours in sport,[\s\S]*$/i, '').trim();
+  return `${body}\n\n${standardDirectorySignatureText()}`.trim();
+}
+
+function friendlyLinkLabel(url = '') {
+  const clean = String(url || '').replace(/[.,;!?]+$/, '');
+  if (clean.includes('/directory/quick-start')) return 'Quick Start Guide';
+  if (clean.includes('/directory/story')) return 'Directory Explainer';
+  if (clean.includes('/directory/help')) return 'Club Guide & Help';
+  if (clean.includes('/app/admin?tab=directory')) return 'Open Directory Admin';
+  if (clean.includes('/about')) return 'About RallyHub';
+  if (/^https?:\/\/rallyhub\.ie\/?$/i.test(clean)) return 'RallyHub.ie';
+  return clean.replace(/^https?:\/\//i, '');
+}
+
+function textToBrandedHtml(value = '', primaryUrl = '') {
+  let text = String(value || '').replace(/\r/g, '').trim();
+  text = text.replace(/\n*Yours in sport,[\s\S]*$/i, '').trim();
+  if (primaryUrl) {
+    text = text.replaceAll(primaryUrl, '');
+    text = text.replace(/(^|\n)\s*(Your secure (?:claim|editor) link|Manage your listing):\s*(?=\n|$)/gi, '$1');
+  }
+  const escaped = escapeHtml(text);
+  const linked = escaped.replace(/https:\/\/[^\s<]+/g, matched => {
+    const decoded = matched.replace(/&amp;/g, '&');
+    const url = decoded.replace(/[.,;!?]+$/, '');
+    return `<a href="${escapeHtml(url)}" style="color:${RALLYHUB_GREEN};font-weight:700;text-decoration:underline;">${escapeHtml(friendlyLinkLabel(url))}</a>`;
+  });
+  return linked
+    .split(/\n{2,}/)
+    .map(block => `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#334155;">${block.replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
+
+function rallyHubEmailSignatureHtml() {
+  return `<div style="margin-top:26px;padding-top:20px;border-top:1px solid #e2e8f0;">
+    <p style="margin:0 0 7px;font-size:15px;line-height:1.5;color:#334155;">Yours in sport,</p>
+    <p style="margin:0;font-size:20px;font-weight:800;color:${RALLYHUB_NAVY};">Brian Moore</p>
+    <p style="margin:3px 0 0;font-size:13px;font-weight:700;color:${RALLYHUB_GREEN};">Founder, RallyHub</p>
+    <p style="margin:8px 0 0;font-size:12px;line-height:1.6;color:#64748b;">087 810 0333 · <a href="https://rallyhub.ie" style="color:${RALLYHUB_GREEN};text-decoration:none;font-weight:700;">RallyHub.ie</a></p>
+  </div>`;
+}
+
+function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUrl = '', actionLabel = '', footerNote = 'RallyHub Directory' }:any) {
+  const button = actionUrl && actionLabel ? `
+    <table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px auto 24px;"><tr>
+      <td bgcolor="${RALLYHUB_GREEN}" style="border-radius:12px;">
+        <a href="${escapeHtml(actionUrl)}" style="display:inline-block;padding:14px 24px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:800;letter-spacing:.01em;">${escapeHtml(actionLabel)}</a>
+      </td>
+    </tr></table>` : '';
+  return `<!doctype html><html><body style="margin:0;padding:0;background:#eef3f2;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader || title)}</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef3f2;padding:24px 10px;"><tr><td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:660px;background:#ffffff;border:1px solid #d8e3df;border-radius:20px;overflow:hidden;box-shadow:0 8px 28px rgba(7,24,76,.08);">
+        <tr><td style="height:7px;background:${RALLYHUB_GREEN};"></td></tr>
+        <tr><td style="padding:24px 24px 18px;background:#ffffff;">
+          <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;"><tr>
+            <td style="padding-right:12px;vertical-align:middle;"><img src="${RALLYHUB_EMAIL_LOGO}" width="58" height="58" alt="RallyHub paddle logo" style="display:block;width:58px;height:58px;object-fit:contain;border:0;"></td>
+            <td style="vertical-align:middle;text-align:left;">
+              <div style="font-size:30px;line-height:1;font-weight:900;letter-spacing:-1.4px;color:${RALLYHUB_NAVY};">Rally<span style="color:${RALLYHUB_GREEN};">Hub</span></div>
+              <div style="margin-top:7px;font-size:9px;line-height:1;font-weight:800;letter-spacing:2.3px;color:${RALLYHUB_NAVY};">PLAY <span style="color:${RALLYHUB_GREEN};">•</span> CONNECT <span style="color:${RALLYHUB_GREEN};">•</span> BELONG</div>
+            </td>
+          </tr></table>
+        </td></tr>
+        <tr><td style="padding:0 24px 28px;">
+          <div style="height:1px;background:#e7eeec;margin:0 0 24px;"></div>
+          ${title ? `<h1 style="margin:0 0 20px;font-size:24px;line-height:1.25;color:${RALLYHUB_NAVY};font-weight:850;">${escapeHtml(title)}</h1>` : ''}
+          ${content}
+          ${button}
+          ${rallyHubEmailSignatureHtml()}
+        </td></tr>
+        <tr><td style="padding:16px 24px;background:${RALLYHUB_NAVY};text-align:center;">
+          <div style="font-size:11px;line-height:1.6;color:#dfe8ff;">${escapeHtml(footerNote)} · <span style="color:#83d1a0;">Play • Connect • Belong</span></div>
+          <div style="margin-top:4px;font-size:10px;color:#aab8d6;">rallyhub.ie</div>
+        </td></tr>
+      </table>
+    </td></tr></table>
+  </body></html>`;
+}
+
 function publicClaim(claim) {
   if (!claim) return null;
   return {
