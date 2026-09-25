@@ -12,206 +12,333 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Error: schedule_change_ack_ms should be <= 350ms but was 616ms
 
-Locator: getByText(/Proposed change:.*0 would be marked Not Played/)
-Expected: visible
-Timeout: 3000ms
-Error: element(s) not found
+expect(received).toBeLessThanOrEqual(expected)
 
-Call log:
-  - Expect "toBeVisible" getByText(/Proposed change:.*0 would be marked Not Played/) with timeout 3000ms
-  - waiting for getByText(/Proposed change:.*0 would be marked Not Played/)
-
+Expected: <= 350
+Received:    616
 ```
 
+# Page snapshot
+
 ```yaml
-- main:
-  - img
-  - paragraph: RallyHub Interclub
-  - paragraph: "Interclub Challenge · Status: in progress"
-  - text: CL Clare Blue vs CL Clare Gold
-  - button "Live Event View"
-  - button "Player Link / QR"
-  - button "Print Sheets · OUT OF DATE"
-  - button "Setup":
-    - img
-    - text: Setup
-  - button "Teams":
-    - img
-    - text: Teams
-  - button "Draw":
-    - img
-    - text: Draw
-  - button "4 Live Event"
-  - button "5 Simulator"
-  - button "6 Results"
-  - text: Round 2/12 10:00
-  - strong: 0/4
-  - text: current scores saved
-  - button "Audio ON":
-    - img
-    - text: Audio ON
-  - button "PA":
-    - img
-    - text: PA
-  - button "Reserve / Player Change":
-    - img
-    - text: Reserve / Player Change
-  - button "Start Round 2":
-    - img
-    - text: Start Round 2
-  - button "Round in play" [disabled]
-  - img
-  - text: Round 2 ready · 4 courts · 16 players resting · 3 Round 1 scores still to enter
-  - paragraph: Finish-on-Time Guide
-  - text: RECOVERY NEEDED
-  - paragraph: Booked finish 09:11 AM · projected finish 10:11 AM · started 91 min late
-  - paragraph: 61 min over
-  - paragraph: Recalculates throughout the event
-  - paragraph: Recommended recovery
-  - paragraph: Use 1-minute changeovers (saves up to 10 min) · Shorten the remaining break to 10 min (saves 10 min) · Reduce remaining rounds to about 6 min · Treat the Showcase Final as optional unless time is recovered
-  - paragraph: Live Event
-  - paragraph: Round 2 of 12
-  - paragraph: Clare Blue 8 – 0 Clare Gold
-  - text: 4W 0D 0W
-  - paragraph: Round at a Glance
-  - paragraph: On court, resting and up next — all in one place.
-  - text: R2
-  - paragraph: Court 1 · NOW
-  - paragraph: Club A Test 09 & Club A Test 10
-  - paragraph: vs
-  - paragraph: Club B Test 09 & Club B Test 10
-  - paragraph: Court 2 · NOW
-  - paragraph: Club A Test 11 & Club A Test 12
-  - paragraph: vs
-  - paragraph: Club B Test 11 & Club B Test 12
-  - paragraph: Court 3 · NOW
-  - paragraph: Club A Test 13 & Club A Test 14
-  - paragraph: vs
-  - paragraph: Club B Test 13 & Club B Test 14
-  - paragraph: Court 4 · NOW
-  - paragraph: Club A Test 15 & Club A Test 16
-  - paragraph: vs
-  - paragraph: Club B Test 15 & Club B Test 16
-  - paragraph: Resting this round
-  - paragraph: Clare Blue
-  - text: Replacement Test Club A Test 01 Club A Test 03 Club A Test 04 Club A Test 05 Club A Test 06 Club A Test 07 Club A Test 08
-  - paragraph: Clare Gold
-  - text: Club B Test 01 Club B Test 02 Club B Test 03 Club B Test 04 Club B Test 05 Club B Test 06 Club B Test 07 Club B Test 08
-  - paragraph: Up next · Round 3
-  - paragraph: Court 1 · NEXT
-  - paragraph: Replacement Test & Club A Test 03
-  - paragraph: vs
-  - paragraph: Club B Test 05 & Club B Test 07
-  - paragraph: Court 2 · NEXT
-  - paragraph: Club A Test 01 & Club A Test 04
-  - paragraph: vs
-  - paragraph: Club B Test 06 & Club B Test 08
-  - paragraph: Court 3 · NEXT
-  - paragraph: Club A Test 05 & Club A Test 07
-  - paragraph: vs
-  - paragraph: Club B Test 01 & Club B Test 03
-  - paragraph: Court 4 · NEXT
-  - paragraph: Club A Test 06 & Club A Test 08
-  - paragraph: vs
-  - paragraph: Club B Test 02 & Club B Test 04
-  - paragraph: Round Timer
-  - paragraph: Round 2 of 12
-  - text: ready
-  - paragraph: 10:00
-  - paragraph: This round
-  - paragraph: Adjust before play or while paused.
-  - button "Reduce this round by one minute":
-    - img
-  - paragraph: 10:00
-  - button "Add one minute to this round":
-    - img
-  - button "Start Play":
-    - img
-    - text: Start Play
-  - button "Changeover" [disabled]
-  - button "+1 minute" [disabled]
-  - group: Round options
-  - paragraph: Round 2 Scores
-  - paragraph: Enter each court result as it comes in — you do not need to wait for the timer to finish.
-  - text: 0/4 saved Court 1 R2
-  - paragraph: Clare Blue
-  - paragraph: Club A Test 09 & Club A Test 10
-  - textbox "Clare Blue score"
-  - paragraph: Clare Gold
-  - paragraph: Club B Test 09 & Club B Test 10
-  - textbox "Clare Gold score"
-  - button "Save Result" [disabled]
-  - text: Court 2 R2
-  - paragraph: Clare Blue
-  - paragraph: Club A Test 11 & Club A Test 12
-  - textbox "Clare Blue score"
-  - paragraph: Clare Gold
-  - paragraph: Club B Test 11 & Club B Test 12
-  - textbox "Clare Gold score"
-  - button "Save Result" [disabled]
-  - text: Court 3 R2
-  - paragraph: Clare Blue
-  - paragraph: Club A Test 13 & Club A Test 14
-  - textbox "Clare Blue score"
-  - paragraph: Clare Gold
-  - paragraph: Club B Test 13 & Club B Test 14
-  - textbox "Clare Gold score"
-  - button "Save Result" [disabled]
-  - text: Court 4 R2
-  - paragraph: Clare Blue
-  - paragraph: Club A Test 15 & Club A Test 16
-  - textbox "Clare Blue score"
-  - paragraph: Clare Gold
-  - paragraph: Club B Test 15 & Club B Test 16
-  - textbox "Clare Gold score"
-  - button "Save Result" [disabled]
-  - img
-  - text: Round 2 ready · 4 courts · 16 players resting · 3 Round 1 scores still to enter
-  - button "Round in play" [disabled]
-  - group:
-    - paragraph: PA & Announcements
-    - paragraph: Open only when you need the microphone or an announcement.
-    - text: NOT TESTED
-    - img
-  - group:
-    - paragraph: Player Changes & Reserves
-    - paragraph: Quick reserve handover, injury, withdrawal, replacement or late arrival.
-    - img
-  - group:
-    - paragraph: Court & Time Changes
-    - paragraph: Use this if you lose or gain a court, or if less event time remains than planned.
-    - img
-    - paragraph: Preview the impact before changing anything
-    - paragraph: Enter the courts actually available now and the minutes remaining. RallyHub will show how many future matches still fit, which matches would move, and whether any would have to be marked Not Played. Completed results are never changed.
-    - text: Courts available now
-    - spinbutton "4": "3"
-    - text: Minutes remaining
-    - spinbutton "e.g. 60": "180"
-    - button "Preview Impact"
-    - paragraph:
-      - strong: "Proposed change:"
-      - text: 33 future matches can still be played · 30 move to a different round/court · 11 would be marked Not Played.
-    - paragraph: Nothing changes until you press Confirm Changes. Completed results remain locked, and the existing Event Pack will be marked out of date.
-    - button "Confirm Changes"
-    - button "Cancel"
-- region "Notifications alt+T":
-  - list:
-    - listitem:
-      - img
-      - text: 33 future matches fit within the approved 12-round event; 11 would be marked Not Played. Review before confirming.
-    - listitem:
-      - img
-      - text: Score saved
-    - listitem:
-      - img
-      - text: Score saved
+- generic [ref=f1e2]:
+  - main [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - generic [ref=f1e11]:
+          - paragraph [ref=f1e12]: RallyHub Interclub
+          - paragraph [ref=f1e13]: "Interclub Challenge · Status: in progress"
+        - generic [ref=f1e14]:
+          - generic [ref=f1e15]:
+            - generic [ref=f1e16]:
+              - generic [ref=f1e17]: CL
+              - generic [ref=f1e18]: Clare Blue
+            - generic [ref=f1e19]: vs
+            - generic [ref=f1e20]:
+              - generic [ref=f1e21]: CL
+              - generic [ref=f1e22]: Clare Gold
+          - button "Live Event View" [ref=f1e23] [cursor=pointer]
+          - button "Player Link / QR" [ref=f1e24] [cursor=pointer]
+          - button "Print Sheets · OUT OF DATE" [ref=f1e25] [cursor=pointer]
+      - generic [ref=f1e27]:
+        - button [ref=f1e28] [cursor=pointer]
+        - button [ref=f1e33] [cursor=pointer]
+        - button [ref=f1e38] [cursor=pointer]
+        - button "4 Live Event" [ref=f1e43] [cursor=pointer]:
+          - generic [ref=f1e44]: "4"
+          - text: Live Event
+        - button "5 Simulator" [ref=f1e45] [cursor=pointer]:
+          - generic [ref=f1e46]: "5"
+          - text: Simulator
+        - button "6 Results" [ref=f1e47] [cursor=pointer]:
+          - generic [ref=f1e48]: "6"
+          - text: Results
+      - generic [ref=f1e50]:
+        - generic [ref=f1e52]:
+          - generic [ref=f1e53]:
+            - generic [ref=f1e54]: Round 2/12
+            - generic [ref=f1e55]: 10:00
+            - generic [ref=f1e56]:
+              - strong [ref=f1e57]: 0/3
+              - text: current scores saved
+            - generic [ref=f1e58]:
+              - button "Audio ON" [ref=f1e59] [cursor=pointer]
+              - button "PA" [ref=f1e60] [cursor=pointer]
+              - button "Reserve / Player Change" [ref=f1e61] [cursor=pointer]
+              - button "Start Round 2" [ref=f1e62] [cursor=pointer]
+              - button "Round in play" [disabled]
+          - generic [ref=f1e63]: Round 2 ready · 4 courts · 16 players resting · 3 Round 1 scores still to enter
+        - generic [ref=f1e68]:
+          - generic [ref=f1e69]:
+            - generic [ref=f1e70]:
+              - generic [ref=f1e71]:
+                - paragraph [ref=f1e72]: Finish-on-Time Guide
+                - generic [ref=f1e73]: RECOVERY NEEDED
+              - paragraph [ref=f1e74]: Booked finish 09:13 AM · projected finish 10:13 AM · started 90 min late
+            - generic [ref=f1e75]:
+              - paragraph [ref=f1e76]: 61 min over
+              - paragraph [ref=f1e77]: Recalculates throughout the event
+          - generic [ref=f1e78]:
+            - paragraph [ref=f1e79]: Recommended recovery
+            - paragraph [ref=f1e80]: Use 1-minute changeovers (saves up to 10 min) · Shorten the remaining break to 10 min (saves 10 min) · Reduce remaining rounds to about 6 min · Treat the Showcase Final as optional unless time is recovered
+        - generic [ref=f1e82]:
+          - generic [ref=f1e83]:
+            - paragraph [ref=f1e84]: Live Event
+            - paragraph [ref=f1e85]: Round 2 of 12
+            - paragraph [ref=f1e86]: Clare Blue 8 – 0 Clare Gold
+          - generic [ref=f1e87]:
+            - generic [ref=f1e88]: 4W
+            - generic [ref=f1e89]: 0D
+            - generic [ref=f1e90]: 0W
+        - generic [ref=f1e91]:
+          - generic [ref=f1e92]:
+            - generic [ref=f1e93]:
+              - paragraph [ref=f1e94]: Round at a Glance
+              - paragraph [ref=f1e95]: On court, resting and up next — all in one place.
+            - generic [ref=f1e96]: R2
+          - generic [ref=f1e97]:
+            - generic [ref=f1e98]:
+              - paragraph [ref=f1e99]: Court 1 · NOW
+              - paragraph [ref=f1e100]: Club A Test 09 & Club A Test 10
+              - paragraph [ref=f1e101]: vs
+              - paragraph [ref=f1e102]: Club B Test 09 & Club B Test 10
+            - generic [ref=f1e103]:
+              - paragraph [ref=f1e104]: Court 2 · NOW
+              - paragraph [ref=f1e105]: Club A Test 11 & Club A Test 12
+              - paragraph [ref=f1e106]: vs
+              - paragraph [ref=f1e107]: Club B Test 11 & Club B Test 12
+            - generic [ref=f1e108]:
+              - paragraph [ref=f1e109]: Court 3 · NOW
+              - paragraph [ref=f1e110]: Club A Test 13 & Club A Test 14
+              - paragraph [ref=f1e111]: vs
+              - paragraph [ref=f1e112]: Club B Test 13 & Club B Test 14
+          - generic [ref=f1e113]:
+            - paragraph [ref=f1e114]: Resting this round
+            - generic [ref=f1e115]:
+              - generic [ref=f1e116]:
+                - paragraph [ref=f1e117]: Clare Blue
+                - generic [ref=f1e118]:
+                  - generic [ref=f1e119]: Replacement Test
+                  - generic [ref=f1e120]: Club A Test 01
+                  - generic [ref=f1e121]: Club A Test 03
+                  - generic [ref=f1e122]: Club A Test 04
+                  - generic [ref=f1e123]: Club A Test 05
+                  - generic [ref=f1e124]: Club A Test 06
+                  - generic [ref=f1e125]: Club A Test 07
+                  - generic [ref=f1e126]: Club A Test 08
+                  - generic [ref=f1e127]: Club A Test 15
+                  - generic [ref=f1e128]: Club A Test 16
+              - generic [ref=f1e129]:
+                - paragraph [ref=f1e130]: Clare Gold
+                - generic [ref=f1e131]:
+                  - generic [ref=f1e132]: Club B Test 01
+                  - generic [ref=f1e133]: Club B Test 02
+                  - generic [ref=f1e134]: Club B Test 03
+                  - generic [ref=f1e135]: Club B Test 04
+                  - generic [ref=f1e136]: Club B Test 05
+                  - generic [ref=f1e137]: Club B Test 06
+                  - generic [ref=f1e138]: Club B Test 07
+                  - generic [ref=f1e139]: Club B Test 08
+                  - generic [ref=f1e140]: Club B Test 15
+                  - generic [ref=f1e141]: Club B Test 16
+          - generic [ref=f1e142]:
+            - paragraph [ref=f1e143]: Up next · Round 3
+            - generic [ref=f1e144]:
+              - generic [ref=f1e145]:
+                - paragraph [ref=f1e146]: Court 1 · NEXT
+                - paragraph [ref=f1e147]: Club A Test 15 & Club A Test 16
+                - paragraph [ref=f1e148]: vs
+                - paragraph [ref=f1e149]: Club B Test 15 & Club B Test 16
+              - generic [ref=f1e150]:
+                - paragraph [ref=f1e151]: Court 2 · NEXT
+                - paragraph [ref=f1e152]: Replacement Test & Club A Test 03
+                - paragraph [ref=f1e153]: vs
+                - paragraph [ref=f1e154]: Club B Test 05 & Club B Test 07
+              - generic [ref=f1e155]:
+                - paragraph [ref=f1e156]: Court 3 · NEXT
+                - paragraph [ref=f1e157]: Club A Test 01 & Club A Test 04
+                - paragraph [ref=f1e158]: vs
+                - paragraph [ref=f1e159]: Club B Test 06 & Club B Test 08
+        - generic [ref=f1e160]:
+          - generic [ref=f1e161]:
+            - generic [ref=f1e162]:
+              - paragraph [ref=f1e163]: Round Timer
+              - paragraph [ref=f1e164]: Round 2 of 12
+            - generic [ref=f1e165]: ready
+          - paragraph [ref=f1e167]: 10:00
+          - generic [ref=f1e168]:
+            - generic [ref=f1e169]:
+              - paragraph [ref=f1e170]: This round
+              - paragraph [ref=f1e171]: Adjust before play or while paused.
+            - generic [ref=f1e172]:
+              - button "Reduce this round by one minute" [ref=f1e173] [cursor=pointer]
+              - paragraph [ref=f1e174]: 10:00
+              - button "Add one minute to this round" [ref=f1e175] [cursor=pointer]
+          - generic [ref=f1e176]:
+            - button "Start Play" [ref=f1e177] [cursor=pointer]
+            - button "Changeover" [disabled]
+            - button "+1 minute" [disabled]
+            - group [ref=f1e178]:
+              - generic "Round options" [ref=f1e179] [cursor=pointer]
+        - generic [ref=f1e180]:
+          - generic [ref=f1e181]:
+            - generic [ref=f1e182]:
+              - paragraph [ref=f1e183]: Round 2 Scores
+              - paragraph [ref=f1e184]: Enter each court result as it comes in — you do not need to wait for the timer to finish.
+            - generic [ref=f1e185]: 0/3 saved
+          - generic [ref=f1e186]:
+            - generic [ref=f1e187]:
+              - generic [ref=f1e188]:
+                - generic [ref=f1e189]: Court 1
+                - generic [ref=f1e190]: R2
+              - generic [ref=f1e191]:
+                - generic [ref=f1e192]:
+                  - generic [ref=f1e193]:
+                    - paragraph [ref=f1e194]: Clare Blue
+                    - paragraph [ref=f1e195]: Club A Test 09 & Club A Test 10
+                  - textbox "Clare Blue score" [ref=f1e196]
+                - generic [ref=f1e197]:
+                  - generic [ref=f1e198]:
+                    - paragraph [ref=f1e199]: Clare Gold
+                    - paragraph [ref=f1e200]: Club B Test 09 & Club B Test 10
+                  - textbox "Clare Gold score" [ref=f1e201]
+              - button "Save Result" [disabled]
+            - generic [ref=f1e202]:
+              - generic [ref=f1e203]:
+                - generic [ref=f1e204]: Court 2
+                - generic [ref=f1e205]: R2
+              - generic [ref=f1e206]:
+                - generic [ref=f1e207]:
+                  - generic [ref=f1e208]:
+                    - paragraph [ref=f1e209]: Clare Blue
+                    - paragraph [ref=f1e210]: Club A Test 11 & Club A Test 12
+                  - textbox "Clare Blue score" [ref=f1e211]
+                - generic [ref=f1e212]:
+                  - generic [ref=f1e213]:
+                    - paragraph [ref=f1e214]: Clare Gold
+                    - paragraph [ref=f1e215]: Club B Test 11 & Club B Test 12
+                  - textbox "Clare Gold score" [ref=f1e216]
+              - button "Save Result" [disabled]
+            - generic [ref=f1e217]:
+              - generic [ref=f1e218]:
+                - generic [ref=f1e219]: Court 3
+                - generic [ref=f1e220]: R2
+              - generic [ref=f1e221]:
+                - generic [ref=f1e222]:
+                  - generic [ref=f1e223]:
+                    - paragraph [ref=f1e224]: Clare Blue
+                    - paragraph [ref=f1e225]: Club A Test 13 & Club A Test 14
+                  - textbox "Clare Blue score" [ref=f1e226]
+                - generic [ref=f1e227]:
+                  - generic [ref=f1e228]:
+                    - paragraph [ref=f1e229]: Clare Gold
+                    - paragraph [ref=f1e230]: Club B Test 13 & Club B Test 14
+                  - textbox "Clare Gold score" [ref=f1e231]
+              - button "Save Result" [disabled]
+          - generic [ref=f1e232]: Round 2 ready · 4 courts · 16 players resting · 3 Round 1 scores still to enter
+          - button "Round in play" [disabled]
+        - group [ref=f1e237]:
+          - generic "PA & Announcements Open only when you need the microphone or an announcement. NOT TESTED" [ref=f1e238] [cursor=pointer]:
+            - generic [ref=f1e239]:
+              - paragraph [ref=f1e240]: PA & Announcements
+              - paragraph [ref=f1e241]: Open only when you need the microphone or an announcement.
+            - generic [ref=f1e242]: NOT TESTED
+        - group [ref=f1e246]:
+          - generic [ref=f1e248] [cursor=pointer]:
+            - paragraph [ref=f1e249]: Player Changes & Reserves
+            - paragraph [ref=f1e250]: Quick reserve handover, injury, withdrawal, replacement or late arrival.
+        - group [ref=f1e253]:
+          - generic [ref=f1e255] [cursor=pointer]:
+            - paragraph [ref=f1e256]: Court & Time Changes
+            - paragraph [ref=f1e257]: Use this if you lose or gain a court, or if less event time remains than planned.
+          - generic [ref=f1e261]:
+            - generic [ref=f1e262]:
+              - paragraph [ref=f1e263]: Preview the impact before changing anything
+              - paragraph [ref=f1e264]: Enter the courts actually available now and the minutes remaining. RallyHub will show how many future matches still fit, which matches would move, and whether any would have to be marked Not Played. Completed results are never changed.
+            - generic [ref=f1e265]:
+              - generic [ref=f1e266]:
+                - text: Courts available now
+                - spinbutton "3" [ref=f1e267]
+              - generic [ref=f1e268]:
+                - text: Minutes remaining
+                - spinbutton "e.g. 60" [ref=f1e269]: "180"
+              - button "Preview Impact" [ref=f1e270] [cursor=pointer]
+            - generic [ref=f1e271]: "Schedule updated: 30 future fixture positions changed; 11 marked Not Played. Event Pack marked out of date."
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f1e272]:
+        - generic [ref=f1e276]: "Schedule updated: 30 future fixture positions changed; 11 marked Not Played. Event Pack marked out of date."
+      - listitem [ref=f1e278]:
+        - generic [ref=f1e282]: 33 future matches fit within the approved 12-round event; 11 would be marked Not Played. Review before confirming.
+      - listitem [ref=f1e284]:
+        - generic [ref=f1e288]: 33 future matches fit within the approved 12-round event; 11 would be marked Not Played. Review before confirming.
+      - listitem:
+        - generic: Score saved
+      - listitem:
+        - generic: Score saved
 ```
 
 # Test source
 
 ```ts
+  138 |         next={...current,running:true,started_at:now()};
+  139 |       } else if (body.action === 'reset') {
+  140 |         next={phase:'ready',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round:Number(model.event.current_round||1)};
+  141 |       } else if (body.action === 'set_round_minutes') {
+  142 |         next={phase:'ready',running:false,remaining_seconds:Number(body.minutes)*60,started_at:null,round:Number(model.event.current_round||1)};
+  143 |       } else if (body.action === 'add_minute') {
+  144 |         next={...current,remaining_seconds:Number(current.remaining_seconds||0)+60};
+  145 |       } else if (body.action === 'adjust_break') {
+  146 |         next={...current,remaining_seconds:Math.max(0,Number(current.remaining_seconds||0)+Number(body.minutes||0)*60)};
+  147 |       }
+  148 |       model.event.timer_revision=Number(model.event.timer_revision||0)+1;
+  149 |       model.event.timer_state_json=JSON.stringify(next);
+  150 |       return { success:true, event:model.event, state:next, server_now:now() };
+  151 |     }
+  152 | 
+  153 |     if (name === 'updateClubChallengeRound') {
+  154 |       await sleep(260);
+  155 |       const round=Number(body.nextRound);const nextTimer={phase:'ready',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round};
+  156 |       Object.assign(model.event,{current_round:round,status:'in_progress',timer_state_json:JSON.stringify(nextTimer),timer_revision:Number(model.event.timer_revision||0)+1});
+  157 |       return {success:true,event:model.event,timer_state:nextTimer,timer_revision:model.event.timer_revision};
+  158 |     }
+  159 | 
+  160 |     if (name === 'updateClubChallengeSchedule') {
+  161 |       await sleep(420);
+  162 |       for(const c of body.changes||[]){const m=model.matches.find(x=>x.id===c.id);if(m)Object.assign(m,{round_number:Number(c.newRound),court_number:Number(c.newCourt),revision:Number(m.revision||0)+1});}
+  163 |       for(const matchId of body.dropIds||[]){const m=model.matches.find(x=>x.id===matchId);if(m)Object.assign(m,{status:'not_played',winner:'none',revision:Number(m.revision||0)+1});}
+  164 |       Object.assign(model.event,{courts:Number(body.courts),available_minutes:Number(body.availableMinutes),event_pack_stale:true});
+  165 |       return {success:true,event:model.event,changed:(body.changes||[]).length,dropped:(body.dropIds||[]).length,alreadyApplied:false};
+  166 |     }
+  167 | 
+  168 |     if (name === 'saveClubChallengeScore') {
+  169 |       await sleep(260);
+  170 |       const match=model.matches.find(m=>m.id===body.matchId); if(!match)return {error:'Match not found'};
+  171 |       if(Number(body.expectedRevision||0)!==Number(match.revision||0))return {conflict:true,error:'Revision conflict',match};
+  172 |       const a=Number(body.scoreA),b=Number(body.scoreB);Object.assign(match,{score_a:a,score_b:b,winner:a===b?'draw':a>b?'club_a':'club_b',status:a===b?'draw':'completed',revision:Number(match.revision||0)+1,scored_by_user_id:model.user.id,scored_at:now()});
+  173 |       return {success:true,match};
+  174 |     }
+  175 | 
+  176 |     if (name === 'populateClubChallengePracticeScenario') {
+  177 |       await sleep(650);
+  178 |       const normal=model.matches.filter(m=>!m.is_showcase).sort((a,b)=>a.round_number-b.round_number||a.court_number-b.court_number);
+  179 |       normal.forEach((m,i)=>Object.assign(m,{status:'completed',score_a:i%2===0?11:8,score_b:i%2===0?8:11,winner:i%2===0?'club_a':'club_b',revision:Number(m.revision||0)+1,scored_by_user_id:model.user.id,scored_at:now()}));
+  180 |       if(model.event.showcase_enabled){const a=model.participants.filter(p=>p.side==='club_a'),b=model.participants.filter(p=>p.side==='club_b');model.matches.push({id:'cc-showcase',tenant_id:model.event.tenant_id,challenge_event_id:model.event.id,tournament_id:model.event.tournament_id,draw_version:model.event.draw_version,round_number:13,court_number:1,match_number:49,club_a_participant_ids:[a[0].id,a[1].id],club_b_participant_ids:[b[0].id,b[1].id],club_a_names:[a[0].display_name,a[1].display_name],club_b_names:[b[0].display_name,b[1].display_name],status:'completed',score_a:15,score_b:13,winner:'club_a',revision:1,correction_count:0,is_showcase:true,scored_by_user_id:model.user.id,scored_at:now()});}
+  181 |       const winner=model.participants[0];model.votes=model.participants.filter(p=>p.id!==winner.id).slice(0,8).map((p,i)=>({id:`vote-${i+1}`,tenant_id:model.event.tenant_id,challenge_event_id:model.event.id,voter_identity_key:`practice:${p.id}`,voter_participant_id:p.id,nominee_participant_id:winner.id,access_route:'guest',cast_at:now(),valid:true}));
+  182 |       const maxRound=Math.max(...normal.map(m=>Number(m.round_number||0)));Object.assign(model.event,{status:'completed',current_round:maxRound,finalised_at:now(),showcase_resolution_method:'showcase_final',showcase_resolved_winner:'club_a',pot_status:'revealed',pot_winner_participant_ids:[winner.id],pot_revealed_at:now(),timer_state_json:JSON.stringify({phase:'play',running:false,remaining_seconds:0,started_at:null,round:maxRound}),timer_revision:Number(model.event.timer_revision||0)+1});model.tournament.status='Completed';
+  183 |       return {success:true,normalMatches:normal.length,showcase:true,practiceVotes:model.votes.length,winner:'club_a'};
+  184 |     }
+  185 | 
+  186 |     if (name === 'updateClubChallengePot') {
+  187 |       await sleep(180); if(body.action==='open')model.event.pot_status='open';if(body.action==='close')model.event.pot_status='closed';return {success:true,event:model.event};
+  188 |     }
+  189 |     if (name === 'castClubChallengePotVote') {
+  190 |       await sleep(180); if(body.voterParticipantId===body.nomineeParticipantId)return {error:'Players cannot vote for themselves.'};if(model.votes.some(v=>v.voter_participant_id===body.voterParticipantId&&v.valid!==false))return {error:'This player has already voted.'};const v={id:id('vote'),tenant_id:model.event.tenant_id,challenge_event_id:model.event.id,voter_identity_key:`participant:${body.voterParticipantId}`,voter_participant_id:body.voterParticipantId,nominee_participant_id:body.nomineeParticipantId,access_route:'logged_in',cast_at:now(),valid:true};model.votes.push(v);return {success:true,vote:v};
+  191 |     }
+  192 | 
+  193 |     if (name === 'manageClubChallengePublicLinks') {
   194 |       return {success:true,displayToken:'e2e-display-token',votingToken:'e2e-vote-token',voterCodes:model.participants.map(p=>({participantId:p.id,displayName:p.display_name,code:p.guest_access_token||'TESTCODE'}))};
   195 |     }
   196 | 
@@ -256,7 +383,8 @@ Call log:
   235 |   });
   236 | }
   237 | 
-  238 | function metric(report,name,value,max){report[name]=value;expect(value,`${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);}
+> 238 | function metric(report,name,value,max){report[name]=value;expect(value,`${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);}
+      |                                                                                                                            ^ Error: schedule_change_ack_ms should be <= 350ms but was 616ms
   239 | async function expectNoHorizontalOverflow(page){const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);expect(overflow,'mobile page should not require horizontal body scrolling').toBeLessThanOrEqual(1);}
   240 | 
   241 | test.use({ viewport:{width:390,height:844} });
@@ -312,8 +440,7 @@ Call log:
   291 |   for(const court of [2,3,4]){await page.getByTestId(`cc-score-r1-c${court}-a`).fill('11');await page.getByTestId(`cc-score-r1-c${court}-b`).fill('7');await page.getByTestId(`cc-save-score-r1-c${court}`).click();await expect(page.getByTestId(`cc-score-card-r1-c${court}`)).toBeHidden({timeout:1800});}
   292 |   await expect(page.getByText('Earlier scores still to enter')).toBeHidden({timeout:1800});await expect(page.getByText('ready',{exact:true})).toBeVisible();await expect(page.getByText('10:00').first()).toBeVisible();await expect(page.getByText('0/4').first()).toBeVisible();report.pending_scores_cleared_during_next_round=true;report.round_transition_timer_reset=true;
   293 | 
-> 294 |   await page.locator('#cc-court-time-controls > summary').click();await page.getByTestId('cc-courts-now').fill('3');await page.getByTestId('cc-minutes-remaining').fill('180');await page.getByTestId('cc-preview-schedule-change').click();await expect(page.getByText(/Proposed change:.*0 would be marked Not Played/)).toBeVisible();const scheduleBefore=model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length;started=Date.now();await page.getByTestId('cc-confirm-schedule-change').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Applying court & time changes… command sent')).toBeVisible({timeout:300});metric(report,'schedule_change_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-schedule-change-status')).toContainText('Schedule updated:',{timeout:1800});expect(model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length-scheduleBefore).toBe(1);expect(model.event.courts).toBe(3);expect(model.event.event_pack_stale).toBe(true);report.schedule_change_double_tap_calls=1;
-      |                                                                                                                                                                                                                                                                                                                            ^ Error: expect(locator).toBeVisible() failed
+  294 |   await page.locator('#cc-court-time-controls > summary').click();await page.getByTestId('cc-courts-now').fill('3');await page.getByTestId('cc-minutes-remaining').fill('180');await page.getByTestId('cc-preview-schedule-change').click();await expect(page.getByText(/Proposed change:.*would be marked Not Played/)).toBeVisible();expect(model.event.courts).toBe(4);await page.getByRole('button',{name:'Cancel',exact:true}).click();await expect(page.getByText(/Preview cancelled/)).toBeVisible();expect(model.event.courts).toBe(4);report.schedule_preview_cancel_is_safe=true;await page.getByTestId('cc-preview-schedule-change').click();await expect(page.getByText(/Proposed change:/)).toBeVisible();const scheduleBefore=model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length;started=Date.now();await page.getByTestId('cc-confirm-schedule-change').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Applying court & time changes… command sent')).toBeVisible({timeout:300});metric(report,'schedule_change_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-schedule-change-status')).toContainText('Schedule updated:',{timeout:1800});expect(model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length-scheduleBefore).toBe(1);expect(model.event.courts).toBe(3);expect(model.event.event_pack_stale).toBe(true);report.schedule_change_double_tap_calls=1;
   295 | 
   296 |   await page.getByRole('button',{name:'Live Event View'}).evaluate(el=>el.click());await expect(page.getByText('On Court Now')).toBeVisible();await expect(page.getByText('Resting This Round')).toBeVisible();await expect(page.getByText('Up Next')).toBeVisible();await expect(page.getByRole('button',{name:'Exit Display'})).toBeVisible();report.internal_hall_display=true;await page.getByRole('button',{name:'Exit Display'}).evaluate(el=>el.click());await expect(page.getByTestId('cc-tab-simulator')).toBeVisible({timeout:1500});
   297 | 
@@ -358,41 +485,4 @@ Call log:
   336 |     {id:'b-d',side:'club_b',display_name:'Declan Player',event_rank:2,roster_role:'rotation',status:'active'},
   337 |   ];
   338 |   const matches=[
-  339 |     {id:'r1c1',round_number:1,court_number:1,status:'completed',winner:'club_a',score_a:11,score_b:8,is_showcase:false,club_a_names:['Aoife Player','Brian Player'],club_b_names:['Cara Player','Declan Player'],club_a_participant_ids:['a-a','a-b'],club_b_participant_ids:['b-c','b-d']},
-  340 |     {id:'r2c1',round_number:2,court_number:1,status:'completed',winner:'club_b',score_a:7,score_b:11,is_showcase:false,club_a_names:['Zara Player','Aoife Player'],club_b_names:['Eoin Player','Cara Player'],club_a_participant_ids:['a-z','a-a'],club_b_participant_ids:['b-e','b-c']},
-  341 |     {id:'r2c2',round_number:2,court_number:2,status:'completed',winner:'club_a',score_a:11,score_b:9,is_showcase:false,club_a_names:['Brian Player','Zara Player'],club_b_names:['Declan Player','Eoin Player'],club_a_participant_ids:['a-b','a-z'],club_b_participant_ids:['b-d','b-e']},
-  342 |   ];
-  343 |   const event={id:'completed-player-link',status:'completed',club_a_name:'Banner Strikers',club_b_name:'Banner Smashers',current_round:2,planned_rounds:2,courts:2,timer_state_json:JSON.stringify({phase:'play',running:false,remaining_seconds:0,started_at:null,round:2}),play_minutes:10,changeover_minutes:2,normal_match_type:'timed',timed_draws_allowed:true,include_break:false,pot_enabled:true,pot_status:'open',pot_voting_token:'ccv_integrated_test',pot_vote_closes_at:null,win_points:2,draw_points:1,loss_points:0};
-  344 |   const calls=[];
-  345 |   await page.route('**/api/apps/**',async route=>{const req=route.request(),path=new URL(req.url()).pathname;if(path.includes('/analytics/'))return json(route,{});const marker=`/api/apps/${APP_ID}/functions/`;const i=path.indexOf(marker);if(i<0)return json(route,{});const name=decodeURIComponent(path.slice(i+marker.length).split('/')[0]);let body={};try{body=req.postDataJSON()||{};}catch{}calls.push({name,body});if(name==='getPublicClubChallengeDisplay')return json(route,{success:true,event,participants,matches});if(name==='castPublicClubChallengePotVote'){await sleep(220);return json(route,{success:true,votesRecorded:2,sides:['club_a','club_b']});}return json(route,{});});
-  346 |   await page.goto('/e2e/clubChallengePublicDisplayHarness.html');
-  347 |   await expect(page.getByText('Final Result',{exact:true})).toBeVisible();
-  348 |   await expect(page.getByRole('button',{name:'Final',exact:true})).toBeVisible();
-  349 | 
-  350 |   await page.getByRole('button',{name:'Teams',exact:true}).click();await expect(page.getByRole('heading',{name:'Teams'})).toBeVisible();
-  351 |   const aTeam=page.getByRole('heading',{name:'Banner Strikers'}).locator('xpath=../..');const aText=await aTeam.innerText();expect(aText.indexOf('Aoife Player')).toBeLessThan(aText.indexOf('Brian Player'));expect(aText.indexOf('Brian Player')).toBeLessThan(aText.indexOf('Zara Player'));
-  352 | 
-  353 |   await page.getByRole('button',{name:'Event Info',exact:true}).click();await expect(page.getByRole('heading',{name:'Interclub Event Information'})).toBeVisible();await expect(page.getByText('2 courts, 2 rounds')).toBeVisible();await expect(page.getByRole('heading',{name:'Interclub Etiquette'})).toBeVisible();
-  354 | 
-  355 |   await page.getByRole('button',{name:'Summary',exact:true}).click();await expect(page.getByRole('heading',{name:'Interclub Summary'})).toBeVisible();await expect(page.getByRole('heading',{name:'Round 1'})).toBeVisible();await expect(page.getByRole('heading',{name:'Round 2'})).toBeVisible();
-  356 | 
-  357 |   await page.getByRole('button',{name:'Vote · Open',exact:true}).click();await expect(page.getByRole('heading',{name:'Players of the Tournament'})).toBeVisible();const combos=page.getByRole('combobox');await combos.nth(0).selectOption('a-a');await combos.nth(1).selectOption('b-c');const before=calls.filter(c=>c.name==='castPublicClubChallengePotVote').length;await page.getByRole('button',{name:'Submit My Votes'}).evaluate(el=>{el.click();el.click();});await expect(page.getByText('Votes recorded')).toBeVisible({timeout:1200});expect(calls.filter(c=>c.name==='castPublicClubChallengePotVote').length-before).toBe(1);
-  358 |   await page.getByRole('button',{name:'Back to Summary'}).click();await expect(page.getByRole('heading',{name:'Interclub Summary'})).toBeVisible();await page.getByRole('button',{name:'Final',exact:true}).click();await expect(page.getByText('Final Result',{exact:true})).toBeVisible();await expectNoHorizontalOverflow(page);
-  359 |   const report={final_landing:true,alphabetical_public_teams:true,event_info:true,round_summary:true,integrated_vote:true,return_to_summary:true,return_to_final:true};console.log(`COMPLETED PLAYER LINK ROBOT REPORT\n${JSON.stringify(report,null,2)}`);await testInfo.attach('completed-player-link-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
-  360 | });
-  361 | 
-  362 | test('Live recovery robot: stale timer is silent, break controls work, and host returns to the next round',async({page},testInfo)=>{
-  363 |   const model=createClubChallengeModel();await installHallDeviceMocks(page);await installClubChallengeBackend(page,model);
-  364 |   const now=new Date(),start=new Date(Date.now()-90*60000);model.tournament.start_date=now.toISOString().slice(0,10);model.tournament.status='In Progress';
-  365 |   const hhmm=`${String(start.getHours()).padStart(2,'0')}:${String(start.getMinutes()).padStart(2,'0')}`;
-  366 |   model.event={id:'cc-live-recovery',tenant_id:model.tournament.tenant_id,tournament_id:model.tournament.id,club_a_name:'Clare Blue',club_b_name:'Clare Gold',status:'in_progress',current_round:6,planned_rounds:12,courts:4,available_minutes:180,scheduled_start_time:hhmm,actual_started_at:now.toISOString(),play_minutes:10,changeover_minutes:2,include_break:true,break_minutes:20,break_after_round:6,normal_match_type:'timed',timed_draws_allowed:true,showcase_enabled:true,pot_enabled:false,win_points:2,draw_points:1,loss_points:0,timer_revision:2,timer_state_json:JSON.stringify({phase:'play',running:false,remaining_seconds:0,started_at:null,round:6}),event_pack_stale:false};
-  367 |   model.participants=Array.from({length:32},(_,i)=>({id:`lrp-${i+1}`,challenge_event_id:model.event.id,tournament_id:model.tournament.id,side:i<16?'club_a':'club_b',display_name:`Live Player ${String(i+1).padStart(2,'0')}`,event_rank:(i%16)+1,roster_role:'rotation',status:'active',available_from_round:1}));
-  368 |   for(const round of [6,7])for(let court=1;court<=4;court++){const ai=(court-1)*2,bi=16+(court-1)*2;model.matches.push({id:`lr-r${round}-c${court}`,challenge_event_id:model.event.id,tournament_id:model.tournament.id,round_number:round,court_number:court,status:'scheduled',winner:'none',revision:0,is_showcase:false,club_a_participant_ids:[model.participants[ai].id,model.participants[ai+1].id],club_b_participant_ids:[model.participants[bi].id,model.participants[bi+1].id],club_a_names:[model.participants[ai].display_name,model.participants[ai+1].display_name],club_b_names:[model.participants[bi].display_name,model.participants[bi+1].display_name]});}
-  369 |   await page.goto('/e2e/clubChallengeHarness.html');await page.getByTestId('cc-tab-live').click();await expect(page.getByText('Round at a Glance')).toBeVisible();await expect(page.getByText('RECOVERY NEEDED')).toBeVisible();
-  370 |   await page.waitForTimeout(400);expect((await page.evaluate(()=>window.__ccDevice.speech)).length).toBe(0);
-  371 |   await page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:/^Start 20-min Break/}).click();await expect(page.getByText('Break now',{exact:false}).first()).toBeVisible({timeout:1600});await expect(page.getByText('20:00').first()).toBeVisible();
-  372 |   const fiveButtons=page.getByRole('button',{name:'5 min'});await expect(fiveButtons).toHaveCount(4);await fiveButtons.nth(0).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(900);await fiveButtons.nth(1).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(1200);
-  373 |   await page.getByRole('button',{name:/End Break Early/}).first().click();await expect(page.getByText('Round 7/12',{exact:true})).toBeVisible({timeout:1600});await expect(page.getByText('Up next · Round 8')).toBeVisible();await expectNoHorizontalOverflow(page);
-  374 |   const report={historic_refresh_silent:true,recovery_guide:true,break_minus:true,break_plus:true,end_break_to_next_round:true};console.log(`LIVE RECOVERY ROBOT REPORT\n${JSON.stringify(report,null,2)}`);await testInfo.attach('live-recovery-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
-  375 | });
 ```
