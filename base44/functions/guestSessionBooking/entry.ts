@@ -305,7 +305,7 @@ Deno.serve(async(req)=>{
           const now=new Date().toISOString();
           let updated=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
           const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
-          if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),external_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||''});
+          if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:checkout?.provider||'sumup',provider_account_id:checkout?.merchant_account_id||'',provider_transaction_id:checkout?.transaction_id||checkout?.transactions?.[0]?.id||'',provider_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||'',provider_status:checkout?.status||'PAID',external_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||''});
           updated=await sendConfirmations(base44,session,updated);
           return Response.json({success:true,status:'paid',booking:updated});
         }
@@ -340,7 +340,7 @@ Deno.serve(async(req)=>{
             const now=new Date().toISOString();
             booking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
             const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
-            if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),external_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||''});
+            if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:checkout?.provider||'sumup',provider_account_id:checkout?.merchant_account_id||'',provider_transaction_id:checkout?.transaction_id||checkout?.transactions?.[0]?.id||'',provider_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||'',provider_status:checkout?.status||'PAID',external_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||''});
           }else if(status==='FAILED'||status==='EXPIRED'){
             booking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:status.toLowerCase(),booking_status:'pending_payment'});
           }
@@ -454,7 +454,7 @@ Deno.serve(async(req)=>{
       tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,
       purpose_type:'booking',purpose_id:booking.id,payment_type:'guest_session',
       amount:Number(session.fee_amount||0),currency:session.currency||'EUR',
-      payment_method:session.payment_method,payment_status:'pending',
+      payment_method:session.payment_method,payment_status:'pending',provider:session.payment_method,amount_refunded:0,
       source_system:'rallyhub_guest_session',source_row:booking.id,
       notes:`${session.venue_name} · ${session.session_date} · ${session.start_time}`,
     });
