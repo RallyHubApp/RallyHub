@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
-import { createCheckout, retrievePayment, refundPayment, providerConfigured, type ProviderAccount } from './payments.ts';
+import { createCheckout, retrievePayment, refundPayment, providerConfigured, verifyProviderConnection, type ProviderAccount } from './payments.ts';
 
 const WAIVER_VERSION='clare-guest-session-waiver-v1-2026-09';
 const CODE_VERSION='clare-guest-session-code-v1-2026-09';
@@ -63,6 +63,19 @@ function safeSession(s:any){
     sessionLabel:s.session_label||'',capacity:s.capacity||null,feeAmount:Number(s.fee_amount||0),
     currency:s.currency||'EUR',paymentMethod:s.payment_method,
   };
+}
+async function clubBrand(base44:any,clubId:string){
+  try{
+    const rows=await base44.asServiceRole.entities.Club.filter({id:clubId},'-updated_date',5);
+    const club=rows?.[0]||null;
+    if(!club)return null;
+    return {
+      id:club.id,name:club.name||'',
+      logo_url:club.logo_url||'',
+      primary_colour:club.primary_colour||'',
+      secondary_colour:club.secondary_colour||'',
+    };
+  }catch{return null}
 }
 function legal(){
   return {
@@ -230,10 +243,29 @@ Deno.serve(async(req)=>{
       const tenantId=clean(user.active_tenant_id,100);
       const clubId=clean(user.active_club_id,100);
       if(!tenantId||!clubId)return Response.json({error:'Choose an active RallyHub club first.'},{status:400});
-      const sumupConfigured=providerConfigured('sumup');
+      const sumupGateway=await gatewayAccount(base44,tenantId,clubId,'sumup');
+      let sumupConfigured=providerConfigured('sumup',sumupGateway?.account||null);
+      let sumupMerchantName='';
+      if(sumupConfigured){
+        const verification=await verifyProviderConnection('sumup',sumupGateway?.account||null);
+        sumupConfigured=verification.ok===true;
+        sumupMerchantName=clean(verification.merchantName,160);
+        if(sumupGateway?.row){
+          const gatewayUpdates:any={
+            status:verification.ok?'connected':'error',
+            last_verified_at:new Date().toISOString(),
+            supports_payments:true,supports_refunds:true,
+          };
+          if(verification.ok){
+            if(verification.merchantAccountId)gatewayUpdates.merchant_account_id=verification.merchantAccountId;
+            if(!sumupGateway.row.connected_at)gatewayUpdates.connected_at=new Date().toISOString();
+          }
+          await base44.asServiceRole.entities.PaymentGatewayAccount.update(sumupGateway.row.id,gatewayUpdates);
+        }
+      }
 
       if(action==='admin_templates'){
-        return Response.json({success:true,templates:Object.values(TEMPLATES).map(templateOut),sumupConfigured});
+        return Response.json({success:true,templates:Object.values(TEMPLATES).map(templateOut),sumupConfigured,sumupMerchantName});
       }
 
       if(action==='admin_list'){
@@ -443,7 +475,7 @@ Clare Pickleball`,
     const remaining=cap>0?Math.max(0,cap-active.length):null;
 
     if(action==='public_get'){
-      return Response.json({success:true,session:safeSession(session),legal:legal(),spotsRemaining:remaining});
+      return Response.json({success:true,session:safeSession(session),clubBrand:await clubBrand(base44,session.club_id),legal:legal(),spotsRemaining:remaining});
     }
 
     if(action==='public_status'){
