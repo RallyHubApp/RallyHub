@@ -225,56 +225,47 @@ function MasterSchedulePage({ event, tournament, matches, participants, rounds, 
   </Page>;
 }
 
-function RosterTable({ event, side, players }) {
+function RosterTable({ event, side, players, order='ranked' }) {
   const isA = side === 'club_a';
   const name = isA ? event.club_a_name : event.club_b_name;
   const logo = isA ? event.club_a_logo_url : event.club_b_logo_url;
   const primary = isA ? event.club_a_primary_colour : event.club_b_primary_colour;
   const secondary = isA ? event.club_a_secondary_colour : event.club_b_secondary_colour;
-  const rotation = players.filter(p => (p.roster_role || 'rotation') !== 'reserve').sort((a,b)=>Number(a.event_rank||999)-Number(b.event_rank||999));
-  const reserves = players.filter(p => (p.roster_role || 'rotation') === 'reserve').sort((a,b)=>Number(a.event_rank||999)-Number(b.event_rank||999));
+  const alphabetical = (a,b) => String(a.display_name || '').localeCompare(String(b.display_name || ''), 'en', { sensitivity:'base' });
+  const ranked = (a,b) => Number(a.event_rank || 999) - Number(b.event_rank || 999);
+  const sorter = order === 'alphabetical' ? alphabetical : ranked;
+  const rotation = players.filter(p => (p.roster_role || 'rotation') !== 'reserve').sort(sorter);
+  const reserves = players.filter(p => (p.roster_role || 'rotation') === 'reserve').sort(sorter).slice(0,4);
+  const showRank = order === 'ranked';
 
-  return <div className="rhpp-roster">
+  return <div className={`rhpp-roster rhpp-roster-${order}`}>
     <div className="rhpp-roster-title" style={{background:secondary || '#eef4f8', borderColor:primary || BLUE}}>
       {logo && <img src={logo} alt="" />}<strong>{name}</strong>
     </div>
-    <table><thead><tr><th>No.</th><th>Player Name</th><th>M / F</th><th>Notes</th></tr></thead>
+    <table><thead><tr>{showRank && <th>No.</th>}<th>Player Name</th><th>M / F</th><th>Notes</th></tr></thead>
       <tbody>{Array.from({length:Math.max(16, rotation.length)},(_,i)=>{
         const p=rotation[i];
-        return <tr key={i}><td>{p?.event_rank || i+1}</td><td>{p?.display_name || ''}</td><td>{p ? shortGender(p.gender) : ''}</td><td>{p && p.status !== 'active' ? p.status : ''}</td></tr>;
+        return <tr key={i}>{showRank && <td>{p?.event_rank || i+1}</td>}<td>{p?.display_name || ''}</td><td>{p ? shortGender(p.gender) : ''}</td><td>{p && p.status !== 'active' ? p.status : ''}</td></tr>;
       })}</tbody>
     </table>
     <div className="rhpp-reserve-title">Reserves</div>
-    <table className="rhpp-reserves"><tbody>{Array.from({length:Math.max(4,reserves.length)},(_,i)=>{
+    <table className="rhpp-reserves"><tbody>{Array.from({length:4},(_,i)=>{
       const p=reserves[i]; return <tr key={i}><td>R{i+1}</td><td>{p?.display_name || ''}</td></tr>;
     })}</tbody></table>
   </div>;
 }
 
-function TeamRosterPage({ event, tournament, participants, roundsCount, courtsCount }) {
+function TeamRosterPage({ event, tournament, participants, order='ranked' }) {
   const a = participants.filter(p => p.side === 'club_a');
   const b = participants.filter(p => p.side === 'club_b');
-  const matchFormat = event.normal_match_type === 'timed'
-    ? `Timed · ${event.play_minutes || 0} min${event.timed_draws_allowed === false ? ' · no draws' : ' · draws allowed'}`
-    : `First to ${event.normal_target_points || 11} · win by ${event.normal_win_by || 1}`;
+  const alphabetical = order === 'alphabetical';
+  const title = alphabetical ? 'Team Rosters · Alphabetical Hall Display' : 'Team Roster & Playing Order · Host Copy';
 
   return <Page className="rhpp-roster-page">
-    <StandardHeader event={event} tournament={tournament} title="Team Roster & Playing Order" />
+    <StandardHeader event={event} tournament={tournament} title={title} />
     <div className="rhpp-roster-layout">
-      <RosterTable event={event} side="club_a" players={a} />
-      <RosterTable event={event} side="club_b" players={b} />
-      <aside className="rhpp-info-panel">
-        <h3>Event Information</h3>
-        <dl>
-          <dt>Date</dt><dd>{fmtDate(tournament?.start_date)}</dd>
-          <dt>Venue</dt><dd>{tournament?.location || '________________'}</dd>
-          <dt>Format</dt><dd>{courtsCount} courts · {roundsCount} rounds</dd>
-          <dt>Match format</dt><dd>{matchFormat}</dd>
-          <dt>Break</dt><dd>{event.include_break ? `${event.break_minutes} minutes after Round ${event.break_after_round}` : 'No scheduled break'}</dd>
-          <dt>Team size</dt><dd>{a.filter(p => (p.roster_role || 'rotation') !== 'reserve').length} / {b.filter(p => (p.roster_role || 'rotation') !== 'reserve').length} players + reserves</dd>
-        </dl>
-        <div className="rhpp-day-notes"><h3>Notes / Changes on the Day</h3><i/><i/><i/><i/></div>
-      </aside>
+      <RosterTable event={event} side="club_a" players={a} order={order} />
+      <RosterTable event={event} side="club_b" players={b} order={order} />
     </div>
     <Footer />
   </Page>;
