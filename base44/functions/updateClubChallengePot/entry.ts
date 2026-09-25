@@ -52,7 +52,8 @@ Deno.serve(async (req) => {
     let winnerSides:any = null;
 
     if (action === 'open') {
-      if (event.pot_status !== 'closed') return Response.json({ error:'Voting can only be opened from Closed.' }, { status:409 });
+      const currentPotStatus = event.pot_status || 'closed';
+      if (currentPotStatus !== 'closed') return Response.json({ error:'Voting can only be opened from Closed.' }, { status:409 });
       const rawDuration = body.durationMinutes;
       const manual = rawDuration === null || rawDuration === undefined || rawDuration === '' || rawDuration === 'manual';
       const durationMinutes = manual ? null : Math.max(1, Math.min(60, Number(rawDuration)));
