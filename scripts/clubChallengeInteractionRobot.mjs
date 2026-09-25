@@ -78,7 +78,7 @@ check('test mode: full population includes sample POT voting', contains(fullPrac
 check('test mode: visual bulk population is one browser function invocation', (ui.match(/populateClubChallengePracticeScenario/g)||[]).length === 1);
 
 // 3. Team build + ranking journey: pooled import, drag/drop and one-save organisation.
-check('host: team builder has a shared Player Pool', contains(ui,'Player Pool') && contains(ui,'Import Spond Event'));
+check('host: Unassigned Pool is available on demand rather than permanently occupying a team column', contains(ui,"const [poolOpen, setPoolOpen] = useState(false)") && contains(ui,'Unassigned Pool') && contains(ui,"poolOpen && lane('pool','Player Pool',lanes.pool)"));
 check('host: teams and rankings use cross-column drag/drop', contains(ui,'DragDropContext') && contains(ui,"Droppable droppableId={id}") && contains(ui,"club_a") && contains(ui,"club_b"));
 check('host: team names are editable before saving', contains(ui,'Team name') && contains(ui,'Save Teams & Rankings'));
 check('host: team rank number is visually prominent', contains(ui,'rounded-full bg-primary text-primary-foreground'));
@@ -119,8 +119,11 @@ check('sound: external mic selection uses direct capture compatibility mode', co
 check('sound: live PA and RallyHub-generated audio volumes are clearly distinguished', contains(ui,'Live PA mic volume') && contains(ui,'RallyHub alerts & voice volume'));
 check('sound: mobile audio is unlocked from the host play gesture', contains(ui,'await unlockHallAudio()'));
 check('sound: wake lock is requested during the authoritative timer', contains(ui,"navigator.wakeLock.request('screen')"));
-check('sound: one-minute, 30-second, 10-second and five-second countdown cues exist', contains(ui,'One minute remaining.') && contains(ui,'Thirty seconds.') && contains(ui,'Ten seconds.') && contains(ui,'timerRemaining <= 5'));
-check('sound: round-end cue asks for scores', contains(ui,'Round finished. Please give your scores.'));
+check('sound: legacy one-minute, 30-second and 10-second warnings are removed', !contains(ui,'One minute remaining.') && !contains(ui,'Thirty seconds.') && !contains(ui,'Ten seconds.'));
+check('sound: final countdown is only 5, 4, 3, 2, 1', contains(ui,'timerRemaining <= 5 && timerRemaining > 0'));
+check('sound: round-end cue asks for scores without replaying the round-finished speech', contains(ui,"? 'Please hand in your scores.'") && !contains(ui,'Round finished. Please give your scores.'));
+check('sound: historic timer state cannot speak merely because the host reloads or refreshes', contains(ui,'timerSpeechArmedRef.current') && contains(ui,"!['in_progress','paused'].includes(event?.status)"));
+check('sound: round start clearly repeats the full round announcement', contains(ui,'${label}. ${label} starting now. ${label} starting now.'));
 check('Base44 control: timer actions are single-flight', contains(ui,'timerCommandRef.current'));
 check('Base44 control: major sporting actions are single-flight', contains(ui,'sportingActionRef.current'));
 check('Base44 control: team assignment and ranking save in one browser function call', contains(ui,"action:'organise_teams'") && !contains(ui,'Promise.all(ordered.map'));
@@ -129,6 +132,10 @@ check('Base44 control: unactivated Reserves are excluded from authoritative draw
 check('Base44 control: one-game rotation spread is accepted but wider unfairness is rejected', contains(drawFn,'aSpread > 1 || bSpread > 1') && contains(drawFn,'fairness.balancedGames'));
 check('Base44 control: approve/start route through authorised event backend', contains(ui,"action:'approve_draw'") && contains(ui,"action:'start'"));
 check('Base44 control: public voting double-tap is single-flight', contains(publicVote,'savingRef.current'));
+check('Base44 control: public player polling is single-flight and deliberately de-synchronised', contains(publicDisplay,'loadInFlightRef.current') && contains(publicDisplay,'pollJitterRef') && contains(publicDisplay,'18000'));
+check('Base44 control: host queries do not refetch on every window focus', contains(ui,'refetchOnWindowFocus:false'));
+check('Base44 control: authoritative host sync is serial rather than a four-request burst', contains(ui,'await refetchEvent();') && contains(ui,'await refetchParticipants();') && contains(ui,'await refetchMatches();') && !contains(ui,'Promise.all([refetchEvent(), refetchParticipants(), refetchMatches()'));
+check('Base44 control: successful score saves merge returned match locally instead of forcing another Base44 read', contains(ui,'mergeSavedMatch') && contains(ui,'res.data?.match || null'));
 check('busy-hall UX: accepted host command stays visibly acknowledged', contains(ui,'RallyHub has accepted your tap'));
 
 // 6. Scorer perspective.
@@ -149,7 +156,7 @@ check('what-if: activated reserves and cover players are visibly labelled withou
 check('what-if: player-control changes are protected from duplicate taps', contains(ui,'playerControlBusy') && contains(ui,'sportingActionRef.current || playerControlBusy'));
 check('busy-hall UX: sticky host bar keeps round, timer and scores visible', contains(ui,'data-testid="cc-sticky-host-bar"') && contains(ui,"data-pinned={hostBarPinned ? 'true' : 'false'}") && contains(ui,"hostBarPinned && 'fixed z-20'") && contains(ui,'scores saved'));
 check('busy-hall UX: PA is collapsible during normal scoring', contains(ui,'id="cc-pa-panel"') && contains(ui,'Open only when you need the microphone or an announcement.'));
-check('busy-hall UX: player controls are separate and discoverable', contains(ui,'id="cc-player-controls"') && contains(ui,'Player Controls'));
+check('busy-hall UX: reserve changes are surfaced directly and detailed player controls remain available', contains(ui,'Quick Reserve Handover') && contains(ui,'id="cc-player-controls"') && contains(ui,'Reserve / Player Change'));
 check('what-if: registered replacement candidates can be offered before manual entry', contains(participantFn,"'replacement_candidates'") && contains(ui,'Registered available player'));
 check('what-if: changeover is state-gated so it cannot replace the initial play timer', contains(ui,'changeoverAvailable') && contains(ui,'Start Play first. Changeover becomes available'));
 check('what-if: late arrival remains explicit', contains(participantFn,"'late_arrival'"));
@@ -168,6 +175,10 @@ check('what-if: court/time confirm blocks duplicate host taps', contains(ui,'eve
 check('what-if: repeated schedule apply is server-idempotent after success', contains(scheduleFn,'alreadyApplied:true') && contains(scheduleFn,'sameEventSettings') && contains(scheduleFn,'changesAlreadyApplied'));
 check('what-if: finalisation blocks unresolved matches', contains(finaliseFn,'unresolved'));
 check('what-if: finalisation checks POT open state', contains(finaliseFn,'pot_status'));
+check('live flow: the host can prepare the next round after play ends even with scores still pending', contains(ui,'canPrepareNextRound') && contains(ui,'allowPendingScores:true') && contains(ui,'Earlier scores still to enter'));
+check('late-start intelligence: setup stores hall booking start and event start stores actual start', contains(ui,'Hall booking start') && contains(eventFn,'actual_started_at'));
+check('late-start intelligence: live host gets a continuously recalculated finish-on-time guide', contains(ui,'Finish-on-Time Guide') && contains(ui,'projectedFinish') && contains(ui,'Recommended recovery'));
+check('post-event voting: completed events can still open, close and reveal POT before archive', contains(ui,'const canManagePot') && contains(ui,"event.status !== 'archived'"));
 
 // 8. Voting all the way to the end.
 check('player: public voting asks voter identity', /Select your name|Who are you|Voting player/.test(publicVote));
