@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const { eventId, action } = body;
-    if (!['open','close','reveal','extend','reset','tiebreak'].includes(action)) return Response.json({ error:'Invalid POT action.' }, { status:400 });
+    if (!['open','close','reveal','extend','reset','tiebreak','calculate_points'].includes(action)) return Response.json({ error:'Invalid player-award action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
       const durationMinutes = manual ? null : Math.max(1, Math.min(60, Number(rawDuration)));
       if (!manual && !Number.isFinite(durationMinutes)) return Response.json({ error:'Voting duration is invalid.' }, { status:400 });
       update = {
+        pot_method:'vote',
         pot_status:'open',
         pot_winner_participant_ids:[],
         pot_revealed_at:null,
@@ -111,6 +112,7 @@ Deno.serve(async (req) => {
         invalidated += 1;
       }
       update = {
+        pot_method:'none',
         pot_status:'closed',
         pot_winner_participant_ids:[],
         pot_revealed_at:null,
@@ -130,6 +132,44 @@ Deno.serve(async (req) => {
         note:'Voting reset by host. Previous ballots retained as invalid audit records.'
       });
       return Response.json({ success:true, event:updated, invalidatedVotes:invalidated });
+    } else if (action === 'calculate_points') {
+      if (!['completed','archived'].includes(event.status)) return Response.json({ error:'Highest scorers can only be calculated after the event is completed.' }, { status:409 });
+      const [matches, participants] = await Promise.all([
+        base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300),
+        base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100)
+      ]);
+      const byId = new Map(participants.map((p:any) => [p.id, p]));
+      const stats:any = {};
+      const ensure = (id:string, side:string) => {
+        if (!stats[id]) stats[id] = { participantId:id, side, gamesPlayed:0, pointsFor:0, pointsAgainst:0, wins:0, draws:0, losses:0, pointDiff:0 };
+        return stats[id];
+      };
+      const terminal = new Set(['completed','draw','retired','forfeit']);
+      for (const match of matches) {
+        if (match.is_showcase || !terminal.has(match.status)) continue;
+        const scoreA = Number(match.score_a || 0), scoreB = Number(match.score_b || 0);
+        for (const id of (match.club_a_participant_ids || [])) {
+          const p:any = byId.get(id); if (!p || p.side !== 'club_a') continue;
+          const s = ensure(id, 'club_a'); s.gamesPlayed++; s.pointsFor += scoreA; s.pointsAgainst += scoreB; if (match.winner === 'club_a') s.wins++; else if (match.winner === 'draw') s.draws++; else s.losses++;
+        }
+        for (const id of (match.club_b_participant_ids || [])) {
+          const p:any = byId.get(id); if (!p || p.side !== 'club_b') continue;
+          const s = ensure(id, 'club_b'); s.gamesPlayed++; s.pointsFor += scoreB; s.pointsAgainst += scoreA; if (match.winner === 'club_b') s.wins++; else if (match.winner === 'draw') s.draws++; else s.losses++;
+        }
+      }
+      for (const s of Object.values(stats) as any[]) s.pointDiff = s.pointsFor - s.pointsAgainst;
+      const sortedFor = (side:string) => (Object.values(stats) as any[]).filter(s => s.side === side && s.gamesPlayed > 0).sort((a,b) => b.pointsFor-a.pointsFor || b.wins-a.wins || b.pointDiff-a.pointDiff || a.participantId.localeCompare(b.participantId));
+      const a = sortedFor('club_a'), b = sortedFor('club_b');
+      if (!a.length || !b.length) return Response.json({ error:'Not enough completed match data to calculate both team awards.' }, { status:409 });
+      const clubAWinner = a[0], clubBWinner = b[0];
+      const winners = [clubAWinner.participantId, clubBWinner.participantId];
+      winnerCount = winners.length;
+      winnerSides = { club_a:[clubAWinner.participantId], club_b:[clubBWinner.participantId] };
+      update = { pot_method:'points', pot_status:'revealed', pot_winner_participant_ids:winners, pot_revealed_at:nowIso, pot_vote_opened_at:null, pot_vote_closes_at:null, pot_vote_duration_minutes:null };
+      const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, update);
+      const publicStats = [clubAWinner, clubBWinner].map(s => ({ ...s, display_name:(byId.get(s.participantId) as any)?.display_name || 'Player' }));
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'pot_calculate_points', user_id:user.id, occurred_at:nowIso, old_value_json:JSON.stringify({ pot_method:event.pot_method || 'none', pot_status:event.pot_status }), new_value_json:JSON.stringify({ pot_method:'points', pot_status:'revealed', winners:publicStats }), note:'Highest-scoring player selected for each team from normal-round points scored while that player was on court. Tie-break order: match wins, then point differential.' });
+      return Response.json({ success:true, event:updated, winnerCount, winnerSides, stats:publicStats });
     } else {
       if (event.pot_status !== 'closed') return Response.json({ error:'Voting must be closed before reveal.' }, { status:409 });
       const [votes, participants] = await Promise.all([
