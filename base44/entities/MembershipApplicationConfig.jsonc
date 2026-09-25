@@ -1,0 +1,134 @@
+{
+  "name": "MembershipApplicationConfig",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "public_slug": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "paused",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "title": {
+      "type": "string"
+    },
+    "season_label": {
+      "type": "string"
+    },
+    "membership_fee": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR"
+    },
+    "allow_new": {
+      "type": "boolean",
+      "default": true
+    },
+    "allow_renewal": {
+      "type": "boolean",
+      "default": true
+    },
+    "payment_required": {
+      "type": "boolean",
+      "default": true
+    },
+    "payment_gateway_account_id": {
+      "type": "string"
+    },
+    "renewal_lookup_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notification_email": {
+      "type": "string"
+    },
+    "privacy_document_id": {
+      "type": "string"
+    },
+    "waiver_document_id": {
+      "type": "string"
+    },
+    "code_document_id": {
+      "type": "string"
+    },
+    "health_document_id": {
+      "type": "string"
+    },
+    "photo_document_id": {
+      "type": "string"
+    },
+    "terms_document_id": {
+      "type": "string"
+    },
+    "confirmation_email_subject": {
+      "type": "string"
+    },
+    "admin_notification_subject": {
+      "type": "string"
+    },
+    "signatory_name": {
+      "type": "string"
+    },
+    "signatory_title": {
+      "type": "string"
+    },
+    "active_from": {
+      "type": "string",
+      "format": "date"
+    },
+    "active_until": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "public_slug",
+    "status",
+    "season_label",
+    "membership_fee",
+    "currency"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

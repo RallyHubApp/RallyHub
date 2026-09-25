@@ -1,5 +1,5 @@
 {
-  "name": "ConsentRecord",
+  "name": "ClubLegalDocument",
   "type": "object",
   "properties": {
     "tenant_id": {
@@ -8,49 +8,43 @@
     "club_id": {
       "type": "string"
     },
-    "person_id": {
-      "type": "string"
-    },
-    "membership_application_id": {
-      "type": "string"
-    },
-    "legal_document_id": {
-      "type": "string"
-    },
-    "consent_type": {
-      "type": "string"
-    },
-    "status": {
+    "document_type": {
       "type": "string",
       "enum": [
-        "accepted",
-        "declined",
-        "not_recorded"
+        "privacy_data",
+        "liability_waiver",
+        "code_of_conduct",
+        "health_declaration",
+        "photo_video",
+        "membership_terms",
+        "other"
       ]
     },
-    "response_text": {
+    "title": {
       "type": "string"
     },
-    "channels": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "consent_version": {
+    "version": {
       "type": "string"
     },
-    "wording_hash": {
+    "body_text": {
       "type": "string"
     },
-    "recorded_at": {
+    "consent_label": {
+      "type": "string"
+    },
+    "required_consent": {
+      "type": "boolean",
+      "default": true
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "effective_from": {
       "type": "string",
-      "format": "date-time"
+      "format": "date"
     },
-    "source_system": {
-      "type": "string"
-    },
-    "source_row": {
+    "source_reference": {
       "type": "string"
     },
     "notes": {
@@ -60,9 +54,10 @@
   "required": [
     "tenant_id",
     "club_id",
-    "person_id",
-    "consent_type",
-    "status"
+    "document_type",
+    "title",
+    "version",
+    "body_text"
   ],
   "rls": {
     "create": {

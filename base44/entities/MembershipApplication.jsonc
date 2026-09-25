@@ -1,0 +1,203 @@
+{
+  "name": "MembershipApplication",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "config_id": {
+      "type": "string"
+    },
+    "application_type": {
+      "type": "string",
+      "enum": [
+        "new",
+        "renewal"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "pending_payment",
+        "paid",
+        "approved",
+        "rejected",
+        "withdrawn",
+        "payment_failed"
+      ],
+      "default": "draft"
+    },
+    "public_token": {
+      "type": "string"
+    },
+    "confirmation_code": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "existing_membership_id": {
+      "type": "string"
+    },
+    "club_membership_id": {
+      "type": "string"
+    },
+    "payment_record_id": {
+      "type": "string"
+    },
+    "membership_season": {
+      "type": "string"
+    },
+    "membership_type": {
+      "type": "string"
+    },
+    "membership_fee": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "full_postal_address": {
+      "type": "string"
+    },
+    "postal_code": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "emergency_contact_name": {
+      "type": "string"
+    },
+    "emergency_contact_relationship": {
+      "type": "string"
+    },
+    "emergency_mobile": {
+      "type": "string"
+    },
+    "emergency_contact_raw": {
+      "type": "string"
+    },
+    "changed_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "data_review_confirmed": {
+      "type": "boolean",
+      "default": false
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "paid",
+        "failed",
+        "not_required"
+      ],
+      "default": "not_started"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "confirmation_email_sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "admin_notification_sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reminder_count": {
+      "type": "number",
+      "default": 0
+    },
+    "last_reminder_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_reminder_channel": {
+      "type": "string"
+    },
+    "follow_up_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "payment_due",
+        "reminded",
+        "second_reminder",
+        "contacted",
+        "complete",
+        "no_response"
+      ],
+      "default": "none"
+    },
+    "admin_notes": {
+      "type": "string"
+    },
+    "source_system": {
+      "type": "string"
+    },
+    "source_reference": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "config_id",
+    "application_type",
+    "status",
+    "membership_season",
+    "full_name",
+    "email"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
