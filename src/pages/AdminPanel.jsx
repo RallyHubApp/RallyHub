@@ -1211,9 +1211,6 @@ Brian`;
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="membership" className="text-xs gap-1.5">
-            <Users className="w-3.5 h-3.5" /> Membership
-          </TabsTrigger>
           <TabsTrigger value="preview" className="text-xs gap-1.5">
             <Eye className="w-3.5 h-3.5" /> Member Preview
           </TabsTrigger>
