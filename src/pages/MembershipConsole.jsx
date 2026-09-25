@@ -244,6 +244,7 @@ export default function MembershipConsole() {
       if (filters.quality === 'complete' && Number(row.quality_count || 0) > 0) return false;
       if (filters.quality === 'duplicates' && !(row.quality_issues || []).includes('duplicate_review')) return false;
       if (filters.sport !== 'all' && !(row.sport_profiles || []).some(profile => String(profile.sport_id) === String(filters.sport))) return false;
+      if (filters.renewal !== 'all' && row.renewal_state !== filters.renewal) return false;
       return true;
     });
     result.sort((a, b) => {
@@ -280,6 +281,9 @@ export default function MembershipConsole() {
     else if (name === 'pending') setFilters({ ...EMPTY_FILTERS, membershipStatus: 'pending_payment' });
     else if (name === 'unpaid') setFilters({ ...EMPTY_FILTERS, paymentStatus: 'pending' });
     else if (name === 'issues') setFilters({ ...EMPTY_FILTERS, quality: 'issues' });
+    else if (name === 'renewed') setFilters({ ...EMPTY_FILTERS, renewal: 'renewed' });
+    else if (name === 'renewal-payment') setFilters({ ...EMPTY_FILTERS, renewal: 'awaiting_payment' });
+    else if (name === 'not-renewed') setFilters({ ...EMPTY_FILTERS, renewal: listData.renewal?.windowStatus === 'closed' ? 'overdue' : 'not_renewed' });
     else setFilters(EMPTY_FILTERS);
   };
 
@@ -714,6 +718,7 @@ export default function MembershipConsole() {
                   <PopoverContent align="end" className="w-72 space-y-3">
                     <div><Label>RallyHub account</Label><Select value={filters.account} onValueChange={value => setFilters(f => ({ ...f, account: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="linked">Linked</SelectItem><SelectItem value="unlinked">Not linked</SelectItem></SelectContent></Select></div>
                     <div><Label>Data quality</Label><Select value={filters.quality} onValueChange={value => setFilters(f => ({ ...f, quality: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="complete">Complete</SelectItem><SelectItem value="issues">Needs attention</SelectItem><SelectItem value="duplicates">Duplicate review</SelectItem></SelectContent></Select></div>
+                    <div><Label>Renewal</Label><Select value={filters.renewal} onValueChange={value => setFilters(f => ({ ...f, renewal: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="renewed">Renewed</SelectItem><SelectItem value="awaiting_payment">Awaiting renewal payment</SelectItem><SelectItem value="not_renewed">Not renewed</SelectItem><SelectItem value="overdue">Renewal overdue</SelectItem><SelectItem value="not_open">Renewal not open yet</SelectItem></SelectContent></Select></div>
                     <Button variant="outline" className="w-full" onClick={() => { setFilters(EMPTY_FILTERS); setSearch(''); }}><X className="w-3.5 h-3.5 mr-1.5" />Clear filters</Button>
                   </PopoverContent>
                 </Popover>
