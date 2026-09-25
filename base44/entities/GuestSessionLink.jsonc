@@ -1,0 +1,128 @@
+{
+  "name": "GuestSessionLink",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "token": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "session_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "weekday": {
+      "type": "string"
+    },
+    "start_time": {
+      "type": "string"
+    },
+    "end_time": {
+      "type": "string"
+    },
+    "venue_key": {
+      "type": "string"
+    },
+    "venue_name": {
+      "type": "string"
+    },
+    "venue_address": {
+      "type": "string"
+    },
+    "venue_eircode": {
+      "type": "string"
+    },
+    "google_maps_url": {
+      "type": "string"
+    },
+    "session_label": {
+      "type": "string"
+    },
+    "capacity": {
+      "type": "number"
+    },
+    "fee_amount": {
+      "type": "number",
+      "default": 5.5
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "sumup",
+        "cash"
+      ],
+      "default": "sumup"
+    },
+    "notification_email": {
+      "type": "string"
+    },
+    "notification_name": {
+      "type": "string"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "token",
+    "active",
+    "session_date",
+    "start_time",
+    "venue_key",
+    "venue_name",
+    "venue_address",
+    "venue_eircode",
+    "google_maps_url",
+    "fee_amount",
+    "currency",
+    "payment_method",
+    "created_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
