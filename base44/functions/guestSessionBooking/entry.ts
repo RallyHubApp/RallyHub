@@ -241,12 +241,22 @@ Deno.serve(async(req)=>{
         const rows=[];
         for(const s of sessions||[]){
           const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:s.id},'-registered_at',200);
-          rows.push({...safeSession(s),notificationEmail:s.notification_email||'',bookings:(bookings||[]).map((b:any)=>({
-            id:b.id,fullName:b.full_name,email:b.email,mobile:b.mobile,bookingStatus:b.booking_status,
-            paymentMethod:b.payment_method,paymentStatus:b.payment_status,amount:b.amount,
-            registeredAt:b.registered_at,paidAt:b.paid_at||'',confirmationCode:b.confirmation_code||'',
-            hostMessage:hostText(s,b),
-          }))});
+          const bookingRows=[];
+          for(const b of bookings||[]){
+            const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:b.id},'-created_date',10);
+            const payment=payments?.[0]||null;
+            const originalAmount=Number(payment?.amount||b.amount||0);
+            const refundedAmount=Number(payment?.amount_refunded||0);
+            bookingRows.push({
+              id:b.id,fullName:b.full_name,email:b.email,mobile:b.mobile,bookingStatus:b.booking_status,
+              paymentMethod:b.payment_method,paymentStatus:b.payment_status,amount:b.amount,
+              refundedAmount,refundableAmount:Math.max(0,Math.round((originalAmount-refundedAmount)*100)/100),
+              provider:payment?.provider||b.payment_method||'',providerTransactionId:payment?.provider_transaction_id||'',
+              registeredAt:b.registered_at,paidAt:b.paid_at||'',confirmationCode:b.confirmation_code||'',
+              hostMessage:hostText(s,b),
+            });
+          }
+          rows.push({...safeSession(s),notificationEmail:s.notification_email||'',bookings:bookingRows});
         }
         return Response.json({success:true,sessions:rows,sumupConfigured});
       }
