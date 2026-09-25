@@ -494,8 +494,9 @@ export default function MembershipConsole() {
         title="Membership Console"
         description={meta.club?.name ? `${meta.club.name} · canonical membership, sport and payment records` : 'Tenant membership administration'}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {gateway ? <Badge variant="outline" className="gap-1.5"><WalletCards className="w-3 h-3" />{label(gateway.provider)} · {label(gateway.status)}</Badge> : null}
+          <Button size="sm" onClick={() => setAddMemberOpen(true)}><Plus className="w-3.5 h-3.5 mr-1.5" />Add member</Button>
           <Button variant="outline" size="sm" onClick={() => { refetchList(); queryClient.invalidateQueries({ queryKey: ['membership-console-meta'] }); }}>
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />Refresh
           </Button>
@@ -625,7 +626,10 @@ export default function MembershipConsole() {
                 <Badge variant="outline">{label(detail.membership?.membership_status)}</Badge>
                 <Badge variant="outline">{label(detail.membership?.payment_status)}</Badge>
                 {(detail.person?.linked_user_id || detail.player?.user_id) ? <Badge className="bg-primary/15 text-primary"><Link2 className="w-3 h-3 mr-1" />RallyHub linked</Badge> : <Badge variant="outline">Not linked</Badge>}
-                <Button size="sm" className="ml-auto" onClick={() => setEditOpen(true)}><Pencil className="w-3.5 h-3.5 mr-1.5" />Edit record</Button>
+                <div className="ml-auto flex flex-wrap gap-2">
+                  {!(detail.person?.linked_user_id || detail.player?.user_id) ? <Button size="sm" variant="outline" disabled={saving} onClick={connectAccount}><Link2 className="w-3.5 h-3.5 mr-1.5" />Link RallyHub account</Button> : null}
+                  <Button size="sm" onClick={() => setEditOpen(true)}><Pencil className="w-3.5 h-3.5 mr-1.5" />Edit record</Button>
+                </div>
               </div>
 
               <Tabs defaultValue="profile">
