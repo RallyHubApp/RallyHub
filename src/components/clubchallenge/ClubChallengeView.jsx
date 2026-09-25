@@ -147,6 +147,7 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
   const [dirty, setDirty] = useState(() => !!initialDraft);
   const [status, setStatus] = useState(() => initialDraft ? {state:'working',text:'Recovered your unsaved team allocation and ranking draft.'} : null);
   const [manualPool, setManualPool] = useState('');
+  const [poolOpen, setPoolOpen] = useState(false);
   const [clubSearch, setClubSearch] = useState({ club_a:'', club_b:'' });
   const [guestDraft, setGuestDraft] = useState({ club_a:{name:'',gender:''}, club_b:{name:'',gender:''} });
   const [rosterAction, setRosterAction] = useState('');
