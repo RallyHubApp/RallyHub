@@ -2250,7 +2250,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               { key:'score', label:'Master Score Sheet', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)), note:'Blank score boxes for use during the event' },
               ...(event?.id === '6ab3d84c8bbc3bc6e171ba03' ? [{ key:'handoverScore', label:'Master Score Sheet · 8:30 Handover Copy', pages:1, note:'Tonight only: Rounds 7–12 show Paul for John and Margaret for Kim' }] : []),
               { key:'schedule', label:'Master Schedule / Court Assignment', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)), note:'Two rounds per A4 page' },
-              { key:'roster', label:'Team Roster & Reserves', pages:1, note:'Players, rankings, reserves and event information' },
+              { key:'roster', label:'Team Rosters', pages:2, note:'Ranked host copy + alphabetical hall-display copy' },
               { key:'briefing', label:'Event Briefing & Rules', pages:1, note:'Operational rules for the event' },
               { key:'final', label:'Final Result / Sign-off', pages:1, note:['completed','archived'].includes(event?.status) ? 'Completed result and signatures' : 'Available after the event is completed', disabled:!['completed','archived'].includes(event?.status) },
             ].map(item => <label key={item.key} className={cn('flex items-start gap-3 rounded-xl border p-3 transition-colors', item.disabled ? 'opacity-50 cursor-not-allowed bg-muted/30' : 'cursor-pointer hover:bg-secondary/40', printSelection[item.key] && !item.disabled ? 'border-primary/50 bg-primary/5' : 'border-border')}>
@@ -2264,14 +2264,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               (printSelection.score ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)) : 0) +
               (printSelection.handoverScore && event?.id === '6ab3d84c8bbc3bc6e171ba03' ? 1 : 0) +
               (printSelection.schedule ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)) : 0) +
-              (printSelection.roster ? 1 : 0) +
+              (printSelection.roster ? 2 : 0) +
               (printSelection.briefing ? 1 : 0) +
               (printSelection.final && ['completed','archived'].includes(event?.status) ? 1 : 0)
             )} page{(
               (printSelection.score ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)) : 0) +
               (printSelection.handoverScore && event?.id === '6ab3d84c8bbc3bc6e171ba03' ? 1 : 0) +
               (printSelection.schedule ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)) : 0) +
-              (printSelection.roster ? 1 : 0) +
+              (printSelection.roster ? 2 : 0) +
               (printSelection.briefing ? 1 : 0) +
               (printSelection.final && ['completed','archived'].includes(event?.status) ? 1 : 0)
             ) === 1 ? '' : 's'}</strong>
