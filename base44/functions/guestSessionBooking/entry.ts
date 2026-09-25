@@ -311,6 +311,112 @@ Deno.serve(async(req)=>{
         }
         return Response.json({success:true,status:status.toLowerCase()});
       }
+
+      if(action==='admin_refund_payment'){
+        if(booking.payment_method==='cash')return Response.json({error:'Cash refunds are recorded manually; there is no online gateway transaction to refund.'},{status:409});
+        if(body.confirmRefund!==true)return Response.json({error:'Refund confirmation is required.'},{status:400});
+        const reason=clean(body.reason,500);
+        if(!reason)return Response.json({error:'Enter a reason for the refund.'},{status:400});
+
+        const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+        let payment=payments?.[0]||null;
+        if(!payment)return Response.json({error:'Payment record not found.'},{status:404});
+        if(!['paid','partially_refunded','refund_failed'].includes(String(payment.payment_status||''))){
+          return Response.json({error:'Only a completed online payment can be refunded.'},{status:409});
+        }
+
+        let transactionId=clean(payment.provider_transaction_id,120);
+        let provider=clean(payment.provider||booking.payment_method,30).toLowerCase();
+        let merchantAccountId=clean(payment.provider_account_id,120);
+        if(!transactionId && booking.sumup_checkout_id){
+          const checkout=await retrieveProviderCheckout(base44,session,booking.sumup_checkout_id);
+          transactionId=clean(checkout?.transaction_id||checkout?.transactions?.[0]?.id,120);
+          provider=clean(checkout?.provider||provider,30).toLowerCase();
+          merchantAccountId=clean(checkout?.merchant_account_id||merchantAccountId,120);
+          if(transactionId){
+            payment=await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{
+              provider,provider_account_id:merchantAccountId,provider_transaction_id:transactionId,
+              provider_payment_reference:checkout?.transaction_code||'',provider_status:checkout?.status||'PAID',
+            });
+          }
+        }
+        if(!transactionId)return Response.json({error:'RallyHub could not identify the gateway transaction to refund. Verify the payment first.'},{status:409});
+
+        const previous=await base44.asServiceRole.entities.PaymentRefund.filter({payment_record_id:payment.id},'-requested_at',100);
+        const alreadyRefunded=(previous||[]).filter((x:any)=>x.status==='succeeded').reduce((sum:number,x:any)=>sum+Number(x.amount||0),0);
+        const originalAmount=Number(payment.amount||booking.amount||0);
+        const remaining=Math.max(0,Math.round((originalAmount-alreadyRefunded)*100)/100);
+        if(remaining<=0)return Response.json({error:'This payment has already been fully refunded.'},{status:409});
+
+        const requestedRaw=body.refundAmount===undefined||body.refundAmount===null||body.refundAmount===''?remaining:Number(body.refundAmount);
+        const refundAmount=Math.round(requestedRaw*100)/100;
+        if(!Number.isFinite(refundAmount)||refundAmount<=0||refundAmount>remaining){
+          return Response.json({error:`Refund amount must be between €0.01 and €${remaining.toFixed(2)}.`},{status:400});
+        }
+
+        const gateway=await gatewayAccount(base44,tenantId,clubId,provider);
+        const now=new Date().toISOString();
+        let refundRow=await base44.asServiceRole.entities.PaymentRefund.create({
+          tenant_id:tenantId,club_id:clubId,payment_record_id:payment.id,person_id:booking.person_id||'',
+          purpose_type:'booking',purpose_id:booking.id,provider,
+          provider_account_id:merchantAccountId,provider_transaction_id:transactionId,
+          amount:refundAmount,currency:payment.currency||booking.currency||'EUR',status:'processing',
+          reason,policy_override:body.policyOverride===true,requested_by_user_id:user.id,requested_at:now,
+          source_system:'rallyhub_guest_session',
+        });
+
+        try{
+          const result=await refundPayment({
+            provider,account:gateway?.account||null,transactionId,amount:refundAmount,currency:payment.currency||'EUR',
+          });
+          const completedAt=new Date().toISOString();
+          refundRow=await base44.asServiceRole.entities.PaymentRefund.update(refundRow.id,{
+            status:'succeeded',provider_refund_id:result.refundId||'',provider_status:result.providerStatus||'REFUNDED',completed_at:completedAt,
+          });
+          const totalRefunded=Math.round((alreadyRefunded+refundAmount)*100)/100;
+          const fullyRefunded=totalRefunded>=originalAmount-0.001;
+          await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{
+            payment_status:fullyRefunded?'refunded':'partially_refunded',amount_refunded:totalRefunded,last_refund_at:completedAt,
+            provider_status:result.providerStatus||'REFUNDED',
+          });
+          const updatedBooking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{
+            payment_status:fullyRefunded?'refunded':'partially_refunded',
+          });
+
+          if(booking.email){
+            try{
+              await base44.asServiceRole.integrations.Core.SendEmail({
+                to:booking.email,from_name:'Clare Pickleball via RallyHub',
+                subject:`Refund issued · Clare Pickleball · ${session.session_date} ${session.start_time}`,
+                body:`Hi ${booking.full_name},
+
+A refund of €${refundAmount.toFixed(2)} has been issued for your Clare Pickleball guest booking.
+
+Session: ${formatDate(session.session_date)} · ${session.start_time}
+Venue: ${session.venue_name}
+Booking reference: ${booking.confirmation_code}
+Reason: ${reason}
+
+The refund is being returned through the same payment method used for the original payment.
+
+Clare Pickleball`,
+              });
+            }catch(e){console.error('refund confirmation email failed',e?.message||e)}
+          }
+
+          return Response.json({
+            success:true,refundId:refundRow.id,refundAmount,totalRefunded,
+            refundableAmount:Math.max(0,Math.round((originalAmount-totalRefunded)*100)/100),
+            paymentStatus:fullyRefunded?'refunded':'partially_refunded',booking:updatedBooking,
+          });
+        }catch(e){
+          await base44.asServiceRole.entities.PaymentRefund.update(refundRow.id,{
+            status:'failed',failure_message:clean(e?.message||'Refund failed',500),completed_at:new Date().toISOString(),
+          });
+          await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{payment_status:'refund_failed'});
+          return Response.json({error:e?.message||'The payment gateway could not issue the refund.'},{status:502});
+        }
+      }
     }
 
     const tokenValue=clean(body.token,80);
