@@ -63,8 +63,9 @@ export default function PublicClubChallengeVote(){
   const timed = Number.isFinite(closesAt);
   const remainingMs = timed ? Math.max(0, closesAt - now) : null;
   const votingOpen = data?.event?.pot_status === 'open' && (!timed || remainingMs > 0);
-  const aPlayers = (data?.participants || []).filter(p=>p.side === 'club_a');
-  const bPlayers = (data?.participants || []).filter(p=>p.side === 'club_b');
+  const alphabetical = (a,b) => String(a.display_name || '').localeCompare(String(b.display_name || ''), 'en', { sensitivity:'base' });
+  const aPlayers = (data?.participants || []).filter(p=>p.side === 'club_a').sort(alphabetical);
+  const bPlayers = (data?.participants || []).filter(p=>p.side === 'club_b').sort(alphabetical);
   const liveEventUrl = data?.event?.display_token ? interclubPublicUrl(`/club-challenge/display/${data.event.display_token}`) : '';
   const eventClubs = data ? [
     { id:'club_a', name:data.event.club_a_name, logo_url:data.event.club_a_logo_url, primary_colour:data.event.club_a_primary_colour, secondary_colour:data.event.club_a_secondary_colour },
