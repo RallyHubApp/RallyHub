@@ -391,7 +391,7 @@ Deno.serve(async(req)=>{
           });
           const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
           if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{
-            payment_status:'pending',sumup_checkout_id:checkout.id,sumup_payment_link:checkout.url,external_payment_reference:checkout.reference,
+            payment_status:'pending',provider:checkout.provider||'sumup',provider_account_id:checkout.merchantAccountId||'',provider_checkout_id:checkout.id,provider_checkout_url:checkout.url,provider_payment_reference:checkout.reference,provider_status:checkout.status||'PENDING',sumup_checkout_id:checkout.id,sumup_payment_link:checkout.url,external_payment_reference:checkout.reference,
           });
           paymentUrl=checkout.url;paymentStatus='pending';
         }catch(e){console.error('SumUp retry checkout failed',e?.message||e)}
@@ -474,7 +474,7 @@ Deno.serve(async(req)=>{
         sumup_checkout_id:checkout.id,sumup_checkout_url:checkout.url,sumup_checkout_reference:checkout.reference,
       });
       await base44.asServiceRole.entities.PaymentRecord.update(paymentRecord.id,{
-        sumup_checkout_id:checkout.id,sumup_payment_link:checkout.url,external_payment_reference:checkout.reference,
+        provider:checkout.provider||'sumup',provider_account_id:checkout.merchantAccountId||'',provider_checkout_id:checkout.id,provider_checkout_url:checkout.url,provider_payment_reference:checkout.reference,provider_status:checkout.status||'PENDING',sumup_checkout_id:checkout.id,sumup_payment_link:checkout.url,external_payment_reference:checkout.reference,
       });
       return Response.json({
         success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),
