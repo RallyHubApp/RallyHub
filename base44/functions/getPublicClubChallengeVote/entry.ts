@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.ClubChallengeDisplayToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5)
     ]);
     const nominees = participants
-      .filter((p:any) => p.status !== 'replaced')
+      .filter((p:any) => ['club_a','club_b'].includes(p.side) && ((p.roster_role || 'rotation') !== 'reserve' || p.reserve_activated))
       .map((p:any) => ({
         id:p.id,
         side:p.side,
