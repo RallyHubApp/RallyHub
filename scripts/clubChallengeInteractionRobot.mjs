@@ -67,6 +67,7 @@ check('branding: Live Event View uses RallyHub Interclub', contains(publicDispla
 check('future-proofing: Interclub print pack has no Banner Bash event or named-player hard coding', !contains(printPack,'6ab3d84c8bbc3bc6e171ba03') && !contains(printPack,'BANNER_BASH') && contains(printPack,'replacement_for_participant_id') && contains(printPack,'replacement_effective_round'));
 check('future-proofing: Interclub host print chooser derives handover copy from event participant data', !contains(ui,"event?.id === '6ab3d84c8bbc3bc6e171ba03'") && contains(ui,'hasPlannedHandoverCopy') && contains(ui,'firstPlannedHandoverRound'));
 check('future-proofing: Interclub participant import uses generic team names', !contains(participantFn,'Choose Clare or Galway') && contains(participantFn,'Choose Team A or Team B'));
+check('future-proofing: Spond trusted membership derives from the owning club rather than Clare literals', !contains(spondFn,'clare pickleball members') && contains(spondFn,'isTrustedMemberSource') && contains(spondFn,'entities.Club.filter'));
 check('host: live estimated duration is visible during setup', contains(ui,'Estimated event duration'));
 check('host: planned player count drives estimate before roster entry', contains(ui,'Planned total players'));
 check('host: estimate exposes rounds, block, break and contingency', contains(ui,'min contingency'));
