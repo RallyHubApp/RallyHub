@@ -303,16 +303,22 @@ Deno.serve(async(req)=>{
         },'-updated_date',5);
         const membership=memberships?.[0]||null;
         if(membership){
-          await base44.asServiceRole.entities.ClubMembership.update(membership.id,{
-            payment_status:'paid',membership_status:'paid_active',payment_date:now.slice(0,10)
-          });
+          const config=await membershipConfig(base44,payment.tenant_id,payment.club_id);
+          const membershipPatch:any={payment_status:'paid',membership_status:'paid_active',payment_date:now.slice(0,10)};
+          if(!membership.member_id&&config){
+            const generatedId=await nextMemberId(base44,config);
+            if(generatedId)membershipPatch.member_id=generatedId;
+          }
+          const updatedMembership=await base44.asServiceRole.entities.ClubMembership.update(membership.id,membershipPatch);
           const relationships=await base44.asServiceRole.entities.ClubRelationship.filter({
             tenant_id:payment.tenant_id,club_id:payment.club_id,person_id:membership.person_id
           },'-updated_date',20);
           const relationship=relationships?.[0]||null;
           if(relationship)await base44.asServiceRole.entities.ClubRelationship.update(relationship.id,{
-            status:'active',payment_status:'paid',payment_date:now.slice(0,10)
+            status:'active',payment_status:'paid',payment_date:now.slice(0,10),
+            ...(updatedMembership.member_id?{membership_id:updatedMembership.member_id}:{})
           });
+          await syncMembershipApplication(base44,payment,updatedMembership,'paid',now);
           try{await base44.asServiceRole.entities.AuditLog.create({
             tenant_id:payment.tenant_id,club_id:payment.club_id,user_id:'system:webhook',
             action:'membership_payment_confirmed',entity_type:'ClubMembership',entity_id:membership.id,
@@ -348,6 +354,7 @@ Deno.serve(async(req)=>{
           },'-updated_date',20);
           const relationship=relationships?.[0]||null;
           if(relationship)await base44.asServiceRole.entities.ClubRelationship.update(relationship.id,{status:'pending',payment_status:'failed'});
+          await syncMembershipApplication(base44,payment,membership,'failed',now);
         }
       }
     }
