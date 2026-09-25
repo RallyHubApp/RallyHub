@@ -442,6 +442,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [roundActionStatus, setRoundActionStatus] = useState(null);
   const hostBarAnchorRef = React.useRef(null);
   const hostBarInnerRef = React.useRef(null);
+  const lastHostVisibilityRefreshRef = React.useRef(0);
+  const hostVisibilityRefreshInFlightRef = React.useRef(false);
   const [hostBarPinned, setHostBarPinned] = useState(false);
   const [hostBarGeometry, setHostBarGeometry] = useState({ left: 0, width: 0, height: 0, top: 64 });
   const timerCommandRef = React.useRef(false);
@@ -645,18 +647,21 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     return () => window.clearInterval(id);
   }, []);
   React.useEffect(() => {
-    const resyncVisibleTimer = () => {
-      if (document.visibilityState !== 'visible') return;
+    const resyncVisibleTimer = async () => {
+      if (document.visibilityState !== 'visible' || hostVisibilityRefreshInFlightRef.current) return;
       setTimerNow(Date.now());
-      refetchEvent?.();
-      refetchMatches?.();
+      if (Date.now() - lastHostVisibilityRefreshRef.current < 8000) return;
+      hostVisibilityRefreshInFlightRef.current = true;
+      lastHostVisibilityRefreshRef.current = Date.now();
+      try {
+        await refetchEvent?.();
+        await refetchMatches?.();
+      } finally {
+        hostVisibilityRefreshInFlightRef.current = false;
+      }
     };
     document.addEventListener('visibilitychange', resyncVisibleTimer);
-    window.addEventListener('focus', resyncVisibleTimer);
-    return () => {
-      document.removeEventListener('visibilitychange', resyncVisibleTimer);
-      window.removeEventListener('focus', resyncVisibleTimer);
-    };
+    return () => document.removeEventListener('visibilitychange', resyncVisibleTimer);
   }, [refetchEvent, refetchMatches]);
   React.useEffect(() => {
     if (!('speechSynthesis' in window)) return;
