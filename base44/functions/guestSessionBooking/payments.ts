@@ -75,6 +75,23 @@ export function providerConfigured(provider:PaymentProvider,account?:ProviderAcc
   return false;
 }
 
+export async function verifyProviderConnection(provider:PaymentProvider,account?:ProviderAccount|null){
+  if(provider!=='sumup') return {ok:false,provider,error:`Payment provider ${provider} is not implemented yet.`};
+  try{
+    const {apiKey,merchantAccountId}=sumUpCredentials(account);
+    const response=await fetch('https://api.sumup.com/v0.1/me',{headers:{Authorization:`Bearer ${apiKey}`}});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+      return {ok:false,provider:'sumup',merchantAccountId,error:data?.message||`SumUp verification failed (${response.status}).`};
+    }
+    const profileCode=String(data?.merchant_profile?.merchant_code||data?.merchant_code||merchantAccountId||'');
+    const merchantName=String(data?.merchant_profile?.business_name||data?.merchant_profile?.doing_business_as?.business_name||data?.business_name||'');
+    return {ok:true,provider:'sumup',merchantAccountId:profileCode||merchantAccountId,merchantName};
+  }catch(e){
+    return {ok:false,provider:'sumup',merchantAccountId:'',error:e?.message||'SumUp verification failed.'};
+  }
+}
+
 export async function createCheckout(input:CheckoutRequest):Promise<CheckoutResult>{
   const amount=requiredAmount(input.amount);
   if(input.provider!=='sumup') throw new Error(`Payment provider ${input.provider} is not implemented yet.`);
@@ -134,14 +151,14 @@ export async function refundPayment(input:RefundRequest):Promise<RefundResult>{
   if(input.provider!=='sumup') throw new Error(`Refunds for payment provider ${input.provider} are not implemented yet.`);
   const {apiKey,merchantAccountId}=sumUpCredentials(input.account);
   if(!input.transactionId) throw new Error('The gateway transaction ID is missing, so this payment cannot be refunded yet.');
-  const body:any={};
-  if(input.amount!==undefined&&input.amount!==null) body.amount=requiredAmount(input.amount);
-  const response=await fetch(`https://api.sumup.com/v1.0/merchants/${encodeURIComponent(merchantAccountId)}/payments/${encodeURIComponent(input.transactionId)}/refunds`,{
+  const partial=input.amount!==undefined&&input.amount!==null;
+  const body=partial?JSON.stringify({amount:requiredAmount(input.amount)}):undefined;
+  const response=await fetch(`https://api.sumup.com/v0.1/me/refund/${encodeURIComponent(input.transactionId)}`,{
     method:'POST',
-    headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json'},
-    body:JSON.stringify(body),
+    headers:partial?{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json'}:{Authorization:`Bearer ${apiKey}`},
+    body,
   });
-  const data=await response.json().catch(()=>({}));
+  const data=response.status===204?{}:await response.json().catch(()=>({}));
   if(!response.ok) throw new Error(data?.message||'SumUp could not issue the refund.');
   return {
     provider:'sumup',providerStatus:String(data?.status||'REFUNDED'),refundId:String(data?.id||data?.refund_id||''),
