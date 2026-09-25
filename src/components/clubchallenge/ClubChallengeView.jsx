@@ -501,6 +501,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [potTiebreakUi, setPotTiebreakUi] = useState({});
   const potAutoCloseRef = React.useRef('');
   const [publicLinks, setPublicLinks] = useState(null);
+  const [registrationLinks, setRegistrationLinks] = useState({ club_a:'', club_b:'' });
+  const [registrationLinkBusy, setRegistrationLinkBusy] = useState('');
   const [spondImportSide, setSpondImportSide] = useState('');
   const [teamsDirty, setTeamsDirty] = useState(false);
   const [printPackOpen, setPrintPackOpen] = useState(false);
@@ -1022,6 +1024,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     return res.data;
   };
 
+  const setPlayingCategory = async (participantId, playingCategory) => {
+    if (!event || !canManageEvent) throw new Error('Event manager permission required.');
+    const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'set_playing_category', participantId, playingCategory });
+    if (res.data?.error) throw new Error(res.data.error);
+    await sync();
+    toast.success(`${res.data.participantName} set as ${res.data.playingCategory === 'social' ? 'Social' : 'Improver'}.`);
+    return res.data;
+  };
+
   const calculateFormat = () => {
     if (poolPlayers.length || !aRotationPlayers.length || !bRotationPlayers.length || aRotationPlayers.length !== bRotationPlayers.length) return null;
     try {
@@ -1512,6 +1523,23 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     }
   };
   const preparePublicLinks = () => ensurePublicLinks();
+  const prepareRegistrationLink = async side => {
+    if (!event || !hasManagePermission || !['club_a','club_b'].includes(side)) return;
+    setRegistrationLinkBusy(side);
+    try {
+      const res = await base44.functions.invoke('manageInterclubRegistrationLink', { eventId:event.id, side });
+      if (res.data?.error) throw new Error(res.data.error);
+      const url = interclubPublicUrl(`/club-challenge/register/${res.data.token}`);
+      setRegistrationLinks(current => ({ ...current, [side]:url }));
+      toast.success(`${res.data.teamName || (side === 'club_a' ? event.club_a_name : event.club_b_name)} registration link is ready.`);
+      return url;
+    } catch (e) {
+      toast.error(e?.response?.data?.error || e?.message || 'Could not prepare guest registration link');
+      return '';
+    } finally {
+      setRegistrationLinkBusy('');
+    }
+  };
   const sharePublicLink = async (url, label) => {
     if (!url) return;
     const text = `${label} · ${event?.club_a_name || 'Team A'} vs ${event?.club_b_name || 'Team B'}`;
@@ -2528,6 +2556,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               onRemovePlayer={removePreDrawPlayer}
               onSave={organiseTeams}
               onSetRosterRole={setRosterRole}
+              onSetPlayingCategory={setPlayingCategory}
               onDirtyChange={setTeamsDirty}
             />
             {formatInfo ? <div className="glass rounded-xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-center"><div><p className="text-xl font-bold">{formatInfo.recommendedRounds}</p><p className="text-[10px] text-muted-foreground">Rounds</p></div><div><p className="text-xl font-bold">{formatInfo.totalMatches}</p><p className="text-[10px] text-muted-foreground">Matches</p></div><div><p className="text-xl font-bold">{formatInfo.gamesRangeClubA.join('–')}</p><p className="text-[10px] text-muted-foreground">Games/player</p></div><div><p className="text-xl font-bold">{formatInfo.structuredMinutes}</p><p className="text-[10px] text-muted-foreground">Structured min</p></div><div><p className="text-xl font-bold">{formatInfo.remainingMinutes}</p><p className="text-[10px] text-muted-foreground">Contingency min</p></div></div> : participants.length > 0 && <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-700">Finish assigning every player, save the teams, and make the two Rotation squads equal before generating the draw. Reserve numbers may differ.</div>}
