@@ -1164,6 +1164,23 @@ Brian`;
   const directoryInvitations = (directoryVerification.invitations || []).filter(directoryInvitationStillOutstanding).slice(0, 50);
   const pendingDirectoryInvitations = directoryInvitations;
   const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active');
+  const claimedDirectorySlugs = new Set(activeDirectoryAccesses.map(access => String(access.listing_slug || '')).filter(Boolean));
+  const claimedDirectoryListingCount = directoryAdminListings.filter(listing => claimedDirectorySlugs.has(String(listing.slug))).length;
+  const unclaimedDirectoryListingCount = Math.max(0, directoryAdminListings.length - claimedDirectoryListingCount);
+  const directoryRegisteredUserIds = new Set([
+    ...activeDirectoryAccesses.map(access => String(access.user_id || '')).filter(Boolean),
+    ...(directoryVerification.claims || [])
+      .filter(claim => ['pending','approved'].includes(claim.status))
+      .map(claim => String(claim.claimant_user_id || '')).filter(Boolean),
+  ]);
+  const directoryRegisteredPeopleCount = directoryRegisteredUserIds.size;
+  const directoryClaimRate = directoryAdminListings.length ? Math.round((claimedDirectoryListingCount / directoryAdminListings.length) * 100) : 0;
+  const directoryNeedsAttentionCount = pendingDirectoryClaims.length + pendingNewDirectoryRequests.length;
+  const scrollToDirectorySection = id => {
+    window.requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+  };
   const filteredMembershipRows = membershipRows.filter(row => {
     if (!membershipSearch.trim()) return true;
     const q = membershipSearch.toLowerCase();
