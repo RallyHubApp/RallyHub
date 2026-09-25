@@ -22,6 +22,12 @@
     "source_player_id": {
       "type": "string"
     },
+    "source_person_id": {
+      "type": "string"
+    },
+    "registration_id": {
+      "type": "string"
+    },
     "display_name": {
       "type": "string"
     },
@@ -51,6 +57,13 @@
     },
     "age_category": {
       "type": "string"
+    },
+    "playing_category": {
+      "type": "string",
+      "enum": [
+        "social",
+        "improver"
+      ]
     },
     "event_rank": {
       "type": "number"
