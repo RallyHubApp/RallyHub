@@ -811,7 +811,7 @@ Deno.serve(async(req)=>{
         total:rows.length,
         active:rows.filter((r:any)=>r.membership_status==='paid_active').length,
         currentMembers:activeRows.length,
-        currentPaid:activeRows.filter((r:any)=>r.payment_status==='paid'||r.payment_status==='not_required').length,
+        currentPaid:activeRows.filter((r:any)=>r.payment_status==='paid').length,
         complimentary:complimentaryRows.length,
         pending:rows.filter((r:any)=>r.membership_status==='pending_payment').length,
         unpaid:rows.filter((r:any)=>r.payment_status==='pending'||r.payment_status==='failed'||r.membership_status==='pending_payment').length,
