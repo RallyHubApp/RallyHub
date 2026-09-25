@@ -37,10 +37,32 @@ export default function PublicClubChallengeDisplay(){
   const voteSavingRef=React.useRef(false);
   const dataRef=React.useRef(null);
   const initialViewSetRef=React.useRef(false);
+  const lastLoadAtRef=React.useRef(0);
+  const loadInFlightRef=React.useRef(false);
   React.useEffect(()=>{ dataRef.current=data; },[data]);
-  const load=React.useCallback(async()=>{ try { const r=await base44.functions.invoke('getPublicClubChallengeDisplay',{token}); if(r.data?.error) throw new Error(r.data.error); setData(r.data); dataRef.current=r.data; if(!initialViewSetRef.current){ if(['completed','archived'].includes(r.data?.event?.status)) setView('live'); initialViewSetRef.current=true; } setError(''); setDisconnected(false); } catch(e){ if(dataRef.current) setDisconnected(true); else setError(e?.response?.data?.error||e?.message||'Display unavailable'); } },[token]);
-  const pollMs=data?.matches?.some(m=>m.is_showcase)?2000:5000;
-  React.useEffect(()=>{ load(); const poll=setInterval(load,pollMs); const tick=setInterval(()=>setNow(Date.now()),1000); const off=()=>setDisconnected(true), on=()=>{setDisconnected(false);load();}; const visible=()=>{if(document.visibilityState==='visible'){setNow(Date.now());load();}}; window.addEventListener('offline',off); window.addEventListener('online',on); document.addEventListener('visibilitychange',visible); window.addEventListener('focus',visible); return()=>{clearInterval(poll);clearInterval(tick);window.removeEventListener('offline',off);window.removeEventListener('online',on);document.removeEventListener('visibilitychange',visible);window.removeEventListener('focus',visible);}; },[load,pollMs]);
+  const load=React.useCallback(async()=>{
+    if(loadInFlightRef.current) return;
+    loadInFlightRef.current=true;
+    try {
+      const r=await base44.functions.invoke('getPublicClubChallengeDisplay',{token});
+      if(r.data?.error) throw new Error(r.data.error);
+      setData(r.data); dataRef.current=r.data; lastLoadAtRef.current=Date.now();
+      if(!initialViewSetRef.current){ if(['completed','archived'].includes(r.data?.event?.status)) setView('live'); initialViewSetRef.current=true; }
+      setError(''); setDisconnected(false);
+    } catch(e){ if(dataRef.current) setDisconnected(true); else setError(e?.response?.data?.error||e?.message||'Display unavailable'); }
+    finally { loadInFlightRef.current=false; }
+  },[token]);
+  const pollMs=data?.matches?.some(m=>m.is_showcase)?10000:18000;
+  React.useEffect(()=>{
+    load();
+    const poll=setInterval(()=>{ if(document.visibilityState==='visible') load(); },pollMs);
+    const tick=setInterval(()=>setNow(Date.now()),1000);
+    const off=()=>setDisconnected(true);
+    const refreshIfStale=()=>{ setDisconnected(false); setNow(Date.now()); if(Date.now()-lastLoadAtRef.current>8000) load(); };
+    const visible=()=>{ if(document.visibilityState==='visible') refreshIfStale(); };
+    window.addEventListener('offline',off); window.addEventListener('online',refreshIfStale); document.addEventListener('visibilitychange',visible);
+    return()=>{clearInterval(poll);clearInterval(tick);window.removeEventListener('offline',off);window.removeEventListener('online',refreshIfStale);document.removeEventListener('visibilitychange',visible);};
+  },[load,pollMs]);
   if(error&&!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center p-6 text-center"><div><WifiOff className="mx-auto mb-3"/><p className="font-semibold">{error}</p></div></div>;
   if(!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center"><RefreshCw className="animate-spin"/></div>;
   const {event,matches,participants=[]}=data, s=score(matches,event), round=Number(event.current_round||1), plannedRounds=Number(event.planned_rounds||0);
