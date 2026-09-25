@@ -476,7 +476,7 @@ https://rallyhub.ie`;
   await sendWithConfiguredEmailTransport(
     base44,
     { scopeType: 'platform', purpose: 'directory' },
-    { to, subject, textBody, htmlBody },
+    { to, subject, textBody: finalTextBody, htmlBody },
   );
   try {
     await base44.asServiceRole.entities.AuditLog.create({
