@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { 
   LayoutDashboard, Users, Trophy, Crown, 
-  BarChart3, X, ChevronRight, UserCircle, Shield, MapPin, CalendarCheck
+  BarChart3, X, ChevronRight, UserCircle, Shield, MapPin, CalendarCheck, ContactRound
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -27,7 +27,13 @@ export default function Sidebar({ isOpen, onToggle }) {
   const { user } = useAuth();
   const { role } = useKotcRole();
   const canAccessAdmin = user?.role === 'admin';
+  const canManageMembership = user?.role === 'admin' || user?.active_club_role === 'club_admin';
   const isSuperAdmin = role === 'super_admin';
+  const mainNavItems = [
+    navItems[0],
+    ...(canManageMembership ? [{ path: '/app/membership', label: 'Membership', icon: ContactRound }] : []),
+    ...navItems.slice(1)
+  ];
 
   const { data: pendingApprovalCount = 0 } = useQuery({
     queryKey: ['pending-approval-count'],
@@ -91,7 +97,7 @@ export default function Sidebar({ isOpen, onToggle }) {
 
         {/* Nav */}
         <nav className="flex-1 py-4 px-3 space-y-1">
-          {navItems.map(item => {
+          {mainNavItems.map(item => {
             const isActive = item.path === '/app'
               ? location.pathname === '/app' || location.pathname === '/app/'
               : location.pathname.startsWith(item.path);
