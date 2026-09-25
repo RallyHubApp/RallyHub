@@ -51,6 +51,24 @@ const DEFAULT_SETUP = {
 };
 
 function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
+function isBase44RateLimitError(error) {
+  const status = Number(error?.response?.status || error?.status || 0);
+  const message = String(error?.response?.data?.error || error?.message || error || '').toLowerCase();
+  return status === 429 || message.includes('rate limit') || message.includes('burst');
+}
+async function invokeBase44Safely(name, payload, { retries = 2 } = {}) {
+  let attempt = 0;
+  while (true) {
+    try { return await base44.functions.invoke(name, payload); }
+    catch (error) {
+      if (!isBase44RateLimitError(error) || attempt >= retries) throw error;
+      const retryAfterHeader = Number(error?.response?.headers?.['retry-after'] || 0);
+      const waitMs = retryAfterHeader > 0 ? retryAfterHeader * 1000 : 700 * (2 ** attempt);
+      await new Promise(resolve => window.setTimeout(resolve, waitMs));
+      attempt += 1;
+    }
+  }
+}
 function durationLabel(minutes) { const total = Math.max(0, Math.round(Number(minutes) || 0)); const h = Math.floor(total / 60); const m = total % 60; return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`; }
 function clockLabel(ms) { if (!Number.isFinite(ms)) return ''; return new Date(ms).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); }
 function bookingStartMs(tournament, event) { const date=String(tournament?.start_date||'').slice(0,10), time=String(event?.scheduled_start_time||'').trim(); if(!date||!/^\d{2}:\d{2}$/.test(time)) return NaN; const ms=new Date(`${date}T${time}:00`).getTime(); return Number.isFinite(ms)?ms:NaN; }
