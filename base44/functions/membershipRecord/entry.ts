@@ -370,13 +370,14 @@ Deno.serve(async(req)=>{
     await assertClubAdmin(base44,user,tenantId,clubId);
 
     if(action==='admin_meta'){
-      const [club,tenant,clubSports,allSports,gateways,views]=await Promise.all([
+      const [club,tenant,clubSports,allSports,gateways,views,memberships]=await Promise.all([
         first(base44,'Club',{id:clubId,tenant_id:tenantId}),
         first(base44,'Tenant',{id:tenantId}),
         base44.asServiceRole.entities.ClubSport.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'-is_primary',100),
         base44.asServiceRole.entities.Sport.filter({status:'active'},'name',100),
         base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:tenantId,club_id:clubId},'-is_default',50),
-        base44.asServiceRole.entities.MembershipSavedView.filter({tenant_id:tenantId,club_id:clubId,user_id:user.id},'name',100)
+        base44.asServiceRole.entities.MembershipSavedView.filter({tenant_id:tenantId,club_id:clubId,user_id:user.id},'name',100),
+        base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',500)
       ]);
       const sportMap=new Map((allSports||[]).map((s:any)=>[String(s.id),s]));
       const configuredSports=(clubSports||[]).map((cs:any)=>({
@@ -385,12 +386,26 @@ Deno.serve(async(req)=>{
         is_primary:cs.is_primary===true,
         settings:sportSettings(cs)
       })).filter((x:any)=>x.id);
+      const seasonCounts=new Map<string,number>();
+      const feeCounts=new Map<string,number>();
+      for(const membership of memberships||[]){
+        if(membership.membership_season){
+          const key=String(membership.membership_season);
+          seasonCounts.set(key,(seasonCounts.get(key)||0)+1);
+        }
+        if(Number.isFinite(Number(membership.membership_fee))){
+          const key=String(Number(membership.membership_fee));
+          feeCounts.set(key,(feeCounts.get(key)||0)+1);
+        }
+      }
+      const mostCommon=(map:Map<string,number>)=>[...map.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
       return Response.json({
         success:true,
         tenant:tenant?{id:tenant.id,name:tenant.name||null,slug:tenant.slug||null,timezone:tenant.timezone||null}:null,
         club:safeClub(club),
         sports:configuredSports,
         gateways:(gateways||[]).map(safeGateway),
+        defaults:{membership_season:mostCommon(seasonCounts),membership_fee:mostCommon(feeCounts)!==null?Number(mostCommon(feeCounts)):null},
         membershipStatuses:MEMBERSHIP_STATUS,
         relationshipTypes:RELATIONSHIP_TYPE,
         paymentStatuses:PAYMENT_STATUS,
