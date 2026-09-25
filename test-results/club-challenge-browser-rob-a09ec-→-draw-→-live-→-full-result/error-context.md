@@ -12,281 +12,210 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Error: expect(locator).toContainText(expected) failed
 
-Locator: getByRole('button', { name: 'Prepare Round 2 · 3 scores pending' })
-Expected: visible
-Error: strict mode violation: getByRole('button', { name: 'Prepare Round 2 · 3 scores pending' }) resolved to 2 elements:
-    1) <button data-dynamic-content="true" data-collection-item-field="advanceActionLabel" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:2479:20" class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground shadow hover:bg-primary…>Prepare Round 2 · 3 scores pending</button> aka getByTestId('cc-sticky-host-bar').getByRole('button', { name: 'Prepare Round 2 · 3 scores' })
-    2) <button data-dynamic-content="true" data-collection-item-field="advanceActionLabel" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:2527:1193" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground sh…>Prepare Round 2 · 3 scores pending</button> aka getByRole('button', { name: 'Prepare Round 2 · 3 scores' }).nth(1)
+Locator: getByTestId('cc-score-card-r1-c2')
+Expected substring: "Saved ·"
+Timeout: 1500ms
+Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByRole('button', { name: 'Prepare Round 2 · 3 scores pending' }) with timeout 1800ms
-  - waiting for getByRole('button', { name: 'Prepare Round 2 · 3 scores pending' })
+  - Expect "toContainText" getByTestId('cc-score-card-r1-c2') with timeout 1500ms
+  - waiting for getByTestId('cc-score-card-r1-c2')
+    4 × locator resolved to <div data-dynamic-content="true" data-testid="cc-score-card-r1-c2" class="glass rounded-xl p-4 space-y-3" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:410:4">…</div>
+      - unexpected value "Court 2R1Clare BlueClub A Test 03 & Club A Test 04Clare GoldClub B Test 03 & Club B Test 04Saving…"
 
 ```
 
-# Page snapshot
-
 ```yaml
-- generic [ref=f1e2]:
-  - main [ref=f1e3]:
-    - generic [ref=f1e4]:
-      - generic [ref=f1e5]:
-        - generic [ref=f1e11]:
-          - paragraph [ref=f1e12]: RallyHub Interclub
-          - paragraph [ref=f1e13]: "Interclub Challenge · Status: in progress"
-        - generic [ref=f1e14]:
-          - generic [ref=f1e15]:
-            - generic [ref=f1e16]:
-              - generic [ref=f1e17]: CL
-              - generic [ref=f1e18]: Clare Blue
-            - generic [ref=f1e19]: vs
-            - generic [ref=f1e20]:
-              - generic [ref=f1e21]: CL
-              - generic [ref=f1e22]: Clare Gold
-          - button "Live Event View" [ref=f1e23] [cursor=pointer]
-          - button "Player Link / QR" [ref=f1e24] [cursor=pointer]
-          - button "Print Sheets · OUT OF DATE" [ref=f1e25] [cursor=pointer]
-      - generic [ref=f1e27]:
-        - button [ref=f1e28] [cursor=pointer]
-        - button [ref=f1e33] [cursor=pointer]
-        - button [ref=f1e38] [cursor=pointer]
-        - button "4 Live Event" [active] [ref=f1e43] [cursor=pointer]:
-          - generic [ref=f1e44]: "4"
-          - text: Live Event
-        - button "5 Simulator" [ref=f1e45] [cursor=pointer]:
-          - generic [ref=f1e46]: "5"
-          - text: Simulator
-        - button "6 Results" [ref=f1e47] [cursor=pointer]:
-          - generic [ref=f1e48]: "6"
-          - text: Results
-      - generic [ref=f1e50]:
-        - generic [ref=f1e53]:
-          - generic [ref=f1e54]: Round 1/12
-          - generic [ref=f1e55]: 00:00
-          - generic [ref=f1e56]:
-            - strong [ref=f1e57]: 1/4
-            - text: current scores saved
-          - generic [ref=f1e58]:
-            - button "Audio ON" [ref=f1e59] [cursor=pointer]
-            - button "PA" [ref=f1e60] [cursor=pointer]
-            - button "Reserve / Player Change" [ref=f1e61] [cursor=pointer]
-            - button "Prepare Round 2 · 3 scores pending" [ref=f1e62] [cursor=pointer]
-        - generic [ref=f1e63]:
-          - generic [ref=f1e64]:
-            - generic [ref=f1e65]:
-              - generic [ref=f1e66]:
-                - paragraph [ref=f1e67]: Finish-on-Time Guide
-                - generic [ref=f1e68]: RECOVERY NEEDED
-              - paragraph [ref=f1e69]: Booked finish 09:08 AM · projected finish 10:10 AM · started 91 min late
-            - generic [ref=f1e70]:
-              - paragraph [ref=f1e71]: 63 min over
-              - paragraph [ref=f1e72]: Recalculates throughout the event
-          - generic [ref=f1e73]:
-            - paragraph [ref=f1e74]: Recommended recovery
-            - paragraph [ref=f1e75]: Use 1-minute changeovers (saves up to 11 min) · Shorten the remaining break to 10 min (saves 10 min) · Reduce remaining rounds to about 6 min · Treat the Showcase Final as optional unless time is recovered
-        - generic [ref=f1e77]:
-          - generic [ref=f1e78]:
-            - paragraph [ref=f1e79]: Live Event
-            - paragraph [ref=f1e80]: Round 1 of 12
-            - paragraph [ref=f1e81]: Clare Blue 2 – 0 Clare Gold
-          - generic [ref=f1e82]:
-            - generic [ref=f1e83]: 1W
-            - generic [ref=f1e84]: 0D
-            - generic [ref=f1e85]: 0W
-        - generic [ref=f1e86]:
-          - generic [ref=f1e87]:
-            - generic [ref=f1e88]:
-              - paragraph [ref=f1e89]: Round at a Glance
-              - paragraph [ref=f1e90]: On court, resting and up next — all in one place.
-            - generic [ref=f1e91]: R1
-          - generic [ref=f1e92]:
-            - generic [ref=f1e93]:
-              - paragraph [ref=f1e94]: Court 1 · NOW
-              - paragraph [ref=f1e95]: Club A Test 02 & Club A Test 01
-              - paragraph [ref=f1e96]: vs
-              - paragraph [ref=f1e97]: Club B Test 01 & Club B Test 02
-            - generic [ref=f1e98]:
-              - paragraph [ref=f1e99]: Court 2 · NOW
-              - paragraph [ref=f1e100]: Club A Test 03 & Club A Test 04
-              - paragraph [ref=f1e101]: vs
-              - paragraph [ref=f1e102]: Club B Test 03 & Club B Test 04
-            - generic [ref=f1e103]:
-              - paragraph [ref=f1e104]: Court 3 · NOW
-              - paragraph [ref=f1e105]: Club A Test 05 & Club A Test 06
-              - paragraph [ref=f1e106]: vs
-              - paragraph [ref=f1e107]: Club B Test 05 & Club B Test 06
-            - generic [ref=f1e108]:
-              - paragraph [ref=f1e109]: Court 4 · NOW
-              - paragraph [ref=f1e110]: Club A Test 07 & Club A Test 08
-              - paragraph [ref=f1e111]: vs
-              - paragraph [ref=f1e112]: Club B Test 07 & Club B Test 08
-          - generic [ref=f1e113]:
-            - paragraph [ref=f1e114]: Resting this round
-            - generic [ref=f1e115]:
-              - generic [ref=f1e116]:
-                - paragraph [ref=f1e117]: Clare Blue
-                - generic [ref=f1e118]:
-                  - generic [ref=f1e119]: Replacement Test
-                  - generic [ref=f1e120]: Club A Test 09
-                  - generic [ref=f1e121]: Club A Test 10
-                  - generic [ref=f1e122]: Club A Test 11
-                  - generic [ref=f1e123]: Club A Test 12
-                  - generic [ref=f1e124]: Club A Test 13
-                  - generic [ref=f1e125]: Club A Test 14
-                  - generic [ref=f1e126]: Club A Test 15
-                  - generic [ref=f1e127]: Club A Test 16
-              - generic [ref=f1e128]:
-                - paragraph [ref=f1e129]: Clare Gold
-                - generic [ref=f1e130]:
-                  - generic [ref=f1e131]: Club B Test 09
-                  - generic [ref=f1e132]: Club B Test 10
-                  - generic [ref=f1e133]: Club B Test 11
-                  - generic [ref=f1e134]: Club B Test 12
-                  - generic [ref=f1e135]: Club B Test 13
-                  - generic [ref=f1e136]: Club B Test 14
-                  - generic [ref=f1e137]: Club B Test 15
-                  - generic [ref=f1e138]: Club B Test 16
-          - generic [ref=f1e139]:
-            - paragraph [ref=f1e140]: Up next · Round 2
-            - generic [ref=f1e141]:
-              - generic [ref=f1e142]:
-                - paragraph [ref=f1e143]: Court 1 · NEXT
-                - paragraph [ref=f1e144]: Club A Test 09 & Club A Test 10
-                - paragraph [ref=f1e145]: vs
-                - paragraph [ref=f1e146]: Club B Test 09 & Club B Test 10
-              - generic [ref=f1e147]:
-                - paragraph [ref=f1e148]: Court 2 · NEXT
-                - paragraph [ref=f1e149]: Club A Test 11 & Club A Test 12
-                - paragraph [ref=f1e150]: vs
-                - paragraph [ref=f1e151]: Club B Test 11 & Club B Test 12
-              - generic [ref=f1e152]:
-                - paragraph [ref=f1e153]: Court 3 · NEXT
-                - paragraph [ref=f1e154]: Club A Test 13 & Club A Test 14
-                - paragraph [ref=f1e155]: vs
-                - paragraph [ref=f1e156]: Club B Test 13 & Club B Test 14
-              - generic [ref=f1e157]:
-                - paragraph [ref=f1e158]: Court 4 · NEXT
-                - paragraph [ref=f1e159]: Club A Test 15 & Club A Test 16
-                - paragraph [ref=f1e160]: vs
-                - paragraph [ref=f1e161]: Club B Test 15 & Club B Test 16
-        - generic [ref=f1e162]:
-          - generic [ref=f1e163]:
-            - generic [ref=f1e164]:
-              - paragraph [ref=f1e165]: Round Timer
-              - paragraph [ref=f1e166]: Round 1 of 12
-            - generic [ref=f1e167]: play
-          - paragraph [ref=f1e169]: 00:00
-          - generic [ref=f1e170]:
-            - generic [ref=f1e171]:
-              - paragraph [ref=f1e172]: This round
-              - paragraph [ref=f1e173]: Adjust before play or while paused.
-            - generic [ref=f1e174]:
-              - button "Reduce this round by one minute" [ref=f1e175] [cursor=pointer]
-              - paragraph [ref=f1e176]: 10:00
-              - button "Add one minute to this round" [ref=f1e177] [cursor=pointer]
-          - generic [ref=f1e178]:
-            - button "Start Changeover" [ref=f1e179] [cursor=pointer]
-            - button "Changeover" [disabled]
-            - button "+1 minute" [disabled]
-            - group [ref=f1e180]:
-              - generic "Round options" [ref=f1e181] [cursor=pointer]
-        - generic [ref=f1e182]:
-          - generic [ref=f1e183]:
-            - generic [ref=f1e184]:
-              - paragraph [ref=f1e185]: Round 1 Scores
-              - paragraph [ref=f1e186]: Enter each court result as it comes in — you do not need to wait for the timer to finish.
-            - generic [ref=f1e187]: 1/4 saved
-          - generic [ref=f1e188]:
-            - generic [ref=f1e189]:
-              - generic [ref=f1e190]:
-                - generic [ref=f1e191]: Court 1
-                - generic [ref=f1e192]: R1
-              - generic [ref=f1e193]:
-                - generic [ref=f1e194]:
-                  - generic [ref=f1e195]:
-                    - paragraph [ref=f1e196]: Clare Blue
-                    - paragraph [ref=f1e197]: Club A Test 02 & Club A Test 01
-                  - textbox "Clare Blue score" [ref=f1e198]: "11"
-                - generic [ref=f1e199]:
-                  - generic [ref=f1e200]:
-                    - paragraph [ref=f1e201]: Clare Gold
-                    - paragraph [ref=f1e202]: Club B Test 01 & Club B Test 02
-                  - textbox "Clare Gold score" [ref=f1e203]: "8"
-              - button "Update Result" [ref=f1e204] [cursor=pointer]
-              - paragraph [ref=f1e205]: Saved · Clare Blue win
-            - generic [ref=f1e206]:
-              - generic [ref=f1e207]:
-                - generic [ref=f1e208]: Court 2
-                - generic [ref=f1e209]: R1
-              - generic [ref=f1e210]:
-                - generic [ref=f1e211]:
-                  - generic [ref=f1e212]:
-                    - paragraph [ref=f1e213]: Clare Blue
-                    - paragraph [ref=f1e214]: Club A Test 03 & Club A Test 04
-                  - textbox "Clare Blue score" [ref=f1e215]
-                - generic [ref=f1e216]:
-                  - generic [ref=f1e217]:
-                    - paragraph [ref=f1e218]: Clare Gold
-                    - paragraph [ref=f1e219]: Club B Test 03 & Club B Test 04
-                  - textbox "Clare Gold score" [ref=f1e220]
-              - button "Save Result" [disabled]
-            - generic [ref=f1e221]:
-              - generic [ref=f1e222]:
-                - generic [ref=f1e223]: Court 3
-                - generic [ref=f1e224]: R1
-              - generic [ref=f1e225]:
-                - generic [ref=f1e226]:
-                  - generic [ref=f1e227]:
-                    - paragraph [ref=f1e228]: Clare Blue
-                    - paragraph [ref=f1e229]: Club A Test 05 & Club A Test 06
-                  - textbox "Clare Blue score" [ref=f1e230]
-                - generic [ref=f1e231]:
-                  - generic [ref=f1e232]:
-                    - paragraph [ref=f1e233]: Clare Gold
-                    - paragraph [ref=f1e234]: Club B Test 05 & Club B Test 06
-                  - textbox "Clare Gold score" [ref=f1e235]
-              - button "Save Result" [disabled]
-            - generic [ref=f1e236]:
-              - generic [ref=f1e237]:
-                - generic [ref=f1e238]: Court 4
-                - generic [ref=f1e239]: R1
-              - generic [ref=f1e240]:
-                - generic [ref=f1e241]:
-                  - generic [ref=f1e242]:
-                    - paragraph [ref=f1e243]: Clare Blue
-                    - paragraph [ref=f1e244]: Club A Test 07 & Club A Test 08
-                  - textbox "Clare Blue score" [ref=f1e245]
-                - generic [ref=f1e246]:
-                  - generic [ref=f1e247]:
-                    - paragraph [ref=f1e248]: Clare Gold
-                    - paragraph [ref=f1e249]: Club B Test 07 & Club B Test 08
-                  - textbox "Clare Gold score" [ref=f1e250]
-              - button "Save Result" [disabled]
-          - button "Prepare Round 2 · 3 scores pending" [ref=f1e251] [cursor=pointer]
-        - group [ref=f1e252]:
-          - generic "PA & Announcements Open only when you need the microphone or an announcement. NOT TESTED" [ref=f1e253] [cursor=pointer]:
-            - generic [ref=f1e254]:
-              - paragraph [ref=f1e255]: PA & Announcements
-              - paragraph [ref=f1e256]: Open only when you need the microphone or an announcement.
-            - generic [ref=f1e257]: NOT TESTED
-        - group [ref=f1e261]:
-          - generic [ref=f1e263] [cursor=pointer]:
-            - paragraph [ref=f1e264]: Player Changes & Reserves
-            - paragraph [ref=f1e265]: Quick reserve handover, injury, withdrawal, replacement or late arrival.
-        - group [ref=f1e268]:
-          - generic [ref=f1e270] [cursor=pointer]:
-            - paragraph [ref=f1e271]: Court & Time Changes
-            - paragraph [ref=f1e272]: Use this if you lose or gain a court, or if less event time remains than planned.
-  - region "Notifications alt+T"
+- main:
+  - img
+  - paragraph: RallyHub Interclub
+  - paragraph: "Interclub Challenge · Status: in progress"
+  - text: CL Clare Blue vs CL Clare Gold
+  - button "Live Event View"
+  - button "Player Link / QR"
+  - button "Print Sheets · OUT OF DATE"
+  - button "Setup":
+    - img
+    - text: Setup
+  - button "Teams":
+    - img
+    - text: Teams
+  - button "Draw":
+    - img
+    - text: Draw
+  - button "4 Live Event"
+  - button "5 Simulator"
+  - button "6 Results"
+  - text: Round 2/12 10:00
+  - strong: 0/4
+  - text: current scores saved 2 earlier scores pending
+  - button "Audio ON":
+    - img
+    - text: Audio ON
+  - button "PA":
+    - img
+    - text: PA
+  - button "Reserve / Player Change":
+    - img
+    - text: Reserve / Player Change
+  - button "Start Round 2":
+    - img
+    - text: Start Round 2
+  - button "Round in play" [disabled]
+  - img
+  - text: Round 2 ready · 4 courts · 16 players resting · 3 Round 1 scores still to enter
+  - paragraph: Finish-on-Time Guide
+  - text: RECOVERY NEEDED
+  - paragraph: Booked finish 09:09 AM · projected finish 10:10 AM · started 91 min late
+  - paragraph: 62 min over
+  - paragraph: Recalculates throughout the event
+  - paragraph: Recommended recovery
+  - paragraph: Use 1-minute changeovers (saves up to 10 min) · Shorten the remaining break to 10 min (saves 10 min) · Reduce remaining rounds to about 6 min · Treat the Showcase Final as optional unless time is recovered
+  - paragraph: Live Event
+  - paragraph: Round 2 of 12
+  - paragraph: Clare Blue 4 – 0 Clare Gold
+  - text: 2W 0D 0W
+  - paragraph: Round at a Glance
+  - paragraph: On court, resting and up next — all in one place.
+  - text: R2
+  - paragraph: Court 1 · NOW
+  - paragraph: Club A Test 09 & Club A Test 10
+  - paragraph: vs
+  - paragraph: Club B Test 09 & Club B Test 10
+  - paragraph: Court 2 · NOW
+  - paragraph: Club A Test 11 & Club A Test 12
+  - paragraph: vs
+  - paragraph: Club B Test 11 & Club B Test 12
+  - paragraph: Court 3 · NOW
+  - paragraph: Club A Test 13 & Club A Test 14
+  - paragraph: vs
+  - paragraph: Club B Test 13 & Club B Test 14
+  - paragraph: Court 4 · NOW
+  - paragraph: Club A Test 15 & Club A Test 16
+  - paragraph: vs
+  - paragraph: Club B Test 15 & Club B Test 16
+  - paragraph: Resting this round
+  - paragraph: Clare Blue
+  - text: Replacement Test Club A Test 01 Club A Test 03 Club A Test 04 Club A Test 05 Club A Test 06 Club A Test 07 Club A Test 08
+  - paragraph: Clare Gold
+  - text: Club B Test 01 Club B Test 02 Club B Test 03 Club B Test 04 Club B Test 05 Club B Test 06 Club B Test 07 Club B Test 08
+  - paragraph: Up next · Round 3
+  - paragraph: Court 1 · NEXT
+  - paragraph: Replacement Test & Club A Test 03
+  - paragraph: vs
+  - paragraph: Club B Test 05 & Club B Test 07
+  - paragraph: Court 2 · NEXT
+  - paragraph: Club A Test 01 & Club A Test 04
+  - paragraph: vs
+  - paragraph: Club B Test 06 & Club B Test 08
+  - paragraph: Court 3 · NEXT
+  - paragraph: Club A Test 05 & Club A Test 07
+  - paragraph: vs
+  - paragraph: Club B Test 01 & Club B Test 03
+  - paragraph: Court 4 · NEXT
+  - paragraph: Club A Test 06 & Club A Test 08
+  - paragraph: vs
+  - paragraph: Club B Test 02 & Club B Test 04
+  - paragraph: Round Timer
+  - paragraph: Round 2 of 12
+  - text: ready
+  - paragraph: 10:00
+  - paragraph: This round
+  - paragraph: Adjust before play or while paused.
+  - button "Reduce this round by one minute":
+    - img
+  - paragraph: 10:00
+  - button "Add one minute to this round":
+    - img
+  - button "Start Play":
+    - img
+    - text: Start Play
+  - button "Changeover" [disabled]
+  - button "+1 minute" [disabled]
+  - group: Round options
+  - paragraph: Earlier scores still to enter
+  - paragraph: Keep the current round moving. Enter these results here as they arrive from the courts.
+  - text: 2 pending Court 3 R1
+  - paragraph: Clare Blue
+  - paragraph: Club A Test 05 & Club A Test 06
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Club B Test 05 & Club B Test 06
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - text: Court 4 R1
+  - paragraph: Clare Blue
+  - paragraph: Club A Test 07 & Club A Test 08
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Club B Test 07 & Club B Test 08
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - paragraph: Round 2 Scores
+  - paragraph: Enter each court result as it comes in — you do not need to wait for the timer to finish.
+  - text: 0/4 saved Court 1 R2
+  - paragraph: Clare Blue
+  - paragraph: Club A Test 09 & Club A Test 10
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Club B Test 09 & Club B Test 10
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - text: Court 2 R2
+  - paragraph: Clare Blue
+  - paragraph: Club A Test 11 & Club A Test 12
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Club B Test 11 & Club B Test 12
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - text: Court 3 R2
+  - paragraph: Clare Blue
+  - paragraph: Club A Test 13 & Club A Test 14
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Club B Test 13 & Club B Test 14
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - text: Court 4 R2
+  - paragraph: Clare Blue
+  - paragraph: Club A Test 15 & Club A Test 16
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Club B Test 15 & Club B Test 16
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - img
+  - text: Round 2 ready · 4 courts · 16 players resting · 3 Round 1 scores still to enter
+  - button "Round in play" [disabled]
+  - group:
+    - paragraph: PA & Announcements
+    - paragraph: Open only when you need the microphone or an announcement.
+    - text: NOT TESTED
+    - img
+  - group:
+    - paragraph: Player Changes & Reserves
+    - paragraph: Quick reserve handover, injury, withdrawal, replacement or late arrival.
+    - img
+  - group:
+    - paragraph: Court & Time Changes
+    - paragraph: Use this if you lose or gain a court, or if less event time remains than planned.
+    - img
+- region "Notifications alt+T":
+  - list:
+    - listitem:
+      - img
+      - text: Score saved
+    - listitem:
+      - img
+      - text: Round 2 ready · 4 courts · 16 players resting · 3 Round 1 scores still to enter
 ```
 
 # Test source
 
 ```ts
-  189 |     if (name === 'castClubChallengePotVote') {
-  190 |       await sleep(180); if(body.voterParticipantId===body.nomineeParticipantId)return {error:'Players cannot vote for themselves.'};if(model.votes.some(v=>v.voter_participant_id===body.voterParticipantId&&v.valid!==false))return {error:'This player has already voted.'};const v={id:id('vote'),tenant_id:model.event.tenant_id,challenge_event_id:model.event.id,voter_identity_key:`participant:${body.voterParticipantId}`,voter_participant_id:body.voterParticipantId,nominee_participant_id:body.nomineeParticipantId,access_route:'logged_in',cast_at:now(),valid:true};model.votes.push(v);return {success:true,vote:v};
   191 |     }
   192 | 
   193 |     if (name === 'manageClubChallengePublicLinks') {
@@ -385,10 +314,10 @@ Call log:
   286 |   const replaceBefore=model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='replace').length;started=Date.now();await page.getByTestId('cc-replace-player').click();await expect(page.getByText(new RegExp(`^Replacing .* with Replacement Test from Round 1… command sent$`))).toBeVisible({timeout:300});metric(report,'replacement_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-player-control-status')).toContainText('replaced by Replacement Test',{timeout:1800});expect(model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='replace').length-replaceBefore).toBe(1);expect(savedR1C1.club_a_names).toEqual(historicalNames);expect(model.matches.some(m=>m.round_number>1&&(m.club_a_names||[]).includes('Replacement Test'))).toBe(true);report.replacement_future_only=true;
   287 | 
   288 |   model.event.timer_state_json=JSON.stringify({phase:'play',running:false,remaining_seconds:0,started_at:null,round:1});model.event.timer_revision=Number(model.event.timer_revision||0)+1;
-> 289 |   await page.reload();await expect(page.getByTestId('cc-root')).toBeVisible();await page.getByTestId('cc-tab-live').click();await expect(page.getByRole('button',{name:'Prepare Round 2 · 3 scores pending'})).toBeVisible({timeout:1800});
-      |                                                                                                                                                                                                                ^ Error: expect(locator).toBeVisible() failed
-  290 |   started=Date.now();await page.getByRole('button',{name:'Prepare Round 2 · 3 scores pending'}).click();await expect(page.getByText('Preparing Round 2… command sent')).toBeVisible({timeout:300});metric(report,'round_advance_ack_ms',Date.now()-started,350);await expect(page.getByText('Round 2/12',{exact:true})).toBeVisible({timeout:1800});await expect(page.getByText('Earlier scores still to enter')).toBeVisible();expect(model.calls.filter(c=>c.name==='updateClubChallengeRound').at(-1)?.body.allowPendingScores).toBe(true);report.next_round_before_scores=true;
-  291 |   for(const court of [2,3,4]){await page.getByTestId(`cc-score-r1-c${court}-a`).fill('11');await page.getByTestId(`cc-score-r1-c${court}-b`).fill('7');await page.getByTestId(`cc-save-score-r1-c${court}`).click();await expect(page.getByTestId(`cc-score-card-r1-c${court}`)).toContainText('Saved ·',{timeout:1500});}
+  289 |   await page.reload();await expect(page.getByTestId('cc-root')).toBeVisible();await page.getByTestId('cc-tab-live').click();await expect(page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:'Prepare Round 2 · 3 scores pending'})).toBeVisible({timeout:1800});
+  290 |   started=Date.now();await page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:'Prepare Round 2 · 3 scores pending'}).click();await expect(page.getByText('Preparing Round 2… command sent')).toBeVisible({timeout:300});metric(report,'round_advance_ack_ms',Date.now()-started,350);await expect(page.getByText('Round 2/12',{exact:true})).toBeVisible({timeout:1800});await expect(page.getByText('Earlier scores still to enter')).toBeVisible();expect(model.calls.filter(c=>c.name==='updateClubChallengeRound').at(-1)?.body.allowPendingScores).toBe(true);report.next_round_before_scores=true;
+> 291 |   for(const court of [2,3,4]){await page.getByTestId(`cc-score-r1-c${court}-a`).fill('11');await page.getByTestId(`cc-score-r1-c${court}-b`).fill('7');await page.getByTestId(`cc-save-score-r1-c${court}`).click();await expect(page.getByTestId(`cc-score-card-r1-c${court}`)).toContainText('Saved ·',{timeout:1500});}
+      |                                                                                                                                                                                                                                                                                  ^ Error: expect(locator).toContainText(expected) failed
   292 |   await expect(page.getByText('Earlier scores still to enter')).toBeHidden({timeout:1800});await expect(page.getByText('ready',{exact:true})).toBeVisible();await expect(page.getByText('10:00').first()).toBeVisible();await expect(page.getByText('0/4').first()).toBeVisible();report.pending_scores_cleared_during_next_round=true;report.round_transition_timer_reset=true;
   293 | 
   294 |   await page.locator('#cc-court-time-controls > summary').click();await page.getByTestId('cc-courts-now').fill('3');await page.getByTestId('cc-minutes-remaining').fill('180');await page.getByTestId('cc-preview-schedule-change').click();await expect(page.getByText(/Proposed change:.*0 would be marked Not Played/)).toBeVisible();const scheduleBefore=model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length;started=Date.now();await page.getByTestId('cc-confirm-schedule-change').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Applying court & time changes… command sent')).toBeVisible({timeout:300});metric(report,'schedule_change_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-schedule-change-status')).toContainText('Schedule updated:',{timeout:1800});expect(model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length-scheduleBefore).toBe(1);expect(model.event.courts).toBe(3);expect(model.event.event_pack_stale).toBe(true);report.schedule_change_double_tap_calls=1;
@@ -469,7 +398,7 @@ Call log:
   369 |   await page.goto('/e2e/clubChallengeHarness.html');await page.getByTestId('cc-tab-live').click();await expect(page.getByText('Round at a Glance')).toBeVisible();await expect(page.getByText('RECOVERY NEEDED')).toBeVisible();
   370 |   await page.waitForTimeout(400);expect((await page.evaluate(()=>window.__ccDevice.speech)).length).toBe(0);
   371 |   await page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:/^Start 20-min Break/}).click();await expect(page.getByText('Break now',{exact:false}).first()).toBeVisible({timeout:1600});await expect(page.getByText('20:00').first()).toBeVisible();
-  372 |   const fiveButtons=page.getByRole('button',{name:'5 min'});await expect(fiveButtons).toHaveCount(4);await fiveButtons.nth(0).click();await expect(page.getByText('15:00').first()).toBeVisible({timeout:1200});await fiveButtons.nth(1).click();await expect(page.getByText('20:00').first()).toBeVisible({timeout:1200});
+  372 |   const fiveButtons=page.getByRole('button',{name:'5 min'});await expect(fiveButtons).toHaveCount(4);await fiveButtons.nth(0).click();await expect(page.getByText('15:00').first()).toBeVisible({timeout:1200});await fiveButtons.nth(1).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(1200);
   373 |   await page.getByRole('button',{name:/End Break Early/}).first().click();await expect(page.getByText('Round 7/12',{exact:true})).toBeVisible({timeout:1600});await expect(page.getByText('Up next · Round 8')).toBeVisible();await expectNoHorizontalOverflow(page);
   374 |   const report={historic_refresh_silent:true,recovery_guide:true,break_minus:true,break_plus:true,end_break_to_next_round:true};console.log(`LIVE RECOVERY ROBOT REPORT\n${JSON.stringify(report,null,2)}`);await testInfo.attach('live-recovery-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
   375 | });

@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('20:00').first()
+Locator: getByText('15:00').first()
 Expected: visible
 Timeout: 1200ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('20:00').first() with timeout 1200ms
-  - waiting for getByText('20:00').first()
+  - Expect "toBeVisible" getByText('15:00').first() with timeout 1200ms
+  - waiting for getByText('15:00').first()
 
 ```
 
@@ -46,7 +46,7 @@ Call log:
   - button "4 Live Event"
   - button "5 Simulator"
   - button "6 Results"
-  - text: BREAK 19:58
+  - text: BREAK 14:59
   - strong: 0/4
   - text: current scores saved
   - button "Audio ON":
@@ -62,18 +62,16 @@ Call log:
   - img
   - text: Round 6 play finished ✓ · 20-minute break started · 4 scores still to enter
   - paragraph: Finish-on-Time Guide
-  - text: RECOVERY NEEDED
-  - paragraph: Booked finish 09:08 AM · projected finish 09:10 AM · started 91 min late
-  - paragraph: 3 min over
+  - text: TIGHT
+  - paragraph: Booked finish 09:10 AM · projected finish 09:07 AM · started 90 min late
+  - paragraph: 2 min spare
   - paragraph: Recalculates throughout the event
-  - paragraph: Recommended recovery
-  - paragraph: Use 1-minute changeovers (saves up to 6 min) · Treat the Showcase Final as optional unless time is recovered
   - paragraph: Live Event
   - paragraph: Round 6 of 12
   - paragraph: Clare Blue 0 – 0 Clare Gold
   - text: 0W 0D 0W
   - paragraph: Break now
-  - paragraph: 19:58
+  - paragraph: 14:59
   - paragraph: Round 7 is waiting. The host can shorten, extend or end the break.
   - button "5 min":
     - img
@@ -126,7 +124,7 @@ Call log:
   - paragraph: Break Timer
   - paragraph: 20-minute scheduled break · Round 7 waits
   - text: break
-  - paragraph: 19:58
+  - paragraph: 14:59
   - paragraph: Host break controls
   - paragraph: Shorten, extend or end the break to keep the event on time.
   - button "5 min":
@@ -194,9 +192,6 @@ Call log:
   - list:
     - listitem:
       - img
-      - text: 5 minutes added to the break.
-    - listitem:
-      - img
       - text: 5 minutes removed from the break.
     - listitem:
       - img
@@ -223,8 +218,8 @@ Call log:
   286 |   const replaceBefore=model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='replace').length;started=Date.now();await page.getByTestId('cc-replace-player').click();await expect(page.getByText(new RegExp(`^Replacing .* with Replacement Test from Round 1… command sent$`))).toBeVisible({timeout:300});metric(report,'replacement_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-player-control-status')).toContainText('replaced by Replacement Test',{timeout:1800});expect(model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='replace').length-replaceBefore).toBe(1);expect(savedR1C1.club_a_names).toEqual(historicalNames);expect(model.matches.some(m=>m.round_number>1&&(m.club_a_names||[]).includes('Replacement Test'))).toBe(true);report.replacement_future_only=true;
   287 | 
   288 |   model.event.timer_state_json=JSON.stringify({phase:'play',running:false,remaining_seconds:0,started_at:null,round:1});model.event.timer_revision=Number(model.event.timer_revision||0)+1;
-  289 |   await page.reload();await expect(page.getByTestId('cc-root')).toBeVisible();await page.getByTestId('cc-tab-live').click();await expect(page.getByRole('button',{name:'Prepare Round 2 · 3 scores pending'})).toBeVisible({timeout:1800});
-  290 |   started=Date.now();await page.getByRole('button',{name:'Prepare Round 2 · 3 scores pending'}).click();await expect(page.getByText('Preparing Round 2… command sent')).toBeVisible({timeout:300});metric(report,'round_advance_ack_ms',Date.now()-started,350);await expect(page.getByText('Round 2/12',{exact:true})).toBeVisible({timeout:1800});await expect(page.getByText('Earlier scores still to enter')).toBeVisible();expect(model.calls.filter(c=>c.name==='updateClubChallengeRound').at(-1)?.body.allowPendingScores).toBe(true);report.next_round_before_scores=true;
+  289 |   await page.reload();await expect(page.getByTestId('cc-root')).toBeVisible();await page.getByTestId('cc-tab-live').click();await expect(page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:'Prepare Round 2 · 3 scores pending'})).toBeVisible({timeout:1800});
+  290 |   started=Date.now();await page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:'Prepare Round 2 · 3 scores pending'}).click();await expect(page.getByText('Preparing Round 2… command sent')).toBeVisible({timeout:300});metric(report,'round_advance_ack_ms',Date.now()-started,350);await expect(page.getByText('Round 2/12',{exact:true})).toBeVisible({timeout:1800});await expect(page.getByText('Earlier scores still to enter')).toBeVisible();expect(model.calls.filter(c=>c.name==='updateClubChallengeRound').at(-1)?.body.allowPendingScores).toBe(true);report.next_round_before_scores=true;
   291 |   for(const court of [2,3,4]){await page.getByTestId(`cc-score-r1-c${court}-a`).fill('11');await page.getByTestId(`cc-score-r1-c${court}-b`).fill('7');await page.getByTestId(`cc-save-score-r1-c${court}`).click();await expect(page.getByTestId(`cc-score-card-r1-c${court}`)).toContainText('Saved ·',{timeout:1500});}
   292 |   await expect(page.getByText('Earlier scores still to enter')).toBeHidden({timeout:1800});await expect(page.getByText('ready',{exact:true})).toBeVisible();await expect(page.getByText('10:00').first()).toBeVisible();await expect(page.getByText('0/4').first()).toBeVisible();report.pending_scores_cleared_during_next_round=true;report.round_transition_timer_reset=true;
   293 | 
@@ -306,8 +301,8 @@ Call log:
   369 |   await page.goto('/e2e/clubChallengeHarness.html');await page.getByTestId('cc-tab-live').click();await expect(page.getByText('Round at a Glance')).toBeVisible();await expect(page.getByText('RECOVERY NEEDED')).toBeVisible();
   370 |   await page.waitForTimeout(400);expect((await page.evaluate(()=>window.__ccDevice.speech)).length).toBe(0);
   371 |   await page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:/^Start 20-min Break/}).click();await expect(page.getByText('Break now',{exact:false}).first()).toBeVisible({timeout:1600});await expect(page.getByText('20:00').first()).toBeVisible();
-> 372 |   const fiveButtons=page.getByRole('button',{name:'5 min'});await expect(fiveButtons).toHaveCount(4);await fiveButtons.nth(0).click();await expect(page.getByText('15:00').first()).toBeVisible({timeout:1200});await fiveButtons.nth(1).click();await expect(page.getByText('20:00').first()).toBeVisible({timeout:1200});
-      |                                                                                                                                                                                                                                                                                                ^ Error: expect(locator).toBeVisible() failed
+> 372 |   const fiveButtons=page.getByRole('button',{name:'5 min'});await expect(fiveButtons).toHaveCount(4);await fiveButtons.nth(0).click();await expect(page.getByText('15:00').first()).toBeVisible({timeout:1200});await fiveButtons.nth(1).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(1200);
+      |                                                                                                                                                                                     ^ Error: expect(locator).toBeVisible() failed
   373 |   await page.getByRole('button',{name:/End Break Early/}).first().click();await expect(page.getByText('Round 7/12',{exact:true})).toBeVisible({timeout:1600});await expect(page.getByText('Up next · Round 8')).toBeVisible();await expectNoHorizontalOverflow(page);
   374 |   const report={historic_refresh_silent:true,recovery_guide:true,break_minus:true,break_plus:true,end_break_to_next_round:true};console.log(`LIVE RECOVERY ROBOT REPORT\n${JSON.stringify(report,null,2)}`);await testInfo.attach('live-recovery-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
   375 | });
