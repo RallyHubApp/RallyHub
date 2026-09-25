@@ -81,7 +81,7 @@ check('test mode: visual bulk population is one browser function invocation', (u
 check('host: Unassigned Pool is available on demand rather than permanently occupying a team column', contains(ui,"const [poolOpen, setPoolOpen] = useState(false)") && contains(ui,'Unassigned Pool') && contains(ui,"poolOpen && lane('pool','Player Pool',lanes.pool)"));
 check('host: teams and rankings use cross-column drag/drop', contains(ui,'DragDropContext') && contains(ui,"Droppable droppableId={id}") && contains(ui,"club_a") && contains(ui,"club_b"));
 check('host: team names are editable before saving', contains(ui,'Team name') && contains(ui,'Save Teams & Rankings'));
-check('host: team rank number is visually prominent', contains(ui,'rounded-full bg-primary text-primary-foreground'));
+check('host: team rank number is visually prominent', contains(ui,'w-8 h-8 rounded-full') && contains(ui,'text-xs font-bold shrink-0') && contains(ui,'>{i + 1}</span>'));
 check('host: team organisation is a single backend action', contains(ui,"action:'organise_teams'") && contains(participantFn,"action === 'organise_teams'"));
 check('host: draw is blocked until pool is empty and Rotation squad sizes match', contains(ui,'poolPlayers.length') && contains(ui,'aRotationPlayers.length !== bRotationPlayers.length'));
 check('host: team builder distinguishes Rotation and Reserve players', contains(ui,'Rotation') && contains(ui,'Reserve') && contains(ui,"roster_role || 'rotation'"));
