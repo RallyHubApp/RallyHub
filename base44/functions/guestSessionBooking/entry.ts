@@ -322,11 +322,12 @@ async function createProviderCheckout(base44:any,session:any,booking:any,req:Req
   const origin=clean(req.headers.get('origin')||'',250);
   const safeOrigin=/^https:\/\/([a-z0-9-]+\.)?(rallyhub\.ie|base44\.app)$/i.test(origin)?origin:'https://rallyhub.ie';
   const redirectUrl=`${safeOrigin}/guest-session/${encodeURIComponent(session.token)}?booking=${encodeURIComponent(booking.id)}&payment=return`;
+  const returnUrl='https://rallyhub.ie/api/apps/6a01dc00702b7dd2a2978c28/functions/paymentGatewayWebhook?provider=sumup';
   const brand=await clubBrand(base44,session.club_id);
   const checkout=await createCheckout({
     provider,account:gateway?.account||null,amount:Number(session.fee_amount),currency:session.currency||'EUR',
     reference:ref,description:`${brand?.name||'RallyHub club'} guest session ${session.session_date} ${session.start_time}`,
-    redirectUrl,
+    redirectUrl,returnUrl,
   });
   return {id:checkout.checkoutId,url:checkout.checkoutUrl,reference:checkout.reference,status:checkout.providerStatus,provider,merchantAccountId:checkout.merchantAccountId};
 }
