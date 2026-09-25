@@ -1,0 +1,135 @@
+{
+  "name": "InterclubGuestRegistration",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "challenge_event_id": {
+      "type": "string"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "club_a",
+        "club_b"
+      ]
+    },
+    "participant_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "email_key": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "mobile_key": {
+      "type": "string"
+    },
+    "gender": {
+      "type": "string"
+    },
+    "emergency_contact_name": {
+      "type": "string"
+    },
+    "emergency_contact_mobile": {
+      "type": "string"
+    },
+    "medical_note": {
+      "type": "string"
+    },
+    "waiver_version": {
+      "type": "string"
+    },
+    "waiver_accepted": {
+      "type": "boolean"
+    },
+    "code_of_conduct_version": {
+      "type": "string"
+    },
+    "code_of_conduct_accepted": {
+      "type": "boolean"
+    },
+    "privacy_notice_version": {
+      "type": "string"
+    },
+    "privacy_acknowledged": {
+      "type": "boolean"
+    },
+    "photo_video_consent": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "no"
+      ]
+    },
+    "registered_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "withdrawn"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "challenge_event_id",
+    "tournament_id",
+    "side",
+    "full_name",
+    "email",
+    "email_key",
+    "mobile",
+    "mobile_key",
+    "gender",
+    "waiver_version",
+    "waiver_accepted",
+    "code_of_conduct_version",
+    "code_of_conduct_accepted",
+    "privacy_notice_version",
+    "privacy_acknowledged",
+    "photo_video_consent",
+    "registered_at",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
