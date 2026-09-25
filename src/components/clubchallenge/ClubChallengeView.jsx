@@ -445,6 +445,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const timerCommandRef = React.useRef(false);
   const sportingActionRef = React.useRef(false);
   const lastTimerAnnouncementRef = React.useRef(new Set());
+  const timerSpeechArmedRef = React.useRef(false);
   const announcedRoundStartsRef = React.useRef(new Set());
   const lastShowcaseSideChangeRef = React.useRef('');
   const lastShowcaseCompleteRef = React.useRef('');
@@ -1071,7 +1072,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         // that must fire instantly during play. This does not alter the event clock.
         const commonHallPhrases = [
           '5', '4', '3', '2', '1',
-          'Round finished. Please hand in your scores.',
+          'Please hand in your scores.',
           'Changeover finished. Next round ready.',
           'Event paused.',
           'Break resumed.',
@@ -1289,19 +1290,22 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         if (!announcedRoundStartsRef.current.has(Number(currentRound))) {
           announcedRoundStartsRef.current.add(Number(currentRound));
           const label = roundLabel(currentRound);
-          speak(`${label}. Starting now. ${label}. Starting now.`, { signal:'start' });
+          timerSpeechArmedRef.current = true;
+          speak(`${label}. ${label} starting now. ${label} starting now.`, { signal:'start' });
         }
       } else if (phase === 'changeover') {
+        timerSpeechArmedRef.current = true;
         speak('Changeover starting now.', { signal:'start' });
       } else {
+        timerSpeechArmedRef.current = true;
         speak(`Your ${Number(event?.break_minutes || 20)} minute break starts now. Enjoy your break.`, { signal:'start' });
       }
       requestWakeLock();
     }
   };
-  const pauseTimer = async () => { if (await timerAction('pause')) { speak('Event paused.'); wakeLockRef.current?.release?.(); } };
-  const resumeTimer = async () => { await unlockHallAudio(); if (await timerAction('resume')) { speak(String(timerState?.phase || '') === 'break' ? 'Break resumed.' : String(timerState?.phase || '') === 'changeover' ? 'Changeover resumed.' : `${roundLabel(currentRound)}. Resume play.`, { signal:'start' }); requestWakeLock(); } };
-  const resetTimer = () => timerAction('reset');
+  const pauseTimer = async () => { if (await timerAction('pause')) { timerSpeechArmedRef.current = false; speak('Event paused.'); wakeLockRef.current?.release?.(); } };
+  const resumeTimer = async () => { await unlockHallAudio(); if (await timerAction('resume')) { timerSpeechArmedRef.current = true; speak(String(timerState?.phase || '') === 'break' ? 'Break resumed.' : String(timerState?.phase || '') === 'changeover' ? 'Changeover resumed.' : `${roundLabel(currentRound)}. Resume play.`, { signal:'start' }); requestWakeLock(); } };
+  const resetTimer = async () => { timerSpeechArmedRef.current = false; return timerAction('reset'); };
   const preparedRoundMinutes = ['ready','play'].includes(String(timerState?.phase || '')) && Number(timerState?.round || 0) === Number(currentRound) && !timerState?.running && Number(timerState?.remaining_seconds || 0) > 0
     ? Math.max(1, Math.round(Number(timerState.remaining_seconds) / 60))
     : Number(event?.play_minutes || 10);
@@ -1318,7 +1322,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const fmtTimer = s => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
   const testVoice = () => unlockHallAudio({ test:true });
   React.useEffect(() => {
-    if (!timerState?.running) return;
+    if (!timerState?.running || !timerSpeechArmedRef.current || !['in_progress','paused'].includes(event?.status)) return;
     const phase = timerState.phase || 'play';
     const announceOnce = (key, text, signal = 'warning') => {
       if (lastTimerAnnouncementRef.current.has(key)) return;
@@ -1330,20 +1334,21 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (timerRemaining === 0) {
       const scheduledBreakAfterThisRound = event?.include_break && Number(currentRound) === Number(event?.break_after_round || 0);
       const endMessage = phase === 'play'
-        ? (scheduledBreakAfterThisRound ? `${roundLabel(currentRound)} finished. Please hand in your scores. Your ${Number(event?.break_minutes || 20)} minute break is next.` : `${roundLabel(currentRound)} finished. Please hand in your scores.`)
+        ? 'Please hand in your scores.'
         : phase === 'changeover'
           ? 'Changeover finished. Next round ready.'
           : `Break finished. ${roundLabel(Number(currentRound) + 1)} is ready when the host is ready.`;
       announceOnce(`${prefix}-end`, endMessage, 'end');
+      timerSpeechArmedRef.current = false;
       wakeLockRef.current?.release?.();
     }
   }, [timerRemaining, timerState?.running, timerState?.phase, currentRound, hallVolume, voiceMode, voices, audioMuted, event?.include_break, event?.break_after_round, event?.break_minutes]);
   const runCompressedTimerAudioTest = async () => {
     if (compressedTimer.running) return;
     const steps = [
-      `${roundLabel(1)}. Starting now. ${roundLabel(1)}. Starting now.`, '5', '4', '3', '2', '1', `${roundLabel(1)} finished. Please hand in your scores.`,
-      'Changeover starting now.', `${roundLabel(2)}. Starting now. ${roundLabel(2)}. Starting now.`,
-      'Event paused.', `${roundLabel(2)}. Resume play.`, `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`, `${roundLabel(3)}. Starting now. ${roundLabel(3)}. Starting now.`
+      `${roundLabel(1)}. ${roundLabel(1)} starting now. ${roundLabel(1)} starting now.`, '5', '4', '3', '2', '1', 'Please hand in your scores.',
+      'Changeover starting now.', `${roundLabel(2)}. ${roundLabel(2)} starting now. ${roundLabel(2)} starting now.`,
+      'Event paused.', `${roundLabel(2)}. Resume play.`, `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`, `${roundLabel(3)}. ${roundLabel(3)} starting now. ${roundLabel(3)} starting now.`
     ];
     setCompressedTimer({ running: true, step: 0, text: steps[0] });
     for (let i = 0; i < steps.length; i += 1) {
