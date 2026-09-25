@@ -40,6 +40,102 @@ async function clubBrand(base44:any,clubId:string){
   }catch{return null}
 }
 
+async function membershipConfig(base44:any,tenantId:string,clubId:string,configId=''){
+  if(configId){
+    const rows=await base44.asServiceRole.entities.MembershipApplicationConfig.filter({id:configId,tenant_id:tenantId,club_id:clubId},'-updated_date',5);
+    if(rows?.[0])return rows[0];
+  }
+  const rows=await base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',20);
+  return (rows||[]).find((x:any)=>x.status==='active')||(rows||[])[0]||null;
+}
+
+async function nextMemberId(base44:any,config:any){
+  const prefix=clean(config?.member_id_prefix,50);
+  if(!prefix)return '';
+  const digits=Math.max(2,Math.min(8,Number(config?.member_id_digits||4)));
+  const rows=await base44.asServiceRole.entities.ClubMembership.filter({tenant_id:config.tenant_id,club_id:config.club_id},'member_id',500);
+  let max=0;
+  for(const row of rows||[]){
+    const id=String(row.member_id||'');
+    if(!id.startsWith(prefix))continue;
+    const n=Number(id.slice(prefix.length).replace(/\D/g,''));
+    if(Number.isFinite(n))max=Math.max(max,n);
+  }
+  return `${prefix}${String(max+1).padStart(digits,'0')}`;
+}
+
+function membershipEmailShell({club,headline,preheader,content}:any){
+  const name=escapeHtml(club?.name||'RallyHub Club');
+  const logo=escapeHtml(club?.logo_url||'');
+  const primary=escapeHtml(club?.primary_colour||'#2563eb');
+  const secondary=escapeHtml(club?.secondary_colour||'#facc15');
+  return `<!doctype html><html><body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader||headline||'')}</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 12px;"><tr><td align="center">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #d9e1ec;border-radius:18px;overflow:hidden;">
+<tr><td style="height:6px;background:${primary};border-bottom:3px solid ${secondary};"></td></tr>
+<tr><td style="padding:26px 28px 18px;text-align:center;">${logo?`<img src="${logo}" alt="${name} logo" width="72" height="72" style="display:block;margin:0 auto 12px;object-fit:contain;border-radius:12px;">`:''}<div style="font-size:25px;font-weight:800;color:#10182b;">${name}</div><div style="margin-top:5px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b7280;">Membership</div></td></tr>
+<tr><td style="padding:0 28px 28px;"><h1 style="margin:0 0 18px;font-size:23px;line-height:1.25;color:#10182b;">${escapeHtml(headline)}</h1>${content}</td></tr>
+<tr><td style="padding:18px 28px;background:#f7f9fc;border-top:1px solid #e4e9f1;text-align:center;font-size:11px;line-height:1.5;color:#7b8494;">Powered by <strong>RallyHub</strong> · membership technology for clubs</td></tr>
+</table></td></tr></table></body></html>`;
+}
+
+async function sendMembershipPaidEmail(base44:any,config:any,club:any,application:any){
+  if(!application?.email||String(application.admin_notes||'').includes('paid-confirmation-sent'))return application;
+  const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:application.tenant_id,clubId:application.club_id};
+  const hello=firstName(application.full_name);
+  const fee=money(application.membership_fee,application.currency||config?.currency||'EUR');
+  const signatoryName=clean(config?.signatory_name,120)||club?.name||'Club team';
+  const signatoryTitle=clean(config?.signatory_title,120);
+  const textBody=`Hi ${hello},
+
+Your ${club.name} membership for ${application.membership_season} is confirmed.
+
+Payment received: ${fee}
+Membership reference: ${application.confirmation_code}
+
+Thank you for being part of ${club.name}.
+
+${signatoryName}${signatoryTitle?`\n${signatoryTitle}`:''}
+${club.name}
+
+Powered by RallyHub`;
+  const htmlBody=membershipEmailShell({club,headline:`Membership confirmed, ${hello}`,preheader:`${club.name} membership confirmed`,content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Your membership for <strong>${escapeHtml(application.membership_season)}</strong> is now confirmed.</p>
+<div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#eef8f1;border:1px solid #b9e2c4;"><div style="font-size:15px;font-weight:800;color:#23452d;">Payment received · ${escapeHtml(fee)}</div><div style="margin-top:5px;font-size:13px;color:#3f6348;">Membership reference: ${escapeHtml(application.confirmation_code)}</div></div>
+<p style="margin:0;font-size:15px;line-height:1.65;color:#374151;">Thank you for being part of ${escapeHtml(club.name)}.</p>
+<p style="margin:24px 0 0;font-size:15px;line-height:1.5;"><strong>${escapeHtml(signatoryName)}</strong>${signatoryTitle?`<br>${escapeHtml(signatoryTitle)}`:''}<br>${escapeHtml(club.name)}</p>`});
+  try{
+    await sendWithConfiguredEmailTransport(base44,scope,{to:application.email,subject:`${club.name} membership confirmed · ${application.membership_season}`,textBody,htmlBody});
+    return await base44.asServiceRole.entities.MembershipApplication.update(application.id,{
+      admin_notes:`${clean(application.admin_notes,1200)} paid-confirmation-sent`.trim(),follow_up_status:'complete'
+    });
+  }catch(e){
+    console.error('membership webhook confirmation email failed',e?.message||e);
+    return application;
+  }
+}
+
+async function syncMembershipApplication(base44:any,payment:any,membership:any,status:'paid'|'failed',now:string){
+  const apps=await base44.asServiceRole.entities.MembershipApplication.filter({
+    tenant_id:payment.tenant_id,club_id:payment.club_id,club_membership_id:membership.id
+  },'-submitted_at',20);
+  let application=(apps||[])[0]||null;
+  if(!application)return;
+  if(status==='paid'){
+    application=await base44.asServiceRole.entities.MembershipApplication.update(application.id,{
+      status:'approved',payment_status:'paid',paid_at:application.paid_at||now,approved_at:application.approved_at||now,follow_up_status:'complete'
+    });
+    const config=await membershipConfig(base44,payment.tenant_id,payment.club_id,application.config_id||'');
+    const club=await clubBrand(base44,payment.club_id);
+    if(config&&club)await sendMembershipPaidEmail(base44,config,club,application);
+  }else if(application.payment_status!=='paid'){
+    await base44.asServiceRole.entities.MembershipApplication.update(application.id,{
+      status:'payment_failed',payment_status:'failed',follow_up_status:'payment_due'
+    });
+  }
+}
+
 async function sendBookingEmails(base44:any,session:any,booking:any){
   if(booking.notification_sent_at && booking.guest_confirmation_sent_at)return booking;
   const club=(await clubBrand(base44,session.club_id))||{
