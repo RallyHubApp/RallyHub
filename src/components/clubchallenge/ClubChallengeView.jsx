@@ -487,13 +487,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-secure-state', tournament.id, currentUser?.id],
     queryFn: async () => (await base44.functions.invoke('getClubChallengeState', { tournamentId: tournament.id })).data,
     enabled: !!currentUser && !isAdmin,
-    refetchInterval: 5000,
+    refetchInterval: 12000,
+    refetchOnWindowFocus:false,
   });
   const { data: adminEvent, refetch: refetchAdminEvent } = useQuery({
     queryKey: ['club-challenge-event', tournament.id],
     queryFn: async () => (await base44.entities.ClubChallengeEvent.filter({ tournament_id: tournament.id }))[0] || null,
     enabled: isAdmin,
-    refetchInterval: 5000,
+    refetchInterval: 12000,
+    refetchOnWindowFocus:false,
   });
   const event = isAdmin ? adminEvent : secureState?.event || null;
   const { data: adminParticipants = [], refetch: refetchAdminParticipants } = useQuery({
@@ -506,7 +508,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-matches', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeMatch.filter({ challenge_event_id: event.id }, 'round_number', 200) : [],
     enabled: isAdmin && !!event?.id,
-    refetchInterval: isAdmin && showcaseScorerLink ? 2000 : false,
+    refetchInterval: isAdmin && showcaseScorerLink ? 5000 : false,
+    refetchOnWindowFocus:false,
   });
   const matches = isAdmin ? adminMatches : secureState?.matches || [];
   const refetchEvent = isAdmin ? refetchAdminEvent : refetchSecureState;
@@ -516,7 +519,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-votes', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeVote.filter({ challenge_event_id: event.id }, '-cast_at', 200) : [],
     enabled: isAdmin && !!event?.id && !!event?.pot_enabled,
-    refetchInterval: isAdmin && event?.pot_status === 'open' ? 2000 : false,
+    refetchInterval: isAdmin && event?.pot_status === 'open' ? 5000 : false,
+    refetchOnWindowFocus:false,
   });
 
   React.useEffect(() => {
@@ -715,7 +719,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   React.useEffect(() => { localStorage.setItem(`cc-pending-${tournament.id}`, JSON.stringify(pendingScores)); }, [pendingScores, tournament.id]);
 
   const sync = async () => {
-    await Promise.all([refetchEvent(), refetchParticipants(), refetchMatches(), event?.pot_enabled ? refetchPotVotes() : Promise.resolve()]);
+    // Serialise authoritative refreshes instead of firing four Base44 reads in the same burst.
+    await refetchEvent();
+    await refetchParticipants();
+    await refetchMatches();
+    if (event?.pot_enabled) await refetchPotVotes();
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
   };
   const queueOfflineScore = item => setPendingScores(q => [...q.filter(x => x.matchId !== item.matchId), item]);
