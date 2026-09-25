@@ -64,6 +64,18 @@ export default function Dashboard() {
     refetchOnWindowFocus: true
   });
 
+  const { data: pendingMembershipApplicationCount = 0 } = useQuery({
+    queryKey: ['membership-application-attention-count', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('membershipApplication', { action: 'admin_count' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return Number(res.data?.pendingCount || 0);
+    },
+    enabled: !!currentUser && (currentUser?.role === 'admin' || currentUser?.active_club_role === 'club_admin'),
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true
+  });
+
   const { data: pendingDirectoryApprovalCount = 0 } = useQuery({
     queryKey: ['pending-directory-approval-count'],
     queryFn: async () => {
@@ -94,8 +106,8 @@ export default function Dashboard() {
         </Link>
       </PageHeader>
 
-      {currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0) && (
-        <div className="grid gap-3 sm:grid-cols-2">
+      {((currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0)) || pendingMembershipApplicationCount > 0) && (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {pendingMembershipApprovalCount > 0 && (
             <Link
               to="/app/admin?tab=approvals"
@@ -107,8 +119,8 @@ export default function Dashboard() {
                   <Users className="w-5 h-5 text-amber-300" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-foreground">Membership approvals</p>
-                  <p className="text-sm text-muted-foreground">{pendingMembershipApprovalCount} {pendingMembershipApprovalCount === 1 ? 'approval needs' : 'approvals need'} your attention.</p>
+                  <p className="font-bold text-foreground">Account approvals</p>
+                  <p className="text-sm text-muted-foreground">{pendingMembershipApprovalCount} {pendingMembershipApprovalCount === 1 ? 'account needs' : 'accounts need'} your attention.</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="min-w-7 h-7 px-2 rounded-full bg-amber-400 text-black text-sm font-black flex items-center justify-center">{pendingMembershipApprovalCount}</span>
@@ -118,7 +130,29 @@ export default function Dashboard() {
             </Link>
           )}
 
-          {pendingDirectoryApprovalCount > 0 && (
+          {pendingMembershipApplicationCount > 0 && (
+            <Link
+              to="/app/membership#membership-applications"
+              className="block rounded-xl border border-blue-400/40 bg-blue-500/10 p-4 hover:bg-blue-500/15 transition-colors"
+              aria-label={`Review ${pendingMembershipApplicationCount} membership applications awaiting action`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-400/20 flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5 text-blue-300" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-foreground">Membership applications</p>
+                  <p className="text-sm text-muted-foreground">{pendingMembershipApplicationCount} {pendingMembershipApplicationCount === 1 ? 'application needs' : 'applications need'} payment or follow-up.</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="min-w-7 h-7 px-2 rounded-full bg-blue-400 text-black text-sm font-black flex items-center justify-center">{pendingMembershipApplicationCount}</span>
+                  <ArrowRight className="w-4 h-4 text-blue-300" />
+                </div>
+              </div>
+            </Link>
+          )}
+
+          {currentUser?.role === 'admin' && pendingDirectoryApprovalCount > 0 && (
             <Link
               to="/app/admin?tab=directory&focus=pending-actions"
               className="block rounded-xl border border-emerald-400/40 bg-emerald-500/10 p-4 hover:bg-emerald-500/15 transition-colors"
