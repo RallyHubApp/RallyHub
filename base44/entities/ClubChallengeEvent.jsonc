@@ -58,6 +58,16 @@
     "available_minutes": {
       "type": "number"
     },
+    "scheduled_start_time": {
+      "type": "string"
+    },
+    "actual_started_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
     "play_minutes": {
       "type": "number"
     },
