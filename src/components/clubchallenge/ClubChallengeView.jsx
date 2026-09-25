@@ -52,6 +52,8 @@ const DEFAULT_SETUP = {
 
 function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
 function durationLabel(minutes) { const total = Math.max(0, Math.round(Number(minutes) || 0)); const h = Math.floor(total / 60); const m = total % 60; return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`; }
+function clockLabel(ms) { if (!Number.isFinite(ms)) return ''; return new Date(ms).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); }
+function bookingStartMs(tournament, event) { const date=String(tournament?.start_date||'').slice(0,10), time=String(event?.scheduled_start_time||'').trim(); if(!date||!/^\d{2}:\d{2}$/.test(time)) return NaN; const ms=new Date(`${date}T${time}:00`).getTime(); return Number.isFinite(ms)?ms:NaN; }
 function privacyName(name, junior) { if (!junior) return name || ''; const parts = String(name || '').trim().split(/\s+/).filter(Boolean); return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : (parts[0] || ''); }
 
 function parseCsvPlayers(text) {
