@@ -53,8 +53,9 @@ export default function PublicClubChallengeDisplay(){
   const potWinnersB=potWinners.filter(p=>p.side==='club_b');
   const completed=['completed','archived'].includes(event.status);
   const finalTitle=s.a===s.b?'Interclub Draw':`${s.a>s.b?event.club_a_name:event.club_b_name} win the Interclub`;
-  const teamAPlayers=participants.filter(p=>p.side==='club_a').sort((a,b)=>Number(a.event_rank||99)-Number(b.event_rank||99));
-  const teamBPlayers=participants.filter(p=>p.side==='club_b').sort((a,b)=>Number(a.event_rank||99)-Number(b.event_rank||99));
+  const alphabeticalTeamSort=(a,b)=>String(a.display_name||'').localeCompare(String(b.display_name||''),'en',{sensitivity:'base'});
+  const teamAPlayers=participants.filter(p=>p.side==='club_a').sort(alphabeticalTeamSort);
+  const teamBPlayers=participants.filter(p=>p.side==='club_b').sort(alphabeticalTeamSort);
   const resultMatches=matches.filter(m=>!m.is_showcase&&['completed','draw','retired','forfeit','abandoned'].includes(m.status)).sort((a,b)=>Number(a.round_number)-Number(b.round_number)||Number(a.court_number)-Number(b.court_number));
   const resultRounds=[...new Set(resultMatches.map(m=>Number(m.round_number)))].sort((a,b)=>a-b);
   const playerLabel = p => {
