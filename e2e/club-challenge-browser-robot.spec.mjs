@@ -8,13 +8,14 @@ function createClubChallengeModel() {
   const model = {
     user: { id:'e2e-admin', email:'admin@example.test', role:'admin', active_tenant_id:'tenant-clare-e2e', active_club_id:'club-clare-e2e' },
     club: { id:'club-clare-e2e', name:'Clare Pickleball Club', logo_url:'', primary_colour:'#2563eb', secondary_colour:'#facc15' },
-    tournament: { id:'e2e-club-challenge-tournament', status:'Draft', tenant_id:'tenant-clare-e2e', host_club_id:'club-clare-e2e', format:'Club Challenge', inter_club:true },
+    tournament: { id:'e2e-club-challenge-tournament', status:'Draft', start_date:new Date().toISOString().slice(0,10), tenant_id:'tenant-clare-e2e', host_club_id:'club-clare-e2e', format:'Club Challenge', inter_club:true },
     event: null,
     participants: [],
     matches: [],
     votes: [],
     calls: [],
     entityWrites: [],
+    rateLimitFailures: {},
     nextId: 1,
   };
 
@@ -114,7 +115,7 @@ function createClubChallengeModel() {
         Object.assign(model.event,{status:'draw_approved',draw_version:next,draw_approved_at:now(),draw_approved_by:model.user.id,event_pack_stale:false,event_pack_version:next,event_pack_generated_at:now()});
       } else if (body.action === 'start') {
         const initialTimer={phase:'ready',running:false,remaining_seconds:Number(model.event.play_minutes||10)*60,started_at:null,round:1};
-        Object.assign(model.event,{status:'in_progress',current_round:1,timer_state_json:JSON.stringify(initialTimer),timer_revision:Number(model.event.timer_revision||0)+1}); model.tournament.status='In Progress';
+        Object.assign(model.event,{status:'in_progress',current_round:1,actual_started_at:now(),timer_state_json:JSON.stringify(initialTimer),timer_revision:Number(model.event.timer_revision||0)+1}); model.tournament.status='In Progress';
       } else if (body.action === 'set_round_label') {
         let labels={};try{labels=model.event.round_labels_json?JSON.parse(model.event.round_labels_json):{};}catch{}
         if(body.label)labels[String(body.round)]=body.label;else delete labels[String(body.round)];model.event.round_labels_json=JSON.stringify(labels);
@@ -141,6 +142,8 @@ function createClubChallengeModel() {
         next={phase:'ready',running:false,remaining_seconds:Number(body.minutes)*60,started_at:null,round:Number(model.event.current_round||1)};
       } else if (body.action === 'add_minute') {
         next={...current,remaining_seconds:Number(current.remaining_seconds||0)+60};
+      } else if (body.action === 'adjust_break') {
+        next={...current,remaining_seconds:Math.max(0,Number(current.remaining_seconds||0)+Number(body.minutes||0)*60)};
       }
       model.event.timer_revision=Number(model.event.timer_revision||0)+1;
       model.event.timer_state_json=JSON.stringify(next);
@@ -204,7 +207,7 @@ async function installClubChallengeBackend(page, model) {
     if(path.endsWith('/entities/User/me'))return json(route,model.user);
     const fnMarker=`/api/apps/${APP_ID}/functions/`;
     const fnIndex=path.indexOf(fnMarker);
-    if(fnIndex>=0){const name=decodeURIComponent(path.slice(fnIndex+fnMarker.length).split('/')[0]);let body={};try{body=req.postDataJSON()||{};}catch{}return json(route,await model.handleFunction(name,body));}
+    if(fnIndex>=0){const name=decodeURIComponent(path.slice(fnIndex+fnMarker.length).split('/')[0]);let body={};try{body=req.postDataJSON()||{};}catch{}const remaining=Number(model.rateLimitFailures?.[name]||0);if(remaining>0){model.rateLimitFailures[name]=remaining-1;model.calls.push({name,body,at:Date.now(),rateLimited:true});return json(route,{error:'Burst rate limit exceeded'},429);}return json(route,await model.handleFunction(name,body));}
     const entityMarker=`/api/apps/${APP_ID}/entities/`;
     const entityIndex=path.indexOf(entityMarker);
     if(entityIndex>=0){const rest=path.slice(entityIndex+entityMarker.length);const [entity,recordId]=rest.split('/').map(decodeURIComponent);let body={};try{body=req.postDataJSON()||{};}catch{}
