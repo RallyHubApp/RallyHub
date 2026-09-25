@@ -2,6 +2,7 @@ import { base44 } from '@/api/base44Client';
 
 const amplifiedSpeechCache = new Map();
 let amplifiedSpeechBackoffUntil = 0;
+let amplifiedSpeechRequestChain = Promise.resolve();
 
 export function getRallyHubAudioContext() {
   if (typeof window === 'undefined') return null;
@@ -190,7 +191,15 @@ async function getAmplifiedSpeechBuffer(text, eventId = '') {
   const key = `${eventId || 'global'}::${String(text || '').trim()}`;
   if (amplifiedSpeechCache.has(key)) return amplifiedSpeechCache.get(key);
 
-  const pending = (async () => {
+  const request = amplifiedSpeechRequestChain.then(async () => {
+    // Re-check after waiting for any preceding TTS request. If the first
+    // request failed, all queued pre-warms immediately use browser fallback
+    // instead of forming a Base44 burst.
+    if (Date.now() < amplifiedSpeechBackoffUntil) {
+      const error = new Error('Amplified hall speech is temporarily cooling down; browser voice will be used.');
+      error.code = 'TTS_BACKOFF';
+      throw error;
+    }
     const response = await base44.functions.invoke('generateHallSpeech', {
       text:String(text || '').trim(),
       eventId:eventId || undefined,
@@ -204,7 +213,9 @@ async function getAmplifiedSpeechBuffer(text, eventId = '') {
     const arrayBuffer = base64ToArrayBuffer(payload.audio_base64);
     const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
     return { audioBuffer, provider:payload.provider || 'generated', voice:payload.voice || '' };
-  })();
+  });
+  amplifiedSpeechRequestChain = request.catch(() => undefined);
+  const pending = request;
 
   amplifiedSpeechCache.set(key, pending);
   try {
