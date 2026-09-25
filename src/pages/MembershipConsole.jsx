@@ -404,6 +404,50 @@ export default function MembershipConsole() {
     }
   };
 
+  const createMembershipPayment = async () => {
+    if (!personId) return;
+    setSaving(true);
+    try {
+      const response = await base44.functions.invoke('membershipRecord', { action: 'admin_create_membership_payment', personId });
+      if (response.data?.error) throw new Error(response.data.error);
+      const payment = response.data?.payment;
+      if (payment?.checkout_url) {
+        try {
+          await navigator.clipboard.writeText(payment.checkout_url);
+          toast.success(response.data?.reused ? 'Existing payment link copied' : 'Membership payment link created and copied');
+        } catch {
+          window.prompt('Copy this membership payment link', payment.checkout_url);
+        }
+      }
+      await Promise.all([
+        refetchDetail(),
+        queryClient.invalidateQueries({ queryKey: ['membership-console-list'] })
+      ]);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not create payment link');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const verifyMembershipPayment = async () => {
+    if (!personId) return;
+    setSaving(true);
+    try {
+      const response = await base44.functions.invoke('membershipRecord', { action: 'admin_verify_membership_payment', personId });
+      if (response.data?.error) throw new Error(response.data.error);
+      await Promise.all([
+        refetchDetail(),
+        queryClient.invalidateQueries({ queryKey: ['membership-console-list'] })
+      ]);
+      toast.success(response.data?.status === 'paid' ? 'Membership payment confirmed and membership activated' : 'Payment status: ' + label(response.data?.status || 'pending'));
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not verify membership payment');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const addTraining = async () => {
     if (!training.trainingName.trim()) return toast.error('Enter the training name');
     setSaving(true);
