@@ -33,16 +33,23 @@ Deno.serve(async (req) => {
     const potWinners = potWinnerIds.map((id:string) => participants.find((p:any) => p.id === id)).filter(Boolean).map((p:any) => ({
       id:p.id, side:p.side, display_name:maskName(p.display_name, !!event.junior_display_mode),
     }));
-    const safeParticipants = participants.filter((p:any) => ['active','late'].includes(p.status)).map((p:any) => ({
-      id:p.id,
-      display_name:pmap.get(p.id) || 'Player',
-      side:p.side,
-      event_rank:p.event_rank,
-      roster_role:p.roster_role || 'rotation',
-      reserve_activated:!!p.reserve_activated,
-      status:p.status,
-      available_from_round:p.available_from_round
-    }));
+    const participantById = new Map(participants.map((p:any) => [p.id, p]));
+    const safeParticipants = participants.filter((p:any) => ['club_a','club_b'].includes(p.side)).map((p:any) => {
+      const incoming:any = p.replaced_by_participant_id ? participantById.get(p.replaced_by_participant_id) : null;
+      return {
+        id:p.id,
+        display_name:pmap.get(p.id) || 'Player',
+        side:p.side,
+        event_rank:p.event_rank,
+        roster_role:p.roster_role || 'rotation',
+        reserve_activated:!!p.reserve_activated,
+        status:p.status,
+        available_from_round:p.available_from_round,
+        replaced_by_participant_id:p.replaced_by_participant_id || null,
+        replacement_for_participant_id:p.replacement_for_participant_id || null,
+        replacement_effective_round:p.replacement_effective_round || incoming?.replacement_effective_round || null
+      };
+    });
     const safeMatches = matches.map((m:any) => ({
       id:m.id, round_number:m.round_number, court_number:m.court_number, status:m.status, winner:m.winner,
       score_a:m.score_a, score_b:m.score_b, is_showcase:!!m.is_showcase,
@@ -56,6 +63,7 @@ Deno.serve(async (req) => {
       id:event.id, status:event.status, club_a_name:event.club_a_name, club_b_name:event.club_b_name,
       club_a_logo_url:event.club_a_logo_url, club_b_logo_url:event.club_b_logo_url,
       club_a_primary_colour:event.club_a_primary_colour, club_b_primary_colour:event.club_b_primary_colour,
+      club_a_secondary_colour:event.club_a_secondary_colour, club_b_secondary_colour:event.club_b_secondary_colour,
       current_round:event.current_round, planned_rounds:event.planned_rounds, timer_state_json:event.timer_state_json, timer_revision:event.timer_revision,
       play_minutes:event.play_minutes, changeover_minutes:event.changeover_minutes,
       include_break:!!event.include_break, break_minutes:event.break_minutes, break_after_round:event.break_after_round,
