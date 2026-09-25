@@ -562,12 +562,21 @@ async function sendAdminDirectoryEmail(base44, { user, subject, body, kind, cont
     const to = String(settings?.[0]?.review_email || '').trim().toLowerCase();
     if (!to) return { sent: 0 };
 
-    await base44.asServiceRole.integrations.Core.SendEmail({
-      to,
-      from_name: 'RallyHub Directory',
-      subject,
-      body,
+    const adminUrl = String(body || '').match(/https:\/\/rallyhub\.ie\/app\/admin[^\s]*/i)?.[0] || '';
+    const finalTextBody = normaliseDirectorySignatureText(body);
+    const htmlBody = rallyHubEmailShell({
+      title: subject.replace(/^\[RallyHub Directory\]\s*/i, ''),
+      preheader: 'RallyHub Directory admin notification',
+      content: textToBrandedHtml(finalTextBody, adminUrl),
+      actionUrl: adminUrl,
+      actionLabel: adminUrl ? 'Open Directory Admin' : '',
+      footerNote: 'RallyHub Directory · Admin notification',
     });
+    await sendWithConfiguredEmailTransport(
+      base44,
+      { scopeType: 'platform', purpose: 'directory' },
+      { to, subject, textBody: finalTextBody, htmlBody },
+    );
     return { sent: 1 };
   } catch (error) {
     // A notification failure must never lose the underlying claim/request; it remains
