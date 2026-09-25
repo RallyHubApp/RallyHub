@@ -106,6 +106,8 @@ export default function MembershipConsole() {
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [applicationBusyId, setApplicationBusyId] = useState('');
+  const [communicationPreview, setCommunicationPreview] = useState(null);
+  const [previewChannel, setPreviewChannel] = useState('email');
   const [editPerson, setEditPerson] = useState({});
   const [editMembership, setEditMembership] = useState({});
   const [editSports, setEditSports] = useState([]);
@@ -473,6 +475,29 @@ export default function MembershipConsole() {
       toast.error(error?.response?.data?.error || error?.message || 'Could not verify membership payment');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const previewApplicationReminder = async application => {
+    if (!application?.id) return;
+    setApplicationBusyId(application.id);
+    try {
+      const response = await base44.functions.invoke('membershipApplication', {
+        action: 'admin_preview_reminder',
+        applicationId: application.id
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      if (response.data?.alreadyPaid) {
+        toast.success('This membership has already been paid');
+        await refetchApplications();
+        return;
+      }
+      setPreviewChannel('email');
+      setCommunicationPreview({ application, ...(response.data?.preview || {}) });
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not prepare the reminder preview');
+    } finally {
+      setApplicationBusyId('');
     }
   };
 
