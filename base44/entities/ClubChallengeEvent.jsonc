@@ -202,6 +202,15 @@
       "type": "boolean",
       "default": false
     },
+    "pot_method": {
+      "type": "string",
+      "enum": [
+        "none",
+        "vote",
+        "points"
+      ],
+      "default": "none"
+    },
     "pot_status": {
       "type": "string",
       "enum": [
@@ -310,15 +319,6 @@
         "null"
       ],
       "format": "date-time"
-    },
-    "pot_method": {
-      "type": "string",
-      "enum": [
-        "none",
-        "vote",
-        "points"
-      ],
-      "default": "none"
     }
   },
   "required": [
