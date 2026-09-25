@@ -139,7 +139,7 @@ RallyHub Guest Bookings`,
     }catch(e){console.error('guest admin notification failed',e?.message||e)}
   }
 
-  if(!booking.guest_confirmation_sent_at && booking.email){
+  if(!booking.guest_confirmation_sent_at && booking.email && booking.payment_method==='sumup' && booking.payment_status==='paid'){
     try{
       const paymentLine=booking.payment_method==='cash'
         ? `Payment: €${Number(booking.amount).toFixed(2)} cash on arrival.`
@@ -379,10 +379,26 @@ Deno.serve(async(req)=>{
 
     const duplicate=(bookings||[]).find((b:any)=>b.email_key===email&&b.booking_status!=='cancelled');
     if(duplicate){
+      let paymentUrl=duplicate.sumup_checkout_url||'';
+      let paymentStatus=duplicate.payment_status;
+      if(session.payment_method==='sumup' && duplicate.booking_status!=='confirmed' && (!paymentUrl || ['failed','expired'].includes(String(paymentStatus||'').toLowerCase()))){
+        try{
+          const checkout=await createSumUpCheckout(session,duplicate,req);
+          await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{
+            sumup_checkout_id:checkout.id,sumup_checkout_url:checkout.url,sumup_checkout_reference:checkout.reference,
+            payment_status:'pending',booking_status:'pending_payment',
+          });
+          const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
+          if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{
+            payment_status:'pending',sumup_checkout_id:checkout.id,sumup_payment_link:checkout.url,external_payment_reference:checkout.reference,
+          });
+          paymentUrl=checkout.url;paymentStatus='pending';
+        }catch(e){console.error('SumUp retry checkout failed',e?.message||e)}
+      }
       return Response.json({
-        success:true,alreadyBooked:true,bookingId:duplicate.id,paymentUrl:duplicate.sumup_checkout_url||'',
-        session:safeSession(session),bookingStatus:duplicate.booking_status,paymentStatus:duplicate.payment_status,
-        message:duplicate.booking_status==='confirmed'?'You are already confirmed for this session.':'You already started this booking.',
+        success:true,alreadyBooked:true,bookingId:duplicate.id,paymentUrl,
+        session:safeSession(session),bookingStatus:duplicate.booking_status,paymentStatus,
+        message:duplicate.booking_status==='confirmed'?'You are already confirmed for this session.':'You already started this booking. Complete payment to confirm your place.',
       });
     }
 
