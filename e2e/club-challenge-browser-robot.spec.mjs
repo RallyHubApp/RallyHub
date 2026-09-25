@@ -350,7 +350,7 @@ test('Completed player link robot: Final landing, alphabetical teams, Summary an
   await page.getByRole('button',{name:'Teams',exact:true}).click();await expect(page.getByRole('heading',{name:'Teams'})).toBeVisible();
   const aTeam=page.getByRole('heading',{name:'Banner Strikers'}).locator('xpath=../..');const aText=await aTeam.innerText();expect(aText.indexOf('Aoife Player')).toBeLessThan(aText.indexOf('Brian Player'));expect(aText.indexOf('Brian Player')).toBeLessThan(aText.indexOf('Zara Player'));
 
-  await page.getByRole('button',{name:'Event Info',exact:true}).click();await expect(page.getByRole('heading',{name:'Interclub Event Information'})).toBeVisible();await expect(page.getByText('2 courts, 2 rounds')).toBeVisible();await expect(page.getByRole('heading',{name:'Interclub Etiquette'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Event Info',exact:true})).toHaveCount(0);
 
   await page.getByRole('button',{name:'Summary',exact:true}).click();await expect(page.getByRole('heading',{name:'Interclub Summary'})).toBeVisible();await expect(page.getByRole('heading',{name:'Round 1'})).toBeVisible();await expect(page.getByRole('heading',{name:'Round 2'})).toBeVisible();
 
