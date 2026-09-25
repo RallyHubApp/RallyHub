@@ -58,6 +58,7 @@ export default function PublicClubProfile() {
   const [feedbackResponse, setFeedbackResponse] = useState('');
   const [feedback, setFeedback] = useState({ category: 'improvement', area: 'directory', message: '', importance: 'important', contactOk: true });
   const [membershipApplicationConfig, setMembershipApplicationConfig] = useState(null);
+  const [membershipApplicationConfig, setMembershipApplicationConfig] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -93,6 +94,14 @@ export default function PublicClubProfile() {
       .finally(() => { if (active) setLoadingListing(false); });
     return () => { active = false; };
   }, [slug, seedClub, location.search, previewMode]);
+
+  useEffect(() => {
+    let active = true;
+    base44.functions.invoke('membershipApplication', { action: 'public_get', clubSlug: slug })
+      .then(res => { if (active && !res.data?.error) setMembershipApplicationConfig(res.data?.config || null); })
+      .catch(() => { if (active) setMembershipApplicationConfig(null); });
+    return () => { active = false; };
+  }, [slug]);
 
   useEffect(() => {
     let active = true;
