@@ -559,21 +559,48 @@ Deno.serve(async(req)=>{
 
           if(booking.email){
             try{
-              await base44.asServiceRole.integrations.Core.SendEmail({
-                to:booking.email,from_name:'Clare Pickleball via RallyHub',
-                subject:`Refund issued · Clare Pickleball · ${session.session_date} ${session.start_time}`,
-                body:`Hi ${booking.full_name},
+              const club=(await clubBrand(base44,session.club_id))||{name:'Clare Pickleball',logo_url:'',primary_colour:'#2667f2',secondary_colour:'#facc15'};
+              const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:session.tenant_id,clubId:session.club_id};
+              const refundLabel=money(refundAmount,payment.currency||booking.currency||'EUR');
+              const guestFirst=firstName(booking.full_name);
+              const refundText=`Hi ${guestFirst},
 
-A refund of €${refundAmount.toFixed(2)} has been issued for your Clare Pickleball guest booking.
+A refund of ${refundLabel} has been issued for your ${club.name} guest booking.
 
-Session: ${formatDate(session.session_date)} · ${session.start_time}
+Session: ${formatDate(session.session_date)} · ${session.start_time}${session.end_time?'–'+session.end_time:''}
 Venue: ${session.venue_name}
 Booking reference: ${booking.confirmation_code}
 Reason: ${reason}
 
-The refund is being returned through the same payment method used for the original payment.
+The refund is being returned to the original payment method.
 
-Clare Pickleball`,
+Brian Moore
+Chairperson, Clare Pickleball
+
+Powered by RallyHub`;
+              const refundHtml=emailShell({
+                club,
+                headline:`Refund issued, ${guestFirst}`,
+                preheader:`${refundLabel} refund · ${session.venue_name}`,
+                content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">A refund of <strong>${escapeHtml(refundLabel)}</strong> has been issued for your guest booking.</p>
+<div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+${detailRow('Session',`${formatDate(session.session_date)} · ${session.start_time}${session.end_time?'–'+session.end_time:''}`)}
+${detailRow('Venue',session.venue_name)}
+${detailRow('Refund',refundLabel)}
+${detailRow('Booking reference',booking.confirmation_code)}
+${detailRow('Reason',reason)}
+</table>
+</div>
+<p style="margin:0 0 22px;font-size:13px;line-height:1.55;color:#6b7280;">The refund is being returned to the original payment method.</p>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#172033;"><strong>Brian Moore</strong><br>Chairperson<br>Clare Pickleball</p>`,
+              });
+              await sendWithConfiguredEmailTransport(base44,scope,{
+                to:booking.email,
+                subject:`${club.name} · Refund issued · ${refundLabel}`,
+                textBody:refundText,
+                htmlBody:refundHtml,
               });
             }catch(e){console.error('refund confirmation email failed',e?.message||e)}
           }
