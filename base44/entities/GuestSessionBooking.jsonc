@@ -94,6 +94,7 @@
         "cash_due",
         "failed",
         "expired",
+        "partially_refunded",
         "refunded"
       ],
       "default": "pending"
