@@ -331,5 +331,101 @@ export default function MembershipConsole() {
   const activeFields = (meta.fieldCatalog || []).filter(field => visibleFields.includes(field.key));
 
   const exportExcel = () => {
-    c
+    onst escape = value => String(value ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const table = `<html><head><meta charset="UTF-8"></head><body><table border="1"><tr>${activeFields.map(f => `<th>${escape(f.label)}</th>`).join('')}</tr>${exportRows.map(row => `<tr>${activeFields.map(f => `<td>${escape(cellValue(row, f.key, currency))}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
+    const blob = new Blob([table], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${(meta.club?.name || 'RallyHub').replace(/[^a-z0-9]+/gi, '_')}_Membership_${new Date().toISOString().slice(0, 10)}.xls`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportPdf = () => {
+    const documentPdf = new jsPDF({ orientation: activeFields.length > 7 ? 'landscape' : 'portrait' });
+    documentPdf.setFontSize(16);
+    documentPdf.text(meta.club?.name || 'RallyHub', 14, 15);
+    documentPdf.setFontSize(11);
+    documentPdf.text('Membership Report', 14, 22);
+    documentPdf.setFontSize(8);
+    documentPdf.text(`Generated ${new Date().toLocaleString()} · ${exportRows.length} records`, 14, 28);
+    autoTable(documentPdf, {
+      startY: 33,
+      head: [activeFields.map(field => field.label)],
+      body: exportRows.map(row => activeFields.map(field => String(cellValue(row, field.key, currency) ?? ''))),
+      styles: { fontSize: 7, cellPadding: 1.8 },
+      headStyles: { fontStyle: 'bold' }
+    });
+    documentPdf.save(`${(meta.club?.name || 'RallyHub').replace(/[^a-z0-9]+/gi, '_')}_Membership_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
+  const printReport = () => {
+    const popup = window.open('', '_blank', 'noopener,noreferrer');
+    if (!popup) return toast.error('Allow pop-ups to print the report');
+    const logo = meta.club?.logo_url ? `<img src="${meta.club.logo_url}" style="height:56px;max-width:90px;object-fit:contain">` : '';
+    popup.document.write(`<!doctype html><html><head><title>Membership Report</title><style>
+      body{font-family:Arial,sans-serif;color:#111;padding:24px}header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+      h1{font-size:20px;margin:0}p{margin:3px 0;color:#555;font-size:12px}table{width:100%;border-collapse:collapse;font-size:10px}
+      th,td{border:1px solid #ccc;padding:5px;text-align:left;vertical-align:top}th{background:#f3f5f7}
+      @page{size:${activeFields.length > 7 ? 'landscape' : 'portrait'};margin:12mm}</style></head><body>
+      <header>${logo}<div><h1>${meta.club?.name || 'RallyHub'} · Membership Report</h1><p>Generated ${new Date().toLocaleString()} · ${exportRows.length} records</p></div></header>
+      <table><thead><tr>${activeFields.map(f => `<th>${f.label}</th>`).join('')}</tr></thead><tbody>
+      ${exportRows.map(row => `<tr>${activeFields.map(f => `<td>${cellValue(row, f.key, currency)}</td>`).join('')}</tr>`).join('')}
+      </tbody></table></body></html>`);
+    popup.document.close();
+    setTimeout(() => popup.print(), 300);
+  };
+
+  return (
+    <div className="space-y-5">
+      <PageHeader
+        title="Membership Console"
+        description={meta.club?.name ? `${meta.club.name} · canonical membership, sport and payment records` : 'Tenant membership administration'}
+      >
+        <div className="flex items-center gap-2">
+          {gateway ? <Badge variant="outline" className="gap-1.5"><WalletCards className="w-3 h-3" />{label(gateway.provider)} · {label(gateway.status)}</Badge> : null}
+          <Button variant="outline" size="sm" onClick={() => { refetchList(); queryClient.invalidateQueries({ queryKey: ['membership-console-meta'] }); }}>
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />Refresh
+          </Button>
+        </div>
+      </PageHeader>
+
+      {(metaLoading || listLoading) ? (
+        <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">Loading membership console…</div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+            <StatCard title="All records" value={listData.counts?.total ?? rows.length} icon={Users} onClick={() => applyQuickFilter('all')} />
+            <StatCard title="Active" value={listData.counts?.active ?? 0} icon={CheckCircle2} onClick={() => applyQuickFilter('active')} active={filters.membershipStatus === 'paid_active'} />
+            <StatCard title="Pending" value={listData.counts?.pending ?? 0} icon={WalletCards} onClick={() => applyQuickFilter('pending')} active={filters.membershipStatus === 'pending_payment'} />
+            <StatCard title="Payment due" value={listData.counts?.unpaid ?? 0} icon={WalletCards} onClick={() => applyQuickFilter('unpaid')} active={filters.paymentStatus === 'pending'} />
+            <StatCard title="Profile issues" value={listData.counts?.incomplete ?? 0} icon={AlertTriangle} onClick={() => applyQuickFilter('issues')} active={filters.quality === 'issues'} />
+            <StatCard title="Linked accounts" value={listData.counts?.linked ?? 0} icon={Link2} onClick={() => setFilters({ ...EMPTY_FILTERS, account: 'linked' })} active={filters.account === 'linked'} />
+          </div>
+
+          <div className="glass rounded-xl p-4 space-y-3">
+            <div className="flex flex-col xl:flex-row xl:items-center gap-3">
+              <div className="relative flex-1 min-w-[240px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input className="pl-9" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, email, mobile, membership ID or rating ID…" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Select value={filters.membershipStatus} onValueChange={value => setFilters(f => ({ ...f, membershipStatus: value }))}>
+                  <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">All membership</SelectItem>{(meta.membershipStatuses || []).map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent>
+                </Select>
+                <Select value={filters.paymentStatus} onValueChange={value => setFilters(f => ({ ...f, paymentStatus: value }))}>
+                  <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">All payments</SelectItem>{(meta.paymentStatuses || []).map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent>
+                </Select>
+                <Select value={filters.sport} onValueChange={value => setFilters(f => ({ ...f, sport: value }))}>
+                  <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">All sports</SelectItem>{(meta.sports || []).map(sport => <SelectItem key={sport.id} value={String(sport.id)}>{sport.name}</SelectItem>)}</SelectContent>
+                </Select>
+                <Popover>
+                  <PopoverTrigger asChild><Button variant="outline"><Filter className="w-4 h-4 mr-1.5" />More</Button></PopoverTrigger>
+                  <PopoverContent align="end" className="w-72 space-y-3">
+                    <div><Label>RallyHub account</Label><Select value={filte
 /*APPEND*/
