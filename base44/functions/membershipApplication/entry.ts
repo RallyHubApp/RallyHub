@@ -555,12 +555,16 @@ Deno.serve(async(req)=>{
     }else{
       person=await findPersonByIdentity(base44,config.tenant_id,email,dob);
       if(person){
+        const priorApplications=await base44.asServiceRole.entities.MembershipApplication.filter({
+          config_id:config.id,person_id:person.id,application_type:'new'
+        },'-created_date',20);
+        app=(priorApplications||[]).find((candidate:any)=>['submitted','pending_payment','payment_failed','paid','approved'].includes(String(candidate.status||'')))||null;
         const prior=await currentOrLatestMembership(base44,config.tenant_id,config.club_id,person.id,config.season_label);
-        if(prior&&prior.relationship_type==='member')return Response.json({error:'We found an existing club membership for these details. Please choose Renewal so you can review and update your existing information.'},{status:409});
+        if(prior&&prior.relationship_type==='member'&&!app)return Response.json({error:'We found an existing club membership for these details. Please choose Renewal so you can review and update your existing information.'},{status:409});
       }
     }
 
-    if(app&&['pending_payment','submitted','paid','approved'].includes(app.status)){
+    if(app&&['pending_payment','submitted','payment_failed','paid','approved'].includes(app.status)){
       const result=await reconcile(base44,config,app);
       return Response.json({success:true,reused:true,application:safeApplication(result.app,result.paymentUrl)});
     }
