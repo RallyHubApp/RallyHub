@@ -395,13 +395,19 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
     : `Your free RallyHub Directory listing – ${listing.name}`);
   const textBody = normaliseDirectorySignatureText(String(customText || '').trim() || (delegated ? editorBody : ownerBody));
   const actionLabel = delegated ? 'Open your editor invitation' : 'Claim your free Directory listing';
-  const inviteTitle = delegated ?  : ;
+  const inviteTitle = delegated
+    ? `Directory Editor invitation · ${listing.name}`
+    : `Your free Directory listing · ${listing.name}`;
   const htmlBody = rallyHubEmailShell({
     title: inviteTitle,
     preheader: delegated
-      ? 
-      : ,
-    content: ,
+      ? `You have been invited to help manage ${listing.name} on the RallyHub Directory.`
+      : `Your free RallyHub Directory listing for ${listing.name} is ready to claim.`,
+    content: `${textToBrandedHtml(textBody, claimUrl)}
+      <div style="margin:4px 0 0;padding:15px 17px;border:1px solid #cfe6d7;background:#f1faf4;border-radius:12px;">
+        <div style="font-size:13px;font-weight:800;color:${RALLYHUB_NAVY};margin-bottom:5px;">Directory access only</div>
+        <div style="font-size:13px;line-height:1.6;color:#52606d;">The RallyHub Directory listing is free. This secure invitation is personal, single-use and expires after 72 hours. Directory access does not grant access to a club’s members, tournaments, matches or administration.</div>
+      </div>`,
     actionUrl: claimUrl,
     actionLabel,
     footerNote: 'RallyHub Club Directory',
