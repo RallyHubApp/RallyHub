@@ -15,6 +15,7 @@ export type CheckoutRequest={
   reference:string;
   description:string;
   redirectUrl:string;
+  returnUrl?:string;
 };
 
 export type CheckoutResult={
@@ -106,6 +107,7 @@ export async function createCheckout(input:CheckoutRequest):Promise<CheckoutResu
       merchant_code:merchantAccountId,
       description:String(input.description||'RallyHub payment').slice(0,120),
       redirect_url:input.redirectUrl,
+      ...(input.returnUrl?{return_url:input.returnUrl}:{}),
       hosted_checkout:{enabled:true},
     }),
   });
