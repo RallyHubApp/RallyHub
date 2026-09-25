@@ -402,7 +402,7 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
     {selected.score && scorePages.map((rs,i)=><MasterScorePage key={`score-${i}`} event={event} tournament={tournament} matches={playable} rounds={rs} courts={courts} />)}
     {selected.handoverScore && hasBannerBashHandoverCopy && scorePages.map((rs,i)=><MasterScorePage key={`handover-score-${i}`} event={event} tournament={tournament} matches={plannedHandoverPlayable} rounds={rs} courts={courts} title="Master Score Sheet · 8:30 Handover Copy" />)}
     {selected.schedule && schedulePages.map((rs,i)=><MasterSchedulePage key={`schedule-${i}`} event={event} tournament={tournament} matches={playable} participants={participants} rounds={rs} lastScheduledById={lastScheduledById} pageIndex={i} totalPages={schedulePages.length} />)}
-    {selected.roster && <TeamRosterPage event={event} tournament={tournament} participants={participants} roundsCount={roundsCount} courtsCount={courts.length} />}
+    {selected.roster && <><TeamRosterPage event={event} tournament={tournament} participants={participants} order="ranked" /><TeamRosterPage event={event} tournament={tournament} participants={participants} order="alphabetical" /></>}
     {selected.briefing && <BriefingPage event={event} tournament={tournament} roundsCount={roundsCount} courtsCount={courts.length} displayUrl={displayUrl} votingUrl={votingUrl} />}
     {selected.final && ['completed','archived'].includes(event.status) && <FinalResultPage event={event} tournament={tournament} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} courtsCount={courts.length} roundsCount={roundsCount} />}
   </div>;
