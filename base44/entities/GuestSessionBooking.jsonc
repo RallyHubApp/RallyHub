@@ -56,6 +56,12 @@
     "privacy_acknowledged": {
       "type": "boolean"
     },
+    "cancellation_policy_version": {
+      "type": "string"
+    },
+    "cancellation_policy_accepted": {
+      "type": "boolean"
+    },
     "photo_video_consent": {
       "type": "string",
       "enum": [
@@ -119,6 +125,14 @@
     "confirmation_code": {
       "type": "string"
     },
+    "notification_sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "guest_confirmation_sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "source_system": {
       "type": "string",
       "default": "rallyhub_guest_session"
@@ -139,6 +153,8 @@
     "code_of_conduct_accepted",
     "privacy_notice_version",
     "privacy_acknowledged",
+    "cancellation_policy_version",
+    "cancellation_policy_accepted",
     "photo_video_consent",
     "booking_status",
     "payment_method",
