@@ -133,7 +133,8 @@ Deno.serve(async (req) => {
       });
       return Response.json({ success:true, event:updated, invalidatedVotes:invalidated });
     } else if (action === 'calculate_points') {
-      if (!['completed','archived'].includes(event.status)) return Response.json({ error:'Highest scorers can only be calculated after the event is completed.' }, { status:409 });
+      if (event.status !== 'completed') return Response.json({ error:'Highest scorers can only be calculated after the event is completed and before it is archived.' }, { status:409 });
+      if (event.pot_status === 'open') return Response.json({ error:'Close voting before switching to Highest Scorers.' }, { status:409 });
       const [matches, participants] = await Promise.all([
         base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300),
         base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100)
