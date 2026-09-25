@@ -34,6 +34,22 @@ Deno.serve(async (req) => {
     const votingToken = votingTokens?.[0]?.token || null;
     const pmap = new Map(participants.map((p:any) => [p.id, maskName(p.display_name, !!event.junior_display_mode)]));
     const potWinnerIds = event.pot_status === 'revealed' ? (event.pot_winner_participant_ids || []) : [];
+    let publicVoteResults:any[] = [];
+    let publicBallotCount = 0;
+    if (event.pot_status === 'revealed' && event.pot_method === 'vote') {
+      const votes = await base44.asServiceRole.entities.ClubChallengeVote.filter({ challenge_event_id:event.id, valid:true }, '-cast_at', 500);
+      const counts = new Map<string,number>();
+      const voters = new Set<string>();
+      for (const vote of votes || []) {
+        if (vote.voter_identity_key) voters.add(String(vote.voter_identity_key));
+        if (vote.nominee_participant_id) counts.set(String(vote.nominee_participant_id),(counts.get(String(vote.nominee_participant_id))||0)+1);
+      }
+      publicBallotCount = voters.size;
+      publicVoteResults = participants
+        .filter((p:any) => ['club_a','club_b'].includes(p.side) && Number(counts.get(String(p.id))||0) > 0)
+        .map((p:any) => ({id:p.id,side:p.side,display_name:maskName(p.display_name,!!event.junior_display_mode),votes:Number(counts.get(String(p.id))||0)}))
+        .sort((a:any,b:any) => a.side.localeCompare(b.side) || b.votes-a.votes || a.display_name.localeCompare(b.display_name));
+    }
     const individualStats:any = {};
     if (event.pot_method === 'points') {
       const ensure = (id:string, side:string) => individualStats[id] || (individualStats[id] = { side, games_played:0, points_for:0, points_against:0, wins:0, point_diff:0 });
@@ -95,6 +111,7 @@ Deno.serve(async (req) => {
       junior_display_mode:!!event.junior_display_mode,
       pot_enabled:!!event.pot_enabled, pot_method:event.pot_method || 'none', pot_status:event.pot_status, pot_vote_closes_at:event.pot_vote_closes_at || null,
       pot_voting_token:votingToken, pot_winners:potWinners,
+      pot_ballot_count:publicBallotCount, pot_vote_results:publicVoteResults,
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
     }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
