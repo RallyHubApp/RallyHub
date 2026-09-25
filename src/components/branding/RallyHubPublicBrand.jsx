@@ -30,10 +30,43 @@ export default function RallyHubPublicBrand({
   clubs = [],
   align = 'center',
   className = '',
+  clubFirst = false,
 }) {
   const identityClubs = clubs?.length ? clubs : club ? [club] : [];
   const alignment = align === 'left' ? 'items-start' : 'items-center';
   const chipsAlignment = align === 'left' ? 'justify-start' : 'justify-center';
+  const primaryClub = identityClubs[0] || null;
+
+  if (clubFirst && primaryClub) {
+    const primary = primaryClub.primary_colour || 'hsl(var(--primary))';
+    const secondary = primaryClub.secondary_colour || primary;
+    return (
+      <div className={`flex flex-col ${alignment} ${className}`}>
+        <div
+          className="flex max-w-full items-center gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm"
+          style={{ borderTopWidth: 5, borderTopColor: primary, borderBottomWidth: 2, borderBottomColor: secondary }}
+        >
+          {primaryClub.logo_url && (
+            <img
+              src={primaryClub.logo_url}
+              alt={primaryClub.name ? `${primaryClub.name} logo` : 'Club logo'}
+              className="h-14 w-14 shrink-0 rounded-xl bg-white object-contain p-1 sm:h-16 sm:w-16"
+            />
+          )}
+          <div className="min-w-0 text-left">
+            <div className="truncate text-xl font-black leading-tight text-foreground sm:text-2xl">{primaryClub.name}</div>
+            {moduleName && <div className="mt-1 text-[10px] font-black uppercase tracking-[.18em] text-muted-foreground">{moduleName}</div>}
+            {pageLabel && <div className="mt-1 text-[10px] font-bold uppercase tracking-[.16em] text-muted-foreground">{pageLabel}</div>}
+          </div>
+        </div>
+        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground">
+          <span>Powered by</span>
+          <img src={RALLYHUB_MARK_URL} alt="" className="h-4 w-4 object-contain" />
+          <span>RallyHub</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col ${alignment} ${className}`}>
