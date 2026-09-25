@@ -121,6 +121,9 @@
     },
     "notes": {
       "type": "string"
+    },
+    "renewal_target_season": {
+      "type": "string"
     }
   },
   "required": [
