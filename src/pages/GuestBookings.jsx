@@ -29,6 +29,7 @@ export default function GuestBookings(){
   const [templateKey,setTemplateKey]=useState('');
   const [sessionDate,setSessionDate]=useState('');
   const [capacity,setCapacity]=useState('');
+  const [feeAmount,setFeeAmount]=useState('');
   const [notificationEmail,setNotificationEmail]=useState(user?.email||'');
   const [busy,setBusy]=useState('');
   const [expanded,setExpanded]=useState('');
@@ -62,7 +63,7 @@ export default function GuestBookings(){
     try{
       const res=await base44.functions.invoke('guestSessionBooking',{
         action:'admin_create',templateKey,sessionDate,capacity:capacity?Number(capacity):0,
-        notificationEmail:notificationEmail.trim()||user?.email||'',
+        feeAmount:feeAmount===''?undefined:Number(feeAmount),notificationEmail:notificationEmail.trim()||user?.email||'',
       });
       if(res.data?.error)throw new Error(res.data.error);
       await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
@@ -70,7 +71,7 @@ export default function GuestBookings(){
       const url=`${window.location.origin}/guest-session/${s.token}`;
       copy(url,'Guest booking link created and copied');
       toast.success('Guest session created');
-      setSessionDate('');setCapacity('');
+      setSessionDate('');setCapacity('');setFeeAmount('');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not create guest session')}
     finally{setBusy('')}
   };
@@ -162,6 +163,7 @@ export default function GuestBookings(){
         </div>
         <div><Label>Session date</Label><Input type="date" value={sessionDate} onChange={e=>setSessionDate(e.target.value)} className="mt-1.5 bg-secondary"/></div>
         <div><Label>Guest capacity <span className="font-normal text-muted-foreground">(optional)</span></Label><Input type="number" min="1" value={capacity} onChange={e=>setCapacity(e.target.value)} placeholder="Leave blank if not needed" className="mt-1.5 bg-secondary"/></div>
+        <div><Label>Price (€)</Label><Input type="number" min="0.01" step="0.01" value={feeAmount} onChange={e=>setFeeAmount(e.target.value)} placeholder={selected?Number(selected.fee).toFixed(2):'5.50'} className="mt-1.5 bg-secondary"/><p className="mt-1 text-xs text-muted-foreground">Leave blank to use the session default. The payment gateway receives the price saved on this booking link.</p></div>
         <div><Label>Email booking confirmations to</Label><Input type="email" value={notificationEmail} onChange={e=>setNotificationEmail(e.target.value)} className="mt-1.5 bg-secondary"/></div>
       </div>
 
@@ -171,7 +173,7 @@ export default function GuestBookings(){
             <p className="font-black">{selected.venueName}</p>
             <p className="mt-1 text-muted-foreground">{selected.venueAddress}</p>
             <p className="text-muted-foreground">{selected.eircode}</p>
-            <p className="mt-2 font-semibold">{selected.weekday} · {selected.start}–{selected.end} · €{Number(selected.fee).toFixed(2)} · {selected.payment==='cash'?'cash on arrival':'SumUp'}</p>
+            <p className="mt-2 font-semibold">{selected.weekday} · {selected.start}–{selected.end} · €{Number(feeAmount===''?selected.fee:feeAmount||0).toFixed(2)} · {selected.payment==='cash'?'cash on arrival':'SumUp'}</p>
           </div>
           <a href={selected.mapsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-primary"><MapPin className="h-4 w-4"/> Google Maps <ExternalLink className="h-3.5 w-3.5"/></a>
         </div>
