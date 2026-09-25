@@ -335,12 +335,12 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div><p className="text-sm font-semibold">Build the two teams</p><p className="text-xs text-muted-foreground">Import Spond or CSV directly into either team, then drag within each team to rank 1–16. Use the Player Pool only for genuinely unassigned players. Rotation players are included in the draw; Reserves stay outside the scheduled rotation until activated.</p></div>
-        <div className="flex flex-wrap gap-2 text-xs"><Badge variant="outline">{active.length} players</Badge><Badge variant="outline">A: {rotationA} rotation · {reserveA} reserve</Badge><Badge variant="outline">B: {rotationB} rotation · {reserveB} reserve</Badge><Badge className={balanced && lanes.pool.length===0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-700'}>{lanes.pool.length===0 && balanced ? 'Rotation squads balanced' : `${lanes.pool.length} unassigned`}</Badge></div>
+        <div className="flex flex-wrap items-center gap-2 text-xs"><Badge variant="outline">{active.length} players</Badge><Badge variant="outline">A: {rotationA} rotation · {reserveA} reserve</Badge><Badge variant="outline">B: {rotationB} rotation · {reserveB} reserve</Badge><Badge className={balanced && lanes.pool.length===0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-700'}>{lanes.pool.length===0 && balanced ? 'Rotation squads balanced' : `${lanes.pool.length} unassigned`}</Badge><Button type="button" variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={()=>setPoolOpen(v=>!v)}>{poolOpen ? 'Hide Unassigned Pool' : `Unassigned Pool${lanes.pool.length ? ` (${lanes.pool.length})` : ''}`}</Button></div>
       </div>
     </div>
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="grid xl:grid-cols-3 gap-3">
-        {lane('pool','Player Pool',lanes.pool)}
+      <div className={cn('grid gap-3', poolOpen ? 'xl:grid-cols-3' : 'xl:grid-cols-2')}>
+        {poolOpen && lane('pool','Player Pool',lanes.pool)}
         {lane('club_a',nameA,lanes.club_a,nameA,setNameA)}
         {lane('club_b',nameB,lanes.club_b,nameB,setNameB)}
       </div>
