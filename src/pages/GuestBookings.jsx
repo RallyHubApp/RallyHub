@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
-import { CalendarCheck, CheckCircle2, Copy, ExternalLink, MapPin, MessageCircle, RefreshCw, RotateCcw, ShieldCheck, XCircle } from 'lucide-react';
+import { CalendarCheck, CheckCircle2, Copy, ExternalLink, Mail, MapPin, MessageCircle, RefreshCw, RotateCcw, ShieldCheck, XCircle } from 'lucide-react';
 
 function niceDate(value){
   if(!value)return '';
@@ -106,6 +106,17 @@ export default function GuestBookings(){
       await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
       toast.success('Cash marked paid');
     }catch(e){toast.error(e?.message||'Could not update cash payment')}
+    finally{setBusy('')}
+  };
+
+  const resendEmails=async(bookingId)=>{
+    setBusy(`email-${bookingId}`);
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_resend_emails',bookingId});
+      if(res.data?.error)throw new Error(res.data.error);
+      await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
+      toast.success('Clare Pickleball booking emails resent');
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not resend booking emails')}
     finally{setBusy('')}
   };
 
@@ -228,6 +239,7 @@ export default function GuestBookings(){
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={()=>copy(b.hostMessage,'Host WhatsApp message copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy host message</Button>
                   {b.paymentMethod==='sumup'&&!['paid','partially_refunded','refunded'].includes(b.paymentStatus)&&<Button size="sm" variant="outline" disabled={busy===`verify-${b.id}`} onClick={()=>verifyPayment(b.id)}>{busy===`verify-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
+                  {['paid','partially_refunded','refunded'].includes(b.paymentStatus)&&<Button size="sm" variant="outline" disabled={busy===`email-${b.id}`} onClick={()=>resendEmails(b.id)}>{busy===`email-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend emails</Button>}
                   {b.paymentMethod!=='cash'&&['paid','partially_refunded'].includes(b.paymentStatus)&&Number(b.refundableAmount||0)>0&&<Button size="sm" variant="outline" disabled={busy===`refund-${b.id}`} onClick={()=>issueRefund(b)}>{busy===`refund-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Refund</Button>}
                   {b.paymentMethod==='cash'&&b.paymentStatus!=='paid'&&<Button size="sm" variant="outline" disabled={busy===`cash-${b.id}`} onClick={()=>markCashPaid(b.id)}><CheckCircle2 className="mr-1.5 h-3.5 w-3.5"/>Mark cash paid</Button>}
                 </div>
