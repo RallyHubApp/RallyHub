@@ -95,6 +95,22 @@
       "type": "number",
       "default": 4
     },
+    "membership_period_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "membership_period_end": {
+      "type": "string",
+      "format": "date"
+    },
+    "renewal_opens_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "renewal_due_on": {
+      "type": "string",
+      "format": "date"
+    },
     "active_from": {
       "type": "string",
       "format": "date"
