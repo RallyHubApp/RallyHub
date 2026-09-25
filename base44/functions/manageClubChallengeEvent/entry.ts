@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
         actual_started_at:event.actual_started_at || now,
         timer_state_json:JSON.stringify(initialTimer),
         timer_revision:initialTimerRevision,
-        ...(event.pot_enabled ? { pot_status:'closed', pot_vote_opened_at:null, pot_vote_closes_at:null, pot_revealed_at:null, pot_winner_participant_ids:[] } : {}),
+        ...(event.pot_enabled ? { pot_method:'none', pot_status:'closed', pot_vote_opened_at:null, pot_vote_closes_at:null, pot_revealed_at:null, pot_winner_participant_ids:[] } : {}),
       });
       await base44.asServiceRole.entities.Tournament.update(event.tournament_id, { status:'In Progress' });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'event_started', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({current_round:1,match_count:matches.length,actual_started_at:event.actual_started_at || now,timer_state:initialTimer,timer_revision:initialTimerRevision,pot_reset_to_closed:!!event.pot_enabled,cleared_pot_votes:clearedPotVotes}) });
