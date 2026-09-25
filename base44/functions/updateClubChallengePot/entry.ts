@@ -210,7 +210,7 @@ Deno.serve(async (req) => {
       const winners = [...clubAWinners, ...clubBWinners];
       winnerCount = winners.length;
       winnerSides = { club_a:clubAWinners, club_b:clubBWinners };
-      update = { pot_status:'revealed', pot_winner_participant_ids:winners, pot_revealed_at:nowIso };
+      update = { pot_method:'vote', pot_status:'revealed', pot_winner_participant_ids:winners, pot_revealed_at:nowIso };
     }
 
     const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, update);
