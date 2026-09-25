@@ -2295,14 +2295,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             <span>Selected print total</span>
             <strong>{(
               (printSelection.score ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)) : 0) +
-              (printSelection.handoverScore && event?.id === '6ab3d84c8bbc3bc6e171ba03' ? 1 : 0) +
+              (printSelection.handoverScore && hasPlannedHandoverCopy ? handoverScorePages : 0) +
               (printSelection.schedule ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)) : 0) +
               (printSelection.roster ? 2 : 0) +
               (printSelection.briefing ? 1 : 0) +
               (printSelection.final && ['completed','archived'].includes(event?.status) ? 1 : 0)
             )} page{(
               (printSelection.score ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)) : 0) +
-              (printSelection.handoverScore && event?.id === '6ab3d84c8bbc3bc6e171ba03' ? 1 : 0) +
+              (printSelection.handoverScore && hasPlannedHandoverCopy ? handoverScorePages : 0) +
               (printSelection.schedule ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)) : 0) +
               (printSelection.roster ? 2 : 0) +
               (printSelection.briefing ? 1 : 0) +
