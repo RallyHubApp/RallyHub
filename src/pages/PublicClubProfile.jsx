@@ -463,6 +463,22 @@ export default function PublicClubProfile() {
                   <Users className="w-5 h-5" />
                   <h2 className="font-bold">Membership</h2>
                 </div>
+                <p className="mt-2 text-sm text-muted-foreground">New members and renewals can complete their details, club declarations and membership payment online.</p>
+                <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+                  <span>{membershipApplicationConfig.seasonLabel}</span>
+                  <strong>{new Intl.NumberFormat('en-IE',{style:'currency',currency:membershipApplicationConfig.currency || 'EUR'}).format(Number(membershipApplicationConfig.membershipFee || 0))}</strong>
+                </div>
+                <Link to={`/membership/${club.slug}`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
+                  Join or renew membership
+                </Link>
+              </section>
+            )}
+            {membershipApplicationConfig && (
+              <section className="rounded-2xl border border-primary/35 bg-primary/10 p-5">
+                <div className="flex items-center gap-2 text-primary">
+                  <Users className="w-5 h-5" />
+                  <h2 className="font-bold">Membership</h2>
+                </div>
                 <p className="mt-2 text-sm text-muted-foreground">
                   New members and renewals can complete their details, club declarations and membership payment online.
                 </p>
