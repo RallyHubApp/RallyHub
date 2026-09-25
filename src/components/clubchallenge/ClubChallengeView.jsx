@@ -1328,7 +1328,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         if (!announcedRoundStartsRef.current.has(Number(currentRound))) {
           announcedRoundStartsRef.current.add(Number(currentRound));
           const label = roundLabel(currentRound);
-          speak(`${label}. ${label} starting now. ${label} starting now.`, { signal:'start' });
+          speak(`${label}. ${label} starting now.`, { signal:'start' });
         }
       } else if (phase === 'changeover') {
         timerSpeechArmedRef.current = true;
@@ -1382,9 +1382,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const runCompressedTimerAudioTest = async () => {
     if (compressedTimer.running) return;
     const steps = [
-      `${roundLabel(1)}. ${roundLabel(1)} starting now. ${roundLabel(1)} starting now.`, '5', '4', '3', '2', '1', 'Please hand in your scores.',
-      'Changeover starting now.', `${roundLabel(2)}. ${roundLabel(2)} starting now. ${roundLabel(2)} starting now.`,
-      'Event paused.', `${roundLabel(2)}. Resume play.`, `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`, `${roundLabel(3)}. ${roundLabel(3)} starting now. ${roundLabel(3)} starting now.`
+      `${roundLabel(1)}. ${roundLabel(1)} starting now.`, '5', '4', '3', '2', '1', 'Please hand in your scores.',
+      'Changeover starting now.', `${roundLabel(2)}. ${roundLabel(2)} starting now.`,
+      'Event paused.', `${roundLabel(2)}. Resume play.`, `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`, `${roundLabel(3)}. ${roundLabel(3)} starting now.`
     ];
     setCompressedTimer({ running: true, step: 0, text: steps[0] });
     for (let i = 0; i < steps.length; i += 1) {
