@@ -62,7 +62,7 @@ check('sporting: 18-a-side rotation remains within one game per player', rotatio
 check('branding: user-facing module is RallyHub Interclub', contains(interclubBranding,"INTERCLUB_MODULE_NAME = 'RallyHub Interclub'") && contains(tournamentsPage,'INTERCLUB_MODULE_NAME'));
 check('branding: user-facing event type is Interclub Challenge', contains(interclubBranding,"INTERCLUB_EVENT_LABEL = 'Interclub Challenge'") && contains(createTournamentModal,'INTERCLUB_EVENT_LABEL'));
 check('branding: internal Club Challenge format key remains stable', contains(interclubBranding,"INTERCLUB_INTERNAL_FORMAT = 'Club Challenge'") && contains(ui,'INTERCLUB_INTERNAL_FORMAT'));
-check('branding: Hall Display uses RallyHub Interclub', contains(publicDisplayPage,'INTERCLUB_MODULE_NAME') && contains(ui,'INTERCLUB_MODULE_NAME} · Hall Display'));
+check('branding: Live Event View uses RallyHub Interclub', contains(publicDisplayPage,'INTERCLUB_MODULE_NAME') && contains(ui,'INTERCLUB_MODULE_NAME} · Live Event View'));
 check('host: live estimated duration is visible during setup', contains(ui,'Estimated event duration'));
 check('host: planned player count drives estimate before roster entry', contains(ui,'Planned total players'));
 check('host: estimate exposes rounds, block, break and contingency', contains(ui,'min contingency'));
