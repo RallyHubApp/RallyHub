@@ -2272,6 +2272,22 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <label className="flex items-center gap-3 min-h-10 rounded-lg bg-secondary/40 px-3"><input className="w-4 h-4" type="checkbox" checked={setup.juniorDisplayMode} onChange={e => setSetup(s => ({ ...s, juniorDisplayMode: e.target.checked }))} /> Junior display privacy (first name + surname initial)</label>
             </div>
           </div>
+          {event && <div className="glass rounded-xl p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div><p className="text-sm font-semibold">Interclub Player Link</p><p className="mt-1 text-xs text-muted-foreground">One link for teams, event information, live/final results and voting when it opens.</p></div>
+              {!publicLinks && <Button type="button" size="sm" variant="outline" onClick={preparePublicLinks}>Prepare Player Link</Button>}
+            </div>
+            {publicLinks && <div className="mt-4 rounded-lg border border-border bg-secondary/30 p-4 flex flex-col sm:flex-row items-center gap-4">
+              <QRCodeSVG value={publicLinks.displayUrl} size={124} level="H" includeMargin/>
+              <div className="min-w-0 flex-1 w-full">
+                <a href={publicLinks.displayUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline underline-offset-2 break-all">{publicLinks.displayUrl}</a>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(publicLinks.displayUrl)}>Copy Link</Button>
+                  {isSuperAdmin && <><Button type="button" size="sm" variant="outline" onClick={() => sharePublicLink(publicLinks.displayUrl,'RallyHub Interclub Player Link')}>Share</Button><Button type="button" size="sm" variant="outline" onClick={() => shareOnWhatsApp(publicLinks.displayUrl,'RallyHub Interclub Player Link')}>WhatsApp</Button></>}
+                </div>
+              </div>
+            </div>}
+          </div>}
           <Button data-testid="cc-save-setup" onClick={saveSetup} disabled={!isAdmin || saving || !!logoUploading} className="w-full h-11">{logoUploading ? 'Uploading logo…' : saving ? 'Saving…' : event ? 'Save & Continue to Teams' : 'Create & Continue to Teams'}</Button>
         </div>
       )}
