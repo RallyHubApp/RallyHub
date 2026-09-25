@@ -1370,7 +1370,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const res = await base44.functions.invoke('updateClubChallengePot', payload);
       if (res.data?.error) { toast.error(res.data.error); return; }
       potAutoCloseRef.current = '';
-      await Promise.all([refetchEvent(), isAdmin ? refetchPotVotes() : Promise.resolve()]);
+      await refetchEvent();
+      if (isAdmin) await refetchPotVotes();
       toast.success(status === 'open'
         ? `Players of the Tournament voting is open${potDuration === 'manual' ? ' until you close it' : ` for ${potDuration} minutes`}.`
         : 'Voting closed. Totals remain hidden until reveal.');
@@ -1393,7 +1394,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try {
       const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'reset' });
       if (res.data?.error) { toast.error(res.data.error); return; }
-      await Promise.all([refetchEvent(), isAdmin ? refetchPotVotes() : Promise.resolve()]);
+      await refetchEvent();
+      if (isAdmin) await refetchPotVotes();
       toast.success(`Voting reset. ${Number(res.data?.invalidatedVotes || 0)} recorded team vote${Number(res.data?.invalidatedVotes || 0) === 1 ? '' : 's'} cleared from the live count.`);
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reset voting'); }
   };
@@ -1473,7 +1475,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try {
       const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'reveal' });
       if (res.data?.error) { toast.error(res.data.error); return; }
-      await Promise.all([refetchEvent(), isAdmin ? refetchPotVotes() : Promise.resolve()]);
+      await refetchEvent();
+      if (isAdmin) await refetchPotVotes();
       toast.success('Players of the Tournament results revealed.');
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reveal voting result'); }
   };
@@ -1488,7 +1491,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'close' })
       .then(async res => {
         if (!res.data?.error) {
-          await Promise.all([refetchEvent(), isAdmin ? refetchPotVotes() : Promise.resolve()]);
+          await refetchEvent();
+      if (isAdmin) await refetchPotVotes();
           toast.success('Voting closed automatically. Results remain hidden until reveal.');
         }
       })
