@@ -1,6 +1,7 @@
 import { base44 } from '@/api/base44Client';
 
 const amplifiedSpeechCache = new Map();
+let amplifiedSpeechBackoffUntil = 0;
 
 export function getRallyHubAudioContext() {
   if (typeof window === 'undefined') return null;
@@ -181,6 +182,11 @@ function base64ToArrayBuffer(base64) {
 async function getAmplifiedSpeechBuffer(text, eventId = '') {
   const ctx = await unlockRallyHubAudio();
   if (!ctx) throw new Error('RallyHub audio is not available in this browser.');
+  if (Date.now() < amplifiedSpeechBackoffUntil) {
+    const error = new Error('Amplified hall speech is temporarily cooling down; browser voice will be used.');
+    error.code = 'TTS_BACKOFF';
+    throw error;
+  }
   const key = `${eventId || 'global'}::${String(text || '').trim()}`;
   if (amplifiedSpeechCache.has(key)) return amplifiedSpeechCache.get(key);
 
@@ -205,6 +211,9 @@ async function getAmplifiedSpeechBuffer(text, eventId = '') {
     return await pending;
   } catch (error) {
     amplifiedSpeechCache.delete(key);
+    // Avoid a burst of provider requests when amplified TTS is unavailable.
+    // Browser speech remains the immediate fallback; retry TTS after a short cooldown.
+    amplifiedSpeechBackoffUntil = Date.now() + 15000;
     throw error;
   }
 }
@@ -224,7 +233,7 @@ function stopGeneratedHallSpeech() {
 export async function primeRallyHubHallSpeech(texts, { eventId = '' } = {}) {
   const queue = [...new Set((Array.isArray(texts) ? texts : [texts]).map(v => String(v || '').trim()).filter(Boolean))];
   if (!queue.length) return true;
-  const workers = Array.from({ length:Math.min(3, queue.length) }, async () => {
+  const workers = Array.from({ length:Math.min(1, queue.length) }, async () => {
     while (queue.length) {
       const text = queue.shift();
       try { await getAmplifiedSpeechBuffer(text, eventId); } catch { /* browser voice remains the fallback */ }
