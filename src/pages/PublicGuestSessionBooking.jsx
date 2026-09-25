@@ -127,7 +127,7 @@ export default function PublicGuestSessionBooking(){
             <MapPin className="h-4 w-4"/> View in Google Maps <ExternalLink className="h-3.5 w-3.5"/>
           </a>
         </div>
-        <p className="mt-5 text-xs text-muted-foreground">A confirmation email has been sent. Cancellations made less than 24 hours before the session are non-refundable.</p>
+        <p className="mt-5 text-xs text-muted-foreground">{done.type==='cash'?'The club organiser has been notified of your booking.':'A confirmation email has been sent.'} Cancellations made less than 24 hours before the session are non-refundable.</p>
       </div>
     </div>
   </div>;
