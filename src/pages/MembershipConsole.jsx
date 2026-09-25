@@ -728,12 +728,21 @@ export default function MembershipConsole() {
                     })}
                 </TabsContent>
 
-                <TabsContent value="payments" className="pt-4 space-y-2">
+                <TabsContent value="payments" className="pt-4 space-y-3">
+                  <div className="flex flex-wrap justify-end gap-2">
+                    {detail.membership?.payment_status !== 'paid' && gateway?.supports_payments !== false ? <Button size="sm" onClick={createMembershipPayment} disabled={saving}><WalletCards className="w-3.5 h-3.5 mr-1.5" />Create / copy payment link</Button> : null}
+                    {(detail.payments || []).some(payment => payment.purpose_type === 'membership' && payment.provider_checkout_id && payment.payment_status !== 'paid') ? <Button size="sm" variant="outline" onClick={verifyMembershipPayment} disabled={saving}><ShieldCheck className="w-3.5 h-3.5 mr-1.5" />Verify payment</Button> : null}
+                  </div>
                   {!(detail.payments || []).length ? <p className="text-sm text-muted-foreground">No payment records.</p> :
                     detail.payments.map(payment => <div key={payment.id} className="rounded-lg border p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div><p className="text-sm font-semibold">{label(payment.purpose_type || payment.payment_type || 'Payment')}</p><p className="text-xs text-muted-foreground">{label(payment.provider || payment.payment_method)} {payment.payment_date ? ` · ${payment.payment_date}` : ''}</p></div>
+                      <div>
+                        <p className="text-sm font-semibold">{label(payment.purpose_type || payment.payment_type || 'Payment')}</p>
+                        <p className="text-xs text-muted-foreground">{label(payment.provider || payment.payment_method)} {payment.payment_date ? ` · ${payment.payment_date}` : ''}</p>
+                        {payment.provider_checkout_url && payment.payment_status !== 'paid' ? <button type="button" className="mt-1 text-xs text-primary hover:underline" onClick={async () => { try { await navigator.clipboard.writeText(payment.provider_checkout_url); toast.success('Payment link copied'); } catch { window.prompt('Copy payment link', payment.provider_checkout_url); } }}>Copy payment link</button> : null}
+                      </div>
                       <div className="sm:text-right"><p className="font-semibold">{money(payment.amount, payment.currency || currency)}</p><Badge variant="outline">{label(payment.payment_status)}</Badge></div>
                     </div>)}
+                  <p className="text-[11px] text-muted-foreground">Online membership payments are confirmed by the connected club gateway and activate the membership automatically. Verify payment remains a manual recovery tool.</p>
                 </TabsContent>
 
                 <TabsContent value="training" className="pt-4 space-y-3">
