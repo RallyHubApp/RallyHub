@@ -1460,7 +1460,7 @@ Brian`;
               </p>
             </div>
 
-            <div className="glass rounded-xl p-4 sm:p-5 space-y-4">
+            <div id="directory-clubs" className="glass rounded-xl p-4 sm:p-5 space-y-4 scroll-mt-24">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Directory clubs</p>
                 <h3 className="text-lg font-bold text-foreground mt-1">Contact a club and invite them to claim</h3>
@@ -1580,7 +1580,7 @@ Brian`;
               {ownerInviteResult?.channel === 'email-sent' && <div className="rounded-xl border border-green-400/25 bg-green-400/5 p-4 text-sm">Email invitation sent successfully.</div>}
             </div>
 
-            <div className="space-y-2 scroll-mt-24" data-directory-action="new-club" data-has-pending={pendingNewDirectoryRequests.length > 0 ? "true" : "false"}>
+            <div id="directory-pending-actions" className="space-y-2 scroll-mt-24" data-directory-action="new-club" data-has-pending={pendingNewDirectoryRequests.length > 0 ? "true" : "false"}>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">New club requests</p>
               {pendingNewDirectoryRequests.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No new clubs are waiting to be added.</p>
@@ -1632,7 +1632,7 @@ Brian`;
               ))}
             </div>
 
-            <div className="space-y-2 scroll-mt-24" data-directory-action="pending-claim" data-has-pending={pendingDirectoryClaims.length > 0 ? "true" : "false"}>
+            <div id="directory-pending-claims" className="space-y-2 scroll-mt-24" data-directory-action="pending-claim" data-has-pending={pendingDirectoryClaims.length > 0 ? "true" : "false"}>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Pending verification</p>
               {pendingDirectoryClaims.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No directory claims are waiting for review.</p>
@@ -1748,7 +1748,7 @@ Brian`;
               </DialogContent>
             </Dialog>
 
-            <div className="space-y-2">
+            <div id="directory-outstanding-invitations" className="space-y-2 scroll-mt-24">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Owner invitations awaiting acceptance {pendingDirectoryInvitations.length ? `· ${pendingDirectoryInvitations.length}` : ''}</p>
               {directoryInvitations.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No active directory invitations are awaiting acceptance.</p>
@@ -1796,7 +1796,7 @@ Brian`;
               </div>
             )}
 
-            <div className="space-y-2">
+            <div id="directory-verified-access" className="space-y-2 scroll-mt-24">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Verified directory owners & editors</p>
               {activeDirectoryAccesses.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No directory editor access has been granted yet.</p>
