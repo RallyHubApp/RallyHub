@@ -331,7 +331,7 @@ export default function MembershipConsole() {
   const activeFields = (meta.fieldCatalog || []).filter(field => visibleFields.includes(field.key));
 
   const exportExcel = () => {
-    onst escape = value => String(value ?? '')
+    const escape = value => String(value ?? '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const table = `<html><head><meta charset="UTF-8"></head><body><table border="1"><tr>${activeFields.map(f => `<th>${escape(f.label)}</th>`).join('')}</tr>${exportRows.map(row => `<tr>${activeFields.map(f => `<td>${escape(cellValue(row, f.key, currency))}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
     const blob = new Blob([table], { type: 'application/vnd.ms-excel;charset=utf-8' });
@@ -427,5 +427,86 @@ export default function MembershipConsole() {
                 <Popover>
                   <PopoverTrigger asChild><Button variant="outline"><Filter className="w-4 h-4 mr-1.5" />More</Button></PopoverTrigger>
                   <PopoverContent align="end" className="w-72 space-y-3">
-                    <div><Label>RallyHub account</Label><Select value={filte
+                    <div><Label>RallyHub account</Label><Select value={rs.account} onValueChange={value => setFilters(f => ({ ...f, account: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="linked">Linked</SelectItem><SelectItem value="unlinked">Not linked</SelectItem></SelectContent></Select></div>
+                    <div><Label>Data quality</Label><Select value={filters.quality} onValueChange={value => setFilters(f => ({ ...f, quality: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="complete">Complete</SelectItem><SelectItem value="issues">Needs attention</SelectItem><SelectItem value="duplicates">Duplicate review</SelectItem></SelectContent></Select></div>
+                    <Button variant="outline" className="w-full" onClick={() => { setFilters(EMPTY_FILTERS); setSearch(''); }}><X className="w-3.5 h-3.5 mr-1.5" />Clear filters</Button>
+                  </PopoverContent>
+                </Popover>
+                <Popover>
+                  <PopoverTrigger asChild><Button variant="outline"><Columns3 className="w-4 h-4 mr-1.5" />Columns</Button></PopoverTrigger>
+                  <PopoverContent align="end" className="w-80 max-h-[420px] overflow-y-auto">
+                    <p className="text-xs font-semibold mb-2">Visible fields</p>
+                    <div className="space-y-1.5">
+                      {(meta.fieldCatalog || []).map(field => (
+                        <label key={field.key} className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-secondary cursor-pointer">
+                          <Checkbox checked={visibleFields.includes(field.key)} onCheckedChange={checked => setVisibleFields(previous => checked ? [...new Set([...previous, field.key])] : previous.filter(key => key !== field.key))} />
+                          <span className="text-xs flex-1">{field.label}</span>
+                          {field.sensitive ? <span className="text-[9px] text-amber-600">Sensitive</span> : null}
+                        </label>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Select value={sortField} onValueChange={setSortField}><SelectTrigger className="w-[170px] h-9"><SelectValue /></SelectTrigger><SelectContent>{(meta.fieldCatalog || []).map(field => <SelectItem key={field.key} value={field.key}>Sort: {field.label}</SelectItem>)}</SelectContent></Select>
+                <Button variant="outline" size="sm" onClick={() => setSortDirection(direction => direction === 'asc' ? 'desc' : 'asc')}>{sortDirection === 'asc' ? 'Ascending' : 'Descending'}</Button>
+                {(meta.savedViews || []).length ? (
+                  <Select onValueChange={id => { const view = meta.savedViews.find(item => String(item.id) === id); if (view) applySavedView(view); }}>
+                    <SelectTrigger className="w-[180px] h-9"><SelectValue placeholder="Saved views" /></SelectTrigger>
+                    <SelectContent>{meta.savedViews.map(view => <SelectItem key={view.id} value={String(view.id)}>{view.name}{view.is_default ? ' · default' : ''}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : null}
+                <Button variant="outline" size="sm" onClick={saveView}><Save className="w-3.5 h-3.5 mr-1.5" />Save view</Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={exportExcel}><Download className="w-3.5 h-3.5 mr-1.5" />Excel</Button>
+                <Button variant="outline" size="sm" onClick={exportPdf}><FileText className="w-3.5 h-3.5 mr-1.5" />PDF</Button>
+                <Button variant="outline" size="sm" onClick={printReport}><Printer className="w-3.5 h-3.5 mr-1.5" />Print</Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div><p className="font-semibold">Membership records</p><p className="text-xs text-muted-foreground">{rows.length} shown · {selected.size ? `${selected.size} selected` : 'exports use current filtered view'}</p></div>
+              {primarySport ? <p className="text-xs text-muted-foreground">Primary sport: <strong className="text-foreground">{primarySport.name}</strong></p> : null}
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead className="w-10"><Checkbox checked={rows.length > 0 && selected.size === rows.length} onCheckedChange={toggleAll} /></TableHead>
+                  {activeFields.map(field => <TableHead key={field.key} className="whitespace-nowrap">{field.label}</TableHead>)}
+                  <TableHead className="text-right">Open</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {!rows.length ? <TableRow><TableCell colSpan={activeFields.length + 2} className="text-center py-10 text-muted-foreground">No membership records match this view.</TableCell></TableRow> :
+                    rows.map(row => (
+                      <TableRow key={row.person_id} className="hover:bg-secondary/40">
+                        <TableCell><Checkbox checked={selected.has(row.person_id)} onCheckedChange={() => toggleSelected(row.person_id)} /></TableCell>
+                        {activeFields.map(field => (
+                          <TableCell key={field.key} className={field.key === 'full_name' ? 'font-semibold whitespace-nowrap' : 'text-xs whitespace-nowrap'}>
+                            {field.key === 'membership_status' ? <Badge variant="outline">{label(row.membership_status)}</Badge> :
+                              field.key === 'payment_status' ? <Badge variant="outline">{label(row.payment_status)}</Badge> :
+                              field.key === 'linked' ? (row.linked ? <Badge className="bg-primary/15 text-primary">Linked</Badge> : <Badge variant="outline">Not linked</Badge>) :
+                              field.key === 'quality_count' ? (row.quality_count ? <Badge className="bg-amber-500/15 text-amber-700">{row.quality_count} issue{row.quality_count === 1 ? '' : 's'}</Badge> : <Badge variant="outline" className="text-green-700">Complete</Badge>) :
+                              cellValue(row, field.key, currency)}
+                          </TableCell>
+                        ))}
+                        <TableCell className="text-right"><Button size="sm" variant="ghost" onClick={() => openMember(row)}>View</Button></TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </>
+      )}
+
+      <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
+          <SheetHeader><SheetTitle>{detail?.person?.full_name || 'Member record'}</SheetTitle><SheetDescription>{detail?.membership?.member_id || 'No membership ID'} · {meta.club?.name || 'Club membership'}</SheetDescription></Sh
 /*APPEND*/
