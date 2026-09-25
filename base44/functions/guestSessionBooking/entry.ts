@@ -412,8 +412,10 @@ Deno.serve(async(req)=>{
         });
 
         try{
+          const fullOriginalRefund=alreadyRefunded<=0.001 && refundAmount>=originalAmount-0.001;
           const result=await refundPayment({
-            provider,account:gateway?.account||null,transactionId,amount:refundAmount,currency:payment.currency||'EUR',
+            provider,account:gateway?.account||null,transactionId,
+            amount:fullOriginalRefund?undefined:refundAmount,currency:payment.currency||'EUR',
           });
           const completedAt=new Date().toISOString();
           refundRow=await base44.asServiceRole.entities.PaymentRefund.update(refundRow.id,{
