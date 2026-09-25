@@ -271,12 +271,15 @@ Deno.serve(async(req)=>{
         const v=VENUES[t.venueKey];
         const cap=Number(body.capacity||0);
         const capacity=Number.isFinite(cap)&&cap>0?Math.floor(cap):undefined;
+        const feeInput=body.feeAmount===undefined||body.feeAmount===null||body.feeAmount===''?Number(t.fee):Number(body.feeAmount);
+        const feeAmount=Math.round(feeInput*100)/100;
+        if(!Number.isFinite(feeAmount)||feeAmount<=0)return Response.json({error:'Enter a valid session price greater than €0.'},{status:400});
         const now=new Date().toISOString();
         const row=await base44.asServiceRole.entities.GuestSessionLink.create({
           tenant_id:tenantId,club_id:clubId,token:token(),active:true,
           session_date:date,weekday:t.weekday,start_time:t.start,end_time:t.end,
           venue_key:t.venueKey,venue_name:v.name,venue_address:v.address,venue_eircode:v.eircode,google_maps_url:v.mapsUrl,
-          session_label:t.label,capacity,fee_amount:t.fee,currency:'EUR',payment_method:t.payment,
+          session_label:t.label,capacity,fee_amount:feeAmount,currency:'EUR',payment_method:t.payment,
           notification_email:emailKey(body.notificationEmail||user.email||''),notification_name:clean(user.full_name||user.email||'',120),
           created_by_user_id:user.id,created_at:now,
         });
