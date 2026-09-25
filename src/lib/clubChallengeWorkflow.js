@@ -38,7 +38,7 @@ export function createChallengeEventDraft({ tournament, hostClub, opponent, setu
     showcase_enabled: !!setup.showcaseEnabled,
     showcase_points: Number(setup.showcasePoints || 0),
     pot_enabled: !!setup.potEnabled,
-    pot_method: setup.potEnabled ? 'none' : 'none',
+    pot_method: 'none',
     pot_status: setup.potEnabled ? 'closed' : 'disabled',
     draw_version: 0, current_round: 0, event_pack_version: 0, event_pack_stale: true,
   };
