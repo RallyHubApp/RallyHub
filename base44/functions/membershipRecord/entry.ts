@@ -421,6 +421,112 @@ Deno.serve(async(req)=>{
       });
     }
 
+    if(action==='admin_create_member'){
+      const input=body.member&&typeof body.member==='object'?body.member:{};
+      const fullName=clean(input.full_name,180);
+      const email=lower(input.primary_email);
+      const mobile=clean(input.mobile,80).replace(/\s+/g,'');
+      const dob=clean(input.date_of_birth,20);
+      if(!fullName) return Response.json({error:'Full name is required.'},{status:400});
+      if(dob&&!/^\d{4}-\d{2}-\d{2}$/.test(dob)) return Response.json({error:'Date of birth must use YYYY-MM-DD.'},{status:400});
+      const membershipStatus=MEMBERSHIP_STATUS.includes(clean(input.membership_status,60))?clean(input.membership_status,60):'pending_payment';
+      const relationshipType=RELATIONSHIP_TYPE.includes(clean(input.relationship_type,60))?clean(input.relationship_type,60):'member';
+      const paymentStatus=PAYMENT_STATUS.includes(clean(input.payment_status,60))?clean(input.payment_status,60):(membershipStatus==='paid_active'?'paid':'pending');
+
+      const tenantPeople=await base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'full_name',500);
+      const exactEmail=email?(tenantPeople||[]).filter((p:any)=>lower(p.primary_email)===email):[];
+      const exactMobile=mobile?(tenantPeople||[]).filter((p:any)=>clean(p.mobile,80).replace(/\s+/g,'')===mobile):[];
+      const exactNameDob=dob?(tenantPeople||[]).filter((p:any)=>nameKey(p.full_name)===nameKey(fullName)&&clean(p.date_of_birth,20)===dob):[];
+      const candidateIds=new Set([...exactEmail,...exactMobile,...exactNameDob].map((p:any)=>String(p.id)));
+      if(candidateIds.size>1){
+        return Response.json({error:'More than one existing person may match this member. Review duplicates before creating the membership.',code:'DUPLICATE_REVIEW_REQUIRED'},{status:409});
+      }
+      let person:any=[...exactNameDob,...exactEmail,...exactMobile][0]||null;
+      if(person){
+        const strongEmail=!!(email&&lower(person.primary_email)===email);
+        const strongMobile=!!(mobile&&clean(person.mobile,80).replace(/\s+/g,'')===mobile);
+        const strongDob=!!(dob&&clean(person.date_of_birth,20)===dob);
+        if(!(strongEmail||strongMobile||strongDob)){
+          return Response.json({error:'A possible existing person was found but could not be safely matched. Review the record before continuing.',code:'DUPLICATE_REVIEW_REQUIRED'},{status:409});
+        }
+        const existingMembership=await first(base44,'ClubMembership',{tenant_id:tenantId,club_id:clubId,person_id:person.id});
+        if(existingMembership) return Response.json({error:'This person already has a membership record in the active club.',code:'MEMBERSHIP_EXISTS',person_id:person.id},{status:409});
+      }else{
+        person=await base44.asServiceRole.entities.Person.create({
+          tenant_id:tenantId,full_name:fullName,primary_email:email||undefined,mobile:clean(input.mobile,80)||undefined,
+          date_of_birth:dob||undefined,full_postal_address:clean(input.full_postal_address,600)||undefined,
+          postal_code:clean(input.postal_code,40)||undefined,emergency_contact_name:clean(input.emergency_contact_name,180)||undefined,
+          emergency_contact_relationship:clean(input.emergency_contact_relationship,120)||undefined,
+          emergency_mobile:clean(input.emergency_mobile,80)||undefined,source_system:'rallyhub_membership_console',
+          source_rows:[],data_quality_flags:[],profile_visibility:'club',photo_visibility:'club'
+        });
+      }
+
+      const membershipFee=input.membership_fee===''||input.membership_fee===null||input.membership_fee===undefined?null:Number(input.membership_fee);
+      if(membershipFee!==null&&(!Number.isFinite(membershipFee)||membershipFee<0)) return Response.json({error:'Membership fee must be a valid non-negative amount.'},{status:400});
+      const membership=await base44.asServiceRole.entities.ClubMembership.create({
+        tenant_id:tenantId,club_id:clubId,person_id:person.id,member_id:clean(input.member_id,120)||undefined,
+        membership_season:clean(input.membership_season,80)||new Date().getFullYear().toString(),
+        membership_type:clean(input.membership_type,120)||undefined,membership_status:membershipStatus,relationship_type:relationshipType,
+        join_date:clean(input.join_date,20)||new Date().toISOString().slice(0,10),membership_fee:membershipFee===null?undefined:Math.round(membershipFee*100)/100,
+        payment_status:paymentStatus,payment_date:clean(input.payment_date,20)||undefined,admin_notes:clean(input.admin_notes,1200)||undefined,
+        include_in_rallyhub:true,source_system:'rallyhub_membership_console',source_rows:[],data_quality_flags:[]
+      });
+      const relationshipStatus=membershipStatus==='paid_active'?'active':membershipStatus==='former_member'?'archived':'pending';
+      await base44.asServiceRole.entities.ClubRelationship.create({
+        tenant_id:tenantId,club_id:clubId,person_id:person.id,relationship_type:relationshipType,status:relationshipStatus,
+        start_date:clean(input.join_date,20)||new Date().toISOString().slice(0,10),entry_route:'direct_membership',
+        membership_id:membership.member_id||undefined,membership_type:membership.membership_type||undefined,
+        membership_season:membership.membership_season,payment_status:paymentStatus,payment_date:membership.payment_date||undefined,
+        membership_amount:membership.membership_fee??undefined,membership_category:clean(input.membership_category,60)||'paid',
+        source_system:'rallyhub_membership_console',source_row_refs:[]
+      });
+
+      const configuredClubSports=await base44.asServiceRole.entities.ClubSport.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'-is_primary',100);
+      const requestedSportIds=Array.isArray(input.sport_ids)?input.sport_ids.map((x:any)=>clean(x,180)).filter(Boolean):[];
+      const chosenSportIds=requestedSportIds.length?requestedSportIds:[String((configuredClubSports||[]).find((x:any)=>x.is_primary)?.sport_id||(configuredClubSports||[])[0]?.sport_id||'')].filter(Boolean);
+      const allowedSportIds=new Set((configuredClubSports||[]).map((x:any)=>String(x.sport_id)));
+      for(const sportId of chosenSportIds){
+        if(!allowedSportIds.has(String(sportId))) continue;
+        const cs=(configuredClubSports||[]).find((x:any)=>String(x.sport_id)===String(sportId));
+        const settings=sportSettings(cs);
+        await base44.asServiceRole.entities.SportProfile.create({
+          tenant_id:tenantId,person_id:person.id,sport_id:sportId,primary_club_id:clubId,status:'active',experience_type:'current',
+          rating_system:settings?.rating?.system||undefined
+        });
+      }
+
+      let player=await first(base44,'Player',{tenant_id:tenantId,club_id:clubId,person_id:person.id});
+      if(!player){
+        player=await base44.asServiceRole.entities.Player.create({
+          person_id:person.id,full_name:person.full_name,email:person.primary_email||undefined,phone:person.mobile||undefined,
+          status:'Active',tenant_id:tenantId,club_id:clubId,club:(await first(base44,'Club',{id:clubId,tenant_id:tenantId}))?.name||undefined,
+          relationship_type:relationshipType,relationship_status:relationshipStatus==='active'?'active':'pending',
+          wins:0,losses:0,matches_played:0,guest_visits_used:0
+        });
+      }
+
+      try{await base44.asServiceRole.entities.AuditLog.create({
+        tenant_id:tenantId,club_id:clubId,user_id:user.id,action:'membership_created',entity_type:'ClubMembership',entity_id:membership.id,
+        scope_type:'Person',scope_id:person.id,after_state:JSON.stringify({person_id:person.id,membership_status:membershipStatus,payment_status:paymentStatus,reused_existing_person:!![...exactNameDob,...exactEmail,...exactMobile][0]}),
+        reason:'Created from Membership Console'
+      });}catch{}
+      return Response.json({success:true,person_id:person.id,membership_id:membership.id,reusedExistingPerson:!![...exactNameDob,...exactEmail,...exactMobile][0]});
+    }
+
+    if(action==='admin_account_candidate'){
+      const personId=clean(body.personId,180);
+      const person=await first(base44,'Person',{id:personId,tenant_id:tenantId});
+      const membership=person?await first(base44,'ClubMembership',{tenant_id:tenantId,club_id:clubId,person_id:personId}):null;
+      if(!person||!membership) return Response.json({error:'Member not found in the active club.'},{status:404});
+      if(person.linked_user_id) return Response.json({success:true,alreadyLinked:true,user_id:person.linked_user_id,candidates:[]});
+      const email=lower(person.primary_email);
+      if(!email) return Response.json({success:true,alreadyLinked:false,candidates:[]});
+      const users=await base44.asServiceRole.entities.User.filter({email},'-updated_date',20);
+      const candidates=(users||[]).map((u:any)=>({id:u.id,email:u.email||null,full_name:u.full_name||u.display_name||null,approval_status:u.approval_status||null}));
+      return Response.json({success:true,alreadyLinked:false,candidates});
+    }
+
     if(action==='admin_connect_account'){
       const userId=clean(body.userId,180), personId=clean(body.personId,180);
       if(!userId||!personId) return Response.json({error:'userId and personId required'},{status:400});
