@@ -2388,12 +2388,34 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 <div>
                   <Label className="text-xs">Club logo</Label>
                   <div className="mt-1 flex items-center gap-3 rounded-lg border border-border bg-secondary/40 p-3">
-                    {(side === 'A' ? setup.clubALogo : setup.clubBLogo) ? <img src={side === 'A' ? setup.clubALogo : setup.clubBLogo} alt={`${setup[nameKey]} logo`} className="w-12 h-12 rounded-lg object-contain bg-white p-1" /> : <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center"><ImagePlus className="w-5 h-5 text-muted-foreground" /></div>}
-                    <div className="flex-1 min-w-0">
-                      <Input type="file" accept="image/*" disabled={logoUploading === side} onChange={e => uploadClubLogo(side, e.target.files?.[0])} className="bg-secondary text-xs" />
-                      <p className="text-[10px] text-muted-foreground mt-1">{side === 'A' ? 'Uses the saved host-club logo automatically when available; you can replace it for this event.' : 'Upload the visiting club logo for this event.'}</p>
+                    {(side === 'A' ? setup.clubALogo : setup.clubBLogo) ? <img src={side === 'A' ? setup.clubALogo : setup.clubBLogo} alt={`${setup[nameKey]} logo`} className="w-16 h-16 rounded-xl object-contain bg-white p-1 shrink-0" /> : <div className="w-16 h-16 rounded-xl bg-secondary flex items-center justify-center shrink-0"><ImagePlus className="w-5 h-5 text-muted-foreground" /></div>}
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <Input type="file" accept="image/*" disabled={logoUploading === side} onChange={e => { chooseClubLogo(side, e.target.files?.[0]); e.target.value=''; }} className="bg-secondary text-xs" />
+                      {(side === 'A' ? setup.clubALogo : setup.clubBLogo) && <Button type="button" size="sm" variant="outline" disabled={logoUploading === side} onClick={() => adjustCurrentClubLogo(side)}>Resize / reposition current logo</Button>}
+                      <p className="text-[10px] text-muted-foreground">{side === 'A' ? 'Uses the saved host-club logo automatically when available. RallyHub trims padding and lets you size and position it for this event.' : 'Upload the visiting club logo, then size and position it so both club crests have equal visual weight.'}</p>
                     </div>
                   </div>
+                  {logoDraft?.side === side && <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-4" data-testid={`cc-logo-editor-${side}`}>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="shrink-0">
+                        <p className="text-xs font-semibold mb-2">Logo preview</p>
+                        <div className="relative h-40 w-40 overflow-hidden rounded-2xl border-2 border-border bg-white shadow-inner">
+                          <img src={logoDraft.url} alt="Positioned club logo preview" draggable="false" className="absolute max-w-none select-none pointer-events-none" style={{
+                            width: `${Math.max(1, logoDraft.width) * Math.min((160 * 0.88) / Math.max(1, logoDraft.width), (160 * 0.88) / Math.max(1, logoDraft.height)) * logoDraft.zoom}px`,
+                            height: `${Math.max(1, logoDraft.height) * Math.min((160 * 0.88) / Math.max(1, logoDraft.width), (160 * 0.88) / Math.max(1, logoDraft.height)) * logoDraft.zoom}px`,
+                            left:'50%', top:'50%', transform:`translate(calc(-50% + ${logoDraft.offsetX * 0.8}px), calc(-50% + ${logoDraft.offsetY * 0.8}px))`
+                          }} />
+                        </div>
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <div><div className="flex items-center justify-between gap-2"><Label className="text-xs">Size</Label><span className="text-[10px] text-muted-foreground">{Math.round(logoDraft.zoom * 100)}%</span></div><input aria-label={`${label} logo size`} type="range" min="0.7" max="2" step="0.02" value={logoDraft.zoom} onChange={e => setLogoDraft(d => ({ ...d, zoom:Number(e.target.value) }))} className="mt-1 w-full accent-primary" /></div>
+                        <div><div className="flex items-center justify-between gap-2"><Label className="text-xs">Move left / right</Label><span className="text-[10px] text-muted-foreground">{logoDraft.offsetX}</span></div><input aria-label={`${label} logo horizontal position`} type="range" min="-100" max="100" step="1" value={logoDraft.offsetX} onChange={e => setLogoDraft(d => ({ ...d, offsetX:Number(e.target.value) }))} className="mt-1 w-full accent-primary" /></div>
+                        <div><div className="flex items-center justify-between gap-2"><Label className="text-xs">Move up / down</Label><span className="text-[10px] text-muted-foreground">{logoDraft.offsetY}</span></div><input aria-label={`${label} logo vertical position`} type="range" min="-100" max="100" step="1" value={logoDraft.offsetY} onChange={e => setLogoDraft(d => ({ ...d, offsetY:Number(e.target.value) }))} className="mt-1 w-full accent-primary" /></div>
+                        <p className="text-[10px] text-muted-foreground">The saved file is a square, centred event logo. That keeps both clubs the same display size on the host screen, Live Event View and print pack.</p>
+                        <div className="flex flex-wrap gap-2"><Button type="button" size="sm" variant="outline" onClick={resetClubLogoDraft}>Reset</Button><Button type="button" size="sm" variant="ghost" onClick={cancelClubLogoDraft}>Cancel</Button><Button type="button" size="sm" onClick={applyClubLogoDraft} disabled={logoUploading === side}>{logoUploading === side ? 'Saving logo…' : 'Apply logo'}</Button></div>
+                      </div>
+                    </div>
+                  </div>}
                 </div>
                 <div className="grid grid-cols-2 gap-3"><div><Label className="text-xs">Primary</Label><Input type="color" value={setup[primaryKey]} onChange={e => setSetup(s => ({ ...s, [primaryKey]: e.target.value }))} className="mt-1 h-10 bg-secondary" /></div><div><Label className="text-xs">Accent</Label><Input type="color" value={setup[secondaryKey]} onChange={e => setSetup(s => ({ ...s, [secondaryKey]: e.target.value }))} className="mt-1 h-10 bg-secondary" /></div></div>
               </div>
