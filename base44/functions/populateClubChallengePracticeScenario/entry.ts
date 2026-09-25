@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
       status:'completed', current_round:maxRound, finalised_at:now,
       showcase_resolution_method:method, showcase_resolved_winner:'club_a',
-      ...(event.pot_enabled ? { pot_status:'revealed', pot_winner_participant_ids:potWinnerId ? [potWinnerId] : [], pot_revealed_at:now } : {}),
+      ...(event.pot_enabled ? { pot_method:'vote', pot_status:'revealed', pot_winner_participant_ids:potWinnerId ? [potWinnerId] : [], pot_revealed_at:now } : {}),
       timer_state_json:JSON.stringify({ phase:'play', running:false, remaining_seconds:0, started_at:null, round:maxRound }), timer_revision:Number(event.timer_revision||0)+1,
     });
     await base44.asServiceRole.entities.Tournament.update(event.tournament_id, { status:'Completed', finalised_at:now });
