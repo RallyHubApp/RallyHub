@@ -1480,7 +1480,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, [event?.id, event?.pot_status, event?.pot_vote_closes_at, timerNow, canManageEvent, isAdmin]);
   const printEventPack = () => {
     if (!event || !['draw_approved','in_progress','paused','completed'].includes(event.status) || !normalMatches.length) { toast.error('Approve the draw before producing the Event Pack.'); return; }
-    if (event.event_pack_stale) { toast.error('This pack is OUT OF DATE because fixtures changed. Re-approve the draw before printing a new authoritative pack.'); return; }
+    if (event.event_pack_stale) toast.warning('Event Pack is OUT OF DATE because fixtures changed. You can still open and review it; re-approve the draw before treating it as the current authoritative pack.');
     setPrintPackOpen(true);
   };
   const confirmPrintEventPack = async () => {
@@ -2149,6 +2149,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             <div><h2 className="text-lg font-bold">Choose sheets to print</h2><p className="text-xs text-muted-foreground mt-1">Only the sheets you select will be sent to the printer.</p></div>
             <button type="button" className="text-muted-foreground hover:text-foreground text-xl leading-none px-2" onClick={() => setPrintPackOpen(false)} aria-label="Close">×</button>
           </div>
+          {event?.event_pack_stale && <div className="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3"><p className="text-sm font-black text-amber-700 dark:text-amber-300">EVENT PACK · OUT OF DATE</p><p className="mt-1 text-xs text-muted-foreground">Fixtures have changed since this pack was last approved. You can still open, review and print the sheets; re-approve the draw before using the pack as the current authoritative event pack.</p></div>}
           <div className="space-y-2">
             {[
               { key:'score', label:'Master Score Sheet', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)), note:'Blank score boxes for use during the event' },
