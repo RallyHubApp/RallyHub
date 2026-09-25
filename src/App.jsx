@@ -208,6 +208,7 @@ function App() {
             <Route path="/guest-session/:token" element={<PublicGuestSessionBooking />} />
             <Route path="/book/:token" element={<PublicGuestSessionBooking />} />
             <Route path="/book/:token" element={<PublicGuestSessionBooking />} />
+            <Route path="/book/:token" element={<PublicGuestSessionBooking />} />
             <Route path="/club-challenge/display/:token" element={<PublicClubChallengeDisplay />} />
             <Route path="/club-challenge/vote/:token" element={<PublicClubChallengeVote />} />
             <Route path="/club-challenge/showcase-score/:token" element={<PublicClubChallengeShowcaseScorer />} />
