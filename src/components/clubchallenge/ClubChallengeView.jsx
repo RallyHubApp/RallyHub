@@ -1295,10 +1295,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (await timerAction('start', phase)) {
       lastTimerAnnouncementRef.current = new Set();
       if (phase === 'play') {
+        timerSpeechArmedRef.current = true;
         if (!announcedRoundStartsRef.current.has(Number(currentRound))) {
           announcedRoundStartsRef.current.add(Number(currentRound));
           const label = roundLabel(currentRound);
-          timerSpeechArmedRef.current = true;
           speak(`${label}. ${label} starting now. ${label} starting now.`, { signal:'start' });
         }
       } else if (phase === 'changeover') {
@@ -1340,7 +1340,6 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const prefix = `${currentRound}-${phase}`;
     if (timerRemaining <= 5 && timerRemaining > 0) announceOnce(`${prefix}-count-${timerRemaining}`, String(timerRemaining));
     if (timerRemaining === 0) {
-      const scheduledBreakAfterThisRound = event?.include_break && Number(currentRound) === Number(event?.break_after_round || 0);
       const endMessage = phase === 'play'
         ? 'Please hand in your scores.'
         : phase === 'changeover'
