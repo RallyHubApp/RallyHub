@@ -328,6 +328,82 @@ export default function MembershipConsole() {
     }
   };
 
+  const createMember = async () => {
+    if (!newMember.full_name.trim()) return toast.error('Enter the member name');
+    setSaving(true);
+    try {
+      const response = await base44.functions.invoke('membershipRecord', { action: 'admin_create_member', member: newMember });
+      if (response.data?.error) throw new Error(response.data.error);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['membership-console-list'] }),
+        queryClient.invalidateQueries({ queryKey: ['membership-console-meta'] }),
+        queryClient.invalidateQueries({ queryKey: ['players'] })
+      ]);
+      setAddMemberOpen(false);
+      setNewMember({
+        full_name: '', primary_email: '', mobile: '', date_of_birth: '', member_id: '',
+        membership_season: meta.defaults?.membership_season || '', membership_type: '',
+        membership_status: 'pending_payment', relationship_type: 'member', payment_status: 'pending',
+        membership_fee: meta.defaults?.membership_fee != null ? String(meta.defaults.membership_fee) : '',
+        join_date: '', emergency_contact_name: '', emergency_contact_relationship: '', emergency_mobile: '',
+        sport_ids: (meta.sports || []).filter(sport => sport.is_primary).map(sport => String(sport.id))
+      });
+      toast.success(response.data?.reusedExistingPerson ? 'Membership added to the existing RallyHub person' : 'Member added');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not add member');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const connectAccount = async () => {
+    if (!personId) return;
+    setSaving(true);
+    try {
+      const candidateResponse = await base44.functions.invoke('membershipRecord', { action: 'admin_account_candidate', personId });
+      if (candidateResponse.data?.error) throw new Error(candidateResponse.data.error);
+      if (candidateResponse.data?.alreadyLinked) {
+        toast.success('This member is already linked to a RallyHub account');
+        return;
+      }
+      const candidates = candidateResponse.data?.candidates || [];
+      if (!candidates.length) {
+        toast.info('No RallyHub account currently matches this member email');
+        return;
+      }
+      if (candidates.length > 1) {
+        toast.error('More than one RallyHub account matches this email. Review the user accounts before linking.');
+        return;
+      }
+      const candidate = candidates[0];
+      const recordName = detail?.person?.full_name || '';
+      const candidateName = candidate.full_name || '';
+      let verifyDateOfBirth = '';
+      let verifyMobile = '';
+      if (recordName && candidateName && recordName.trim().toLowerCase() !== candidateName.trim().toLowerCase()) {
+        const factor = window.prompt('The RallyHub account name is "' + candidateName + '" but the member record is "' + recordName + '". Enter the member\'s date of birth (YYYY-MM-DD) or mobile number to verify the link.');
+        if (!factor) return;
+        if (/^\\d{4}-\\d{2}-\\d{2}$/.test(factor.trim())) verifyDateOfBirth = factor.trim();
+        else verifyMobile = factor.trim();
+      }
+      if (!window.confirm('Link ' + candidate.email + ' to ' + (recordName || 'this member') + '? This grants member access to the active club.')) return;
+      const response = await base44.functions.invoke('membershipRecord', {
+        action: 'admin_connect_account', personId, userId: candidate.id, verifyDateOfBirth, verifyMobile
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      await Promise.all([
+        refetchDetail(),
+        queryClient.invalidateQueries({ queryKey: ['membership-console-list'] }),
+        queryClient.invalidateQueries({ queryKey: ['pending-approval-count'] })
+      ]);
+      toast.success('RallyHub account linked to the existing member');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not link account');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const addTraining = async () => {
     if (!training.trainingName.trim()) return toast.error('Enter the training name');
     setSaving(true);
