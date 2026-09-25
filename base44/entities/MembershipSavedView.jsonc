@@ -1,0 +1,151 @@
+{
+  "name": "MembershipSavedView",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "visible_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "filters_json": {
+      "type": "string"
+    },
+    "sort_field": {
+      "type": "string"
+    },
+    "sort_direction": {
+      "type": "string",
+      "enum": [
+        "asc",
+        "desc"
+      ],
+      "default": "asc"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "user_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.user_id": "{{user.id}}"
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.user_id": "{{user.id}}"
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.user_id": "{{user.id}}"
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.user_id": "{{user.id}}"
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

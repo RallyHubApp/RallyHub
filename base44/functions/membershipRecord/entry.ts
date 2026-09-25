@@ -90,6 +90,29 @@ function safePlayer(p:any){
     user_id:p.user_id||null,linked_user_email:p.linked_user_email||null
   };
 }
+function dataQualityIssues(person:any,membership:any){
+  const out:string[]=[];
+  if(!clean(person?.primary_email,240)) out.push('missing_email');
+  if(!clean(person?.mobile,80)) out.push('missing_mobile');
+  if(!clean(person?.date_of_birth,20)) out.push('missing_date_of_birth');
+  if(!clean(person?.full_postal_address||person?.address_line1,300)) out.push('missing_address');
+  if(!clean(person?.postal_code,40)) out.push('missing_postcode');
+  if(!clean(person?.emergency_contact_name||person?.emergency_contact_raw,240)) out.push('missing_emergency_contact');
+  if(!clean(person?.emergency_mobile,80)) out.push('missing_emergency_mobile');
+  if(!clean(membership?.member_id,120)) out.push('missing_membership_id');
+  if(clean(membership?.duplicate_flag,240)) out.push('duplicate_review');
+  return Array.from(new Set([...(person?.data_quality_flags||[]),...(membership?.data_quality_flags||[]),...out]));
+}
+function safeClub(c:any){
+  if(!c) return null;
+  return {id:c.id,tenant_id:c.tenant_id||null,name:c.name||null,slug:c.slug||null,timezone:c.timezone||null,logo_url:c.logo_url||null,primary_colour:c.primary_colour||null,secondary_colour:c.secondary_colour||null,public_contact_email:c.public_contact_email||null};
+}
+function safeSport(s:any){return s?{id:s.id,name:s.name||null,code:s.code||null,status:s.status||null}:null}
+function safeGateway(g:any){return g?{id:g.id,provider:g.provider||null,display_name:g.display_name||null,status:g.status||null,is_default:g.is_default===true,currency:g.currency||'EUR',supports_payments:g.supports_payments!==false,supports_refunds:g.supports_refunds===true}:null}
+const MEMBERSHIP_STATUS=['paid_active','pending_payment','no_response','not_renewing','inactive','former_member'];
+const RELATIONSHIP_TYPE=['member','guest','booking_only','waiting_list','inactive','former_member'];
+const PAYMENT_STATUS=['paid','pending','failed','not_required','unknown'];
+
 async function resolveSelf(base44:any,user:any){
   const tenantId=clean(user.active_tenant_id,180), clubId=clean(user.active_club_id,180), email=lower(user.email);
   let player=await first(base44,'Player',{user_id:user.id});
