@@ -2241,6 +2241,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const potWinnerIds = event?.pot_winner_participant_ids || [];
   const potWinnersA = potWinnerIds.map(id => participants.find(p => p.id === id)).filter(p => p?.side === 'club_a');
   const potWinnersB = potWinnerIds.map(id => participants.find(p => p.id === id)).filter(p => p?.side === 'club_b');
+  const individualPointStats = useMemo(() => calculateIndividualPointStats(normalMatches, participants), [normalMatches, participants]);
+  const awardMethod = event?.pot_method || 'none';
+  const awardTitle = awardMethod === 'points' ? 'Highest Scoring Players' : awardMethod === 'vote' ? 'Players of the Tournament' : 'Team Player Awards';
   const potTopCandidates = side => {
     const sidePlayers = participants.filter(p => p.side === side);
     const max = Math.max(0, ...sidePlayers.map(p => Number(potCounts[p.id] || 0)));
