@@ -200,6 +200,32 @@ Deno.serve(async(req)=>{
           if(session)await sendBookingEmails(base44,session,booking);
         }
       }
+      if(payment.purpose_type==='membership'&&(payment.club_membership_id||payment.purpose_id)){
+        const membershipId=clean(payment.club_membership_id||payment.purpose_id,180);
+        const memberships=await base44.asServiceRole.entities.ClubMembership.filter({
+          id:membershipId,tenant_id:payment.tenant_id,club_id:payment.club_id
+        },'-updated_date',5);
+        const membership=memberships?.[0]||null;
+        if(membership){
+          await base44.asServiceRole.entities.ClubMembership.update(membership.id,{
+            payment_status:'paid',membership_status:'paid_active',payment_date:now.slice(0,10)
+          });
+          const relationships=await base44.asServiceRole.entities.ClubRelationship.filter({
+            tenant_id:payment.tenant_id,club_id:payment.club_id,person_id:membership.person_id
+          },'-updated_date',20);
+          const relationship=relationships?.[0]||null;
+          if(relationship)await base44.asServiceRole.entities.ClubRelationship.update(relationship.id,{
+            status:'active',payment_status:'paid',payment_date:now.slice(0,10)
+          });
+          try{await base44.asServiceRole.entities.AuditLog.create({
+            tenant_id:payment.tenant_id,club_id:payment.club_id,user_id:'system:webhook',
+            action:'membership_payment_confirmed',entity_type:'ClubMembership',entity_id:membership.id,
+            scope_type:'Person',scope_id:membership.person_id,
+            after_state:JSON.stringify({payment_record_id:payment.id,provider:payment.provider||'sumup',provider_transaction_id:verified.transactionId||''}),
+            reason:'Payment gateway webhook verified the membership payment'
+          });}catch{}
+        }
+      }
       return new Response('',{status:204});
     }
 
@@ -211,6 +237,21 @@ Deno.serve(async(req)=>{
         const booking=bookings?.[0]||null;
         if(booking&&booking.payment_status!=='paid'){
           await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:local,booking_status:'pending_payment'});
+        }
+      }
+      if(payment.purpose_type==='membership'&&(payment.club_membership_id||payment.purpose_id)){
+        const membershipId=clean(payment.club_membership_id||payment.purpose_id,180);
+        const memberships=await base44.asServiceRole.entities.ClubMembership.filter({
+          id:membershipId,tenant_id:payment.tenant_id,club_id:payment.club_id
+        },'-updated_date',5);
+        const membership=memberships?.[0]||null;
+        if(membership&&membership.payment_status!=='paid'){
+          await base44.asServiceRole.entities.ClubMembership.update(membership.id,{payment_status:'failed',membership_status:'pending_payment'});
+          const relationships=await base44.asServiceRole.entities.ClubRelationship.filter({
+            tenant_id:payment.tenant_id,club_id:payment.club_id,person_id:membership.person_id
+          },'-updated_date',20);
+          const relationship=relationships?.[0]||null;
+          if(relationship)await base44.asServiceRole.entities.ClubRelationship.update(relationship.id,{status:'pending',payment_status:'failed'});
         }
       }
     }
