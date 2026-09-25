@@ -30,8 +30,19 @@ Deno.serve(async (req) => {
     const votingToken = votingTokens?.[0]?.token || null;
     const pmap = new Map(participants.map((p:any) => [p.id, maskName(p.display_name, !!event.junior_display_mode)]));
     const potWinnerIds = event.pot_status === 'revealed' ? (event.pot_winner_participant_ids || []) : [];
+    const individualStats:any = {};
+    if (event.pot_method === 'points') {
+      const ensure = (id:string, side:string) => individualStats[id] || (individualStats[id] = { side, games_played:0, points_for:0, points_against:0, wins:0, point_diff:0 });
+      for (const m of matches) {
+        if (m.is_showcase || !['completed','draw','retired','forfeit'].includes(m.status)) continue;
+        const a=Number(m.score_a||0), b=Number(m.score_b||0);
+        for (const id of (m.club_a_participant_ids||[])) { const s=ensure(id,'club_a'); s.games_played++; s.points_for+=a; s.points_against+=b; if(m.winner==='club_a')s.wins++; }
+        for (const id of (m.club_b_participant_ids||[])) { const s=ensure(id,'club_b'); s.games_played++; s.points_for+=b; s.points_against+=a; if(m.winner==='club_b')s.wins++; }
+      }
+      Object.values(individualStats).forEach((s:any) => { s.point_diff=s.points_for-s.points_against; });
+    }
     const potWinners = potWinnerIds.map((id:string) => participants.find((p:any) => p.id === id)).filter(Boolean).map((p:any) => ({
-      id:p.id, side:p.side, display_name:maskName(p.display_name, !!event.junior_display_mode),
+      id:p.id, side:p.side, display_name:maskName(p.display_name, !!event.junior_display_mode), ...(event.pot_method === 'points' ? individualStats[p.id] || {} : {}),
     }));
     const participantById = new Map(participants.map((p:any) => [p.id, p]));
     const safeParticipants = participants.filter((p:any) => ['club_a','club_b'].includes(p.side)).map((p:any) => {
@@ -70,7 +81,7 @@ Deno.serve(async (req) => {
       timed_draws_allowed:event.timed_draws_allowed !== false, showcase_enabled:!!event.showcase_enabled,
       include_break:!!event.include_break, break_minutes:event.break_minutes, break_after_round:event.break_after_round,
       junior_display_mode:!!event.junior_display_mode,
-      pot_enabled:!!event.pot_enabled, pot_status:event.pot_status, pot_vote_closes_at:event.pot_vote_closes_at || null,
+      pot_enabled:!!event.pot_enabled, pot_method:event.pot_method || 'none', pot_status:event.pot_status, pot_vote_closes_at:event.pot_vote_closes_at || null,
       pot_voting_token:votingToken, pot_winners:potWinners,
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
     }, participants:safeParticipants, matches:safeMatches });
