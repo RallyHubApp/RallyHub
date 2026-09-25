@@ -86,7 +86,11 @@ export default function PublicClubChallengeDisplay(){
   const potWinners=Array.isArray(event.pot_winners)?event.pot_winners:[];
   const potWinnersA=potWinners.filter(p=>p.side==='club_a');
   const potWinnersB=potWinners.filter(p=>p.side==='club_b');
+  const publicVoteResults=Array.isArray(event.pot_vote_results)?event.pot_vote_results:[];
+  const publicVoteResultsA=publicVoteResults.filter(p=>p.side==='club_a');
+  const publicVoteResultsB=publicVoteResults.filter(p=>p.side==='club_b');
   const awardLabel=event.pot_method==='points'?'Highest Scoring Players':'Players of the Tournament';
+  const awardRevealed=event.pot_status==='revealed'&&potWinners.length>0;
   const completed=['completed','archived'].includes(event.status);
   const finalTitle=s.a===s.b?'Interclub Draw':`${s.a>s.b?event.club_a_name:event.club_b_name} win the Interclub`;
   const alphabeticalTeamSort=(a,b)=>String(a.display_name||'').localeCompare(String(b.display_name||''),'en',{sensitivity:'base'});
@@ -118,7 +122,23 @@ export default function PublicClubChallengeDisplay(){
       await load();
     } finally { voteSavingRef.current=false; setVoteSaving(false); }
   };
-  const playerNav=<div className="sticky top-2 z-30 mx-auto mb-4 flex w-full max-w-3xl items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur"><button onClick={()=>setView('live')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold ${view==='live'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}>{completed?'Final':'Live'}</button><button onClick={()=>setView('teams')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='teams'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><Users className="w-4 h-4"/>Teams</button>{!completed&&<button onClick={()=>setView('info')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='info'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><Info className="w-4 h-4"/>Event Info</button>}<button onClick={()=>setView('results')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='results'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><ListChecks className="w-4 h-4"/>{completed?'Summary':'Results'}</button>{event.pot_enabled&&<button onClick={()=>setView('vote')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='vote'?'bg-primary text-primary-foreground':potOpen?'bg-primary/10 text-primary hover:bg-primary/20':'text-muted-foreground hover:bg-secondary'}`}><Trophy className="w-4 h-4"/>{event.pot_method==='points'&&event.pot_status==='revealed'?'Award':'Vote'}{potOpen?' · Open':''}</button>}</div>;
+  const playerNav=<div className="sticky top-2 z-30 mx-auto mb-4 flex w-full max-w-3xl items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur"><button onClick={()=>setView('live')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold ${view==='live'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}>{completed?'Final':'Live'}</button><button onClick={()=>setView('teams')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='teams'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><Users className="w-4 h-4"/>Teams</button>{!completed&&<button onClick={()=>setView('info')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='info'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><Info className="w-4 h-4"/>Event Info</button>}<button onClick={()=>setView('results')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='results'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><ListChecks className="w-4 h-4"/>{completed?'Summary':'Results'}</button>{event.pot_enabled&&<button onClick={()=>setView('vote')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='vote'?'bg-primary text-primary-foreground':potOpen?'bg-primary/10 text-primary hover:bg-primary/20':'text-muted-foreground hover:bg-secondary'}`}><Trophy className="w-4 h-4"/>{awardRevealed?'Awards':'Vote'}{potOpen?' · Open':''}</button>}</div>;
+
+  const publicAwardPanel=awardRevealed?<section className="mt-6 rounded-3xl border-2 border-primary/30 bg-primary/5 p-5 sm:p-8 text-center shadow-sm">
+    <p className="text-xs sm:text-sm font-black uppercase tracking-[.22em] text-primary">{awardLabel}</p>
+    {event.pot_method==='vote'&&event.pot_ballot_count>0&&<p className="mt-2 text-xs text-muted-foreground">{event.pot_ballot_count} ballot{event.pot_ballot_count===1?'':'s'} cast</p>}
+    <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-6">
+      {[[event.club_a_name,event.club_a_logo_url,event.club_a_primary_colour,event.club_a_secondary_colour,potWinnersA,publicVoteResultsA],[event.club_b_name,event.club_b_logo_url,event.club_b_primary_colour,event.club_b_secondary_colour,potWinnersB,publicVoteResultsB]].map(([name,logo,primary,secondary,winners,voteResults])=><div key={name} className="rounded-2xl border bg-card p-4 sm:p-6" style={{borderTopWidth:'7px',borderTopColor:primary||'#2563eb',borderBottomWidth:'3px',borderBottomColor:secondary||primary||'#2563eb'}}>
+        {logo&&<img src={logo} alt={`${name} logo`} className="mx-auto h-14 w-14 sm:h-20 sm:w-20 rounded-xl bg-white object-contain p-1.5"/>}
+        <p className="mt-3 text-xs sm:text-sm text-muted-foreground">{name}</p>
+        <p className="mt-2 text-xl sm:text-3xl font-black leading-tight">{winners.map(p=>p.display_name).join(' & ')}</p>
+        {event.pot_method==='vote'&&voteResults.length>0&&<div className="mt-4 border-t pt-3 text-left">
+          {voteResults.map((player,index)=><div key={player.id} className="flex items-center justify-between gap-3 py-1.5 text-xs sm:text-sm"><span className={index===0?'font-black':'font-medium'}>{player.display_name}</span><span className="font-black tabular-nums">{player.votes}</span></div>)}
+        </div>}
+        {event.pot_method==='points'&&winners[0]&&<p className="mt-2 text-xs text-muted-foreground">{winners[0].points_for||0} points · {winners[0].games_played||0} games · {winners[0].wins||0} wins</p>}
+      </div>)}
+    </div>
+  </section>:null;
 
   if(view==='info' && !completed) return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8"><AppearanceQuickButton className="fixed right-3 top-3 z-40 h-10 px-2 sm:px-3"/>{playerNav}<div className="mx-auto max-w-5xl"><LiveEventBrand pageLabel="Event Briefing & Rules"/><h1 className="mt-4 text-center text-2xl sm:text-3xl font-black">Interclub Event Information</h1><p className="mt-1 text-center text-sm text-muted-foreground">{event.club_a_name} vs {event.club_b_name}</p>
     <div className="mt-6 grid gap-4 md:grid-cols-2">
