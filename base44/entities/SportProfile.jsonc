@@ -45,6 +45,29 @@
     "preferred_side": {
       "type": "string"
     },
+    "rating_system": {
+      "type": "string",
+      "description": "Sport-specific external rating system name, e.g. DUPR, WTN or another governing-body/provider rating"
+    },
+    "external_rating_id": {
+      "type": "string",
+      "description": "Identifier used by the configured external rating system"
+    },
+    "rating_value": {
+      "type": "number",
+      "description": "Primary/current external rating value for this sport profile"
+    },
+    "rating_metadata_json": {
+      "type": "string",
+      "description": "Optional provider-neutral JSON for rating variants such as singles/doubles, reliability or verification metadata"
+    },
+    "rating_source": {
+      "type": "string"
+    },
+    "rating_last_synced": {
+      "type": "string",
+      "format": "date-time"
+    },
     "dupr_id": {
       "type": "string"
     },
