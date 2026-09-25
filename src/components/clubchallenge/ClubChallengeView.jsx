@@ -2540,6 +2540,41 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <div><p className="text-sm font-semibold">Participants</p><p className="text-xs text-muted-foreground">Event ranks are independent of permanent RallyHub skill ratings.</p></div>
               <Button data-testid="cc-load-practice" variant="outline" className="w-full sm:w-auto min-h-11" onClick={loadTestRoster} disabled={locked || saving || !canManageEvent}><Users className="w-4 h-4 mr-2" />Practice with 32 Test Players</Button>
             </div>
+            <div className="glass rounded-xl p-4 sm:p-5 space-y-4">
+              <div>
+                <p className="text-sm font-semibold">Guest Player Registration</p>
+                <p className="mt-1 text-xs text-muted-foreground">Send the appropriate team link to guest or visiting players. Each player enters their own contact and emergency details and accepts the event waiver, Code of Conduct and privacy notice. They are added directly to that team as event-only players, not club members. Social / Improver and ranking stay under organiser control.</p>
+              </div>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {[
+                  ['club_a', setup.clubAName || event.club_a_name || 'Team A'],
+                  ['club_b', setup.clubBName || event.club_b_name || 'Team B'],
+                ].map(([side, teamName]) => {
+                  const url = registrationLinks[side];
+                  return <div key={side} className="rounded-xl border border-border bg-secondary/30 p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0"><p className="text-sm font-bold truncate">{teamName}</p><p className="text-[10px] text-muted-foreground">Guest registration link</p></div>
+                      {!url && <Button type="button" size="sm" variant="outline" disabled={registrationLinkBusy === side || locked || !canManageEvent} onClick={() => prepareRegistrationLink(side)}>{registrationLinkBusy === side ? 'Preparing…' : 'Prepare Link'}</Button>}
+                    </div>
+                    {url && <div className="mt-3 flex flex-col sm:flex-row gap-3 items-center">
+                      <QRCodeSVG value={url} size={96} level="H" includeMargin />
+                      <div className="min-w-0 flex-1 w-full">
+                        <a href={url} target="_blank" rel="noreferrer" className="block break-all text-[10px] text-primary underline underline-offset-2">{url}</a>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Button type="button" size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(url)}>Copy</Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => shareOnWhatsApp(url, `${teamName} Guest Registration`)}>WhatsApp</Button>
+                          <Button type="button" size="sm" variant="ghost" onClick={() => window.open(url,'_blank','noopener,noreferrer')}>Open Form</Button>
+                        </div>
+                      </div>
+                    </div>}
+                  </div>;
+                })}
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <p className="text-[11px] text-muted-foreground">As players submit, use Refresh Roster to see them here. The form does not ask the player to grade themselves.</p>
+                <Button type="button" size="sm" variant="outline" onClick={sync} disabled={saving || !!hostAction}><RefreshCw className="w-3.5 h-3.5 mr-1.5" />Refresh Roster</Button>
+              </div>
+            </div>
             <TeamBuilder
               eventId={event.id}
               participants={participants}
