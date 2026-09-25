@@ -15,6 +15,7 @@ const roundFn = fs.readFileSync('base44/functions/updateClubChallengeRound/entry
 const eventFn = fs.readFileSync('base44/functions/manageClubChallengeEvent/entry.ts','utf8');
 const scoreFn = fs.readFileSync('base44/functions/saveClubChallengeScore/entry.ts','utf8');
 const voteFn = fs.readFileSync('base44/functions/castPublicClubChallengePotVote/entry.ts','utf8');
+const potFn = fs.readFileSync('base44/functions/updateClubChallengePot/entry.ts','utf8');
 const participantFn = fs.readFileSync('base44/functions/manageClubChallengeParticipant/entry.ts','utf8');
 const spondFn = fs.readFileSync('base44/functions/spondIntegrationWorking/entry.ts','utf8');
 const scheduleFn = fs.readFileSync('base44/functions/updateClubChallengeSchedule/entry.ts','utf8');
@@ -192,6 +193,11 @@ check('live flow: the host can prepare the next round after play ends even with 
 check('late-start intelligence: setup stores hall booking start and event start stores actual start', contains(ui,'Hall booking start') && contains(eventFn,'actual_started_at'));
 check('late-start intelligence: live host gets a continuously recalculated finish-on-time guide', contains(ui,'Finish-on-Time Guide') && contains(ui,'projectedFinish') && contains(ui,'Recommended recovery'));
 check('post-event voting: completed events can still open, close and reveal POT before archive', contains(ui,'const canManagePot') && contains(ui,"event.status !== 'archived'"));
+check('post-event awards: host can choose Highest Scorers or Player Vote at the end', contains(ui,'Choose the award method') && contains(ui,'Calculate Highest Scorers') && contains(ui,'Open Player Vote'));
+check('post-event awards: score-based winners use only normal completed rounds', contains(potFn,"action === 'calculate_points'") && contains(potFn,'match.is_showcase') && contains(potFn,"new Set(['completed','draw','retired','forfeit'])"));
+check('post-event awards: each player receives their side score for every match played', contains(potFn,'s.pointsFor += scoreA') && contains(potFn,'s.pointsFor += scoreB') && contains(potFn,'s.gamesPlayed++'));
+check('post-event awards: score ties break by wins, point differential, then secure coin toss', contains(potFn,'b.pointsFor-a.pointsFor || b.wins-a.wins || b.pointDiff-a.pointDiff') && contains(potFn,'secureRandomIndex(tied.length)'));
+check('post-event awards: public display distinguishes Highest Scoring Players from voting awards', contains(publicDisplayPage,"event.pot_method==='points'?'Highest Scoring Players':'Players of the Tournament'"));
 
 // 8. Voting all the way to the end.
 check('player: public voting uses one ballot with one choice from each team', contains(publicVote,'Choose one player from each team.') && contains(publicVote,'clubANomineeParticipantId') && contains(publicVote,'clubBNomineeParticipantId'));
@@ -204,7 +210,7 @@ check('voting: ballot audit omits nominee identities', /nominee identities inten
 const clearWinner = calculateClubChallengeScore(Array.from({length:48},(_,i)=>({scoreA:i<28?11:8,scoreB:i<28?8:11,status:'completed'})),{winPoints:2,drawPoints:1,lossPoints:0});
 check('end state: clear winner can be produced without compulsory final', clearWinner.clubA !== clearWinner.clubB);
 check('end state: Showcase remains optional rather than replacing normal result', contains(ui,'Showcase / Tiebreak Final'));
-check('end state: POT remains optional and privacy-aware', contains(ui,'Player of Tournament voting'));
+check('end state: team player awards remain optional and privacy-aware', contains(ui,'Team player awards') && contains(voteFn,'ballot audit') || contains(voteFn,'nominee identities intentionally omitted'));
 
 console.log(`\nINTERACTION ROBOT PASS — ${passed} assertions`);
 console.log('Perspectives exercised: sporting engine, host, scorer, Hall Display/public viewer, voter, event-day disruption, finalisation.');
