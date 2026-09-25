@@ -388,7 +388,7 @@ function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true,
     if (!networkOnline) { onQueue?.({ ...payload, queuedAt: new Date().toISOString(), clubAName, clubBName, matchLabel: `R${match.round_number} C${match.court_number}` }); toast.warning('Offline: result retained on this device as UNSYNCHRONISED.'); return; }
     setSaving(true);
     try {
-      const res = await base44.functions.invoke('saveClubChallengeScore', payload);
+      const res = await invokeBase44Safely('saveClubChallengeScore', payload);
       if (res.data?.conflict) {
         toast.error('Score conflict: this result changed on another device. Refresh and review it.');
         onSaved?.(null);
@@ -771,7 +771,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const remaining = [], conflicts = [];
     for (const item of pendingScores) {
       try {
-        const res = await base44.functions.invoke('saveClubChallengeScore', { matchId:item.matchId, expectedRevision:item.expectedRevision, scoreA:item.scoreA, scoreB:item.scoreB });
+        const res = await invokeBase44Safely('saveClubChallengeScore', { matchId:item.matchId, expectedRevision:item.expectedRevision, scoreA:item.scoreA, scoreB:item.scoreB });
         if (res.data?.conflict || res.data?.error) { remaining.push(item); conflicts.push({ ...item, reason:res.data?.error || 'Revision conflict' }); }
       } catch (e) { remaining.push(item); conflicts.push({ ...item, reason:e?.response?.data?.error || e?.message || 'Retry failed' }); }
     }
@@ -1067,7 +1067,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     timerCommandRef.current = true;
     setHostAction(action === 'start' ? `Starting ${phase || 'timer'}… command sent` : action === 'pause' ? 'Pausing timer… command sent' : action === 'resume' ? 'Resuming timer… command sent' : 'Updating timer… command sent');
     try {
-      const res = await base44.functions.invoke('updateClubChallengeTimer', { eventId: event.id, action, phase, expectedRevision: Number(event.timer_revision || 0), ...extra });
+      const res = await invokeBase44Safely('updateClubChallengeTimer', { eventId: event.id, action, phase, expectedRevision: Number(event.timer_revision || 0), ...extra });
       if (res.data?.conflict) { toast.error('Timer changed on another device. RallyHub has refreshed the authoritative timer.'); await refetchEvent(); return false; }
       if (res.data?.error) { toast.error(res.data.error); return false; }
       await refetchEvent();
@@ -1350,7 +1350,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const minutes = Math.max(1, Math.min(60, Math.round(Number(value) || Number(event?.play_minutes || 10))));
     if (!event || !canManageEvent || timerState?.running) return;
     try {
-      const res = await base44.functions.invoke('updateClubChallengeTimer', { eventId:event.id, action:'set_round_minutes', minutes, expectedRevision:Number(event.timer_revision || 0) });
+      const res = await invokeBase44Safely('updateClubChallengeTimer', { eventId:event.id, action:'set_round_minutes', minutes, expectedRevision:Number(event.timer_revision || 0) });
       if (res.data?.error) { toast.error(res.data.error); return; }
       await refetchEvent();
       toast.success(`${roundLabel(currentRound)} set to ${minutes} minutes.`);
@@ -1856,7 +1856,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     sportingActionRef.current = true; setRoundActionStatus({ state:'working', text:currentRound < maxRound ? `Round ${currentRound} saved. Preparing Round ${currentRound + 1}…` : 'Normal rounds complete. Opening final options…' }); setHostAction(currentRound < maxRound ? `Preparing Round ${currentRound + 1}… command sent` : 'Opening final options…');
     try {
       if (currentRound < maxRound) {
-        const res = await base44.functions.invoke('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1, allowPendingScores:true });
+        const res = await invokeBase44Safely('updateClubChallengeRound', { eventId: event.id, nextRound: currentRound + 1, allowPendingScores:true });
         if (res.data?.error) { toast.error(res.data.error); return; }
         const nextRound = currentRound + 1;
         const nextMatches = normalMatches.filter(m => m.round_number === nextRound && m.status !== 'not_played');
@@ -1889,7 +1889,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setRoundActionStatus({ state:'working', text:`Ending break early and preparing Round ${nextRound}…` });
     setHostAction(`Ending break early → Round ${nextRound}… command sent`);
     try {
-      const res = await base44.functions.invoke('updateClubChallengeRound', { eventId:event.id, nextRound, skipBreak:true, allowPendingScores:true });
+      const res = await invokeBase44Safely('updateClubChallengeRound', { eventId:event.id, nextRound, skipBreak:true, allowPendingScores:true });
       if (res.data?.error) throw new Error(res.data.error);
       await refetchEvent();
       const message = `Break ended early · Round ${nextRound} ready`;
