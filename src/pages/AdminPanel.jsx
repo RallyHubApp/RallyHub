@@ -1195,24 +1195,59 @@ Brian`;
         </Badge>
       </PageHeader>
 
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
-        <GlassCard delay={0} className="text-center">
-          <p className="text-2xl font-bold text-foreground">{clubPlayerCount}</p>
-          <p className="text-xs text-muted-foreground">Current Clare Members</p>
-          <p className="text-[10px] text-muted-foreground/70 mt-1">{paidActiveCount} paid · {complimentaryActiveCount} complimentary · {pendingMemberCount} pending</p>
-        </GlassCard>
-        <GlassCard delay={0.05} className="text-center">
-          <p className="text-2xl font-bold text-primary">{linkedCount}</p>
-          <p className="text-xs text-muted-foreground">Linked RallyHub Accounts</p>
-          <p className="text-[10px] text-muted-foreground/70 mt-1">Current club only</p>
-        </GlassCard>
-        <GlassCard delay={0.1} className="text-center">
-          <p className="text-2xl font-bold text-yellow-400">{unlinkedCount}</p>
-          <p className="text-xs text-muted-foreground">Members Not Yet Linked</p>
-          <p className="text-[10px] text-muted-foreground/70 mt-1">Current Clare members only</p>
-        </GlassCard>
-      </div>
+      {/* Context-specific dashboard summary */}
+      {activeAdminTab === 'directory' ? (
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5 sm:gap-3">
+          <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-clubs')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-clubs'); } }} delay={0} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <p className="text-2xl sm:text-3xl font-black text-foreground">{directoryAdminListings.length}</p>
+            <p className="mt-1 text-xs sm:text-sm font-semibold">Directory listings</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">All current club listings</p>
+          </GlassCard>
+          <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-clubs')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-clubs'); } }} delay={0.03} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-green-500/40 hover:bg-green-500/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <p className="text-2xl sm:text-3xl font-black text-green-500">{claimedDirectoryListingCount}</p>
+            <p className="mt-1 text-xs sm:text-sm font-semibold">Claimed listings</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{directoryClaimRate}% of Directory</p>
+          </GlassCard>
+          <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-clubs')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-clubs'); } }} delay={0.06} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-amber-500/40 hover:bg-amber-500/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <p className="text-2xl sm:text-3xl font-black text-amber-500">{unclaimedDirectoryListingCount}</p>
+            <p className="mt-1 text-xs sm:text-sm font-semibold">Still unclaimed</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Clubs still to connect</p>
+          </GlassCard>
+          <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-verified-access')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-verified-access'); } }} delay={0.09} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <p className="text-2xl sm:text-3xl font-black text-primary">{directoryRegisteredPeopleCount}</p>
+            <p className="mt-1 text-xs sm:text-sm font-semibold">Registered people</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{directoryContactRows.length} verified with access</p>
+          </GlassCard>
+          <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-pending-actions')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-pending-actions'); } }} delay={0.12} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-destructive/40 hover:bg-destructive/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <p className="text-2xl sm:text-3xl font-black text-destructive">{directoryNeedsAttentionCount}</p>
+            <p className="mt-1 text-xs sm:text-sm font-semibold">Needs attention</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{pendingDirectoryClaims.length} claims · {pendingNewDirectoryRequests.length} new clubs</p>
+          </GlassCard>
+          <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-outstanding-invitations')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-outstanding-invitations'); } }} delay={0.15} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-blue-500/40 hover:bg-blue-500/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <p className="text-2xl sm:text-3xl font-black text-blue-500">{pendingDirectoryInvitations.length}</p>
+            <p className="mt-1 text-xs sm:text-sm font-semibold">Invitations out</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Awaiting recipient / approval</p>
+          </GlassCard>
+        </div>
+      ) : activeAdminTab === 'directory-contacts' ? null : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <GlassCard role="button" tabIndex={0} onClick={() => { window.location.href='/app/membership'; }} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.href='/app/membership'; } }} delay={0} className="text-center cursor-pointer select-none transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <p className="text-2xl font-bold text-foreground">{clubPlayerCount}</p>
+            <p className="text-xs text-muted-foreground">Current Club Members</p>
+            <p className="text-[10px] text-muted-foreground/70 mt-1">{paidActiveCount} paid · {complimentaryActiveCount} complimentary · {pendingMemberCount} pending</p>
+          </GlassCard>
+          <GlassCard role="button" tabIndex={0} onClick={() => setSearchParams({ tab:'linking' })} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSearchParams({ tab:'linking' }); } }} delay={0.05} className="text-center cursor-pointer select-none transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <p className="text-2xl font-bold text-primary">{linkedCount}</p>
+            <p className="text-xs text-muted-foreground">Linked RallyHub Accounts</p>
+            <p className="text-[10px] text-muted-foreground/70 mt-1">Tap to manage account links</p>
+          </GlassCard>
+          <GlassCard role="button" tabIndex={0} onClick={() => setSearchParams({ tab:'linking' })} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSearchParams({ tab:'linking' }); } }} delay={0.1} className="text-center cursor-pointer select-none transition hover:border-amber-500/40 hover:bg-amber-500/5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <p className="text-2xl font-bold text-yellow-400">{unlinkedCount}</p>
+            <p className="text-xs text-muted-foreground">Members Not Yet Linked</p>
+            <p className="text-[10px] text-muted-foreground/70 mt-1">Tap to review linking</p>
+          </GlassCard>
+        </div>
+      )}
 
       <Tabs value={activeAdminTab} onValueChange={value => {
         if (value === 'approvals') return setSearchParams({});
