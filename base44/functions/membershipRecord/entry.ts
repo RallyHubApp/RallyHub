@@ -539,6 +539,87 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,person_id:person.id,membership_id:membership.id,reusedExistingPerson:!![...exactNameDob,...exactEmail,...exactMobile][0]});
     }
 
+    if(action==='admin_create_membership_payment'){
+      const personId=clean(body.personId,180);
+      const person=await first(base44,'Person',{id:personId,tenant_id:tenantId});
+      const membership=person?await first(base44,'ClubMembership',{tenant_id:tenantId,club_id:clubId,person_id:personId}):null;
+      if(!person||!membership) return Response.json({error:'Member not found in the active club.'},{status:404});
+      if(membership.payment_status==='paid') return Response.json({error:'This membership is already marked paid.'},{status:409});
+      const amountInput=body.amount===undefined||body.amount===null||body.amount===''?membership.membership_fee:Number(body.amount);
+      const amount=Math.round(Number(amountInput)*100)/100;
+      if(!Number.isFinite(amount)||amount<=0) return Response.json({error:'Set a valid membership fee before creating a payment link.'},{status:400});
+
+      const gateway=await resolvePaymentGateway(base44,tenantId,clubId,clean(body.provider,40));
+      if(!gateway||!providerConfigured(gateway.row.provider,gateway.account)) return Response.json({error:'No connected online payment gateway is available for this club.'},{status:409});
+      const provider=String(gateway.row.provider||'').toLowerCase();
+
+      const existing=await base44.asServiceRole.entities.PaymentRecord.filter({
+        tenant_id:tenantId,club_id:clubId,person_id:personId,club_membership_id:membership.id,purpose_type:'membership'
+      },'-created_date',20);
+      const reusable=(existing||[]).find((p:any)=>p.payment_status==='pending'&&p.provider===provider&&p.provider_checkout_url);
+      if(reusable) return Response.json({success:true,reused:true,payment:{
+        id:reusable.id,provider:reusable.provider,amount:reusable.amount,currency:reusable.currency||gateway.row.currency||'EUR',
+        checkout_url:reusable.provider_checkout_url,status:reusable.payment_status
+      }});
+
+      const club=await first(base44,'Club',{id:clubId,tenant_id:tenantId});
+      const currency=clean(gateway.row.currency,8)||'EUR';
+      const ref=`membership-${String(membership.id).slice(-20)}-${Date.now().toString(36)}`.slice(0,64);
+      const checkout=await createCheckout({
+        provider,account:gateway.account,amount,currency,reference:ref,
+        description:`${club?.name||'RallyHub club'} membership ${membership.membership_season||''}`.trim(),
+        redirectUrl:'https://rallyhub.ie/?payment=complete',
+        returnUrl:`https://rallyhub.ie/api/apps/6a01dc00702b7dd2a2978c28/functions/paymentGatewayWebhook?provider=${encodeURIComponent(provider)}`
+      });
+      const payment=await base44.asServiceRole.entities.PaymentRecord.create({
+        tenant_id:tenantId,club_id:clubId,person_id:personId,club_membership_id:membership.id,
+        membership_season:membership.membership_season||undefined,purpose_type:'membership',purpose_id:membership.id,
+        payment_type:'membership',amount,currency,payment_method:provider,payment_status:'pending',
+        provider,provider_account_id:gateway.row.id,provider_checkout_id:checkout.checkoutId,
+        provider_checkout_url:checkout.checkoutUrl,provider_status:checkout.providerStatus,
+        external_payment_reference:checkout.reference,source_system:'rallyhub_membership_console'
+      });
+      if(membership.membership_status!=='pending_payment'||membership.payment_status!=='pending'){
+        await base44.asServiceRole.entities.ClubMembership.update(membership.id,{membership_status:'pending_payment',payment_status:'pending'});
+      }
+      const relationship=await first(base44,'ClubRelationship',{tenant_id:tenantId,club_id:clubId,person_id:personId});
+      if(relationship) await base44.asServiceRole.entities.ClubRelationship.update(relationship.id,{status:'pending',payment_status:'pending',membership_amount:amount});
+      try{await base44.asServiceRole.entities.AuditLog.create({
+        tenant_id:tenantId,club_id:clubId,user_id:user.id,action:'membership_payment_link_created',
+        entity_type:'PaymentRecord',entity_id:payment.id,scope_type:'ClubMembership',scope_id:membership.id,
+        after_state:JSON.stringify({provider,amount,currency}),reason:'Created from Membership Console'
+      });}catch{}
+      return Response.json({success:true,reused:false,payment:{id:payment.id,provider,amount,currency,checkout_url:checkout.checkoutUrl,status:'pending'}});
+    }
+
+    if(action==='admin_verify_membership_payment'){
+      const personId=clean(body.personId,180);
+      const membership=await first(base44,'ClubMembership',{tenant_id:tenantId,club_id:clubId,person_id:personId});
+      if(!membership) return Response.json({error:'Member not found in the active club.'},{status:404});
+      const payments=await base44.asServiceRole.entities.PaymentRecord.filter({
+        tenant_id:tenantId,club_id:clubId,person_id:personId,club_membership_id:membership.id,purpose_type:'membership'
+      },'-created_date',20);
+      const payment=(payments||[]).find((p:any)=>p.provider_checkout_id&&p.provider)||null;
+      if(!payment) return Response.json({error:'No online membership payment checkout is attached to this membership.'},{status:409});
+      const gateway=await resolvePaymentGateway(base44,tenantId,clubId,payment.provider);
+      if(!gateway) return Response.json({error:'The payment gateway for this membership is not configured.'},{status:409});
+      const result=await retrievePayment(payment.provider,payment.provider_checkout_id,gateway.account);
+      const now=new Date().toISOString();
+      await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{
+        payment_status:result.normalizedStatus==='expired'?'failed':result.normalizedStatus,
+        payment_date:result.normalizedStatus==='paid'?now.slice(0,10):payment.payment_date||undefined,
+        provider_status:result.providerStatus,provider_transaction_id:result.transactionId||payment.provider_transaction_id||'',
+        provider_payment_reference:result.transactionCode||payment.provider_payment_reference||'',
+        external_payment_reference:result.transactionCode||payment.external_payment_reference||''
+      });
+      if(result.normalizedStatus==='paid'){
+        await base44.asServiceRole.entities.ClubMembership.update(membership.id,{payment_status:'paid',membership_status:'paid_active',payment_date:now.slice(0,10)});
+        const relationship=await first(base44,'ClubRelationship',{tenant_id:tenantId,club_id:clubId,person_id:personId});
+        if(relationship) await base44.asServiceRole.entities.ClubRelationship.update(relationship.id,{status:'active',payment_status:'paid',payment_date:now.slice(0,10)});
+      }
+      return Response.json({success:true,status:result.normalizedStatus});
+    }
+
     if(action==='admin_account_candidate'){
       const personId=clean(body.personId,180);
       const person=await first(base44,'Person',{id:personId,tenant_id:tenantId});
