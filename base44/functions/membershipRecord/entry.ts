@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
 
 const clean=(v:any,max=500)=>String(v??'').trim().slice(0,max);
 const lower=(v:any)=>clean(v,240).toLowerCase();
@@ -130,6 +131,15 @@ function safeGateway(g:any){return g?{id:g.id,provider:g.provider||null,display_
 const MEMBERSHIP_STATUS=['paid_active','pending_payment','no_response','not_renewing','inactive','former_member'];
 const RELATIONSHIP_TYPE=['member','guest','booking_only','waiting_list','inactive','former_member'];
 const PAYMENT_STATUS=['paid','pending','failed','not_required','unknown'];
+
+async function resolvePaymentGateway(base44:any,tenantId:string,clubId:string,providerHint=''){
+  const rows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',50);
+  const eligible=(rows||[]).filter((row:any)=>row.supports_payments!==false && (!providerHint||String(row.provider)===String(providerHint)));
+  const row=eligible.find((x:any)=>x.status==='connected'&&x.is_default)||eligible.find((x:any)=>x.status==='connected')||eligible.find((x:any)=>x.is_default)||eligible[0]||null;
+  if(!row) return null;
+  const account:ProviderAccount={provider:row.provider,merchantAccountId:row.merchant_account_id||undefined,credentialSecretName:row.credential_reference||undefined,connectionMode:row.connection_mode||undefined};
+  return {row,account};
+}
 
 async function resolveSelf(base44:any,user:any){
   const tenantId=clean(user.active_tenant_id,180), clubId=clean(user.active_club_id,180), email=lower(user.email);
