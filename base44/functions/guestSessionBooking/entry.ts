@@ -223,14 +223,14 @@ Deno.serve(async(req)=>{
     const body=await req.json().catch(()=>({}));
     const action=clean(body.action||'public_get',40);
 
-    if(['admin_templates','admin_list','admin_create','admin_close','admin_mark_cash_paid','admin_verify_payment'].includes(action)){
+    if(['admin_templates','admin_list','admin_create','admin_close','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment'].includes(action)){
       const user=await base44.auth.me();
       if(!user)return Response.json({error:'Unauthorized'},{status:401});
       if(user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
       const tenantId=clean(user.active_tenant_id,100);
       const clubId=clean(user.active_club_id,100);
       if(!tenantId||!clubId)return Response.json({error:'Choose an active RallyHub club first.'},{status:400});
-      const sumupConfigured=!!(Deno.env.get('SUMUP_API_KEY')&&Deno.env.get('SUMUP_MERCHANT_CODE'));
+      const sumupConfigured=providerConfigured('sumup');
 
       if(action==='admin_templates'){
         return Response.json({success:true,templates:Object.values(TEMPLATES).map(templateOut),sumupConfigured});
@@ -299,7 +299,7 @@ Deno.serve(async(req)=>{
 
       if(action==='admin_verify_payment'){
         if(booking.payment_method!=='sumup'||!booking.sumup_checkout_id)return Response.json({error:'No SumUp checkout is attached to this booking.'},{status:409});
-        const checkout=await retrieveSumUp(booking.sumup_checkout_id);
+        const checkout=await retrieveProviderCheckout(base44,session,booking.sumup_checkout_id);
         const status=String(checkout?.status||'PENDING').toUpperCase();
         if(status==='PAID'){
           const now=new Date().toISOString();
@@ -334,7 +334,7 @@ Deno.serve(async(req)=>{
 
       if(booking.payment_method==='sumup'&&booking.sumup_checkout_id&&booking.payment_status!=='paid'){
         try{
-          const checkout=await retrieveSumUp(booking.sumup_checkout_id);
+          const checkout=await retrieveProviderCheckout(base44,session,booking.sumup_checkout_id);
           const status=String(checkout?.status||'PENDING').toUpperCase();
           if(status==='PAID'){
             const now=new Date().toISOString();
@@ -384,7 +384,7 @@ Deno.serve(async(req)=>{
       let paymentStatus=duplicate.payment_status;
       if(session.payment_method==='sumup' && duplicate.booking_status!=='confirmed' && (!paymentUrl || ['failed','expired'].includes(String(paymentStatus||'').toLowerCase()))){
         try{
-          const checkout=await createSumUpCheckout(session,duplicate,req);
+          const checkout=await createProviderCheckout(base44,session,duplicate,req);
           await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{
             sumup_checkout_id:checkout.id,sumup_checkout_url:checkout.url,sumup_checkout_reference:checkout.reference,
             payment_status:'pending',booking_status:'pending_payment',
@@ -469,7 +469,7 @@ Deno.serve(async(req)=>{
     }
 
     try{
-      const checkout=await createSumUpCheckout(session,booking,req);
+      const checkout=await createProviderCheckout(base44,session,booking,req);
       booking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{
         sumup_checkout_id:checkout.id,sumup_checkout_url:checkout.url,sumup_checkout_reference:checkout.reference,
       });
