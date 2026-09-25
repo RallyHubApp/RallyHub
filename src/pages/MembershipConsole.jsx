@@ -279,7 +279,7 @@ export default function MembershipConsole() {
   const applyQuickFilter = name => {
     if (name === 'active') setFilters({ ...EMPTY_FILTERS, membershipStatus: 'paid_active' });
     else if (name === 'pending') setFilters({ ...EMPTY_FILTERS, membershipStatus: 'pending_payment' });
-    else if (name === 'unpaid') setFilters({ ...EMPTY_FILTERS, paymentStatus: 'pending' });
+    else if (name === 'unpaid') setFilters({ ...EMPTY_FILTERS, membershipStatus: 'pending_payment' });
     else if (name === 'issues') setFilters({ ...EMPTY_FILTERS, quality: 'issues' });
     else if (name === 'renewed') setFilters({ ...EMPTY_FILTERS, renewal: 'renewed' });
     else if (name === 'renewal-payment') setFilters({ ...EMPTY_FILTERS, renewal: 'awaiting_payment' });
@@ -706,7 +706,7 @@ export default function MembershipConsole() {
               <StatCard title="Current members" value={listData.counts?.currentMembers ?? listData.counts?.active ?? 0} icon={Users} note={listData.renewal?.currentSeason || 'Current season'} onClick={() => applyQuickFilter('all')} />
               <StatCard title="Paid" value={listData.counts?.currentPaid ?? 0} icon={CheckCircle2} note="Current season" onClick={() => setFilters({ ...EMPTY_FILTERS, paymentStatus: 'paid' })} active={filters.paymentStatus === 'paid'} />
               <StatCard title="Complimentary" value={listData.counts?.complimentary ?? 0} icon={ShieldCheck} note="No payment required" disabled />
-              <StatCard title="Payment due" value={listData.counts?.unpaid ?? 0} icon={WalletCards} note="Current season" onClick={() => applyQuickFilter('unpaid')} active={filters.paymentStatus === 'pending'} />
+              <StatCard title="Payment due" value={listData.counts?.unpaid ?? 0} icon={WalletCards} note="Current season" onClick={() => applyQuickFilter('unpaid')} active={filters.membershipStatus === 'pending_payment'} />
               <StatCard
                 title={listData.renewal?.windowStatus === 'upcoming' ? 'Renewal opens' : 'Renewed'}
                 value={listData.renewal?.windowStatus === 'upcoming' ? dateLabel(listData.renewal?.opensOn).replace(/\s\d{4}$/,'') : (listData.renewal?.renewed ?? 0)}
