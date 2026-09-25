@@ -54,7 +54,6 @@ import TestClubEntry from '@/pages/TestClubEntry';
 import GuestBookings from '@/pages/GuestBookings';
 import MembershipConsole from '@/pages/MembershipConsole';
 import PublicMembershipApplication from '@/pages/PublicMembershipApplication';
-import PublicMembershipApplication from '@/pages/PublicMembershipApplication';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -210,7 +209,6 @@ function App() {
             <Route path="/t/:id" element={<PublicTournament />} />
             <Route path="/club-challenge/register/:token" element={<PublicInterclubRegistration />} />
             <Route path="/guest-session/:token" element={<PublicGuestSessionBooking />} />
-            <Route path="/membership/:clubSlug" element={<PublicMembershipApplication />} />
             <Route path="/membership/:clubSlug" element={<PublicMembershipApplication />} />
             <Route path="/book/:token" element={<PublicGuestSessionBooking />} />
             <Route path="/club-challenge/display/:token" element={<PublicClubChallengeDisplay />} />
