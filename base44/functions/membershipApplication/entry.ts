@@ -338,6 +338,14 @@ function whatsappReminder(config:any,club:any,app:any,paymentUrl:string){
   const fee=money(app.membership_fee,app.currency||config.currency||'EUR');
   return `Hi ${firstName(app.full_name)}, just a quick reminder about your ${club.name} membership ${app.application_type==='renewal'?'renewal':'application'} for ${app.membership_season}. The membership fee is ${fee}.${paymentUrl?` You can complete payment securely here: ${paymentUrl}`:''} If you have already paid, please ignore this message. Thanks, ${config.signatory_name||club.name} · ${club.name}`;
 }
+function reminderContent(config:any,club:any,app:any,paymentUrl:string){
+  const fee=money(app.membership_fee,app.currency||config.currency||'EUR');
+  const text=whatsappReminder(config,club,app,paymentUrl);
+  const subject=`${club.name} membership payment reminder`;
+  const button=paymentUrl?`<div style="text-align:center;margin:22px 0;"><a href="${escapeHtml(paymentUrl)}" style="display:inline-block;padding:14px 24px;border-radius:10px;background:${escapeHtml(club.primary_colour||'#2563eb')};color:#fff;text-decoration:none;font-size:16px;font-weight:800;">Pay ${escapeHtml(fee)} securely</a></div>`:'';
+  const html=emailShell({club,headline:'Membership payment reminder',preheader:`${club.name} membership · ${app.membership_season}`,content:`<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Hi ${escapeHtml(firstName(app.full_name))}, just a quick reminder that your membership application is awaiting payment.</p>${button}<p style="margin:0;font-size:13px;color:#6b7280;">If you have already paid, please ignore this message.</p>${signoffHtml(config,club)}`});
+  return {subject,text,html,paymentUrl};
+}
 
 Deno.serve(async(req)=>{
   try{
