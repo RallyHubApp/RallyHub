@@ -595,6 +595,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const eventReadOnly = ['completed','archived'].includes(event?.status);
   const canManageEvent = !!permissions.canManage && !eventReadOnly;
   const canManagePot = !!permissions.canManage && !!event && event.status !== 'archived';
+  const effectivePotStatus = event?.pot_status || (event?.pot_enabled ? 'closed' : 'disabled');
   const canScoreEvent = !!permissions.canScore && !eventReadOnly;
   const canFinaliseEvent = !!permissions.canFinalise && !eventReadOnly;
   const displayOnly = !!permissions.displayOnly;
@@ -2667,10 +2668,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 <p className="text-sm font-semibold">Players of the Tournament</p>
                 <p className="text-xs text-muted-foreground">One winner from each team · one ballot per phone/browser · results hidden until reveal.</p>
               </div>
-              <Badge variant="outline">{event.pot_status || 'closed'}</Badge>
+              <Badge variant="outline">{effectivePotStatus}</Badge>
             </div>
 
-            {canManagePot && event.pot_status === 'closed' && <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+            {canManagePot && effectivePotStatus === 'closed' && <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
               <div className="sm:w-48">
                 <Label className="text-xs">Voting window</Label>
                 <Select value={potDuration} onValueChange={setPotDuration}>
@@ -2703,7 +2704,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               Individual choices and running totals remain hidden.
             </div>}
 
-            {canManagePot && event.pot_status === 'closed' && (potTopA.length > 1 || potTopB.length > 1) && <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 space-y-3"><div><p className="text-sm font-bold text-amber-600">Tie detected in Player of the Tournament voting</p><p className="text-xs text-muted-foreground mt-1">Use a private RallyHub Coin Toss to select one winner from the tied top vote. The selected name stays hidden from the Live Event View until you press Reveal Results.</p></div><div className="grid sm:grid-cols-2 gap-3">{[['club_a',event.club_a_name,potTopA,potSavedA],['club_b',event.club_b_name,potTopB,potSavedB]].map(([side,clubName,candidates,saved]) => candidates.length > 1 ? <div key={side} className="rounded-lg border border-border bg-card p-4 text-center"><p className="text-xs font-semibold">{clubName}</p><p className="mt-2 text-xs text-muted-foreground">{candidates.map(p=>p.display_name).join(' · ')}</p>{saved ? <div className="mt-3"><Badge variant="outline">Coin toss complete</Badge><p className="mt-2 font-black">{saved.display_name}</p><p className="text-[10px] text-muted-foreground">Saved privately · ready to reveal</p></div> : <><div className="mt-3 min-h-8 font-black text-primary">{potTiebreakUi[side]?.display || 'Tie unresolved'}</div><Button className="mt-2 w-full" variant="outline" disabled={potTiebreakUi[side]?.running} onClick={() => runPotTiebreak(side)}>{potTiebreakUi[side]?.running ? 'Shuffling…' : 'Coin Toss'}</Button></>}</div> : null)}</div>{potTieUnresolved ? <p className="text-xs text-amber-700">Resolve each tied team before Reveal Results becomes available.</p> : <div className="text-center"><Button onClick={revealPot}>Reveal Results</Button></div>}</div>}
+            {canManagePot && effectivePotStatus === 'closed' && (potTopA.length > 1 || potTopB.length > 1) && <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 space-y-3"><div><p className="text-sm font-bold text-amber-600">Tie detected in Player of the Tournament voting</p><p className="text-xs text-muted-foreground mt-1">Use a private RallyHub Coin Toss to select one winner from the tied top vote. The selected name stays hidden from the Live Event View until you press Reveal Results.</p></div><div className="grid sm:grid-cols-2 gap-3">{[['club_a',event.club_a_name,potTopA,potSavedA],['club_b',event.club_b_name,potTopB,potSavedB]].map(([side,clubName,candidates,saved]) => candidates.length > 1 ? <div key={side} className="rounded-lg border border-border bg-card p-4 text-center"><p className="text-xs font-semibold">{clubName}</p><p className="mt-2 text-xs text-muted-foreground">{candidates.map(p=>p.display_name).join(' · ')}</p>{saved ? <div className="mt-3"><Badge variant="outline">Coin toss complete</Badge><p className="mt-2 font-black">{saved.display_name}</p><p className="text-[10px] text-muted-foreground">Saved privately · ready to reveal</p></div> : <><div className="mt-3 min-h-8 font-black text-primary">{potTiebreakUi[side]?.display || 'Tie unresolved'}</div><Button className="mt-2 w-full" variant="outline" disabled={potTiebreakUi[side]?.running} onClick={() => runPotTiebreak(side)}>{potTiebreakUi[side]?.running ? 'Shuffling…' : 'Coin Toss'}</Button></>}</div> : null)}</div>{potTieUnresolved ? <p className="text-xs text-amber-700">Resolve each tied team before Reveal Results becomes available.</p> : <div className="text-center"><Button onClick={revealPot}>Reveal Results</Button></div>}</div>}
 
             {event.pot_status === 'revealed' && <div className="grid sm:grid-cols-2 gap-3">
               <div className="rounded-xl bg-primary/10 p-4 text-center">
