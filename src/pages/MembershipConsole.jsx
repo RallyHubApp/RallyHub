@@ -601,8 +601,9 @@ export default function MembershipConsole() {
       >
         <div className="flex flex-wrap items-center gap-2">
           {gateway ? <Badge variant="outline" className="gap-1.5"><WalletCards className="w-3 h-3" />{label(gateway.provider)} · {label(gateway.status)}</Badge> : null}
+          {applicationData.publicUrl ? <a href={applicationData.publicUrl} target="_blank" rel="noreferrer"><Button variant="outline" size="sm"><ExternalLink className="w-3.5 h-3.5 mr-1.5" />Membership form</Button></a> : null}
           <Button size="sm" onClick={() => setAddMemberOpen(true)}><Plus className="w-3.5 h-3.5 mr-1.5" />Add member</Button>
-          <Button variant="outline" size="sm" onClick={() => { refetchList(); queryClient.invalidateQueries({ queryKey: ['membership-console-meta'] }); }}>
+          <Button variant="outline" size="sm" onClick={() => { refetchList(); refetchApplications(); queryClient.invalidateQueries({ queryKey: ['membership-console-meta'] }); }}>
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />Refresh
           </Button>
         </div>
