@@ -19,8 +19,8 @@ import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
-  AlertTriangle, CheckCircle2, Columns3, Download, FileText, Filter, Link2,
-  Pencil, Plus, Printer, RefreshCw, Save, Search, ShieldCheck, Users, WalletCards, X
+  AlertTriangle, CheckCircle2, ClipboardCopy, Columns3, Download, ExternalLink, FileText, Filter, Link2,
+  Mail, MessageCircle, Pencil, Plus, Printer, RefreshCw, Save, Search, ShieldCheck, Users, WalletCards, X
 } from 'lucide-react';
 
 const EMPTY_FILTERS = { membershipStatus: 'all', paymentStatus: 'all', account: 'all', quality: 'all', sport: 'all' };
@@ -94,6 +94,7 @@ export default function MembershipConsole() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [applicationBusyId, setApplicationBusyId] = useState('');
   const [editPerson, setEditPerson] = useState({});
   const [editMembership, setEditMembership] = useState({});
   const [editSports, setEditSports] = useState([]);
@@ -128,6 +129,18 @@ export default function MembershipConsole() {
       return response.data || { rows: [], counts: {} };
     },
     enabled: canManage
+  });
+
+  const { data: applicationData = { applications: [], counts: {} }, isLoading: applicationsLoading, refetch: refetchApplications } = useQuery({
+    queryKey: ['membership-applications', user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('membershipApplication', { action: 'admin_list' });
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data || { applications: [], counts: {} };
+    },
+    enabled: canManage,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true
   });
 
   const { data: detail = null, isLoading: detailLoading, refetch: refetchDetail } = useQuery({
