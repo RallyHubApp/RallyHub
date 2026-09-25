@@ -231,7 +231,7 @@ Guest waiver, Code of Conduct, privacy notice and 24-hour cancellation policy ac
 
   const guestEligible=booking.email && (
     (booking.payment_method==='sumup' && ['paid','partially_refunded','refunded'].includes(booking.payment_status))
-    || booking.payment_method==='cash'
+    || (booking.payment_method==='cash' && booking.payment_status==='paid')
   );
   if((force||!booking.guest_confirmation_sent_at) && guestEligible){
     try{
@@ -348,7 +348,7 @@ Deno.serve(async(req)=>{
     const body=await req.json().catch(()=>({}));
     const action=clean(body.action||'public_get',40);
 
-    if(['admin_templates','admin_list','admin_create','admin_close','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment'].includes(action)){
+    if(['admin_templates','admin_list','admin_create','admin_close','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment','admin_resend_emails'].includes(action)){
       const user=await base44.auth.me();
       if(!user)return Response.json({error:'Unauthorized'},{status:401});
       if(user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
@@ -451,6 +451,14 @@ Deno.serve(async(req)=>{
         const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
         if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10)});
         updated=await sendConfirmations(base44,session,updated);
+        return Response.json({success:true,booking:updated});
+      }
+
+      if(action==='admin_resend_emails'){
+        if(booking.payment_status!=='paid' && booking.payment_status!=='partially_refunded' && booking.payment_status!=='refunded'){
+          return Response.json({error:'Confirm the payment before resending booking emails.'},{status:409});
+        }
+        const updated=await sendConfirmations(base44,session,booking,true);
         return Response.json({success:true,booking:updated});
       }
 
