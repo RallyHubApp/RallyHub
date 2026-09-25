@@ -27,6 +27,7 @@ const interclubBranding = fs.readFileSync('src/lib/interclubBranding.js','utf8')
 const tournamentsPage = fs.readFileSync('src/pages/Tournaments.jsx','utf8');
 const createTournamentModal = fs.readFileSync('src/components/tournaments/CreateTournamentModal.jsx','utf8');
 const publicDisplayPage = fs.readFileSync('src/pages/PublicClubChallengeDisplay.jsx','utf8');
+const printPack = fs.readFileSync('src/components/clubchallenge/InterclubPrintPack.jsx','utf8');
 
 let passed = 0;
 const check = (name, condition) => {
@@ -63,6 +64,9 @@ check('branding: user-facing module is RallyHub Interclub', contains(interclubBr
 check('branding: user-facing event type is Interclub Challenge', contains(interclubBranding,"INTERCLUB_EVENT_LABEL = 'Interclub Challenge'") && contains(createTournamentModal,'INTERCLUB_EVENT_LABEL'));
 check('branding: internal Club Challenge format key remains stable', contains(interclubBranding,"INTERCLUB_INTERNAL_FORMAT = 'Club Challenge'") && contains(ui,'INTERCLUB_INTERNAL_FORMAT'));
 check('branding: Live Event View uses RallyHub Interclub', contains(publicDisplayPage,'Rally') && contains(publicDisplayPage,'Interclub') && contains(publicDisplayPage,'Live Event View') && contains(ui,'INTERCLUB_MODULE_NAME} · Live Event View'));
+check('future-proofing: Interclub print pack has no Banner Bash event or named-player hard coding', !contains(printPack,'6ab3d84c8bbc3bc6e171ba03') && !contains(printPack,'BANNER_BASH') && contains(printPack,'replacement_for_participant_id') && contains(printPack,'replacement_effective_round'));
+check('future-proofing: Interclub host print chooser derives handover copy from event participant data', !contains(ui,"event?.id === '6ab3d84c8bbc3bc6e171ba03'") && contains(ui,'hasPlannedHandoverCopy') && contains(ui,'firstPlannedHandoverRound'));
+check('future-proofing: Interclub participant import uses generic team names', !contains(participantFn,'Choose Clare or Galway') && contains(participantFn,'Choose Team A or Team B'));
 check('host: live estimated duration is visible during setup', contains(ui,'Estimated event duration'));
 check('host: planned player count drives estimate before roster entry', contains(ui,'Planned total players'));
 check('host: estimate exposes rounds, block, break and contingency', contains(ui,'min contingency'));
@@ -95,6 +99,9 @@ check('host: live screen exposes who is resting', contains(ui,'Resting this roun
 check('host: not-played fixtures are excluded from NOW, score cards and next-round cards', contains(ui,"m.status !== 'not_played'") && contains(ui,"currentMatches = matches.filter"));
 check('host: late players are not labelled as resting before their available round', contains(ui,"p.status === 'late' && Number(p.available_from_round || 1) <= currentRound"));
 check('host: live screen exposes next round without navigation', contains(ui,'Up next · Round'));
+check('host: every saved round can be opened without changing the authoritative live round', contains(ui,'data-testid="cc-host-round-nav"') && contains(ui,'setHostScoreRound(r)') && contains(ui,'Operational controls remain on Round'));
+check('host: completed events expose audited score correction to authorised hosts', contains(ui,'canCorrectScoreEvent') && contains(ui,'canEditScoreView') && contains(scoreFn,"event.status === 'completed'") && contains(scoreFn,'postCorrectionWinner'));
+check('host: archived events remain immutable after final archival', contains(scoreFn,"event.status === 'archived'") && contains(scoreFn,'Archived Interclub Challenge results are read-only.'));
 check('display: Hall Display exposes On Court Now', contains(ui,'On Court Now') && contains(publicDisplay,'On Court Now'));
 check('display: Hall Display exposes Resting This Round', contains(ui,'Resting This Round') && contains(publicDisplay,'Resting This Round'));
 check('display: Hall Display exposes Up Next', contains(ui,'Up Next') && contains(publicDisplay,'Up Next'));
