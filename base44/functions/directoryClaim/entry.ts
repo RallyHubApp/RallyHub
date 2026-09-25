@@ -1624,15 +1624,21 @@ Deno.serve(async (req) => {
           .replaceAll('{{first_name}}', String(user.full_name || 'Brian').split(/\s+/)[0])
           .replaceAll('{{name}}', String(user.full_name || 'Brian'))
           .replaceAll('{{clubs}}', 'Test Directory clubs');
-        const htmlMessage = escapeHtml(testText).replace(/\n/g, '<br>');
+        const finalTestText = normaliseDirectorySignatureText(testText);
+        const testHtmlBody = rallyHubEmailShell({
+          title: subject,
+          preheader: 'Test preview of a RallyHub Directory email',
+          content: textToBrandedHtml(finalTestText),
+          footerNote: 'RallyHub Directory · Test email',
+        });
         await sendWithConfiguredEmailTransport(
           base44,
           { scopeType: 'platform', purpose: 'directory' },
           {
             to,
             subject: `[TEST] ${subject}`,
-            textBody: testText,
-            htmlBody: `<!doctype html><html><body style="margin:0;background:#f4f8f5;font-family:Arial,Helvetica,sans-serif;color:#0c1e35;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" style="max-width:640px;background:#fff;border:1px solid #dfe9e2;border-radius:18px;"><tr><td style="padding:28px 32px;border-top:7px solid #159447;"><div style="font-size:28px;font-weight:800;">Rally<span style="color:#159447;">Hub</span></div><div style="font-size:11px;letter-spacing:2.2px;color:#66737f;margin:3px 0 22px;">PLAY • CONNECT • BELONG</div><div style="font-size:15px;line-height:1.7;">${htmlMessage}</div></td></tr></table></td></tr></table></body></html>`,
+            textBody: finalTestText,
+            htmlBody: testHtmlBody,
           },
         );
         return Response.json({ success: true, testOnly: true, sent: 1, to });
@@ -1680,7 +1686,13 @@ Deno.serve(async (req) => {
             .replaceAll('{{first_name}}', firstName)
             .replaceAll('{{name}}', recipient.name || firstName)
             .replaceAll('{{clubs}}', recipient.clubs.join(', ') || 'your Directory listing');
-          const htmlMessage = escapeHtml(personalised).replace(/\n/g, '<br>');
+          const finalPersonalised = normaliseDirectorySignatureText(personalised);
+          const htmlBody = rallyHubEmailShell({
+            title: subject,
+            preheader: 'RallyHub Directory update',
+            content: textToBrandedHtml(finalPersonalised),
+            footerNote: 'RallyHub Directory',
+          });
           try {
             await sendWithConfiguredEmailTransport(
               base44,
@@ -1688,8 +1700,8 @@ Deno.serve(async (req) => {
               {
                 to: recipient.email,
                 subject,
-                textBody: personalised,
-                htmlBody: `<!doctype html><html><body style="margin:0;background:#f4f8f5;font-family:Arial,Helvetica,sans-serif;color:#0c1e35;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" style="max-width:640px;background:#fff;border:1px solid #dfe9e2;border-radius:18px;"><tr><td style="padding:28px 32px;border-top:7px solid #159447;"><div style="font-size:28px;font-weight:800;">Rally<span style="color:#159447;">Hub</span></div><div style="font-size:11px;letter-spacing:2.2px;color:#66737f;margin:3px 0 22px;">PLAY • CONNECT • BELONG</div><div style="font-size:15px;line-height:1.7;">${htmlMessage}</div><p style="font-size:12px;color:#66737f;margin-top:26px;">RallyHub Directory · rallyhub.ie</p></td></tr></table></td></tr></table></body></html>`,
+                textBody: finalPersonalised,
+                htmlBody,
               },
             );
             return { ok: true };
