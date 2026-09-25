@@ -64,12 +64,14 @@ Deno.serve(async (req) => {
       club_a_logo_url:event.club_a_logo_url, club_b_logo_url:event.club_b_logo_url,
       club_a_primary_colour:event.club_a_primary_colour, club_b_primary_colour:event.club_b_primary_colour,
       club_a_secondary_colour:event.club_a_secondary_colour, club_b_secondary_colour:event.club_b_secondary_colour,
-      current_round:event.current_round, planned_rounds:event.planned_rounds, timer_state_json:event.timer_state_json, timer_revision:event.timer_revision,
+      current_round:event.current_round, planned_rounds:event.planned_rounds, courts:event.courts, timer_state_json:event.timer_state_json, timer_revision:event.timer_revision,
       play_minutes:event.play_minutes, changeover_minutes:event.changeover_minutes,
+      normal_match_type:event.normal_match_type, normal_target_points:event.normal_target_points, normal_win_by:event.normal_win_by,
+      timed_draws_allowed:event.timed_draws_allowed !== false, showcase_enabled:!!event.showcase_enabled,
       include_break:!!event.include_break, break_minutes:event.break_minutes, break_after_round:event.break_after_round,
       junior_display_mode:!!event.junior_display_mode,
       pot_enabled:!!event.pot_enabled, pot_status:event.pot_status, pot_vote_closes_at:event.pot_vote_closes_at || null,
-      pot_voting_token:event.pot_status === 'open' ? votingToken : null, pot_winners:potWinners,
+      pot_voting_token:votingToken, pot_winners:potWinners,
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
     }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
