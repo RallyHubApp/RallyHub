@@ -393,62 +393,19 @@ async function sendClaimInviteEmail(base44, { user, listing, contactEmail, conta
   const subject = String(customSubject || '').trim().slice(0, 180) || (delegated
     ? `An invitation to help manage ${listing.name} on the RallyHub Directory`
     : `Your free RallyHub Directory listing – ${listing.name}`);
-  const textBody = String(customText || '').trim() || (delegated ? editorBody : ownerBody);
+  const textBody = normaliseDirectorySignatureText(String(customText || '').trim() || (delegated ? editorBody : ownerBody));
   const actionLabel = delegated ? 'Open your editor invitation' : 'Claim your free Directory listing';
-  const introCopy = delegated
-    ? sharedStory
-    : `I’m getting in touch because I’ve put together a <strong>free RallyHub Directory listing for ${listing.name}</strong> as part of a wider effort to improve information on pickleball clubs around Ireland, following David Molloy’s request for help updating the national club map.`;
-  const roleCopy = delegated
-    ? `You’ve been invited as a <strong>Directory Editor</strong> for <strong>${listing.name}</strong>. This gives you access to help maintain the club’s public Directory information only.`
-    : `I’ve already created the <strong>${listing.name}</strong> listing, so most of the work is done. I’d simply like you to have a look, claim the listing and correct or add anything that needs updating.`;
-  const customHtmlText = String(customText || '').trim()
-    ? String(customText).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
-    : '';
-  const htmlBody = customHtmlText ? `<!doctype html><html><body style="margin:0;background:#f4f8f5;font-family:Arial,Helvetica,sans-serif;color:#0c1e35;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f8f5;padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border-radius:20px;border:1px solid #dfe9e2;"><tr><td style="padding:28px 32px;border-top:7px solid #159447;"><div style="font-size:28px;font-weight:800;">Rally<span style="color:#159447;">Hub</span></div><div style="font-size:11px;letter-spacing:2.2px;color:#66737f;margin:3px 0 24px;">PLAY • CONNECT • BELONG</div><div style="font-size:15px;line-height:1.7;">${customHtmlText}</div></td></tr></table></td></tr></table></body></html>` : `<!doctype html>
-<html>
-  <body style="margin:0;background:#f4f8f5;font-family:Arial,Helvetica,sans-serif;color:#0c1e35;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f8f5;padding:24px 12px;">
-      <tr><td align="center">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border-radius:20px;overflow:hidden;border:1px solid #dfe9e2;">
-          <tr>
-            <td style="padding:28px 32px 18px;border-top:7px solid #159447;">
-              <div style="font-size:28px;font-weight:800;letter-spacing:-0.4px;">Rally<span style="color:#159447;">Hub</span></div>
-              <div style="font-size:11px;letter-spacing:2.2px;color:#66737f;margin-top:3px;">PLAY • CONNECT • BELONG</div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:6px 32px 8px;">
-              <p style="font-size:18px;margin:0 0 16px;">Hi ${recipientName},</p>
-              <p style="font-size:15px;line-height:1.6;color:#55636f;margin:0 0 16px;">${introCopy}</p>
-              ${!delegated ? `<p style="font-size:15px;line-height:1.6;color:#55636f;margin:0 0 16px;">${sharedStory}</p>` : ''}
-              <p style="font-size:16px;line-height:1.6;margin:0 0 22px;">${roleCopy}</p>
-              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 24px;"><tr>
-                <td bgcolor="#159447" style="border-radius:10px;">
-                  <a href="${claimUrl}" style="display:inline-block;padding:14px 22px;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;">${actionLabel}</a>
-                </td>
-              </tr></table>
-              <div style="background:#eef9f1;border:1px solid #d7eadc;border-radius:14px;padding:16px 18px;margin-bottom:22px;">
-                <div style="font-weight:700;margin-bottom:6px;">Directory access only</div>
-                <div style="font-size:14px;line-height:1.55;color:#55636f;">The Directory listing is completely free. There is no subscription, no catch and no obligation to use any other RallyHub services. The secure invitation is single-use and expires after 72 hours.</div>
-              </div>
-              <p style="font-size:14px;line-height:1.8;margin:0 0 18px;">
-                <a href="https://rallyhub.ie/about" style="color:#159447;font-weight:700;">About RallyHub</a><br>
-                <a href="https://rallyhub.ie/directory/story" style="color:#159447;font-weight:700;">1-page Directory Explainer</a><br>
-                <a href="https://rallyhub.ie/directory/help" style="color:#159447;font-weight:700;">Club Guide &amp; Help</a><br>
-                <a href="https://rallyhub.ie/directory/quick-start" style="color:#159447;font-weight:700;">Quick Start Guide</a>
-              </p>
-              <p style="font-size:15px;line-height:1.6;color:#55636f;margin:0 0 16px;">RallyHub is also developing other optional club tools around session management, King of the Court, tournaments and events, but those are separate from your free Directory listing.</p>
-              <p style="font-size:15px;line-height:1.6;margin:0 0 8px;">There is also a <strong>Feedback</strong> area inside RallyHub, and I’m always happy to hear suggestions about what would genuinely be useful to clubs. If you have any difficulty claiming the listing, just WhatsApp or call me.</p>
-              <p style="font-size:15px;line-height:1.5;margin:0 0 4px;">Yours in sport,</p>
-              <p style="font-size:22px;font-style:italic;font-weight:700;margin:0 0 2px;">Brian Moore</p>
-              <p style="font-size:13px;color:#66737f;margin:0 0 24px;">087 810 0333 · <a href="https://rallyhub.ie" style="color:#159447;text-decoration:none;">RallyHub.ie</a></p>
-            </td>
-          </tr>
-        </table>
-      </td></tr>
-    </table>
-  </body>
-</html>`;
+  const inviteTitle = delegated ?  : ;
+  const htmlBody = rallyHubEmailShell({
+    title: inviteTitle,
+    preheader: delegated
+      ? 
+      : ,
+    content: ,
+    actionUrl: claimUrl,
+    actionLabel,
+    footerNote: 'RallyHub Club Directory',
+  });
 
   await sendWithConfiguredEmailTransport(
     base44,
