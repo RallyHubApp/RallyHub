@@ -8,6 +8,13 @@ import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
 import { CheckCircle2, ExternalLink, MapPin, RefreshCw, ShieldCheck } from 'lucide-react';
 
+const CLARE_FALLBACK_BRAND={
+  name:'Clare Pickleball',
+  logo_url:'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/6e59058fc_ClarePBLogo.jpg',
+  primary_colour:'#2667f2',
+  secondary_colour:'#facc15',
+};
+
 const EMPTY={
   fullName:'',email:'',mobile:'',emergencyContactName:'',emergencyContactMobile:'',medicalNote:'',
   waiverAccepted:false,codeAccepted:false,privacyAcknowledged:false,cancellationAccepted:false,photoVideoConsent:'',
@@ -95,13 +102,13 @@ export default function PublicGuestSessionBooking(){
 
   if(loading)return <div className="min-h-screen bg-background text-foreground grid place-items-center p-5">
     <AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
-    <div className="text-center"><RallyHubPublicBrand pageLabel="Clare Pickleball Guest Booking"/><RefreshCw className="mx-auto mt-6 h-7 w-7 animate-spin"/></div>
+    <div className="text-center"><RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Guest Session Booking"/><RefreshCw className="mx-auto mt-6 h-7 w-7 animate-spin"/></div>
   </div>;
 
   if(error&&!data)return <div className="min-h-screen bg-background text-foreground grid place-items-center p-5">
     <AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
     <div className="glass max-w-md rounded-2xl p-6 text-center">
-      <RallyHubPublicBrand pageLabel="Clare Pickleball Guest Booking"/>
+      <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Guest Session Booking"/>
       <h1 className="mt-5 text-xl font-black">Booking unavailable</h1>
       <p className="mt-2 text-sm text-muted-foreground">{error}</p>
     </div>
@@ -109,12 +116,13 @@ export default function PublicGuestSessionBooking(){
 
   const session=data?.session||{};
   const legal=data?.legal||{};
+  const activeClubBrand=data?.clubBrand||CLARE_FALLBACK_BRAND;
 
   if(done)return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8">
     <AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
     <div className="mx-auto max-w-xl">
       <div className="glass rounded-2xl p-6 sm:p-8 text-center">
-        <RallyHubPublicBrand pageLabel="Clare Pickleball Guest Booking"/>
+        <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Guest Session Booking"/>
         <CheckCircle2 className="mx-auto mt-7 h-12 w-12 text-primary"/>
         <h1 className="mt-4 text-2xl font-black">{done.type==='cash'?'Place reserved':'Booking confirmed'}</h1>
         <p className="mt-3 text-sm text-muted-foreground">{done.message||'Your guest booking is confirmed.'}</p>
@@ -136,7 +144,7 @@ export default function PublicGuestSessionBooking(){
     <AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
     <div className="mx-auto max-w-2xl space-y-5">
       <header className="glass rounded-2xl p-5 sm:p-7 text-center">
-        <RallyHubPublicBrand pageLabel="Clare Pickleball Guest Booking"/>
+        <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Guest Session Booking"/>
         <h1 className="mt-5 text-2xl sm:text-3xl font-black">Guest Session</h1>
         <p className="mt-2 text-base font-bold">{niceDate(session.sessionDate)} · {session.startTime}{session.endTime?`–${session.endTime}`:''}</p>
         <div className="mx-auto mt-4 max-w-lg rounded-xl border bg-secondary/30 p-4 text-left">
@@ -200,6 +208,10 @@ export default function PublicGuestSessionBooking(){
           </div>
         </section>
 
+        {session.paymentMethod!=='cash'&&<div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center text-sm">
+          <p className="font-black">Payment to {activeClubBrand?.name||'the club'}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Your payment is processed securely by SumUp. RallyHub provides the booking system.</p>
+        </div>}
         <Button type="submit" className="w-full min-h-12 text-base font-bold" disabled={submitting||checkingPayment||!form.photoVideoConsent}>
           {submitting?<><RefreshCw className="mr-2 h-4 w-4 animate-spin"/>Saving…</>:session.paymentMethod==='cash'?`Reserve Place · €${Number(session.feeAmount||0).toFixed(2)} Cash`:`Continue to SumUp · €${Number(session.feeAmount||0).toFixed(2)}`}
         </Button>
