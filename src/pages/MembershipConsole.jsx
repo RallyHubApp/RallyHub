@@ -613,6 +613,63 @@ export default function MembershipConsole() {
         <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">Loading membership console…</div>
       ) : (
         <>
+          <section id="membership-applications" className="glass rounded-xl overflow-hidden scroll-mt-24">
+            <div className="px-4 py-4 border-b flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+              <div>
+                <p className="font-semibold">Membership applications</p>
+                <p className="text-xs text-muted-foreground">New members and renewals submitted through the club’s public membership form.</p>
+              </div>
+              {applicationData.publicUrl ? <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={async () => {
+                  try { await navigator.clipboard.writeText(applicationData.publicUrl); toast.success('Membership form link copied'); }
+                  catch { window.prompt('Copy membership form link', applicationData.publicUrl); }
+                }}><ClipboardCopy className="w-3.5 h-3.5 mr-1.5" />Copy form link</Button>
+                <a href={applicationData.publicUrl} target="_blank" rel="noreferrer"><Button size="sm"><ExternalLink className="w-3.5 h-3.5 mr-1.5" />Open form</Button></a>
+              </div> : null}
+            </div>
+
+            <div className="p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+                <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Applications</p><p className="mt-1 text-xl font-black">{applicationData.counts?.total || 0}</p></div>
+                <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Awaiting payment</p><p className="mt-1 text-xl font-black text-amber-600">{applicationData.counts?.awaitingPayment || 0}</p></div>
+                <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Paid</p><p className="mt-1 text-xl font-black text-green-600">{applicationData.counts?.paid || 0}</p></div>
+                <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">New</p><p className="mt-1 text-xl font-black">{applicationData.counts?.newMembers || 0}</p></div>
+                <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Renewals</p><p className="mt-1 text-xl font-black">{applicationData.counts?.renewals || 0}</p></div>
+              </div>
+
+              {applicationsLoading ? <p className="py-6 text-center text-sm text-muted-foreground">Loading applications…</p> :
+                !(applicationData.applications || []).length ? <p className="py-6 text-center text-sm text-muted-foreground">No membership applications have been submitted through RallyHub yet.</p> :
+                <div className="space-y-2">
+                  {(applicationData.applications || []).map(application => {
+                    const waiting = application.paymentStatus !== 'paid';
+                    const busy = applicationBusyId === application.id;
+                    return <div key={application.id} className="rounded-xl border bg-background/35 p-3 sm:p-4">
+                      <div className="flex flex-col xl:flex-row xl:items-center gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold">{application.fullName}</p>
+                            <Badge variant="outline">{application.applicationType === 'renewal' ? 'Renewal' : 'New member'}</Badge>
+                            <Badge variant={application.paymentStatus === 'paid' ? 'default' : 'outline'}>{label(application.paymentStatus)}</Badge>
+                            {application.followUpStatus && application.followUpStatus !== 'none' ? <Badge variant="outline">{label(application.followUpStatus)}</Badge> : null}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground break-words">{application.email} · {application.mobile || 'No mobile'} · Ref {application.confirmationCode}</p>
+                          <p className="mt-1 text-[11px] text-muted-foreground">{application.submittedAt ? new Date(application.submittedAt).toLocaleString() : ''}{application.reminderCount ? ` · ${application.reminderCount} reminder${application.reminderCount === 1 ? '' : 's'} sent` : ''}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 xl:justify-end">
+                          {waiting && application.paymentUrl ? <Button size="sm" variant="outline" onClick={() => copyApplicationPaymentLink(application)} disabled={busy}><ClipboardCopy className="w-3.5 h-3.5 mr-1.5" />Payment link</Button> : null}
+                          {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','email')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Email reminder</Button> : null}
+                          {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','whatsapp')} disabled={busy}><MessageCircle className="w-3.5 h-3.5 mr-1.5" />WhatsApp</Button> : null}
+                          {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_verify_payment')} disabled={busy}><RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${busy ? 'animate-spin' : ''}`} />Verify</Button> : null}
+                          {!waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_resend_confirmation')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Resend confirmation</Button> : null}
+                          {waiting && application.followUpStatus !== 'no_response' ? <Button size="sm" variant="ghost" onClick={() => runApplicationAction(application,'admin_mark_no_response')} disabled={busy}>No response</Button> : null}
+                        </div>
+                      </div>
+                    </div>;
+                  })}
+                </div>}
+            </div>
+          </section>
+
           <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
             <StatCard title="All records" value={listData.counts?.total ?? rows.length} icon={Users} onClick={() => applyQuickFilter('all')} />
             <StatCard title="Active" value={listData.counts?.active ?? 0} icon={CheckCircle2} onClick={() => applyQuickFilter('active')} active={filters.membershipStatus === 'paid_active'} />
