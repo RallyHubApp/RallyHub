@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
-import { createCheckout, retrievePayment, refundPayment, providerConfigured, type ProviderAccount } from '../_shared/payments.ts';
+import { createCheckout, retrievePayment, refundPayment, providerConfigured, type ProviderAccount } from './payments.ts';
 
 const WAIVER_VERSION='clare-guest-session-waiver-v1-2026-09';
 const CODE_VERSION='clare-guest-session-code-v1-2026-09';
