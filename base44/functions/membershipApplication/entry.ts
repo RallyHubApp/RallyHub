@@ -528,6 +528,20 @@ Deno.serve(async(req)=>{
     if(!emergencyName||phoneDigits(emergencyMobile).length<8)return Response.json({error:'Please provide an emergency contact name and mobile number.'},{status:400});
     if(applicationType==='renewal'&&body.dataReviewConfirmed!==true)return Response.json({error:'Please confirm that you have reviewed all of your membership details.'},{status:400});
 
+    const submittedConsents=body.consents||{};
+    const requiredConsentChecks:any=[
+      ['privacy',docs.privacy],
+      ['liability_waiver',docs.waiver],
+      ['code_of_conduct',docs.code],
+      ['health_declaration',docs.health],
+      ['membership_terms',docs.terms],
+    ];
+    for(const [key,doc] of requiredConsentChecks){
+      if(!doc)return Response.json({error:'A required club membership declaration is not configured. Please contact the club.'},{status:409});
+      if(submittedConsents[key]!==true)return Response.json({error:`Please accept ${doc.title}.`},{status:400});
+    }
+    if(docs.photo&&!['yes','no'].includes(String(submittedConsents.photoVideo||'')))return Response.json({error:'Please choose Yes or No for photography/video consent.'},{status:400});
+
     let person=null;
     let existingMembership=null;
     let app=null;
@@ -600,7 +614,7 @@ Deno.serve(async(req)=>{
     if(app)app=await base44.asServiceRole.entities.MembershipApplication.update(app.id,applicationPatch);
     else app=await base44.asServiceRole.entities.MembershipApplication.create(applicationPatch);
 
-    try{await recordConsents(base44,config,docs,person,app,body.consents||{})}catch(e){return Response.json({error:e?.message||'Please accept the membership declarations.'},{status:400})}
+    try{await recordConsents(base44,config,docs,person,app,submittedConsents)}catch(e){return Response.json({error:e?.message||'Please accept the membership declarations.'},{status:400})}
 
     let pay={app,payment:null,paymentUrl:''};
     if(config.payment_required!==false)pay=await paymentForApplication(base44,config,club,app,membership,false);
