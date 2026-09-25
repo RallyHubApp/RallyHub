@@ -2,8 +2,7 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
-import { ListChecks, RefreshCw, Users, WifiOff } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { CheckCircle2, Clock3, Info, ListChecks, RefreshCw, Trophy, Users, WifiOff } from 'lucide-react';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
 import { interclubPublicUrl } from '@/lib/interclubBranding';
 const RALLYHUB_LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
@@ -19,13 +18,24 @@ function score(matches, event) {
   return {a,b};
 }
 function fmt(seconds){ const s=Math.max(0,Number(seconds||0)); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
+function getDeviceId() {
+  const key='rallyhub-pot-device-id';
+  try {
+    let id=localStorage.getItem(key);
+    if(!id){ id=window.crypto?.randomUUID?.() || `rh-${Date.now()}-${Math.random().toString(36).slice(2)}`; localStorage.setItem(key,id); }
+    return id;
+  } catch { return window.crypto?.randomUUID?.() || `rh-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
+}
 function PoweredByRallyHub(){ return <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground/70"><span>Powered by</span><img src={RALLYHUB_LOGO_URL} alt="RallyHub" className="h-4 w-auto object-contain opacity-80"/></div>; }
 function LiveEventBrand({ pageLabel='Live Event View' }){ return <div className="flex flex-col items-center justify-center"><div className="flex items-center gap-2"><img src={RALLYHUB_MARK_URL} alt="RallyHub logo" className="h-8 w-8 object-contain sm:h-9 sm:w-9"/><div className="text-left"><div className="text-lg sm:text-xl font-black leading-none tracking-[-.04em] text-[#081342] dark:text-white">Rally<span className="text-[#078e48]">Hub</span></div><div className="mt-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[.24em] text-[#0c1e53] dark:text-slate-200">Interclub</div></div></div><p className="mt-2 text-[10px] sm:text-xs font-bold uppercase tracking-[.2em] text-muted-foreground">{pageLabel}</p></div>; }
-function VotingPrompt({ votingUrl, countdown, compact=false }){ if(!votingUrl) return null; return <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-center"><div><p className="text-sm sm:text-lg font-black uppercase tracking-[.16em] text-primary">Players of the Tournament voting open</p><p className="mt-1 text-2xl sm:text-4xl font-black tabular-nums">{countdown}</p><p className="mt-1 text-xs sm:text-sm text-muted-foreground">Scan the QR or tap Vote now.</p><a href={votingUrl} className="mt-2 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm">Vote now</a><a href={votingUrl} className="block mt-1 text-[10px] sm:text-xs text-primary underline underline-offset-2 break-all">Open voting link</a></div><div className="rounded-xl bg-white p-2 shadow-sm"><QRCodeSVG value={votingUrl} size={compact?96:124} level="H" includeMargin/></div></div>; }
+function VotingPrompt({ onVote, countdown }){ return <div className="text-center"><p className="text-sm sm:text-lg font-black uppercase tracking-[.16em] text-primary">Players of the Tournament voting open</p><p className="mt-1 text-2xl sm:text-4xl font-black tabular-nums">{countdown}</p><p className="mt-1 text-xs sm:text-sm text-muted-foreground">Voting is built into this player link.</p><button type="button" onClick={onVote} className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-sm">Vote now</button></div>; }
 
 export default function PublicClubChallengeDisplay(){
   const { token } = useParams();
   const [data,setData]=React.useState(null), [error,setError]=React.useState(''), [disconnected,setDisconnected]=React.useState(false), [now,setNow]=React.useState(Date.now()), [view,setView]=React.useState('live');
+  const [voteA,setVoteA]=React.useState(''), [voteB,setVoteB]=React.useState(''), [voteSaving,setVoteSaving]=React.useState(false), [voteDone,setVoteDone]=React.useState(false), [voteError,setVoteError]=React.useState('');
+  const [deviceId]=React.useState(getDeviceId);
+  const voteSavingRef=React.useRef(false);
   const dataRef=React.useRef(null);
   const initialViewSetRef=React.useRef(false);
   React.useEffect(()=>{ dataRef.current=data; },[data]);
