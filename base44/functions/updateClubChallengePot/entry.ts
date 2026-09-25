@@ -159,17 +159,19 @@ Deno.serve(async (req) => {
         }
       }
       for (const s of Object.values(stats) as any[]) s.pointDiff = s.pointsFor - s.pointsAgainst;
-      const sortedFor = (side:string) => (Object.values(stats) as any[]).filter(s => s.side === side && s.gamesPlayed > 0).sort((a,b) => b.pointsFor-a.pointsFor || b.wins-a.wins || b.pointDiff-a.pointDiff || a.participantId.localeCompare(b.participantId));
+      const sortedFor = (side:string) => (Object.values(stats) as any[]).filter(s => s.side === side && s.gamesPlayed > 0).sort((a,b) => b.pointsFor-a.pointsFor || b.wins-a.wins || b.pointDiff-a.pointDiff);
       const a = sortedFor('club_a'), b = sortedFor('club_b');
       if (!a.length || !b.length) return Response.json({ error:'Not enough completed match data to calculate both team awards.' }, { status:409 });
-      const clubAWinner = a[0], clubBWinner = b[0];
+      const selectWinner = (rows:any[]) => { const top=rows[0]; const tied=rows.filter(s => s.pointsFor===top.pointsFor && s.wins===top.wins && s.pointDiff===top.pointDiff); return { winner:tied[secureRandomIndex(tied.length)], tiedCount:tied.length }; };
+      const pickA=selectWinner(a), pickB=selectWinner(b);
+      const clubAWinner = pickA.winner, clubBWinner = pickB.winner;
       const winners = [clubAWinner.participantId, clubBWinner.participantId];
       winnerCount = winners.length;
       winnerSides = { club_a:[clubAWinner.participantId], club_b:[clubBWinner.participantId] };
       update = { pot_method:'points', pot_status:'revealed', pot_winner_participant_ids:winners, pot_revealed_at:nowIso, pot_vote_opened_at:null, pot_vote_closes_at:null, pot_vote_duration_minutes:null };
       const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, update);
       const publicStats = [clubAWinner, clubBWinner].map(s => ({ ...s, display_name:(byId.get(s.participantId) as any)?.display_name || 'Player' }));
-      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'pot_calculate_points', user_id:user.id, occurred_at:nowIso, old_value_json:JSON.stringify({ pot_method:event.pot_method || 'none', pot_status:event.pot_status }), new_value_json:JSON.stringify({ pot_method:'points', pot_status:'revealed', winners:publicStats }), note:'Highest-scoring player selected for each team from normal-round points scored while that player was on court. Tie-break order: match wins, then point differential.' });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'pot_calculate_points', user_id:user.id, occurred_at:nowIso, old_value_json:JSON.stringify({ pot_method:event.pot_method || 'none', pot_status:event.pot_status }), new_value_json:JSON.stringify({ pot_method:'points', pot_status:'revealed', winners:publicStats, exact_tie_candidates:{ club_a:pickA.tiedCount, club_b:pickB.tiedCount } }), note:'Highest-scoring player selected for each team from normal-round points scored while that player was on court. Tie-break order: match wins, then point differential, then a secure RallyHub coin toss for an exact tie.' });
       return Response.json({ success:true, event:updated, winnerCount, winnerSides, stats:publicStats });
     } else {
       if (event.pot_status !== 'closed') return Response.json({ error:'Voting must be closed before reveal.' }, { status:409 });
