@@ -71,6 +71,20 @@ async function invokeBase44Safely(name, payload, { retries = 2 } = {}) {
   }
 }
 function durationLabel(minutes) { const total = Math.max(0, Math.round(Number(minutes) || 0)); const h = Math.floor(total / 60); const m = total % 60; return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`; }
+function calculateIndividualPointStats(matches=[], participants=[]) {
+  const byId = new Map(participants.map(p => [p.id, p]));
+  const stats = {};
+  const ensure = (id, side) => stats[id] || (stats[id] = { participantId:id, side, gamesPlayed:0, pointsFor:0, pointsAgainst:0, wins:0, draws:0, losses:0, pointDiff:0 });
+  const terminal = new Set(['completed','draw','retired','forfeit']);
+  for (const match of matches) {
+    if (match.is_showcase || !terminal.has(match.status)) continue;
+    const scoreA=Number(match.score_a||0), scoreB=Number(match.score_b||0);
+    for (const id of (match.club_a_participant_ids||[])) { const p=byId.get(id); if (!p || p.side!=='club_a') continue; const s=ensure(id,'club_a'); s.gamesPlayed++; s.pointsFor+=scoreA; s.pointsAgainst+=scoreB; if(match.winner==='club_a')s.wins++;else if(match.winner==='draw')s.draws++;else s.losses++; }
+    for (const id of (match.club_b_participant_ids||[])) { const p=byId.get(id); if (!p || p.side!=='club_b') continue; const s=ensure(id,'club_b'); s.gamesPlayed++; s.pointsFor+=scoreB; s.pointsAgainst+=scoreA; if(match.winner==='club_b')s.wins++;else if(match.winner==='draw')s.draws++;else s.losses++; }
+  }
+  Object.values(stats).forEach(s => { s.pointDiff=s.pointsFor-s.pointsAgainst; });
+  return stats;
+}
 function clockLabel(ms) { if (!Number.isFinite(ms)) return ''; return new Date(ms).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); }
 function bookingStartMs(tournament, event) { const date=String(tournament?.start_date||'').slice(0,10), time=String(event?.scheduled_start_time||'').trim(); if(!date||!/^\d{2}:\d{2}$/.test(time)) return NaN; const ms=new Date(`${date}T${time}:00`).getTime(); return Number.isFinite(ms)?ms:NaN; }
 function privacyName(name, junior) { if (!junior) return name || ''; const parts = String(name || '').trim().split(/\s+/).filter(Boolean); return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : (parts[0] || ''); }
