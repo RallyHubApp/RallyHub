@@ -355,6 +355,13 @@ Deno.serve(async(req)=>{
           updated=await sendConfirmations(base44,session,updated);
           return Response.json({success:true,status:'paid',booking:updated});
         }
+        if(status==='FAILED'||status==='EXPIRED'){
+          const localStatus=status.toLowerCase();
+          const updated=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:localStatus,booking_status:'pending_payment'});
+          const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+          if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:localStatus,provider_status:status});
+          return Response.json({success:true,status:localStatus,booking:updated});
+        }
         return Response.json({success:true,status:status.toLowerCase()});
       }
 
@@ -496,7 +503,10 @@ Clare Pickleball`,
             const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
             if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:checkout?.provider||'sumup',provider_account_id:checkout?.merchant_account_id||'',provider_transaction_id:checkout?.transaction_id||checkout?.transactions?.[0]?.id||'',provider_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||'',provider_status:checkout?.status||'PAID',external_payment_reference:checkout?.transaction_code||checkout?.transactions?.[0]?.transaction_code||''});
           }else if(status==='FAILED'||status==='EXPIRED'){
-            booking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:status.toLowerCase(),booking_status:'pending_payment'});
+            const localStatus=status.toLowerCase();
+            booking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{payment_status:localStatus,booking_status:'pending_payment'});
+            const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',10);
+            if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:localStatus,provider_status:status});
           }
         }catch(e){console.error('sumup status check failed',e?.message||e)}
       }
@@ -536,6 +546,26 @@ Clare Pickleball`,
     if(duplicate){
       let paymentUrl=duplicate.sumup_checkout_url||'';
       let paymentStatus=duplicate.payment_status;
+      if(session.payment_method==='sumup' && duplicate.booking_status!=='confirmed' && duplicate.sumup_checkout_id && !['failed','expired'].includes(String(paymentStatus||'').toLowerCase())){
+        try{
+          const existingCheckout=await retrieveProviderCheckout(base44,session,duplicate.sumup_checkout_id);
+          const remoteStatus=String(existingCheckout?.status||'PENDING').toUpperCase();
+          if(remoteStatus==='PAID'){
+            const now=new Date().toISOString();
+            let updated=await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
+            const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
+            if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:existingCheckout?.provider||'sumup',provider_account_id:existingCheckout?.merchant_account_id||'',provider_transaction_id:existingCheckout?.transaction_id||existingCheckout?.transactions?.[0]?.id||'',provider_payment_reference:existingCheckout?.transaction_code||existingCheckout?.transactions?.[0]?.transaction_code||'',provider_status:'PAID'});
+            updated=await sendConfirmations(base44,session,updated);
+            return Response.json({success:true,alreadyBooked:true,bookingId:duplicate.id,paymentUrl:'',session:safeSession(session),bookingStatus:'confirmed',paymentStatus:'paid',message:'Your payment is already confirmed for this session.'});
+          }
+          if(remoteStatus==='FAILED'||remoteStatus==='EXPIRED'){
+            paymentStatus=remoteStatus.toLowerCase();
+            await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{payment_status,payment_status_updated_at:new Date().toISOString()});
+            const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
+            if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:paymentStatus,provider_status:remoteStatus});
+          }
+        }catch(e){console.error('SumUp duplicate status check failed',e?.message||e)}
+      }
       if(session.payment_method==='sumup' && duplicate.booking_status!=='confirmed' && (!paymentUrl || ['failed','expired'].includes(String(paymentStatus||'').toLowerCase()))){
         try{
           const checkout=await createProviderCheckout(base44,session,duplicate,req);
