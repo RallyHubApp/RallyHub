@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { createCheckout, retrievePayment, refundPayment, providerConfigured, type ProviderAccount } from '../_shared/payments.ts';
 
 const WAIVER_VERSION='clare-guest-session-waiver-v1-2026-09';
 const CODE_VERSION='clare-guest-session-code-v1-2026-09';
@@ -176,44 +177,44 @@ Clare Pickleball`,
   }
   return booking;
 }
-async function createSumUpCheckout(session:any,booking:any,req:Request){
-  const apiKey=Deno.env.get('SUMUP_API_KEY')||'';
-  const merchantCode=Deno.env.get('SUMUP_MERCHANT_CODE')||'';
-  if(!apiKey||!merchantCode) throw new Error('SumUp is not configured yet for RallyHub guest bookings.');
-
+async function gatewayAccount(base44:any,tenantId:string,clubId:string,provider:string){
+  try{
+    const rows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:tenantId,club_id:clubId,provider},'-updated_date',20);
+    const row=(rows||[]).find((x:any)=>x.status==='connected'&&x.is_default) || (rows||[]).find((x:any)=>x.status==='connected') || null;
+    if(!row)return null;
+    const account:ProviderAccount={
+      provider,
+      merchantAccountId:clean(row.merchant_account_id,120)||undefined,
+      credentialSecretName:clean(row.credential_reference,120)||undefined,
+      connectionMode:row.connection_mode||undefined,
+    };
+    return {row,account};
+  }catch{return null}
+}
+async function createProviderCheckout(base44:any,session:any,booking:any,req:Request){
+  const provider=clean(session.payment_provider||session.payment_method,30).toLowerCase();
+  const gateway=await gatewayAccount(base44,session.tenant_id,session.club_id,provider);
   const ref=`RH-GUEST-${String(booking.id).slice(-18)}-${Date.now().toString(36)}`.slice(0,64);
   const origin=clean(req.headers.get('origin')||'',250);
   const safeOrigin=/^https:\/\/([a-z0-9-]+\.)?(rallyhub\.ie|base44\.app)$/i.test(origin)?origin:'https://rallyhub.ie';
   const redirectUrl=`${safeOrigin}/guest-session/${encodeURIComponent(session.token)}?booking=${encodeURIComponent(booking.id)}&payment=return`;
-
-  const response=await fetch('https://api.sumup.com/v0.1/checkouts',{
-    method:'POST',
-    headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json'},
-    body:JSON.stringify({
-      checkout_reference:ref,
-      amount:Number(session.fee_amount||5.5),
-      currency:session.currency||'EUR',
-      merchant_code:merchantCode,
-      description:`Clare Pickleball guest session ${session.session_date} ${session.start_time}`.slice(0,120),
-      redirect_url:redirectUrl,
-      hosted_checkout:{enabled:true},
-    }),
+  const checkout=await createCheckout({
+    provider,account:gateway?.account||null,amount:Number(session.fee_amount),currency:session.currency||'EUR',
+    reference:ref,description:`Clare Pickleball guest session ${session.session_date} ${session.start_time}`,
+    redirectUrl,
   });
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok||!data?.id||!data?.hosted_checkout_url){
-    throw new Error(data?.message||'SumUp could not create the payment checkout.');
-  }
-  return {id:String(data.id),url:String(data.hosted_checkout_url),reference:ref,status:String(data.status||'PENDING')};
+  return {id:checkout.checkoutId,url:checkout.checkoutUrl,reference:checkout.reference,status:checkout.providerStatus,provider,merchantAccountId:checkout.merchantAccountId};
 }
-async function retrieveSumUp(checkoutId:string){
-  const apiKey=Deno.env.get('SUMUP_API_KEY')||'';
-  if(!apiKey) throw new Error('SumUp is not configured.');
-  const response=await fetch(`https://api.sumup.com/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,{
-    headers:{Authorization:`Bearer ${apiKey}`},
-  });
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok) throw new Error(data?.message||'Could not verify SumUp payment.');
-  return data;
+async function retrieveProviderCheckout(base44:any,session:any,checkoutId:string){
+  const provider=clean(session.payment_provider||session.payment_method,30).toLowerCase();
+  const gateway=await gatewayAccount(base44,session.tenant_id,session.club_id,provider);
+  const result=await retrievePayment(provider,checkoutId,gateway?.account||null);
+  return {
+    status:result.normalizedStatus==='paid'?'PAID':result.normalizedStatus==='failed'?'FAILED':result.normalizedStatus==='expired'?'EXPIRED':result.providerStatus,
+    transaction_id:result.transactionId,transaction_code:result.transactionCode,
+    transactions:result.transactionId?[{id:result.transactionId,transaction_code:result.transactionCode}]:[],
+    provider:result.provider,merchant_account_id:result.merchantAccountId,_normalized:result.normalizedStatus,
+  };
 }
 
 Deno.serve(async(req)=>{
