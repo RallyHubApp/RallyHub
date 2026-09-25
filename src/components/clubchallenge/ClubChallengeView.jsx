@@ -373,16 +373,19 @@ function ScoreCard({ match, clubAName, clubBName, onSaved, networkOnline = true,
       const res = await base44.functions.invoke('saveClubChallengeScore', payload);
       if (res.data?.conflict) {
         toast.error('Score conflict: this result changed on another device. Refresh and review it.');
+        onSaved?.(null);
       } else if (res.data?.error) {
         toast.error(res.data.error);
       } else {
         toast.success(saved ? 'Score corrected and audited' : 'Score saved');
-        onSaved?.();
+        onSaved?.(res.data?.match || null);
       }
     } catch (e) {
       if (!navigator.onLine || /network|fetch|offline/i.test(e?.message || '')) { onQueue?.({ ...payload, queuedAt: new Date().toISOString(), clubAName, clubBName, matchLabel: `R${match.round_number} C${match.court_number}` }); toast.warning('Connection lost: result retained locally as UNSYNCHRONISED.'); }
-      else toast.error(e?.response?.data?.error || e?.message || 'Could not save score');
-      onSaved?.();
+      else {
+        toast.error(e?.response?.data?.error || e?.message || 'Could not save score');
+        if (e?.response?.status === 409) onSaved?.(null);
+      }
     } finally { setSaving(false); }
   };
   return (
@@ -735,6 +738,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await refetchMatches();
     if (event?.pot_enabled) await refetchPotVotes();
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+  };
+  const mergeSavedMatch = async savedMatch => {
+    if (!savedMatch) { await refetchMatches(); return; }
+    if (isAdmin) {
+      queryClient.setQueryData(['club-challenge-matches', event?.id], old => (old || []).map(m => m.id === savedMatch.id ? savedMatch : m));
+    } else {
+      queryClient.setQueryData(['club-challenge-secure-state', tournament.id, currentUser?.id], old => old ? ({ ...old, matches:(old.matches || []).map(m => m.id === savedMatch.id ? savedMatch : m) }) : old);
+    }
   };
   const queueOfflineScore = item => setPendingScores(q => [...q.filter(x => x.matchId !== item.matchId), item]);
   const retryPendingScores = async () => {
@@ -2489,11 +2500,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               {!timerState && <p className="text-[11px] text-muted-foreground text-center">Start Play first. Changeover becomes available after play starts, so an accidental pre-round changeover cannot replace the match timer.</p>}
             </div>
 
-            {pendingPastMatches.length > 0 && <div className="rounded-xl border-2 border-amber-500/50 bg-amber-500/5 p-4 sm:p-5 space-y-3"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-bold text-amber-700">Earlier scores still to enter</p><p className="text-xs text-muted-foreground mt-1">Keep the current round moving. Enter these results here as they arrive from the courts.</p></div><Badge variant="outline" className="border-amber-500/50 text-amber-700">{pendingPastMatches.length} pending</Badge></div><div className="grid md:grid-cols-2 gap-3">{pendingPastMatches.map(m => <ScoreCard key={`pending-${m.id}-${m.revision}`} match={m} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={refetchMatches} networkOnline={networkOnline} onQueue={queueOfflineScore} canScore={canScoreEvent} formatNames={matchNames} />)}</div></div>}
+            {pendingPastMatches.length > 0 && <div className="rounded-xl border-2 border-amber-500/50 bg-amber-500/5 p-4 sm:p-5 space-y-3"><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-bold text-amber-700">Earlier scores still to enter</p><p className="text-xs text-muted-foreground mt-1">Keep the current round moving. Enter these results here as they arrive from the courts.</p></div><Badge variant="outline" className="border-amber-500/50 text-amber-700">{pendingPastMatches.length} pending</Badge></div><div className="grid md:grid-cols-2 gap-3">{pendingPastMatches.map(m => <ScoreCard key={`pending-${m.id}-${m.revision}`} match={m} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={mergeSavedMatch} networkOnline={networkOnline} onQueue={queueOfflineScore} canScore={canScoreEvent} formatNames={matchNames} />)}</div></div>}
 
             <div className={cn('rounded-xl border bg-card p-4 sm:p-5 space-y-3', currentRoundComplete ? 'border-primary/50' : 'border-border')}>
               <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">Round {currentRound} Scores</p><p className={cn('text-xs', currentRoundComplete ? 'text-primary font-medium' : 'text-muted-foreground')}>{currentRoundComplete ? (scheduledBreakHere && !breakActive ? `Round ${currentRound} complete — ready to start the scheduled ${event.break_minutes}-minute break.` : breakActive ? `Round ${currentRound} saved — break in progress.` : `Round ${currentRound} complete — ready to advance.`) : 'Enter each court result as it comes in — you do not need to wait for the timer to finish.'}</p></div><Badge className={currentRoundComplete ? 'bg-primary/10 text-primary' : ''} variant={currentRoundComplete ? 'default' : 'outline'}>{currentRoundSavedCount}/{currentMatches.length} saved</Badge></div>
-              <div className="grid md:grid-cols-2 gap-3">{currentMatches.sort((a,b)=>a.court_number-b.court_number).map(m => <ScoreCard key={`${m.id}-${m.revision}`} match={m} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={refetchMatches} networkOnline={networkOnline} onQueue={queueOfflineScore} canScore={canScoreEvent} formatNames={matchNames} />)}</div>
+              <div className="grid md:grid-cols-2 gap-3">{currentMatches.sort((a,b)=>a.court_number-b.court_number).map(m => <ScoreCard key={`${m.id}-${m.revision}`} match={m} clubAName={event.club_a_name} clubBName={event.club_b_name} onSaved={mergeSavedMatch} networkOnline={networkOnline} onQueue={queueOfflineScore} canScore={canScoreEvent} formatNames={matchNames} />)}</div>
               {roundActionStatus && <div className={cn('rounded-lg border px-3 py-2 text-xs font-semibold flex items-center gap-2', roundActionStatus.state === 'success' ? 'border-green-500/40 bg-green-500/10 text-green-500' : roundActionStatus.state === 'error' ? 'border-red-500/50 bg-red-500/10 text-red-500' : 'border-primary/30 bg-primary/5 text-primary')}>{roundActionStatus.state === 'working' ? <RefreshCw className="w-4 h-4 animate-spin" /> : roundActionStatus.state === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}<span>{roundActionStatus.text}</span></div>}
               {!['completed','archived'].includes(event.status) && (breakActive ? <Button className="w-full h-12" variant="destructive" disabled={!canManageEvent} onClick={timerRemaining > 0 ? endBreakEarly : advanceRound}>{timerRemaining > 0 ? `Break in progress · End Early & Prepare Round ${currentRound + 1}` : `Break complete · Prepare Round ${currentRound + 1}`}</Button> : allNormalResultsSaved && currentRound >= plannedRounds && score.clubA !== score.clubB && event.showcase_enabled && !showcaseMatch ? <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3"><div><p className="text-sm font-black">Round {plannedRounds} complete — what would you like to do?</p><p className="text-xs text-muted-foreground mt-1">The normal Interclub result is decided. The optional final is available only if time allows.</p></div><div className="grid sm:grid-cols-2 gap-2"><Button variant="outline" className="h-12" disabled={!canManageEvent} onClick={openOptionalShowcase}><Trophy className="w-4 h-4 mr-2" />Play Optional Showcase Final</Button><Button className="h-12" disabled={!canManageEvent} onClick={advanceRound}>Finish Interclub & Go to Results</Button></div></div> : <Button className="w-full h-12" disabled={advanceActionDisabled} onClick={advanceRound}>{advanceActionLabel}</Button>)}
             </div>
