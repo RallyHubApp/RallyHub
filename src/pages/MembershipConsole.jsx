@@ -23,7 +23,7 @@ import {
   Mail, MessageCircle, Pencil, Plus, Printer, RefreshCw, Save, Search, ShieldCheck, Users, WalletCards, X
 } from 'lucide-react';
 
-const EMPTY_FILTERS = { membershipStatus: 'all', paymentStatus: 'all', account: 'all', quality: 'all', sport: 'all' };
+const EMPTY_FILTERS = { membershipStatus: 'all', paymentStatus: 'all', account: 'all', quality: 'all', sport: 'all', renewal: 'all' };
 
 const label = value => String(value || '')
   .replaceAll('_', ' ')
@@ -42,6 +42,15 @@ const money = (value, currency = 'EUR') => {
   }
 };
 
+const dateLabel = value => {
+  if (!value) return '—';
+  try {
+    return new Intl.DateTimeFormat('en-IE', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${value}T12:00:00Z`));
+  } catch {
+    return String(value);
+  }
+};
+
 const cellValue = (row, key, currency) => {
   const value = row?.[key];
   if (key === 'membership_fee') return money(value, currency);
@@ -52,18 +61,20 @@ const cellValue = (row, key, currency) => {
   return value ?? '—';
 };
 
-function StatCard({ title, value, icon: Icon, onClick, active }) {
+function StatCard({ title, value, icon: Icon, onClick, active, note, disabled = false }) {
   return (
     <button
       type="button"
-      onClick={onClick}
-      className={`glass rounded-xl p-4 text-left transition hover:border-primary/40 ${active ? 'ring-1 ring-primary/40 bg-primary/5' : ''}`}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      className={`glass rounded-xl p-3 sm:p-4 text-left transition min-h-[104px] ${disabled ? 'cursor-default opacity-80' : 'hover:border-primary/40 active:scale-[0.99]'} ${active ? 'ring-1 ring-primary/40 bg-primary/5' : ''}`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-muted-foreground">{title}</span>
-        {Icon ? <Icon className="w-4 h-4 text-primary" /> : null}
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground leading-tight">{title}</span>
+        {Icon ? <Icon className="w-4 h-4 text-primary shrink-0" /> : null}
       </div>
       <div className="mt-2 text-2xl font-black">{value}</div>
+      {note ? <div className="mt-1 text-[10px] sm:text-[11px] leading-tight text-muted-foreground">{note}</div> : null}
     </button>
   );
 }
