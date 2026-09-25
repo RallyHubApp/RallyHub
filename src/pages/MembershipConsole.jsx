@@ -427,7 +427,7 @@ export default function MembershipConsole() {
                 <Popover>
                   <PopoverTrigger asChild><Button variant="outline"><Filter className="w-4 h-4 mr-1.5" />More</Button></PopoverTrigger>
                   <PopoverContent align="end" className="w-72 space-y-3">
-                    <div><Label>RallyHub account</Label><Select value={rs.account} onValueChange={value => setFilters(f => ({ ...f, account: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="linked">Linked</SelectItem><SelectItem value="unlinked">Not linked</SelectItem></SelectContent></Select></div>
+                    <div><Label>RallyHub account</Label><Select value={filters.account} onValueChange={value => setFilters(f => ({ ...f, account: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="linked">Linked</SelectItem><SelectItem value="unlinked">Not linked</SelectItem></SelectContent></Select></div>
                     <div><Label>Data quality</Label><Select value={filters.quality} onValueChange={value => setFilters(f => ({ ...f, quality: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="complete">Complete</SelectItem><SelectItem value="issues">Needs attention</SelectItem><SelectItem value="duplicates">Duplicate review</SelectItem></SelectContent></Select></div>
                     <Button variant="outline" className="w-full" onClick={() => { setFilters(EMPTY_FILTERS); setSearch(''); }}><X className="w-3.5 h-3.5 mr-1.5" />Clear filters</Button>
                   </PopoverContent>
@@ -508,5 +508,76 @@ export default function MembershipConsole() {
 
       <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
         <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
-          <SheetHeader><SheetTitle>{detail?.person?.full_name || 'Member record'}</SheetTitle><SheetDescription>{detail?.membership?.member_id || 'No membership ID'} · {meta.club?.name || 'Club membership'}</SheetDescription></Sh
+          <SheetHeader><SheetTitle>{detail?.person?.full_name || 'Member record'}</SheetTitle><SheetDescription>{detail?.membership?.member_id || 'No membership ID'} · {meta.club?.name || 'Club membership'}</SheetDescription></SheetHeader>
+          {detailLoading ? <p className="mt-6 text-sm text-muted-foreground">Loading complete record…</p> : detail ? (
+            <div className="mt-5 space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline">{label(detail.membership?.membership_status)}</Badge>
+                <Badge variant="outline">{label(detail.membership?.payment_status)}</Badge>
+                {(detail.person?.linked_user_id || detail.player?.user_id) ? <Badge className="bg-primary/15 text-primary"><Link2 className="w-3 h-3 mr-1" />RallyHub linked</Badge> : <Badge variant="outline">Not linked</Badge>}
+                <Button size="sm" className="ml-auto" onClick={() => setEditOpen(true)}><Pencil className="w-3.5 h-3.5 mr-1.5" />Edit record</Button>
+              </div>
+
+              <Tabs defaultValue="profile">
+                <TabsList className="flex flex-wrap h-auto gap-1 justify-start">
+                  <TabsTrigger value="profile">Profile</TabsTrigger>
+                  <TabsTrigger value="membership">Membership</TabsTrigger>
+                  <TabsTrigger value="sports">Sports</TabsTrigger>
+                  <TabsTrigger value="payments">Payments</TabsTrigger>
+                  <TabsTrigger value="training">Training</TabsTrigger>
+                  <TabsTrigger value="qualifications">Qualifications</TabsTrigger>
+                  <TabsTrigger value="consents">Consents</TabsTrigger>
+                  <TabsTrigger value="history">Competition</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="profile" className="pt-4"><div className="grid sm:grid-cols-2 gap-4">
+                  <Info title="Email" value={detail.person?.primary_email} /><Info title="Mobile" value={detail.person?.mobile} />
+                  <Info title="Date of birth" value={detail.person?.date_of_birth} sensitive /><Info title="Age / group" value={detail.person?.age != null ? `${detail.person.age} · ${detail.person.age_group || ''}` : null} sensitive />
+                  <Info title="Address" value={detail.person?.full_postal_address || [detail.person?.address_line1, detail.person?.address_line2, detail.person?.town_city, detail.person?.county_region].filter(Boolean).join(', ')} />
+                  <Info title="Postcode / Eircode" value={detail.person?.postal_code} />
+                  <Info title="Emergency contact" value={[detail.person?.emergency_contact_name || detail.person?.emergency_contact_raw, detail.person?.emergency_contact_relationship].filter(Boolean).join(' · ')} sensitive />
+                  <Info title="Emergency mobile" value={detail.person?.emergency_mobile} sensitive />
+                </div></TabsContent>
+
+                <TabsContent value="membership" className="pt-4"><div className="grid sm:grid-cols-2 gap-4">
+                  <Info title="Membership ID" value={detail.membership?.member_id} /><Info title="Season" value={detail.membership?.membership_season} />
+                  <Info title="Type" value={detail.membership?.membership_type} /><Info title="Status" value={label(detail.membership?.membership_status)} />
+                  <Info title="Relationship" value={label(detail.membership?.relationship_type)} /><Info title="Category" value={label(detail.relationship?.membership_category)} />
+                  <Info title="Fee" value={money(detail.membership?.membership_fee, currency)} /><Info title="Payment status" value={label(detail.membership?.payment_status)} />
+                  <Info title="Payment date" value={detail.membership?.payment_date} /><Info title="Join date" value={detail.membership?.join_date} />
+                  <Info title="Renewal date" value={detail.membership?.renewal_date} /><Info title="Expiry date" value={detail.membership?.expiry_date} />
+                </div>{detail.membership?.admin_notes ? <div className="mt-4 rounded-lg bg-secondary/50 p-3 text-sm"><strong>Admin notes:</strong> {detail.membership.admin_notes}</div> : null}</TabsContent>
+
+                <TabsContent value="sports" className="pt-4 space-y-3">
+                  {!(detail.sportProfiles || []).length ? <p className="text-sm text-muted-foreground">No sport profile recorded.</p> :
+                    detail.sportProfiles.map(profile => {
+                      const sport = (meta.sports || []).find(item => String(item.id) === String(profile.sport_id));
+                      return <div key={profile.id || profile.sport_id} className="rounded-xl border p-4">
+                        <div className="flex items-center justify-between"><p className="font-semibold">{sport?.name || profile.sport || 'Sport'}</p><Badge variant="outline">{label(profile.status)}</Badge></div>
+                        <div className="grid sm:grid-cols-3 gap-3 mt-3">
+                          <Info title="Skill level" value={profile.skill_level} /><Info title="Playing category" value={profile.playing_category} />
+                          <Info title="Rating" value={profile.dupr_doubles_rating ?? profile.dupr_rating} /><Info title="Rating ID" value={profile.dupr_id} />
+                          <Info title="Singles rating" value={profile.dupr_singles_rating} /><Info title="Doubles rating" value={profile.dupr_doubles_rating} />
+                        </div>
+                      </div>;
+                    })}
+                </TabsContent>
+
+                <TabsContent value="payments" className="pt-4 space-y-2">
+                  {!(detail.payments || []).length ? <p className="text-sm text-muted-foreground">No payment records.</p> :
+                    detail.payments.map(payment => <div key={payment.id} className="rounded-lg border p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div><p className="text-sm font-semibold">{label(payment.purpose_type || payment.payment_type || 'Payment')}</p><p className="text-xs text-muted-foreground">{label(payment.provider || payment.payment_method)} {payment.payment_date ? ` · ${payment.payment_date}` : ''}</p></div>
+                      <div className="sm:text-right"><p className="font-semibold">{money(payment.amount, payment.currency || currency)}</p><Badge variant="outline">{label(payment.payment_status)}</Badge></div>
+                    </div>)}
+                </TabsContent>
+
+                <TabsContent value="training" className="pt-4 space-y-3">
+                  <div className="flex justify-end"><Button size="sm" onClick={() => setTrainingOpen(true)}><Plus className="w-3.5 h-3.5 mr-1" />Add training</Button></div>
+                  {!(detail.training || []).length ? <p className="text-sm text-muted-foreground">No training history recorded.</p> :
+                    detail.training.map(item => <div key={item.id} className="rounded-lg border p-3"><div className="flex justify-between gap-2"><p className="font-semibold text-sm">{item.training_name}</p><Badge variant="outline">{label(item.status)}</Badge></div><p className="text-xs text-muted-foreground mt-1">{[item.sport, item.level_category, item.provider, item.completion_date].filter(Boolean).join(' · ')}</p></div>)}
+                </TabsContent>
+
+                <TabsContent value="qualifications" className="pt-4 space-y-3">
+                  <div className="flex justify-end"><Button size="sm" onClick={() => setQualificationOpen(true)}><Plus className="w-3.5 h-3.5 mr-1" />Add qualification</Button></div>
+                  {!(detail.qualifications || []).length ? <p className="text-sm text-mut
 /*APPEND*/
