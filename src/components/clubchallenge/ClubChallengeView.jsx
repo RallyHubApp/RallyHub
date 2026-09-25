@@ -503,7 +503,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-event', tournament.id],
     queryFn: async () => (await base44.entities.ClubChallengeEvent.filter({ tournament_id: tournament.id }))[0] || null,
     enabled: isAdmin,
-    refetchInterval: 12000,
+    refetchInterval: 15000,
     refetchOnWindowFocus:false,
   });
   const event = isAdmin ? adminEvent : secureState?.event || null;
@@ -517,7 +517,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-matches', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeMatch.filter({ challenge_event_id: event.id }, 'round_number', 200) : [],
     enabled: isAdmin && !!event?.id,
-    refetchInterval: isAdmin && showcaseScorerLink ? 5000 : false,
+    refetchInterval: isAdmin && showcaseScorerLink ? 5000 : isAdmin && ['in_progress','paused'].includes(event?.status) ? 12000 : false,
     refetchOnWindowFocus:false,
   });
   const matches = isAdmin ? adminMatches : secureState?.matches || [];
@@ -2008,8 +2008,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!unresolved.length) { toast.info('Those matches are already complete.'); return; }
     setSimulating(true);
     try {
-      for (let i = 0; i < unresolved.length; i += 6) {
-        const batch = unresolved.slice(i, i + 6);
+      for (let i = 0; i < unresolved.length; i += 3) {
+        const batch = unresolved.slice(i, i + 3);
         await Promise.all(batch.map((m, j) => saveSimulatedMatch(m, i + j, mode)));
       }
       addSimLog(`${label}: ${unresolved.length} results simulated`, 'pass');
@@ -2027,8 +2027,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const normal = matches.filter(m => !m.is_showcase && (!plannedRounds || Number(m.round_number) <= plannedRounds));
     const showcase = matches.filter(m => m.is_showcase);
     for (const m of showcase) await base44.entities.ClubChallengeMatch.delete(m.id);
-    for (let i = 0; i < normal.length; i += 8) {
-      await Promise.all(normal.slice(i, i + 8).map(m => base44.entities.ClubChallengeMatch.update(m.id, {
+    for (let i = 0; i < normal.length; i += 3) {
+      await Promise.all(normal.slice(i, i + 3).map(m => base44.entities.ClubChallengeMatch.update(m.id, {
         status: 'scheduled', score_a: null, score_b: null, winner: 'none', revision: 0,
         scored_by_user_id: null, scored_at: null, last_corrected_by_user_id: null, last_corrected_at: null, correction_count: 0,
       })));
