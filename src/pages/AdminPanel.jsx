@@ -22,7 +22,7 @@ export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
-  const allowedAdminTabs = ['approvals', 'membership', 'preview', 'directory', 'directory-contacts', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['approvals', 'preview', 'directory', 'directory-contacts', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
   const directoryFocus = searchParams.get('focus');
@@ -138,7 +138,7 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data?.rows || [];
     },
-    enabled: canAccessAdmin && activeAdminTab === 'membership' && !!user?.active_tenant_id && !!user?.active_club_id
+    enabled: canAccessAdmin && activeAdminTab === 'approvals' && !!user?.active_tenant_id && !!user?.active_club_id
   });
 
   const { data: selectedMembershipRecord = null, isLoading: selectedMembershipLoading, error: selectedMembershipError } = useQuery({
