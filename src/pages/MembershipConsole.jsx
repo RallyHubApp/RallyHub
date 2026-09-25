@@ -461,6 +461,54 @@ export default function MembershipConsole() {
     }
   };
 
+  const runApplicationAction = async (application, action, channel = '') => {
+    if (!application?.id) return;
+    setApplicationBusyId(application.id);
+    try {
+      const response = await base44.functions.invoke('membershipApplication', {
+        action,
+        applicationId: application.id,
+        ...(channel ? { channel } : {})
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      if (channel === 'whatsapp' && response.data?.message) {
+        try {
+          await navigator.clipboard.writeText(response.data.message);
+          toast.success('WhatsApp reminder copied');
+        } catch {
+          window.prompt('Copy this WhatsApp reminder', response.data.message);
+        }
+      } else if (action === 'admin_send_reminder') {
+        toast.success('Payment reminder email sent');
+      } else if (action === 'admin_verify_payment') {
+        toast.success(response.data?.application?.paymentStatus === 'paid' ? 'Payment confirmed and membership activated' : 'Payment status checked');
+      } else if (action === 'admin_resend_confirmation') {
+        toast.success('Membership confirmation resent');
+      } else if (action === 'admin_mark_no_response') {
+        toast.success('Application marked no response');
+      }
+      await Promise.all([
+        refetchApplications(),
+        queryClient.invalidateQueries({ queryKey: ['membership-console-list'] }),
+        queryClient.invalidateQueries({ queryKey: ['membership-application-attention-count'] })
+      ]);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not update membership application');
+    } finally {
+      setApplicationBusyId('');
+    }
+  };
+
+  const copyApplicationPaymentLink = async application => {
+    if (!application?.paymentUrl) return;
+    try {
+      await navigator.clipboard.writeText(application.paymentUrl);
+      toast.success('Membership payment link copied');
+    } catch {
+      window.prompt('Copy this membership payment link', application.paymentUrl);
+    }
+  };
+
   const addTraining = async () => {
     if (!training.trainingName.trim()) return toast.error('Enter the training name');
     setSaving(true);
