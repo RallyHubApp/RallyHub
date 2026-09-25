@@ -332,7 +332,7 @@ async function requireClubManager(base44:any){
   return {user,tenantId,clubId};
 }
 function safeApplication(app:any,paymentUrl=''){
-  return {id:app.id,applicationType:app.application_type,status:app.status,paymentStatus:app.payment_status,confirmationCode:app.confirmation_code,fullName:app.full_name,seasonLabel:app.membership_season,membershipFee:Number(app.membership_fee||0),currency:app.currency||'EUR',paymentUrl};
+  return {id:app.id,publicToken:app.public_token||'',applicationType:app.application_type,status:app.status,paymentStatus:app.payment_status,confirmationCode:app.confirmation_code,fullName:app.full_name,seasonLabel:app.membership_season,membershipFee:Number(app.membership_fee||0),currency:app.currency||'EUR',paymentUrl};
 }
 function whatsappReminder(config:any,club:any,app:any,paymentUrl:string){
   const fee=money(app.membership_fee,app.currency||config.currency||'EUR');
