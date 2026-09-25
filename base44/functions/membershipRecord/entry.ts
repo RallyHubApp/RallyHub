@@ -351,6 +351,58 @@ Deno.serve(async(req)=>{
     if(!tenantId||!clubId) return Response.json({error:'Active club context required'},{status:400});
     await assertClubAdmin(base44,user,tenantId,clubId);
 
+    if(action==='admin_meta'){
+      const [club,tenant,clubSports,allSports,gateways,views]=await Promise.all([
+        first(base44,'Club',{id:clubId,tenant_id:tenantId}),
+        first(base44,'Tenant',{id:tenantId}),
+        base44.asServiceRole.entities.ClubSport.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'-is_primary',100),
+        base44.asServiceRole.entities.Sport.filter({status:'active'},'name',100),
+        base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:tenantId,club_id:clubId},'-is_default',50),
+        base44.asServiceRole.entities.MembershipSavedView.filter({tenant_id:tenantId,club_id:clubId,user_id:user.id},'name',100)
+      ]);
+      const sportMap=new Map((allSports||[]).map((s:any)=>[String(s.id),s]));
+      const configuredSports=(clubSports||[]).map((cs:any)=>({
+        ...safeSport(sportMap.get(String(cs.sport_id))),
+        club_sport_id:cs.id,
+        is_primary:cs.is_primary===true,
+        settings_json:cs.settings_json||null
+      })).filter((x:any)=>x.id);
+      return Response.json({
+        success:true,
+        tenant:tenant?{id:tenant.id,name:tenant.name||null,slug:tenant.slug||null,timezone:tenant.timezone||null}:null,
+        club:safeClub(club),
+        sports:configuredSports,
+        gateways:(gateways||[]).map(safeGateway),
+        membershipStatuses:MEMBERSHIP_STATUS,
+        relationshipTypes:RELATIONSHIP_TYPE,
+        paymentStatuses:PAYMENT_STATUS,
+        fieldCatalog:[
+          {key:'full_name',label:'Name',group:'Person',default:true},
+          {key:'member_id',label:'Membership ID',group:'Membership',default:true},
+          {key:'membership_status',label:'Membership status',group:'Membership',default:true},
+          {key:'payment_status',label:'Payment status',group:'Membership',default:true},
+          {key:'email',label:'Email',group:'Contact',default:true},
+          {key:'mobile',label:'Mobile',group:'Contact',default:true},
+          {key:'membership_type',label:'Membership type',group:'Membership',default:false},
+          {key:'membership_season',label:'Season',group:'Membership',default:false},
+          {key:'membership_fee',label:'Fee',group:'Membership',default:false},
+          {key:'payment_date',label:'Payment date',group:'Membership',default:false},
+          {key:'date_of_birth',label:'Date of birth',group:'Personal',default:false,sensitive:true},
+          {key:'age',label:'Age',group:'Personal',default:false,sensitive:true},
+          {key:'age_group',label:'Age group',group:'Personal',default:false},
+          {key:'postal_code',label:'Postcode / Eircode',group:'Contact',default:false},
+          {key:'emergency_contact',label:'Emergency contact',group:'Emergency',default:false,sensitive:true},
+          {key:'emergency_mobile',label:'Emergency mobile',group:'Emergency',default:false,sensitive:true},
+          {key:'primary_sport',label:'Primary sport',group:'Sport',default:true},
+          {key:'skill_level',label:'Skill level',group:'Sport',default:false},
+          {key:'external_rating',label:'External rating',group:'Sport',default:false},
+          {key:'linked',label:'RallyHub account',group:'Access',default:true},
+          {key:'quality_count',label:'Data issues',group:'Data quality',default:true}
+        ],
+        savedViews:(views||[]).map((v:any)=>({id:v.id,name:v.name,visible_fields:v.visible_fields||[],filters_json:v.filters_json||'{}',sort_field:v.sort_field||'full_name',sort_direction:v.sort_direction||'asc',is_default:v.is_default===true}))
+      });
+    }
+
     if(action==='admin_connect_account'){
       const userId=clean(body.userId,180), personId=clean(body.personId,180);
       if(!userId||!personId) return Response.json({error:'userId and personId required'},{status:400});
