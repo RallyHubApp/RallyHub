@@ -80,6 +80,7 @@ function irelandDate(value) {
   } catch { return ''; }
 }
 function normaliseName(v=''){return String(v).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();}
+function isTrustedMemberSource(groupName='',clubName=''){const club=normaliseName(clubName);return !!club&&normaliseName(groupName)===`${club} members`;}
 function normaliseEmail(v=''){return String(v).trim().toLowerCase();}
 function normalisePhone(v=''){return String(v).replace(/\D/g,'').replace(/^3530?/,'353');}
 function collectResponseIds(event) {
@@ -520,10 +521,10 @@ Deno.serve(async (req) => {
     let tournament=null;if(tournamentId)tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0]||null;
     if(tournament&&user.role!=='admin'&&(tournament.tenant_id!==activeTenantId||tournament.host_club_id!==activeClubId))return Response.json({error:'Forbidden: tournament belongs to another tenant/club'},{status:403});
     const tenantId=tournament?.tenant_id||activeTenantId;const clubId=tournament?.host_club_id||activeClubId;
-    const existingPlayers=tenantId&&clubId?await base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId}):[];
+    const [existingPlayers,clubs]=tenantId&&clubId?await Promise.all([base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId}),base44.asServiceRole.entities.Club.filter({id:clubId,tenant_id:tenantId})]):[[],[]];
     const {accepted,waiting}=collectResponseIds(event);const memberMap=buildMemberMap(group);
     const sourceGroupName=String(group?.name||'').trim();
-    const sourceMembershipTrusted=normaliseName(sourceGroupName)==='clare pickleball members';
+    const sourceMembershipTrusted=isTrustedMemberSource(sourceGroupName,clubs?.[0]?.name||'');
     const attendees=[...accepted].map(id=>attendeeFromMember(id,memberMap[id])).filter(Boolean).map(attendee=>{const match=matchAttendee(attendee,existingPlayers);return {...attendee,existingPlayerId:match.matched?.id||null,existingPlayerName:match.matched?.full_name||null,duprRating:match.matched?.dupr_rating??null,status:match.status,candidates:match.candidates};});
     const playerDirectory=existingPlayers.map(p=>({id:p.id,name:p.full_name||'',email:p.email||'',phone:p.phone||''})).sort((a,b)=>a.name.localeCompare(b.name));
     return Response.json({attendees,playerDirectory,waitingListCount:waiting.size,sourceMembershipTrusted,sourceGroupName,event:{id:event.id,heading:event.heading,startTimestamp:authoritativeStart,location:event.location?.address||event.location?.feature||''}});
@@ -542,10 +543,10 @@ Deno.serve(async (req) => {
     if(!selectedDate)return Response.json({error:'Refusing roster sync: selected Spond event has no usable date/time.'},{status:409});
     const tenantId=tournament.tenant_id||activeTenantId; const clubId=tournament.host_club_id||activeClubId;
     if(!tenantId||!clubId)return Response.json({error:'Tournament is missing tenant/club ownership.'},{status:409});
-    const scopedPlayers=await base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId}); const scopedIds=new Set(scopedPlayers.map(p=>p.id));
+    const [scopedPlayers,clubs]=await Promise.all([base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId}),base44.asServiceRole.entities.Club.filter({id:clubId,tenant_id:tenantId})]); const scopedIds=new Set(scopedPlayers.map(p=>p.id));
     const {accepted,waiting}=collectResponseIds(event); const memberMap=buildMemberMap(group);
     const sourceGroupName=String(group?.name||'').trim();
-    const sourceMembershipTrusted=normaliseName(sourceGroupName)==='clare pickleball members';
+    const sourceMembershipTrusted=isTrustedMemberSource(sourceGroupName,clubs?.[0]?.name||'');
     const sourceAttendees=[...accepted].map(id=>attendeeFromMember(id,memberMap[id])).filter(Boolean);
     const clientChoices=Object.fromEntries((body.matchChoices||[]).map(x=>[String(x.spondId),String(x.playerId||'')]));
     const allowedGuests=new Set((body.allowGuestSpondIds||[]).map(x=>String(x)));
