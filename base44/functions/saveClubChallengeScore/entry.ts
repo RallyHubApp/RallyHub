@@ -57,7 +57,8 @@ Deno.serve(async (req) => {
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id: match.challenge_event_id });
     const event = events?.[0];
     if (!event) return Response.json({ error: 'Interclub Challenge event not found' }, { status: 404 });
-    if (['completed','archived'].includes(event.status)) return Response.json({ error: 'Finalised Interclub Challenge results are read-only.' }, { status: 409 });
+    if (event.status === 'archived') return Response.json({ error: 'Archived Interclub Challenge results are read-only.' }, { status: 409 });
+    if (event.status === 'completed' && !['completed','draw'].includes(match.status)) return Response.json({ error: 'A completed Interclub Challenge only allows correction of an existing saved result.' }, { status: 409 });
 
     let accessRole = user.role === 'admin' ? 'admin' : '';
     let canCorrect = user.role === 'admin';
@@ -104,7 +105,31 @@ Deno.serve(async (req) => {
     };
     const updated = await base44.asServiceRole.entities.ClubChallengeMatch.update(match.id, update);
 
+    let postCorrectionWinner = event.showcase_resolved_winner || 'none';
     if (isCorrection) {
+      const eventUpdate:any = { event_pack_stale:true };
+      if (event.status === 'completed') {
+        const eventMatches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300);
+        const effectiveMatches = (eventMatches || []).map((m:any) => m.id === updated.id ? updated : m);
+        const normal = effectiveMatches.filter((m:any) => !m.is_showcase && ['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status));
+        let pointsA = 0, pointsB = 0, scoredA = 0, scoredB = 0;
+        for (const m of normal) {
+          if (typeof m.score_a === 'number') scoredA += Number(m.score_a || 0);
+          if (typeof m.score_b === 'number') scoredB += Number(m.score_b || 0);
+          if (m.winner === 'club_a') { pointsA += Number(event.win_points ?? 2); pointsB += Number(event.loss_points ?? 0); }
+          else if (m.winner === 'club_b') { pointsB += Number(event.win_points ?? 2); pointsA += Number(event.loss_points ?? 0); }
+          else if (m.winner === 'draw') { pointsA += Number(event.draw_points ?? 1); pointsB += Number(event.draw_points ?? 1); }
+        }
+        if (pointsA !== pointsB) postCorrectionWinner = pointsA > pointsB ? 'club_a' : 'club_b';
+        else if (event.showcase_resolution_method === 'overall_draw') postCorrectionWinner = 'draw';
+        else if (event.showcase_resolution_method === 'metrics') postCorrectionWinner = scoredA === scoredB ? 'draw' : scoredA > scoredB ? 'club_a' : 'club_b';
+        else if (event.showcase_resolution_method === 'showcase_final') {
+          const showcase = effectiveMatches.find((m:any) => m.is_showcase && m.status === 'completed' && ['club_a','club_b'].includes(m.winner));
+          postCorrectionWinner = showcase?.winner || 'draw';
+        } else postCorrectionWinner = 'draw';
+        eventUpdate.showcase_resolved_winner = postCorrectionWinner;
+      }
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, eventUpdate);
       await base44.asServiceRole.entities.ClubChallengeAudit.create({
         tenant_id: match.tenant_id,
         challenge_event_id: match.challenge_event_id,
@@ -113,11 +138,12 @@ Deno.serve(async (req) => {
         user_id: user.id,
         occurred_at: now,
         old_value_json: JSON.stringify({ score_a: match.score_a, score_b: match.score_b, winner: match.winner, revision: currentRevision }),
-        new_value_json: JSON.stringify({ score_a: a, score_b: b, winner, revision: currentRevision + 1 }),
+        new_value_json: JSON.stringify({ score_a: a, score_b: b, winner, revision: currentRevision + 1, post_correction_event_winner:postCorrectionWinner }),
+        note:event.status === 'completed' ? 'Post-event result correction. Event remained completed; final winner was recalculated from authoritative match data.' : undefined,
       });
     }
 
-    return Response.json({ success: true, match: updated, correction: isCorrection });
+    return Response.json({ success: true, match: updated, correction: isCorrection, postCorrectionWinner:isCorrection ? postCorrectionWinner : undefined });
   } catch (error) {
     return Response.json({ error: error?.message || 'Unexpected scoring error' }, { status: 500 });
   }
