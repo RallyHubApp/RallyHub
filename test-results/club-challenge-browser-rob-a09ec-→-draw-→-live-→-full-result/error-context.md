@@ -12,18 +12,16 @@
 # Error details
 
 ```
-Error: expect(locator).toContainText(expected) failed
+Error: expect(locator).toBeVisible() failed
 
-Locator: getByTestId('cc-score-card-r1-c2')
-Expected substring: "Saved ·"
-Timeout: 1500ms
+Locator: getByText(/Proposed change:.*0 would be marked Not Played/)
+Expected: visible
+Timeout: 3000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toContainText" getByTestId('cc-score-card-r1-c2') with timeout 1500ms
-  - waiting for getByTestId('cc-score-card-r1-c2')
-    4 × locator resolved to <div data-dynamic-content="true" data-testid="cc-score-card-r1-c2" class="glass rounded-xl p-4 space-y-3" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:410:4">…</div>
-      - unexpected value "Court 2R1Clare BlueClub A Test 03 & Club A Test 04Clare GoldClub B Test 03 & Club B Test 04Saving…"
+  - Expect "toBeVisible" getByText(/Proposed change:.*0 would be marked Not Played/) with timeout 3000ms
+  - waiting for getByText(/Proposed change:.*0 would be marked Not Played/)
 
 ```
 
@@ -50,7 +48,7 @@ Call log:
   - button "6 Results"
   - text: Round 2/12 10:00
   - strong: 0/4
-  - text: current scores saved 2 earlier scores pending
+  - text: current scores saved
   - button "Audio ON":
     - img
     - text: Audio ON
@@ -68,15 +66,15 @@ Call log:
   - text: Round 2 ready · 4 courts · 16 players resting · 3 Round 1 scores still to enter
   - paragraph: Finish-on-Time Guide
   - text: RECOVERY NEEDED
-  - paragraph: Booked finish 09:09 AM · projected finish 10:10 AM · started 91 min late
-  - paragraph: 62 min over
+  - paragraph: Booked finish 09:11 AM · projected finish 10:11 AM · started 91 min late
+  - paragraph: 61 min over
   - paragraph: Recalculates throughout the event
   - paragraph: Recommended recovery
   - paragraph: Use 1-minute changeovers (saves up to 10 min) · Shorten the remaining break to 10 min (saves 10 min) · Reduce remaining rounds to about 6 min · Treat the Showcase Final as optional unless time is recovered
   - paragraph: Live Event
   - paragraph: Round 2 of 12
-  - paragraph: Clare Blue 4 – 0 Clare Gold
-  - text: 2W 0D 0W
+  - paragraph: Clare Blue 8 – 0 Clare Gold
+  - text: 4W 0D 0W
   - paragraph: Round at a Glance
   - paragraph: On court, resting and up next — all in one place.
   - text: R2
@@ -135,24 +133,6 @@ Call log:
   - button "Changeover" [disabled]
   - button "+1 minute" [disabled]
   - group: Round options
-  - paragraph: Earlier scores still to enter
-  - paragraph: Keep the current round moving. Enter these results here as they arrive from the courts.
-  - text: 2 pending Court 3 R1
-  - paragraph: Clare Blue
-  - paragraph: Club A Test 05 & Club A Test 06
-  - textbox "Clare Blue score"
-  - paragraph: Clare Gold
-  - paragraph: Club B Test 05 & Club B Test 06
-  - textbox "Clare Gold score"
-  - button "Save Result" [disabled]
-  - text: Court 4 R1
-  - paragraph: Clare Blue
-  - paragraph: Club A Test 07 & Club A Test 08
-  - textbox "Clare Blue score"
-  - paragraph: Clare Gold
-  - paragraph: Club B Test 07 & Club B Test 08
-  - textbox "Clare Gold score"
-  - button "Save Result" [disabled]
   - paragraph: Round 2 Scores
   - paragraph: Enter each court result as it comes in — you do not need to wait for the timer to finish.
   - text: 0/4 saved Court 1 R2
@@ -203,22 +183,35 @@ Call log:
     - paragraph: Court & Time Changes
     - paragraph: Use this if you lose or gain a court, or if less event time remains than planned.
     - img
+    - paragraph: Preview the impact before changing anything
+    - paragraph: Enter the courts actually available now and the minutes remaining. RallyHub will show how many future matches still fit, which matches would move, and whether any would have to be marked Not Played. Completed results are never changed.
+    - text: Courts available now
+    - spinbutton "4": "3"
+    - text: Minutes remaining
+    - spinbutton "e.g. 60": "180"
+    - button "Preview Impact"
+    - paragraph:
+      - strong: "Proposed change:"
+      - text: 33 future matches can still be played · 30 move to a different round/court · 11 would be marked Not Played.
+    - paragraph: Nothing changes until you press Confirm Changes. Completed results remain locked, and the existing Event Pack will be marked out of date.
+    - button "Confirm Changes"
+    - button "Cancel"
 - region "Notifications alt+T":
   - list:
+    - listitem:
+      - img
+      - text: 33 future matches fit within the approved 12-round event; 11 would be marked Not Played. Review before confirming.
     - listitem:
       - img
       - text: Score saved
     - listitem:
       - img
-      - text: Round 2 ready · 4 courts · 16 players resting · 3 Round 1 scores still to enter
+      - text: Score saved
 ```
 
 # Test source
 
 ```ts
-  191 |     }
-  192 | 
-  193 |     if (name === 'manageClubChallengePublicLinks') {
   194 |       return {success:true,displayToken:'e2e-display-token',votingToken:'e2e-vote-token',voterCodes:model.participants.map(p=>({participantId:p.id,displayName:p.display_name,code:p.guest_access_token||'TESTCODE'}))};
   195 |     }
   196 | 
@@ -316,11 +309,11 @@ Call log:
   288 |   model.event.timer_state_json=JSON.stringify({phase:'play',running:false,remaining_seconds:0,started_at:null,round:1});model.event.timer_revision=Number(model.event.timer_revision||0)+1;
   289 |   await page.reload();await expect(page.getByTestId('cc-root')).toBeVisible();await page.getByTestId('cc-tab-live').click();await expect(page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:'Prepare Round 2 · 3 scores pending'})).toBeVisible({timeout:1800});
   290 |   started=Date.now();await page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:'Prepare Round 2 · 3 scores pending'}).click();await expect(page.getByText('Preparing Round 2… command sent')).toBeVisible({timeout:300});metric(report,'round_advance_ack_ms',Date.now()-started,350);await expect(page.getByText('Round 2/12',{exact:true})).toBeVisible({timeout:1800});await expect(page.getByText('Earlier scores still to enter')).toBeVisible();expect(model.calls.filter(c=>c.name==='updateClubChallengeRound').at(-1)?.body.allowPendingScores).toBe(true);report.next_round_before_scores=true;
-> 291 |   for(const court of [2,3,4]){await page.getByTestId(`cc-score-r1-c${court}-a`).fill('11');await page.getByTestId(`cc-score-r1-c${court}-b`).fill('7');await page.getByTestId(`cc-save-score-r1-c${court}`).click();await expect(page.getByTestId(`cc-score-card-r1-c${court}`)).toContainText('Saved ·',{timeout:1500});}
-      |                                                                                                                                                                                                                                                                                  ^ Error: expect(locator).toContainText(expected) failed
+  291 |   for(const court of [2,3,4]){await page.getByTestId(`cc-score-r1-c${court}-a`).fill('11');await page.getByTestId(`cc-score-r1-c${court}-b`).fill('7');await page.getByTestId(`cc-save-score-r1-c${court}`).click();await expect(page.getByTestId(`cc-score-card-r1-c${court}`)).toBeHidden({timeout:1800});}
   292 |   await expect(page.getByText('Earlier scores still to enter')).toBeHidden({timeout:1800});await expect(page.getByText('ready',{exact:true})).toBeVisible();await expect(page.getByText('10:00').first()).toBeVisible();await expect(page.getByText('0/4').first()).toBeVisible();report.pending_scores_cleared_during_next_round=true;report.round_transition_timer_reset=true;
   293 | 
-  294 |   await page.locator('#cc-court-time-controls > summary').click();await page.getByTestId('cc-courts-now').fill('3');await page.getByTestId('cc-minutes-remaining').fill('180');await page.getByTestId('cc-preview-schedule-change').click();await expect(page.getByText(/Proposed change:.*0 would be marked Not Played/)).toBeVisible();const scheduleBefore=model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length;started=Date.now();await page.getByTestId('cc-confirm-schedule-change').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Applying court & time changes… command sent')).toBeVisible({timeout:300});metric(report,'schedule_change_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-schedule-change-status')).toContainText('Schedule updated:',{timeout:1800});expect(model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length-scheduleBefore).toBe(1);expect(model.event.courts).toBe(3);expect(model.event.event_pack_stale).toBe(true);report.schedule_change_double_tap_calls=1;
+> 294 |   await page.locator('#cc-court-time-controls > summary').click();await page.getByTestId('cc-courts-now').fill('3');await page.getByTestId('cc-minutes-remaining').fill('180');await page.getByTestId('cc-preview-schedule-change').click();await expect(page.getByText(/Proposed change:.*0 would be marked Not Played/)).toBeVisible();const scheduleBefore=model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length;started=Date.now();await page.getByTestId('cc-confirm-schedule-change').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Applying court & time changes… command sent')).toBeVisible({timeout:300});metric(report,'schedule_change_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-schedule-change-status')).toContainText('Schedule updated:',{timeout:1800});expect(model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length-scheduleBefore).toBe(1);expect(model.event.courts).toBe(3);expect(model.event.event_pack_stale).toBe(true);report.schedule_change_double_tap_calls=1;
+      |                                                                                                                                                                                                                                                                                                                            ^ Error: expect(locator).toBeVisible() failed
   295 | 
   296 |   await page.getByRole('button',{name:'Live Event View'}).evaluate(el=>el.click());await expect(page.getByText('On Court Now')).toBeVisible();await expect(page.getByText('Resting This Round')).toBeVisible();await expect(page.getByText('Up Next')).toBeVisible();await expect(page.getByRole('button',{name:'Exit Display'})).toBeVisible();report.internal_hall_display=true;await page.getByRole('button',{name:'Exit Display'}).evaluate(el=>el.click());await expect(page.getByTestId('cc-tab-simulator')).toBeVisible({timeout:1500});
   297 | 
@@ -398,7 +391,7 @@ Call log:
   369 |   await page.goto('/e2e/clubChallengeHarness.html');await page.getByTestId('cc-tab-live').click();await expect(page.getByText('Round at a Glance')).toBeVisible();await expect(page.getByText('RECOVERY NEEDED')).toBeVisible();
   370 |   await page.waitForTimeout(400);expect((await page.evaluate(()=>window.__ccDevice.speech)).length).toBe(0);
   371 |   await page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:/^Start 20-min Break/}).click();await expect(page.getByText('Break now',{exact:false}).first()).toBeVisible({timeout:1600});await expect(page.getByText('20:00').first()).toBeVisible();
-  372 |   const fiveButtons=page.getByRole('button',{name:'5 min'});await expect(fiveButtons).toHaveCount(4);await fiveButtons.nth(0).click();await expect(page.getByText('15:00').first()).toBeVisible({timeout:1200});await fiveButtons.nth(1).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(1200);
+  372 |   const fiveButtons=page.getByRole('button',{name:'5 min'});await expect(fiveButtons).toHaveCount(4);await fiveButtons.nth(0).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(900);await fiveButtons.nth(1).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(1200);
   373 |   await page.getByRole('button',{name:/End Break Early/}).first().click();await expect(page.getByText('Round 7/12',{exact:true})).toBeVisible({timeout:1600});await expect(page.getByText('Up next · Round 8')).toBeVisible();await expectNoHorizontalOverflow(page);
   374 |   const report={historic_refresh_silent:true,recovery_guide:true,break_minus:true,break_plus:true,end_break_to_next_round:true};console.log(`LIVE RECOVERY ROBOT REPORT\n${JSON.stringify(report,null,2)}`);await testInfo.attach('live-recovery-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
   375 | });

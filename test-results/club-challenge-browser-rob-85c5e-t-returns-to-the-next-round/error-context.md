@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('15:00').first()
+Locator: getByText('Up next · Round 8')
 Expected: visible
-Timeout: 1200ms
+Timeout: 3000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('15:00').first() with timeout 1200ms
-  - waiting for getByText('15:00').first()
+  - Expect "toBeVisible" getByText('Up next · Round 8') with timeout 3000ms
+  - waiting for getByText('Up next · Round 8')
 
 ```
 
@@ -46,9 +46,9 @@ Call log:
   - button "4 Live Event"
   - button "5 Simulator"
   - button "6 Results"
-  - text: BREAK 14:59
+  - text: Round 7/12 10:00
   - strong: 0/4
-  - text: current scores saved
+  - text: current scores saved 4 earlier scores pending
   - button "Audio ON":
     - img
     - text: Audio ON
@@ -58,31 +58,24 @@ Call log:
   - button "Reserve / Player Change":
     - img
     - text: Reserve / Player Change
-  - button "End Break → R7"
+  - button "Start Round 7":
+    - img
+    - text: Start Round 7
+  - button "Round in play" [disabled]
   - img
-  - text: Round 6 play finished ✓ · 20-minute break started · 4 scores still to enter
+  - text: Break ended early · Round 7 ready
   - paragraph: Finish-on-Time Guide
-  - text: TIGHT
-  - paragraph: Booked finish 09:10 AM · projected finish 09:07 AM · started 90 min late
-  - paragraph: 2 min spare
+  - text: ON TRACK
+  - paragraph: Booked finish 09:11 AM · projected finish 08:52 AM · started 91 min late
+  - paragraph: 18 min spare
   - paragraph: Recalculates throughout the event
   - paragraph: Live Event
-  - paragraph: Round 6 of 12
+  - paragraph: Round 7 of 12
   - paragraph: Clare Blue 0 – 0 Clare Gold
   - text: 0W 0D 0W
-  - paragraph: Break now
-  - paragraph: 14:59
-  - paragraph: Round 7 is waiting. The host can shorten, extend or end the break.
-  - button "5 min":
-    - img
-    - text: 5 min
-  - button "5 min":
-    - img
-    - text: 5 min
-  - button "End Break Early → Round 7"
   - paragraph: Round at a Glance
   - paragraph: On court, resting and up next — all in one place.
-  - text: R6
+  - text: R7
   - paragraph: Court 1 · NOW
   - paragraph: Live Player 01 & Live Player 02
   - paragraph: vs
@@ -104,43 +97,26 @@ Call log:
   - text: Live Player 09 Live Player 10 Live Player 11 Live Player 12 Live Player 13 Live Player 14 Live Player 15 Live Player 16
   - paragraph: Clare Gold
   - text: Live Player 25 Live Player 26 Live Player 27 Live Player 28 Live Player 29 Live Player 30 Live Player 31 Live Player 32
-  - paragraph: Up next · Round 7
-  - paragraph: Court 1 · NEXT
-  - paragraph: Live Player 01 & Live Player 02
-  - paragraph: vs
-  - paragraph: Live Player 17 & Live Player 18
-  - paragraph: Court 2 · NEXT
-  - paragraph: Live Player 03 & Live Player 04
-  - paragraph: vs
-  - paragraph: Live Player 19 & Live Player 20
-  - paragraph: Court 3 · NEXT
-  - paragraph: Live Player 05 & Live Player 06
-  - paragraph: vs
-  - paragraph: Live Player 21 & Live Player 22
-  - paragraph: Court 4 · NEXT
-  - paragraph: Live Player 07 & Live Player 08
-  - paragraph: vs
-  - paragraph: Live Player 23 & Live Player 24
-  - paragraph: Break Timer
-  - paragraph: 20-minute scheduled break · Round 7 waits
-  - text: break
-  - paragraph: 14:59
-  - paragraph: Host break controls
-  - paragraph: Shorten, extend or end the break to keep the event on time.
-  - button "5 min":
+  - paragraph: Round Timer
+  - paragraph: Round 7 of 12
+  - text: ready
+  - paragraph: 10:00
+  - paragraph: This round
+  - paragraph: Adjust before play or while paused.
+  - button "Reduce this round by one minute":
     - img
-    - text: 5 min
-  - button "5 min":
+  - paragraph: 10:00
+  - button "Add one minute to this round":
     - img
-    - text: 5 min
-  - button "End Break Early"
-  - button "Pause"
+  - button "Start Play":
+    - img
+    - text: Start Play
   - button "Changeover" [disabled]
-  - button "End Break → Round 7"
+  - button "+1 minute" [disabled]
   - group: Round options
-  - paragraph: Round 6 Scores
-  - paragraph: Enter each court result as it comes in — you do not need to wait for the timer to finish.
-  - text: 0/4 saved Court 1 R6
+  - paragraph: Earlier scores still to enter
+  - paragraph: Keep the current round moving. Enter these results here as they arrive from the courts.
+  - text: 4 pending Court 1 R6
   - paragraph: Clare Blue
   - paragraph: Live Player 01 & Live Player 02
   - textbox "Clare Blue score"
@@ -172,9 +148,43 @@ Call log:
   - paragraph: Live Player 23 & Live Player 24
   - textbox "Clare Gold score"
   - button "Save Result" [disabled]
+  - paragraph: Round 7 Scores
+  - paragraph: Enter each court result as it comes in — you do not need to wait for the timer to finish.
+  - text: 0/4 saved Court 1 R7
+  - paragraph: Clare Blue
+  - paragraph: Live Player 01 & Live Player 02
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Live Player 17 & Live Player 18
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - text: Court 2 R7
+  - paragraph: Clare Blue
+  - paragraph: Live Player 03 & Live Player 04
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Live Player 19 & Live Player 20
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - text: Court 3 R7
+  - paragraph: Clare Blue
+  - paragraph: Live Player 05 & Live Player 06
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Live Player 21 & Live Player 22
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
+  - text: Court 4 R7
+  - paragraph: Clare Blue
+  - paragraph: Live Player 07 & Live Player 08
+  - textbox "Clare Blue score"
+  - paragraph: Clare Gold
+  - paragraph: Live Player 23 & Live Player 24
+  - textbox "Clare Gold score"
+  - button "Save Result" [disabled]
   - img
-  - text: Round 6 play finished ✓ · 20-minute break started · 4 scores still to enter
-  - button "Break in progress · End Early & Prepare Round 7"
+  - text: Break ended early · Round 7 ready
+  - button "Round in play" [disabled]
   - group:
     - paragraph: PA & Announcements
     - paragraph: Open only when you need the microphone or an announcement.
@@ -192,16 +202,15 @@ Call log:
   - list:
     - listitem:
       - img
-      - text: 5 minutes removed from the break.
+      - text: Break ended early · Round 7 ready
     - listitem:
       - img
-      - text: Round 6 play finished ✓ · 20-minute break started · 4 scores still to enter
+      - text: 5 minutes added to the break.
 ```
 
 # Test source
 
 ```ts
-  272 | 
   273 |   const startBefore=model.calls.filter(c=>c.name==='manageClubChallengeEvent'&&c.body.action==='start').length;
   274 |   started=Date.now();await page.getByTestId('cc-start-event').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Starting Interclub Challenge… command sent')).toBeVisible({timeout:300});metric(report,'event_start_ack_ms',Date.now()-started,250);await expect(page.getByText('Round at a Glance')).toBeVisible({timeout:2000});metric(report,'event_start_to_live_ms',Date.now()-started,1800);expect(model.calls.filter(c=>c.name==='manageClubChallengeEvent'&&c.body.action==='start').length-startBefore).toBe(1);report.start_double_tap_calls=1;
   275 |   await expect(page.getByText('Resting this round')).toBeVisible();await expect(page.getByText('Up next · Round 2')).toBeVisible();await expect(page.getByText('scores saved')).toBeVisible();await expect(page.getByText('ready',{exact:true})).toBeVisible();await expect(page.getByText('10:00').first()).toBeVisible();await expect(page.getByRole('button',{name:'Changeover',exact:true})).toBeDisabled();await expect(page.getByText('Finish-on-Time Guide')).toBeVisible();await expect(page.getByText('RECOVERY NEEDED')).toBeVisible();await expectNoHorizontalOverflow(page);report.initial_timer_ready=true;report.finish_on_time_recovery_visible=true;
@@ -220,7 +229,7 @@ Call log:
   288 |   model.event.timer_state_json=JSON.stringify({phase:'play',running:false,remaining_seconds:0,started_at:null,round:1});model.event.timer_revision=Number(model.event.timer_revision||0)+1;
   289 |   await page.reload();await expect(page.getByTestId('cc-root')).toBeVisible();await page.getByTestId('cc-tab-live').click();await expect(page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:'Prepare Round 2 · 3 scores pending'})).toBeVisible({timeout:1800});
   290 |   started=Date.now();await page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:'Prepare Round 2 · 3 scores pending'}).click();await expect(page.getByText('Preparing Round 2… command sent')).toBeVisible({timeout:300});metric(report,'round_advance_ack_ms',Date.now()-started,350);await expect(page.getByText('Round 2/12',{exact:true})).toBeVisible({timeout:1800});await expect(page.getByText('Earlier scores still to enter')).toBeVisible();expect(model.calls.filter(c=>c.name==='updateClubChallengeRound').at(-1)?.body.allowPendingScores).toBe(true);report.next_round_before_scores=true;
-  291 |   for(const court of [2,3,4]){await page.getByTestId(`cc-score-r1-c${court}-a`).fill('11');await page.getByTestId(`cc-score-r1-c${court}-b`).fill('7');await page.getByTestId(`cc-save-score-r1-c${court}`).click();await expect(page.getByTestId(`cc-score-card-r1-c${court}`)).toContainText('Saved ·',{timeout:1500});}
+  291 |   for(const court of [2,3,4]){await page.getByTestId(`cc-score-r1-c${court}-a`).fill('11');await page.getByTestId(`cc-score-r1-c${court}-b`).fill('7');await page.getByTestId(`cc-save-score-r1-c${court}`).click();await expect(page.getByTestId(`cc-score-card-r1-c${court}`)).toBeHidden({timeout:1800});}
   292 |   await expect(page.getByText('Earlier scores still to enter')).toBeHidden({timeout:1800});await expect(page.getByText('ready',{exact:true})).toBeVisible();await expect(page.getByText('10:00').first()).toBeVisible();await expect(page.getByText('0/4').first()).toBeVisible();report.pending_scores_cleared_during_next_round=true;report.round_transition_timer_reset=true;
   293 | 
   294 |   await page.locator('#cc-court-time-controls > summary').click();await page.getByTestId('cc-courts-now').fill('3');await page.getByTestId('cc-minutes-remaining').fill('180');await page.getByTestId('cc-preview-schedule-change').click();await expect(page.getByText(/Proposed change:.*0 would be marked Not Played/)).toBeVisible();const scheduleBefore=model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length;started=Date.now();await page.getByTestId('cc-confirm-schedule-change').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Applying court & time changes… command sent')).toBeVisible({timeout:300});metric(report,'schedule_change_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-schedule-change-status')).toContainText('Schedule updated:',{timeout:1800});expect(model.calls.filter(c=>c.name==='updateClubChallengeSchedule').length-scheduleBefore).toBe(1);expect(model.event.courts).toBe(3);expect(model.event.event_pack_stale).toBe(true);report.schedule_change_double_tap_calls=1;
@@ -301,9 +310,9 @@ Call log:
   369 |   await page.goto('/e2e/clubChallengeHarness.html');await page.getByTestId('cc-tab-live').click();await expect(page.getByText('Round at a Glance')).toBeVisible();await expect(page.getByText('RECOVERY NEEDED')).toBeVisible();
   370 |   await page.waitForTimeout(400);expect((await page.evaluate(()=>window.__ccDevice.speech)).length).toBe(0);
   371 |   await page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:/^Start 20-min Break/}).click();await expect(page.getByText('Break now',{exact:false}).first()).toBeVisible({timeout:1600});await expect(page.getByText('20:00').first()).toBeVisible();
-> 372 |   const fiveButtons=page.getByRole('button',{name:'5 min'});await expect(fiveButtons).toHaveCount(4);await fiveButtons.nth(0).click();await expect(page.getByText('15:00').first()).toBeVisible({timeout:1200});await fiveButtons.nth(1).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(1200);
-      |                                                                                                                                                                                     ^ Error: expect(locator).toBeVisible() failed
-  373 |   await page.getByRole('button',{name:/End Break Early/}).first().click();await expect(page.getByText('Round 7/12',{exact:true})).toBeVisible({timeout:1600});await expect(page.getByText('Up next · Round 8')).toBeVisible();await expectNoHorizontalOverflow(page);
+  372 |   const fiveButtons=page.getByRole('button',{name:'5 min'});await expect(fiveButtons).toHaveCount(4);await fiveButtons.nth(0).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(900);await fiveButtons.nth(1).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(1200);
+> 373 |   await page.getByRole('button',{name:/End Break Early/}).first().click();await expect(page.getByText('Round 7/12',{exact:true})).toBeVisible({timeout:1600});await expect(page.getByText('Up next · Round 8')).toBeVisible();await expectNoHorizontalOverflow(page);
+      |                                                                                                                                                                                                                 ^ Error: expect(locator).toBeVisible() failed
   374 |   const report={historic_refresh_silent:true,recovery_guide:true,break_minus:true,break_plus:true,end_break_to_next_round:true};console.log(`LIVE RECOVERY ROBOT REPORT\n${JSON.stringify(report,null,2)}`);await testInfo.attach('live-recovery-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
   375 | });
 ```
