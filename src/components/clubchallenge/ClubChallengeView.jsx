@@ -2829,7 +2829,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                 <p className="text-sm font-semibold">{awardTitle}</p>
                 <p className="text-xs text-muted-foreground">One winner from each team. At the end choose either Highest Scoring Players or a Player Vote.</p>
               </div>
-              <Badge variant="outline">{effectivePotStatus}</Badge>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">{effectivePotStatus}</Badge>
+                {canManagePot && event.pot_status === 'open' && <Button data-testid="cc-close-pot-vote" size="sm" variant="destructive" onClick={() => setPotStatus('closed')}>Close Voting</Button>}
+              </div>
             </div>
 
             {canManagePot && effectivePotStatus === 'closed' && <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-3">
@@ -2845,9 +2848,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             {event.pot_status === 'open' && <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div><p className="text-xs uppercase tracking-wider font-bold text-primary">Voting open</p><p className="text-2xl font-black tabular-nums mt-1">{potCountdownText}</p></div>
-                {canManageEvent && <div className="flex flex-wrap gap-2">
+                {canManagePot && <div className="flex flex-wrap gap-2">
                   {event.pot_vote_closes_at && <Button variant="outline" onClick={extendPotVoting}>+5 Minutes</Button>}
-                  <Button variant="outline" onClick={() => setPotStatus('closed')}>Close Now</Button>
+                  <Button variant="destructive" onClick={() => setPotStatus('closed')}>Close Voting Now</Button>
                 </div>}
               </div>
             </div>}
