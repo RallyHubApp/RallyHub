@@ -19,7 +19,8 @@ function copy(text,label='Copied'){
   navigator.clipboard.writeText(text).then(()=>toast.success(label)).catch(()=>toast.error('Could not copy'));
 }
 function shareWhatsApp(url,session){
-  const msg=`Clare Pickleball guest session\n${niceDate(session.sessionDate)} · ${session.startTime}\n${session.venueName}\n\nPlease complete your guest booking, waiver and payment here:\n${url}`;
+  const action=session.paymentMethod==='cash'?'Reserve your place':`Book & pay €${Number(session.feeAmount||0).toFixed(2)}`;
+  const msg=`Clare Pickleball guest session\n${niceDate(session.sessionDate)} · ${session.startTime}\n${session.venueName}\n\n${action}:\n${url}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
 }
 
@@ -68,11 +69,27 @@ export default function GuestBookings(){
       if(res.data?.error)throw new Error(res.data.error);
       await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
       const s=res.data.session;
-      const url=`${window.location.origin}/guest-session/${s.token}`;
+      const url=`${window.location.origin}/book/${s.token}`;
       copy(url,'Guest booking link created and copied');
       toast.success('Guest session created');
       setSessionDate('');setCapacity('');setFeeAmount('');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not create guest session')}
+    finally{setBusy('')}
+  };
+
+  const emailInvite=async(session)=>{
+    const recipientEmail=window.prompt('Guest email address');
+    if(recipientEmail===null)return;
+    if(!recipientEmail.trim()){toast.error('Enter the guest email address');return}
+    const recipientName=window.prompt('Guest first name or full name (optional)')||'';
+    setBusy(`invite-${session.id}`);
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{
+        action:'admin_send_invite',sessionId:session.id,recipientEmail:recipientEmail.trim(),recipientName:recipientName.trim(),
+      });
+      if(res.data?.error)throw new Error(res.data.error);
+      toast.success('Clare Pickleball booking email sent');
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not send booking email')}
     finally{setBusy('')}
   };
 
@@ -199,7 +216,7 @@ export default function GuestBookings(){
     <section className="space-y-3">
       <div><h2 className="text-lg font-black">Guest sessions</h2><p className="mt-1 text-xs text-muted-foreground">Each link is tied to one date/time, so you always know exactly where the guest is booked.</p></div>
       {sessions.length===0?<div className="glass rounded-2xl p-6 text-sm text-muted-foreground">No guest booking links have been created yet.</div>:sessions.map(s=>{
-        const url=`${window.location.origin}/guest-session/${s.token}`;
+        const url=`${window.location.origin}/book/${s.token}`;
         const confirmed=(s.bookings||[]).filter(b=>['confirmed','cash_due'].includes(b.bookingStatus)).length;
         return <div key={s.id} className="glass rounded-2xl p-5">
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
@@ -215,6 +232,7 @@ export default function GuestBookings(){
             </div>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" onClick={()=>copy(url,'Booking link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy link</Button>
+              <Button size="sm" variant="outline" disabled={busy===`invite-${s.id}`} onClick={()=>emailInvite(s)}>{busy===`invite-${s.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Email booking link</Button>
               <Button size="sm" variant="outline" onClick={()=>shareWhatsApp(url,s)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
               <a href={s.mapsUrl} target="_blank" rel="noreferrer"><Button size="sm" variant="outline"><MapPin className="mr-1.5 h-3.5 w-3.5"/>Map</Button></a>
               {s.active&&<Button size="sm" variant="ghost" className="text-destructive" disabled={busy===`close-${s.id}`} onClick={()=>closeSession(s.id)}><XCircle className="mr-1.5 h-3.5 w-3.5"/>Close link</Button>}
