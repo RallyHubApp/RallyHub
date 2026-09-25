@@ -151,17 +151,28 @@ export default function MembershipConsole() {
     setEditMembership({ ...detail.membership, membership_category: detail.relationship?.membership_category || '' });
     setEditSports((meta.sports || []).map(sport => {
       const existing = (detail.sportProfiles || []).find(profile => String(profile.sport_id) === String(sport.id));
-      return existing ? { ...existing } : {
+      const ratingMeta = parseJson(existing?.rating_metadata_json, {});
+      return existing ? {
+        ...existing,
+        rating_system: existing.rating_system || sport.settings?.rating?.system || '',
+        external_rating_id: existing.external_rating_id || existing.dupr_id || '',
+        rating_value: existing.rating_value ?? existing.dupr_doubles_rating ?? existing.dupr_rating ?? '',
+        rating_metadata: {
+          ...ratingMeta,
+          ...(ratingMeta.singles === undefined && existing.dupr_singles_rating !== undefined ? { singles: existing.dupr_singles_rating } : {}),
+          ...(ratingMeta.doubles === undefined && existing.dupr_doubles_rating !== undefined ? { doubles: existing.dupr_doubles_rating } : {})
+        }
+      } : {
         sport_id: sport.id,
         status: 'active',
         experience_type: 'current',
         skill_level: '',
         playing_category: '',
         preferred_side: '',
-        dupr_id: '',
-        dupr_rating: '',
-        dupr_singles_rating: '',
-        dupr_doubles_rating: '',
+        rating_system: sport.settings?.rating?.system || '',
+        external_rating_id: '',
+        rating_value: '',
+        rating_metadata: {},
         notes: ''
       };
     }));
@@ -556,8 +567,15 @@ export default function MembershipConsole() {
                         <div className="flex items-center justify-between"><p className="font-semibold">{sport?.name || profile.sport || 'Sport'}</p><Badge variant="outline">{label(profile.status)}</Badge></div>
                         <div className="grid sm:grid-cols-3 gap-3 mt-3">
                           <Info title="Skill level" value={profile.skill_level} /><Info title="Playing category" value={profile.playing_category} />
-                          <Info title="Rating" value={profile.dupr_doubles_rating ?? profile.dupr_rating} /><Info title="Rating ID" value={profile.dupr_id} />
-                          <Info title="Singles rating" value={profile.dupr_singles_rating} /><Info title="Doubles rating" value={profile.dupr_doubles_rating} />
+                          {sport?.settings?.rating?.enabled !== false ? <>
+                            <Info title={sport?.settings?.rating?.label || profile.rating_system || 'External rating'} value={profile.rating_value ?? profile.dupr_doubles_rating ?? profile.dupr_rating} />
+                            <Info title={sport?.settings?.rating?.id_label || 'Rating ID'} value={profile.external_rating_id || profile.dupr_id} />
+                            {(sport?.settings?.rating?.variants || []).map(variant => {
+                              const metadata = parseJson(profile.rating_metadata_json, {});
+                              const legacyValue = variant.key === 'singles' ? profile.dupr_singles_rating : variant.key === 'doubles' ? profile.dupr_doubles_rating : undefined;
+                              return <Info key={variant.key} title={variant.label || label(variant.key)} value={metadata?.[variant.key] ?? legacyValue} />;
+                            })}
+                          </> : null}
                         </div>
                       </div>;
                     })}
@@ -639,10 +657,12 @@ export default function MembershipConsole() {
                     <div><Label>Skill level</Label><Input className="mt-1" value={profile.skill_level || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, skill_level: event.target.value } : item))} /></div>
                     <div><Label>Playing category</Label><Input className="mt-1" value={profile.playing_category || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, playing_category: event.target.value } : item))} /></div>
                     <div><Label>Preferred side / position</Label><Input className="mt-1" value={profile.preferred_side || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, preferred_side: event.target.value } : item))} /></div>
-                    <div><Label>External rating ID</Label><Input className="mt-1" value={profile.dupr_id || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, dupr_id: event.target.value } : item))} /></div>
-                    <div><Label>Rating</Label><Input type="number" step="0.01" className="mt-1" value={profile.dupr_rating ?? ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, dupr_rating: event.target.value } : item))} /></div>
-                    <div><Label>Singles rating</Label><Input type="number" step="0.01" className="mt-1" value={profile.dupr_singles_rating ?? ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, dupr_singles_rating: event.target.value } : item))} /></div>
-                    <div><Label>Doubles rating</Label><Input type="number" step="0.01" className="mt-1" value={profile.dupr_doubles_rating ?? ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, dupr_doubles_rating: event.target.value } : item))} /></div>
+                    {sport?.settings?.rating?.enabled !== false ? <>
+                      <div><Label>Rating system</Label><Input className="mt-1" value={profile.rating_system || sport?.settings?.rating?.system || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, rating_system: event.target.value } : item))} /></div>
+                      <div><Label>{sport?.settings?.rating?.id_label || 'External rating ID'}</Label><Input className="mt-1" value={profile.external_rating_id || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, external_rating_id: event.target.value } : item))} /></div>
+                      <div><Label>{sport?.settings?.rating?.label || 'External rating'}</Label><Input type="number" step="0.01" className="mt-1" value={profile.rating_value ?? ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, rating_value: event.target.value } : item))} /></div>
+                      {(sport?.settings?.rating?.variants || []).map(variant => <div key={variant.key}><Label>{variant.label || label(variant.key)}</Label><Input type="number" step="0.01" className="mt-1" value={profile.rating_metadata?.[variant.key] ?? ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, rating_metadata: { ...(item.rating_metadata || {}), [variant.key]: event.target.value } } : item))} /></div>)}
+                    </> : null}
                     <div className="sm:col-span-2 lg:col-span-3"><Label>Sport notes</Label><Textarea className="mt-1" value={profile.notes || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, notes: event.target.value } : item))} /></div>
                   </div>
                 </div>;
