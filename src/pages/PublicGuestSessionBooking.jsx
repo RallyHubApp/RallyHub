@@ -215,7 +215,7 @@ export default function PublicGuestSessionBooking(){
         <Button type="submit" className="w-full min-h-12 text-base font-bold" disabled={submitting||checkingPayment||!form.photoVideoConsent}>
           {submitting?<><RefreshCw className="mr-2 h-4 w-4 animate-spin"/>Saving…</>:session.paymentMethod==='cash'?`Reserve Place · €${Number(session.feeAmount||0).toFixed(2)} Cash`:`Continue to SumUp · €${Number(session.feeAmount||0).toFixed(2)}`}
         </Button>
-        <p className="pb-8 text-center text-[11px] text-muted-foreground">Your place is confirmed after payment for online-payment sessions. Corofin cash bookings are reserved when this form is completed.</p>
+        <p className="pb-8 text-center text-[11px] text-muted-foreground">Your place is confirmed after payment for online-payment sessions. For cash-on-arrival sessions, your place is reserved when this form is completed.</p>
       </form>
     </div>
   </div>;
