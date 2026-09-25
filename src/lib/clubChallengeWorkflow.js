@@ -21,6 +21,7 @@ export function createChallengeEventDraft({ tournament, hostClub, opponent, setu
     club_b_secondary_colour: opponent.secondary_colour || '',
     courts: Number(setup.courts),
     available_minutes: Number(setup.availableMinutes),
+    scheduled_start_time: String(setup.scheduledStartTime || '').trim(),
     play_minutes: Number(setup.playMinutes),
     changeover_minutes: Number(setup.changeoverMinutes || 0),
     include_break: !!setup.includeBreak,
