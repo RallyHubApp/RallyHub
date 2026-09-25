@@ -14,6 +14,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import { getRallyHubPaLevel, listRallyHubMicrophones, playRallyHubSignal, primeRallyHubHallSpeech, setRallyHubPaGain, speakRallyHubHall, startRallyHubPA, stopAllRallyHubAudio, stopRallyHubPA, unlockRallyHubAudio } from '@/lib/rallyHubHallAudio.js';
 import { INTERCLUB_EVENT_LABEL, INTERCLUB_INTERNAL_FORMAT, INTERCLUB_MODULE_NAME, interclubPublicUrl } from '@/lib/interclubBranding';
+import { prepareEventLogoDraft, prepareEventLogoDraftFromUrl, renderPositionedEventLogo } from '@/lib/eventLogoEditor';
 import InterclubSpondImportModal from '@/components/clubchallenge/InterclubSpondImportModal';
 import InterclubPrintPack from '@/components/clubchallenge/InterclubPrintPack';
 import {
@@ -425,6 +426,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [saving, setSaving] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [logoUploading, setLogoUploading] = useState('');
+  const [logoDraft, setLogoDraft] = useState(null);
   const [simLog, setSimLog] = useState([]);
   const [showcaseSelection, setShowcaseSelection] = useState({ a1: '', a2: '', b1: '', b2: '' });
   const [showcaseFormat, setShowcaseFormat] = useState({ targetPoints: 11, winBy: 1 });
@@ -745,6 +747,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     return () => { mounted = false; navigator.mediaDevices?.removeEventListener?.('devicechange', refresh); };
   }, [selectedMicId]);
   React.useEffect(() => () => { wakeLockRef.current?.release?.(); stopAllRallyHubAudio(); }, []);
+  React.useEffect(() => () => { if (logoDraft?.url?.startsWith('blob:')) URL.revokeObjectURL(logoDraft.url); }, [logoDraft?.url]);
   React.useEffect(() => {
     if (['draw', 'live'].includes(tab) || !paActive) return;
     stopRallyHubPA();
@@ -833,25 +836,50 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setSaving(false);
   };
 
-  const uploadClubLogo = async (side, file) => {
+  const chooseClubLogo = async (side, file) => {
     if (!file) return;
     setLogoUploading(side);
     try {
-      const uploadRes = await base44.functions.invoke('secureCreditAction', { action: 'upload_image', purpose: 'club_challenge_logo', tournamentId: tournament.id, file });
+      const draft = await prepareEventLogoDraft(file);
+      setLogoDraft({ ...draft, side });
+    } catch (e) { toast.error(e?.message || 'Could not prepare logo'); }
+    finally { setLogoUploading(''); }
+  };
+
+  const adjustCurrentClubLogo = async side => {
+    const logo = side === 'A' ? setup.clubALogo : setup.clubBLogo;
+    if (!logo) return;
+    setLogoUploading(side);
+    try {
+      const draft = await prepareEventLogoDraftFromUrl(logo, `${side === 'A' ? setup.clubAName : setup.clubBName}-logo`);
+      setLogoDraft({ ...draft, side });
+    } catch (e) { toast.error(e?.message || 'Could not open the current logo for editing'); }
+    finally { setLogoUploading(''); }
+  };
+
+  const resetClubLogoDraft = () => setLogoDraft(draft => draft ? { ...draft, zoom:1, offsetX:0, offsetY:0 } : draft);
+  const cancelClubLogoDraft = () => setLogoDraft(null);
+
+  const applyClubLogoDraft = async () => {
+    if (!logoDraft?.side) return;
+    const side = logoDraft.side;
+    setLogoUploading(side);
+    try {
+      const positionedFile = await renderPositionedEventLogo(logoDraft, `${side === 'A' ? setup.clubAName : setup.clubBName}-event-logo`);
+      const uploadRes = await base44.functions.invoke('secureCreditAction', { action:'upload_image', purpose:'club_challenge_logo', tournamentId:tournament.id, file:positionedFile });
       if (uploadRes.data?.error) throw new Error(uploadRes.data.error);
       const fileUrl = uploadRes.data?.file_url;
       if (!fileUrl) throw new Error('No file URL returned');
       const setupKey = side === 'A' ? 'clubALogo' : 'clubBLogo';
       const eventKey = side === 'A' ? 'club_a_logo_url' : 'club_b_logo_url';
-      setSetup(s => ({ ...s, [setupKey]: fileUrl }));
-      // Once an Interclub event exists, persist the logo immediately so a host
-      // cannot lose it by navigating away after a successful upload.
+      setSetup(s => ({ ...s, [setupKey]:fileUrl }));
       if (event?.id && isAdmin) {
-        await base44.entities.ClubChallengeEvent.update(event.id, { [eventKey]: fileUrl });
+        await base44.entities.ClubChallengeEvent.update(event.id, { [eventKey]:fileUrl, event_pack_stale:true });
         await refetchEvent();
       }
-      toast.success(`${side === 'A' ? setup.clubAName : setup.clubBName} logo uploaded${event?.id ? ' and saved' : ''}`);
-    } catch (e) { toast.error(e?.message || 'Could not upload logo'); }
+      setLogoDraft(null);
+      toast.success(`${side === 'A' ? setup.clubAName : setup.clubBName} logo positioned and saved${event?.id ? ' to the event' : ''}.`);
+    } catch (e) { toast.error(e?.message || 'Could not save positioned logo'); }
     finally { setLogoUploading(''); }
   };
 
