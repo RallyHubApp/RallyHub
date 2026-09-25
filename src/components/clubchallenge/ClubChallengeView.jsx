@@ -2761,28 +2761,20 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           {event?.pot_enabled && <div className="rounded-xl border border-border bg-card p-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold">Players of the Tournament</p>
-                <p className="text-xs text-muted-foreground">One winner from each team · one ballot per phone/browser · results hidden until reveal.</p>
+                <p className="text-sm font-semibold">{awardTitle}</p>
+                <p className="text-xs text-muted-foreground">One winner from each team. At the end choose either Highest Scoring Players or a Player Vote.</p>
               </div>
               <Badge variant="outline">{effectivePotStatus}</Badge>
             </div>
 
-            {canManagePot && effectivePotStatus === 'closed' && <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
-              <div className="sm:w-48">
-                <Label className="text-xs">Voting window</Label>
-                <Select value={potDuration} onValueChange={setPotDuration}>
-                  <SelectTrigger className="mt-1 bg-secondary"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 minutes</SelectItem>
-                    <SelectItem value="10">10 minutes</SelectItem>
-                    <SelectItem value="15">15 minutes</SelectItem>
-                    <SelectItem value="manual">Manual close</SelectItem>
-                  </SelectContent>
-                </Select>
+            {canManagePot && effectivePotStatus === 'closed' && <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-3">
+              <div><p className="text-xs font-bold uppercase tracking-wider">Choose the award method</p><p className="mt-1 text-xs text-muted-foreground">Highest Scorers uses the normal-round scores already saved in RallyHub. Player Vote uses one ballot per phone/browser.</p></div>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div className="rounded-lg border bg-card p-4"><p className="font-semibold">Highest Scoring Players</p><p className="mt-1 text-xs text-muted-foreground">Adds the points scored by each player's pair in every normal-round match they played. Tie-break: match wins, then point differential.</p><Button className="mt-3 w-full" disabled={event.status !== 'completed'} onClick={calculateHighestScorers}>Calculate Highest Scorers</Button></div>
+                <div className="rounded-lg border bg-card p-4"><p className="font-semibold">Player Vote</p><p className="mt-1 text-xs text-muted-foreground">Players choose one person from each team. Use this when you want the social Player of the Tournament award.</p><div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-end"><div className="flex-1"><Label className="text-xs">Voting window</Label><Select value={potDuration} onValueChange={setPotDuration}><SelectTrigger className="mt-1 bg-secondary"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="5">5 minutes</SelectItem><SelectItem value="10">10 minutes</SelectItem><SelectItem value="15">15 minutes</SelectItem><SelectItem value="manual">Manual close</SelectItem></SelectContent></Select></div><Button onClick={() => setPotStatus('open')}>Open Player Vote</Button></div></div>
               </div>
-              <Button onClick={() => setPotStatus('open')}>Open Voting</Button>
-              {potTeamVoteCount > 0 && <Button variant="outline" disabled={potTieUnresolved} onClick={revealPot}>Reveal Results</Button>}
-              {potTeamVoteCount > 0 && <Button variant="ghost" onClick={resetPotVoting}>Reset Voting</Button>}
+              {awardMethod === 'vote' && potTeamVoteCount > 0 && <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={potTieUnresolved} onClick={revealPot}>Reveal Vote Result</Button><Button variant="ghost" onClick={resetPotVoting}>Reset Award Choice</Button></div>}
+              {awardMethod === 'vote' && potTeamVoteCount === 0 && <p className="text-xs text-muted-foreground">No usable ballots yet. You can reopen voting or use Highest Scorers instead.</p>}
             </div>}
 
             {event.pot_status === 'open' && <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
@@ -2795,7 +2787,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               </div>
             </div>}
 
-            {event.pot_status !== 'revealed' && <div className="text-xs text-muted-foreground">
+            {event.pot_status !== 'revealed' && awardMethod === 'vote' && <div className="text-xs text-muted-foreground">
               {isAdmin ? <><strong className="text-foreground">{potBallotCount}</strong> ballot{potBallotCount === 1 ? '' : 's'} received · <strong className="text-foreground">{potTeamVoteCount}</strong> team vote{potTeamVoteCount === 1 ? '' : 's'} recorded. </> : 'Votes are securely recorded. '}
               Individual choices and running totals remain hidden.
             </div>}
@@ -2806,16 +2798,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <div className="rounded-xl bg-primary/10 p-4 text-center">
                 <Trophy className="w-5 h-5 text-primary mx-auto" />
                 <p className="text-xs text-muted-foreground mt-2">{event.club_a_name}</p>
-                <p className="font-bold mt-1">{potWinnersA.length ? potWinnersA.map(p => p.display_name).join(' & ') : 'No valid votes'}</p>
-                {isAdmin && potWinnersA.map(p => <p key={p.id} className="text-xs text-muted-foreground mt-1">{potCounts[p.id] || 0} vote{(potCounts[p.id] || 0) === 1 ? '' : 's'}</p>)}
+                <p className="font-bold mt-1">{potWinnersA.length ? potWinnersA.map(p => p.display_name).join(' & ') : 'No winner'}</p>
+                {isAdmin && potWinnersA.map(p => awardMethod === 'points' ? <p key={p.id} className="text-xs text-muted-foreground mt-1">{individualPointStats[p.id]?.pointsFor || 0} points · {individualPointStats[p.id]?.gamesPlayed || 0} games · {individualPointStats[p.id]?.wins || 0} wins</p> : <p key={p.id} className="text-xs text-muted-foreground mt-1">{potCounts[p.id] || 0} vote{(potCounts[p.id] || 0) === 1 ? '' : 's'}</p>)}
               </div>
               <div className="rounded-xl bg-primary/10 p-4 text-center">
                 <Trophy className="w-5 h-5 text-primary mx-auto" />
                 <p className="text-xs text-muted-foreground mt-2">{event.club_b_name}</p>
-                <p className="font-bold mt-1">{potWinnersB.length ? potWinnersB.map(p => p.display_name).join(' & ') : 'No valid votes'}</p>
-                {isAdmin && potWinnersB.map(p => <p key={p.id} className="text-xs text-muted-foreground mt-1">{potCounts[p.id] || 0} vote{(potCounts[p.id] || 0) === 1 ? '' : 's'}</p>)}
+                <p className="font-bold mt-1">{potWinnersB.length ? potWinnersB.map(p => p.display_name).join(' & ') : 'No winner'}</p>
+                {isAdmin && potWinnersB.map(p => awardMethod === 'points' ? <p key={p.id} className="text-xs text-muted-foreground mt-1">{individualPointStats[p.id]?.pointsFor || 0} points · {individualPointStats[p.id]?.gamesPlayed || 0} games · {individualPointStats[p.id]?.wins || 0} wins</p> : <p key={p.id} className="text-xs text-muted-foreground mt-1">{potCounts[p.id] || 0} vote{(potCounts[p.id] || 0) === 1 ? '' : 's'}</p>)}
               </div>
-              {canManagePot && <div className="sm:col-span-2 text-center"><Button variant="outline" onClick={resetPotVoting}>Reset Voting</Button></div>}
+              {canManagePot && <div className="sm:col-span-2 text-center"><Button variant="outline" onClick={resetPotVoting}>Choose Different Award Method</Button></div>}
             </div>}
           </div>}
           {score.completedMatches > 0 ? (
