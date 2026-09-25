@@ -29,11 +29,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": null,
-      "phone": null,
-      "phoneHref": null,
-      "whatsapp": null,
-      "email": null
+      "name": "Dympna Quinn",
+      "phone": "+44 7706 031809",
+      "phoneHref": "tel:+447706031809",
+      "whatsapp": "447706031809",
+      "email": "dympna@gmail.com"
     },
     "secondaryContacts": [],
     "venues": [
