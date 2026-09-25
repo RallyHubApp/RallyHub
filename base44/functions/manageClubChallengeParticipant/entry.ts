@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
 
     if (action === 'bulk_add_manual') {
       if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Players can only be imported before the draw is approved.' }, { status:409 });
-      if (!['club_a','club_b'].includes(side)) return Response.json({ error:'Choose Clare or Galway as the import destination.' }, { status:400 });
+      if (!['club_a','club_b'].includes(side)) return Response.json({ error:'Choose Team A or Team B as the import destination.' }, { status:400 });
       const rows = Array.isArray(players) ? players.slice(0,200) : [];
       if (!rows.length) return Response.json({ error:'No CSV players were supplied.' }, { status:400 });
       const normalise = (value:any) => String(value || '').trim().toLowerCase().replace(/\s+/g,' ');
