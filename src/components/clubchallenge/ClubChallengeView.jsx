@@ -44,7 +44,7 @@ const TABS = [
 const DEFAULT_SETUP = {
   clubAName: 'Clare Pickleball Club', clubALogo: '', clubAPrimary: '#2563eb', clubASecondary: '#facc15',
   clubBName: 'Galway Pickleball', clubBLogo: '', clubBPrimary: '#7f1d1d', clubBSecondary: '#f8fafc',
-  venue: '', courts: 4, plannedPlayersTotal: 32, availableMinutes: 180, playMinutes: 10, changeoverMinutes: 2,
+  venue: '', scheduledStartTime: '', courts: 4, plannedPlayersTotal: 32, availableMinutes: 180, playMinutes: 10, changeoverMinutes: 2,
   includeBreak: true, breakMinutes: 20, breakAfterRound: 6,
   matchType: 'timed', target: 11, winBy: 1, drawsAllowed: true,
   compositionMode: 'open', showcaseEnabled: true, showcasePoints: 5, potEnabled: true, juniorDisplayMode: false,
@@ -531,7 +531,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       ...s,
       clubAName: event.club_a_name || s.clubAName, clubALogo: event.club_a_logo_url || s.clubALogo, clubAPrimary: event.club_a_primary_colour || s.clubAPrimary, clubASecondary: event.club_a_secondary_colour || s.clubASecondary,
       clubBName: event.club_b_name || s.clubBName, clubBLogo: event.club_b_logo_url || s.clubBLogo, clubBPrimary: event.club_b_primary_colour || s.clubBPrimary, clubBSecondary: event.club_b_secondary_colour || s.clubBSecondary,
-      courts: event.courts ?? s.courts, availableMinutes: event.available_minutes ?? s.availableMinutes, playMinutes: event.play_minutes ?? s.playMinutes,
+      courts: event.courts ?? s.courts, availableMinutes: event.available_minutes ?? s.availableMinutes, scheduledStartTime:event.scheduled_start_time || s.scheduledStartTime, playMinutes: event.play_minutes ?? s.playMinutes,
       changeoverMinutes: event.changeover_minutes ?? s.changeoverMinutes, includeBreak: event.include_break ?? s.includeBreak,
       breakMinutes: event.break_minutes ?? s.breakMinutes, breakAfterRound: event.break_after_round ?? s.breakAfterRound,
       matchType: event.normal_match_type || s.matchType, target: event.normal_target_points || s.target, winBy: event.normal_win_by || s.winBy,
@@ -756,7 +756,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       hostClub: { id: hostClubId, name: setup.clubAName, logo_url: setup.clubALogo, primary_colour: setup.clubAPrimary, secondary_colour: setup.clubASecondary },
       opponent: { name: setup.clubBName, logo_url: setup.clubBLogo, primary_colour: setup.clubBPrimary, secondary_colour: setup.clubBSecondary },
       setup: {
-        courts: number(setup.courts, 4), availableMinutes: number(setup.availableMinutes, 180), playMinutes: number(setup.playMinutes, 10), changeoverMinutes: number(setup.changeoverMinutes, 2),
+        courts: number(setup.courts, 4), availableMinutes: number(setup.availableMinutes, 180), scheduledStartTime:setup.scheduledStartTime, playMinutes: number(setup.playMinutes, 10), changeoverMinutes: number(setup.changeoverMinutes, 2),
         includeBreak: setup.includeBreak, breakMinutes: number(setup.breakMinutes, 20), breakAfterRound: number(setup.breakAfterRound, 6),
         matchFormat: setup.matchType === 'timed' ? { type: 'timed', drawsAllowed: setup.drawsAllowed } : { type: 'points', target: number(setup.target, 11), winBy: number(setup.winBy, 1) },
         compositionMode: setup.compositionMode, showcaseEnabled: setup.showcaseEnabled, showcasePoints: number(setup.showcasePoints, 5), potEnabled: setup.potEnabled, juniorDisplayMode: setup.juniorDisplayMode,
@@ -2264,11 +2264,18 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           </div>
           <div className="glass rounded-xl p-4 sm:p-5 space-y-4">
             <p className="text-sm font-semibold">Event Configuration</p>
-            <div>
-              <Label className="text-xs">Venue</Label>
-              <Input data-testid="cc-venue" list="cc-venue-options" value={setup.venue} onChange={e => setSetup(s => ({ ...s, venue:e.target.value }))} placeholder="Choose or type a venue" className="mt-1 bg-secondary" />
-              <datalist id="cc-venue-options">{venueOptions.map(v => <option key={v.id} value={v.name}>{v.address || ''}</option>)}</datalist>
-              <p className="text-[10px] text-muted-foreground mt-1">Choose a saved club venue, or type a new venue and RallyHub will save it for reuse.</p>
+            <div className="grid sm:grid-cols-[1fr_180px] gap-3">
+              <div>
+                <Label className="text-xs">Venue</Label>
+                <Input data-testid="cc-venue" list="cc-venue-options" value={setup.venue} onChange={e => setSetup(s => ({ ...s, venue:e.target.value }))} placeholder="Choose or type a venue" className="mt-1 bg-secondary" />
+                <datalist id="cc-venue-options">{venueOptions.map(v => <option key={v.id} value={v.name}>{v.address || ''}</option>)}</datalist>
+                <p className="text-[10px] text-muted-foreground mt-1">Choose a saved club venue, or type a new venue and RallyHub will save it for reuse.</p>
+              </div>
+              <div>
+                <Label className="text-xs">Hall booking start</Label>
+                <Input data-testid="cc-scheduled-start-time" type="time" value={setup.scheduledStartTime || ''} onChange={e => setSetup(s => ({ ...s, scheduledStartTime:e.target.value }))} className="mt-1 bg-secondary" />
+                <p className="text-[10px] text-muted-foreground mt-1">Used with Available min to protect the booked finish time.</p>
+              </div>
             </div>
             <div className="grid sm:grid-cols-[220px_1fr] gap-3 items-end">
               <div><Label className="text-xs">Planned total players</Label><Input type="number" min="8" step="2" value={setup.plannedPlayersTotal} onChange={e => setSetup(s => ({ ...s, plannedPlayersTotal: e.target.value }))} className="mt-1 bg-secondary" /><p className="text-[10px] text-muted-foreground mt-1">Used for the setup estimate until the real rosters are entered. Split equally between clubs.</p></div>
