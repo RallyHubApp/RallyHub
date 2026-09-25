@@ -770,6 +770,10 @@ Deno.serve(async(req)=>{
         const primarySport=primaryProfile?sportMap.get(String(primaryProfile.sport_id)):primarySportId?sportMap.get(primarySportId):null;
         const quality=dataQualityIssues(p,m);
         const externalRating=primaryProfile?.rating_value??primaryProfile?.dupr_doubles_rating??primaryProfile?.dupr_rating??null;
+        const targetMembership:any=targetMembershipByPerson.get(String(m.person_id))||null;
+        const renewalState=targetMembership
+          ? ((targetMembership.payment_status==='paid'||targetMembership.payment_status==='not_required'||targetMembership.membership_status==='paid_active')?'renewed':'awaiting_payment')
+          : (renewalWindowStatus==='upcoming'?'not_open':renewalWindowStatus==='open'?'not_renewed':renewalWindowStatus==='closed'?'overdue':'not_scheduled');
         return {
           person_id:m.person_id,full_name:p?.full_name||pl?.full_name||'Member',alternate_names:m.alternate_names||[],
           email:p?.primary_email||pl?.email||null,mobile:p?.mobile||pl?.phone||null,date_of_birth:p?.date_of_birth||null,
@@ -779,6 +783,9 @@ Deno.serve(async(req)=>{
           membership_status:m.membership_status||null,relationship_type:m.relationship_type||rel?.relationship_type||null,
           payment_status:m.payment_status||rel?.payment_status||null,payment_date:m.payment_date||rel?.payment_date||null,
           membership_fee:m.membership_fee??rel?.membership_amount??null,membership_category:rel?.membership_category||null,
+          renewal_date:m.renewal_date||null,expiry_date:m.expiry_date||null,
+          renewal_state:renewalState,renewal_target_season:targetSeason||null,
+          renewal_payment_status:targetMembership?.payment_status||null,renewal_membership_status:targetMembership?.membership_status||null,
           primary_sport:primarySport?.name||primaryProfile?.sport||null,primary_sport_id:primaryProfile?.sport_id||primarySportId||null,
           skill_level:primaryProfile?.skill_level||null,playing_category:primaryProfile?.playing_category||null,
           external_rating:externalRating,external_rating_id:primaryProfile?.external_rating_id||primaryProfile?.dupr_id||null,
@@ -798,16 +805,35 @@ Deno.serve(async(req)=>{
           include_in_rallyhub:m.include_in_rallyhub!==false
         };
       });
+      const activeRows=rows.filter((r:any)=>r.membership_status!=='former_member'&&r.relationship_type==='member');
+      const complimentaryRows=activeRows.filter((r:any)=>r.payment_status==='not_required'||Number(r.membership_fee||0)===0);
       const counts={
         total:rows.length,
         active:rows.filter((r:any)=>r.membership_status==='paid_active').length,
+        currentMembers:activeRows.length,
+        currentPaid:activeRows.filter((r:any)=>r.payment_status==='paid'||r.payment_status==='not_required').length,
+        complimentary:complimentaryRows.length,
         pending:rows.filter((r:any)=>r.membership_status==='pending_payment').length,
-        unpaid:rows.filter((r:any)=>r.payment_status==='pending'||r.membership_status==='pending_payment').length,
+        unpaid:rows.filter((r:any)=>r.payment_status==='pending'||r.payment_status==='failed'||r.membership_status==='pending_payment').length,
         incomplete:rows.filter((r:any)=>r.quality_count>0).length,
         linked:rows.filter((r:any)=>r.linked).length,
         duplicateReview:rows.filter((r:any)=>r.quality_issues.includes('duplicate_review')).length
       };
-      return Response.json({success:true,rows,total:rows.length,counts});
+      const renewalEligible=activeRows;
+      const renewal={
+        currentSeason:currentSeason||null,targetSeason:targetSeason||null,
+        windowStatus:renewalWindowStatus,
+        opensOn:membershipConfig?.renewal_opens_on||null,dueOn:membershipConfig?.renewal_due_on||null,
+        periodStart:membershipConfig?.membership_period_start||membershipConfig?.active_from||null,
+        periodEnd:membershipConfig?.membership_period_end||membershipConfig?.active_until||null,
+        eligible:renewalEligible.length,
+        renewed:renewalEligible.filter((r:any)=>r.renewal_state==='renewed').length,
+        awaitingPayment:renewalEligible.filter((r:any)=>r.renewal_state==='awaiting_payment').length,
+        notRenewed:renewalEligible.filter((r:any)=>['not_renewed','overdue'].includes(r.renewal_state)).length,
+        notYetOpen:renewalEligible.filter((r:any)=>r.renewal_state==='not_open').length,
+        overdue:renewalEligible.filter((r:any)=>r.renewal_state==='overdue').length
+      };
+      return Response.json({success:true,rows,total:rows.length,counts,renewal});
     }
 
     if(action==='admin_save_view'){
