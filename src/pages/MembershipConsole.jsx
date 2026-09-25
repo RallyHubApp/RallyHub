@@ -685,14 +685,58 @@ export default function MembershipConsole() {
             </div>
           </section>
 
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-            <StatCard title="All records" value={listData.counts?.total ?? rows.length} icon={Users} onClick={() => applyQuickFilter('all')} />
-            <StatCard title="Active" value={listData.counts?.active ?? 0} icon={CheckCircle2} onClick={() => applyQuickFilter('active')} active={filters.membershipStatus === 'paid_active'} />
-            <StatCard title="Pending" value={listData.counts?.pending ?? 0} icon={WalletCards} onClick={() => applyQuickFilter('pending')} active={filters.membershipStatus === 'pending_payment'} />
-            <StatCard title="Payment due" value={listData.counts?.unpaid ?? 0} icon={WalletCards} onClick={() => applyQuickFilter('unpaid')} active={filters.paymentStatus === 'pending'} />
-            <StatCard title="Profile issues" value={listData.counts?.incomplete ?? 0} icon={AlertTriangle} onClick={() => applyQuickFilter('issues')} active={filters.quality === 'issues'} />
-            <StatCard title="Linked accounts" value={listData.counts?.linked ?? 0} icon={Link2} onClick={() => setFilters({ ...EMPTY_FILTERS, account: 'linked' })} active={filters.account === 'linked'} />
-          </div>
+          <section className="glass rounded-xl p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-bold text-base sm:text-lg">Membership dashboard</h2>
+                  {listData.renewal?.currentSeason ? <Badge variant="outline">{listData.renewal.currentSeason}</Badge> : null}
+                  {listData.renewal?.targetSeason ? <Badge variant="outline">Next · {listData.renewal.targetSeason}</Badge> : null}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">Current membership, payment position and renewal progress in one place.</p>
+              </div>
+              {listData.renewal?.opensOn ? <div className="text-xs text-muted-foreground lg:text-right">
+                <div><strong className="text-foreground">Renewal opens:</strong> {dateLabel(listData.renewal.opensOn)}</div>
+                <div><strong className="text-foreground">Payment due:</strong> {dateLabel(listData.renewal.dueOn)}</div>
+                {listData.renewal.periodEnd ? <div><strong className="text-foreground">Current year ends:</strong> {dateLabel(listData.renewal.periodEnd)}</div> : null}
+              </div> : null}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2.5 sm:gap-3">
+              <StatCard title="Current members" value={listData.counts?.currentMembers ?? listData.counts?.active ?? 0} icon={Users} note={listData.renewal?.currentSeason || 'Current season'} onClick={() => applyQuickFilter('all')} />
+              <StatCard title="Paid" value={listData.counts?.currentPaid ?? 0} icon={CheckCircle2} note="Current season" onClick={() => setFilters({ ...EMPTY_FILTERS, paymentStatus: 'paid' })} active={filters.paymentStatus === 'paid'} />
+              <StatCard title="Complimentary" value={listData.counts?.complimentary ?? 0} icon={ShieldCheck} note="No payment required" disabled />
+              <StatCard title="Payment due" value={listData.counts?.unpaid ?? 0} icon={WalletCards} note="Current season" onClick={() => applyQuickFilter('unpaid')} active={filters.paymentStatus === 'pending'} />
+              <StatCard
+                title={listData.renewal?.windowStatus === 'upcoming' ? 'Renewal opens' : 'Renewed'}
+                value={listData.renewal?.windowStatus === 'upcoming' ? dateLabel(listData.renewal?.opensOn).replace(/\s\d{4}$/,'') : (listData.renewal?.renewed ?? 0)}
+                icon={RefreshCw}
+                note={listData.renewal?.windowStatus === 'upcoming' ? ('Tracking ' + (listData.renewal?.targetSeason || 'next season') + ' from this date') : (listData.renewal?.targetSeason || 'Next season')}
+                onClick={() => listData.renewal?.windowStatus === 'upcoming' ? undefined : applyQuickFilter('renewed')}
+                disabled={listData.renewal?.windowStatus === 'upcoming'}
+                active={filters.renewal === 'renewed'}
+              />
+              <StatCard
+                title="Renewal payment due"
+                value={listData.renewal?.windowStatus === 'upcoming' ? '—' : (listData.renewal?.awaitingPayment ?? 0)}
+                icon={WalletCards}
+                note={listData.renewal?.windowStatus === 'upcoming' ? 'Starts when renewals open' : 'Renewal started, not paid'}
+                onClick={() => applyQuickFilter('renewal-payment')}
+                disabled={listData.renewal?.windowStatus === 'upcoming'}
+                active={filters.renewal === 'awaiting_payment'}
+              />
+              <StatCard
+                title={listData.renewal?.windowStatus === 'closed' ? 'Renewal overdue' : 'Not renewed'}
+                value={listData.renewal?.windowStatus === 'upcoming' ? '—' : (listData.renewal?.notRenewed ?? 0)}
+                icon={AlertTriangle}
+                note={listData.renewal?.windowStatus === 'upcoming' ? ('Not due until ' + dateLabel(listData.renewal?.opensOn)) : ('Eligible · ' + (listData.renewal?.eligible ?? 0))}
+                onClick={() => applyQuickFilter('not-renewed')}
+                disabled={listData.renewal?.windowStatus === 'upcoming'}
+                active={['not_renewed','overdue'].includes(filters.renewal)}
+              />
+              <StatCard title="Profile issues" value={listData.counts?.incomplete ?? 0} icon={AlertTriangle} note={(listData.counts?.linked ?? 0) + ' RallyHub accounts linked'} onClick={() => applyQuickFilter('issues')} active={filters.quality === 'issues'} />
+            </div>
+          </section>
 
           <div className="glass rounded-xl p-4 space-y-3">
             <div className="flex flex-col xl:flex-row xl:items-center gap-3">
