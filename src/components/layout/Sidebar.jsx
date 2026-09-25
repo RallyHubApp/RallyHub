@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { 
   LayoutDashboard, Users, Trophy, Crown, 
-  BarChart3, X, ChevronRight, UserCircle, Shield, MapPin
+  BarChart3, X, ChevronRight, UserCircle, Shield, MapPin, CalendarCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -124,6 +124,7 @@ export default function Sidebar({ isOpen, onToggle }) {
               { path: '/directory', label: 'Switch to Directory', icon: MapPin },
               { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield }
             ] : []),
+            ...(canAccessAdmin ? [{ path: '/app/guest-bookings', label: 'Guest Bookings', icon: CalendarCheck }] : []),
             { path: '/app/my-profile', label: 'My Profile', icon: UserCircle },
             ...(canAccessAdmin ? [{ path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
           ].map(item => {
