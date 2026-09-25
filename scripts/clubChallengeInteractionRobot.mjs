@@ -123,8 +123,9 @@ check('sound: legacy one-minute, 30-second and 10-second warnings are removed', 
 check('sound: final countdown is only 5, 4, 3, 2, 1', contains(ui,'timerRemaining <= 5 && timerRemaining > 0'));
 check('sound: round-end cue asks for scores without replaying the round-finished speech', contains(ui,"? 'Please hand in your scores.'") && !contains(ui,'Round finished. Please give your scores.'));
 check('sound: historic timer state cannot speak merely because the host reloads or refreshes', contains(ui,'timerSpeechArmedRef.current') && contains(ui,"!['in_progress','paused'].includes(event?.status)"));
-check('sound: round start clearly repeats the full round announcement', contains(ui,'${label}. ${label} starting now. ${label} starting now.'));
+check('sound: round start is concise but explicit', contains(ui,'${label}. ${label} starting now.') && !contains(ui,'${label}. ${label} starting now. ${label} starting now.'));
 check('Base44 control: timer actions are single-flight', contains(ui,'timerCommandRef.current'));
+check('Base44 control: critical host writes back off and retry on burst / 429 responses', contains(ui,'invokeBase44Safely') && contains(ui,'isBase44RateLimitError') && contains(ui,"message.includes('burst')") && contains(ui,'status === 429'));
 check('Base44 control: major sporting actions are single-flight', contains(ui,'sportingActionRef.current'));
 check('Base44 control: team assignment and ranking save in one browser function call', contains(ui,"action:'organise_teams'") && !contains(ui,'Promise.all(ordered.map'));
 check('Base44 control: full draw replacement is one browser function call', contains(ui,"replaceClubChallengeDraw") && contains(drawFn,'ClubChallengeMatch.bulkCreate'));
