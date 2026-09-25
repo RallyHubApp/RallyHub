@@ -1896,6 +1896,64 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const timerPaused = !!timerState && !timerState?.running && timerRemaining > 0 && ['play','changeover','break'].includes(timerPhase);
   const scheduledBreakHere = !!event?.include_break && Number(currentRound) === Number(event?.break_after_round || 0);
   const breakActive = scheduledBreakHere && timerPhase === 'break';
+  const timingGuide = (() => {
+    if (!event || !['in_progress','paused'].includes(event.status)) return null;
+    const bookedStart = bookingStartMs(tournament, event);
+    const bookedMinutes = Number(event.available_minutes || 0);
+    if (!Number.isFinite(bookedStart) || bookedMinutes <= 0) return null;
+    const hardFinish = bookedStart + bookedMinutes * 60000;
+    const actualStart = event.actual_started_at ? Date.parse(event.actual_started_at) : NaN;
+    const lateMinutes = Number.isFinite(actualStart) ? Math.max(0, Math.round((actualStart - bookedStart) / 60000)) : 0;
+    const futureRounds = Math.max(0, Number(plannedRounds || 0) - Number(currentRound || 0));
+    const playMinutes = Math.max(1, Number(event.play_minutes || 10));
+    const changeoverMinutes = Math.max(0, Number(event.changeover_minutes || 0));
+    let currentPlaySeconds = 0;
+    if (['ready','idle'].includes(timerPhase)) currentPlaySeconds = Number(timerState?.remaining_seconds || playMinutes * 60);
+    else if (timerPhase === 'play') currentPlaySeconds = Math.max(0, timerRemaining);
+    const futurePlaySeconds = futureRounds * playMinutes * 60;
+    let changeoverSeconds = futureRounds * changeoverMinutes * 60;
+    if (timerPhase === 'changeover') changeoverSeconds = Math.max(0, timerRemaining) + Math.max(0, futureRounds - 1) * changeoverMinutes * 60;
+    let breakSeconds = 0;
+    const breakRound = Number(event.break_after_round || 0);
+    if (event.include_break && breakRound > 0) {
+      if (timerPhase === 'break') breakSeconds = Math.max(0, timerRemaining);
+      else if (Number(currentRound) <= breakRound) breakSeconds = Math.max(0, Number(event.break_minutes || 0)) * 60;
+    }
+    const remainingSeconds = currentPlaySeconds + futurePlaySeconds + changeoverSeconds + breakSeconds;
+    const projectedFinish = timerNow + remainingSeconds * 1000;
+    const slackMinutes = Math.floor((hardFinish - projectedFinish) / 60000);
+    const remainingRoundCount = Math.max(1, futureRounds + (currentPlaySeconds > 0 ? 1 : 0));
+    const recommendations = [];
+    if (slackMinutes < 0) {
+      let recoveryNeeded = Math.abs(slackMinutes);
+      const remainingChangeovers = futureRounds;
+      const changeoverSaving = Math.max(0, changeoverMinutes - 1) * remainingChangeovers;
+      if (changeoverSaving > 0) {
+        recommendations.push(`Use 1-minute changeovers (saves up to ${changeoverSaving} min)`);
+        recoveryNeeded = Math.max(0, recoveryNeeded - changeoverSaving);
+      }
+      const breakMinutesRemaining = Math.ceil(breakSeconds / 60);
+      if (recoveryNeeded > 0 && breakMinutesRemaining > 0) {
+        const targetBreak = Math.min(10, breakMinutesRemaining);
+        const breakSaving = Math.max(0, breakMinutesRemaining - targetBreak);
+        if (breakSaving > 0) {
+          recommendations.push(`Shorten the remaining break to ${targetBreak} min (saves ${breakSaving} min)`);
+          recoveryNeeded = Math.max(0, recoveryNeeded - breakSaving);
+        }
+      }
+      if (recoveryNeeded > 0) {
+        const cutPerRound = Math.max(1, Math.ceil(recoveryNeeded / remainingRoundCount));
+        const suggestedPlay = Math.max(5, playMinutes - cutPerRound);
+        recommendations.push(`Reduce remaining rounds to about ${suggestedPlay} min`);
+      }
+      if (event.showcase_enabled) recommendations.push('Treat the Showcase Final as optional unless time is recovered');
+    }
+    return {
+      bookedStart, hardFinish, actualStart, lateMinutes, projectedFinish, slackMinutes,
+      status: slackMinutes >= 10 ? 'on_track' : slackMinutes >= 0 ? 'tight' : 'recover',
+      recommendations
+    };
+  })();
   const playFinished = timerPhase === 'play' && timerRemaining <= 0;
   const canPrepareNextRound = currentRoundComplete || playFinished || (timerPhase === 'changeover' && !timerState?.running);
   const missingCurrentScores = Math.max(0, currentMatches.length - currentRoundSavedCount);
