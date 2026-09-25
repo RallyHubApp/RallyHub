@@ -406,6 +406,22 @@ Deno.serve(async(req)=>{
         return Response.json({success:true,application:safeApplication(app,result.paymentUrl)});
       }
 
+      if(action==='admin_preview_reminder'){
+        const result=await reconcile(base44,config,app);
+        app=result.app;
+        if(app.payment_status==='paid')return Response.json({success:true,alreadyPaid:true,application:safeApplication(app,'')});
+        const content=reminderContent(config,club,app,result.paymentUrl||'');
+        return Response.json({
+          success:true,
+          application:safeApplication(app,result.paymentUrl||''),
+          preview:{
+            email:{to:app.email,subject:content.subject,textBody:content.text,htmlBody:content.html},
+            whatsapp:{message:content.text},
+            paymentUrl:content.paymentUrl
+          }
+        });
+      }
+
       if(action==='admin_send_reminder'){
         let result=await reconcile(base44,config,app);
         app=result.app;
@@ -422,18 +438,15 @@ Deno.serve(async(req)=>{
           }
         }
         const channel=clean(body.channel,20).toLowerCase()==='whatsapp'?'whatsapp':'email';
-        const text=whatsappReminder(config,club,app,paymentUrl);
+        const content=reminderContent(config,club,app,paymentUrl);
         const now=new Date().toISOString();
         if(channel==='email'){
           const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId,clubId};
-          const fee=money(app.membership_fee,app.currency||config.currency||'EUR');
-          const button=paymentUrl?`<div style="text-align:center;margin:22px 0;"><a href="${escapeHtml(paymentUrl)}" style="display:inline-block;padding:14px 24px;border-radius:10px;background:${escapeHtml(club.primary_colour||'#2563eb')};color:#fff;text-decoration:none;font-size:16px;font-weight:800;">Pay ${escapeHtml(fee)} securely</a></div>`:'';
-          const html=emailShell({club,headline:'Membership payment reminder',preheader:`${club.name} membership · ${app.membership_season}`,content:`<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Hi ${escapeHtml(firstName(app.full_name))}, just a quick reminder that your membership application is awaiting payment.</p>${button}<p style="margin:0;font-size:13px;color:#6b7280;">If you have already paid, please ignore this message.</p>${signoffHtml(config,club)}`});
-          await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,subject:`${club.name} membership payment reminder`,textBody:text,htmlBody:html});
+          await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,subject:content.subject,textBody:content.text,htmlBody:content.html});
         }
         const count=Number(app.reminder_count||0)+1;
         app=await base44.asServiceRole.entities.MembershipApplication.update(app.id,{reminder_count:count,last_reminder_at:now,last_reminder_channel:channel,follow_up_status:count>1?'second_reminder':'reminded'});
-        return Response.json({success:true,channel,message:text,paymentUrl,application:safeApplication(app,paymentUrl)});
+        return Response.json({success:true,channel,message:content.text,paymentUrl,application:safeApplication(app,paymentUrl)});
       }
 
       if(action==='admin_resend_confirmation'){
