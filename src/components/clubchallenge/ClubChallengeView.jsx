@@ -2034,7 +2034,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       })));
     }
     await base44.entities.ClubChallengeEvent.update(event.id, {
-      status: 'draw_approved', current_round: 0, finalised_at: null,
+      status: 'draw_approved', current_round: 0, finalised_at: null, actual_started_at:null,
       showcase_resolution_method: 'none', showcase_resolved_winner: 'none',
       showcase_club_a_male_id: null, showcase_club_a_female_id: null,
       showcase_club_b_male_id: null, showcase_club_b_female_id: null,
