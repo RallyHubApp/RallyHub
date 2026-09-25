@@ -349,7 +349,7 @@ Deno.serve(async(req)=>{
     const body=await req.json().catch(()=>({}));
     const action=clean(body.action||'public_get',40);
 
-    if(['admin_templates','admin_list','admin_create','admin_close','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment','admin_resend_emails'].includes(action)){
+    if(['admin_templates','admin_list','admin_create','admin_close','admin_send_invite','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment','admin_resend_emails'].includes(action)){
       const user=await base44.auth.me();
       if(!user)return Response.json({error:'Unauthorized'},{status:401});
       if(user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
@@ -437,6 +437,74 @@ Deno.serve(async(req)=>{
         if(!row)return Response.json({error:'Guest session not found.'},{status:404});
         const updated=await base44.asServiceRole.entities.GuestSessionLink.update(row.id,{active:false,closed_at:new Date().toISOString()});
         return Response.json({success:true,session:safeSession(updated)});
+      }
+
+      if(action==='admin_send_invite'){
+        const sessionId=clean(body.sessionId,100);
+        const recipientEmail=emailKey(body.recipientEmail||'');
+        const recipientName=clean(body.recipientName||'',120);
+        if(!recipientEmail||!recipientEmail.includes('@'))return Response.json({error:'Enter the guest email address.'},{status:400});
+        const session=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:sessionId,tenant_id:tenantId,club_id:clubId}))?.[0];
+        if(!session)return Response.json({error:'Guest session not found.'},{status:404});
+        if(!session.active)return Response.json({error:'This booking link is closed.'},{status:409});
+        const club=(await clubBrand(base44,clubId))||{
+          name:'Clare Pickleball',
+          logo_url:'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/6e59058fc_ClarePBLogo.jpg',
+          primary_colour:'#2667f2',secondary_colour:'#facc15',
+        };
+        const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId,clubId};
+        const bookingUrl=`https://rallyhub.ie/book/${encodeURIComponent(session.token)}`;
+        const dateLabel=formatDate(session.session_date);
+        const timeLabel=`${session.start_time}${session.end_time?'–'+session.end_time:''}`;
+        const amount=money(session.fee_amount,session.currency||'EUR');
+        const hello=recipientName?firstName(recipientName):'there';
+        const actionLabel=session.payment_method==='cash'?'Reserve your place':`Book & Pay ${amount}`;
+        const textBody=`Hi ${hello},
+
+You are invited to book a ${club.name} guest session.
+
+Date: ${dateLabel}
+Time: ${timeLabel}
+Venue: ${session.venue_name}
+Fee: ${amount}${session.payment_method==='cash'?' cash on arrival':' online payment'}
+
+Complete your booking, waiver and payment here:
+${bookingUrl}
+
+Cancellations made less than 24 hours before the session are non-refundable.
+
+Brian Moore
+Chairperson, Clare Pickleball
+
+Powered by RallyHub`;
+        const htmlBody=emailShell({
+          club,
+          headline:recipientName?`Guest session invitation for ${firstName(recipientName)}`:'Guest session invitation',
+          preheader:`${dateLabel} · ${timeLabel} · ${session.venue_name}`,
+          content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">You are invited to book a Clare Pickleball guest session.</p>
+<div style="margin:0 0 22px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+${detailRow('Date',dateLabel)}
+${detailRow('Time',timeLabel)}
+${detailRow('Venue',session.venue_name)}
+${detailRow('Address',`${session.venue_address}, ${session.venue_eircode}`)}
+${detailRow('Fee',session.payment_method==='cash'?`${amount} cash on arrival`:`${amount} online`)}
+</table>
+</div>
+<div style="text-align:center;margin:6px 0 24px;">
+<a href="${escapeHtml(bookingUrl)}" style="display:inline-block;padding:14px 24px;border-radius:10px;background:#2667f2;color:#ffffff;text-decoration:none;font-size:16px;font-weight:800;">${escapeHtml(actionLabel)}</a>
+</div>
+<p style="margin:0 0 18px;text-align:center;font-size:12px;color:#6b7280;">The button opens your secure Clare Pickleball booking page.</p>
+<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#fff8ea;border:1px solid #f2d18a;font-size:13px;line-height:1.55;color:#624717;"><strong>Cancellation policy</strong><br>Cancellations made less than 24 hours before the session are non-refundable.</div>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#172033;"><strong>Brian Moore</strong><br>Chairperson<br>Clare Pickleball</p>`,
+        });
+        await sendWithConfiguredEmailTransport(base44,scope,{
+          to:recipientEmail,
+          subject:`${club.name} · Guest session · ${dateLabel} ${session.start_time}`,
+          textBody,htmlBody,
+        });
+        return Response.json({success:true});
       }
 
       const bookingId=clean(body.bookingId,100);
