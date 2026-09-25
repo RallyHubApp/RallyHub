@@ -383,7 +383,7 @@ export default function MembershipConsole() {
       if (recordName && candidateName && recordName.trim().toLowerCase() !== candidateName.trim().toLowerCase()) {
         const factor = window.prompt('The RallyHub account name is "' + candidateName + '" but the member record is "' + recordName + '". Enter the member\'s date of birth (YYYY-MM-DD) or mobile number to verify the link.');
         if (!factor) return;
-        if (/^\\d{4}-\\d{2}-\\d{2}$/.test(factor.trim())) verifyDateOfBirth = factor.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(factor.trim())) verifyDateOfBirth = factor.trim();
         else verifyMobile = factor.trim();
       }
       if (!window.confirm('Link ' + candidate.email + ' to ' + (recordName || 'this member') + '? This grants member access to the active club.')) return;
