@@ -772,6 +772,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } else {
       queryClient.setQueryData(['club-challenge-secure-state', tournament.id, currentUser?.id], old => old ? ({ ...old, matches:(old.matches || []).map(m => m.id === savedMatch.id ? savedMatch : m) }) : old);
     }
+    if (event?.status === 'completed') await refetchEvent();
   };
   const queueOfflineScore = item => setPendingScores(q => [...q.filter(x => x.matchId !== item.matchId), item]);
   const retryPendingScores = async () => {
