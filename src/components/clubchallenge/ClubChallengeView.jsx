@@ -461,6 +461,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [quickReserveOutgoing, setQuickReserveOutgoing] = useState({});
   const [hostAction, setHostAction] = useState('');
   const [roundActionStatus, setRoundActionStatus] = useState(null);
+  const [hostScoreRound, setHostScoreRound] = useState(null);
   const hostBarAnchorRef = React.useRef(null);
   const hostBarInnerRef = React.useRef(null);
   const lastHostVisibilityRefreshRef = React.useRef(0);
@@ -597,6 +598,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const canManagePot = !!permissions.canManage && !!event && event.status !== 'archived';
   const effectivePotStatus = event?.pot_status || (event?.pot_enabled ? 'closed' : 'disabled');
   const canScoreEvent = !!permissions.canScore && !eventReadOnly;
+  const canCorrectScoreEvent = !!permissions.canCorrectScore && !!event && event.status !== 'archived';
   const canFinaliseEvent = !!permissions.canFinalise && !eventReadOnly;
   const displayOnly = !!permissions.displayOnly;
   const { data: clubPlayerCandidatesBySide = { club_a:[], club_b:[] }, refetch: refetchClubPlayerCandidates, isFetching: clubPlayerCandidatesLoading } = useQuery({
@@ -657,6 +659,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, [score, showcaseMatch, event?.showcase_points]);
   const rounds = [...new Set(normalMatches.map(m => Number(m.round_number)).filter(r => !plannedRounds || r <= plannedRounds))].sort((a, b) => a - b);
   const currentRound = event?.current_round || 1;
+  const scoreViewRound = rounds.includes(Number(hostScoreRound)) ? Number(hostScoreRound) : Number(currentRound);
+  const plannedHandoverParticipants = participants.filter(p => p.replacement_for_participant_id && Number(p.replacement_effective_round || p.available_from_round || 0) > 0);
+  const hasPlannedHandoverCopy = plannedHandoverParticipants.length > 0;
+  const firstPlannedHandoverRound = hasPlannedHandoverCopy ? Math.min(...plannedHandoverParticipants.map(p => Number(p.replacement_effective_round || p.available_from_round))) : null;
+  const handoverScorePages = hasPlannedHandoverCopy ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)) : 0;
   const timerState = useMemo(() => { try { return event?.timer_state_json ? JSON.parse(event.timer_state_json) : null; } catch { return null; } }, [event?.timer_state_json]);
   const timerRemaining = useMemo(() => {
     if (!timerState) return 0;
@@ -1919,6 +1926,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const currentMatches = matches.filter(m => m.round_number === currentRound && !m.is_showcase && m.status !== 'not_played');
   const currentRoundSavedCount = currentMatches.filter(m => ['completed','draw','retired','forfeit','abandoned'].includes(m.status)).length;
   const currentRoundComplete = currentMatches.length > 0 && currentRoundSavedCount === currentMatches.length;
+  const scoreViewMatches = matches.filter(m => Number(m.round_number) === Number(scoreViewRound) && !m.is_showcase && m.status !== 'not_played');
+  const scoreViewSavedCount = scoreViewMatches.filter(m => ['completed','draw','retired','forfeit','abandoned'].includes(m.status)).length;
+  const scoreViewComplete = scoreViewMatches.length > 0 && scoreViewSavedCount === scoreViewMatches.length;
+  const viewingHistoricalRound = Number(scoreViewRound) !== Number(currentRound);
+  const canEditScoreView = event?.status === 'completed' || viewingHistoricalRound ? canCorrectScoreEvent : canScoreEvent;
   const terminalResultStatuses = ['completed','draw','retired','forfeit','abandoned','not_played'];
   const pendingPastMatches = normalMatches.filter(m => Number(m.round_number) < Number(currentRound) && !terminalResultStatuses.includes(m.status)).sort((a,b)=>Number(a.round_number)-Number(b.round_number)||Number(a.court_number)-Number(b.court_number));
   const allNormalResultsSaved = normalMatches.length > 0 && normalMatches.every(m => terminalResultStatuses.includes(m.status));
