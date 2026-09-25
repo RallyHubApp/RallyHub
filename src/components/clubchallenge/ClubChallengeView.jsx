@@ -1460,16 +1460,6 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not calculate highest scorers'); }
   };
 
-  const calculateHighestScorers = async () => {
-    if (!event || !canManagePot) return;
-    try {
-      const res = await base44.functions.invoke('updateClubChallengePot', { eventId:event.id, action:'calculate_points' });
-      if (res.data?.error) { toast.error(res.data.error); return; }
-      await refetchEvent();
-      toast.success('Highest scoring player for each team calculated from the completed normal rounds.');
-    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not calculate highest scorers'); }
-  };
-
   const extendPotVoting = async () => {
     if (!event || !canManagePot || event.pot_status !== 'open') return;
     try {
