@@ -628,4 +628,63 @@ export default function MembershipConsole() {
               <div><Label>Expiry date</Label><Input type="date" className="mt-1" value={editMembership.expiry_date || ''} onChange={event => setEditMembership(previous => ({ ...previous, expiry_date: event.target.value }))} /></div>
               <div className="sm:col-span-2"><Label>Admin notes</Label><Textarea className="mt-1" value={editMembership.admin_notes || ''} onChange={event => setEditMembership(previous => ({ ...previous, admin_notes: event.target.value }))} /></div>
             </TabsContent>
-/*APPEND*/
+            <TabsContent value="sports" className="space-y-3 pt-3">
+              {editSports.map((profile, index) => {
+                const sport = (meta.sports || []).find(item => String(item.id) === String(profile.sport_id));
+                return <div key={profile.id || profile.sport_id} className="rounded-xl border p-4">
+                  <div className="flex items-center justify-between gap-2"><p className="font-semibold">{sport?.name || 'Sport'}</p><Badge variant="outline">{label(profile.status)}</Badge></div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+                    <div><Label>Status</Label><Select value={profile.status || 'active'} onValueChange={value => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, status: value } : item))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select></div>
+                    <div><Label>Experience</Label><Select value={profile.experience_type || 'current'} onValueChange={value => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, experience_type: value } : item))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="current">Current</SelectItem><SelectItem value="previous">Previous</SelectItem><SelectItem value="interested">Interested</SelectItem></SelectContent></Select></div>
+                    <div><Label>Skill level</Label><Input className="mt-1" value={profile.skill_level || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, skill_level: event.target.value } : item))} /></div>
+                    <div><Label>Playing category</Label><Input className="mt-1" value={profile.playing_category || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, playing_category: event.target.value } : item))} /></div>
+                    <div><Label>Preferred side / position</Label><Input className="mt-1" value={profile.preferred_side || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, preferred_side: event.target.value } : item))} /></div>
+                    <div><Label>External rating ID</Label><Input className="mt-1" value={profile.dupr_id || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, dupr_id: event.target.value } : item))} /></div>
+                    <div><Label>Rating</Label><Input type="number" step="0.01" className="mt-1" value={profile.dupr_rating ?? ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, dupr_rating: event.target.value } : item))} /></div>
+                    <div><Label>Singles rating</Label><Input type="number" step="0.01" className="mt-1" value={profile.dupr_singles_rating ?? ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, dupr_singles_rating: event.target.value } : item))} /></div>
+                    <div><Label>Doubles rating</Label><Input type="number" step="0.01" className="mt-1" value={profile.dupr_doubles_rating ?? ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, dupr_doubles_rating: event.target.value } : item))} /></div>
+                    <div className="sm:col-span-2 lg:col-span-3"><Label>Sport notes</Label><Textarea className="mt-1" value={profile.notes || ''} onChange={event => setEditSports(previous => previous.map((item, itemIndex) => itemIndex === index ? { ...item, notes: event.target.value } : item))} /></div>
+                  </div>
+                </div>;
+              })}
+            </TabsContent>
+          </Tabs>
+          <DialogFooter><Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button><Button onClick={updateRecord} disabled={saving}>{saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}{saving ? 'Saving…' : 'Save changes'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={trainingOpen} onOpenChange={setTrainingOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add training record</DialogTitle><DialogDescription>Training is attached to the canonical person and may be reused by coaching, eligibility and event workflows.</DialogDescription></DialogHeader>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2"><Label>Training name</Label><Input className="mt-1" value={training.trainingName} onChange={event => setTraining(previous => ({ ...previous, trainingName: event.target.value }))} /></div>
+            <div><Label>Sport</Label><Select value={training.sportId || 'none'} onValueChange={value => setTraining(previous => ({ ...previous, sportId: value === 'none' ? '' : value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">General / not sport-specific</SelectItem>{(meta.sports || []).map(sport => <SelectItem key={sport.id} value={String(sport.id)}>{sport.name}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Status</Label><Select value={training.status} onValueChange={value => setTraining(previous => ({ ...previous, status: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{['planned','attended','completed','not_completed','expired'].map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Completion date</Label><Input type="date" className="mt-1" value={training.completionDate} onChange={event => setTraining(previous => ({ ...previous, completionDate: event.target.value }))} /></div>
+            <div><Label>Provider</Label><Input className="mt-1" value={training.provider} onChange={event => setTraining(previous => ({ ...previous, provider: event.target.value }))} /></div>
+            <div><Label>Level / category</Label><Input className="mt-1" value={training.levelCategory} onChange={event => setTraining(previous => ({ ...previous, levelCategory: event.target.value }))} /></div>
+            <div className="sm:col-span-2"><Label>Notes</Label><Textarea className="mt-1" value={training.notes} onChange={event => setTraining(previous => ({ ...previous, notes: event.target.value }))} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setTrainingOpen(false)}>Cancel</Button><Button onClick={addTraining} disabled={saving}>{saving ? 'Saving…' : 'Add training'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={qualificationOpen} onOpenChange={setQualificationOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add qualification</DialogTitle><DialogDescription>Qualifications stay attached to the canonical person and can support club roles, training and future sports.</DialogDescription></DialogHeader>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2"><Label>Qualification title</Label><Input className="mt-1" value={qualification.title} onChange={event => setQualification(previous => ({ ...previous, title: event.target.value }))} /></div>
+            <div><Label>Sport</Label><Select value={qualification.sportId || 'none'} onValueChange={value => setQualification(previous => ({ ...previous, sportId: value === 'none' ? '' : value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">General / not sport-specific</SelectItem>{(meta.sports || []).map(sport => <SelectItem key={sport.id} value={String(sport.id)}>{sport.name}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Verification</Label><Select value={qualification.verificationStatus} onValueChange={value => setQualification(previous => ({ ...previous, verificationStatus: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{['unverified','verified','expired'].map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Level</Label><Input className="mt-1" value={qualification.level} onChange={event => setQualification(previous => ({ ...previous, level: event.target.value }))} /></div>
+            <div><Label>Governing body / provider</Label><Input className="mt-1" value={qualification.governingBody} onChange={event => setQualification(previous => ({ ...previous, governingBody: event.target.value }))} /></div>
+            <div><Label>Award date</Label><Input type="date" className="mt-1" value={qualification.awardDate} onChange={event => setQualification(previous => ({ ...previous, awardDate: event.target.value }))} /></div>
+            <div><Label>Expiry date</Label><Input type="date" className="mt-1" value={qualification.expiryDate} onChange={event => setQualification(previous => ({ ...previous, expiryDate: event.target.value }))} /></div>
+            <div className="sm:col-span-2"><Label>Notes</Label><Textarea className="mt-1" value={qualification.notes} onChange={event => setQualification(previous => ({ ...previous, notes: event.target.value }))} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setQualificationOpen(false)}>Cancel</Button><Button onClick={addQualification} disabled={saving}>{saving ? 'Saving…' : 'Add qualification'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
