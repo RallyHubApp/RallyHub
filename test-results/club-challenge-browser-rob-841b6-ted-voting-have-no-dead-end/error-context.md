@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: club-challenge-browser-robot.spec.mjs >> Club Challenge mobile host robot: setup → practice → draw → live → full result
-- Location: e2e/club-challenge-browser-robot.spec.mjs:243:1
+- Name: club-challenge-browser-robot.spec.mjs >> Completed player link robot: Final landing, alphabetical teams, Event Info, Summary and integrated voting have no dead end
+- Location: e2e/club-challenge-browser-robot.spec.mjs:329:1
 
 # Error details
 

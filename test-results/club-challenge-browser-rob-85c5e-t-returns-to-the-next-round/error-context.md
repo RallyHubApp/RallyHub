@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: club-challenge-browser-robot.spec.mjs >> Club Challenge mobile host robot: setup → practice → draw → live → full result
-- Location: e2e/club-challenge-browser-robot.spec.mjs:243:1
+- Name: club-challenge-browser-robot.spec.mjs >> Live recovery robot: stale timer is silent, break controls work, and host returns to the next round
+- Location: e2e/club-challenge-browser-robot.spec.mjs:362:1
 
 # Error details
 
