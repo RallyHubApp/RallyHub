@@ -24,6 +24,27 @@ function ageGroup(age:any){
   if(age<65) return 'Senior (50-64)';
   return 'Super Senior (65+)';
 }
+function nextSeasonLabel(labelValue:any){
+  const label=clean(labelValue,40);
+  const m=label.match(/^(\d{4})[-\/]?(\d{2}|\d{4})$/);
+  if(!m)return '';
+  const start=Number(m[1]);
+  const end=start+2;
+  return `${start+1}-${String(end).slice(-2)}`;
+}
+function dateState(openValue:any,dueValue:any){
+  const now=new Date();
+  const today=Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate());
+  const parse=(v:any,end=false)=>{
+    const s=clean(v,20); if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return null;
+    const [y,m,d]=s.split('-').map(Number); return Date.UTC(y,m-1,d)+(end?86399999:0);
+  };
+  const open=parse(openValue),due=parse(dueValue,true);
+  if(open!==null&&today<open)return 'upcoming';
+  if(due!==null&&today>due)return 'closed';
+  if(open!==null||due!==null)return 'open';
+  return 'unscheduled';
+}
 function activeWindow(row:any){
   const now=Date.now();
   if(row?.starts_at && Date.parse(row.starts_at)>now) return false;
@@ -380,14 +401,15 @@ Deno.serve(async(req)=>{
     await assertClubAdmin(base44,user,tenantId,clubId);
 
     if(action==='admin_meta'){
-      const [club,tenant,clubSports,allSports,gateways,views,memberships]=await Promise.all([
+      const [club,tenant,clubSports,allSports,gateways,views,memberships,membershipConfigs]=await Promise.all([
         first(base44,'Club',{id:clubId,tenant_id:tenantId}),
         first(base44,'Tenant',{id:tenantId}),
         base44.asServiceRole.entities.ClubSport.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'-is_primary',100),
         base44.asServiceRole.entities.Sport.filter({status:'active'},'name',100),
         base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:tenantId,club_id:clubId},'-is_default',50),
         base44.asServiceRole.entities.MembershipSavedView.filter({tenant_id:tenantId,club_id:clubId,user_id:user.id},'name',100),
-        base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',500)
+        base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',500),
+        base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',50)
       ]);
       const sportMap=new Map((allSports||[]).map((s:any)=>[String(s.id),s]));
       const configuredSports=(clubSports||[]).map((cs:any)=>({
@@ -409,13 +431,24 @@ Deno.serve(async(req)=>{
         }
       }
       const mostCommon=(map:Map<string,number>)=>[...map.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+      const membershipConfig=(membershipConfigs||[]).find((c:any)=>c.status==='active')||(membershipConfigs||[])[0]||null;
+      const defaultSeason=membershipConfig?.season_label||mostCommon(seasonCounts);
       return Response.json({
         success:true,
         tenant:tenant?{id:tenant.id,name:tenant.name||null,slug:tenant.slug||null,timezone:tenant.timezone||null}:null,
         club:safeClub(club),
         sports:configuredSports,
         gateways:(gateways||[]).map(safeGateway),
-        defaults:{membership_season:mostCommon(seasonCounts),membership_fee:mostCommon(feeCounts)!==null?Number(mostCommon(feeCounts)):null},
+        defaults:{membership_season:defaultSeason,membership_fee:membershipConfig?.membership_fee??(mostCommon(feeCounts)!==null?Number(mostCommon(feeCounts)):null)},
+        membershipCycle:membershipConfig?{
+          currentSeason:membershipConfig.season_label||defaultSeason,
+          targetSeason:membershipConfig.renewal_target_season||nextSeasonLabel(membershipConfig.season_label||defaultSeason),
+          periodStart:membershipConfig.membership_period_start||membershipConfig.active_from||null,
+          periodEnd:membershipConfig.membership_period_end||membershipConfig.active_until||null,
+          renewalOpensOn:membershipConfig.renewal_opens_on||null,
+          renewalDueOn:membershipConfig.renewal_due_on||null,
+          renewalWindowStatus:dateState(membershipConfig.renewal_opens_on,membershipConfig.renewal_due_on)
+        }:null,
         membershipStatuses:MEMBERSHIP_STATUS,
         relationshipTypes:RELATIONSHIP_TYPE,
         paymentStatuses:PAYMENT_STATUS,
