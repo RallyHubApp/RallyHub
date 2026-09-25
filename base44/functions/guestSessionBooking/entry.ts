@@ -453,7 +453,7 @@ Deno.serve(async(req)=>{
       tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,
       purpose_type:'booking',purpose_id:booking.id,payment_type:'guest_session',
       amount:Number(session.fee_amount||0),currency:session.currency||'EUR',
-      payment_method:session.payment_method,payment_status:initialPayment,
+      payment_method:session.payment_method,payment_status:'pending',
       source_system:'rallyhub_guest_session',source_row:booking.id,
       notes:`${session.venue_name} · ${session.session_date} · ${session.start_time}`,
     });
