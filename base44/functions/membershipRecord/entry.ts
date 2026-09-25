@@ -806,7 +806,7 @@ Deno.serve(async(req)=>{
         };
       });
       const activeRows=rows.filter((r:any)=>r.membership_status!=='former_member'&&r.relationship_type==='member');
-      const complimentaryRows=activeRows.filter((r:any)=>r.payment_status==='not_required'||Number(r.membership_fee||0)===0);
+      const complimentaryRows=activeRows.filter((r:any)=>r.payment_status==='not_required'||String(r.membership_type||'').toLowerCase().includes('complimentary'));
       const counts={
         total:rows.length,
         active:rows.filter((r:any)=>r.membership_status==='paid_active').length,
