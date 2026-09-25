@@ -3,6 +3,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 const clean=(v:any,max=500)=>String(v??'').trim().slice(0,max);
 const lower=(v:any)=>clean(v,240).toLowerCase();
 const nameKey=(v:any)=>lower(v).replace(/[’‘]/g,"'").replace(/[^a-z0-9]+/g,' ').trim();
+function parseJson(value:any,fallback:any={}){
+  try{return typeof value==='string'&&value.trim()?JSON.parse(value):value&&typeof value==='object'?value:fallback}catch{return fallback}
+}
 
 function ageFromDob(value:any,onDate=new Date()){
   const s=clean(value,20);
@@ -108,6 +111,21 @@ function safeClub(c:any){
   return {id:c.id,tenant_id:c.tenant_id||null,name:c.name||null,slug:c.slug||null,timezone:c.timezone||null,logo_url:c.logo_url||null,primary_colour:c.primary_colour||null,secondary_colour:c.secondary_colour||null,public_contact_email:c.public_contact_email||null};
 }
 function safeSport(s:any){return s?{id:s.id,name:s.name||null,code:s.code||null,status:s.status||null}:null}
+function sportSettings(clubSport:any){
+  const settings=parseJson(clubSport?.settings_json,{});
+  const rating=settings?.rating&&typeof settings.rating==='object'?settings.rating:{};
+  return {
+    ...settings,
+    rating:{
+      enabled:rating.enabled!==false,
+      system:clean(rating.system,80)||null,
+      label:clean(rating.label,80)||'External rating',
+      id_label:clean(rating.id_label,80)||'Rating ID',
+      legacy_adapter:clean(rating.legacy_adapter,40)||null,
+      variants:Array.isArray(rating.variants)?rating.variants.slice(0,12):[]
+    }
+  };
+}
 function safeGateway(g:any){return g?{id:g.id,provider:g.provider||null,display_name:g.display_name||null,status:g.status||null,is_default:g.is_default===true,currency:g.currency||'EUR',supports_payments:g.supports_payments!==false,supports_refunds:g.supports_refunds===true}:null}
 const MEMBERSHIP_STATUS=['paid_active','pending_payment','no_response','not_renewing','inactive','former_member'];
 const RELATIONSHIP_TYPE=['member','guest','booking_only','waiting_list','inactive','former_member'];
@@ -365,7 +383,7 @@ Deno.serve(async(req)=>{
         ...safeSport(sportMap.get(String(cs.sport_id))),
         club_sport_id:cs.id,
         is_primary:cs.is_primary===true,
-        settings_json:cs.settings_json||null
+        settings:sportSettings(cs)
       })).filter((x:any)=>x.id);
       return Response.json({
         success:true,
@@ -481,7 +499,7 @@ Deno.serve(async(req)=>{
         const primaryProfile=profiles.find((sp:any)=>String(sp.sport_id)===primarySportId)||profiles[0]||null;
         const primarySport=primaryProfile?sportMap.get(String(primaryProfile.sport_id)):primarySportId?sportMap.get(primarySportId):null;
         const quality=dataQualityIssues(p,m);
-        const externalRating=primaryProfile?.dupr_doubles_rating??primaryProfile?.dupr_rating??null;
+        const externalRating=primaryProfile?.rating_value??primaryProfile?.dupr_doubles_rating??primaryProfile?.dupr_rating??null;
         return {
           person_id:m.person_id,full_name:p?.full_name||pl?.full_name||'Member',alternate_names:m.alternate_names||[],
           email:p?.primary_email||pl?.email||null,mobile:p?.mobile||pl?.phone||null,date_of_birth:p?.date_of_birth||null,
@@ -493,8 +511,18 @@ Deno.serve(async(req)=>{
           membership_fee:m.membership_fee??rel?.membership_amount??null,membership_category:rel?.membership_category||null,
           primary_sport:primarySport?.name||primaryProfile?.sport||null,primary_sport_id:primaryProfile?.sport_id||primarySportId||null,
           skill_level:primaryProfile?.skill_level||null,playing_category:primaryProfile?.playing_category||null,
-          external_rating:externalRating,external_rating_id:primaryProfile?.dupr_id||null,
-          sport_profiles:profiles.map((sp:any)=>({id:sp.id,sport_id:sp.sport_id,sport_name:sportMap.get(String(sp.sport_id))?.name||sp.sport||'Sport',status:sp.status||null,skill_level:sp.skill_level||null,playing_category:sp.playing_category||null,dupr_id:sp.dupr_id||null,dupr_rating:sp.dupr_rating??null,dupr_singles_rating:sp.dupr_singles_rating??null,dupr_doubles_rating:sp.dupr_doubles_rating??null})),
+          external_rating:externalRating,external_rating_id:primaryProfile?.external_rating_id||primaryProfile?.dupr_id||null,
+          rating_system:primaryProfile?.rating_system||null,
+          sport_profiles:profiles.map((sp:any)=>({
+            id:sp.id,sport_id:sp.sport_id,sport_name:sportMap.get(String(sp.sport_id))?.name||sp.sport||'Sport',
+            status:sp.status||null,experience_type:sp.experience_type||null,skill_level:sp.skill_level||null,
+            playing_category:sp.playing_category||null,preferred_side:sp.preferred_side||null,
+            rating_system:sp.rating_system||null,external_rating_id:sp.external_rating_id||sp.dupr_id||null,
+            rating_value:sp.rating_value??sp.dupr_doubles_rating??sp.dupr_rating??null,
+            rating_metadata_json:sp.rating_metadata_json||null,rating_source:sp.rating_source||null,rating_last_synced:sp.rating_last_synced||sp.dupr_last_synced||null,
+            dupr_id:sp.dupr_id||null,dupr_rating:sp.dupr_rating??null,dupr_singles_rating:sp.dupr_singles_rating??null,dupr_doubles_rating:sp.dupr_doubles_rating??null,
+            notes:sp.notes||null
+          })),
           linked:!!(p?.linked_user_id||pl?.user_id||pl?.linked_user_email),linked_user_id:p?.linked_user_id||pl?.user_id||null,
           quality_issues:quality,quality_count:quality.length,duplicate_flag:m.duplicate_flag||null,
           include_in_rallyhub:m.include_in_rallyhub!==false
