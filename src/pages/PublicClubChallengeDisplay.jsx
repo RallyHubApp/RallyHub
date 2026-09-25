@@ -87,8 +87,8 @@ export default function PublicClubChallengeDisplay(){
   const alphabeticalTeamSort=(a,b)=>String(a.display_name||'').localeCompare(String(b.display_name||''),'en',{sensitivity:'base'});
   const teamAPlayers=participants.filter(p=>p.side==='club_a').sort(alphabeticalTeamSort);
   const teamBPlayers=participants.filter(p=>p.side==='club_b').sort(alphabeticalTeamSort);
-  const voteAPlayers=participants.filter(p=>p.side==='club_a'&&p.status!=='replaced').sort(alphabeticalTeamSort);
-  const voteBPlayers=participants.filter(p=>p.side==='club_b'&&p.status!=='replaced').sort(alphabeticalTeamSort);
+  const voteAPlayers=participants.filter(p=>p.side==='club_a'&&((p.roster_role||'rotation')!=='reserve'||p.reserve_activated)).sort(alphabeticalTeamSort);
+  const voteBPlayers=participants.filter(p=>p.side==='club_b'&&((p.roster_role||'rotation')!=='reserve'||p.reserve_activated)).sort(alphabeticalTeamSort);
   const resultMatches=matches.filter(m=>!m.is_showcase&&['completed','draw','retired','forfeit','abandoned'].includes(m.status)).sort((a,b)=>Number(a.round_number)-Number(b.round_number)||Number(a.court_number)-Number(b.court_number));
   const resultRounds=[...new Set(resultMatches.map(m=>Number(m.round_number)))].sort((a,b)=>a-b);
   const courtsCount=Math.max(Number(event.courts||0),...matches.filter(m=>!m.is_showcase).map(m=>Number(m.court_number||0)),1);
