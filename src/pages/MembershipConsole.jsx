@@ -579,5 +579,53 @@ export default function MembershipConsole() {
 
                 <TabsContent value="qualifications" className="pt-4 space-y-3">
                   <div className="flex justify-end"><Button size="sm" onClick={() => setQualificationOpen(true)}><Plus className="w-3.5 h-3.5 mr-1" />Add qualification</Button></div>
-                  {!(detail.qualifications || []).length ? <p className="text-sm text-mut
+                  {!(detail.qualifications || []).length ? <p className="text-sm text-muted-foreground">No qualifications recorded.</p> :
+                    detail.qualifications.map(item => <div key={item.id} className="rounded-lg border p-3"><div className="flex justify-between gap-2"><p className="font-semibold text-sm">{item.title}</p><Badge variant="outline">{label(item.verification_status)}</Badge></div><p className="text-xs text-muted-foreground mt-1">{[item.sport, item.level, item.governing_body, item.award_date].filter(Boolean).join(' · ')}</p></div>)}
+                </TabsContent>
+
+                <TabsContent value="consents" className="pt-4 grid md:grid-cols-2 gap-2">
+                  {!(detail.consents || []).length ? <p className="text-sm text-muted-foreground">No consent records.</p> :
+                    detail.consents.map(item => <div key={item.id} className="rounded-lg border p-3"><div className="flex justify-between gap-2"><p className="text-sm font-semibold">{label(item.consent_type)}</p><Badge variant="outline">{label(item.status)}</Badge></div><p className="text-xs text-muted-foreground mt-2">{item.response_text || 'No response text stored'}</p><p className="text-[10px] text-muted-foreground mt-2">Version {item.consent_version || '—'} · {item.recorded_at || 'date not recorded'}</p></div>)}
+                </TabsContent>
+
+                <TabsContent value="history" className="pt-4 space-y-2">
+                  {!(detail.sportingHistory || []).length ? <p className="text-sm text-muted-foreground">No linked competition history yet.</p> :
+                    detail.sportingHistory.slice(0, 100).map(item => <div key={item.id} className="rounded-lg border p-3"><div className="flex justify-between gap-2"><div><p className="text-sm font-semibold">{item.competition_name}</p><p className="text-xs text-muted-foreground">{item.competition_type} · {item.date ? String(item.date).slice(0, 10) : '—'} · Round {item.round ?? '—'}</p></div><Badge variant="outline">{label(item.result)}</Badge></div><p className="text-xs mt-2">{item.score_for}–{item.score_against}{item.partner_names?.length ? ` · Partner: ${item.partner_names.join(', ')}` : ''}</p></div>)}
+                </TabsContent>
+              </Tabs>
+            </div>
+          ) : <p className="mt-6 text-sm text-muted-foreground">No membership record selected.</p>}
+        </SheetContent>
+      </Sheet>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit membership record</DialogTitle>
+            <DialogDescription>Personal details, club membership and sport profiles stay separate but are linked to one canonical person.</DialogDescription>
+          </DialogHeader>
+          <Tabs defaultValue="person">
+            <TabsList><TabsTrigger value="person">Person</TabsTrigger><TabsTrigger value="membership">Membership</TabsTrigger><TabsTrigger value="sports">Sports</TabsTrigger></TabsList>
+            <TabsContent value="person" className="grid sm:grid-cols-2 gap-3 pt-3">
+              {[
+                ['full_name','Full name'],['preferred_name','Preferred name'],['primary_email','Email'],['mobile','Mobile'],
+                ['date_of_birth','Date of birth'],['gender','Gender'],['full_postal_address','Postal address'],['postal_code','Postcode / Eircode'],
+                ['emergency_contact_name','Emergency contact'],['emergency_contact_relationship','Relationship'],['emergency_mobile','Emergency mobile'],
+                ['communication_preference','Communication preference']
+              ].map(([key, title]) => <div key={key} className={key === 'full_postal_address' ? 'sm:col-span-2' : ''}><Label>{title}</Label><Input type={key === 'date_of_birth' ? 'date' : 'text'} className="mt-1" value={editPerson?.[key] || ''} onChange={event => setEditPerson(previous => ({ ...previous, [key]: event.target.value }))} /></div>)}
+            </TabsContent>
+            <TabsContent value="membership" className="grid sm:grid-cols-2 gap-3 pt-3">
+              <div><Label>Membership ID</Label><Input className="mt-1" value={editMembership.member_id || ''} onChange={event => setEditMembership(previous => ({ ...previous, member_id: event.target.value }))} /></div>
+              <div><Label>Season</Label><Input className="mt-1" value={editMembership.membership_season || ''} onChange={event => setEditMembership(previous => ({ ...previous, membership_season: event.target.value }))} /></div>
+              <div><Label>Membership type</Label><Input className="mt-1" value={editMembership.membership_type || ''} onChange={event => setEditMembership(previous => ({ ...previous, membership_type: event.target.value }))} /></div>
+              <div><Label>Membership status</Label><Select value={editMembership.membership_status || ''} onValueChange={value => setEditMembership(previous => ({ ...previous, membership_status: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{(meta.membershipStatuses || []).map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent></Select></div>
+              <div><Label>Relationship type</Label><Select value={editMembership.relationship_type || ''} onValueChange={value => setEditMembership(previous => ({ ...previous, relationship_type: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{(meta.relationshipTypes || []).map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent></Select></div>
+              <div><Label>Payment status</Label><Select value={editMembership.payment_status || ''} onValueChange={value => setEditMembership(previous => ({ ...previous, payment_status: value }))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{(meta.paymentStatuses || []).map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent></Select></div>
+              <div><Label>Membership fee</Label><Input type="number" min="0" step="0.01" className="mt-1" value={editMembership.membership_fee ?? ''} onChange={event => setEditMembership(previous => ({ ...previous, membership_fee: event.target.value }))} /></div>
+              <div><Label>Payment date</Label><Input type="date" className="mt-1" value={editMembership.payment_date || ''} onChange={event => setEditMembership(previous => ({ ...previous, payment_date: event.target.value }))} /></div>
+              <div><Label>Join date</Label><Input type="date" className="mt-1" value={editMembership.join_date || ''} onChange={event => setEditMembership(previous => ({ ...previous, join_date: event.target.value }))} /></div>
+              <div><Label>Renewal date</Label><Input type="date" className="mt-1" value={editMembership.renewal_date || ''} onChange={event => setEditMembership(previous => ({ ...previous, renewal_date: event.target.value }))} /></div>
+              <div><Label>Expiry date</Label><Input type="date" className="mt-1" value={editMembership.expiry_date || ''} onChange={event => setEditMembership(previous => ({ ...previous, expiry_date: event.target.value }))} /></div>
+              <div className="sm:col-span-2"><Label>Admin notes</Label><Textarea className="mt-1" value={editMembership.admin_notes || ''} onChange={event => setEditMembership(previous => ({ ...previous, admin_notes: event.target.value }))} /></div>
+            </TabsContent>
 /*APPEND*/
