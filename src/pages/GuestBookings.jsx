@@ -221,10 +221,12 @@ export default function GuestBookings(){
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">{b.email} · {b.mobile}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Ref {b.confirmationCode} · booked {b.registeredAt?new Date(b.registeredAt).toLocaleString('en-IE'):''}</p>
+                  {Number(b.refundedAmount||0)>0&&<p className="mt-1 text-xs font-semibold text-amber-600">€{Number(b.refundedAmount).toFixed(2)} refunded · €{Number(b.refundableAmount||0).toFixed(2)} remaining refundable</p>}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={()=>copy(b.hostMessage,'Host WhatsApp message copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy host message</Button>
-                  {b.paymentMethod==='sumup'&&b.paymentStatus!=='paid'&&<Button size="sm" variant="outline" disabled={busy===`verify-${b.id}`} onClick={()=>verifyPayment(b.id)}>{busy===`verify-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
+                  {b.paymentMethod==='sumup'&&!['paid','partially_refunded','refunded'].includes(b.paymentStatus)&&<Button size="sm" variant="outline" disabled={busy===`verify-${b.id}`} onClick={()=>verifyPayment(b.id)}>{busy===`verify-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
+                  {b.paymentMethod!=='cash'&&['paid','partially_refunded'].includes(b.paymentStatus)&&Number(b.refundableAmount||0)>0&&<Button size="sm" variant="outline" disabled={busy===`refund-${b.id}`} onClick={()=>issueRefund(b)}>{busy===`refund-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Refund</Button>}
                   {b.paymentMethod==='cash'&&b.paymentStatus!=='paid'&&<Button size="sm" variant="outline" disabled={busy===`cash-${b.id}`} onClick={()=>markCashPaid(b.id)}><CheckCircle2 className="mr-1.5 h-3.5 w-3.5"/>Mark cash paid</Button>}
                 </div>
               </div>
