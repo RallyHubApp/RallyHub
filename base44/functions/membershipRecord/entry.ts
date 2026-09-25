@@ -639,8 +639,9 @@ Deno.serve(async(req)=>{
         if(personPatch.gender!==undefined&&['Male','Female','Non-binary','Prefer not to say'].includes(personPatch.gender)) playerPatch.gender=personPatch.gender;
         const primarySportId=String((configuredClubSports||[]).find((x:any)=>x.is_primary)?.sport_id||(configuredClubSports||[])[0]?.sport_id||'');
         const primarySubmitted=submittedProfiles.find((x:any)=>String(x?.sport_id||'')===primarySportId);
-        const sport=primarySportId?await first(base44,'Sport',{id:primarySportId}):null;
-        if(primarySubmitted&&String(sport?.code||'').toLowerCase()==='pickleball'){
+        if(primarySubmitted){
+          // Legacy Player only mirrors rating-compatible values from the club's configured primary sport.
+          // The authoritative multi-sport record remains SportProfile.
           if(primarySubmitted.dupr_id!==undefined) playerPatch.dupr_id=clean(primarySubmitted.dupr_id,120)||null;
           const rating=primarySubmitted.dupr_doubles_rating??primarySubmitted.dupr_rating;
           if(rating!==undefined&&rating!==null&&rating!==''){const n=Number(rating);if(Number.isFinite(n)) playerPatch.dupr_rating=n;}
