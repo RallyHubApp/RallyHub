@@ -36,6 +36,7 @@ import PublicClubChallengeDisplay from '@/pages/PublicClubChallengeDisplay';
 import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
 import PublicClubChallengeShowcaseScorer from '@/pages/PublicClubChallengeShowcaseScorer';
 import PublicInterclubRegistration from '@/pages/PublicInterclubRegistration';
+import PublicGuestSessionBooking from '@/pages/PublicGuestSessionBooking';
 import KotcHostSession from '@/pages/KotcHostSession';
 import PublicKotcResults from '@/pages/PublicKotcResults';
 import PublicKotcScorer from '@/pages/PublicKotcScorer';
@@ -50,6 +51,7 @@ import DirectoryHelp from '@/pages/DirectoryHelp';
 import DirectoryStory from '@/pages/DirectoryStory';
 import DirectoryQuickStart from '@/pages/DirectoryQuickStart';
 import TestClubEntry from '@/pages/TestClubEntry';
+import GuestBookings from '@/pages/GuestBookings';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -140,6 +142,7 @@ const AuthenticatedRoutes = () => (
       <Route path="analytics" element={<Analytics />} />
       <Route path="my-profile" element={<MyProfile />} />
       <Route path="admin" element={<AdminPanel />} />
+      <Route path="guest-bookings" element={<GuestBookings />} />
     </Route>
     <Route path="*" element={<Navigate to="/app" replace />} />
   </Routes>
@@ -202,6 +205,7 @@ function App() {
             <Route path="/:slug/:id" element={<PublicTournament />} />
             <Route path="/t/:id" element={<PublicTournament />} />
             <Route path="/club-challenge/register/:token" element={<PublicInterclubRegistration />} />
+            <Route path="/guest-session/:token" element={<PublicGuestSessionBooking />} />
             <Route path="/club-challenge/display/:token" element={<PublicClubChallengeDisplay />} />
             <Route path="/club-challenge/vote/:token" element={<PublicClubChallengeVote />} />
             <Route path="/club-challenge/showcase-score/:token" element={<PublicClubChallengeShowcaseScorer />} />
