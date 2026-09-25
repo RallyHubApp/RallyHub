@@ -716,14 +716,15 @@ Deno.serve(async(req)=>{
     }
 
     if(action==='admin_list'){
-      const [members,people,players,sportProfiles,clubSports,allSports,relationships]=await Promise.all([
+      const [members,people,players,sportProfiles,clubSports,allSports,relationships,membershipConfigs]=await Promise.all([
         base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'member_id',500),
         base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'full_name',500),
         base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId},'full_name',500),
         base44.asServiceRole.entities.SportProfile.filter({tenant_id:tenantId},'person_id',500),
         base44.asServiceRole.entities.ClubSport.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'-is_primary',100),
         base44.asServiceRole.entities.Sport.filter({status:'active'},'name',100),
-        base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:tenantId,club_id:clubId},'person_id',500)
+        base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:tenantId,club_id:clubId},'person_id',500),
+        base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',50)
       ]);
       const personMap=new Map((people||[]).map((p:any)=>[String(p.id),p]));
       const playerMap=new Map((players||[]).filter((p:any)=>p.person_id).map((p:any)=>[String(p.person_id),p]));
@@ -737,7 +738,31 @@ Deno.serve(async(req)=>{
       const configuredSportIds=new Set((clubSports||[]).map((cs:any)=>String(cs.sport_id)));
       const primarySportId=String((clubSports||[]).find((cs:any)=>cs.is_primary)?.sport_id||(clubSports||[])[0]?.sport_id||'');
       const relationshipMap=new Map((relationships||[]).map((r:any)=>[String(r.person_id),r]));
-      const rows=(members||[]).map((m:any)=>{
+      const membershipConfig=(membershipConfigs||[]).find((c:any)=>c.status==='active')||(membershipConfigs||[])[0]||null;
+      const seasonCounts=new Map<string,number>();
+      for(const membership of members||[]) if(membership.membership_season) seasonCounts.set(String(membership.membership_season),(seasonCounts.get(String(membership.membership_season))||0)+1);
+      const mostCommonSeason=[...seasonCounts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||'';
+      const currentSeason=clean(membershipConfig?.season_label||mostCommonSeason,40);
+      const targetSeason=clean(membershipConfig?.renewal_target_season||nextSeasonLabel(currentSeason),40);
+      const membershipsByPerson=new Map<string,any[]>();
+      for(const membership of members||[]){
+        const key=String(membership.person_id||''); if(!key)continue;
+        if(!membershipsByPerson.has(key))membershipsByPerson.set(key,[]);
+        membershipsByPerson.get(key)!.push(membership);
+      }
+      const displayMemberships:any[]=[];
+      const targetMembershipByPerson=new Map<string,any>();
+      for(const [personId,personMemberships] of membershipsByPerson){
+        const current=(personMemberships||[]).find((m:any)=>String(m.membership_season||'')===currentSeason)
+          ||(personMemberships||[]).slice().sort((a:any,b:any)=>String(b.membership_season||b.updated_date||'').localeCompare(String(a.membership_season||a.updated_date||'')))[0];
+        if(current)displayMemberships.push(current);
+        if(targetSeason){
+          const target=(personMemberships||[]).find((m:any)=>String(m.membership_season||'')===targetSeason);
+          if(target)targetMembershipByPerson.set(personId,target);
+        }
+      }
+      const renewalWindowStatus=dateState(membershipConfig?.renewal_opens_on,membershipConfig?.renewal_due_on);
+      const rows=displayMemberships.map((m:any)=>{
         const p:any=personMap.get(String(m.person_id)), pl:any=playerMap.get(String(m.person_id)), rel:any=relationshipMap.get(String(m.person_id));
         const age=ageFromDob(p?.date_of_birth);
         const profiles=(profilesByPerson.get(String(m.person_id))||[]).filter((sp:any)=>!configuredSportIds.size||configuredSportIds.has(String(sp.sport_id)));
