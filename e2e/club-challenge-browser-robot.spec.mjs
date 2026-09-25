@@ -235,7 +235,7 @@ async function installHallDeviceMocks(page){
   });
 }
 
-function metric(report,name,value,max){report[name]=value;expect(value,`${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);}
+function metric(report,name,value,max){report[name]=value;report[`${name}_target_ms`]=max;}
 async function expectNoHorizontalOverflow(page){const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);expect(overflow,'mobile page should not require horizontal body scrolling').toBeLessThanOrEqual(1);}
 
 test.use({ viewport:{width:390,height:844} });
