@@ -460,25 +460,19 @@ Brian Moore
 RallyHub
 087 810 0333
 https://rallyhub.ie`;
-  const htmlBody = `<!doctype html>
-<html><body style="margin:0;background:#f4f8f5;font-family:Arial,Helvetica,sans-serif;color:#0c1e35;">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f8f5;padding:24px 12px;"><tr><td align="center">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border-radius:20px;overflow:hidden;border:1px solid #dfe9e2;">
-<tr><td style="padding:28px 32px 18px;border-top:7px solid #159447;"><div style="font-size:28px;font-weight:800;">Rally<span style="color:#159447;">Hub</span></div><div style="font-size:11px;letter-spacing:2.2px;color:#66737f;margin-top:3px;">PLAY • CONNECT • BELONG</div></td></tr>
-<tr><td style="padding:6px 32px 30px;">
-<p style="font-size:18px;margin:0 0 16px;">Hi ${firstName},</p>
-<p style="font-size:15px;line-height:1.65;margin:0 0 16px;">Thanks for connecting with RallyHub. Your access to the <strong>${clubName}</strong> Directory listing is now ready.</p>
-<p style="font-size:15px;line-height:1.65;color:#55636f;margin:0 0 20px;">Your listing is now ready for you to manage. You can check or update the club description, public contact details, venues and regular sessions at any time.</p>
-<table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 22px;"><tr><td bgcolor="#159447" style="border-radius:10px;"><a href="${manageUrl}" style="display:inline-block;padding:14px 22px;color:#fff;text-decoration:none;font-weight:700;font-size:15px;">Manage your listing</a></td></tr></table>
-<div style="background:#eef9f1;border:1px solid #d7eadc;border-radius:14px;padding:16px 18px;margin-bottom:20px;"><div style="font-weight:700;margin-bottom:6px;">Using Spond?</div><div style="font-size:14px;line-height:1.55;color:#55636f;">Open <strong>Enhanced listing</strong> to connect your club’s Spond account. RallyHub can scan your upcoming events and bring in regular venues and session times, which should save you quite a bit of work.</div></div>
-<p style="font-size:15px;line-height:1.65;margin:0 0 16px;">If there is anything we can do to help, just reply to this email or WhatsApp Brian on <strong>087 810 0333</strong>.</p>
-<p style="font-size:15px;line-height:1.65;color:#55636f;margin:0 0 16px;">We’re building the Directory with clubs, so if you have thoughts, suggestions or ideas about how we could make it better, please use the <strong>Feedback</strong> button inside RallyHub, or send Brian a text or voice note on WhatsApp — whatever is easiest.</p>
-<p style="font-size:15px;line-height:1.65;color:#55636f;margin:0 0 18px;">If you notice a <strong>club, venue or regular session missing from the Directory</strong>, or anything that doesn’t look quite right, please let us know. We’d be delighted to follow it up and invite any missing clubs or groups to be included.</p>
-<p style="font-size:14px;line-height:1.8;margin:0 0 18px;"><a href="${helpUrl}" style="color:#159447;font-weight:700;">Club Guide &amp; Help</a></p>
-<p style="font-size:15px;line-height:1.5;margin:0 0 4px;">Thanks again for being part of it.<br><br>Yours in sport,</p>
-<p style="font-size:22px;font-style:italic;font-weight:700;margin:0 0 2px;">Brian Moore</p>
-<p style="font-size:13px;color:#66737f;margin:0;">RallyHub · 087 810 0333 · <a href="https://rallyhub.ie" style="color:#159447;text-decoration:none;">RallyHub.ie</a></p>
-</td></tr></table></td></tr></table></body></html>`;
+  const finalTextBody = normaliseDirectorySignatureText(textBody);
+  const htmlBody = rallyHubEmailShell({
+    title: `Welcome to the RallyHub Directory`,
+    preheader: `Your ${clubName} Directory listing is ready to manage.`,
+    content: `${textToBrandedHtml(finalTextBody, manageUrl)}
+      <div style="margin:4px 0 0;padding:15px 17px;border:1px solid #cfe6d7;background:#f1faf4;border-radius:12px;">
+        <div style="font-size:13px;font-weight:800;color:${RALLYHUB_NAVY};margin-bottom:5px;">Your listing is ready</div>
+        <div style="font-size:13px;line-height:1.6;color:#52606d;">You can update your club description, public contact details, venues and regular sessions at any time. If you use Spond, Enhanced listing can help bring in regular venue and session information.</div>
+      </div>`,
+    actionUrl: manageUrl,
+    actionLabel: 'Manage your Directory listing',
+    footerNote: 'RallyHub Club Directory',
+  });
   await sendWithConfiguredEmailTransport(
     base44,
     { scopeType: 'platform', purpose: 'directory' },
