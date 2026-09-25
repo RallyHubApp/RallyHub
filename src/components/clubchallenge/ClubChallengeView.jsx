@@ -2473,7 +2473,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               </div>
             </div>}
           </div>}
-          <Button data-testid="cc-save-setup" onClick={saveSetup} disabled={!isAdmin || saving || !!logoUploading} className="w-full h-11">{logoUploading ? 'Uploading logo…' : saving ? 'Saving…' : event ? 'Save & Continue to Teams' : 'Create & Continue to Teams'}</Button>
+          <Button data-testid="cc-save-setup" onClick={saveSetup} disabled={!isAdmin || saving || !!logoUploading || !!logoDraft} className="w-full h-11">{logoDraft ? 'Apply or cancel logo edit first' : logoUploading ? 'Saving logo…' : saving ? 'Saving…' : event ? 'Save & Continue to Teams' : 'Create & Continue to Teams'}</Button>
         </div>
       )}
 
