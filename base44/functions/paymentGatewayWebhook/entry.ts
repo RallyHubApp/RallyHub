@@ -332,7 +332,7 @@ Deno.serve(async(req)=>{
     }
 
     if(status==='FAILED'||status==='EXPIRED'){
-      const local=status.toLowerCase();
+      const local='failed';
       await base44.asServiceRole.entities.PaymentRecord.update(payment.id,{payment_status:local,provider_status:status});
       if(payment.purpose_type==='booking'&&payment.purpose_id){
         const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({id:payment.purpose_id},'-created_date',5);
