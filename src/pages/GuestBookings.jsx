@@ -40,6 +40,7 @@ export default function GuestBookings(){
       if(res.data?.error)throw new Error(res.data.error);
       return res.data;
     },
+    enabled:user?.role==='admin',
   });
 
   const {data:listData={sessions:[],sumupConfigured:false},isLoading:listLoading}=useQuery({
@@ -49,6 +50,7 @@ export default function GuestBookings(){
       if(res.data?.error)throw new Error(res.data.error);
       return res.data;
     },
+    enabled:user?.role==='admin',
   });
 
   const selected=useMemo(()=>templateData.templates?.find(t=>t.key===templateKey)||null,[templateData,templateKey]);
@@ -106,6 +108,7 @@ export default function GuestBookings(){
     finally{setBusy('')}
   };
 
+  if(user?.role!=='admin')return <div className="min-h-[50vh] grid place-items-center text-center"><div><ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground/40"/><p className="mt-3 font-semibold">Admin access required</p></div></div>;
   if(templatesLoading||listLoading)return <div className="min-h-[50vh] grid place-items-center"><RefreshCw className="h-6 w-6 animate-spin"/></div>;
 
   return <div className="mx-auto max-w-6xl space-y-6">
