@@ -42,7 +42,8 @@ Deno.serve(async (req) => {
     for (const choice of requested) {
       const nominee:any = byId.get(choice.id);
       if (!nominee || nominee.side !== choice.side) return Response.json({ error:'That player is not eligible for this team award.' }, { status:409 });
-      if (nominee.status === 'replaced') return Response.json({ error:'That player is not eligible for voting.' }, { status:409 });
+      const isUnusedReserve = (nominee.roster_role || 'rotation') === 'reserve' && !nominee.reserve_activated;
+      if (isUnusedReserve) return Response.json({ error:'That player did not enter the active team and is not eligible for voting.' }, { status:409 });
     }
 
     const voterIdentityKey = await deviceKey(event.id, rawDeviceId);
