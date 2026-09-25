@@ -453,27 +453,63 @@ Deno.serve(async(req)=>{
     }
 
     if(action==='admin_list'){
-      const [members,people,players]=await Promise.all([
+      const [members,people,players,sportProfiles,clubSports,allSports,relationships]=await Promise.all([
         base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'member_id',500),
         base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'full_name',500),
-        base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId},'full_name',500)
+        base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId},'full_name',500),
+        base44.asServiceRole.entities.SportProfile.filter({tenant_id:tenantId},'person_id',500),
+        base44.asServiceRole.entities.ClubSport.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'-is_primary',100),
+        base44.asServiceRole.entities.Sport.filter({status:'active'},'name',100),
+        base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:tenantId,club_id:clubId},'person_id',500)
       ]);
       const personMap=new Map((people||[]).map((p:any)=>[String(p.id),p]));
       const playerMap=new Map((players||[]).filter((p:any)=>p.person_id).map((p:any)=>[String(p.person_id),p]));
+      const profilesByPerson=new Map<string,any[]>();
+      for(const sp of sportProfiles||[]){
+        const k=String(sp.person_id||''); if(!k) continue;
+        if(!profilesByPerson.has(k)) profilesByPerson.set(k,[]);
+        profilesByPerson.get(k)!.push(sp);
+      }
+      const sportMap=new Map((allSports||[]).map((s:any)=>[String(s.id),s]));
+      const configuredSportIds=new Set((clubSports||[]).map((cs:any)=>String(cs.sport_id)));
+      const primarySportId=String((clubSports||[]).find((cs:any)=>cs.is_primary)?.sport_id||(clubSports||[])[0]?.sport_id||'');
+      const relationshipMap=new Map((relationships||[]).map((r:any)=>[String(r.person_id),r]));
       const rows=(members||[]).map((m:any)=>{
-        const p:any=personMap.get(String(m.person_id)), pl:any=playerMap.get(String(m.person_id));
+        const p:any=personMap.get(String(m.person_id)), pl:any=playerMap.get(String(m.person_id)), rel:any=relationshipMap.get(String(m.person_id));
         const age=ageFromDob(p?.date_of_birth);
+        const profiles=(profilesByPerson.get(String(m.person_id))||[]).filter((sp:any)=>!configuredSportIds.size||configuredSportIds.has(String(sp.sport_id)));
+        const primaryProfile=profiles.find((sp:any)=>String(sp.sport_id)===primarySportId)||profiles[0]||null;
+        const primarySport=primaryProfile?sportMap.get(String(primaryProfile.sport_id)):primarySportId?sportMap.get(primarySportId):null;
+        const quality=dataQualityIssues(p,m);
+        const externalRating=primaryProfile?.dupr_doubles_rating??primaryProfile?.dupr_rating??null;
         return {
-          person_id:m.person_id,full_name:p?.full_name||pl?.full_name||'Member',alternate_names:m.alternate_names||[],email:p?.primary_email||pl?.email||null,
-          mobile:p?.mobile||pl?.phone||null,date_of_birth:p?.date_of_birth||null,age,age_group:ageGroup(age),
-          postal_code:p?.postal_code||null,member_id:m.member_id||null,membership_season:m.membership_season||null,
-          membership_type:m.membership_type||null,membership_status:m.membership_status||null,payment_status:m.payment_status||null,
-          payment_date:m.payment_date||null,membership_fee:m.membership_fee??null,dupr_id:pl?.dupr_id||null,
-          dupr_rating:pl?.dupr_rating??null,skill_rating:pl?.skill_rating??null,linked:!!(p?.linked_user_id||pl?.user_id||pl?.linked_user_email),
-          data_quality_flags:[...(p?.data_quality_flags||[]),...(m?.data_quality_flags||[])]
+          person_id:m.person_id,full_name:p?.full_name||pl?.full_name||'Member',alternate_names:m.alternate_names||[],
+          email:p?.primary_email||pl?.email||null,mobile:p?.mobile||pl?.phone||null,date_of_birth:p?.date_of_birth||null,
+          age,age_group:ageGroup(age),postal_code:p?.postal_code||null,
+          emergency_contact:p?.emergency_contact_name||p?.emergency_contact_raw||null,emergency_mobile:p?.emergency_mobile||null,
+          member_id:m.member_id||null,membership_season:m.membership_season||null,membership_type:m.membership_type||null,
+          membership_status:m.membership_status||null,relationship_type:m.relationship_type||rel?.relationship_type||null,
+          payment_status:m.payment_status||rel?.payment_status||null,payment_date:m.payment_date||rel?.payment_date||null,
+          membership_fee:m.membership_fee??rel?.membership_amount??null,membership_category:rel?.membership_category||null,
+          primary_sport:primarySport?.name||primaryProfile?.sport||null,primary_sport_id:primaryProfile?.sport_id||primarySportId||null,
+          skill_level:primaryProfile?.skill_level||null,playing_category:primaryProfile?.playing_category||null,
+          external_rating:externalRating,external_rating_id:primaryProfile?.dupr_id||null,
+          sport_profiles:profiles.map((sp:any)=>({id:sp.id,sport_id:sp.sport_id,sport_name:sportMap.get(String(sp.sport_id))?.name||sp.sport||'Sport',status:sp.status||null,skill_level:sp.skill_level||null,playing_category:sp.playing_category||null,dupr_id:sp.dupr_id||null,dupr_rating:sp.dupr_rating??null,dupr_singles_rating:sp.dupr_singles_rating??null,dupr_doubles_rating:sp.dupr_doubles_rating??null})),
+          linked:!!(p?.linked_user_id||pl?.user_id||pl?.linked_user_email),linked_user_id:p?.linked_user_id||pl?.user_id||null,
+          quality_issues:quality,quality_count:quality.length,duplicate_flag:m.duplicate_flag||null,
+          include_in_rallyhub:m.include_in_rallyhub!==false
         };
       });
-      return Response.json({success:true,rows,total:rows.length});
+      const counts={
+        total:rows.length,
+        active:rows.filter((r:any)=>r.membership_status==='paid_active').length,
+        pending:rows.filter((r:any)=>r.membership_status==='pending_payment').length,
+        unpaid:rows.filter((r:any)=>r.payment_status==='pending'||r.membership_status==='pending_payment').length,
+        incomplete:rows.filter((r:any)=>r.quality_count>0).length,
+        linked:rows.filter((r:any)=>r.linked).length,
+        duplicateReview:rows.filter((r:any)=>r.quality_issues.includes('duplicate_review')).length
+      };
+      return Response.json({success:true,rows,total:rows.length,counts});
     }
 
     if(action==='admin_detail'){
