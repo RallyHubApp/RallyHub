@@ -1731,11 +1731,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!eventDayProposal || !canManageEvent || eventDayAdjustmentBusy || sportingActionRef.current) return;
     const proposal = eventDayProposal;
     sportingActionRef.current = true;
-    setEventDayAdjustmentBusy(true);
-    setEventDayAdjustmentStatus({ state:'working', text:`Applying court & time changes… ${proposal.changes.length} fixture move${proposal.changes.length === 1 ? '' : 's'}, ${proposal.dropIds.length} Not Played.` });
-    setHostAction('Applying court & time changes… command sent');
+    flushSync(() => {
+      setEventDayAdjustmentBusy(true);
+      setEventDayAdjustmentStatus({ state:'working', text:`Applying court & time changes… ${proposal.changes.length} fixture move${proposal.changes.length === 1 ? '' : 's'}, ${proposal.dropIds.length} Not Played.` });
+      setHostAction('Applying court & time changes… command sent');
+    });
     try {
-      const res = await base44.functions.invoke('updateClubChallengeSchedule', {
+      const res = await invokeBase44Safely('updateClubChallengeSchedule', {
         eventId: event.id,
         courts: proposal.courts,
         availableMinutes: proposal.minutes,
