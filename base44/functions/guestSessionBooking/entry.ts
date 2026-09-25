@@ -193,7 +193,7 @@ Clare Pickleball`,
 async function gatewayAccount(base44:any,tenantId:string,clubId:string,provider:string){
   try{
     const rows=await base44.asServiceRole.entities.PaymentGatewayAccount.filter({tenant_id:tenantId,club_id:clubId,provider},'-updated_date',20);
-    const row=(rows||[]).find((x:any)=>x.status==='connected'&&x.is_default) || (rows||[]).find((x:any)=>x.status==='connected') || null;
+    const row=(rows||[]).find((x:any)=>x.status==='connected'&&x.is_default) || (rows||[]).find((x:any)=>x.status==='connected') || (rows||[]).find((x:any)=>x.is_default) || rows?.[0] || null;
     if(!row)return null;
     const account:ProviderAccount={
       provider,
