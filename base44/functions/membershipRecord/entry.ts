@@ -632,11 +632,14 @@ Deno.serve(async(req)=>{
 
       const configuredClubSports=await base44.asServiceRole.entities.ClubSport.filter({tenant_id:tenantId,club_id:clubId,status:'active'},'-is_primary',100);
       const allowedSportIds=new Set((configuredClubSports||[]).map((x:any)=>String(x.sport_id)));
+      const clubSportBySportId=new Map((configuredClubSports||[]).map((x:any)=>[String(x.sport_id),x]));
       const submittedProfiles=Array.isArray(body.sportProfiles)?body.sportProfiles:[];
       for(const input of submittedProfiles){
         const sportId=clean(input?.sport_id,180);
         if(!sportId||!allowedSportIds.has(String(sportId))) continue;
         let profile=input?.id?await first(base44,'SportProfile',{id:clean(input.id,180),tenant_id:tenantId,person_id:personId}):await first(base44,'SportProfile',{tenant_id:tenantId,person_id:personId,sport_id:sportId});
+        const configuredSettings=sportSettings(clubSportBySportId.get(String(sportId)));
+        const ratingMeta=input?.rating_metadata&&typeof input.rating_metadata==='object'?input.rating_metadata:parseJson(input?.rating_metadata_json,{});
         const patch:any={
           sport_id:sportId,
           primary_club_id:clubId,
@@ -645,12 +648,21 @@ Deno.serve(async(req)=>{
           skill_level:clean(input?.skill_level,120)||null,
           playing_category:clean(input?.playing_category,120)||null,
           preferred_side:clean(input?.preferred_side,80)||null,
-          dupr_id:clean(input?.dupr_id,120)||null,
+          rating_system:clean(input?.rating_system,80)||configuredSettings?.rating?.system||null,
+          external_rating_id:clean(input?.external_rating_id,160)||null,
+          rating_metadata_json:Object.keys(ratingMeta||{}).length?JSON.stringify(ratingMeta):null,
+          rating_source:clean(input?.rating_source,160)||null,
           notes:clean(input?.notes,1000)||null
         };
-        for(const key of ['dupr_rating','dupr_singles_rating','dupr_doubles_rating']){
-          if(input?.[key]===null||input?.[key]==='') patch[key]=null;
-          else if(input?.[key]!==undefined){const n=Number(input[key]); if(Number.isFinite(n)) patch[key]=n;}
+        if(input?.rating_value===null||input?.rating_value==='') patch.rating_value=null;
+        else if(input?.rating_value!==undefined){const n=Number(input.rating_value); if(Number.isFinite(n)) patch.rating_value=n;}
+        // Provider-specific legacy fields are adapters only. They are not the authoritative multi-sport model.
+        if(configuredSettings?.rating?.legacy_adapter==='dupr'){
+          patch.dupr_id=patch.external_rating_id;
+          patch.dupr_rating=patch.rating_value??null;
+          const singles=ratingMeta?.singles, doubles=ratingMeta?.doubles;
+          patch.dupr_singles_rating=singles===null||singles===''?null:Number.isFinite(Number(singles))?Number(singles):profile?.dupr_singles_rating??null;
+          patch.dupr_doubles_rating=doubles===null||doubles===''?null:Number.isFinite(Number(doubles))?Number(doubles):patch.rating_value??profile?.dupr_doubles_rating??null;
         }
         if(profile) await base44.asServiceRole.entities.SportProfile.update(profile.id,patch);
         else await base44.asServiceRole.entities.SportProfile.create({tenant_id:tenantId,person_id:personId,...patch});
@@ -667,11 +679,12 @@ Deno.serve(async(req)=>{
         if(personPatch.gender!==undefined&&['Male','Female','Non-binary','Prefer not to say'].includes(personPatch.gender)) playerPatch.gender=personPatch.gender;
         const primarySportId=String((configuredClubSports||[]).find((x:any)=>x.is_primary)?.sport_id||(configuredClubSports||[])[0]?.sport_id||'');
         const primarySubmitted=submittedProfiles.find((x:any)=>String(x?.sport_id||'')===primarySportId);
-        if(primarySubmitted){
-          // Legacy Player only mirrors rating-compatible values from the club's configured primary sport.
-          // The authoritative multi-sport record remains SportProfile.
-          if(primarySubmitted.dupr_id!==undefined) playerPatch.dupr_id=clean(primarySubmitted.dupr_id,120)||null;
-          const rating=primarySubmitted.dupr_doubles_rating??primarySubmitted.dupr_rating;
+        const primaryConfig=sportSettings(clubSportBySportId.get(primarySportId));
+        if(primarySubmitted&&primaryConfig?.rating?.legacy_adapter==='dupr'){
+          // Existing pickleball competition screens still consume legacy Player DUPR fields.
+          // Only the configured adapter mirrors into them; SportProfile remains authoritative.
+          if(primarySubmitted.external_rating_id!==undefined) playerPatch.dupr_id=clean(primarySubmitted.external_rating_id,160)||null;
+          const rating=primarySubmitted.rating_value;
           if(rating!==undefined&&rating!==null&&rating!==''){const n=Number(rating);if(Number.isFinite(n)) playerPatch.dupr_rating=n;}
           if(primarySubmitted.skill_rating!==undefined){const n=Number(primarySubmitted.skill_rating);if(Number.isFinite(n)) playerPatch.skill_rating=n;}
         }
