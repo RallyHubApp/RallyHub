@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
-import { CalendarCheck, CheckCircle2, Copy, ExternalLink, MapPin, MessageCircle, RefreshCw, ShieldCheck, XCircle } from 'lucide-react';
+import { CalendarCheck, CheckCircle2, Copy, ExternalLink, MapPin, MessageCircle, RefreshCw, RotateCcw, ShieldCheck, XCircle } from 'lucide-react';
 
 function niceDate(value){
   if(!value)return '';
@@ -105,6 +105,30 @@ export default function GuestBookings(){
       await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
       toast.success('Cash marked paid');
     }catch(e){toast.error(e?.message||'Could not update cash payment')}
+    finally{setBusy('')}
+  };
+
+  const issueRefund=async(booking)=>{
+    const available=Number(booking.refundableAmount||0);
+    if(available<=0){toast.error('Nothing remains to refund');return}
+    const raw=window.prompt(`Refund amount (maximum €${available.toFixed(2)})`,available.toFixed(2));
+    if(raw===null)return;
+    const amount=Math.round(Number(raw)*100)/100;
+    if(!Number.isFinite(amount)||amount<=0||amount>available){toast.error(`Enter an amount between €0.01 and €${available.toFixed(2)}`);return}
+    const reason=window.prompt('Reason for refund (kept in the RallyHub audit record)');
+    if(reason===null)return;
+    if(!reason.trim()){toast.error('A refund reason is required');return}
+    const ok=window.confirm(`Issue a €${amount.toFixed(2)} refund through ${booking.provider||booking.paymentMethod}?\n\nGuest cancellations made less than 24 hours before the session are normally non-refundable. Only continue if this refund is appropriate or an authorised exception.\n\nThis action sends the refund to the original payment method.`);
+    if(!ok)return;
+    setBusy(`refund-${booking.id}`);
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{
+        action:'admin_refund_payment',bookingId:booking.id,refundAmount:amount,reason:reason.trim(),confirmRefund:true,
+      });
+      if(res.data?.error)throw new Error(res.data.error);
+      await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
+      toast.success(`€${Number(res.data.refundAmount||amount).toFixed(2)} refund issued`);
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not issue refund')}
     finally{setBusy('')}
   };
 
