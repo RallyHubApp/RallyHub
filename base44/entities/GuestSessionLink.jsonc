@@ -50,8 +50,7 @@
       "type": "number"
     },
     "fee_amount": {
-      "type": "number",
-      "default": 5.5
+      "type": "number"
     },
     "currency": {
       "type": "string",
@@ -61,9 +60,15 @@
       "type": "string",
       "enum": [
         "sumup",
+        "stripe",
+        "square",
         "cash"
       ],
       "default": "sumup"
+    },
+    "payment_gateway_account_id": {
+      "type": "string",
+      "description": "Optional RallyHub PaymentGatewayAccount used for this session"
     },
     "notification_email": {
       "type": "string"
