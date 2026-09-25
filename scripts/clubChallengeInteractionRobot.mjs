@@ -68,6 +68,8 @@ check('future-proofing: Interclub print pack has no Banner Bash event or named-p
 check('future-proofing: Interclub host print chooser derives handover copy from event participant data', !contains(ui,"event?.id === '6ab3d84c8bbc3bc6e171ba03'") && contains(ui,'hasPlannedHandoverCopy') && contains(ui,'firstPlannedHandoverRound'));
 check('future-proofing: Interclub participant import uses generic team names', !contains(participantFn,'Choose Clare or Galway') && contains(participantFn,'Choose Team A or Team B'));
 check('future-proofing: Spond trusted membership derives from the owning club rather than Clare literals', !contains(spondFn,'clare pickleball members') && contains(spondFn,'isTrustedMemberSource') && contains(spondFn,'entities.Club.filter'));
+check('host branding: Interclub setup provides event-logo resize and position controls', contains(ui,'Resize / reposition current logo') && contains(ui,'cc-logo-editor-') && contains(ui,'Move left / right') && contains(ui,'Move up / down') && contains(ui,'renderPositionedEventLogo'));
+check('host branding: an unfinished logo edit blocks event creation', contains(ui,"logoDraft ? 'Apply or cancel logo edit first'"));
 check('host: live estimated duration is visible during setup', contains(ui,'Estimated event duration'));
 check('host: planned player count drives estimate before roster entry', contains(ui,'Planned total players'));
 check('host: estimate exposes rounds, block, break and contingency', contains(ui,'min contingency'));
