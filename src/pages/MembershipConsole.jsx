@@ -99,6 +99,14 @@ export default function MembershipConsole() {
   const [editSports, setEditSports] = useState([]);
   const [trainingOpen, setTrainingOpen] = useState(false);
   const [qualificationOpen, setQualificationOpen] = useState(false);
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [newMember, setNewMember] = useState({
+    full_name: '', primary_email: '', mobile: '', date_of_birth: '', member_id: '',
+    membership_season: '', membership_type: '', membership_status: 'pending_payment',
+    relationship_type: 'member', payment_status: 'pending', membership_fee: '',
+    join_date: '', emergency_contact_name: '', emergency_contact_relationship: '', emergency_mobile: '',
+    sport_ids: []
+  });
   const [training, setTraining] = useState({ trainingName: '', sportId: '', status: 'completed', completionDate: '', provider: '', levelCategory: '', notes: '' });
   const [qualification, setQualification] = useState({ title: '', sportId: '', verificationStatus: 'unverified', level: '', governingBody: '', awardDate: '', expiryDate: '', notes: '' });
 
@@ -177,6 +185,21 @@ export default function MembershipConsole() {
       };
     }));
   }, [detail, editOpen, meta.sports]);
+
+  useEffect(() => {
+    if (!meta.defaults && !(meta.sports || []).length) return;
+    setNewMember(previous => {
+      const sportIds = previous.sport_ids?.length
+        ? previous.sport_ids
+        : (meta.sports || []).filter(sport => sport.is_primary).map(sport => String(sport.id));
+      return {
+        ...previous,
+        membership_season: previous.membership_season || meta.defaults?.membership_season || '',
+        membership_fee: previous.membership_fee === '' && meta.defaults?.membership_fee != null ? String(meta.defaults.membership_fee) : previous.membership_fee,
+        sport_ids: sportIds
+      };
+    });
+  }, [meta.defaults, meta.sports]);
 
   const currency = meta.gateways?.find(g => g.is_default)?.currency || meta.gateways?.[0]?.currency || 'EUR';
   const gateway = meta.gateways?.find(g => g.is_default) || meta.gateways?.[0] || null;
