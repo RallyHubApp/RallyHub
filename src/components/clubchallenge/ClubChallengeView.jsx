@@ -2281,7 +2281,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           <div className="space-y-2">
             {[
               { key:'score', label:'Master Score Sheet', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)), note:'Blank score boxes for use during the event' },
-              ...(event?.id === '6ab3d84c8bbc3bc6e171ba03' ? [{ key:'handoverScore', label:'Master Score Sheet · 8:30 Handover Copy', pages:1, note:'Tonight only: Rounds 7–12 show Paul for John and Margaret for Kim' }] : []),
+              ...(hasPlannedHandoverCopy ? [{ key:'handoverScore', label:`Master Score Sheet · Handover from Round ${firstPlannedHandoverRound}`, pages:handoverScorePages, note:'Uses recorded replacements and the effective round automatically' }] : []),
               { key:'schedule', label:'Master Schedule / Court Assignment', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)), note:'Two rounds per A4 page' },
               { key:'roster', label:'Team Rosters', pages:2, note:'Ranked host copy + alphabetical hall-display copy' },
               { key:'briefing', label:'Event Briefing & Rules', pages:1, note:'Operational rules for the event' },
