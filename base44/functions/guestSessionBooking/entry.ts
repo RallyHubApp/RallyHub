@@ -560,7 +560,7 @@ Clare Pickleball`,
           }
           if(remoteStatus==='FAILED'||remoteStatus==='EXPIRED'){
             paymentStatus=remoteStatus.toLowerCase();
-            await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{payment_status,payment_status_updated_at:new Date().toISOString()});
+            await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{payment_status});
             const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
             if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:paymentStatus,provider_status:remoteStatus});
           }
