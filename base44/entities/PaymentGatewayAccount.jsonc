@@ -1,0 +1,99 @@
+{
+  "name": "PaymentGatewayAccount",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "connection_mode": {
+      "type": "string",
+      "enum": [
+        "api_key",
+        "oauth",
+        "manual"
+      ],
+      "default": "api_key"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "connected",
+        "pending",
+        "disconnected",
+        "error"
+      ],
+      "default": "pending"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false
+    },
+    "merchant_account_id": {
+      "type": "string"
+    },
+    "credential_reference": {
+      "type": "string",
+      "description": "Logical reference to a secure credential. Never store the secret value here."
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR"
+    },
+    "supports_payments": {
+      "type": "boolean",
+      "default": true
+    },
+    "supports_refunds": {
+      "type": "boolean",
+      "default": false
+    },
+    "connected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "provider",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

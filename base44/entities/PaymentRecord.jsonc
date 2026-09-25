@@ -51,7 +51,10 @@
         "paid",
         "pending",
         "failed",
+        "partially_refunded",
         "refunded",
+        "refund_pending",
+        "refund_failed",
         "not_required",
         "unknown"
       ]
@@ -60,11 +63,45 @@
       "type": "string",
       "format": "date"
     },
-    "sumup_checkout_id": {
+    "provider": {
+      "type": "string",
+      "description": "Payment gateway/provider, e.g. sumup, stripe, square, cash"
+    },
+    "provider_account_id": {
+      "type": "string",
+      "description": "RallyHub PaymentGatewayAccount id or provider merchant account identifier"
+    },
+    "provider_checkout_id": {
       "type": "string"
     },
-    "sumup_payment_link": {
+    "provider_checkout_url": {
       "type": "string"
+    },
+    "provider_transaction_id": {
+      "type": "string",
+      "description": "Authoritative provider transaction/payment id used for reconciliation and refunds"
+    },
+    "provider_payment_reference": {
+      "type": "string"
+    },
+    "provider_status": {
+      "type": "string"
+    },
+    "amount_refunded": {
+      "type": "number",
+      "default": 0
+    },
+    "last_refund_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sumup_checkout_id": {
+      "type": "string",
+      "description": "Legacy compatibility field; use provider_checkout_id for new code"
+    },
+    "sumup_payment_link": {
+      "type": "string",
+      "description": "Legacy compatibility field; use provider_checkout_url for new code"
     },
     "external_payment_reference": {
       "type": "string"
