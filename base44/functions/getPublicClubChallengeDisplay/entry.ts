@@ -22,8 +22,12 @@ Deno.serve(async (req) => {
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:link.challenge_event_id });
     const event = events?.[0];
     if (!event || !['draw_approved','in_progress','paused','completed','archived'].includes(event.status)) return Response.json({ error:'Interclub Challenge display is not available.' }, { status:404 });
-    const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
-    const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200);
+    const [participants,matches,hostClubRows] = await Promise.all([
+      base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100),
+      base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200),
+      event.host_club_id ? base44.asServiceRole.entities.Club.filter({ id:event.host_club_id, tenant_id:event.tenant_id }, '-updated_date', 5) : Promise.resolve([])
+    ]);
+    const hostClub = hostClubRows?.[0] || null;
     const votingTokens = event.pot_enabled
       ? await base44.asServiceRole.entities.ClubChallengeVotingToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5)
       : [];
@@ -71,7 +75,15 @@ Deno.serve(async (req) => {
       club_b_names:(m.club_b_participant_ids || []).map((id:string) => pmap.get(id) || 'Player'),
     }));
     return Response.json({ success:true, server_now:new Date().toISOString(), event:{
-      id:event.id, status:event.status, club_a_name:event.club_a_name, club_b_name:event.club_b_name,
+      id:event.id, status:event.status, host_club_id:event.host_club_id || null,
+      host_club:hostClub ? {
+        id:hostClub.id,
+        name:hostClub.name || null,
+        logo_url:hostClub.logo_url || null,
+        primary_colour:hostClub.primary_colour || null,
+        secondary_colour:hostClub.secondary_colour || null
+      } : null,
+      club_a_name:event.club_a_name, club_b_name:event.club_b_name,
       club_a_logo_url:event.club_a_logo_url, club_b_logo_url:event.club_b_logo_url,
       club_a_primary_colour:event.club_a_primary_colour, club_b_primary_colour:event.club_b_primary_colour,
       club_a_secondary_colour:event.club_a_secondary_colour, club_b_secondary_colour:event.club_b_secondary_colour,
