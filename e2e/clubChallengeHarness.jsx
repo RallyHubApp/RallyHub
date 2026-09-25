@@ -10,6 +10,7 @@ const tournament = {
   name: 'E2E Club Challenge',
   format: 'Club Challenge',
   status: 'Draft',
+  start_date: new Date().toISOString().slice(0, 10),
   tenant_id: 'tenant-clare-e2e',
   host_club_id: 'club-clare-e2e',
   inter_club: true,
