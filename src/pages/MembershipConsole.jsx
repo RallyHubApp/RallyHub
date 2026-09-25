@@ -697,7 +697,8 @@ export default function MembershipConsole() {
                         </div>
                         <div className="flex flex-wrap gap-2 xl:justify-end">
                           {waiting && application.paymentUrl ? <Button size="sm" variant="outline" onClick={() => copyApplicationPaymentLink(application)} disabled={busy}><ClipboardCopy className="w-3.5 h-3.5 mr-1.5" />Payment link</Button> : null}
-                          {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','email')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Email reminder</Button> : null}
+                          {waiting ? <Button size="sm" variant="outline" onClick={() => previewApplicationReminder(application)} disabled={busy}><FileText className="w-3.5 h-3.5 mr-1.5" />Preview</Button> : null}
+                          {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','email')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Send email</Button> : null}
                           {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','whatsapp')} disabled={busy}><MessageCircle className="w-3.5 h-3.5 mr-1.5" />WhatsApp</Button> : null}
                           {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_verify_payment')} disabled={busy}><RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${busy ? 'animate-spin' : ''}`} />Verify</Button> : null}
                           {!waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_resend_confirmation')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Resend confirmation</Button> : null}
