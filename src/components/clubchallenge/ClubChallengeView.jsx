@@ -42,8 +42,8 @@ const TABS = [
 ];
 
 const DEFAULT_SETUP = {
-  clubAName: 'Clare Pickleball Club', clubALogo: '', clubAPrimary: '#2563eb', clubASecondary: '#facc15',
-  clubBName: 'Galway Pickleball', clubBLogo: '', clubBPrimary: '#7f1d1d', clubBSecondary: '#f8fafc',
+  clubAName: 'Host Club', clubALogo: '', clubAPrimary: '#2563eb', clubASecondary: '#facc15',
+  clubBName: 'Opponent Club', clubBLogo: '', clubBPrimary: '#7f1d1d', clubBSecondary: '#f8fafc',
   venue: '', scheduledStartTime: '', courts: 4, plannedPlayersTotal: 32, availableMinutes: 180, playMinutes: 10, changeoverMinutes: 2,
   includeBreak: true, breakMinutes: 20, breakAfterRound: 6,
   matchType: 'timed', target: 11, winBy: 1, drawsAllowed: true,
