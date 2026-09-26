@@ -1227,7 +1227,7 @@ export default function MembershipConsole() {
                   ['Current needs review','ambiguous'],
                   ['RallyHub members','rallyhub_members'],
                   ['Missing from Spond','rallyhub_missing_from_spond']
-                ].map(([title,key]) => <div key={key} className="rounded-lg bg-secondary/40 p-2.5"><p className="text-[10px] uppercase text-muted-foreground">{title}</p><p className="text-lg font-black mt-1">{membershipSourcePreview.counts?.[key] || 0}</p></div>)}
+                ].map(([title,key]) => <div key={key} className="rounded-lg bg-secondary/40 p-2.5 min-h-[78px] h-full flex flex-col justify-between"><p className="text-[10px] uppercase text-muted-foreground leading-4 min-h-8">{title}</p><p className="text-lg font-black mt-1 leading-none">{membershipSourcePreview.counts?.[key] || 0}</p></div>)}
               </div>
               {(membershipSourcePreview.rallyhubMissing || []).length ? <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50/60 dark:bg-amber-950/20 p-3">
                 <p className="text-xs font-semibold text-amber-900 dark:text-amber-100">RallyHub members with no current Spond Club record</p>
