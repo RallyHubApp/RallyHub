@@ -191,7 +191,7 @@ export default function PublicGuestSessionBooking(){
         </section>
 
         <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
-          <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary"/><h2 className="text-lg font-black">Waiver & club conduct</h2></div>
+          <div className="flex items-center justify-between gap-3 flex-wrap"><div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary"/><h2 className="text-lg font-black">Waiver & club conduct</h2></div>{activeClubBrand?.slug&&<a href={`/directory/${activeClubBrand.slug}/policies`} target="_blank" rel="noreferrer" className="text-xs font-semibold text-primary hover:underline">View full club policy library</a>}</div>
 
           <details className="rounded-xl border bg-secondary/30 p-4"><summary className="cursor-pointer font-bold text-sm">{legal.waiverTitle}</summary><div className="mt-3 whitespace-pre-line text-xs leading-5 text-muted-foreground">{legal.waiverText}</div></details>
           <label className="flex items-start gap-3 rounded-xl border p-4 text-sm"><input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.waiverAccepted} onChange={e=>set('waiverAccepted',e.target.checked)} required/><span><strong>{legal.waiverConsentLabel || 'I have read and accept the Clare Pickleball Participation Declaration, Assumption of Risk & Liability Notice.'}</strong></span></label>
