@@ -23,7 +23,7 @@ import {
   Mail, MessageCircle, Pencil, Plus, Printer, RefreshCw, Save, Search, ShieldCheck, Users, WalletCards, X
 } from 'lucide-react';
 
-const EMPTY_FILTERS = { membershipStatus: 'all', paymentStatus: 'all', account: 'all', quality: 'all', sport: 'all', renewal: 'all' };
+const EMPTY_FILTERS = { membershipStatus: 'all', paymentStatus: 'all', account: 'all', quality: 'all', sport: 'all', renewal: 'all', ageBand: 'all' };
 
 const label = value => String(value || '')
   .replaceAll('_', ' ')
