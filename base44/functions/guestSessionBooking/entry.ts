@@ -426,7 +426,8 @@ Deno.serve(async(req)=>{
       }
 
       if(action==='admin_templates'){
-        return Response.json({success:true,templates:Object.values(TEMPLATES).map(templateOut),sumupConfigured,sumupMerchantName});
+        const templates=await directoryTemplates(base44,tenantId,clubId);
+        return Response.json({success:true,templates,sumupConfigured,sumupMerchantName,source:'directory'});
       }
 
       if(action==='admin_list'){
@@ -455,13 +456,13 @@ Deno.serve(async(req)=>{
       }
 
       if(action==='admin_create'){
-        const t=TEMPLATES[clean(body.templateKey,80)];
+        const templates=await directoryTemplates(base44,tenantId,clubId);
+        const t=templates.find((x:any)=>x.key===clean(body.templateKey,80));
         const date=clean(body.sessionDate,20);
-        if(!t)return Response.json({error:'Choose a valid Clare Pickleball session slot.'},{status:400});
+        if(!t)return Response.json({error:'Choose a valid club session from the Directory schedule.'},{status:400});
         if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'Choose the session date.'},{status:400});
         if(weekday(date)!==t.weekday)return Response.json({error:`That date is not a ${t.weekday}.`},{status:400});
 
-        const v=VENUES[t.venueKey];
         const cap=Number(body.capacity||0);
         const capacity=Number.isFinite(cap)&&cap>0?Math.floor(cap):undefined;
         const feeInput=body.feeAmount===undefined||body.feeAmount===null||body.feeAmount===''?Number(t.fee):Number(body.feeAmount);
@@ -471,12 +472,14 @@ Deno.serve(async(req)=>{
         const row=await base44.asServiceRole.entities.GuestSessionLink.create({
           tenant_id:tenantId,club_id:clubId,token:token(),active:true,
           session_date:date,weekday:t.weekday,start_time:t.start,end_time:t.end,
-          venue_key:t.venueKey,venue_name:v.name,venue_address:v.address,venue_eircode:v.eircode,google_maps_url:v.mapsUrl,
-          session_label:t.label,capacity,fee_amount:feeAmount,currency:'EUR',payment_method:t.payment,
+          venue_key:t.venueKey,venue_name:t.venueName,venue_address:t.venueAddress,venue_eircode:t.eircode,google_maps_url:t.mapsUrl,
+          session_label:t.directorySessionId||t.key,capacity:capacity||undefined,fee_amount:feeAmount,currency:'EUR',payment_method:t.payment,
           notification_email:emailKey(body.notificationEmail||user.email||''),notification_name:clean(user.full_name||user.email||'',120),
           created_by_user_id:user.id,created_at:now,
         });
-        return Response.json({success:true,session:safeSession(row),sumupConfigured});
+        const invite=await createInvite(base44,row,user);
+        const magicInviteUrl=`https://rallyhub.ie/book/${encodeURIComponent(row.token)}?invite=${encodeURIComponent(invite.token)}`;
+        return Response.json({success:true,session:safeSession(row),sumupConfigured,magicInviteUrl});
       }
 
       if(action==='admin_close'){
