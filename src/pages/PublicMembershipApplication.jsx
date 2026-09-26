@@ -48,6 +48,7 @@ function LegalBlock({ doc, checked, onChange }) {
 export default function PublicMembershipApplication() {
   const { clubSlug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite') || '';
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -64,6 +65,7 @@ export default function PublicMembershipApplication() {
     health_declaration:false, membership_terms:false, photoVideo:''
   });
   const [application, setApplication] = useState(null);
+  const [inviteApproved, setInviteApproved] = useState(false);
 
   const club = config?.club || {};
   const legal = config?.legal || {};
@@ -72,16 +74,33 @@ export default function PublicMembershipApplication() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    base44.functions.invoke('membershipApplication',{action:'public_get',clubSlug})
+    base44.functions.invoke('membershipApplication',{action:'public_get',clubSlug,inviteToken})
       .then(res => {
         if (!active) return;
         if (res.data?.error) throw new Error(res.data.error);
         setConfig(res.data?.config || null);
+        const approved = res.data?.inviteApproved === true;
+        setInviteApproved(approved);
+        if (approved) {
+          setApplicationType('new');
+          const prefill = res.data?.prefill || null;
+          if (prefill) {
+            setForm({ ...EMPTY_FORM,
+              fullName:prefill.fullName||'',fullPostalAddress:prefill.fullPostalAddress||'',postalCode:prefill.postalCode||'',
+              email:prefill.email||res.data?.inviteEmail||'',mobile:prefill.mobile||'',dateOfBirth:prefill.dateOfBirth||'',
+              emergencyContactName:prefill.emergencyContactName||'',emergencyContactRelationship:prefill.emergencyContactRelationship||'',emergencyMobile:prefill.emergencyMobile||''
+            });
+            if (prefill.consents) setConsents(prev=>({...prev,...prefill.consents}));
+          } else if (res.data?.inviteEmail) {
+            setForm(prev=>({...prev,email:res.data.inviteEmail}));
+          }
+          setStep('details');
+        }
       })
       .catch(err => { if (active) setError(err?.message || 'Membership applications are unavailable.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [clubSlug]);
+  }, [clubSlug, inviteToken]);
 
   const statusToken = searchParams.get('application') || application?.publicToken || '';
   useEffect(() => {
@@ -177,11 +196,17 @@ export default function PublicMembershipApplication() {
     setError('');
     try {
       const res = await base44.functions.invoke('membershipApplication',{
-        action:'public_submit',clubSlug,applicationType,renewalToken,
+        action:'public_submit',clubSlug,applicationType,renewalToken,inviteToken,
         ...form,changedFields,dataReviewConfirmed:applicationType === 'renewal' ? reviewConfirmed : true,
         consents
       });
       if (res.data?.error) throw new Error(res.data.error);
+      if (res.data?.pendingApproval) {
+        setApplication({pendingApproval:true,message:res.data?.message||'Your request is awaiting club approval.',fullName:form.fullName});
+        setStep('approval_pending');
+        window.scrollTo({top:0,behavior:'smooth'});
+        return;
+      }
       const next = res.data?.application;
       setApplication(next);
       if (next?.publicToken) {
@@ -235,7 +260,7 @@ export default function PublicMembershipApplication() {
             <section className="space-y-4">
               <div><h2 className="text-xl font-bold">How are you applying?</h2><p className="mt-1 text-sm text-muted-foreground">Choose the option that applies to you.</p></div>
               <div className="grid gap-3 sm:grid-cols-2">
-                {config.allowNew && <button onClick={() => chooseType('new')} className="rounded-2xl border border-border bg-card p-5 text-left hover:border-primary/50 hover:bg-primary/5 transition"><UserPlus className="w-6 h-6 text-primary" /><div className="mt-3 text-lg font-bold">New Member</div><p className="mt-1 text-sm text-muted-foreground">I am applying to join this club.</p></button>}
+                {config.allowNew && <button onClick={() => chooseType('new')} className="rounded-2xl border border-border bg-card p-5 text-left hover:border-primary/50 hover:bg-primary/5 transition"><UserPlus className="w-6 h-6 text-primary" /><div className="mt-3 text-lg font-bold">New Member</div><p className="mt-1 text-sm text-muted-foreground">I am applying to join this club.{!inviteApproved?' New public applications are approved by the club before payment.':''}</p></button>}
                 {config.allowRenewal && <button onClick={() => chooseType('renewal')} className="rounded-2xl border border-border bg-card p-5 text-left hover:border-primary/50 hover:bg-primary/5 transition"><Repeat2 className="w-6 h-6 text-primary" /><div className="mt-3 text-lg font-bold">Renewal</div><p className="mt-1 text-sm text-muted-foreground">I am renewing an existing membership.</p></button>}
               </div>
             </section>
