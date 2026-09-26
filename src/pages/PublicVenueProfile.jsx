@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Building2, CalendarDays, ExternalLink, MapPin } from 'lucide-react';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
@@ -6,6 +6,7 @@ import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 import { getClub } from '@/data/directorySeed';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
+import { trackSiteEvent } from '@/lib/site-analytics';
 
 const countySlug = county => String(county || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const venuePath = (clubSlug, venueId) => `/pickleball-venues/${encodeURIComponent(clubSlug)}/${encodeURIComponent(venueId)}`;
@@ -14,6 +15,7 @@ export default function PublicVenueProfile() {
   const { clubSlug, venueId } = useParams();
   const seedClub = getClub(clubSlug);
   const [directoryState, setDirectoryState] = useState(null);
+  const analyticsViewed = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -37,6 +39,20 @@ export default function PublicVenueProfile() {
       verificationStatus: state.verificationStatus || base.verificationStatus,
     } : { ...base, venues: base.venues || [], sessions: base.sessions || [] };
   }, [seedClub, directoryState]);
+
+  useEffect(() => {
+    const knownVenue = club?.venues?.find(item => String(item.id) === String(venueId));
+    if (!analyticsViewed.current && club?.name && knownVenue?.name) {
+      analyticsViewed.current = true;
+      trackSiteEvent('venue_view', {
+        clubSlug: club.slug,
+        clubName: club.name,
+        county: club.county,
+        venueId: knownVenue.id,
+        venueName: knownVenue.name
+      });
+    }
+  }, [club, venueId]);
 
   if (!seedClub && directoryState === null) {
     return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader /><main className="container mx-auto max-w-5xl px-4 py-10"><div className="glass rounded-2xl p-6">Loading venue…</div></main></div>;
@@ -145,7 +161,7 @@ export default function PublicVenueProfile() {
             <div className="rounded-xl border border-border bg-background/40 p-4"><CalendarDays className="h-4 w-4 text-primary"/><p className="mt-2 text-xs text-muted-foreground">Weekly sessions</p><p className="mt-1 font-semibold">{sessions.length || 'None currently listed'}</p></div>
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
-            {venue.mapUrl && <a href={venue.mapUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground">Open map <ExternalLink className="h-3.5 w-3.5"/></a>}
+            {venue.mapUrl && <a href={venue.mapUrl} onClick={() => trackSiteEvent('map_click',{clubSlug:club.slug,clubName:club.name,county:club.county,venueId:venue.id,venueName:venue.name})} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground">Open map <ExternalLink className="h-3.5 w-3.5"/></a>}
             {venue.websiteUrl && <a href={venue.websiteUrl} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl border border-border px-4 text-sm font-bold">Venue website <ExternalLink className="h-3.5 w-3.5"/></a>}
             <Link to={`/directory/${club.slug}`} className="inline-flex h-10 items-center gap-2 rounded-xl border border-border px-4 text-sm font-bold">View {club.name}</Link>
           </div>
