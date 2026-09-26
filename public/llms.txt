@@ -1,0 +1,21 @@
+# RallyHub
+
+RallyHub is an Ireland-focused pickleball platform for players, clubs, venues, sessions, events and competition management.
+
+Primary public resources:
+- https://rallyhub.ie/directory — all-Ireland pickleball club directory
+- https://rallyhub.ie/pickleball-clubs/clare — pickleball clubs and venues in County Clare
+- https://rallyhub.ie/pickleball-clubs/galway — pickleball clubs and venues in County Galway
+- https://rallyhub.ie/events — Irish pickleball events and tournament area
+- https://rallyhub.ie/directory/story — what the RallyHub Directory is
+- https://rallyhub.ie/directory/help — club guide and Directory help
+
+Public club pages use URLs like:
+- https://rallyhub.ie/directory/{club-slug}
+
+Public venue pages use URLs like:
+- https://rallyhub.ie/pickleball-venues/{club-slug}/{venue-id}
+
+RallyHub Directory information includes club names, counties, venues, addresses, court information, weekly sessions, contact information and club-supplied updates where available. Clubs may be verified or unclaimed; visitors should contact a club before travelling because schedules can change.
+
+RallyHub supports all 32 counties on the island of Ireland and is intended to help people find where and when to play pickleball.
