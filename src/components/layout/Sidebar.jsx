@@ -29,7 +29,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   const { role } = useKotcRole();
   const canAccessAdmin = user?.role === 'admin';
   const canManageMembership = user?.role === 'admin' || user?.active_club_role === 'club_admin';
-  const isMemberExperience = user?.role !== 'admin' && user?.active_club_role !== 'club_admin';
+  const isMemberExperience = !!user?.id && user?.role !== 'admin' && user?.active_club_role !== 'club_admin';
   const isSuperAdmin = role === 'super_admin';
   const memberNavItems = [
     { path: '/app', label: 'Home', icon: Home },
