@@ -1,0 +1,108 @@
+{
+  "name": "DirectoryPlayerSubscriber",
+  "type": "object",
+  "properties": {
+    "first_name": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "club_name": {
+      "type": "string"
+    },
+    "club_slug": {
+      "type": "string"
+    },
+    "county": {
+      "type": "string"
+    },
+    "dupr_rating": {
+      "type": "number"
+    },
+    "email_opt_in": {
+      "type": "boolean",
+      "default": false
+    },
+    "whatsapp_opt_in": {
+      "type": "boolean",
+      "default": false
+    },
+    "topics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "unsubscribed"
+      ],
+      "default": "active"
+    },
+    "consent_version": {
+      "type": "string"
+    },
+    "consent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "string"
+    },
+    "unsubscribe_token": {
+      "type": "string"
+    },
+    "unsubscribed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "first_name",
+    "status",
+    "consent_version",
+    "consent_at",
+    "source",
+    "unsubscribe_token",
+    "created_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
