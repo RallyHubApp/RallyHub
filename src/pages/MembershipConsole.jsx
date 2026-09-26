@@ -1166,7 +1166,7 @@ export default function MembershipConsole() {
 
               {membershipSourceData.canConfigureCredentialReference ? <div>
                 <Label>Secret reference</Label>
-                <Input className="mt-1 font-mono" value={membershipSourceCredentialReference} onChange={event => setMembershipSourceCredentialReference(event.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '_'))} placeholder="SPOND" />
+                <Input className="mt-1 font-mono" value={membershipSourceCredentialReference} onChange={event => setMembershipSourceCredentialReference(event.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '_'))} placeholder="SPOND_CLUB" />
                 <p className="mt-1 text-[11px] text-muted-foreground">This is a secret name prefix, never the Spond email or password itself.</p>
               </div> : null}
 
