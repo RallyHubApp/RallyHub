@@ -1654,7 +1654,7 @@ Brian`;
                 const adminIdentityConfirmed = !!claim.identity_admin_confirmed_at;
                 const sourceInvite = directoryInvitationUsedForClaim(claim);
                 return (
-                <div key={claim.id} className="glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div key={claim.id} aria-busy={reviewingDirectoryClaim === claim.id} className={`glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition ${reviewingDirectoryClaim === claim.id ? 'ring-2 ring-primary/35 bg-primary/5' : ''}`}>
                   <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold text-foreground">{claim.listing_name_snapshot}</p>
