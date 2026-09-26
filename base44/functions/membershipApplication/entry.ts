@@ -546,6 +546,10 @@ Deno.serve(async(req)=>{
     if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return Response.json({error:'Please enter a valid email address.'},{status:400});
     if(phoneDigits(mobile).length<8)return Response.json({error:'Please enter a valid mobile number.'},{status:400});
     if(!/^\d{4}-\d{2}-\d{2}$/.test(dob))return Response.json({error:'Please enter your date of birth.'},{status:400});
+    const birthDate=new Date(`${dob}T12:00:00Z`);
+    const today=new Date();
+    const eighteenthBirthday=new Date(Date.UTC(birthDate.getUTCFullYear()+18,birthDate.getUTCMonth(),birthDate.getUTCDate(),12));
+    if(!Number.isFinite(birthDate.getTime())||today.getTime()<eighteenthBirthday.getTime())return Response.json({error:'Clare Pickleball currently operates an adults-only programme. Applicants must be 18 or over.'},{status:400});
     if(!emergencyName||phoneDigits(emergencyMobile).length<8)return Response.json({error:'Please provide an emergency contact name and mobile number.'},{status:400});
     if(applicationType==='renewal'&&body.dataReviewConfirmed!==true)return Response.json({error:'Please confirm that you have reviewed all of your membership details.'},{status:400});
 
