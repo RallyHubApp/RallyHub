@@ -330,7 +330,7 @@ Deno.serve(async(req)=>{
       const now=new Date().toISOString();
       const settings={...parseJson(connection.settings_json,{}),surface:'spond_club',external_club_name:club.name,club_slug:club.slug||parseJson(connection.settings_json,{})?.club_slug||null};
       await base44.asServiceRole.entities.ExternalGroupConnection.update(connection.id,{status:'active',external_club_id:club.id,external_group_id:'',external_group_name:'',settings_json:JSON.stringify(settings),last_verified_at:now,last_error:'',last_sync_summary:`Previewed ${rows.length} Spond Club member records; no RallyHub or Spond records were changed.`}).catch(()=>{});
-      return Response.json({success:true,source:{provider:'spond',surface:'spond_club',club_id:club.id,club_name:club.name},counts,rows,readOnly:true,previewedAt:now});
+      return Response.json({success:true,source:{provider:'spond',surface:'spond_club',club_id:club.id,club_name:club.name},counts,rows,rallyhubMissing,readOnly:true,previewedAt:now});
     }
 
     if(action==='disconnect'){
