@@ -639,7 +639,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (action === 'admin_preview') {
+    if (action === 'admin_preview' || action === 'admin_preview_full') {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
       const userId = clean(body.userId, 180);
       if (!userId) return Response.json({ error: 'userId required' }, { status: 400 });
@@ -652,7 +652,66 @@ Deno.serve(async (req) => {
         tenant_id: clean(body.tenantId || user.active_tenant_id, 180),
         club_id: clean(body.clubId || user.active_club_id, 180),
       };
-      return Response.json({ success: true, preview: true, snapshot: await buildSnapshot(base44, target, previewContext) });
+      const snapshot = await buildSnapshot(base44, target, previewContext);
+      if (action === 'admin_preview') return Response.json({ success: true, preview: true, snapshot });
+
+      const tenantId = snapshot.user?.active_tenant_id;
+      const clubId = snapshot.user?.active_club_id;
+      const spond = await loadPersonalSpondSessions(base44, {
+        club:snapshot.club,
+        tenantId,
+        clubId,
+        person:snapshot.person,
+        player:snapshot.player,
+        member:snapshot.member,
+        user:snapshot.user,
+      });
+      const competitionItems = (snapshot.myCompetitions || []).map((event:any) => ({
+        id:`rallyhub:${event.id}`,
+        source_id:String(event.id),
+        source:'rallyhub',
+        title:event.name,
+        start:event.start_date ? `${event.start_date}T12:00:00` : null,
+        end:event.end_date ? `${event.end_date}T12:00:00` : null,
+        venue:event.location || null,
+        address:null,
+        latitude:null,
+        longitude:null,
+        response_status:'entered',
+        competition_format:event.format || null,
+        competition_status:event.status || null,
+      }));
+      const play = {
+        items:[...(spond.sessions || []), ...competitionItems].filter((item:any) => item.start).sort((a:any,b:any) => String(a.start).localeCompare(String(b.start))),
+        spond,
+        club:snapshot.club,
+      };
+
+      let clubhouse = { posts:[], playerDirectory:snapshot.playerDirectory || [], club:snapshot.club };
+      let learn = { resources:[], club:snapshot.club };
+      if (tenantId && clubId) {
+        const [postRows, resourceRows] = await Promise.all([
+          base44.asServiceRole.entities.ClubBulletinPost.filter({ tenant_id:tenantId, club_id:clubId, status:'published' }, '-published_at', 200),
+          base44.asServiceRole.entities.ClubResource.filter({ tenant_id:tenantId, club_id:clubId, status:'published' }, 'sort_order', 500),
+        ]);
+        const now = Date.now();
+        const identityIds = new Set([target.id, snapshot.person?.id, snapshot.player?.id, snapshot.member?.id].filter(Boolean).map(String));
+        clubhouse = {
+          club:snapshot.club,
+          playerDirectory:snapshot.playerDirectory || [],
+          posts:(postRows || [])
+            .filter((post:any) => !post.expires_at || Date.parse(post.expires_at) >= now)
+            .filter((post:any) => post.audience_scope === 'club' || (post.audience_scope === 'member' && (post.audience_ids || []).some((id:any) => identityIds.has(String(id)))))
+            .map((post:any) => ({ id:post.id, post_type:post.post_type, title:post.title, body:post.body || '', image_url:post.image_url || null, link_url:post.link_url || null, comments_enabled:post.comments_enabled !== false, is_pinned:post.is_pinned === true, published_at:post.published_at || post.created_date || null }))
+            .sort((a:any,b:any) => Number(b.is_pinned) - Number(a.is_pinned) || String(b.published_at || '').localeCompare(String(a.published_at || ''))),
+        };
+        learn = {
+          club:snapshot.club,
+          resources:(resourceRows || []).map((row:any) => ({ id:row.id, title:row.title, description:row.description || '', category:row.category || 'Resources', resource_type:row.resource_type || 'link', url:row.url || null, image_url:row.image_url || null, sport_key:row.sport_key || null, sort_order:Number(row.sort_order || 0) })),
+        };
+      }
+
+      return Response.json({ success:true, preview:true, snapshot, play, clubhouse, learn });
     }
 
     return Response.json({ error: 'Unknown action' }, { status: 400 });
