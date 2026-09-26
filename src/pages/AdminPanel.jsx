@@ -22,7 +22,7 @@ export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
-  const allowedAdminTabs = ['approvals', 'preview', 'directory', 'directory-contacts', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['approvals', 'preview', 'directory', 'directory-contacts', 'directory-players', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
   const directoryFocus = searchParams.get('focus');
@@ -108,6 +108,7 @@ export default function AdminPanel() {
   const [resendPreview, setResendPreview] = useState(null);
   const [welcomeBusy, setWelcomeBusy] = useState('');
   const [directoryContactSearch, setDirectoryContactSearch] = useState('');
+  const [directoryPlayerSearch, setDirectoryPlayerSearch] = useState('');
   const [editingDirectoryContact, setEditingDirectoryContact] = useState(null);
   const [directoryContactEditForm, setDirectoryContactEditForm] = useState({ fullName: '', mobile: '' });
   const [savingDirectoryIdentity, setSavingDirectoryIdentity] = useState(false);
@@ -196,6 +197,16 @@ export default function AdminPanel() {
       return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [], listingRecords: res.data?.listingRecords || [], listingProfiles: res.data?.listingProfiles || [], invitations: res.data?.invitations || [] }; 
     },
     enabled: canAccessAdmin
+  });
+
+  const { data: directoryPlayerNetwork = { counts: {}, subscribers: [] } } = useQuery({
+    queryKey: ['directory-player-network'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('directoryPlayerNetwork', { action: 'admin_list' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data || { counts: {}, subscribers: [] };
+    },
+    enabled: canAccessAdmin && activeAdminTab === 'directory-players'
   });
 
   const { data: clubFeedbackRows = [] } = useQuery({
