@@ -7,6 +7,7 @@ function raw(v:any,max=20000){return String(v??'').trim().slice(0,max)}
 function emailKey(v:any){return clean(v,240).toLowerCase()}
 function phoneDigits(v:any){return clean(v,80).replace(/\D/g,'')}
 function publicToken(){return `ma_${crypto.randomUUID().replaceAll('-','')}`}
+function inviteToken(){return `mi_${crypto.randomUUID().replaceAll('-','')}`}
 function validPublicToken(v:any){return /^ma_[0-9a-f]{32}$/i.test(String(v||''))}
 function confirmation(){return `M${crypto.randomUUID().replaceAll('-','').slice(0,8).toUpperCase()}`}
 function firstName(v:any){return clean(v,160).split(/\s+/).filter(Boolean)[0]||'there'}
@@ -36,6 +37,28 @@ async function activeConfig(base44:any,publicSlug:string){
 async function configForClub(base44:any,tenantId:string,clubId:string){
   const rows=await base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',20);
   return (rows||[]).find((c:any)=>c.status==='active')||(rows||[])[0]||null;
+}
+async function membershipInvite(base44:any,config:any,rawToken:any,email=''){
+  const token=clean(rawToken,120);
+  if(!token)return null;
+  const rows=await base44.asServiceRole.entities.AccessInviteToken.filter({token,purpose:'membership_application',status:'active',membership_config_id:config.id},'-created_at',5);
+  const invite=rows?.[0]||null;
+  if(!invite)return null;
+  if(invite.expires_at&&Date.parse(invite.expires_at)<Date.now()){
+    await base44.asServiceRole.entities.AccessInviteToken.update(invite.id,{status:'expired'}).catch(()=>{});
+    return null;
+  }
+  if(invite.intended_email&&email&&emailKey(invite.intended_email)!==emailKey(email))return null;
+  return invite;
+}
+async function createMembershipInvite(base44:any,config:any,user:any,intendedEmail='',intendedName='',accessRequestId=''){
+  const now=new Date();
+  return await base44.asServiceRole.entities.AccessInviteToken.create({
+    tenant_id:config.tenant_id,club_id:config.club_id,purpose:'membership_application',token:inviteToken(),status:'active',membership_config_id:config.id,
+    access_request_id:accessRequestId||'',intended_email:emailKey(intendedEmail),intended_name:clean(intendedName,160),
+    expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),created_by_user_id:user?.id||'',created_at:now.toISOString(),
+    notes:accessRequestId?`Approved public membership request ${accessRequestId}`:'Admin-issued membership magic link',
+  });
 }
 async function activeAdultPolicy(base44:any,tenantId:string,clubId:string){
   const rows=await base44.asServiceRole.entities.ClubPolicy.filter({tenant_id:tenantId,club_id:clubId,policy_type:'adult_participation',status:'active'},'-effective_from',20);
