@@ -142,6 +142,12 @@ export default function PublicMembershipApplication() {
     if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) return 'Please enter a valid email address.';
     if (form.mobile.replace(/\D/g,'').length < 8) return 'Please enter a valid mobile number.';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.dateOfBirth)) return 'Please enter your date of birth.';
+    if (Number(config?.minimumAge||0) > 0) {
+      const birth = new Date(`${form.dateOfBirth}T12:00:00Z`);
+      const now = new Date();
+      const eligible = new Date(Date.UTC(birth.getUTCFullYear()+Number(config.minimumAge),birth.getUTCMonth(),birth.getUTCDate(),12));
+      if (!Number.isFinite(birth.getTime()) || now.getTime() < eligible.getTime()) return `${club?.name||'This club'} currently requires applicants to be ${config.minimumAge} or over.`;
+    }
     if (!form.emergencyContactName.trim() || form.emergencyMobile.replace(/\D/g,'').length < 8) return 'Please provide an emergency contact name and mobile number.';
     if (applicationType === 'renewal' && !reviewConfirmed) return 'Please confirm that you have reviewed all of your details.';
     return '';
@@ -251,7 +257,7 @@ export default function PublicMembershipApplication() {
                 <div className="sm:col-span-2"><Label>Full name</Label><Input className="mt-1" value={form.fullName} onChange={e=>updateField('fullName',e.target.value)} autoComplete="name" /></div>
                 <div className="sm:col-span-2"><Label>Full postal address</Label><textarea className="mt-1 min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.fullPostalAddress} onChange={e=>updateField('fullPostalAddress',e.target.value)} autoComplete="street-address" /></div>
                 <div><Label>Eircode / postcode</Label><Input className="mt-1" value={form.postalCode} onChange={e=>updateField('postalCode',e.target.value)} /></div>
-                <div><Label>Date of birth</Label><Input type="date" className="mt-1" value={form.dateOfBirth} onChange={e=>updateField('dateOfBirth',e.target.value)} /></div>
+                <div><Label>Date of birth</Label><Input type="date" className="mt-1" value={form.dateOfBirth} onChange={e=>updateField('dateOfBirth',e.target.value)} />{Number(config?.minimumAge||0)>0&&<p className="mt-1 text-xs text-muted-foreground">Membership is currently for people aged {config.minimumAge} or over.</p>}</div>
                 <div><Label>Email address</Label><Input type="email" className="mt-1" value={form.email} onChange={e=>updateField('email',e.target.value)} autoComplete="email" /></div>
                 <div><Label>Mobile number</Label><Input className="mt-1" value={form.mobile} onChange={e=>updateField('mobile',e.target.value)} autoComplete="tel" /></div>
                 <div><Label>Emergency contact name</Label><Input className="mt-1" value={form.emergencyContactName} onChange={e=>updateField('emergencyContactName',e.target.value)} /></div>
