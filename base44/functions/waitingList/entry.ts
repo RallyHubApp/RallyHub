@@ -95,8 +95,9 @@ Deno.serve(async(req)=>{
       const [club,sport]=await Promise.all([clubBrand(base44,clubId,tenantId),sportName(base44,config.target_sport_id)]);
       if(action==='admin_count'||action==='admin_list'){
         const all=await base44.asServiceRole.entities.WaitingListEntry.filter({tenant_id:tenantId,club_id:clubId},'first_joined_at',500);
-        const active=(all||[]).filter((x:any)=>!['removed','declined','completed_course'].includes(String(x.status||'')));
-        const counts={total:(all||[]).length,waiting:active.filter((x:any)=>x.status==='waiting').length,active:active.length,priority:active.filter((x:any)=>x.priority_flag===true).length,targetExperience:active.filter((x:any)=>x.played_target_sport_before==='yes').length,racketExperience:active.filter((x:any)=>x.has_racket_sport_experience===true).length,medicalProvided:active.filter((x:any)=>x.medical_response_status==='provided').length,review:active.filter((x:any)=>x.identity_review_required===true||(x.data_quality_flags||[]).length>0).length};
+        const active=(all||[]).filter((x:any)=>x.active!==false&&!['removed','declined','completed_course'].includes(String(x.status||'')));
+        const inactive=(all||[]).filter((x:any)=>x.active===false);
+        const counts={total:(all||[]).length,waiting:active.filter((x:any)=>x.status==='waiting').length,active:active.length,inactive:inactive.length,priority:active.filter((x:any)=>x.priority_flag===true).length,targetExperience:active.filter((x:any)=>x.played_target_sport_before==='yes').length,racketExperience:active.filter((x:any)=>x.has_racket_sport_experience===true).length,medicalProvided:active.filter((x:any)=>x.medical_response_status==='provided').length,review:active.filter((x:any)=>x.identity_review_required===true||(x.data_quality_flags||[]).length>0).length};
         if(action==='admin_count')return Response.json({success:true,counts,oldestJoinedAt:active[0]?.first_joined_at||null,publicUrl:`https://rallyhub.ie/waiting-list/${encodeURIComponent(config.public_slug)}`});
         return Response.json({success:true,config:safeConfig(config,club,sport),counts,publicUrl:`https://rallyhub.ie/waiting-list/${encodeURIComponent(config.public_slug)}`,rows:(all||[]).map(clientRow)});
       }
@@ -109,6 +110,17 @@ Deno.serve(async(req)=>{
         if(body.priorityReason!==undefined)patch.priority_reason=clean(body.priorityReason,1000);
         if(body.adminNotes!==undefined)patch.admin_notes=raw(body.adminNotes,4000);
         if(body.identityReviewRequired!==undefined)patch.identity_review_required=body.identityReviewRequired===true;
+        const updated=await base44.asServiceRole.entities.WaitingListEntry.update(entry.id,patch);
+        return Response.json({success:true,entry:updated});
+      }
+      if(action==='admin_toggle_active'){
+        const id=clean(body.entryId,160); const entry=await first(base44,'WaitingListEntry',{id,tenant_id:tenantId,club_id:clubId});
+        if(!entry)return Response.json({error:'Waiting-list entry not found.'},{status:404});
+        const makeActive=body.active===true;
+        const now=new Date().toISOString();
+        const patch:any=makeActive
+          ? {active:true,reactivated_at:now}
+          : {active:false,deactivated_at:now,deactivation_reason:clean(body.reason,1000)};
         const updated=await base44.asServiceRole.entities.WaitingListEntry.update(entry.id,patch);
         return Response.json({success:true,entry:updated});
       }
@@ -140,7 +152,7 @@ Deno.serve(async(req)=>{
     const normalizedMobile=digits(mobile);
     const candidates=await base44.asServiceRole.entities.WaitingListEntry.filter({tenant_id:config.tenant_id,club_id:config.club_id},'first_joined_at',500);
     let existing=(candidates||[]).find((x:any)=>String(x.date_of_birth||'')===dob&&((lower(x.email)===email&&email)||(digits(x.mobile)===normalizedMobile&&normalizedMobile)))||null;
-    const patch:any={config_id:config.id,target_sport_id:config.target_sport_id,status:existing?.status||'waiting',last_response_at:now,full_name:fullName,full_postal_address:address,postal_code:postal,email,mobile,date_of_birth:dob,gdpr_consent:true,photo_video_consent:photo,previous_sports:previousSports,previous_sports_response_status:'recorded',has_racket_sport_experience:previousSports.length>0,other_sports_text:raw(body.otherSportsText,1000),played_target_sport_before:targetExp,target_sport_experience_duration:targetExp==='yes'?clean(body.targetSportExperienceDuration,120):'',target_sport_level:targetExp==='yes'?clean(body.targetSportLevel,120):'',activity_level:activityLevel,activity_background:raw(body.activityBackground,1500),medical_response_status:medicalAnswer==='yes'?'provided':'none',medical_information_provided:medicalAnswer==='yes',medical_notes:medicalAnswer==='yes'?medicalNotes:'',source_system:existing?.source_system||'rallyhub_waiting_list',source_response_count:Number(existing?.source_response_count||0)+1};
+    const patch:any={config_id:config.id,target_sport_id:config.target_sport_id,status:existing?.status||'waiting',active:existing?existing.active!==false:true,last_response_at:now,full_name:fullName,full_postal_address:address,postal_code:postal,email,mobile,date_of_birth:dob,gdpr_consent:true,photo_video_consent:photo,previous_sports:previousSports,previous_sports_response_status:'recorded',has_racket_sport_experience:previousSports.length>0,other_sports_text:raw(body.otherSportsText,1000),played_target_sport_before:targetExp,target_sport_experience_duration:targetExp==='yes'?clean(body.targetSportExperienceDuration,120):'',target_sport_level:targetExp==='yes'?clean(body.targetSportLevel,120):'',activity_level:activityLevel,activity_background:raw(body.activityBackground,1500),medical_response_status:medicalAnswer==='yes'?'provided':'none',medical_information_provided:medicalAnswer==='yes',medical_notes:medicalAnswer==='yes'?medicalNotes:'',source_system:existing?.source_system||'rallyhub_waiting_list',source_response_count:Number(existing?.source_response_count||0)+1};
     let entry:any;
     if(existing){entry=await base44.asServiceRole.entities.WaitingListEntry.update(existing.id,patch)}
     else{entry=await base44.asServiceRole.entities.WaitingListEntry.create({tenant_id:config.tenant_id,club_id:config.club_id,first_joined_at:now,age_at_join:ageOn(dob,now),priority_flag:false,identity_review_required:false,data_quality_flags:[],source_external_id:externalId(),source_first_row:'rallyhub',...patch})}
