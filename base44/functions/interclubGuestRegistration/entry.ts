@@ -3,6 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 const FALLBACK_WAIVER_VERSION = 'interclub-event-waiver-v1-2026-09';
 const FALLBACK_CODE_VERSION = 'interclub-code-of-conduct-v1-2026-09';
 const PRIVACY_VERSION = 'interclub-event-privacy-v1-2026-09';
+const ADULT_AGE_VERSION = 'clare-adult-18plus-v1-2026-09';
 
 function clean(value:any, max=200) {
   return String(value ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
@@ -120,6 +121,7 @@ Deno.serve(async (req) => {
     if (mobileK.length < 8) return Response.json({ error:'Please enter a valid mobile number.' }, { status:400 });
     if (!['Male','Female','Non-binary','Prefer not to say'].includes(gender)) return Response.json({ error:'Please select your gender.' }, { status:400 });
     if (!emergencyName || mobileKey(emergencyMobile).length < 8) return Response.json({ error:'Please provide an emergency contact name and mobile number.' }, { status:400 });
+    if (body.ageConfirmed !== true) return Response.json({ error:'Clare Pickleball Interclub registration is currently for adults aged 18 or over.' }, { status:400 });
     if (body.waiverAccepted !== true || body.codeAccepted !== true || body.privacyAcknowledged !== true) {
       return Response.json({ error:'The event waiver, Code of Conduct and privacy notice must be accepted to register.' }, { status:400 });
     }
@@ -246,6 +248,7 @@ Deno.serve(async (req) => {
 
     if (hostClubId) {
       const consents = [
+        { consent_type:'adult_age_confirmation', status:'accepted', response_text:'Confirmed 18 or over', consent_version:ADULT_AGE_VERSION },
         { consent_type:'interclub_event_waiver', status:'accepted', response_text:'Accepted', consent_version:legal.waiverVersion },
         { consent_type:'interclub_code_of_conduct', status:'accepted', response_text:'Accepted', consent_version:legal.codeVersion },
         { consent_type:'interclub_event_privacy_notice', status:'accepted', response_text:'Acknowledged', consent_version:PRIVACY_VERSION },
