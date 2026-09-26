@@ -140,6 +140,17 @@ export default function MembershipConsole() {
     enabled: canManage
   });
 
+  const { data: membershipSourceData = {}, refetch: refetchMembershipSource } = useQuery({
+    queryKey: ['membership-source-status', user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('membershipSource', { action: 'status' });
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data || {};
+    },
+    enabled: canManage,
+    retry: false
+  });
+
   const { data: listData = { rows: [], counts: {} }, isLoading: listLoading, refetch: refetchList } = useQuery({
     queryKey: ['membership-console-list', user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
