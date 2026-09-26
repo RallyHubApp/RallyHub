@@ -44,6 +44,7 @@ import PublicKotcScorer from '@/pages/PublicKotcScorer';
 import PublicPlayerLinkGuide from '@/pages/PublicPlayerLinkGuide';
 import PublicDirectory from '@/pages/PublicDirectory';
 import PublicClubProfile from '@/pages/PublicClubProfile';
+import PublicVenueProfile from '@/pages/PublicVenueProfile';
 import DirectoryClaim from '@/pages/DirectoryClaim';
 import AddDirectoryClub from '@/pages/AddDirectoryClub';
 import CountyDirectory from '@/pages/CountyDirectory';
@@ -199,6 +200,7 @@ function App() {
             <Route path="/events" element={<Events />} />
             <Route path="/directory" element={<PublicDirectory />} />
             <Route path="/directory/:slug" element={<PublicClubProfile />} />
+            <Route path="/pickleball-venues/:clubSlug/:venueId" element={<PublicVenueProfile />} />
             <Route path="/directory/:slug/policies" element={<PublicClubPolicies />} />
             <Route path="/directory/add" element={<AddDirectoryClub />} />
             <Route path="/pickleball-clubs/:countySlug" element={<CountyDirectory />} />
