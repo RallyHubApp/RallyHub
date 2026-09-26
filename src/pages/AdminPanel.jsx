@@ -1605,17 +1605,7 @@ Brian`;
               <p className="text-xs text-muted-foreground">{directoryAdminListings.length} Directory clubs available · showing {filteredDirectoryAdminListings.length}</p>
             </div>}
 
-            {directoryToolsOpen && <div id="directory-claim-invite" className="glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/25 scroll-mt-24">
-              <div className="rounded-lg border border-blue-400/25 bg-blue-400/5 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Clare Pickleball tenant email</p>
-                  <p className="text-xs text-muted-foreground mt-1">Send a private test to your admin email before RallyHub’s master Gmail connection is changed.</p>
-                </div>
-                <Button type="button" variant="outline" onClick={testClareMailGateway} disabled={testingClareMail} className="gap-2 shrink-0">
-                  <Mail className="w-4 h-4" /> {testingClareMail ? 'Sending test…' : 'Send Clare test email'}
-                </Button>
-              </div>
-
+            {directoryToolsOpen && <div id="directory-claim-invite" className="order-80 glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/25 scroll-mt-24">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary">Club claim invitation</p>
@@ -1695,9 +1685,19 @@ Brian`;
                 </div>
               )}
               {ownerInviteResult?.channel === 'email-sent' && <div className="rounded-xl border border-green-400/25 bg-green-400/5 p-4 text-sm">Email invitation sent successfully.</div>}
-            </div>
 
-            <div id="directory-pending-actions" className="space-y-2 scroll-mt-24" data-directory-action="new-club" data-has-pending={pendingNewDirectoryRequests.length > 0 ? "true" : "false"}>
+              <div className="rounded-lg border border-blue-400/25 bg-blue-400/5 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Clare Pickleball tenant email</p>
+                  <p className="text-xs text-muted-foreground mt-1">Low-frequency admin test only. Kept here at the bottom of Directory tools so it does not interrupt on-the-go approvals.</p>
+                </div>
+                <Button type="button" variant="outline" onClick={testClareMailGateway} disabled={testingClareMail} className="gap-2 shrink-0">
+                  <Mail className="w-4 h-4" /> {testingClareMail ? 'Sending test…' : 'Send Clare test email'}
+                </Button>
+              </div>
+            </div>}
+
+            <div id="directory-pending-actions" className="order-20 space-y-2 scroll-mt-24" className="space-y-2 scroll-mt-24" data-directory-action="new-club" data-has-pending={pendingNewDirectoryRequests.length > 0 ? "true" : "false"}>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">New club requests</p>
               {pendingNewDirectoryRequests.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No new clubs are waiting to be added.</p>
