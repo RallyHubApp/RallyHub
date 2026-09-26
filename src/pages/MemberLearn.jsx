@@ -13,9 +13,9 @@ function iconFor(type) {
   return LinkIcon;
 }
 
-export default function MemberLearn() {
+export default function MemberLearn({ previewData = null }) {
   const [search, setSearch] = useState('');
-  const { data: learn = null, isLoading, error } = useQuery({
+  const { data: fetchedLearn = null, isLoading, error } = useQuery({
     queryKey: ['member-portal-learn'],
     queryFn: async () => {
       const res = await base44.functions.invoke('memberPortal', { action: 'learn' });
@@ -23,7 +23,9 @@ export default function MemberLearn() {
       return res.data?.learn || null;
     },
     staleTime: 60_000,
+    enabled: !previewData,
   });
+  const learn = previewData || fetchedLearn;
 
   const directoryClub = learn?.club?.slug ? getClub(learn.club.slug) : null;
   const builtInLinks = useMemo(() => {
