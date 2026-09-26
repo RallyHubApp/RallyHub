@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
-import { sendWithConfiguredEmailTransport } from '../guestSessionBooking/emailRouter.ts';
+import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
 function clean(v:any,max=250){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
 function emailKey(v:any){return clean(v,200).toLowerCase()}
