@@ -30,7 +30,7 @@ function publicOptions(directory:any,config:any){
   const experiencedVenueSet=new Set((config?.experienced_venue_keys||[]).map(String));
   const sessions=(directory.sessions||[]).filter((s:any)=>s?.guestEligible!==false).map((s:any)=>{
     const venue=venues.find((v:any)=>v.id===String(s.venueId));
-    return {id:String(s.id),venueId:String(s.venueId),venueName:venue?.name||'',day:s.day||'',start:s.start||'',end:s.end||'',level:s.level||'',price:Number(s.price||0),paymentMethod:s.paymentMethod||'',capacity:Number(s.capacity||0)||null,beginnerEligible:beginnerSet.has(String(s.id))||s.beginnerGuestEligible===true,experiencedEligible:experiencedVenueSet.size?experiencedVenueSet.has(String(s.venueId)):true};
+    return {id:String(s.id),venueId:String(s.venueId),venueName:venue?.name||'',day:s.day||'',start:s.start||'',end:s.end||'',level:s.level||'',price:Number(s.price||0),paymentMethod:s.paymentMethod||'',capacity:Number(s.capacity||0)||null,beginnerEligible:beginnerSet.size?beginnerSet.has(String(s.id)):s.beginnerGuestEligible===true,experiencedEligible:experiencedVenueSet.size?experiencedVenueSet.has(String(s.venueId)):true};
   });
   return {venues,sessions};
 }
