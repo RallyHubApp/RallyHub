@@ -485,6 +485,58 @@ Deno.serve(async (req) => {
       return Response.json({ success:true, play:{ items, spond, club:snapshot.club } });
     }
 
+    if (action === 'clubhouse') {
+      await requireRallyHubClubAccess(base44, user);
+      const snapshot = await buildSnapshot(base44, user);
+      const tenantId = snapshot.user?.active_tenant_id;
+      const clubId = snapshot.user?.active_club_id;
+      if (!tenantId || !clubId) return Response.json({ success:true, clubhouse:{ posts:[], playerDirectory:[], club:snapshot.club } });
+      const rows = await base44.asServiceRole.entities.ClubBulletinPost.filter({ tenant_id:tenantId, club_id:clubId, status:'published' }, '-published_at', 200);
+      const now = Date.now();
+      const identityIds = new Set([user.id, snapshot.person?.id, snapshot.player?.id, snapshot.member?.id].filter(Boolean).map(String));
+      const posts = (rows || [])
+        .filter((post:any) => !post.expires_at || Date.parse(post.expires_at) >= now)
+        .filter((post:any) => {
+          if (post.audience_scope === 'club') return true;
+          if (post.audience_scope === 'member') return (post.audience_ids || []).some((id:any) => identityIds.has(String(id)));
+          return false;
+        })
+        .map((post:any) => ({
+          id:post.id,
+          post_type:post.post_type,
+          title:post.title,
+          body:post.body || '',
+          image_url:post.image_url || null,
+          link_url:post.link_url || null,
+          comments_enabled:post.comments_enabled !== false,
+          is_pinned:post.is_pinned === true,
+          published_at:post.published_at || post.created_date || null,
+        }))
+        .sort((a:any,b:any) => Number(b.is_pinned) - Number(a.is_pinned) || String(b.published_at || '').localeCompare(String(a.published_at || '')));
+      return Response.json({ success:true, clubhouse:{ posts, playerDirectory:snapshot.playerDirectory || [], club:snapshot.club } });
+    }
+
+    if (action === 'learn') {
+      await requireRallyHubClubAccess(base44, user);
+      const snapshot = await buildSnapshot(base44, user);
+      const tenantId = snapshot.user?.active_tenant_id;
+      const clubId = snapshot.user?.active_club_id;
+      if (!tenantId || !clubId) return Response.json({ success:true, learn:{ resources:[], club:snapshot.club } });
+      const rows = await base44.asServiceRole.entities.ClubResource.filter({ tenant_id:tenantId, club_id:clubId, status:'published' }, 'sort_order', 500);
+      const resources = (rows || []).map((row:any) => ({
+        id:row.id,
+        title:row.title,
+        description:row.description || '',
+        category:row.category || 'Resources',
+        resource_type:row.resource_type || 'link',
+        url:row.url || null,
+        image_url:row.image_url || null,
+        sport_key:row.sport_key || null,
+        sort_order:Number(row.sort_order || 0),
+      }));
+      return Response.json({ success:true, learn:{ resources, club:snapshot.club } });
+    }
+
     if (action === 'self_update') {
       await requireRallyHubClubAccess(base44, user);
 
