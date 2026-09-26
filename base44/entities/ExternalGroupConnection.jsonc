@@ -102,7 +102,6 @@
     "tenant_id",
     "club_id",
     "provider",
-    "external_group_id",
     "purpose",
     "status"
   ],
