@@ -1154,6 +1154,40 @@ Brian`;
   });
   const directoryContactsWithEmail = directoryContactRows.filter(row => row.email).length;
   const optedInDirectoryContacts = directoryContactRows.filter(row => row.email && row.networkUpdatesOptIn).length;
+  const directoryPlayerRows = directoryPlayerNetwork.subscribers || [];
+  const filteredDirectoryPlayerRows = directoryPlayerRows.filter(row => {
+    const q = directoryPlayerSearch.trim().toLowerCase();
+    if (!q) return true;
+    return [row.firstName,row.fullName,row.email,row.mobile,row.clubName,row.county,row.duprRating,row.status]
+      .some(value => String(value ?? '').toLowerCase().includes(q));
+  });
+  const activeDirectoryPlayerRows = directoryPlayerRows.filter(row => row.status === 'active' && (row.emailOptIn || row.whatsappOptIn));
+
+  const downloadDirectoryPlayerCsv = () => {
+    const headings = ['First name','Email','Mobile / WhatsApp','Club','County','DUPR rating','Email opt-in','WhatsApp/SMS opt-in','Status','Consent date'];
+    const rows = filteredDirectoryPlayerRows.map(row => [
+      row.firstName || row.fullName || '', row.email || '', row.mobile || '', row.clubName || '', row.county || '',
+      row.duprRating ?? '', row.emailOptIn ? 'Yes' : 'No', row.whatsappOptIn ? 'Yes' : 'No', row.status || '', row.consentAt || ''
+    ]);
+    const csv = [headings, ...rows].map(cols => cols.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rallyhub-player-network-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
+
+  const copyDirectoryPlayerWhatsAppNumbers = async () => {
+    const numbers = [...new Set(activeDirectoryPlayerRows.filter(row => row.whatsappOptIn && row.mobile).map(row => row.mobile))];
+    if (!numbers.length) return toast.error('No opted-in WhatsApp numbers are available');
+    try {
+      await navigator.clipboard.writeText(numbers.join('\n'));
+      toast.success(`${numbers.length} opted-in WhatsApp number${numbers.length === 1 ? '' : 's'} copied`);
+    } catch {
+      toast.error('Could not copy the WhatsApp numbers');
+    }
+  };
   const activeClubAccessUserIds = new Set((allClubUserAccesses || []).filter(a => a.status === 'active').map(a => String(a.user_id)));
   const directoryOnlyUserIds = new Set(
     activeDirectoryAccesses
