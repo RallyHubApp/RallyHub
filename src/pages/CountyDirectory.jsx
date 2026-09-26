@@ -8,6 +8,7 @@ import { directoryClubs, irelandCounties } from '@/data/directorySeed';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 
 const countySlug = county => county.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const venuePath = (clubSlug, venueId) => `/pickleball-venues/${encodeURIComponent(clubSlug)}/${encodeURIComponent(venueId)}`;
 
 export default function CountyDirectory() {
   const { countySlug: slug } = useParams();
@@ -75,8 +76,26 @@ export default function CountyDirectory() {
   } : null;
 
   const description = hasListings
-    ? `Find ${clubs.length} pickleball club${clubs.length === 1 ? '' : 's'} and ${venueCount} listed venue${venueCount === 1 ? '' : 's'} in County ${county}. View club details, places to play and contact information on RallyHub.`
+    ? `Find ${clubs.length} pickleball club${clubs.length === 1 ? '' : 's'} and ${venueCount} listed venue${venueCount === 1 ? '' : 's'} in County ${county}. View club details, places to play, weekly sessions, maps and contact information on RallyHub.`
     : `RallyHub supports pickleball listings in County ${county}, but no club is currently listed there. Add your club to help complete the all-Ireland directory.`;
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'RallyHub', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Pickleball Club Directory', item: `${SITE_URL}/directory` },
+      { '@type': 'ListItem', position: 3, name: `Pickleball clubs in ${county}`, item: `${SITE_URL}/pickleball-clubs/${slug}` }
+    ]
+  };
+  const faqSchema = hasListings ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      { '@type':'Question', name:`Where can I play pickleball in ${county}?`, acceptedAnswer:{ '@type':'Answer', text:`RallyHub currently lists ${clubs.length} pickleball club${clubs.length===1?'':'s'} and ${venueCount} venue${venueCount===1?'':'s'} in County ${county}. Open a club or venue page for current locations, session times and contact details.` } },
+      { '@type':'Question', name:`How many pickleball clubs are listed in ${county}?`, acceptedAnswer:{ '@type':'Answer', text:`There ${clubs.length===1?'is':'are'} currently ${clubs.length} pickleball club${clubs.length===1?'':'s'} listed for County ${county} on RallyHub.` } },
+      { '@type':'Question', name:`How do I check pickleball session times in ${county}?`, acceptedAnswer:{ '@type':'Answer', text:`RallyHub club and venue pages show verified weekly session times where clubs have supplied them. Contact the club before travelling because schedules can change.` } }
+    ]
+  } : null;
 
   return (
     <>
@@ -85,7 +104,7 @@ export default function CountyDirectory() {
         description={description}
         path={`/pickleball-clubs/${slug}`}
         robots={hasListings ? 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1' : 'noindex,follow'}
-        structuredData={schema}
+        structuredData={[schema, breadcrumbSchema, faqSchema].filter(Boolean)}
       />
       <div className="min-h-screen bg-background text-foreground">
         <PublicDirectoryHeader />
@@ -123,6 +142,7 @@ export default function CountyDirectory() {
                     <span>{club.venues?.length || 0} venue{club.venues?.length === 1 ? '' : 's'}</span>
                     <span>{club.sessions?.length ? `${club.sessions.length} weekly session${club.sessions.length === 1 ? '' : 's'}` : 'Schedule pending'}</span>
                   </div>
+                  {club.venues?.length ? <div className="mt-3 flex flex-wrap gap-2">{club.venues.slice(0,4).map(venue => <Link key={venue.id} to={venuePath(club.slug,venue.id)} className="rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-primary hover:border-primary/40">{venue.shortName || venue.name}</Link>)}</div> : null}
                   <div className="mt-auto pt-5 flex flex-wrap gap-2">
                     <Link to={`/directory/${club.slug}`} className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground">View club</Link>
                     {club.verificationStatus !== 'verified' && <Link to={`/directory/${club.slug}/claim`} className="inline-flex h-9 items-center rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 text-sm font-semibold text-amber-700 dark:text-amber-200">Claim listing</Link>}
