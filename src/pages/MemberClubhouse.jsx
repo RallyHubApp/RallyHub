@@ -15,9 +15,9 @@ function formatDate(value) {
   return date.toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export default function MemberClubhouse() {
+export default function MemberClubhouse({ previewData = null }) {
   const [search, setSearch] = useState('');
-  const { data: clubhouse = null, isLoading, error } = useQuery({
+  const { data: fetchedClubhouse = null, isLoading, error } = useQuery({
     queryKey: ['member-portal-clubhouse'],
     queryFn: async () => {
       const res = await base44.functions.invoke('memberPortal', { action: 'clubhouse' });
@@ -25,7 +25,9 @@ export default function MemberClubhouse() {
       return res.data?.clubhouse || null;
     },
     staleTime: 30_000,
+    enabled: !previewData,
   });
+  const clubhouse = previewData || fetchedClubhouse;
 
   const directoryClub = clubhouse?.club?.slug ? getClub(clubhouse.club.slug) : null;
   const players = clubhouse?.playerDirectory || [];
