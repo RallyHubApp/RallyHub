@@ -1,0 +1,109 @@
+{
+  "name": "ClubBulletinPost",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "author_user_id": {
+      "type": "string"
+    },
+    "post_type": {
+      "type": "string",
+      "enum": [
+        "announcement",
+        "post",
+        "poll",
+        "event_notice"
+      ],
+      "default": "post"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 220
+    },
+    "body": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "link_url": {
+      "type": "string"
+    },
+    "audience_scope": {
+      "type": "string",
+      "enum": [
+        "club",
+        "group",
+        "member"
+      ],
+      "default": "club"
+    },
+    "audience_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "comments_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "is_pinned": {
+      "type": "boolean",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "post_type",
+    "title",
+    "audience_scope",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
