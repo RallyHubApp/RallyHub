@@ -638,6 +638,24 @@ Deno.serve(async(req)=>{
     }
     if(docs.photo&&!['yes','no'].includes(String(submittedConsents.photoVideo||'')))return Response.json({error:'Please choose Yes or No for photography/video consent.'},{status:400});
 
+    let approvedInvite:any=null;
+    if(applicationType==='new'){
+      approvedInvite=await membershipInvite(base44,config,body.inviteToken||'',email);
+      if(!approvedInvite){
+        const existingRequests=await base44.asServiceRole.entities.ClubAccessRequest.filter({tenant_id:config.tenant_id,club_id:config.club_id,request_type:'membership_application',status:'pending_approval',email},'-submitted_at',20);
+        if(existingRequests?.[0]){
+          return Response.json({success:true,pendingApproval:true,requestId:existingRequests[0].id,message:'Your membership request is already awaiting Clare Pickleball approval. No payment has been taken.'});
+        }
+        const payload={applicationType,fullName,fullPostalAddress,postalCode,email,mobile,dateOfBirth:dob,emergencyContactName:emergencyName,emergencyContactRelationship:emergencyRelationship,emergencyMobile,changedFields:Array.isArray(body.changedFields)?body.changedFields:[],dataReviewConfirmed:body.dataReviewConfirmed===true,consents:submittedConsents};
+        const request=await base44.asServiceRole.entities.ClubAccessRequest.create({
+          tenant_id:config.tenant_id,club_id:config.club_id,request_type:'membership_application',status:'pending_approval',source:'public_link',membership_config_id:config.id,
+          full_name:fullName,email,mobile,date_of_birth:dob,payload_json:JSON.stringify(payload),submitted_at:new Date().toISOString(),
+          notes:`Public new-member request for ${config.season_label}. Approval required before payment.`
+        });
+        return Response.json({success:true,pendingApproval:true,requestId:request.id,message:'Thanks. Your membership request has been sent to Clare Pickleball for approval. No payment has been taken. If approved, you will receive a private link to complete the membership payment.'});
+      }
+    }
+
     let person=null;
     let existingMembership=null;
     let app=null;
