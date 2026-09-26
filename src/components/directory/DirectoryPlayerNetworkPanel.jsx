@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { BellRing, CheckCircle2, Mail, MessageCircle, Share2, UserPlus2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { irelandCounties } from '@/data/directorySeed';
+import { trackSiteEvent } from '@/lib/site-analytics';
 
 const EMPTY={
   firstName:'',email:'',mobile:'',county:'',clubChoice:'',otherClub:'',duprRating:'',emailOptIn:false,whatsappOptIn:false,website:''
@@ -34,14 +35,15 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
       });
       if(res.data?.error)throw new Error(res.data.error);
       setDone(res.data);
+      trackSiteEvent('player_updates_signup',{county:form.county,metadata:{club:clubName||'',emailOptIn:form.emailOptIn,whatsappOptIn:form.whatsappOptIn}});
     }catch(err){setError(err?.response?.data?.error||err?.message||'Could not save your update preferences.');}
     finally{setBusy(false)}
   };
 
-  const playerWhatsApp=`Hi, I came across RallyHub and thought you might like it.\n\nIt has a free Irish Pickleball Directory where you can find clubs, venues and regular sessions around Ireland, and you can also sign up to be notified about upcoming tournaments, events, coaching and other pickleball opportunities.\n\nLooks really useful, especially as it grows.\n\nHave a look here:\nhttps://rallyhub.ie/directory`;
-  const playerEmail=`Hi,\n\nI came across RallyHub and thought you might find it useful.\n\nIt has a free Irish Pickleball Directory where players can find clubs, venues and regular playing sessions around Ireland.\n\nYou can also sign up for occasional updates about upcoming tournaments, social events, coaching and other pickleball opportunities.\n\nIt looks like it could become a really useful way of keeping up with what’s happening around Irish pickleball.\n\nHave a look here:\n\nhttps://rallyhub.ie/directory`;
-  const clubWhatsApp=`Hi, I came across RallyHub’s new Irish Pickleball Directory and noticed our club isn’t on it yet.\n\nIt’s a free national directory for pickleball players to find clubs, venues and regular playing sessions around Ireland. Clubs can add or claim their listing for free and keep their own details up to date.\n\nI thought it might be worth getting our club listed too:\n\nhttps://rallyhub.ie/directory\n\nHave a look when you get a chance.`;
-  const clubEmail=`Hi,\n\nI came across RallyHub’s new Irish Pickleball Directory and noticed our club isn’t on it yet.\n\nIt’s a free national directory helping pickleball players find clubs, venues and regular playing sessions around Ireland. Clubs can add or claim their listing for free and then keep their own information up to date.\n\nI thought it would be worth getting our club listed too.\n\nhttps://rallyhub.ie/directory\n\nHave a look when you get a chance.`;
+  const playerWhatsApp=`Hi, I came across RallyHub and thought you might like it.\n\nIt has a free Irish Pickleball Directory where you can find clubs, venues and regular sessions around Ireland, and you can also sign up to be notified about upcoming tournaments, events, coaching and other pickleball opportunities.\n\nLooks really useful, especially as it grows.\n\nHave a look here:\nhttps://rallyhub.ie/directory?utm_source=whatsapp&utm_medium=referral&utm_campaign=player_share`;
+  const playerEmail=`Hi,\n\nI came across RallyHub and thought you might find it useful.\n\nIt has a free Irish Pickleball Directory where players can find clubs, venues and regular playing sessions around Ireland.\n\nYou can also sign up for occasional updates about upcoming tournaments, social events, coaching and other pickleball opportunities.\n\nIt looks like it could become a really useful way of keeping up with what’s happening around Irish pickleball.\n\nHave a look here:\n\nhttps://rallyhub.ie/directory?utm_source=email&utm_medium=referral&utm_campaign=player_share`;
+  const clubWhatsApp=`Hi, I came across RallyHub’s new Irish Pickleball Directory and noticed our club isn’t on it yet.\n\nIt’s a free national directory for pickleball players to find clubs, venues and regular playing sessions around Ireland. Clubs can add or claim their listing for free and keep their own details up to date.\n\nI thought it might be worth getting our club listed too:\n\nhttps://rallyhub.ie/directory?utm_source=whatsapp&utm_medium=referral&utm_campaign=club_share\n\nHave a look when you get a chance.`;
+  const clubEmail=`Hi,\n\nI came across RallyHub’s new Irish Pickleball Directory and noticed our club isn’t on it yet.\n\nIt’s a free national directory helping pickleball players find clubs, venues and regular playing sessions around Ireland. Clubs can add or claim their listing for free and then keep their own information up to date.\n\nI thought it would be worth getting our club listed too.\n\nhttps://rallyhub.ie/directory?utm_source=email&utm_medium=referral&utm_campaign=club_share\n\nHave a look when you get a chance.`;
 
   const openShare=(type,channel)=>{
     const isClub=type==='club';
@@ -58,6 +60,7 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
   };
   const sendShare=()=>{
     if(!shareDraft)return;
+    trackSiteEvent(shareDraft.type==='club'?'share_club':'share_player',{metadata:{channel:shareDraft.channel,surface:'directory_growth_panel'}});
     if(shareDraft.channel==='whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(shareDraft.message)}`,'_blank','noopener,noreferrer');
     else window.location.href=`mailto:?subject=${encodeURIComponent(shareDraft.subject)}&body=${encodeURIComponent(shareDraft.message)}`;
   };
