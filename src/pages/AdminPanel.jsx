@@ -1512,7 +1512,7 @@ Brian`;
               <div className="max-w-2xl">
                 <h3 className="font-semibold text-foreground flex items-center gap-2"><Eye className="w-4 h-4 text-primary" /> Member Preview</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Preview exactly the member dashboard without logging out or impersonating anyone. This is read-only: your Super Admin authentication and permissions never change.
+                  Preview the full member experience without logging out, switching accounts or impersonating anyone. Choose a member, switch between Home, Play, Clubhouse, Learn and Me, and test both mobile and desktop layouts. This is read-only: your Super Admin authentication and permissions never change.
                 </p>
               </div>
               <div className="w-full lg:w-80">
