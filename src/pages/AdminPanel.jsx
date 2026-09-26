@@ -1555,14 +1555,29 @@ Brian`;
         {/* ── DIRECTORY CLAIMS TAB ── */}
         <TabsContent value="directory" className="mt-4">
           <div className="flex flex-col gap-5">
-            <div className="glass rounded-lg p-3 flex items-start gap-2">
+            <div className="glass rounded-lg p-3 flex items-start gap-2 order-0">
               <UserCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <p className="text-xs text-muted-foreground">
                 <strong className="text-foreground">Directory access only.</strong> Approving a claim here grants permission to edit the relevant public Directory listing and nothing else. It does not grant RallyHub Club, tenant, tournament, player, match, leaderboard, analytics or admin access. Those require a completely separate ClubUserAccess/Tenant access process.
               </p>
             </div>
 
-            <div id="directory-clubs" className="glass rounded-xl p-4 sm:p-5 space-y-4 scroll-mt-24">
+            <div className="order-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button type="button" onClick={() => scrollToDirectorySection('directory-pending-claims')} className="glass rounded-xl p-3 text-left hover:bg-secondary/40 transition-colors">
+                <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold text-muted-foreground">Pending verification</span><span className={`text-xl font-black ${pendingDirectoryClaims.length ? 'text-amber-400' : 'text-muted-foreground'}`}>{pendingDirectoryClaims.length}</span></div>
+                <p className="text-[11px] text-muted-foreground mt-1">Claims that may need approval</p>
+              </button>
+              <button type="button" onClick={() => scrollToDirectorySection('directory-pending-actions')} className="glass rounded-xl p-3 text-left hover:bg-secondary/40 transition-colors">
+                <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold text-muted-foreground">New club requests</span><span className={`text-xl font-black ${pendingNewDirectoryRequests.length ? 'text-amber-400' : 'text-muted-foreground'}`}>{pendingNewDirectoryRequests.length}</span></div>
+                <p className="text-[11px] text-muted-foreground mt-1">New listings waiting for a decision</p>
+              </button>
+              <button type="button" onClick={() => scrollToDirectorySection('directory-outstanding-invitations')} className="glass rounded-xl p-3 text-left hover:bg-secondary/40 transition-colors">
+                <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold text-muted-foreground">Owner invitations</span><span className={`text-xl font-black ${directoryInvitationsReadyForApproval ? 'text-primary' : 'text-muted-foreground'}`}>{pendingDirectoryInvitations.length}</span></div>
+                <p className="text-[11px] text-muted-foreground mt-1">{directoryInvitationsReadyForApproval} ready to approve · {directoryInvitationsAwaitingRecipient} awaiting acceptance</p>
+              </button>
+            </div>
+
+            {directoryToolsOpen && <div id="directory-clubs" className="glass rounded-xl p-4 sm:p-5 space-y-4 scroll-mt-24">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Directory clubs</p>
                 <h3 className="text-lg font-bold text-foreground mt-1">Contact a club and invite them to claim</h3>
