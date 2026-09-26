@@ -1143,6 +1143,103 @@ export default function MembershipConsole() {
         </SheetContent>
       </Sheet>
 
+      <Dialog open={membershipSourceOpen} onOpenChange={setMembershipSourceOpen}>
+        <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Spond Club membership source</DialogTitle>
+            <DialogDescription>
+              Secure, tenant-scoped access to the club’s Spond membership roster. This connection is separate from RallyHub’s Spond event/attendance tools.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
+            <div className="flex flex-wrap items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" /><strong>Read-only connection</strong><Badge variant="outline">Preview only</Badge></div>
+            <p className="mt-1 text-xs text-muted-foreground">RallyHub can sign in, read the selected Spond group and compare its members with RallyHub. Preview does not create, update or delete member records in either system.</p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-4">
+            <div className="rounded-xl border p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div><p className="font-semibold">Secure connection</p><p className="text-xs text-muted-foreground">Credentials stay in Base44 backend secrets. RallyHub stores only the logical secret reference.</p></div>
+                <Badge variant={membershipSourceData.connection?.status === 'active' ? 'default' : 'outline'}>{membershipSourceData.connection ? label(membershipSourceData.connection.status) : 'Not connected'}</Badge>
+              </div>
+
+              {membershipSourceData.canConfigureCredentialReference ? <div>
+                <Label>Secret reference</Label>
+                <Input className="mt-1 font-mono" value={membershipSourceCredentialReference} onChange={event => setMembershipSourceCredentialReference(event.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '_'))} placeholder="SPOND" />
+                <p className="mt-1 text-[11px] text-muted-foreground">This is a secret name prefix, never the Spond email or password itself.</p>
+              </div> : null}
+
+              <div className="rounded-lg bg-secondary/40 p-3 text-xs">
+                <div className="flex items-center justify-between gap-2"><span className="font-medium">Backend credentials</span><Badge variant="outline" className={membershipSourceData.credentialsConfigured ? 'text-green-700' : 'text-amber-700'}>{membershipSourceData.credentialsConfigured ? 'Configured' : 'Setup required'}</Badge></div>
+                {membershipSourceData.requiredSecretNames ? <p className="mt-2 text-muted-foreground">Required Base44 secrets: <span className="font-mono text-foreground">{Object.values(membershipSourceData.requiredSecretNames).filter(Boolean).join(' + ')}</span></p> : null}
+                <p className="mt-1 text-muted-foreground">Never paste a Spond password into RallyHub or this chat.</p>
+              </div>
+
+              {membershipSourceData.connection ? <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                <Info title="Connected group" value={membershipSourceData.connection.external_group_name || membershipSourceData.connection.external_group_id} />
+                <Info title="Mode" value={label(membershipSourceData.connection.connection_mode)} />
+                <Info title="Direction" value="Spond source → RallyHub preview" />
+                <Info title="Last verified" value={membershipSourceData.connection.last_verified_at ? new Date(membershipSourceData.connection.last_verified_at).toLocaleString() : null} />
+              </div> : null}
+
+              {membershipSourceData.connection?.last_error ? <div className="rounded-lg border border-amber-300 bg-amber-50/60 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-200">{membershipSourceData.connection.last_error}</div> : null}
+
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={discoverSpondMembershipGroups} disabled={!!membershipSourceBusy}>
+                  <RefreshCw className={`w-4 h-4 mr-2 ${membershipSourceBusy === 'discover' ? 'animate-spin' : ''}`} />Discover groups
+                </Button>
+                {membershipSourceData.connection ? <Button variant="outline" onClick={verifySpondMembershipSource} disabled={!!membershipSourceBusy}><ShieldCheck className="w-4 h-4 mr-2" />Verify connection</Button> : null}
+              </div>
+            </div>
+
+            <div className="rounded-xl border p-4 space-y-3">
+              <div><p className="font-semibold">Membership group</p><p className="text-xs text-muted-foreground">Choose the Spond group that represents this club’s membership roster. The setting is scoped to the active RallyHub tenant and club.</p></div>
+              {membershipSourceGroups.length ? <>
+                <Select value={membershipSourceGroupId || undefined} onValueChange={setMembershipSourceGroupId}>
+                  <SelectTrigger><SelectValue placeholder="Choose Spond membership group" /></SelectTrigger>
+                  <SelectContent>{membershipSourceGroups.map(group => <SelectItem key={group.id} value={String(group.id)}>{group.name}{group.member_count != null ? ` · ${group.member_count} members` : ''}</SelectItem>)}</SelectContent>
+                </Select>
+                <Button onClick={saveSpondMembershipSource} disabled={!!membershipSourceBusy || !membershipSourceGroupId}>{membershipSourceBusy === 'save' ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}Save read-only source</Button>
+              </> : membershipSourceData.connection ? <div className="rounded-lg bg-secondary/40 p-3 text-sm"><strong>{membershipSourceData.connection.external_group_name || 'Spond group'}</strong><p className="mt-1 text-xs text-muted-foreground">Use Discover groups if you need to review or change the selected membership group.</p></div> : <div className="rounded-lg bg-secondary/40 p-3 text-sm text-muted-foreground">Discover groups after the Base44 secrets are configured, then select the membership roster.</div>}
+
+              {membershipSourceData.connection ? <div className="pt-2 border-t space-y-2">
+                <Button className="w-full" onClick={previewSpondMembershipMembers} disabled={!!membershipSourceBusy}>{membershipSourceBusy === 'preview' ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Users className="w-4 h-4 mr-2" />}Preview Spond members</Button>
+                <p className="text-[11px] text-center text-muted-foreground">The preview matches identities by existing Spond ID, email, mobile, or name + date of birth. Ambiguous records are never auto-linked.</p>
+              </div> : null}
+            </div>
+          </div>
+
+          {membershipSourcePreview ? <div className="rounded-xl border overflow-hidden">
+            <div className="p-4 border-b">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                <div><p className="font-semibold">Read-only member preview</p><p className="text-xs text-muted-foreground">{membershipSourcePreview.source?.group_name || 'Spond membership group'} · previewed {membershipSourcePreview.previewedAt ? new Date(membershipSourcePreview.previewedAt).toLocaleString() : 'now'}</p></div>
+                <Badge variant="outline">No records changed</Badge>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-3">
+                {[['Spond members','total'],['Matched members','matched'],['Person, no membership','person_without_membership'],['New candidates','new'],['Needs review','ambiguous']].map(([title,key]) => <div key={key} className="rounded-lg bg-secondary/40 p-2.5"><p className="text-[10px] uppercase text-muted-foreground">{title}</p><p className="text-lg font-black mt-1">{membershipSourcePreview.counts?.[key] || 0}</p></div>)}
+              </div>
+            </div>
+            <div className="max-h-[420px] overflow-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background"><TableRow><TableHead>Spond member</TableHead><TableHead>Contact</TableHead><TableHead>Spond status</TableHead><TableHead>RallyHub comparison</TableHead></TableRow></TableHeader>
+                <TableBody>{(membershipSourcePreview.rows || []).map(row => <TableRow key={row.external_member_id}>
+                  <TableCell><p className="font-medium text-sm">{row.full_name}</p><p className="text-[10px] text-muted-foreground font-mono">{row.external_member_id}</p></TableCell>
+                  <TableCell className="text-xs"><p>{row.email || 'No email'}</p><p className="text-muted-foreground">{row.mobile || 'No mobile'}</p></TableCell>
+                  <TableCell className="text-xs">{[row.source_status, row.source_role, ...(row.source_roles || [])].filter(Boolean).join(' · ') || '—'}</TableCell>
+                  <TableCell><Badge variant={row.match_status === 'matched' ? 'default' : 'outline'}>{row.match_status === 'person_without_membership' ? 'Person found · no membership' : row.match_status === 'new' ? 'New candidate' : row.match_status === 'ambiguous' ? 'Review required' : 'Matched'}</Badge>{row.candidates?.[0]?.full_name ? <p className="mt-1 text-[11px] text-muted-foreground">{row.candidates[0].full_name}{row.candidates[0].member_id ? ` · ${row.candidates[0].member_id}` : ''}</p> : null}</TableCell>
+                </TableRow>)}</TableBody>
+              </Table>
+            </div>
+          </div> : null}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            {membershipSourceData.connection ? <Button variant="ghost" className="mr-auto text-destructive" onClick={disconnectSpondMembershipSource} disabled={!!membershipSourceBusy}>Disconnect source</Button> : null}
+            <Button variant="outline" onClick={() => setMembershipSourceOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!communicationPreview} onOpenChange={open => { if (!open) setCommunicationPreview(null); }}>
         <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
