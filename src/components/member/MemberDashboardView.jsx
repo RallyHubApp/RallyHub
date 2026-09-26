@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   CalendarDays, ChevronRight, CircleUserRound, ExternalLink, MapPin,
@@ -6,7 +6,6 @@ import {
   Bell, Clock3, CheckCircle2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import GlassCard from '@/components/shared/GlassCard';
 import { getClub } from '@/data/directorySeed';
 
@@ -64,10 +63,9 @@ export default function MemberDashboardView({ snapshot, play = null, playLoading
   const membershipStatus = member?.membership_status ? String(member.membership_status).replaceAll('_', ' ') : null;
   const paymentStatus = member?.payment_status ? String(member.payment_status).replaceAll('_', ' ') : null;
 
-  const heroStyle = useMemo(() => {
-    if (!club?.primary_colour) return undefined;
-    return { backgroundImage: `linear-gradient(135deg, ${club.primary_colour}26, transparent 55%)` };
-  }, [club?.primary_colour]);
+  const heroStyle = club?.primary_colour
+    ? { backgroundImage: `linear-gradient(135deg, ${club.primary_colour}26, transparent 55%)` }
+    : undefined;
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-20 lg:pb-0 max-w-6xl mx-auto">
