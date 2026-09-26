@@ -8,6 +8,7 @@ import { AppearanceProvider } from '@/lib/AppearanceContext';
 import { HostAppearanceControl } from '@/components/appearance/AppearanceControls';
 import { base44 } from '@/api/base44Client';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import SiteAnalytics from '@/components/public/SiteAnalytics';
 
 import AppLayout from '@/components/layout/AppLayout';
 import Dashboard from '@/pages/Dashboard';
@@ -250,6 +251,7 @@ function App() {
 
             <Route path="*" element={<PageNotFound />} />
           </Routes>
+          <SiteAnalytics />
           <RouteAwareCopyrightFooter />
           <RouteAwareAppearanceControl />
         </Router>
