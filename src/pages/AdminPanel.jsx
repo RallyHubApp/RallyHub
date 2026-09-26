@@ -1188,6 +1188,17 @@ Brian`;
       toast.error('Could not copy the WhatsApp numbers');
     }
   };
+
+  const copyDirectoryPlayerEmails = async () => {
+    const emails = [...new Set(activeDirectoryPlayerRows.filter(row => row.emailOptIn && row.email).map(row => row.email))];
+    if (!emails.length) return toast.error('No opted-in email addresses are available');
+    try {
+      await navigator.clipboard.writeText(emails.join('\n'));
+      toast.success(`${emails.length} opted-in email address${emails.length === 1 ? '' : 'es'} copied`);
+    } catch {
+      toast.error('Could not copy the email addresses');
+    }
+  };
   const activeClubAccessUserIds = new Set((allClubUserAccesses || []).filter(a => a.status === 'active').map(a => String(a.user_id)));
   const directoryOnlyUserIds = new Set(
     activeDirectoryAccesses
