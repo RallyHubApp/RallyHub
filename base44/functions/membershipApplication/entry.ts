@@ -38,7 +38,7 @@ async function configForClub(base44:any,tenantId:string,clubId:string){
   const rows=await base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',20);
   return (rows||[]).find((c:any)=>c.status==='active')||(rows||[])[0]||null;
 }
-async function membershipInvite(base44:any,config:any,rawToken:any,email=''){
+async function membershipInvite(base44:any,config:any,rawToken:any,email='',mobile=''){
   const token=clean(rawToken,120);
   if(!token)return null;
   const rows=await base44.asServiceRole.entities.AccessInviteToken.filter({token,purpose:'membership_application',status:'active',membership_config_id:config.id},'-created_at',5);
@@ -48,21 +48,33 @@ async function membershipInvite(base44:any,config:any,rawToken:any,email=''){
     await base44.asServiceRole.entities.AccessInviteToken.update(invite.id,{status:'expired'}).catch(()=>{});
     return null;
   }
-  // Membership approval must always be bound to the intended email address.
-  // Older unbound tokens are intentionally treated as normal public applications.
-  if(!emailKey(invite.intended_email))return null;
-  if(email&&emailKey(invite.intended_email)!==emailKey(email))return null;
+  // A private membership link can be authorised by either the intended email or mobile/WhatsApp number.
+  // Tokens with neither identifier are never trusted.
+  const boundEmail=emailKey(invite.intended_email);
+  const boundMobile=phoneDigits(invite.intended_mobile);
+  if(!boundEmail&&!boundMobile)return null;
+  const suppliedEmail=emailKey(email);
+  const suppliedMobile=phoneDigits(mobile);
+  if(suppliedEmail||suppliedMobile){
+    const emailMatch=!!boundEmail&&!!suppliedEmail&&boundEmail===suppliedEmail;
+    const mobileMatch=!!boundMobile&&!!suppliedMobile&&boundMobile===suppliedMobile;
+    if(!emailMatch&&!mobileMatch)return null;
+  }
   return invite;
 }
-async function createMembershipInvite(base44:any,config:any,user:any,intendedEmail='',intendedName='',accessRequestId=''){
+async function createMembershipInvite(base44:any,config:any,user:any,intendedEmail='',intendedName='',accessRequestId='',intendedMobile=''){
   const boundEmail=emailKey(intendedEmail);
-  if(!boundEmail||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(boundEmail))throw new Error('A valid email address is required for a private membership invitation.');
+  const boundMobileRaw=clean(intendedMobile,80);
+  const boundMobile=phoneDigits(boundMobileRaw);
+  if(boundEmail&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(boundEmail))throw new Error('Enter a valid applicant email address.');
+  if(boundMobileRaw&&boundMobile.length<8)throw new Error('Enter a valid applicant mobile/WhatsApp number.');
+  if(!boundEmail&&!boundMobile)throw new Error('Enter either the applicant email address or mobile/WhatsApp number for a private membership invitation.');
   const now=new Date();
   return await base44.asServiceRole.entities.AccessInviteToken.create({
     tenant_id:config.tenant_id,club_id:config.club_id,purpose:'membership_application',token:inviteToken(),status:'active',membership_config_id:config.id,
-    access_request_id:accessRequestId||'',intended_email:boundEmail,intended_name:clean(intendedName,160),
+    access_request_id:accessRequestId||'',intended_email:boundEmail,intended_mobile:boundMobileRaw,intended_name:clean(intendedName,160),
     expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),created_by_user_id:user?.id||'',created_at:now.toISOString(),
-    notes:accessRequestId?`Approved public membership request ${accessRequestId}`:'Admin-issued membership magic link',
+    notes:accessRequestId?`Approved public membership request ${accessRequestId} · bound to email/mobile where available`:'Admin-issued membership magic link · bound to email and/or mobile',
   });
 }
 async function activeAdultPolicy(base44:any,tenantId:string,clubId:string){
@@ -380,7 +392,7 @@ function reminderContent(config:any,club:any,app:any,paymentUrl:string){
   return {subject,text,html,paymentUrl};
 }
 
-async function sendMembershipInviteEmail(base44:any,config:any,club:any,recipientEmail:string,recipientName:string,inviteUrl:string,approvedRequest=false){
+async function sendMembershipInviteEmail(base44:any,config:any,club:any,recipientEmail:string,recipientName:string,inviteUrl:string,approvedRequest=false,recipientMobile=''){
   const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:config.tenant_id,clubId:config.club_id};
   const hello=firstName(recipientName||recipientEmail);
   const fee=money(config.membership_fee,config.currency||'EUR');
@@ -388,14 +400,15 @@ async function sendMembershipInviteEmail(base44:any,config:any,club:any,recipien
   const intro=approvedRequest
     ? `Your ${club.name} membership request has been approved.`
     : `You are invited to complete a ${club.name} membership application.`;
-  const textBody=`Hi ${hello},\n\n${intro}\n\nComplete your membership details, declarations and ${config.payment_required===false?'confirmation':'payment'} using your private link:\n${inviteUrl}\n\nMembership season: ${config.season_label}\nMembership fee: ${fee}\n\nThis private link is authorised for ${recipientEmail}. If a different email is used, the application will return to the normal club approval route and no payment will be taken until approved.\n\n${signoffText(config,club)}`;
+  const authorisedContact=[recipientEmail?`email ${recipientEmail}`:'',recipientMobile?`mobile ${recipientMobile}`:''].filter(Boolean).join(' or ');
+  const textBody=`Hi ${hello},\n\n${intro}\n\nComplete your membership details, declarations and ${config.payment_required===false?'confirmation':'payment'} using your private link:\n${inviteUrl}\n\nMembership season: ${config.season_label}\nMembership fee: ${fee}\n\nThis private link is authorised for ${authorisedContact}. If neither the email nor mobile number entered matches the authorised contact, the application will return to the normal club approval route and no payment will be taken until approved.\n\n${signoffText(config,club)}`;
   const htmlBody=emailShell({club,headline:approvedRequest?'Membership request approved':'Membership invitation',preheader:`${club.name} · ${config.season_label}`,content:`
 <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Hi ${escapeHtml(hello)}, ${escapeHtml(intro)}</p>
 <div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">${detailRow('Membership season',config.season_label)}${detailRow('Membership fee',fee)}${detailRow('Authorised email',recipientEmail)}</table>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">${detailRow('Membership season',config.season_label)}${detailRow('Membership fee',fee)}${recipientEmail?detailRow('Authorised email',recipientEmail):''}${recipientMobile?detailRow('Authorised mobile',recipientMobile):''}</table>
 </div>
 <div style="text-align:center;margin:6px 0 24px;"><a href="${escapeHtml(inviteUrl)}" style="display:inline-block;padding:14px 24px;border-radius:10px;background:${escapeHtml(club.primary_colour||'#2563eb')};color:#fff;text-decoration:none;font-size:16px;font-weight:800;">Complete membership</a></div>
-<p style="margin:0 0 18px;font-size:12px;line-height:1.55;color:#6b7280;">This is a private pre-authorised link for ${escapeHtml(recipientEmail)}. If a different email is entered, the application will require club approval before payment.</p>${signoffHtml(config,club)}`});
+<p style="margin:0 0 18px;font-size:12px;line-height:1.55;color:#6b7280;">This is a private pre-authorised link for ${escapeHtml(authorisedContact)}. If neither contact detail matches, the application will require club approval before payment.</p>${signoffHtml(config,club)}`});
   await sendWithConfiguredEmailTransport(base44,scope,{to:recipientEmail,subject,textBody,htmlBody});
 }
 
@@ -452,13 +465,16 @@ Deno.serve(async(req)=>{
 
       if(action==='admin_create_invite'){
         const recipientEmail=emailKey(body.recipientEmail||'');
+        const recipientMobile=clean(body.recipientMobile||'',80);
         const recipientName=clean(body.recipientName||'',160);
-        if(!recipientEmail||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail))return Response.json({error:'Enter the applicant email address. Private membership invitations must be tied to the intended person.'},{status:400});
-        const invite=await createMembershipInvite(base44,config,user,recipientEmail,recipientName,'');
+        if(recipientEmail&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail))return Response.json({error:'Enter a valid applicant email address.'},{status:400});
+        if(recipientMobile&&phoneDigits(recipientMobile).length<8)return Response.json({error:'Enter a valid applicant mobile/WhatsApp number.'},{status:400});
+        if(!recipientEmail&&!phoneDigits(recipientMobile))return Response.json({error:'Enter either the applicant email address or mobile/WhatsApp number. Private membership invitations must be tied to the intended person.'},{status:400});
+        const invite=await createMembershipInvite(base44,config,user,recipientEmail,recipientName,'',recipientMobile);
         const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
         let emailSent=false;
-        try{await sendMembershipInviteEmail(base44,config,club,recipientEmail,recipientName,magicInviteUrl,false);emailSent=true}catch(e){console.error('membership invitation email failed',e?.message||e)}
-        return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,emailSent});
+        if(recipientEmail){try{await sendMembershipInviteEmail(base44,config,club,recipientEmail,recipientName,magicInviteUrl,false,recipientMobile);emailSent=true}catch(e){console.error('membership invitation email failed',e?.message||e)}}
+        return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,emailSent,boundTo:{email:invite.intended_email||'',mobile:invite.intended_mobile||''}});
       }
 
       if(action==='admin_approve_request'){
@@ -466,11 +482,11 @@ Deno.serve(async(req)=>{
         const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
         if(!request)return Response.json({error:'Membership request not found.'},{status:404});
         if(request.status!=='pending_approval')return Response.json({error:'This membership request has already been decided.'},{status:409});
-        const invite=await createMembershipInvite(base44,config,user,request.email,request.full_name,request.id);
+        const invite=await createMembershipInvite(base44,config,user,request.email,request.full_name,request.id,request.mobile||'');
         await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{status:'approved',approved_at:new Date().toISOString(),approved_by_user_id:user.id,invite_token_id:invite.id});
         const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
         let emailSent=false;
-        try{await sendMembershipInviteEmail(base44,config,club,request.email,request.full_name,magicInviteUrl,true);emailSent=true}catch(e){console.error('approved membership invitation email failed',e?.message||e)}
+        try{await sendMembershipInviteEmail(base44,config,club,request.email,request.full_name,magicInviteUrl,true,request.mobile||'');emailSent=true}catch(e){console.error('approved membership invitation email failed',e?.message||e)}
         return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,emailSent});
       }
 
@@ -571,7 +587,7 @@ Deno.serve(async(req)=>{
           try{prefill=JSON.parse(request.payload_json)}catch{}
         }
       }
-      return Response.json({success:true,config:safeConfig(config,club,docs,adultPolicy),inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',prefill});
+      return Response.json({success:true,config:safeConfig(config,club,docs,adultPolicy),inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',prefill});
     }
 
     if(action==='public_lookup_renewal'){
@@ -671,7 +687,7 @@ Deno.serve(async(req)=>{
 
     let approvedInvite:any=null;
     if(applicationType==='new'){
-      approvedInvite=await membershipInvite(base44,config,body.inviteToken||'',email);
+      approvedInvite=await membershipInvite(base44,config,body.inviteToken||'',email,mobile);
       if(!approvedInvite){
         const existingRequests=await base44.asServiceRole.entities.ClubAccessRequest.filter({tenant_id:config.tenant_id,club_id:config.club_id,request_type:'membership_application',status:'pending_approval',email},'-submitted_at',20);
         if(existingRequests?.[0]){
