@@ -1,0 +1,131 @@
+{
+  "name": "ExternalGroupConnection",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "sport_id": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "spond",
+        "other"
+      ]
+    },
+    "external_club_id": {
+      "type": "string"
+    },
+    "external_group_id": {
+      "type": "string"
+    },
+    "external_group_name": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "membership",
+        "waiting_list",
+        "training",
+        "events",
+        "other"
+      ]
+    },
+    "sync_direction": {
+      "type": "string",
+      "enum": [
+        "rallyhub_master",
+        "two_way",
+        "external_master"
+      ],
+      "default": "rallyhub_master"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "paused",
+        "error",
+        "disconnected"
+      ],
+      "default": "pending"
+    },
+    "connection_mode": {
+      "type": "string",
+      "enum": [
+        "credentials_login",
+        "oauth",
+        "api",
+        "session_token",
+        "manual"
+      ],
+      "default": "credentials_login"
+    },
+    "credential_reference": {
+      "type": "string",
+      "description": "Logical credential prefix only. For credentials_login, RallyHub reads <reference>_EMAIL and <reference>_PASSWORD from backend secrets. Never store passwords, cookies or access tokens here."
+    },
+    "capabilities_json": {
+      "type": "string",
+      "description": "Safe capability snapshot such as read_members/write_members/preview_only. Never store secrets or tokens."
+    },
+    "settings_json": {
+      "type": "string",
+      "description": "Non-secret provider configuration only."
+    },
+    "last_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_sync_summary": {
+      "type": "string"
+    },
+    "last_error": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "provider",
+    "external_group_id",
+    "purpose",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

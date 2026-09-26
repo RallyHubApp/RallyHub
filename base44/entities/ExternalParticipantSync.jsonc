@@ -1,0 +1,145 @@
+{
+  "name": "ExternalParticipantSync",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "spond",
+        "other"
+      ]
+    },
+    "group_connection_id": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "club_membership",
+        "waiting_list_entry",
+        "person",
+        "training_record",
+        "other"
+      ]
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "external_member_id": {
+      "type": "string"
+    },
+    "external_group_member_id": {
+      "type": "string"
+    },
+    "desired_state": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    },
+    "external_state": {
+      "type": "string",
+      "enum": [
+        "absent",
+        "invited",
+        "pending_acceptance",
+        "active",
+        "deactivated",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
+    "sync_status": {
+      "type": "string",
+      "enum": [
+        "not_linked",
+        "queued",
+        "invited",
+        "pending_acceptance",
+        "synced",
+        "out_of_sync",
+        "error",
+        "deactivated"
+      ],
+      "default": "not_linked"
+    },
+    "matched_by": {
+      "type": "string",
+      "enum": [
+        "external_id",
+        "email",
+        "mobile",
+        "name_dob",
+        "manual",
+        "none"
+      ],
+      "default": "none"
+    },
+    "invited_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_attempted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_error": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "provider",
+    "group_connection_id",
+    "source_type",
+    "source_id",
+    "desired_state",
+    "external_state",
+    "sync_status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
