@@ -290,8 +290,23 @@ Deno.serve(async(req)=>{
       const membershipByPerson=new Map((memberships||[]).map((row:any)=>[String(row.person_id),row]));
       const externalById=new Map((externalIdentities||[]).filter((row:any)=>row.external_person_id).map((row:any)=>[String(row.external_person_id),row]));
       const rows=sourceMembers.map((source:any)=>({...source,...matchSourceMember(source,people||[],membershipByPerson,externalById)}));
-      const counts={total:rows.length,matched:0,person_without_membership:0,new:0,ambiguous:0};
-      for(const row of rows){const key=String(row.match_status) as keyof typeof counts;if(key in counts&&key!=='total')counts[key]++}
+      const currentRows=rows.filter((row:any)=>row.source_lifecycle!=='deactivated');
+      const activeRows=rows.filter((row:any)=>row.source_lifecycle==='active');
+      const unprocessedRows=rows.filter((row:any)=>row.source_lifecycle==='unprocessed');
+      const deactivatedRows=rows.filter((row:any)=>row.source_lifecycle==='deactivated');
+      const counts={
+        total:rows.length,
+        current:currentRows.length,
+        active:activeRows.length,
+        unprocessed:unprocessedRows.length,
+        deactivated:deactivatedRows.length,
+        matched:currentRows.filter((row:any)=>row.match_status==='matched').length,
+        person_without_membership:currentRows.filter((row:any)=>row.match_status==='person_without_membership').length,
+        new:currentRows.filter((row:any)=>row.match_status==='new').length,
+        ambiguous:currentRows.filter((row:any)=>row.match_status==='ambiguous').length,
+        deactivated_matched:deactivatedRows.filter((row:any)=>row.match_status==='matched').length,
+        deactivated_unmatched:deactivatedRows.filter((row:any)=>row.match_status!=='matched').length
+      };
       const now=new Date().toISOString();
       const settings={...parseJson(connection.settings_json,{}),surface:'spond_club',external_club_name:club.name,club_slug:club.slug||parseJson(connection.settings_json,{})?.club_slug||null};
       await base44.asServiceRole.entities.ExternalGroupConnection.update(connection.id,{status:'active',external_club_id:club.id,external_group_id:'',external_group_name:'',settings_json:JSON.stringify(settings),last_verified_at:now,last_error:'',last_sync_summary:`Previewed ${rows.length} Spond Club member records; no RallyHub or Spond records were changed.`}).catch(()=>{});
