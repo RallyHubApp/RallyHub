@@ -54,6 +54,8 @@ import TestClubEntry from '@/pages/TestClubEntry';
 import GuestBookings from '@/pages/GuestBookings';
 import MembershipConsole from '@/pages/MembershipConsole';
 import PublicMembershipApplication from '@/pages/PublicMembershipApplication';
+import PublicWaitingList from '@/pages/PublicWaitingList';
+import WaitingList from '@/pages/WaitingList';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -146,6 +148,7 @@ const AuthenticatedRoutes = () => (
       <Route path="admin" element={<AdminPanel />} />
       <Route path="guest-bookings" element={<GuestBookings />} />
       <Route path="membership" element={<MembershipConsole />} />
+      <Route path="waiting-list" element={<WaitingList />} />
     </Route>
     <Route path="*" element={<Navigate to="/app" replace />} />
   </Routes>
@@ -210,6 +213,7 @@ function App() {
             <Route path="/club-challenge/register/:token" element={<PublicInterclubRegistration />} />
             <Route path="/guest-session/:token" element={<PublicGuestSessionBooking />} />
             <Route path="/membership/:clubSlug" element={<PublicMembershipApplication />} />
+            <Route path="/waiting-list/:clubSlug" element={<PublicWaitingList />} />
             <Route path="/book/:token" element={<PublicGuestSessionBooking />} />
             <Route path="/club-challenge/display/:token" element={<PublicClubChallengeDisplay />} />
             <Route path="/club-challenge/vote/:token" element={<PublicClubChallengeVote />} />
