@@ -703,6 +703,75 @@ export default function MembershipConsole() {
     }
   };
 
+  const createMembershipInvite = async () => {
+    const recipientEmail = window.prompt('Applicant email address (required – the private membership link is locked to this email)');
+    if (recipientEmail === null) return;
+    if (!recipientEmail.trim()) return toast.error('Enter the applicant email address');
+    const recipientName = window.prompt('Applicant first name or full name (optional)') || '';
+    setApplicationBusyId('membership-invite');
+    try {
+      const response = await base44.functions.invoke('membershipApplication', {
+        action: 'admin_create_invite',
+        recipientEmail: recipientEmail.trim(),
+        recipientName: recipientName.trim()
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      try {
+        await navigator.clipboard.writeText(response.data.magicInviteUrl);
+        toast.success('Private membership invitation copied');
+      } catch {
+        window.prompt('Copy this private membership invitation', response.data.magicInviteUrl);
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not create membership invitation');
+    } finally {
+      setApplicationBusyId('');
+    }
+  };
+
+  const approveMembershipRequest = async request => {
+    if (!request?.id) return;
+    setApplicationBusyId(`approval-${request.id}`);
+    try {
+      const response = await base44.functions.invoke('membershipApplication', { action: 'admin_approve_request', requestId: request.id });
+      if (response.data?.error) throw new Error(response.data.error);
+      try {
+        await navigator.clipboard.writeText(response.data.magicInviteUrl);
+        toast.success('Membership request approved. Private payment link copied.');
+      } catch {
+        window.prompt('Copy the approved private membership link', response.data.magicInviteUrl);
+      }
+      await Promise.all([
+        refetchApplications(),
+        queryClient.invalidateQueries({ queryKey: ['membership-application-attention-count'] })
+      ]);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not approve membership request');
+    } finally {
+      setApplicationBusyId('');
+    }
+  };
+
+  const rejectMembershipRequest = async request => {
+    if (!request?.id) return;
+    const reason = window.prompt(`Reason for declining ${request.fullName || 'this request'} (optional)`, '');
+    if (reason === null) return;
+    setApplicationBusyId(`reject-${request.id}`);
+    try {
+      const response = await base44.functions.invoke('membershipApplication', { action: 'admin_reject_request', requestId: request.id, reason });
+      if (response.data?.error) throw new Error(response.data.error);
+      toast.success('Membership request declined');
+      await Promise.all([
+        refetchApplications(),
+        queryClient.invalidateQueries({ queryKey: ['membership-application-attention-count'] })
+      ]);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not decline membership request');
+    } finally {
+      setApplicationBusyId('');
+    }
+  };
+
   const addTraining = async () => {
     if (!training.trainingName.trim()) return toast.error('Enter the training name');
     setSaving(true);
