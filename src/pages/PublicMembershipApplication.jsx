@@ -271,7 +271,7 @@ export default function PublicMembershipApplication() {
 
           {step === 'declarations' && (
             <section className="space-y-4">
-              <div><h2 className="text-xl font-bold">Membership declarations & consents</h2><p className="mt-1 text-sm text-muted-foreground">The full club wording is shown below. Required declarations must be accepted before you can submit your application.</p></div>
+              <div><h2 className="text-xl font-bold">Membership declarations & consents</h2><p className="mt-1 text-sm text-muted-foreground">The full club wording is shown below. Required declarations must be accepted before you can submit your application.</p><Link to={`/directory/${clubSlug}/policies`} target="_blank" className="mt-2 inline-flex text-xs font-semibold text-primary hover:underline">View the full {club?.name||'club'} policy library</Link></div>
               <LegalBlock doc={legal.privacy} checked={consents.privacy} onChange={v=>setConsents(p=>({...p,privacy:v}))} />
               <LegalBlock doc={legal.waiver} checked={consents.liability_waiver} onChange={v=>setConsents(p=>({...p,liability_waiver:v}))} />
               <LegalBlock doc={legal.code} checked={consents.code_of_conduct} onChange={v=>setConsents(p=>({...p,code_of_conduct:v}))} />
