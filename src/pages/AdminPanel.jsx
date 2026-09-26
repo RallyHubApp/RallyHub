@@ -1552,7 +1552,7 @@ Brian`;
 
         {/* ── DIRECTORY CLAIMS TAB ── */}
         <TabsContent value="directory" className="mt-4">
-          <div className="space-y-5">
+          <div className="flex flex-col gap-5">
             <div className="glass rounded-lg p-3 flex items-start gap-2">
               <UserCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <p className="text-xs text-muted-foreground">
