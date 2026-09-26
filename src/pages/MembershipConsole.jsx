@@ -266,6 +266,93 @@ export default function MembershipConsole() {
   const gateway = meta.gateways?.find(g => g.is_default) || meta.gateways?.[0] || null;
   const primarySport = meta.sports?.find(s => s.is_primary) || meta.sports?.[0] || null;
 
+  const invokeMembershipSource = async (action, payload = {}) => {
+    const response = await base44.functions.invoke('membershipSource', { action, ...payload });
+    if (response.data?.error) throw new Error(response.data.error);
+    return response.data || {};
+  };
+
+  const discoverSpondMembershipGroups = async () => {
+    setMembershipSourceBusy('discover');
+    try {
+      const data = await invokeMembershipSource('discover_groups', {
+        credentialReference: membershipSourceCredentialReference || undefined
+      });
+      setMembershipSourceGroups(data.groups || []);
+      if (!(data.groups || []).length) toast.info('No Spond groups were returned for this account');
+      else toast.success(`${data.groups.length} Spond group${data.groups.length === 1 ? '' : 's'} available`);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not read Spond groups');
+    } finally {
+      setMembershipSourceBusy('');
+    }
+  };
+
+  const saveSpondMembershipSource = async () => {
+    if (!membershipSourceGroupId) return toast.error('Choose the Spond membership group');
+    setMembershipSourceBusy('save');
+    try {
+      const data = await invokeMembershipSource('save_connection', {
+        groupId: membershipSourceGroupId,
+        credentialReference: membershipSourceCredentialReference || undefined,
+        sportId: primarySport?.id || undefined,
+        connectionMode: 'credentials_login'
+      });
+      await refetchMembershipSource();
+      setMembershipSourcePreview(null);
+      toast.success(`Read-only Spond Club connection verified${data.memberCount != null ? ` · ${data.memberCount} source members` : ''}`);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not save the Spond Club connection');
+    } finally {
+      setMembershipSourceBusy('');
+    }
+  };
+
+  const verifySpondMembershipSource = async () => {
+    setMembershipSourceBusy('verify');
+    try {
+      const data = await invokeMembershipSource('verify_connection');
+      await refetchMembershipSource();
+      toast.success(`Spond Club access verified${data.memberCount != null ? ` · ${data.memberCount} source members` : ''}`);
+    } catch (error) {
+      await refetchMembershipSource();
+      toast.error(error?.response?.data?.error || error?.message || 'Could not verify Spond Club access');
+    } finally {
+      setMembershipSourceBusy('');
+    }
+  };
+
+  const previewSpondMembershipMembers = async () => {
+    setMembershipSourceBusy('preview');
+    try {
+      const data = await invokeMembershipSource('preview_members');
+      setMembershipSourcePreview(data);
+      await refetchMembershipSource();
+      toast.success(`Preview loaded · ${data.counts?.total || 0} Spond source members · no records changed`);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not preview Spond members');
+    } finally {
+      setMembershipSourceBusy('');
+    }
+  };
+
+  const disconnectSpondMembershipSource = async () => {
+    if (!window.confirm('Disconnect this Spond Club membership source? This does not delete or change any member data.')) return;
+    setMembershipSourceBusy('disconnect');
+    try {
+      await invokeMembershipSource('disconnect');
+      setMembershipSourceGroups([]);
+      setMembershipSourceGroupId('');
+      setMembershipSourcePreview(null);
+      await refetchMembershipSource();
+      toast.success('Spond Club membership source disconnected');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not disconnect Spond Club');
+    } finally {
+      setMembershipSourceBusy('');
+    }
+  };
+
   const rows = useMemo(() => {
     const needle = search.trim().toLowerCase();
     const result = (listData.rows || []).filter(row => {
