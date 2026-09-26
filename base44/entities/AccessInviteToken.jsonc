@@ -40,6 +40,9 @@
     "intended_email": {
       "type": "string"
     },
+    "intended_mobile": {
+      "type": "string"
+    },
     "intended_name": {
       "type": "string"
     },
