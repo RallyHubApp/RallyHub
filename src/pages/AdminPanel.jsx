@@ -429,16 +429,28 @@ export default function AdminPanel() {
 
   const reviewDirectoryClaim = async (claimId, decision) => {
     setReviewingDirectoryClaim(claimId);
+    const toastId = toast.loading(decision === 'approved' ? 'Approving Directory claim…' : 'Rejecting Directory claim…');
     try {
       const res = await base44.functions.invoke('directoryClaim', { action: 'review', claimId, decision });
       if (res.data?.error) throw new Error(res.data.error);
-      queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
+
+      // Reflect the confirmed backend result immediately so the admin never has to refresh
+      // to discover whether the key press worked. The normal refetch then reconciles the
+      // complete Directory state (access records, listing verification and invitations).
+      queryClient.setQueryData(['directory-verification'], current => current ? ({
+        ...current,
+        claims: (current.claims || []).map(claim => claim.id === claimId ? { ...claim, status: decision } : claim),
+      }) : current);
+
       if (decision === 'approved') {
-        toast.success(res.data?.welcomeEmail?.sent ? 'Directory claim approved and welcome email sent' : 'Directory claim approved');
+        toast.success(res.data?.welcomeEmail?.sent ? 'Directory claim approved and welcome email sent' : 'Directory claim approved', { id: toastId });
         if (res.data?.welcomeEmail?.error) toast.warning(`Access was approved, but the welcome email was not sent: ${res.data.welcomeEmail.error}`);
-      } else toast.success('Directory claim rejected');
+      } else {
+        toast.success('Directory claim rejected', { id: toastId });
+      }
+      await queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
     } catch (error) {
-      toast.error(error.message || 'Could not update directory claim');
+      toast.error(error.message || 'Could not update directory claim', { id: toastId });
     } finally {
       setReviewingDirectoryClaim(null);
     }
