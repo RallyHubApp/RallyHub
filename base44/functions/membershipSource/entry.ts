@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
-const SPOND_API_BASE = 'https://api.spond.com/core/v1';
+const SPOND_CLUB_API_BASE = 'https://api.spond.com/club/v1';
 const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
 const lower = (value:any) => clean(value, 240).toLowerCase();
 const nameKey = (value:any) => lower(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’‘]/g,"'").replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
@@ -18,7 +18,6 @@ async function assertClubAdmin(base44:any,user:any,tenantId:string,clubId:string
   if((rows||[]).some(activeWindow)) return true;
   throw Object.assign(new Error('Club administrator access required'),{status:403});
 }
-async function first(base44:any,entity:string,filter:any){const rows=await base44.asServiceRole.entities[entity].filter(filter,'-updated_date',20);return rows?.[0]||null}
 
 function credentialPrefix(value:any){
   return clean(value,120).toUpperCase().replace(/[^A-Z0-9_]/g,'_').replace(/^_+|_+$/g,'');
@@ -35,76 +34,131 @@ function credentialState(reference:any,mode='credentials_login'){
   return {configured:!!Deno.env.get(names.email)&&!!Deno.env.get(names.password),names:{email:names.email,password:names.password}};
 }
 
-async function spondLogin(email:string,password:string){
-  const res=await fetch(`${SPOND_API_BASE}/auth2/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
-  if(!res.ok){
-    if([401,403].includes(res.status)) throw Object.assign(new Error('Spond sign-in was not accepted. Check the secure account credentials, or reconnect if Spond requires additional verification.'),{status:502,code:'SPOND_AUTH_FAILED'});
-    if(res.status===429) throw Object.assign(new Error('Spond is temporarily rate-limiting sign-in. Try again shortly.'),{status:503,code:'SPOND_RATE_LIMIT'});
-    throw Object.assign(new Error(`Spond sign-in failed with status ${res.status}.`),{status:502,code:'SPOND_AUTH_FAILED'});
-  }
-  const data=await res.json();
-  const token=data?.accessToken?.token||data?.loginToken||data?.token;
-  if(!token) throw Object.assign(new Error('Spond sign-in succeeded but no usable session token was returned.'),{status:502,code:'SPOND_TOKEN_MISSING'});
-  return String(token);
+async function parseResponse(res:Response){
+  const text=await res.text();
+  if(!text) return {};
+  try{return JSON.parse(text)}catch{return {raw:text.slice(0,1000)}}
 }
-async function spondToken(connection:any){
+async function spondClubLogin(email:string,password:string){
+  const res=await fetch(`${SPOND_CLUB_API_BASE}/login`,{
+    method:'POST',
+    headers:{Accept:'application/json','Content-Type':'application/json'},
+    body:JSON.stringify({email,password})
+  });
+  const data=await parseResponse(res);
+  if(!res.ok){
+    const detail=clean(data?.error||data?.message||'',300);
+    if(res.status===404) throw Object.assign(new Error(detail||'Spond Club could not find a profile for the configured account.'),{status:502,code:'SPOND_CLUB_PROFILE_NOT_FOUND'});
+    if([401,403].includes(res.status)) throw Object.assign(new Error(detail||'Spond Club sign-in was not accepted. Check the secure account credentials.'),{status:502,code:'SPOND_CLUB_AUTH_FAILED'});
+    if(res.status===429) throw Object.assign(new Error('Spond Club is temporarily rate-limiting sign-in. Try again shortly.'),{status:503,code:'SPOND_CLUB_RATE_LIMIT'});
+    throw Object.assign(new Error(detail||`Spond Club sign-in failed with status ${res.status}.`),{status:502,code:'SPOND_CLUB_AUTH_FAILED'});
+  }
+  if(data?.loginToken) return String(data.loginToken);
+  if(data?.token){
+    const ending=clean(data?.phoneNumber||data?.maskedPhoneNumber||'',80);
+    throw Object.assign(new Error(`Spond Club requires two-factor verification for this account${ending?` (${ending})`:''}. Complete an interactive Spond Club connection before RallyHub can continue.`),{status:409,code:'SPOND_CLUB_2FA_REQUIRED'});
+  }
+  throw Object.assign(new Error('Spond Club sign-in succeeded but no usable login token was returned.'),{status:502,code:'SPOND_CLUB_TOKEN_MISSING'});
+}
+async function spondClubToken(connection:any){
   const mode=clean(connection?.connection_mode||'credentials_login',40)||'credentials_login';
   const names=credentialNames(connection?.credential_reference);
   if(!names) throw Object.assign(new Error('This Spond Club connection has no secure credential reference.'),{status:409,code:'CREDENTIAL_REFERENCE_REQUIRED'});
   if(mode==='session_token'){
     const token=Deno.env.get(names.token);
-    if(!token) throw Object.assign(new Error(`The secure Spond session secret ${names.token} is not configured.`),{status:409,code:'CREDENTIALS_NOT_CONFIGURED'});
+    if(!token) throw Object.assign(new Error(`The secure Spond Club session secret ${names.token} is not configured.`),{status:409,code:'CREDENTIALS_NOT_CONFIGURED'});
     return token;
   }
-  if(mode!=='credentials_login') throw Object.assign(new Error(`Spond connection mode “${mode}” is not implemented yet.`),{status:409,code:'CONNECTION_MODE_NOT_IMPLEMENTED'});
+  if(mode!=='credentials_login') throw Object.assign(new Error(`Spond Club connection mode “${mode}” is not implemented yet.`),{status:409,code:'CONNECTION_MODE_NOT_IMPLEMENTED'});
   const email=Deno.env.get(names.email),password=Deno.env.get(names.password);
   if(!email||!password) throw Object.assign(new Error(`Configure the backend secrets ${names.email} and ${names.password} for this Spond Club connection.`),{status:409,code:'CREDENTIALS_NOT_CONFIGURED'});
-  return await spondLogin(email,password);
+  return await spondClubLogin(email,password);
 }
-async function spondRequest(path:string,token:string){
-  const res=await fetch(`${SPOND_API_BASE}${path}`,{headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'}});
+async function spondClubRequest(path:string,token:string,externalClubId=''){
+  const headers:any={Accept:'application/json','Content-Type':'application/json',Authorization:`Bearer ${token}`};
+  if(externalClubId) headers['X-Spond-ClubId']=externalClubId;
+  const res=await fetch(`${SPOND_CLUB_API_BASE}${path}`,{headers});
+  const data=await parseResponse(res);
   if(!res.ok){
-    if([401,403].includes(res.status)) throw Object.assign(new Error('The Spond session is no longer authorised. Reconnect the Spond Club account.'),{status:502,code:'SPOND_RECONNECT_REQUIRED'});
-    if(res.status===429) throw Object.assign(new Error('Spond is temporarily rate-limiting this request. Try again shortly.'),{status:503,code:'SPOND_RATE_LIMIT'});
-    throw Object.assign(new Error(`Spond request failed with status ${res.status}.`),{status:502,code:'SPOND_REQUEST_FAILED'});
+    const detail=clean(data?.error||data?.message||'',300);
+    if([401,403].includes(res.status)) throw Object.assign(new Error(detail||'The Spond Club session is no longer authorised. Reconnect the Spond Club account.'),{status:502,code:'SPOND_CLUB_RECONNECT_REQUIRED'});
+    if(res.status===429) throw Object.assign(new Error('Spond Club is temporarily rate-limiting this request. Try again shortly.'),{status:503,code:'SPOND_CLUB_RATE_LIMIT'});
+    throw Object.assign(new Error(detail||`Spond Club request failed with status ${res.status}.`),{status:502,code:'SPOND_CLUB_REQUEST_FAILED'});
   }
-  return await res.json();
+  return data;
 }
-async function fetchSpondGroup(groupId:string,token:string){
-  try{return await spondRequest(`/groups/${encodeURIComponent(groupId)}`,token)}catch(error:any){
-    const groups=await spondRequest('/groups',token);
-    const row=(Array.isArray(groups)?groups:[]).find((group:any)=>String(group?.id||'')===String(groupId));
-    if(row) return row;
-    throw error;
+function arrayFromResponse(value:any,keys:string[]){
+  if(Array.isArray(value)) return value;
+  for(const key of keys) if(Array.isArray(value?.[key])) return value[key];
+  if(Array.isArray(value?.data)) return value.data;
+  if(Array.isArray(value?.items)) return value.items;
+  if(Array.isArray(value?.content)) return value.content;
+  return [];
+}
+function normaliseClub(club:any){
+  return {
+    id:clean(club?.id||club?.clubId||club?.club_id,180),
+    name:clean(club?.name||club?.clubName||club?.title||'Spond Club',220),
+    slug:clean(club?.slug||club?.shortName||club?.urlName||club?.identifier,180)||null,
+    raw_status:clean(club?.status,80)||null
+  };
+}
+async function discoverClubs(connection:any){
+  const token=await spondClubToken(connection);
+  const response=await spondClubRequest('/clubs',token);
+  return {token,clubs:arrayFromResponse(response,['clubs']).map(normaliseClub).filter((club:any)=>club.id)};
+}
+function resolveConfiguredClub(connection:any,clubs:any[]){
+  if(!clubs.length) return null;
+  const externalClubId=clean(connection?.external_club_id,180);
+  if(externalClubId){
+    const exact=clubs.find((club:any)=>String(club.id)===externalClubId);
+    if(exact) return exact;
   }
+  const settings=parseJson(connection?.settings_json,{});
+  const desiredSlug=lower(settings?.club_slug||settings?.clubSlug);
+  if(desiredSlug){
+    const slugMatch=clubs.find((club:any)=>lower(club.slug)===desiredSlug||lower(club.name).replace(/[^a-z0-9]+/g,'')===desiredSlug.replace(/[^a-z0-9]+/g,''));
+    if(slugMatch) return slugMatch;
+  }
+  const desiredName=lower(settings?.club_name||settings?.clubName);
+  if(desiredName){
+    const nameMatch=clubs.find((club:any)=>lower(club.name)===desiredName);
+    if(nameMatch) return nameMatch;
+  }
+  return clubs.length===1?clubs[0]:null;
 }
-function collectGroupMembers(group:any){
-  const map=new Map<string,any>();
-  const add=(member:any)=>{const id=clean(member?.id||member?.uid||member?.memberId,180);if(id&&!map.has(id))map.set(id,member)};
-  (group?.members||[]).forEach(add);
-  (group?.subGroups||[]).forEach((sub:any)=>(sub?.members||[]).forEach(add));
-  return [...map.entries()].map(([id,member])=>({id,member}));
+async function resolveClubAndMembers(connection:any){
+  const {token,clubs}=await discoverClubs(connection);
+  const club=resolveConfiguredClub(connection,clubs);
+  if(!club){
+    throw Object.assign(new Error(clubs.length?`This Spond Club account can access ${clubs.length} clubs. Choose the correct club in RallyHub before verifying.`:'No Spond Clubs were returned for this account.'),{status:409,code:'SPOND_CLUB_SELECTION_REQUIRED',clubs});
+  }
+  const response=await spondClubRequest('/members',token,club.id);
+  const members=arrayFromResponse(response,['members','results']);
+  return {token,club,members};
 }
-function normaliseSourceMember(source:any){
-  const member=source?.member||{};
-  const profile=member?.profile||{};
-  const firstName=clean(profile?.firstName||profile?.first_name||member?.firstName||member?.first_name,120);
-  const lastName=clean(profile?.lastName||profile?.last_name||member?.lastName||member?.last_name,120);
-  const fallbackName=clean(profile?.name||profile?.displayName||member?.name||member?.displayName,220);
+function normaliseSourceMember(raw:any){
+  const member=raw?.member||raw||{};
+  const profile=member?.profile||member?.person||member?.user||{};
+  const contact=member?.contactInfo||member?.contact||profile?.contactInfo||{};
+  const firstName=clean(member?.firstName||member?.first_name||profile?.firstName||profile?.first_name,120);
+  const lastName=clean(member?.lastName||member?.last_name||profile?.lastName||profile?.last_name,120);
+  const fallbackName=clean(member?.fullName||member?.name||member?.displayName||profile?.fullName||profile?.name||profile?.displayName,220);
   const fullName=clean([firstName,lastName].filter(Boolean).join(' ')||fallbackName,220);
-  const email=lower(profile?.email||profile?.emailAddress||member?.email||member?.emailAddress);
-  const mobile=clean(profile?.phoneNumber||profile?.mobile||profile?.phone||member?.phoneNumber||member?.mobile||member?.phone,100);
-  const dob=dateKey(profile?.dateOfBirth||profile?.birthDate||profile?.birthday||member?.dateOfBirth||member?.birthDate||member?.birthday);
+  const email=lower(member?.email||member?.emailAddress||profile?.email||profile?.emailAddress||contact?.email||contact?.emailAddress);
+  const mobile=clean(member?.phoneNumber||member?.mobile||member?.phone||profile?.phoneNumber||profile?.mobile||profile?.phone||contact?.phoneNumber||contact?.mobile||contact?.phone,100);
+  const dob=dateKey(member?.dateOfBirth||member?.birthDate||member?.birthday||profile?.dateOfBirth||profile?.birthDate||profile?.birthday);
   const roleValue=member?.role||member?.memberRole||profile?.role||'';
-  const statusValue=member?.status||member?.membershipStatus||profile?.status||'';
+  const statusValue=member?.status||member?.membershipStatus||member?.state||profile?.status||'';
   const roles=Array.isArray(member?.roles)?member.roles.map((value:any)=>typeof value==='string'?value:value?.name||value?.title||'').filter(Boolean):[];
   return {
-    external_member_id:clean(source?.id,180),
-    external_profile_id:clean(profile?.id||member?.profileId,180)||null,
-    full_name:fullName||'Unnamed Spond member',
+    external_member_id:clean(member?.id||member?.memberId||member?.uid||profile?.memberId,180),
+    external_profile_id:clean(profile?.id||member?.profileId||member?.personId,180)||null,
+    full_name:fullName||'Unnamed Spond Club member',
     first_name:firstName||null,last_name:lastName||null,
     email:email||null,mobile:mobile||null,date_of_birth:dob||null,
-    gender:clean(profile?.gender||member?.gender,60)||null,
+    gender:clean(member?.gender||profile?.gender,60)||null,
     source_status:clean(statusValue,80)||null,
     source_role:clean(roleValue,80)||null,
     source_roles:roles.slice(0,20),
@@ -114,7 +168,8 @@ function normaliseSourceMember(source:any){
 function safeConnection(row:any){
   if(!row) return null;
   const capabilities=parseJson(row.capabilities_json,{});
-  return {id:row.id,provider:row.provider,purpose:row.purpose,status:row.status,connection_mode:row.connection_mode||'credentials_login',credential_reference:row.credential_reference||null,external_group_id:row.external_group_id,external_group_name:row.external_group_name||null,sport_id:row.sport_id||null,sync_direction:row.sync_direction||null,capabilities,last_verified_at:row.last_verified_at||null,last_synced_at:row.last_synced_at||null,last_sync_summary:row.last_sync_summary||null,last_error:row.last_error||null};
+  const settings=parseJson(row.settings_json,{});
+  return {id:row.id,provider:row.provider,purpose:row.purpose,status:row.status,connection_mode:row.connection_mode||'credentials_login',credential_reference:row.credential_reference||null,external_club_id:row.external_club_id||null,external_club_name:settings?.external_club_name||null,external_group_id:row.external_group_id||null,external_group_name:row.external_group_name||null,sport_id:row.sport_id||null,sync_direction:row.sync_direction||null,capabilities,last_verified_at:row.last_verified_at||null,last_synced_at:row.last_synced_at||null,last_sync_summary:row.last_sync_summary||null,last_error:row.last_error||null};
 }
 async function membershipConnection(base44:any,tenantId:string,clubId:string){
   const rows=await base44.asServiceRole.entities.ExternalGroupConnection.filter({tenant_id:tenantId,club_id:clubId,provider:'spond',purpose:'membership'},'-updated_date',20);
@@ -162,20 +217,18 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,connection:safe,credentialsConfigured:state.configured,requiredSecretNames:state.names,canConfigureCredentialReference:user.role==='admin',defaultCredentialReference:user.role==='admin'?'SPOND_CLUB':null,readOnly:true});
     }
 
-    if(action==='discover_groups'){
+    if(action==='discover_clubs'||action==='discover_groups'){
       let credentialReference=connection?.credential_reference||'';
       let connectionMode=connection?.connection_mode||'credentials_login';
       if(user.role==='admin'&&body.credentialReference){credentialReference=credentialPrefix(body.credentialReference);connectionMode=clean(body.connectionMode||'credentials_login',40)}
-      if(!credentialReference) return Response.json({error:'A platform administrator must configure the secure Spond credential reference first.'},{status:409});
-      const token=await spondToken({credential_reference:credentialReference,connection_mode:connectionMode});
-      const groups=await spondRequest('/groups',token);
-      const simplified=(Array.isArray(groups)?groups:[]).map((group:any)=>({id:String(group?.id||''),name:clean(group?.name||'Spond group',220),member_count:Array.isArray(group?.members)?group.members.length:null})).filter((group:any)=>group.id).sort((a:any,b:any)=>a.name.localeCompare(b.name));
-      return Response.json({success:true,groups:simplified,credentialReference,connectionMode,readOnly:true});
+      if(!credentialReference) return Response.json({error:'A platform administrator must configure the secure Spond Club credential reference first.'},{status:409});
+      const {clubs}=await discoverClubs({credential_reference:credentialReference,connection_mode:connectionMode});
+      return Response.json({success:true,clubs,groups:clubs,credentialReference,connectionMode,readOnly:true});
     }
 
     if(action==='save_connection'){
-      const groupId=clean(body.groupId,180);
-      if(!groupId) return Response.json({error:'Choose the Spond membership group first.'},{status:400});
+      const externalClubId=clean(body.externalClubId||body.clubId||body.groupId,180);
+      if(!externalClubId) return Response.json({error:'Choose the Spond Club first.'},{status:400});
       let credentialReference=connection?.credential_reference||'';
       let connectionMode=connection?.connection_mode||'credentials_login';
       if(user.role==='admin'){
@@ -184,37 +237,41 @@ Deno.serve(async(req)=>{
       }else if(!connection){
         return Response.json({error:'A platform administrator must create the secure Spond Club connection before a club administrator can use it.'},{status:403});
       }
-      if(!credentialReference) return Response.json({error:'Secure Spond credential reference required.'},{status:409});
-      const token=await spondToken({credential_reference:credentialReference,connection_mode:connectionMode});
-      const group=await fetchSpondGroup(groupId,token);
-      if(!group?.id) return Response.json({error:'The selected Spond group could not be verified.'},{status:404});
+      if(!credentialReference) return Response.json({error:'Secure Spond Club credential reference required.'},{status:409});
+      const {token,clubs}=await discoverClubs({credential_reference:credentialReference,connection_mode:connectionMode});
+      const selected=clubs.find((club:any)=>String(club.id)===externalClubId);
+      if(!selected) return Response.json({error:'The selected Spond Club could not be verified for this account.'},{status:404});
+      const membersResponse=await spondClubRequest('/members',token,selected.id);
+      const members=arrayFromResponse(membersResponse,['members','results']);
       const now=new Date().toISOString();
-      const data:any={tenant_id:tenantId,club_id:clubId,provider:'spond',purpose:'membership',external_group_id:String(group.id),external_group_name:clean(group.name||'Spond membership',220),sync_direction:'external_master',status:'active',connection_mode:connectionMode,credential_reference:credentialReference,capabilities_json:JSON.stringify({read_members:true,write_members:false,preview_only:true}),settings_json:JSON.stringify({surface:'spond_club'}),last_verified_at:now,last_error:'',last_sync_summary:'Spond Club connection verified. Member source remains read-only until import mapping is approved.'};
+      const existingSettings=parseJson(connection?.settings_json,{});
+      const settings={...existingSettings,surface:'spond_club',external_club_name:selected.name,club_slug:selected.slug||existingSettings?.club_slug||null};
+      const data:any={tenant_id:tenantId,club_id:clubId,provider:'spond',purpose:'membership',external_club_id:selected.id,external_group_id:'',external_group_name:'',sync_direction:'external_master',status:'active',connection_mode:connectionMode,credential_reference:credentialReference,capabilities_json:JSON.stringify({read_members:true,write_members:false,preview_only:true}),settings_json:JSON.stringify(settings),last_verified_at:now,last_error:'',last_sync_summary:`Spond Club connection verified against ${members.length} source member records. Read-only preview mode remains enabled.`};
       if(body.sportId) data.sport_id=clean(body.sportId,180);
       const saved=connection?await base44.asServiceRole.entities.ExternalGroupConnection.update(connection.id,data):await base44.asServiceRole.entities.ExternalGroupConnection.create(data);
-      try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:tenantId,club_id:clubId,user_id:user.id,action:'membership_source_connected',entity_type:'ExternalGroupConnection',entity_id:saved.id,scope_type:'club',scope_id:clubId,after_state:JSON.stringify({provider:'spond',purpose:'membership',external_group_id:String(group.id),external_group_name:group.name,connection_mode:connectionMode,credential_reference:credentialReference,read_only:true})})}catch{}
-      return Response.json({success:true,connection:safeConnection(saved),memberCount:collectGroupMembers(group).length,readOnly:true});
+      try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:tenantId,club_id:clubId,user_id:user.id,action:'membership_source_connected',entity_type:'ExternalGroupConnection',entity_id:saved.id,scope_type:'club',scope_id:clubId,after_state:JSON.stringify({provider:'spond',purpose:'membership',external_club_id:selected.id,external_club_name:selected.name,connection_mode:connectionMode,credential_reference:credentialReference,read_only:true})})}catch{}
+      return Response.json({success:true,connection:safeConnection(saved),memberCount:members.length,readOnly:true});
     }
 
     if(action==='verify_connection'){
-      if(!connection||connection.status==='disconnected') return Response.json({error:'No active Spond Club membership connection is configured.'},{status:404});
+      if(!connection||connection.status==='disconnected') return Response.json({error:'No Spond Club membership connection is configured.'},{status:404});
       try{
-        const token=await spondToken(connection);
-        const group=await fetchSpondGroup(String(connection.external_group_id),token);
-        const count=collectGroupMembers(group).length,now=new Date().toISOString();
-        const updated=await base44.asServiceRole.entities.ExternalGroupConnection.update(connection.id,{status:'active',external_group_name:clean(group?.name||connection.external_group_name,220),last_verified_at:now,last_error:'',last_sync_summary:`Verified read-only access to ${count} Spond source members.`});
-        return Response.json({success:true,connection:safeConnection(updated),memberCount:count,readOnly:true});
+        const {club,members}=await resolveClubAndMembers(connection);
+        const now=new Date().toISOString();
+        const settings={...parseJson(connection.settings_json,{}),surface:'spond_club',external_club_name:club.name,club_slug:club.slug||parseJson(connection.settings_json,{})?.club_slug||null};
+        const updated=await base44.asServiceRole.entities.ExternalGroupConnection.update(connection.id,{status:'active',external_club_id:club.id,external_group_id:'',external_group_name:'',settings_json:JSON.stringify(settings),last_verified_at:now,last_error:'',last_sync_summary:`Verified read-only Spond Club access to ${members.length} source member records.`});
+        return Response.json({success:true,connection:safeConnection(updated),memberCount:members.length,readOnly:true});
       }catch(error:any){
-        await base44.asServiceRole.entities.ExternalGroupConnection.update(connection.id,{status:'error',last_error:clean(error?.message||'Spond verification failed',500)}).catch(()=>{});
+        await base44.asServiceRole.entities.ExternalGroupConnection.update(connection.id,{status:'error',last_error:clean(error?.message||'Spond Club verification failed',500)}).catch(()=>{});
+        if(error?.clubs) return Response.json({error:error.message,code:error.code,clubs:error.clubs},{status:error.status||409});
         throw error;
       }
     }
 
     if(action==='preview_members'){
-      if(!connection||connection.status==='disconnected') return Response.json({error:'No active Spond Club membership connection is configured.'},{status:404});
-      const token=await spondToken(connection);
-      const group=await fetchSpondGroup(String(connection.external_group_id),token);
-      const sourceMembers=collectGroupMembers(group).map(normaliseSourceMember);
+      if(!connection||connection.status==='disconnected') return Response.json({error:'No Spond Club membership connection is configured.'},{status:404});
+      const {club,members}=await resolveClubAndMembers(connection);
+      const sourceMembers=(members||[]).map(normaliseSourceMember).filter((member:any)=>member.external_member_id);
       const [people,memberships,externalIdentities]=await Promise.all([
         base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'full_name',500),
         base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'member_id',500),
@@ -224,10 +281,11 @@ Deno.serve(async(req)=>{
       const externalById=new Map((externalIdentities||[]).filter((row:any)=>row.external_person_id).map((row:any)=>[String(row.external_person_id),row]));
       const rows=sourceMembers.map((source:any)=>({...source,...matchSourceMember(source,people||[],membershipByPerson,externalById)}));
       const counts={total:rows.length,matched:0,person_without_membership:0,new:0,ambiguous:0};
-      for(const row of rows){const key=String(row.match_status) as keyof typeof counts;if(key in counts&&(key!=='total'))counts[key]++}
+      for(const row of rows){const key=String(row.match_status) as keyof typeof counts;if(key in counts&&key!=='total')counts[key]++}
       const now=new Date().toISOString();
-      await base44.asServiceRole.entities.ExternalGroupConnection.update(connection.id,{status:'active',external_group_name:clean(group?.name||connection.external_group_name,220),last_verified_at:now,last_error:'',last_sync_summary:`Previewed ${rows.length} Spond source members; no RallyHub or Spond member records were changed.`}).catch(()=>{});
-      return Response.json({success:true,source:{provider:'spond',surface:'spond_club',group_id:String(group?.id||connection.external_group_id),group_name:clean(group?.name||connection.external_group_name,220)},counts,rows,readOnly:true,previewedAt:now});
+      const settings={...parseJson(connection.settings_json,{}),surface:'spond_club',external_club_name:club.name,club_slug:club.slug||parseJson(connection.settings_json,{})?.club_slug||null};
+      await base44.asServiceRole.entities.ExternalGroupConnection.update(connection.id,{status:'active',external_club_id:club.id,external_group_id:'',external_group_name:'',settings_json:JSON.stringify(settings),last_verified_at:now,last_error:'',last_sync_summary:`Previewed ${rows.length} Spond Club member records; no RallyHub or Spond records were changed.`}).catch(()=>{});
+      return Response.json({success:true,source:{provider:'spond',surface:'spond_club',club_id:club.id,club_name:club.name},counts,rows,readOnly:true,previewedAt:now});
     }
 
     if(action==='disconnect'){
