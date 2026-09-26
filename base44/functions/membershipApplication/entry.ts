@@ -6,6 +6,7 @@ function clean(v:any,max=500){return String(v??'').trim().replace(/\s+/g,' ').sl
 function raw(v:any,max=20000){return String(v??'').trim().slice(0,max)}
 function emailKey(v:any){return clean(v,240).toLowerCase()}
 function phoneDigits(v:any){return clean(v,80).replace(/\D/g,'')}
+function samePhone(a:any,b:any){const aa=phoneDigits(a),bb=phoneDigits(b);return !!aa&&!!bb&&(aa===bb||(aa.length>=9&&bb.length>=9&&aa.slice(-9)===bb.slice(-9)))}
 function publicToken(){return `ma_${crypto.randomUUID().replaceAll('-','')}`}
 function inviteToken(){return `mi_${crypto.randomUUID().replaceAll('-','')}`}
 function validPublicToken(v:any){return /^ma_[0-9a-f]{32}$/i.test(String(v||''))}
@@ -57,7 +58,7 @@ async function membershipInvite(base44:any,config:any,rawToken:any,email='',mobi
   const suppliedMobile=phoneDigits(mobile);
   if(suppliedEmail||suppliedMobile){
     const emailMatch=!!boundEmail&&!!suppliedEmail&&boundEmail===suppliedEmail;
-    const mobileMatch=!!boundMobile&&!!suppliedMobile&&boundMobile===suppliedMobile;
+    const mobileMatch=!!boundMobile&&!!suppliedMobile&&samePhone(boundMobile,suppliedMobile);
     if(!emailMatch&&!mobileMatch)return null;
   }
   return invite;
