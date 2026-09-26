@@ -18,6 +18,7 @@ const EMPTY = {
   emergencyContactName:'',
   emergencyContactMobile:'',
   medicalNote:'',
+  ageConfirmed:false,
   waiverAccepted:false,
   codeAccepted:false,
   privacyAcknowledged:false,
@@ -171,6 +172,17 @@ export default function PublicInterclubRegistration() {
                 </SelectContent>
               </Select>
             </div>
+          </section>
+
+          <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
+            <div>
+              <h2 className="text-lg font-black">Age eligibility</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Clare Pickleball currently operates an adults-only programme.</p>
+            </div>
+            <label className="flex items-start gap-3 rounded-xl border p-4 text-sm">
+              <input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.ageConfirmed} onChange={e=>set('ageConfirmed',e.target.checked)} required/>
+              <span><strong>I confirm that I am 18 years of age or over.</strong></span>
+            </label>
           </section>
 
           <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
