@@ -313,7 +313,7 @@ export default function PublicClubProfile() {
         path={`/directory/${club.slug}`}
         image={displayLogoUrl ? absoluteUrl(displayLogoUrl) : undefined}
         type="profile"
-        structuredData={clubSchema}
+        structuredData={[clubSchema, breadcrumbSchema, faqSchema]}
       />
       <div className="min-h-screen bg-background text-foreground">
       <PublicDirectoryHeader />
@@ -473,7 +473,7 @@ export default function PublicClubProfile() {
                   <article key={venue.id} className="rounded-xl border border-border bg-background/40 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="font-semibold">{venue.name}</h3>
+                        <h3 className="font-semibold"><Link to={venuePath(club.slug, venue.id)} className="hover:text-primary hover:underline">{venue.name}</Link></h3>
                         <p className="text-sm text-muted-foreground mt-1">{venue.address}{venue.eircode ? ` · ${venue.eircode}` : ''}</p>
                       </div>
                       <span className="rounded-full bg-accent/10 text-accent px-2 py-1 text-[10px] font-semibold">{venue.indoor === true ? 'INDOOR' : venue.indoor === false ? 'OUTDOOR' : 'VENUE'}</span>
@@ -481,6 +481,7 @@ export default function PublicClubProfile() {
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                       <p className="text-sm">{venue.courts ? `${venue.courts} courts` : 'Court details pending'}{venue.playType ? ` · ${venue.playType}` : ''}</p>
                       <div className="flex items-center gap-3">
+                        <Link to={venuePath(club.slug, venue.id)} className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Pickleball venue details</Link>
                         {venue.websiteUrl && <a href={venue.websiteUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Venue <ExternalLink className="w-3.5 h-3.5" /></a>}
                         {venue.mapUrl && <a href={venue.mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Map <ExternalLink className="w-3.5 h-3.5" /></a>}
                       </div>
