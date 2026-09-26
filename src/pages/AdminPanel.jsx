@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
 import { useAuth } from '@/lib/AuthContext';
-import MemberDashboardView from '@/components/member/MemberDashboardView';
+import MemberPortalPreview from '@/components/admin/MemberPortalPreview';
 import DirectoryAnalyticsDashboard from '@/components/admin/DirectoryAnalyticsDashboard';
 import { directoryClubs } from '@/data/directorySeed';
 
@@ -171,15 +171,23 @@ export default function AdminPanel() {
 
   const previewTargetUserId = previewUserId || user?.id || '';
   const { data: memberPreview = null, isLoading: loadingMemberPreview, error: memberPreviewError } = useQuery({
-    queryKey: ['admin-member-preview', previewTargetUserId],
+    queryKey: ['admin-member-preview', previewTargetUserId, user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
       const [res, leaderboardRes] = await Promise.all([
-        base44.functions.invoke('memberPortal', { action: 'admin_preview', userId: previewTargetUserId }),
+        base44.functions.invoke('memberPortal', {
+          action: 'admin_preview_full',
+          userId: previewTargetUserId,
+          tenantId: user?.active_tenant_id,
+          clubId: user?.active_club_id,
+        }),
         base44.functions.invoke('getClubLeaderboard', {}),
       ]);
       if (res.data?.error) throw new Error(res.data.error);
-      const snapshot = res.data?.snapshot || null;
-      return snapshot ? { ...snapshot, clubLeaderboard: leaderboardRes.data?.rows || [] } : null;
+      if (!res.data?.snapshot) return null;
+      return {
+        ...res.data,
+        snapshot: { ...res.data.snapshot, clubLeaderboard: leaderboardRes.data?.rows || [] },
+      };
     },
     enabled: canAccessAdmin && activeAdminTab === 'preview' && !!previewTargetUserId
   });
@@ -1534,9 +1542,7 @@ Brian`;
             ) : memberPreviewError ? (
               <div className="glass rounded-xl p-6 text-sm text-destructive">{memberPreviewError.message || 'Could not load member preview.'}</div>
             ) : memberPreview ? (
-              <div className="rounded-2xl border border-primary/20 bg-background/20 p-3 sm:p-5">
-                <MemberDashboardView snapshot={memberPreview} preview />
-              </div>
+              <MemberPortalPreview payload={memberPreview} />
             ) : (
               <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Choose a member account to preview.</div>
             )}
