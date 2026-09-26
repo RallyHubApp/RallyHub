@@ -1216,9 +1216,18 @@ export default function MembershipConsole() {
                 <div><p className="font-semibold">Read-only member preview</p><p className="text-xs text-muted-foreground">{membershipSourcePreview.source?.club_name || 'Spond Club membership roster'} · previewed {membershipSourcePreview.previewedAt ? new Date(membershipSourcePreview.previewedAt).toLocaleString() : 'now'}</p></div>
                 <Badge variant="outline">No records changed</Badge>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-3">
-                {[['Spond members','total'],['Matched members','matched'],['Person, no membership','person_without_membership'],['New candidates','new'],['Needs review','ambiguous']].map(([title,key]) => <div key={key} className="rounded-lg bg-secondary/40 p-2.5"><p className="text-[10px] uppercase text-muted-foreground">{title}</p><p className="text-lg font-black mt-1">{membershipSourcePreview.counts?.[key] || 0}</p></div>)}
+              <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2 mt-3">
+                {[
+                  ['Spond records','total'],
+                  ['Current in Spond','current'],
+                  ['Active','active'],
+                  ['Pending request','unprocessed'],
+                  ['Deactivated','deactivated'],
+                  ['Matched current','matched'],
+                  ['Current needs review','ambiguous']
+                ].map(([title,key]) => <div key={key} className="rounded-lg bg-secondary/40 p-2.5"><p className="text-[10px] uppercase text-muted-foreground">{title}</p><p className="text-lg font-black mt-1">{membershipSourcePreview.counts?.[key] || 0}</p></div>)}
               </div>
+              {(membershipSourcePreview.counts?.new || membershipSourcePreview.counts?.person_without_membership) ? <p className="mt-2 text-[11px] text-muted-foreground">Current Spond records not yet reconciled: {membershipSourcePreview.counts?.new || 0} new candidate{membershipSourcePreview.counts?.new === 1 ? '' : 's'} · {membershipSourcePreview.counts?.person_without_membership || 0} existing RallyHub person{membershipSourcePreview.counts?.person_without_membership === 1 ? '' : 's'} without membership. Deactivated Spond records are historical and are not treated as new candidates.</p> : <p className="mt-2 text-[11px] text-muted-foreground">Deactivated Spond records are shown for history only and are excluded from new-candidate and current-match counts.</p>}
             </div>
             <div className="max-h-[420px] overflow-auto">
               <Table>
