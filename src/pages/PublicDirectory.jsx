@@ -5,10 +5,11 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { directoryClubs, irelandCounties, weekDays } from '@/data/directorySeed';
-import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, Check, CheckCircle2, PlusCircle, Share2, UserCheck } from 'lucide-react';
+import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, Check, CheckCircle2, PlusCircle, Share2, UserCheck, BellRing } from 'lucide-react';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 import PublicDirectoryLogo from '@/components/directory/PublicDirectoryLogo';
+import DirectoryPlayerNetworkPanel from '@/components/directory/DirectoryPlayerNetworkPanel';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -280,7 +281,7 @@ export default function PublicDirectory() {
             <div className="flex items-center py-8 sm:py-10 lg:min-h-[355px] lg:py-11">
               <div className="max-w-[700px]">
                 <div className="inline-flex items-center gap-2 rounded-full border border-[#cfe4d8] bg-white px-3 py-2 text-[10px] font-extrabold uppercase tracking-[.08em] text-[#078e48] shadow-[0_6px_18px_rgba(8,33,76,.04)] sm:text-xs">
-                  <MapPin className="h-3.5 w-3.5" /> All-Ireland club directory · all 32 counties supported
+                  <MapPin className="h-3.5 w-3.5" /> Players & clubs across Ireland · all 32 counties supported
                 </div>
 
                 <h1 className="mt-5 text-[2.65rem] font-black leading-[.97] tracking-[-.05em] text-[#061545] sm:text-[3.6rem] lg:text-[4.2rem]">
@@ -290,7 +291,7 @@ export default function PublicDirectory() {
                 </h1>
 
                 <p className="mt-4 max-w-[650px] text-[14px] font-medium leading-[1.55] text-[#23365f] sm:text-[16px]">
-                  Search public sports clubs across the whole island of Ireland by county, location, day and venue. The Directory stays simple to browse, while clubs can keep their public information accurate and up to date.
+                  Search pickleball clubs across the whole island of Ireland by county, location, day and venue. Players can also stay informed about events, coaching and other opportunities, while clubs keep their public information accurate and up to date.
                 </p>
 
                 <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
@@ -300,6 +301,9 @@ export default function PublicDirectory() {
                   <Link to="/directory/add" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-5 text-[13px] font-bold text-[#0c2257] transition hover:bg-[#f7faf9]">
                     <PlusCircle className="h-4 w-4" /> Add a missing club
                   </Link>
+                  <a href="#player-network" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#b8dfc7] bg-[#eef9f3] px-5 text-[13px] font-bold text-[#067b3f] transition hover:bg-[#e4f5eb]">
+                    <BellRing className="h-4 w-4" /> Player updates
+                  </a>
                 </div>
               </div>
             </div>
@@ -339,6 +343,8 @@ export default function PublicDirectory() {
             </div>
           </section>
         )}
+
+        <DirectoryPlayerNetworkPanel clubs={effectiveClubs} />
 
         <section className="bg-white">
           <div className="mx-auto max-w-[1380px] px-4 pb-2 pt-4 sm:px-6 lg:px-10 xl:px-12">
