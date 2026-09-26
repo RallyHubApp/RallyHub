@@ -1254,7 +1254,7 @@ Brian`;
 
   return (
     <div className="space-y-6">
-      <PageHeader title={activeAdminTab === 'directory' ? 'Directory Admin' : activeAdminTab === 'directory-contacts' ? 'Directory Contacts' : 'Admin Panel'} description={activeAdminTab === 'directory' ? 'Directory ownership, invitations, claims and listing access' : activeAdminTab === 'directory-contacts' ? 'Private verified owner and editor contact register' : 'Site owner control panel'}>
+      <PageHeader title={activeAdminTab === 'directory' ? 'Directory Admin' : activeAdminTab === 'directory-contacts' ? 'Directory Contacts' : activeAdminTab === 'directory-players' ? 'Player Network' : 'Admin Panel'} description={activeAdminTab === 'directory' ? 'Directory ownership, invitations, claims and listing access' : activeAdminTab === 'directory-contacts' ? 'Private verified owner and editor contact register' : activeAdminTab === 'directory-players' ? 'National opted-in pickleball player distribution list' : 'Site owner control panel'}>
         <Badge className="bg-destructive/20 text-destructive gap-1.5">
           <Shield className="w-3 h-3" /> Admin Only
         </Badge>
@@ -1293,6 +1293,13 @@ Brian`;
             <p className="mt-1 text-xs sm:text-sm font-semibold">Invitations out</p>
             <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Awaiting recipient / approval</p>
           </GlassCard>
+        </div>
+      ) : activeAdminTab === 'directory-players' ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+          <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-foreground">{directoryPlayerNetwork.counts?.active || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">Active players</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Opted in to at least one channel</p></GlassCard>
+          <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-primary">{directoryPlayerNetwork.counts?.email || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">Email opt-ins</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Available for email updates</p></GlassCard>
+          <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-green-500">{directoryPlayerNetwork.counts?.whatsapp || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">WhatsApp opt-ins</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Available for mobile updates</p></GlassCard>
+          <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-amber-500">{directoryPlayerNetwork.counts?.counties || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">Counties represented</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">National reach</p></GlassCard>
         </div>
       ) : activeAdminTab === 'directory-contacts' ? null : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -1344,6 +1351,9 @@ Brian`;
           </TabsTrigger>
           <TabsTrigger value="directory-contacts" className="text-xs gap-1.5">
             <Users className="w-3.5 h-3.5" /> Directory Contacts
+          </TabsTrigger>
+          <TabsTrigger value="directory-players" className="text-xs gap-1.5">
+            <Users className="w-3.5 h-3.5" /> Player Network
           </TabsTrigger>
           <TabsTrigger value="feedback" className="text-xs gap-1.5">
             <MessageCircle className="w-3.5 h-3.5" /> Feedback
