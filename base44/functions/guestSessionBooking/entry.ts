@@ -4,6 +4,7 @@ import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
 const PRIVACY_VERSION='clare-guest-session-privacy-v1-2026-09';
 const CANCELLATION_VERSION='clare-guest-session-cancellation-v1-2026-09';
+const ADULT_AGE_VERSION='clare-adult-18plus-v1-2026-09';
 
 const maps=(q:string)=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 const VENUES:any={
@@ -747,6 +748,7 @@ ${detailRow('Reason',reason)}
     if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return Response.json({error:'Please enter a valid email address.'},{status:400});
     if(mobileK.length<8)return Response.json({error:'Please enter a valid mobile number.'},{status:400});
     if(!emergencyName||mobileKey(emergencyMobile).length<8)return Response.json({error:'Please provide an emergency contact name and mobile number.'},{status:400});
+    if(body.ageConfirmed!==true)return Response.json({error:'Clare Pickleball guest sessions are currently for adults aged 18 or over.'},{status:400});
     if(body.waiverAccepted!==true||body.codeAccepted!==true||body.privacyAcknowledged!==true||body.cancellationAccepted!==true){
       return Response.json({error:'Please accept the waiver, Code of Conduct, privacy notice and cancellation policy.'},{status:400});
     }
@@ -829,6 +831,7 @@ ${detailRow('Reason',reason)}
     });
 
     for(const c of [
+      {consent_type:'adult_age_confirmation',status:'accepted',response_text:'Confirmed 18 or over',consent_version:ADULT_AGE_VERSION},
       {consent_type:'guest_session_waiver',status:'accepted',response_text:'Accepted',consent_version:legalBundle.waiverVersion},
       {consent_type:'guest_session_code_of_conduct',status:'accepted',response_text:'Accepted',consent_version:legalBundle.codeVersion},
       {consent_type:'guest_session_privacy_notice',status:'accepted',response_text:'Acknowledged',consent_version:PRIVACY_VERSION},
