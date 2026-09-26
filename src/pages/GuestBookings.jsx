@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
-import { CalendarCheck, CheckCircle2, Copy, ExternalLink, Mail, MapPin, MessageCircle, RefreshCw, RotateCcw, ShieldCheck, XCircle } from 'lucide-react';
+import { CalendarCheck, CheckCircle2, Copy, ExternalLink, Mail, MapPin, MessageCircle, RefreshCw, RotateCcw, ShieldCheck, UserCheck, XCircle } from 'lucide-react';
 
 function niceDate(value){
   if(!value)return '';
@@ -55,7 +55,18 @@ export default function GuestBookings(){
     enabled:user?.role==='admin',
   });
 
+  const {data:requestData={requests:[]},isLoading:requestsLoading}=useQuery({
+    queryKey:['guest-access-requests'],
+    queryFn:async()=>{
+      const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_list'});
+      if(res.data?.error)throw new Error(res.data.error);
+      return res.data;
+    },
+    enabled:user?.role==='admin',
+  });
+
   const selected=useMemo(()=>templateData.templates?.find(t=>t.key===templateKey)||null,[templateData,templateKey]);
+  const pendingRequests=useMemo(()=>[...(requestData.requests||[])].filter(r=>r.status==='pending_approval'),[requestData]);
   const sessions=useMemo(()=>[...(listData.sessions||[])].sort((a,b)=>`${b.sessionDate} ${b.startTime}`.localeCompare(`${a.sessionDate} ${a.startTime}`)),[listData.sessions]);
 
   const createSession=async()=>{
@@ -69,11 +80,50 @@ export default function GuestBookings(){
       if(res.data?.error)throw new Error(res.data.error);
       await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
       const s=res.data.session;
-      const url=`${window.location.origin}/book/${s.token}`;
-      copy(url,'Guest booking link created and copied');
+      const url=res.data.magicInviteUrl||`${window.location.origin}/book/${s.token}`;
+      copy(url,'Private guest invitation link created and copied');
       toast.success('Guest session created');
       setSessionDate('');setCapacity('');setFeeAmount('');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not create guest session')}
+    finally{setBusy('')}
+  };
+
+  const createMagicLink=async(session)=>{
+    const recipientEmail=window.prompt('Guest email address (recommended – this binds the private link to that guest)')||'';
+    const recipientName=recipientEmail?(window.prompt('Guest first name or full name (optional)')||''):'';
+    setBusy(`magic-${session.id}`);
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_create_magic_invite',sessionId:session.id,recipientEmail:recipientEmail.trim(),recipientName:recipientName.trim()});
+      if(res.data?.error)throw new Error(res.data.error);
+      copy(res.data.magicInviteUrl,'Private guest invitation link copied');
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not create private guest link')}
+    finally{setBusy('')}
+  };
+
+  const approveRequest=async(request)=>{
+    const date=window.prompt(`Approve ${request.fullName} for which ${request.day}?`,request.nextDate||'');
+    if(date===null)return;
+    setBusy(`approve-${request.id}`);
+    try{
+      const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_approve',requestId:request.id,sessionDate:date.trim()});
+      if(res.data?.error)throw new Error(res.data.error);
+      copy(res.data.magicInviteUrl,'Approved – private payment link copied');
+      await Promise.all([qc.invalidateQueries({queryKey:['guest-access-requests']}),qc.invalidateQueries({queryKey:['guest-session-admin-list']})]);
+      toast.success('Guest approved. Private booking/payment link copied.');
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not approve guest request')}
+    finally{setBusy('')}
+  };
+
+  const rejectRequest=async(request)=>{
+    const reason=window.prompt(`Reason for declining ${request.fullName} (optional)`,'');
+    if(reason===null)return;
+    setBusy(`reject-${request.id}`);
+    try{
+      const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_reject',requestId:request.id,reason});
+      if(res.data?.error)throw new Error(res.data.error);
+      await qc.invalidateQueries({queryKey:['guest-access-requests']});
+      toast.success('Guest request declined');
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not decline guest request')}
     finally{setBusy('')}
   };
 
@@ -162,7 +212,7 @@ export default function GuestBookings(){
   };
 
   if(user?.role!=='admin')return <div className="min-h-[50vh] grid place-items-center text-center"><div><ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground/40"/><p className="mt-3 font-semibold">Admin access required</p></div></div>;
-  if(templatesLoading||listLoading)return <div className="min-h-[50vh] grid place-items-center"><RefreshCw className="h-6 w-6 animate-spin"/></div>;
+  if(templatesLoading||listLoading||requestsLoading)return <div className="min-h-[50vh] grid place-items-center"><RefreshCw className="h-6 w-6 animate-spin"/></div>;
 
   return <div className="mx-auto max-w-6xl space-y-6">
     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
