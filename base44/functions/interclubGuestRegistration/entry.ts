@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 
-const WAIVER_VERSION = 'interclub-event-waiver-v1-2026-09';
+const FALLBACK_WAIVER_VERSION = 'interclub-event-waiver-v1-2026-09';
 const CODE_VERSION = 'interclub-code-of-conduct-v1-2026-09';
 const PRIVACY_VERSION = 'interclub-event-privacy-v1-2026-09';
 
@@ -12,22 +12,26 @@ function mobileKey(value:any) { return clean(value, 50).replace(/[^0-9]/g, ''); 
 function normalName(value:any) { return clean(value, 120).toLowerCase(); }
 function validToken(value:string) { return /^ccr_[0-9a-f]{32}$/i.test(value); }
 
-function legalText(event:any) {
+function fallbackWaiver(event:any) {
   const eventName = `${event.club_a_name || 'Team A'} v ${event.club_b_name || 'Team B'}`;
   return {
-    waiverVersion:WAIVER_VERSION,
-    waiverTitle:'RallyHub Interclub Event Waiver & Release of Liability',
-    waiverText:`I acknowledge and understand that participation in ${eventName} involves physical activity and carries inherent risks of injury.
-
-I am voluntarily participating in this RallyHub Interclub event and I am aware of the potential risks and dangers involved, including but not limited to accidents, collisions, falls and equipment-related injuries.
-
-I understand that the event organisers, volunteers, participating clubs and facility owners are not responsible for injuries, accidents or damages that may occur during the event.
-
-I release and discharge the event host, participating clubs, their officers, organisers, volunteers and affiliated parties from liability, claims, demands, actions or causes of action arising from injuries, damages or losses sustained by me during the event, except where liability cannot lawfully be excluded.
-
-I agree to follow all safety guidelines, rules and instructions provided by the event organisers and to maintain proper sportsmanship and conduct.
-
-I consent to emergency medical treatment or care if necessary and understand that I am responsible for any costs associated with such treatment.`,
+    version:FALLBACK_WAIVER_VERSION,
+    title:'RallyHub Interclub Event Waiver & Release of Liability',
+    body_text:`I acknowledge and understand that participation in ${eventName} involves physical activity and carries inherent risks of injury.\n\nI am voluntarily participating in this RallyHub Interclub event and agree to follow all safety guidelines, rules and instructions provided by the event organisers.\n\nNothing in this declaration excludes or limits liability which cannot lawfully be excluded or limited.`,
+    consent_label:'I have read and accept the event waiver and release conditions.'
+  };
+}
+async function activeClubWaiver(base44:any,event:any,hostClub:any){
+  if(!hostClub?.id) return fallbackWaiver(event);
+  const rows=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:event.tenant_id,club_id:hostClub.id,document_type:'liability_waiver',active:true},'-effective_from',20);
+  return rows?.[0]||fallbackWaiver(event);
+}
+function legalText(event:any, waiver:any) {
+  return {
+    waiverVersion:waiver.version,
+    waiverTitle:waiver.title,
+    waiverText:waiver.body_text,
+    waiverConsentLabel:waiver.consent_label||'I have read and accept the participation declaration and liability notice.',
     codeVersion:CODE_VERSION,
     codeTitle:'RallyHub Interclub Code of Conduct',
     codeText:`RallyHub Interclub events are intended to be welcoming, inclusive and respectful.
@@ -96,7 +100,8 @@ Deno.serve(async (req) => {
       : [];
     const hostClub = clubs?.[0] || null;
     const sideTeamName = link.side === 'club_a' ? event.club_a_name : event.club_b_name;
-    const legal = legalText(event);
+    const waiver = await activeClubWaiver(base44,event,hostClub);
+    const legal = legalText(event,waiver);
 
     const safeEvent = {
       id:event.id,
@@ -242,7 +247,7 @@ Deno.serve(async (req) => {
       emergency_contact_name:emergencyName,
       emergency_contact_mobile:emergencyMobile,
       medical_note:medicalNote,
-      waiver_version:WAIVER_VERSION,
+      waiver_version:legal.waiverVersion,
       waiver_accepted:true,
       code_of_conduct_version:CODE_VERSION,
       code_of_conduct_accepted:true,
@@ -261,7 +266,7 @@ Deno.serve(async (req) => {
     const hostClubId = event.host_club_id || tournament?.host_club_id || '';
     if (hostClubId) {
       const consents = [
-        { consent_type:'interclub_event_waiver', status:'accepted', response_text:'Accepted', consent_version:WAIVER_VERSION },
+        { consent_type:'interclub_event_waiver', status:'accepted', response_text:'Accepted', consent_version:legal.waiverVersion }
         { consent_type:'interclub_code_of_conduct', status:'accepted', response_text:'Accepted', consent_version:CODE_VERSION },
         { consent_type:'interclub_event_privacy_notice', status:'accepted', response_text:'Acknowledged', consent_version:PRIVACY_VERSION },
         { consent_type:'interclub_photo_video', status:photoVideoConsent === 'yes' ? 'accepted' : 'declined', response_text:photoVideoConsent === 'yes' ? 'Yes' : 'No', consent_version:PRIVACY_VERSION },
