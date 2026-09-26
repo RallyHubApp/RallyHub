@@ -1605,7 +1605,7 @@ Brian`;
               {pendingNewDirectoryRequests.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No new clubs are waiting to be added.</p>
               ) : pendingNewDirectoryRequests.map(request => (
-                <div key={request.id} className="glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div key={request.id} aria-busy={reviewingNewDirectoryRequest === request.id} className={`glass rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition ${reviewingNewDirectoryRequest === request.id ? 'ring-2 ring-primary/35 bg-primary/5' : ''}`}>
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2"><UserPlus className="w-4 h-4 text-primary" /><p className="font-semibold text-foreground">{request.club_name}</p></div>
                     <p className="text-sm text-muted-foreground">{request.town ? `${request.town} · ` : ''}{request.county}</p>
