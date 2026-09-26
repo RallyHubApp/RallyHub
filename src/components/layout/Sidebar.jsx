@@ -2,8 +2,9 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  LayoutDashboard, Users, Trophy, Crown, 
-  BarChart3, X, ChevronRight, UserCircle, Shield, MapPin, CalendarCheck, ContactRound, ClipboardList
+  LayoutDashboard, Users, Trophy, Crown,
+  BarChart3, X, ChevronRight, UserCircle, Shield, MapPin, CalendarCheck, ContactRound, ClipboardList,
+  CalendarDays, MessageCircle, BookOpen, Home
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -28,8 +29,16 @@ export default function Sidebar({ isOpen, onToggle }) {
   const { role } = useKotcRole();
   const canAccessAdmin = user?.role === 'admin';
   const canManageMembership = user?.role === 'admin' || user?.active_club_role === 'club_admin';
+  const isMemberExperience = user?.role !== 'admin' && user?.active_club_role !== 'club_admin';
   const isSuperAdmin = role === 'super_admin';
-  const mainNavItems = [
+  const memberNavItems = [
+    { path: '/app', label: 'Home', icon: Home },
+    { path: '/app/play', label: 'Play', icon: CalendarDays },
+    { path: '/app/clubhouse', label: 'Clubhouse', icon: MessageCircle },
+    { path: '/app/learn', label: 'Learn', icon: BookOpen },
+    { path: '/app/my-profile', label: 'Me', icon: UserCircle },
+  ];
+  const mainNavItems = isMemberExperience ? memberNavItems : [
     navItems[0],
     ...(canManageMembership ? [
       { path: '/app/membership', label: 'Membership', icon: ContactRound },
@@ -128,7 +137,7 @@ export default function Sidebar({ isOpen, onToggle }) {
 
         {/* Bottom links */}
         <div className="px-3 pb-2 space-y-1">
-          {[
+          {!isMemberExperience && [
             ...(isSuperAdmin ? [
               { path: '/directory', label: 'Switch to Directory', icon: MapPin },
               { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield }
