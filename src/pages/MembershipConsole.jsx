@@ -256,6 +256,12 @@ export default function MembershipConsole() {
     });
   }, [meta.defaults, meta.sports]);
 
+  useEffect(() => {
+    const reference = membershipSourceData.connection?.credential_reference || membershipSourceData.defaultCredentialReference || '';
+    if (reference) setMembershipSourceCredentialReference(reference);
+    if (membershipSourceData.connection?.external_group_id) setMembershipSourceGroupId(String(membershipSourceData.connection.external_group_id));
+  }, [membershipSourceData.connection?.credential_reference, membershipSourceData.connection?.external_group_id, membershipSourceData.defaultCredentialReference]);
+
   const currency = meta.gateways?.find(g => g.is_default)?.currency || meta.gateways?.[0]?.currency || 'EUR';
   const gateway = meta.gateways?.find(g => g.is_default) || meta.gateways?.[0] || null;
   const primarySport = meta.sports?.find(s => s.is_primary) || meta.sports?.[0] || null;
