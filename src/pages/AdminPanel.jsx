@@ -1251,6 +1251,8 @@ Brian`;
   };
   const directoryInvitations = (directoryVerification.invitations || []).filter(directoryInvitationStillOutstanding).slice(0, 50);
   const pendingDirectoryInvitations = directoryInvitations;
+  const directoryInvitationsReadyForApproval = directoryInvitations.filter(invite => !!invite.used_by_user_id).length;
+  const directoryInvitationsAwaitingRecipient = Math.max(0, directoryInvitations.length - directoryInvitationsReadyForApproval);
   const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active');
   const claimedDirectorySlugs = new Set(activeDirectoryAccesses.map(access => String(access.listing_slug || '')).filter(Boolean));
   const claimedDirectoryListingCount = directoryAdminListings.filter(listing => claimedDirectorySlugs.has(String(listing.slug))).length;
