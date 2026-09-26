@@ -156,6 +156,18 @@ export default function MembershipConsole() {
     refetchOnWindowFocus: true
   });
 
+  const { data: waitingListData = { counts: {} } } = useQuery({
+    queryKey: ['waiting-list-count', user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('waitingList', { action: 'admin_count' });
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data || { counts: {} };
+    },
+    enabled: canManage,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true
+  });
+
   const { data: detail = null, isLoading: detailLoading, refetch: refetchDetail } = useQuery({
     queryKey: ['membership-console-detail', personId, user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
@@ -685,6 +697,17 @@ export default function MembershipConsole() {
         <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">Loading membership console…</div>
       ) : (
         <>
+          <section className="glass rounded-xl p-4 sm:p-5 border-l-4 border-l-primary">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2"><Users className="w-5 h-5 text-primary" /><h2 className="font-bold">Waiting list</h2><Badge variant="outline">Separate from membership</Badge></div>
+                <p className="mt-1 text-sm text-muted-foreground">{waitingListData.counts?.active || 0} active prospects · {waitingListData.counts?.targetExperience || 0} with recorded target-sport experience · {waitingListData.counts?.priority || 0} manually flagged</p>
+                <p className="mt-1 text-xs text-muted-foreground">Waiting-list records never count towards member totals or grant member access.</p>
+              </div>
+              <a href="/app/waiting-list"><Button variant="outline">Open waiting list</Button></a>
+            </div>
+          </section>
+
           <section id="membership-applications" className="glass rounded-xl overflow-hidden scroll-mt-24">
             <div className="px-4 py-4 border-b flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
               <div>
