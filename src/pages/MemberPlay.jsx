@@ -131,9 +131,9 @@ function MonthView({ items }) {
   );
 }
 
-export default function MemberPlay() {
+export default function MemberPlay({ previewData = null }) {
   const [view, setView] = useState('schedule');
-  const { data: play = null, isLoading, error } = useQuery({
+  const { data: fetchedPlay = null, isLoading, error } = useQuery({
     queryKey: ['member-portal-play'],
     queryFn: async () => {
       const res = await base44.functions.invoke('memberPortal', { action: 'play' });
@@ -142,7 +142,9 @@ export default function MemberPlay() {
     },
     staleTime: 60_000,
     refetchOnWindowFocus: true,
+    enabled: !previewData,
   });
+  const play = previewData || fetchedPlay;
 
   const directoryClub = play?.club?.slug ? getClub(play.club.slug) : null;
   const items = useMemo(() => (play?.items || []).map(item => enrichItem(item, directoryClub)), [play?.items, directoryClub]);
