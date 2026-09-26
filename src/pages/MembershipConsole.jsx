@@ -1179,7 +1179,7 @@ export default function MembershipConsole() {
               {membershipSourceData.connection ? <div className="grid sm:grid-cols-2 gap-3 text-sm">
                 <Info title="Connected Spond Club" value={membershipSourceData.connection.external_club_name || membershipSourceData.connection.external_club_id} />
                 <Info title="Mode" value={label(membershipSourceData.connection.connection_mode)} />
-                <Info title="Direction" value="Spond source → RallyHub preview" />
+                <Info title="Source of truth" value="RallyHub · Spond read-only comparison" />
                 <Info title="Last verified" value={membershipSourceData.connection.last_verified_at ? new Date(membershipSourceData.connection.last_verified_at).toLocaleString() : null} />
               </div> : null}
 
