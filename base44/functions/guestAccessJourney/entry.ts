@@ -167,7 +167,10 @@ Deno.serve(async(req)=>{
       const now=new Date();
       const invite=await base44.asServiceRole.entities.AccessInviteToken.create({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',token:inviteToken(),status:'active',session_link_id:guestSession.id,intended_email:row.email,intended_name:row.full_name,expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),created_by_user_id:user.id,created_at:now.toISOString(),notes:`Approved guest request ${row.id}`});
       await base44.asServiceRole.entities.GuestBookingRequest.update(row.id,{status:'approved',approved_at:now.toISOString(),approved_session_link_id:guestSession.id,admin_notes:`Approved for ${date} · ${session.day} ${session.start}`});
-      return Response.json({success:true,magicInviteUrl:`https://rallyhub.ie/book/${encodeURIComponent(guestSession.token)}?invite=${encodeURIComponent(invite.token)}`,expiresAt:invite.expires_at,sessionDate:date});
+      const magicInviteUrl=`https://rallyhub.ie/book/${encodeURIComponent(guestSession.token)}?invite=${encodeURIComponent(invite.token)}`;
+      let emailSent=false;
+      try{await sendApprovedGuestInvite(base44,club,row,session,venue,date,magicInviteUrl);emailSent=true}catch(e){console.error('approved guest invitation email failed',e?.message||e)}
+      return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,sessionDate:date,emailSent});
     }
 
     return Response.json({error:'Invalid guest request action.'},{status:400});
