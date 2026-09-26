@@ -18,6 +18,12 @@ function niceDate(value){
 function copy(text,label='Copied'){
   navigator.clipboard.writeText(text).then(()=>toast.success(label)).catch(()=>toast.error('Could not copy'));
 }
+function whatsappNumber(value){
+  let digits=String(value||'').replace(/\D/g,'');
+  if(digits.startsWith('00'))digits=digits.slice(2);
+  if(digits.startsWith('0'))digits=`353${digits.slice(1)}`;
+  return digits;
+}
 
 export default function GuestBookings(){
   const { user }=useAuth();
@@ -134,7 +140,8 @@ export default function GuestBookings(){
       if(res.data?.error)throw new Error(res.data.error);
       const action=session.paymentMethod==='cash'?'Reserve your place':`Book & pay €${Number(session.feeAmount||0).toFixed(2)}`;
       const msg=`Clare Pickleball guest session\n${niceDate(session.sessionDate)} · ${session.startTime}\n${session.venueName}\n\n${action}:\n${res.data.magicInviteUrl}\n\nThis private link is tied to your mobile number.`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
+      const target=whatsappNumber(recipientMobile);
+      window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not create private WhatsApp invitation')}
     finally{setBusy('')}
   };
