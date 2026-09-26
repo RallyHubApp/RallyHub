@@ -37,6 +37,7 @@ import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
 import PublicClubChallengeShowcaseScorer from '@/pages/PublicClubChallengeShowcaseScorer';
 import PublicInterclubRegistration from '@/pages/PublicInterclubRegistration';
 import PublicGuestSessionBooking from '@/pages/PublicGuestSessionBooking';
+import PublicGuestRequest from '@/pages/PublicGuestRequest';
 import KotcHostSession from '@/pages/KotcHostSession';
 import PublicKotcResults from '@/pages/PublicKotcResults';
 import PublicKotcScorer from '@/pages/PublicKotcScorer';
@@ -214,6 +215,7 @@ function App() {
             <Route path="/t/:id" element={<PublicTournament />} />
             <Route path="/club-challenge/register/:token" element={<PublicInterclubRegistration />} />
             <Route path="/guest-session/:token" element={<PublicGuestSessionBooking />} />
+            <Route path="/guest/:clubSlug" element={<PublicGuestRequest />} />
             <Route path="/membership/:clubSlug" element={<PublicMembershipApplication />} />
             <Route path="/waiting-list/:clubSlug" element={<PublicWaitingList />} />
             <Route path="/book/:token" element={<PublicGuestSessionBooking />} />
