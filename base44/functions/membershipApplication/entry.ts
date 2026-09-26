@@ -413,14 +413,43 @@ Deno.serve(async(req)=>{
             paymentUrl,clubMembershipId:app.club_membership_id||'',personId:app.person_id||''
           });
         }
+        const accessRequests=await base44.asServiceRole.entities.ClubAccessRequest.filter({tenant_id:tenantId,club_id:clubId,request_type:'membership_application'},'-submitted_at',200);
+        const pendingApprovals=(accessRequests||[]).filter((r:any)=>r.status==='pending_approval').map((r:any)=>({id:r.id,fullName:r.full_name,email:r.email,mobile:r.mobile||'',dateOfBirth:r.date_of_birth||'',submittedAt:r.submitted_at||r.created_date,notes:r.notes||''}));
         const counts={
           total:rows.length,
+          awaitingApproval:pendingApprovals.length,
           awaitingPayment:rows.filter(x=>['pending','failed'].includes(x.paymentStatus)).length,
           paid:rows.filter(x=>x.paymentStatus==='paid').length,
           newMembers:rows.filter(x=>x.applicationType==='new').length,
           renewals:rows.filter(x=>x.applicationType==='renewal').length
         };
-        return Response.json({success:true,config:safeConfig(config,club,{}),publicUrl:`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}`,counts,applications:rows});
+        return Response.json({success:true,config:safeConfig(config,club,{}),publicUrl:`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}`,counts,pendingApprovals,applications:rows});
+      }
+
+      if(action==='admin_create_invite'){
+        const recipientEmail=emailKey(body.recipientEmail||'');
+        const recipientName=clean(body.recipientName||'',160);
+        const invite=await createMembershipInvite(base44,config,user,recipientEmail,recipientName,'');
+        return Response.json({success:true,magicInviteUrl:`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`,expiresAt:invite.expires_at});
+      }
+
+      if(action==='admin_approve_request'){
+        const requestId=clean(body.requestId,120);
+        const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
+        if(!request)return Response.json({error:'Membership request not found.'},{status:404});
+        if(request.status!=='pending_approval')return Response.json({error:'This membership request has already been decided.'},{status:409});
+        const invite=await createMembershipInvite(base44,config,user,request.email,request.full_name,request.id);
+        await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{status:'approved',approved_at:new Date().toISOString(),approved_by_user_id:user.id,invite_token_id:invite.id});
+        return Response.json({success:true,magicInviteUrl:`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`,expiresAt:invite.expires_at});
+      }
+
+      if(action==='admin_reject_request'){
+        const requestId=clean(body.requestId,120);
+        const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
+        if(!request)return Response.json({error:'Membership request not found.'},{status:404});
+        if(request.status!=='pending_approval')return Response.json({error:'This membership request has already been decided.'},{status:409});
+        await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{status:'rejected',rejected_at:new Date().toISOString(),rejection_reason:clean(body.reason||'Membership request declined by club.',500)});
+        return Response.json({success:true});
       }
 
       const appId=clean(body.applicationId,120);
