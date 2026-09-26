@@ -192,7 +192,7 @@ export default function PublicGuestSessionBooking(){
           <label className="flex items-start gap-3 rounded-xl border p-4 text-sm"><input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.waiverAccepted} onChange={e=>set('waiverAccepted',e.target.checked)} required/><span><strong>{legal.waiverConsentLabel || 'I have read and accept the Clare Pickleball Participation Declaration, Assumption of Risk & Liability Notice.'}</strong></span></label>
 
           <details className="rounded-xl border bg-secondary/30 p-4"><summary className="cursor-pointer font-bold text-sm">{legal.codeTitle}</summary><div className="mt-3 whitespace-pre-line text-xs leading-5 text-muted-foreground">{legal.codeText}</div></details>
-          <label className="flex items-start gap-3 rounded-xl border p-4 text-sm"><input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.codeAccepted} onChange={e=>set('codeAccepted',e.target.checked)} required/><span><strong>I have read and agree to follow the Clare Pickleball Guest Code of Conduct.</strong></span></label>
+          <label className="flex items-start gap-3 rounded-xl border p-4 text-sm"><input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.codeAccepted} onChange={e=>set('codeAccepted',e.target.checked)} required/><span><strong>{legal.codeConsentLabel || 'I have read and agree to abide by the Clare Pickleball Code of Conduct, Court Etiquette & Sportsmanship.'}</strong></span></label>
         </section>
 
         <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
