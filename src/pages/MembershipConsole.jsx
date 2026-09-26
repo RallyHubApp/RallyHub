@@ -704,23 +704,29 @@ export default function MembershipConsole() {
   };
 
   const createMembershipInvite = async () => {
-    const recipientEmail = window.prompt('Applicant email address (required – the private membership link is locked to this email)');
-    if (recipientEmail === null) return;
-    if (!recipientEmail.trim()) return toast.error('Enter the applicant email address');
+    const contact = window.prompt('Applicant email OR mobile/WhatsApp number (required – the private membership link is locked to this contact)');
+    if (contact === null) return;
+    const value = contact.trim();
+    if (!value) return toast.error('Enter the applicant email or mobile/WhatsApp number');
+    const isEmail = value.includes('@');
+    if (!isEmail && value.replace(/\D/g,'').length < 8) return toast.error('Enter a valid mobile/WhatsApp number');
     const recipientName = window.prompt('Applicant first name or full name (optional)') || '';
     setApplicationBusyId('membership-invite');
     try {
       const response = await base44.functions.invoke('membershipApplication', {
         action: 'admin_create_invite',
-        recipientEmail: recipientEmail.trim(),
+        recipientEmail: isEmail ? value : '',
+        recipientMobile: isEmail ? '' : value,
         recipientName: recipientName.trim()
       });
       if (response.data?.error) throw new Error(response.data.error);
-      try {
-        await navigator.clipboard.writeText(response.data.magicInviteUrl);
+      try { await navigator.clipboard.writeText(response.data.magicInviteUrl); } catch {}
+      if (isEmail) {
         toast.success(response.data.emailSent ? 'Membership invitation emailed and private link copied' : 'Private membership link copied. Email delivery failed, so send the copied link manually.');
-      } catch {
-        window.prompt(response.data.emailSent ? 'Invitation emailed. Copy this private membership link if you also want it:' : 'Email delivery failed. Copy and send this private membership invitation:', response.data.magicInviteUrl);
+      } else {
+        const msg = `${recipientName ? `Hi ${recipientName.trim().split(/\s+/)[0]}, ` : ''}you are invited to complete your Clare Pickleball membership. Use this private link:\n${response.data.magicInviteUrl}\n\nThis link is tied to your mobile/WhatsApp number.`;
+        window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
+        toast.success('Mobile-bound membership link created, copied and opened for WhatsApp');
       }
     } catch (error) {
       toast.error(error?.response?.data?.error || error?.message || 'Could not create membership invitation');
@@ -893,7 +899,7 @@ export default function MembershipConsole() {
             <div className="px-4 py-4 border-b flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
               <div>
                 <p className="font-semibold">Membership applications</p>
-                <p className="text-xs text-muted-foreground">Public new-member requests wait for club approval before payment. Private admin invitations are locked to the intended email and are pre-authorised to continue.</p>
+                <p className="text-xs text-muted-foreground">Public new-member requests wait for club approval before payment. Private admin invitations can be locked to the intended email or mobile/WhatsApp number and are pre-authorised to continue.</p>
               </div>
               {applicationData.publicUrl ? <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={async () => {
@@ -915,7 +921,7 @@ export default function MembershipConsole() {
               </div>
 
               {(applicationData.pendingApprovals || []).length > 0 ? <div className="mb-5 space-y-2">
-                <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-bold">Awaiting club approval</p><p className="text-xs text-muted-foreground">No payment has been taken. Approving creates a private email-bound membership link for that applicant.</p></div><Badge variant="outline">{applicationData.pendingApprovals.length}</Badge></div>
+                <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-bold">Awaiting club approval</p><p className="text-xs text-muted-foreground">No payment has been taken. Approving creates a private link bound to that applicant’s email and mobile number where available.</p></div><Badge variant="outline">{applicationData.pendingApprovals.length}</Badge></div>
                 {(applicationData.pendingApprovals || []).map(request => {
                   const approvalBusy = applicationBusyId === `approval-${request.id}` || applicationBusyId === `reject-${request.id}`;
                   return <div key={request.id} className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 sm:p-4">
