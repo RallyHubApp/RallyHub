@@ -1,0 +1,115 @@
+{
+  "name": "GuestBookingRequest",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "request_token": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_approval",
+        "approved",
+        "rejected",
+        "converted"
+      ],
+      "default": "pending_approval"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "public_link",
+        "admin_invite"
+      ],
+      "default": "public_link"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "experience_level": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "experienced"
+      ]
+    },
+    "preferred_venue_key": {
+      "type": "string"
+    },
+    "preferred_session_key": {
+      "type": "string"
+    },
+    "dupr_id": {
+      "type": "string"
+    },
+    "home_club": {
+      "type": "string"
+    },
+    "approved_session_link_id": {
+      "type": "string"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "admin_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "request_token",
+    "status",
+    "source",
+    "full_name",
+    "email",
+    "mobile",
+    "experience_level",
+    "preferred_venue_key",
+    "preferred_session_key",
+    "submitted_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

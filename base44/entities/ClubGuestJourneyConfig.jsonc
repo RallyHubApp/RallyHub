@@ -1,0 +1,92 @@
+{
+  "name": "ClubGuestJourneyConfig",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "adults_only": {
+      "type": "boolean",
+      "default": true
+    },
+    "minimum_age": {
+      "type": "number",
+      "default": 18
+    },
+    "beginner_venue_keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "experienced_venue_keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "beginner_session_keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "require_dupr_for_experienced": {
+      "type": "boolean",
+      "default": true
+    },
+    "require_home_club_for_experienced": {
+      "type": "boolean",
+      "default": true
+    },
+    "public_requests_require_approval": {
+      "type": "boolean",
+      "default": true
+    },
+    "admin_invites_bypass_approval": {
+      "type": "boolean",
+      "default": true
+    },
+    "invite_expiry_hours": {
+      "type": "number",
+      "default": 168
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "active"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

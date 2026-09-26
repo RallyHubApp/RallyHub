@@ -1,0 +1,136 @@
+{
+  "name": "ClubAccessRequest",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "request_type": {
+      "type": "string",
+      "enum": [
+        "guest_booking",
+        "membership_application"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_approval",
+        "approved",
+        "rejected",
+        "converted"
+      ],
+      "default": "pending_approval"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "public_link",
+        "admin_invite"
+      ]
+    },
+    "invite_token_id": {
+      "type": "string"
+    },
+    "session_link_id": {
+      "type": "string"
+    },
+    "membership_config_id": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "player_experience": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "experienced"
+      ]
+    },
+    "preferred_venue_key": {
+      "type": "string"
+    },
+    "preferred_session_key": {
+      "type": "string"
+    },
+    "dupr_id": {
+      "type": "string"
+    },
+    "home_club": {
+      "type": "string"
+    },
+    "payload_json": {
+      "type": "string"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approved_by_user_id": {
+      "type": "string"
+    },
+    "rejected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rejection_reason": {
+      "type": "string"
+    },
+    "conversion_reference": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "request_type",
+    "status",
+    "source",
+    "full_name",
+    "email",
+    "submitted_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

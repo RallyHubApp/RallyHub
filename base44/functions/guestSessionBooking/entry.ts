@@ -55,6 +55,53 @@ function templateOut(t:any){
   const v=VENUES[t.venueKey];
   return {...t,venueName:v.name,venueAddress:v.address,eircode:v.eircode,mapsUrl:v.mapsUrl};
 }
+async function directoryTemplates(base44:any,tenantId:string,clubId:string){
+  try{
+    const club=(await base44.asServiceRole.entities.Club.filter({id:clubId,tenant_id:tenantId},'-updated_date',5))?.[0];
+    if(!club?.slug)return Object.values(TEMPLATES).map(templateOut);
+    const profile=(await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:club.slug,status:'active'},'-updated_at',5))?.[0];
+    const data=profile?.public_json?JSON.parse(profile.public_json):null;
+    const venues=Array.isArray(data?.venues)?data.venues:[];
+    const sessions=Array.isArray(data?.sessions)?data.sessions:[];
+    if(!sessions.length||!venues.length)return Object.values(TEMPLATES).map(templateOut);
+    return sessions.filter((s:any)=>s?.guestEligible!==false).map((s:any)=>{
+      const v=venues.find((x:any)=>String(x.id)===String(s.venueId));
+      if(!v)return null;
+      const payment=/cash/i.test(String(s.paymentMethod||''))?'cash':'sumup';
+      const price=Number(s.price);
+      return {
+        key:String(s.id),directorySessionId:String(s.id),venueKey:String(v.id),weekday:String(s.day||''),
+        start:String(s.start||''),end:String(s.end||''),fee:Number.isFinite(price)&&price>0?price:(payment==='cash'?5:5.5),
+        payment,label:`${s.day||''} ${s.start||''}`.trim(),level:String(s.level||''),
+        venueName:String(v.name||''),venueAddress:String(v.address||''),eircode:String(v.eircode||''),mapsUrl:String(v.mapUrl||''),
+        beginnerGuestEligible:s.beginnerGuestEligible===true,
+      };
+    }).filter(Boolean);
+  }catch(e){console.error('directory guest templates failed',e?.message||e);return Object.values(TEMPLATES).map(templateOut)}
+}
+async function inviteForSession(base44:any,session:any,rawToken:any,email=''){
+  const inviteToken=clean(rawToken,120);
+  if(!inviteToken)return null;
+  const rows=await base44.asServiceRole.entities.AccessInviteToken.filter({token:inviteToken,purpose:'guest_booking',status:'active',session_link_id:session.id},'-created_at',5);
+  const invite=rows?.[0]||null;
+  if(!invite)return null;
+  if(invite.expires_at&&Date.parse(invite.expires_at)<Date.now()){
+    await base44.asServiceRole.entities.AccessInviteToken.update(invite.id,{status:'expired'}).catch(()=>{});
+    return null;
+  }
+  if(invite.intended_email&&email&&emailKey(invite.intended_email)!==emailKey(email))return null;
+  return invite;
+}
+async function createInvite(base44:any,session:any,user:any,intendedEmail='',intendedName=''){
+  const now=new Date();
+  const inviteToken=`gi_${crypto.randomUUID().replaceAll('-','')}`;
+  const row=await base44.asServiceRole.entities.AccessInviteToken.create({
+    tenant_id:session.tenant_id,club_id:session.club_id,purpose:'guest_booking',token:inviteToken,status:'active',session_link_id:session.id,
+    intended_email:emailKey(intendedEmail),intended_name:clean(intendedName,120),expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),
+    created_by_user_id:user?.id||'',created_at:now.toISOString(),notes:'Admin-issued guest booking magic link. Single-use and expires after 7 days.',
+  });
+  return row;
+}
 function safeSession(s:any){
   return {
     id:s.id,token:s.token,active:s.active,sessionDate:s.session_date,weekday:s.weekday,
