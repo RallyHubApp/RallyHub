@@ -14,7 +14,7 @@ import MemberBottomNav from '@/components/member/MemberBottomNav';
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout, isAuthenticated, navigateToLogin } = useAuth();
-  const isMemberExperience = user?.role !== 'admin' && user?.active_club_role !== 'club_admin';
+  const isMemberExperience = !!user?.id && user?.role !== 'admin' && user?.active_club_role !== 'club_admin';
 
   const initials = (user?.full_name || user?.email || 'U')
     .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
