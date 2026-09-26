@@ -455,7 +455,10 @@ Deno.serve(async(req)=>{
         const recipientName=clean(body.recipientName||'',160);
         if(!recipientEmail||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail))return Response.json({error:'Enter the applicant email address. Private membership invitations must be tied to the intended person.'},{status:400});
         const invite=await createMembershipInvite(base44,config,user,recipientEmail,recipientName,'');
-        return Response.json({success:true,magicInviteUrl:`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`,expiresAt:invite.expires_at});
+        const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
+        let emailSent=false;
+        try{await sendMembershipInviteEmail(base44,config,club,recipientEmail,recipientName,magicInviteUrl,false);emailSent=true}catch(e){console.error('membership invitation email failed',e?.message||e)}
+        return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,emailSent});
       }
 
       if(action==='admin_approve_request'){
@@ -465,7 +468,10 @@ Deno.serve(async(req)=>{
         if(request.status!=='pending_approval')return Response.json({error:'This membership request has already been decided.'},{status:409});
         const invite=await createMembershipInvite(base44,config,user,request.email,request.full_name,request.id);
         await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{status:'approved',approved_at:new Date().toISOString(),approved_by_user_id:user.id,invite_token_id:invite.id});
-        return Response.json({success:true,magicInviteUrl:`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`,expiresAt:invite.expires_at});
+        const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
+        let emailSent=false;
+        try{await sendMembershipInviteEmail(base44,config,club,request.email,request.full_name,magicInviteUrl,true);emailSent=true}catch(e){console.error('approved membership invitation email failed',e?.message||e)}
+        return Response.json({success:true,magicInviteUrl,expiresAt:invite.expires_at,emailSent});
       }
 
       if(action==='admin_reject_request'){
