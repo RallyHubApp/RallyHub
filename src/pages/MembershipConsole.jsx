@@ -114,6 +114,12 @@ export default function MembershipConsole() {
   const [trainingOpen, setTrainingOpen] = useState(false);
   const [qualificationOpen, setQualificationOpen] = useState(false);
   const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [membershipSourceOpen, setMembershipSourceOpen] = useState(false);
+  const [membershipSourceBusy, setMembershipSourceBusy] = useState('');
+  const [membershipSourceCredentialReference, setMembershipSourceCredentialReference] = useState('');
+  const [membershipSourceGroups, setMembershipSourceGroups] = useState([]);
+  const [membershipSourceGroupId, setMembershipSourceGroupId] = useState('');
+  const [membershipSourcePreview, setMembershipSourcePreview] = useState(null);
   const [newMember, setNewMember] = useState({
     full_name: '', primary_email: '', mobile: '', date_of_birth: '', member_id: '',
     membership_season: '', membership_type: '', membership_status: 'pending_payment',
