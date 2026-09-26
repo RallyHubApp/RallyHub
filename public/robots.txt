@@ -1,4 +1,23 @@
 User-agent: *
 Allow: /
+Disallow: /app/
+Disallow: /admin
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /test-club-entry
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /app/
+Disallow: /admin
+Disallow: /login
+
+User-agent: GPTBot
+Allow: /
+Disallow: /app/
+Disallow: /admin
+Disallow: /login
 
 Sitemap: https://rallyhub.ie/directory-sitemap.xml
