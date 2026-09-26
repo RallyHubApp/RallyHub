@@ -7,18 +7,13 @@ const EMPTY={
   firstName:'',email:'',mobile:'',county:'',clubChoice:'',otherClub:'',duprRating:'',emailOptIn:false,whatsappOptIn:false,website:''
 };
 
-function whatsappShare(message){
-  window.open(`https://wa.me/?text=${encodeURIComponent(message)}`,'_blank','noopener,noreferrer');
-}
-function emailShare(subject,message){
-  window.location.href=`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
-}
 
 export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
   const [form,setForm]=useState(EMPTY);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [done,setDone]=useState(null);
+  const [shareDraft,setShareDraft]=useState(null);
 
   const clubOptions=useMemo(()=>[...clubs]
     .filter(c=>c?.name)
@@ -43,8 +38,29 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
     finally{setBusy(false)}
   };
 
-  const playerShare=`Thought you might find this useful. RallyHub has a free all-Ireland pickleball directory for clubs, venues and weekly sessions, and players can also sign up for occasional updates about tournaments, coaching and other pickleball opportunities.\n\nHave a look: https://rallyhub.ie/directory`;
-  const clubShare=`Hi, I was looking at the RallyHub Irish Pickleball Directory and noticed our club isn't listed yet. Clubs can add a free listing with venues, playing times and contact information so players can find them more easily.\n\nIt only takes a few minutes to add or claim a club: https://rallyhub.ie/directory\n\nThought it would be worth getting us on there.`;
+  const playerWhatsApp=`Hi, I came across RallyHub and thought you might like it.\n\nIt has a free Irish Pickleball Directory where you can find clubs, venues and regular sessions around Ireland, and you can also sign up to be notified about upcoming tournaments, events, coaching and other pickleball opportunities.\n\nLooks really useful, especially as it grows.\n\nHave a look here:\nhttps://rallyhub.ie/directory`;
+  const playerEmail=`Hi,\n\nI came across RallyHub and thought you might find it useful.\n\nIt has a free Irish Pickleball Directory where players can find clubs, venues and regular playing sessions around Ireland.\n\nYou can also sign up for occasional updates about upcoming tournaments, social events, coaching and other pickleball opportunities.\n\nIt looks like it could become a really useful way of keeping up with what’s happening around Irish pickleball.\n\nHave a look here:\n\nhttps://rallyhub.ie/directory`;
+  const clubWhatsApp=`Hi, I came across RallyHub’s new Irish Pickleball Directory and noticed our club isn’t on it yet.\n\nIt’s a free national directory for pickleball players to find clubs, venues and regular playing sessions around Ireland. Clubs can add or claim their listing for free and keep their own details up to date.\n\nI thought it might be worth getting our club listed too:\n\nhttps://rallyhub.ie/directory\n\nHave a look when you get a chance.`;
+  const clubEmail=`Hi,\n\nI came across RallyHub’s new Irish Pickleball Directory and noticed our club isn’t on it yet.\n\nIt’s a free national directory helping pickleball players find clubs, venues and regular playing sessions around Ireland. Clubs can add or claim their listing for free and then keep their own information up to date.\n\nI thought it would be worth getting our club listed too.\n\nhttps://rallyhub.ie/directory\n\nHave a look when you get a chance.`;
+
+  const openShare=(type,channel)=>{
+    const isClub=type==='club';
+    const isEmail=channel==='email';
+    setShareDraft({
+      type,channel,
+      subject:isEmail?(isClub?'Free listing for our club on the RallyHub Pickleball Directory':'Thought you might like RallyHub'):'',
+      message:isClub?(isEmail?clubEmail:clubWhatsApp):(isEmail?playerEmail:playerWhatsApp)
+    });
+  };
+  const resetShare=()=>{
+    if(!shareDraft)return;
+    openShare(shareDraft.type,shareDraft.channel);
+  };
+  const sendShare=()=>{
+    if(!shareDraft)return;
+    if(shareDraft.channel==='whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(shareDraft.message)}`,'_blank','noopener,noreferrer');
+    else window.location.href=`mailto:?subject=${encodeURIComponent(shareDraft.subject)}&body=${encodeURIComponent(shareDraft.message)}`;
+  };
 
   return <section id="player-network" className="bg-[#f6faf9] border-y border-[#e0ece8]">
     <div className="mx-auto max-w-[1380px] px-4 py-6 sm:px-6 lg:px-10 xl:px-12">
