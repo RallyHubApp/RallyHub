@@ -296,6 +296,22 @@ Deno.serve(async(req)=>{
       const activeRows=rows.filter((row:any)=>row.source_lifecycle==='active');
       const unprocessedRows=rows.filter((row:any)=>row.source_lifecycle==='unprocessed');
       const deactivatedRows=rows.filter((row:any)=>row.source_lifecycle==='deactivated');
+
+      // Reverse reconciliation matters just as much as Spond -> RallyHub: identify current RallyHub
+      // members who have no current Spond Club record at all. Pending-payment/no-response members are
+      // intentionally included because they are still part of the club's current membership workflow.
+      const currentMemberships=(memberships||[]).filter((row:any)=>
+        row.relationship_type==='member' && ['paid_active','pending_payment','no_response'].includes(row.membership_status)
+      );
+      const currentSpondPersonIds=new Set(currentRows.filter((row:any)=>row.matched_person_id).map((row:any)=>String(row.matched_person_id)));
+      const personById=new Map((people||[]).map((row:any)=>[String(row.id),row]));
+      const rallyhubMissing=currentMemberships
+        .filter((membership:any)=>!currentSpondPersonIds.has(String(membership.person_id)))
+        .map((membership:any)=>{
+          const person=personById.get(String(membership.person_id))||{};
+          return candidateSummary(person,membership);
+        })
+        .sort((a:any,b:any)=>String(a.full_name||'').localeCompare(String(b.full_name||''),undefined,{sensitivity:'base'}));
       const counts={
         total:rows.length,
         current:currentRows.length,
@@ -307,7 +323,9 @@ Deno.serve(async(req)=>{
         new:currentRows.filter((row:any)=>row.match_status==='new').length,
         ambiguous:currentRows.filter((row:any)=>row.match_status==='ambiguous').length,
         deactivated_matched:deactivatedRows.filter((row:any)=>row.match_status==='matched').length,
-        deactivated_unmatched:deactivatedRows.filter((row:any)=>row.match_status!=='matched').length
+        deactivated_unmatched:deactivatedRows.filter((row:any)=>row.match_status!=='matched').length,
+        rallyhub_members:currentMemberships.length,
+        rallyhub_missing_from_spond:rallyhubMissing.length
       };
       const now=new Date().toISOString();
       const settings={...parseJson(connection.settings_json,{}),surface:'spond_club',external_club_name:club.name,club_slug:club.slug||parseJson(connection.settings_json,{})?.club_slug||null};
