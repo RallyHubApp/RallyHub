@@ -532,7 +532,15 @@ Deno.serve(async(req)=>{
     ]);
 
     if(action==='public_get'){
-      return Response.json({success:true,config:safeConfig(config,club,docs,adultPolicy)});
+      const invite=await membershipInvite(base44,config,body.inviteToken||'');
+      let prefill=null;
+      if(invite?.access_request_id){
+        const request=await first(base44,'ClubAccessRequest',{id:invite.access_request_id,tenant_id:config.tenant_id,club_id:config.club_id,request_type:'membership_application'});
+        if(request?.payload_json){
+          try{prefill=JSON.parse(request.payload_json)}catch{}
+        }
+      }
+      return Response.json({success:true,config:safeConfig(config,club,docs,adultPolicy),inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',prefill});
     }
 
     if(action==='public_lookup_renewal'){
