@@ -101,9 +101,9 @@ export default function GuestBookings(){
     try{
       const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_approve',requestId:request.id,sessionDate:date.trim()});
       if(res.data?.error)throw new Error(res.data.error);
-      copy(res.data.magicInviteUrl,'Approved – private payment link copied');
+      copy(res.data.magicInviteUrl,res.data.emailSent?'Guest approved – private link emailed and copied':'Guest approved – private link copied');
       await Promise.all([qc.invalidateQueries({queryKey:['guest-access-requests']}),qc.invalidateQueries({queryKey:['guest-session-admin-list']})]);
-      toast.success('Guest approved. Private booking/payment link copied.');
+      toast.success(res.data.emailSent?'Guest approved. Private booking/payment link emailed and copied.':'Guest approved. Email delivery failed, so send the copied private link manually.');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not approve guest request')}
     finally{setBusy('')}
   };
