@@ -201,10 +201,12 @@ function matchSourceMember(source:any,people:any[],membershipByPerson:Map<string
   if(phoneMatches.length===1)return matchedResult(phoneMatches[0],membershipByPerson,'mobile');
   if(emailMatches.length===1)return matchedResult(emailMatches[0],membershipByPerson,'email');
 
-  const strong=uniquePeople([...nameDobMatches,...phoneMatches,...emailMatches]);
-  if(strong.length>1) return {match_status:'ambiguous',match_method:'multiple_strong_matches',matched_person_id:null,candidates:strong.slice(0,10).map((p:any)=>candidateSummary(p,membershipByPerson.get(String(p.id))))};
   const nameMatches=name?people.filter((p:any)=>nameKey(p.full_name)===name):[];
+  // A unique exact full-name match can safely disambiguate a shared household email in this read-only comparison.
   if(nameMatches.length===1)return matchedResult(nameMatches[0],membershipByPerson,'name_only');
+
+  const strong=uniquePeople([...nameDobMatches,...phoneMatches,...emailMatches,...nameMatches]);
+  if(strong.length>1) return {match_status:'ambiguous',match_method:'multiple_strong_matches',matched_person_id:null,candidates:strong.slice(0,10).map((p:any)=>candidateSummary(p,membershipByPerson.get(String(p.id))))};
   if(nameMatches.length>1) return {match_status:'ambiguous',match_method:'name_only',matched_person_id:null,candidates:nameMatches.slice(0,10).map((p:any)=>candidateSummary(p,membershipByPerson.get(String(p.id))))};
   return {match_status:'new',match_method:null,matched_person_id:null,candidates:[]};
 }
