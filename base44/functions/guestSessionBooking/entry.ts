@@ -79,7 +79,7 @@ async function directoryTemplates(base44:any,tenantId:string,clubId:string){
     }).filter(Boolean);
   }catch(e){console.error('directory guest templates failed',e?.message||e);return Object.values(TEMPLATES).map(templateOut)}
 }
-async function inviteForSession(base44:any,session:any,rawToken:any,email=''){
+async function inviteForSession(base44:any,session:any,rawToken:any,email='',mobile=''){
   const inviteToken=clean(rawToken,120);
   if(!inviteToken)return null;
   const rows=await base44.asServiceRole.entities.AccessInviteToken.filter({token:inviteToken,purpose:'guest_booking',status:'active',session_link_id:session.id},'-created_at',5);
@@ -89,21 +89,33 @@ async function inviteForSession(base44:any,session:any,rawToken:any,email=''){
     await base44.asServiceRole.entities.AccessInviteToken.update(invite.id,{status:'expired'}).catch(()=>{});
     return null;
   }
-  // A private/admin-authorised link is only valid when it is bound to a specific email address.
-  // This deliberately invalidates any older unbound invite tokens so forwarded links cannot inherit approval.
-  if(!emailKey(invite.intended_email))return null;
-  if(email&&emailKey(invite.intended_email)!==emailKey(email))return null;
+  // A private/admin-authorised link must be bound to at least one contact identifier.
+  // Either the intended email OR intended mobile may prove identity at submission.
+  const boundEmail=emailKey(invite.intended_email);
+  const boundMobile=mobileKey(invite.intended_mobile);
+  if(!boundEmail&&!boundMobile)return null;
+  const suppliedEmail=emailKey(email);
+  const suppliedMobile=mobileKey(mobile);
+  if(suppliedEmail||suppliedMobile){
+    const emailMatch=!!boundEmail&&!!suppliedEmail&&boundEmail===suppliedEmail;
+    const mobileMatch=!!boundMobile&&!!suppliedMobile&&boundMobile===suppliedMobile;
+    if(!emailMatch&&!mobileMatch)return null;
+  }
   return invite;
 }
-async function createInvite(base44:any,session:any,user:any,intendedEmail='',intendedName=''){
+async function createInvite(base44:any,session:any,user:any,intendedEmail='',intendedName='',intendedMobile=''){
   const boundEmail=emailKey(intendedEmail);
-  if(!boundEmail||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(boundEmail))throw new Error('A valid guest email address is required for a private invitation.');
+  const boundMobileRaw=clean(intendedMobile,50);
+  const boundMobile=mobileKey(boundMobileRaw);
+  if(boundEmail&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(boundEmail))throw new Error('Enter a valid guest email address.');
+  if(boundMobileRaw&&boundMobile.length<8)throw new Error('Enter a valid guest mobile/WhatsApp number.');
+  if(!boundEmail&&!boundMobile)throw new Error('Enter either the guest email address or mobile/WhatsApp number for a private invitation.');
   const now=new Date();
   const inviteToken=`gi_${crypto.randomUUID().replaceAll('-','')}`;
   const row=await base44.asServiceRole.entities.AccessInviteToken.create({
     tenant_id:session.tenant_id,club_id:session.club_id,purpose:'guest_booking',token:inviteToken,status:'active',session_link_id:session.id,
-    intended_email:boundEmail,intended_name:clean(intendedName,120),expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),
-    created_by_user_id:user?.id||'',created_at:now.toISOString(),notes:'Admin-issued guest booking magic link. Single-use and expires after 7 days.',
+    intended_email:boundEmail,intended_mobile:boundMobileRaw,intended_name:clean(intendedName,120),expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),
+    created_by_user_id:user?.id||'',created_at:now.toISOString(),notes:'Admin-issued guest booking magic link. Bound to email and/or mobile; single-use and expires after 7 days.',
   });
   return row;
 }
@@ -497,13 +509,16 @@ Deno.serve(async(req)=>{
       if(action==='admin_create_magic_invite'){
         const sessionId=clean(body.sessionId,100);
         const recipientEmail=emailKey(body.recipientEmail||'');
+        const recipientMobile=clean(body.recipientMobile||'',50);
         const recipientName=clean(body.recipientName||'',120);
-        if(!recipientEmail||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail))return Response.json({error:'Enter the guest email address. Private invitations must be tied to the intended guest.'},{status:400});
+        if(recipientEmail&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail))return Response.json({error:'Enter a valid guest email address.'},{status:400});
+        if(recipientMobile&&mobileKey(recipientMobile).length<8)return Response.json({error:'Enter a valid guest mobile/WhatsApp number.'},{status:400});
+        if(!recipientEmail&&!mobileKey(recipientMobile))return Response.json({error:'Enter either the guest email address or mobile/WhatsApp number. Private invitations must be tied to the intended guest.'},{status:400});
         const session=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:sessionId,tenant_id:tenantId,club_id:clubId}))?.[0];
         if(!session)return Response.json({error:'Guest session not found.'},{status:404});
         if(!session.active)return Response.json({error:'This booking link is closed.'},{status:409});
-        const invite=await createInvite(base44,session,user,recipientEmail,recipientName);
-        return Response.json({success:true,magicInviteUrl:`https://rallyhub.ie/book/${encodeURIComponent(session.token)}?invite=${encodeURIComponent(invite.token)}`,expiresAt:invite.expires_at});
+        const invite=await createInvite(base44,session,user,recipientEmail,recipientName,recipientMobile);
+        return Response.json({success:true,magicInviteUrl:`https://rallyhub.ie/book/${encodeURIComponent(session.token)}?invite=${encodeURIComponent(invite.token)}`,expiresAt:invite.expires_at,boundTo:{email:invite.intended_email||'',mobile:invite.intended_mobile||''}});
       }
 
       if(action==='admin_send_invite'){
@@ -772,7 +787,7 @@ ${detailRow('Reason',reason)}
       const templates=await directoryTemplates(base44,session.tenant_id,session.club_id);
       const directoryTemplate=templates.find((t:any)=>String(t.key)===String(session.session_label)) || templates.find((t:any)=>t.venueName===session.venue_name&&t.weekday===session.weekday&&t.start===session.start_time);
       const brand=await clubBrand(base44,session.club_id);
-      return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',inviteName:invite?.intended_name||'',approvalRequired:!invite,directorySessionId:directoryTemplate?.directorySessionId||directoryTemplate?.key||'',guestRequestUrl:brand?.slug?`/guest/${brand.slug}${directoryTemplate?.key?`?session=${encodeURIComponent(directoryTemplate.key)}`:''}`:''});
+      return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',inviteName:invite?.intended_name||'',approvalRequired:!invite,directorySessionId:directoryTemplate?.directorySessionId||directoryTemplate?.key||'',guestRequestUrl:brand?.slug?`/guest/${brand.slug}${directoryTemplate?.key?`?session=${encodeURIComponent(directoryTemplate.key)}`:''}`:''});
     }
 
     if(action==='public_status'){
@@ -814,9 +829,9 @@ ${detailRow('Reason',reason)}
 
     const fullName=clean(body.fullName,120);
     const email=emailKey(body.email);
-    const invite=await inviteForSession(base44,session,body.inviteToken||'',email);
-    if(!invite)return Response.json({error:'This guest booking requires club approval. Please request a guest place first, or use the private invitation link sent by Clare Pickleball.',approvalRequired:true},{status:403});
     const mobile=clean(body.mobile,50);
+    const invite=await inviteForSession(base44,session,body.inviteToken||'',email,mobile);
+    if(!invite)return Response.json({error:'This guest booking requires club approval. Please request a guest place first, or use the private invitation link sent by Clare Pickleball.',approvalRequired:true},{status:403});
     const mobileK=mobileKey(mobile);
     const emergencyName=clean(body.emergencyContactName,120);
     const emergencyMobile=clean(body.emergencyContactMobile,50);
