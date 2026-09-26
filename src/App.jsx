@@ -51,6 +51,7 @@ import DirectoryListingEdit from '@/pages/DirectoryListingEdit';
 import DirectoryHelp from '@/pages/DirectoryHelp';
 import DirectoryStory from '@/pages/DirectoryStory';
 import DirectoryQuickStart from '@/pages/DirectoryQuickStart';
+import DirectoryPlayerUpdates from '@/pages/DirectoryPlayerUpdates';
 import TestClubEntry from '@/pages/TestClubEntry';
 import GuestBookings from '@/pages/GuestBookings';
 import MembershipConsole from '@/pages/MembershipConsole';
@@ -206,6 +207,7 @@ function App() {
             <Route path="/directory/help" element={<DirectoryHelp />} />
             <Route path="/directory/story" element={<DirectoryStory />} />
             <Route path="/directory/quick-start" element={<DirectoryQuickStart />} />
+            <Route path="/directory/player-updates" element={<DirectoryPlayerUpdates />} />
 
             {/* Public utility routes — no auth required */}
             <Route path="/register/:id" element={<PublicRegister />} />
