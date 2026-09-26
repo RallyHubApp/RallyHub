@@ -81,15 +81,17 @@ export default function GuestBookings(){
   };
 
   const createMagicLink=async(session)=>{
-    const recipientEmail=window.prompt('Guest email address (required – the private link is locked to this email)');
-    if(recipientEmail===null)return;
-    if(!recipientEmail.trim()){toast.error('Enter the guest email address');return}
+    const contact=window.prompt('Guest email OR mobile/WhatsApp number (required – the private link is locked to this contact)');
+    if(contact===null)return;
+    const value=contact.trim();
+    if(!value){toast.error('Enter the guest email or mobile/WhatsApp number');return}
+    const isEmail=value.includes('@');
     const recipientName=window.prompt('Guest first name or full name (optional)')||'';
     setBusy(`magic-${session.id}`);
     try{
-      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_create_magic_invite',sessionId:session.id,recipientEmail:recipientEmail.trim(),recipientName:recipientName.trim()});
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_create_magic_invite',sessionId:session.id,recipientEmail:isEmail?value:'',recipientMobile:isEmail?'':value,recipientName:recipientName.trim()});
       if(res.data?.error)throw new Error(res.data.error);
-      copy(res.data.magicInviteUrl,'Private guest invitation link copied');
+      copy(res.data.magicInviteUrl,isEmail?'Private email-bound guest link copied':'Private mobile/WhatsApp-bound guest link copied');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not create private guest link')}
     finally{setBusy('')}
   };
@@ -122,16 +124,16 @@ export default function GuestBookings(){
   };
 
   const shareMagicWhatsApp=async(session)=>{
-    const recipientEmail=window.prompt('Guest email address (required – the WhatsApp link is locked to this email)');
-    if(recipientEmail===null)return;
-    if(!recipientEmail.trim()){toast.error('Enter the guest email address');return}
+    const recipientMobile=window.prompt('Guest mobile/WhatsApp number (required – the private link is locked to this number)');
+    if(recipientMobile===null)return;
+    if(recipientMobile.replace(/\D/g,'').length<8){toast.error('Enter a valid guest mobile/WhatsApp number');return}
     const recipientName=window.prompt('Guest first name or full name (optional)')||'';
     setBusy(`whatsapp-${session.id}`);
     try{
-      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_create_magic_invite',sessionId:session.id,recipientEmail:recipientEmail.trim(),recipientName:recipientName.trim()});
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_create_magic_invite',sessionId:session.id,recipientMobile:recipientMobile.trim(),recipientName:recipientName.trim()});
       if(res.data?.error)throw new Error(res.data.error);
       const action=session.paymentMethod==='cash'?'Reserve your place':`Book & pay €${Number(session.feeAmount||0).toFixed(2)}`;
-      const msg=`Clare Pickleball guest session\n${niceDate(session.sessionDate)} · ${session.startTime}\n${session.venueName}\n\n${action}:\n${res.data.magicInviteUrl}`;
+      const msg=`Clare Pickleball guest session\n${niceDate(session.sessionDate)} · ${session.startTime}\n${session.venueName}\n\n${action}:\n${res.data.magicInviteUrl}\n\nThis private link is tied to your mobile number.`;
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not create private WhatsApp invitation')}
     finally{setBusy('')}
