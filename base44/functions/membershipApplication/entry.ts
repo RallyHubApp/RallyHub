@@ -48,14 +48,19 @@ async function membershipInvite(base44:any,config:any,rawToken:any,email=''){
     await base44.asServiceRole.entities.AccessInviteToken.update(invite.id,{status:'expired'}).catch(()=>{});
     return null;
   }
-  if(invite.intended_email&&email&&emailKey(invite.intended_email)!==emailKey(email))return null;
+  // Membership approval must always be bound to the intended email address.
+  // Older unbound tokens are intentionally treated as normal public applications.
+  if(!emailKey(invite.intended_email))return null;
+  if(email&&emailKey(invite.intended_email)!==emailKey(email))return null;
   return invite;
 }
 async function createMembershipInvite(base44:any,config:any,user:any,intendedEmail='',intendedName='',accessRequestId=''){
+  const boundEmail=emailKey(intendedEmail);
+  if(!boundEmail||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(boundEmail))throw new Error('A valid email address is required for a private membership invitation.');
   const now=new Date();
   return await base44.asServiceRole.entities.AccessInviteToken.create({
     tenant_id:config.tenant_id,club_id:config.club_id,purpose:'membership_application',token:inviteToken(),status:'active',membership_config_id:config.id,
-    access_request_id:accessRequestId||'',intended_email:emailKey(intendedEmail),intended_name:clean(intendedName,160),
+    access_request_id:accessRequestId||'',intended_email:boundEmail,intended_name:clean(intendedName,160),
     expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),created_by_user_id:user?.id||'',created_at:now.toISOString(),
     notes:accessRequestId?`Approved public membership request ${accessRequestId}`:'Admin-issued membership magic link',
   });
@@ -429,6 +434,7 @@ Deno.serve(async(req)=>{
       if(action==='admin_create_invite'){
         const recipientEmail=emailKey(body.recipientEmail||'');
         const recipientName=clean(body.recipientName||'',160);
+        if(!recipientEmail||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail))return Response.json({error:'Enter the applicant email address. Private membership invitations must be tied to the intended person.'},{status:400});
         const invite=await createMembershipInvite(base44,config,user,recipientEmail,recipientName,'');
         return Response.json({success:true,magicInviteUrl:`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`,expiresAt:invite.expires_at});
       }
