@@ -1235,8 +1235,26 @@ export default function MembershipConsole() {
                 <TableBody>{(membershipSourcePreview.rows || []).map(row => <TableRow key={row.external_member_id}>
                   <TableCell><p className="font-medium text-sm">{row.full_name}</p><p className="text-[10px] text-muted-foreground font-mono">{row.external_member_id}</p></TableCell>
                   <TableCell className="text-xs"><p>{row.email || 'No email'}</p><p className="text-muted-foreground">{row.mobile || 'No mobile'}</p></TableCell>
-                  <TableCell className="text-xs">{[row.source_status, row.source_role, ...(row.source_roles || [])].filter(Boolean).join(' · ') || '—'}</TableCell>
-                  <TableCell><Badge variant={row.match_status === 'matched' ? 'default' : 'outline'}>{row.match_status === 'person_without_membership' ? 'Person found · no membership' : row.match_status === 'new' ? 'New candidate' : row.match_status === 'ambiguous' ? 'Review required' : 'Matched'}</Badge>{row.candidates?.[0]?.full_name ? <p className="mt-1 text-[11px] text-muted-foreground">{row.candidates[0].full_name}{row.candidates[0].member_id ? ` · ${row.candidates[0].member_id}` : ''}</p> : null}</TableCell>
+                  <TableCell className="text-xs">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge variant={row.source_lifecycle === 'deactivated' ? 'outline' : row.source_lifecycle === 'unprocessed' ? 'secondary' : 'default'}>{row.source_lifecycle === 'deactivated' ? 'Deactivated' : row.source_lifecycle === 'unprocessed' ? 'Pending request' : 'Active'}</Badge>
+                      {[row.source_status, row.source_role, ...(row.source_roles || [])].filter(Boolean).map((value,index) => <span key={`${value}-${index}`} className="text-muted-foreground">{index ? '· ' : ''}{value}</span>)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={row.source_lifecycle === 'deactivated' ? 'outline' : row.match_status === 'matched' ? 'default' : 'outline'}>
+                      {row.source_lifecycle === 'deactivated'
+                        ? (row.match_status === 'matched' ? 'Historical · matched' : 'Historical · deactivated')
+                        : row.match_status === 'person_without_membership' ? 'Person found · no membership'
+                        : row.match_status === 'new' ? 'New candidate'
+                        : row.match_status === 'ambiguous' ? 'Review required'
+                        : 'Matched'}
+                    </Badge>
+                    {row.candidates?.[0]?.full_name ? <div className="mt-1 text-[11px] text-muted-foreground">
+                      <p>{row.candidates[0].full_name}{row.candidates[0].member_id ? ` · ${row.candidates[0].member_id}` : ''}</p>
+                      {row.candidates[0].membership_type || row.candidates[0].membership_status || row.candidates[0].payment_status ? <p>{[row.candidates[0].membership_type ? label(row.candidates[0].membership_type) : null, row.candidates[0].membership_status ? label(row.candidates[0].membership_status) : null, row.candidates[0].payment_status ? label(row.candidates[0].payment_status) : null].filter(Boolean).join(' · ')}</p> : null}
+                    </div> : null}
+                  </TableCell>
                 </TableRow>)}</TableBody>
               </Table>
             </div>
