@@ -182,25 +182,29 @@ async function membershipConnection(base44:any,tenantId:string,clubId:string){
   return (rows||[]).find((row:any)=>row.status!=='disconnected')||rows?.[0]||null;
 }
 function uniquePeople(rows:any[]){const map=new Map<string,any>();for(const row of rows||[])if(row?.id)map.set(String(row.id),row);return [...map.values()]}
-function candidateSummary(person:any,membership:any){return {person_id:person.id,full_name:person.full_name||null,email:person.primary_email||null,mobile:person.mobile||null,member_id:membership?.member_id||null,membership_status:membership?.membership_status||null}}
+function candidateSummary(person:any,membership:any){return {person_id:person.id,full_name:person.full_name||null,email:person.primary_email||null,mobile:person.mobile||null,member_id:membership?.member_id||null,membership_status:membership?.membership_status||null,payment_status:membership?.payment_status||null,membership_type:membership?.membership_type||null}}
+function matchedResult(person:any,membershipByPerson:Map<string,any>,method:string){const membership=membershipByPerson.get(String(person.id));return {match_status:membership?'matched':'person_without_membership',match_method:method,matched_person_id:person.id,candidates:[candidateSummary(person,membership)]}}
 function matchSourceMember(source:any,people:any[],membershipByPerson:Map<string,any>,externalById:Map<string,any>){
   const external=externalById.get(String(source.external_member_id));
   if(external?.person_id){
     const person=people.find((p:any)=>String(p.id)===String(external.person_id));
-    if(person){const membership=membershipByPerson.get(String(person.id));return {match_status:membership?'matched':'person_without_membership',match_method:'external_id',matched_person_id:person.id,candidates:[candidateSummary(person,membership)]}}
+    if(person)return matchedResult(person,membershipByPerson,'external_id');
   }
   const email=lower(source.email),phone=phoneKey(source.mobile),name=nameKey(source.full_name),dob=dateKey(source.date_of_birth);
   const emailMatches=email?people.filter((p:any)=>lower(p.primary_email)===email):[];
   const phoneMatches=phone&&phone.length>=7?people.filter((p:any)=>phoneKey(p.mobile)===phone):[];
   const nameDobMatches=name&&dob?people.filter((p:any)=>nameKey(p.full_name)===name&&dateKey(p.date_of_birth)===dob):[];
-  const strong=uniquePeople([...emailMatches,...phoneMatches,...nameDobMatches]);
-  if(strong.length===1){
-    const person=strong[0],membership=membershipByPerson.get(String(person.id));
-    const method=emailMatches.some((p:any)=>p.id===person.id)?'email':phoneMatches.some((p:any)=>p.id===person.id)?'mobile':'name_dob';
-    return {match_status:membership?'matched':'person_without_membership',match_method:method,matched_person_id:person.id,candidates:[candidateSummary(person,membership)]};
-  }
+
+  // Prefer a unique personal identifier over a shared household email. This is important for couples/families
+  // who legitimately share an email address but have distinct mobile numbers and dates of birth.
+  if(nameDobMatches.length===1)return matchedResult(nameDobMatches[0],membershipByPerson,'name_dob');
+  if(phoneMatches.length===1)return matchedResult(phoneMatches[0],membershipByPerson,'mobile');
+  if(emailMatches.length===1)return matchedResult(emailMatches[0],membershipByPerson,'email');
+
+  const strong=uniquePeople([...nameDobMatches,...phoneMatches,...emailMatches]);
   if(strong.length>1) return {match_status:'ambiguous',match_method:'multiple_strong_matches',matched_person_id:null,candidates:strong.slice(0,10).map((p:any)=>candidateSummary(p,membershipByPerson.get(String(p.id))))};
   const nameMatches=name?people.filter((p:any)=>nameKey(p.full_name)===name):[];
+  if(nameMatches.length===1)return matchedResult(nameMatches[0],membershipByPerson,'name_only');
   if(nameMatches.length>1) return {match_status:'ambiguous',match_method:'name_only',matched_person_id:null,candidates:nameMatches.slice(0,10).map((p:any)=>candidateSummary(p,membershipByPerson.get(String(p.id))))};
   return {match_status:'new',match_method:null,matched_person_id:null,candidates:[]};
 }
