@@ -253,6 +253,7 @@ export default function PublicDirectory() {
   const shareClub = async club => {
     const url = `${SITE_URL}/directory/${club.slug}?utm_source=directory_share&utm_medium=referral&utm_campaign=club_profile_share`;
     const text = `${club.name} on the RallyHub Club Directory`;
+    trackSiteEvent('share_club', { clubSlug: club.slug, clubName: club.name, county: club.county, metadata: { surface: 'directory_card' } });
     if (navigator.share) {
       try {
         await navigator.share({ title: club.name, text, url });
