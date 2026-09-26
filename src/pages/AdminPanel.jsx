@@ -2044,6 +2044,82 @@ Brian`;
           </div>
         </TabsContent>
 
+        {/* ── NATIONAL PLAYER NETWORK TAB ── */}
+        <TabsContent value="directory-players" className="mt-4">
+          <div className="space-y-5">
+            <div className="glass rounded-xl p-4 sm:p-5 border border-primary/20">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <h3 className="font-bold text-foreground">National RallyHub player network</h3>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-3xl">Players join this list from the public Directory. It is completely separate from Clare Pickleball membership and club records. Use only the channels each player explicitly opted into.</p>
+                  </div>
+                </div>
+                <Button type="button" variant="outline" onClick={() => window.open('/directory#player-network','_blank','noopener,noreferrer')} className="shrink-0 gap-2"><Eye className="w-4 h-4" /> View public signup</Button>
+              </div>
+            </div>
+
+            <div className="glass rounded-xl p-4 sm:p-5 space-y-4">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                <div>
+                  <h3 className="font-bold text-foreground">Opted-in players</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Search by name, email, mobile, club, county or DUPR. Unsubscribed records remain visible as a suppression record so they are not accidentally re-added to a campaign.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={copyDirectoryPlayerWhatsAppNumbers} disabled={!activeDirectoryPlayerRows.some(row => row.whatsappOptIn && row.mobile)} className="gap-2"><Copy className="w-4 h-4" /> Copy opted-in WhatsApp numbers</Button>
+                  <Button type="button" variant="outline" onClick={downloadDirectoryPlayerCsv} disabled={!filteredDirectoryPlayerRows.length}>Export filtered CSV</Button>
+                </div>
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input value={directoryPlayerSearch} onChange={e => setDirectoryPlayerSearch(e.target.value)} placeholder="Search player, club, county, email, mobile or DUPR…" className="pl-9" />
+              </div>
+              <p className="text-xs text-muted-foreground">Showing {filteredDirectoryPlayerRows.length} of {directoryPlayerRows.length} player records · {activeDirectoryPlayerRows.length} currently active.</p>
+
+              {filteredDirectoryPlayerRows.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No player sign-ups match that search yet.</div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredDirectoryPlayerRows.map(row => {
+                    const rawDigits = String(row.mobile || '').replace(/\D/g,'');
+                    const whatsappDigits = rawDigits.startsWith('00') ? rawDigits.slice(2) : rawDigits.startsWith('0') ? `353${rawDigits.slice(1)}` : rawDigits;
+                    const active = row.status === 'active' && (row.emailOptIn || row.whatsappOptIn);
+                    return <div key={row.id} className={`rounded-xl border p-4 ${active ? 'border-border bg-background/25' : 'border-border/60 bg-background/10 opacity-75'}`}>
+                      <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-bold text-foreground">{row.firstName || row.fullName || 'Player'}</p>
+                            <Badge variant="outline" className={active ? 'border-green-400/40 text-green-400' : 'border-muted text-muted-foreground'}>{active ? 'Active' : 'Unsubscribed'}</Badge>
+                            {row.emailOptIn && <Badge variant="outline" className="border-primary/40 text-primary">Email opt-in</Badge>}
+                            {row.whatsappOptIn && <Badge variant="outline" className="border-green-500/40 text-green-500">WhatsApp opt-in</Badge>}
+                          </div>
+                          <p className="mt-1 text-sm text-muted-foreground break-all">{row.email || 'No email'}{row.mobile ? ` · ${row.mobile}` : ' · No mobile'}</p>
+                          <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                            {row.clubName && <span className="rounded-full border border-border px-2.5 py-1">{row.clubName}</span>}
+                            {row.county && <span className="rounded-full border border-border px-2.5 py-1">County {row.county}</span>}
+                            {row.duprRating !== null && row.duprRating !== undefined && row.duprRating !== '' && <span className="rounded-full border border-border px-2.5 py-1">DUPR {Number(row.duprRating).toFixed(2)}</span>}
+                          </div>
+                          {row.consentAt && <p className="mt-2 text-[11px] text-muted-foreground">Consent/preferences recorded {new Date(row.consentAt).toLocaleString('en-IE')}</p>}
+                        </div>
+                        <div className="flex flex-wrap gap-2 shrink-0">
+                          <Button type="button" size="sm" variant="outline" disabled={!active || !row.emailOptIn || !row.email} onClick={() => { if (row.emailOptIn && row.email) window.location.href=`mailto:${row.email}`; }} className="gap-1"><Mail className="w-3.5 h-3.5" /> Email</Button>
+                          <Button type="button" size="sm" variant="outline" disabled={!active || !row.whatsappOptIn || !whatsappDigits} onClick={() => { if (row.whatsappOptIn && whatsappDigits) window.open(`https://wa.me/${whatsappDigits}`,'_blank','noopener,noreferrer'); }} className="gap-1"><MessageCircle className="w-3.5 h-3.5" /> WhatsApp</Button>
+                        </div>
+                      </div>
+                    </div>;
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="glass rounded-xl p-4 text-xs leading-5 text-muted-foreground">
+              <strong className="text-foreground">Distribution rule:</strong> email only players with Email opt-in; WhatsApp/SMS only players with WhatsApp opt-in. Never use unsubscribed records as a live audience. The CSV includes consent status so external mailing tools can apply the same rule.
+            </div>
+          </div>
+        </TabsContent>
+
         {/* ── CLUB FEEDBACK TAB ── */}
         <TabsContent value="feedback" className="mt-4">
           <div className="space-y-4">
