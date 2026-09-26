@@ -34,6 +34,9 @@
     "membership_config_id": {
       "type": "string"
     },
+    "access_request_id": {
+      "type": "string"
+    },
     "intended_email": {
       "type": "string"
     },
