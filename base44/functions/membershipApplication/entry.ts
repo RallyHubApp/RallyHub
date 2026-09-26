@@ -380,6 +380,25 @@ function reminderContent(config:any,club:any,app:any,paymentUrl:string){
   return {subject,text,html,paymentUrl};
 }
 
+async function sendMembershipInviteEmail(base44:any,config:any,club:any,recipientEmail:string,recipientName:string,inviteUrl:string,approvedRequest=false){
+  const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:config.tenant_id,clubId:config.club_id};
+  const hello=firstName(recipientName||recipientEmail);
+  const fee=money(config.membership_fee,config.currency||'EUR');
+  const subject=approvedRequest?`${club.name} membership request approved`:`${club.name} membership invitation`;
+  const intro=approvedRequest
+    ? `Your ${club.name} membership request has been approved.`
+    : `You are invited to complete a ${club.name} membership application.`;
+  const textBody=`Hi ${hello},\n\n${intro}\n\nComplete your membership details, declarations and ${config.payment_required===false?'confirmation':'payment'} using your private link:\n${inviteUrl}\n\nMembership season: ${config.season_label}\nMembership fee: ${fee}\n\nThis private link is authorised for ${recipientEmail}. If a different email is used, the application will return to the normal club approval route and no payment will be taken until approved.\n\n${signoffText(config,club)}`;
+  const htmlBody=emailShell({club,headline:approvedRequest?'Membership request approved':'Membership invitation',preheader:`${club.name} · ${config.season_label}`,content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Hi ${escapeHtml(hello)}, ${escapeHtml(intro)}</p>
+<div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">${detailRow('Membership season',config.season_label)}${detailRow('Membership fee',fee)}${detailRow('Authorised email',recipientEmail)}</table>
+</div>
+<div style="text-align:center;margin:6px 0 24px;"><a href="${escapeHtml(inviteUrl)}" style="display:inline-block;padding:14px 24px;border-radius:10px;background:${escapeHtml(club.primary_colour||'#2563eb')};color:#fff;text-decoration:none;font-size:16px;font-weight:800;">Complete membership</a></div>
+<p style="margin:0 0 18px;font-size:12px;line-height:1.55;color:#6b7280;">This is a private pre-authorised link for ${escapeHtml(recipientEmail)}. If a different email is entered, the application will require club approval before payment.</p>${signoffHtml(config,club)}`});
+  await sendWithConfiguredEmailTransport(base44,scope,{to:recipientEmail,subject,textBody,htmlBody});
+}
+
 Deno.serve(async(req)=>{
   try{
     const base44=createClientFromRequest(req);
