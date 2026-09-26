@@ -1,0 +1,102 @@
+{
+  "name": "ClubWaitingListConfig",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "target_sport_id": {
+      "type": "string"
+    },
+    "public_slug": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "paused",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "title": {
+      "type": "string"
+    },
+    "programme_name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "notification_email": {
+      "type": "string"
+    },
+    "consent_text": {
+      "type": "string"
+    },
+    "photo_video_text": {
+      "type": "string"
+    },
+    "previous_sports_options": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ask_target_sport_experience": {
+      "type": "boolean",
+      "default": true
+    },
+    "ask_activity_background": {
+      "type": "boolean",
+      "default": true
+    },
+    "ask_medical_information": {
+      "type": "boolean",
+      "default": true
+    },
+    "signatory_name": {
+      "type": "string"
+    },
+    "signatory_title": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "public_slug",
+    "status",
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

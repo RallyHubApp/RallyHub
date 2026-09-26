@@ -1,0 +1,207 @@
+{
+  "name": "WaitingListEntry",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "config_id": {
+      "type": "string"
+    },
+    "target_sport_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "waiting",
+        "contacted",
+        "offered_course",
+        "booked_course",
+        "completed_course",
+        "deferred",
+        "declined",
+        "removed"
+      ],
+      "default": "waiting"
+    },
+    "first_joined_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_response_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "full_postal_address": {
+      "type": "string"
+    },
+    "postal_code": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "source_account_email": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "age_at_join": {
+      "type": "number"
+    },
+    "gdpr_consent": {
+      "type": "boolean"
+    },
+    "photo_video_consent": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "no",
+        "not_recorded"
+      ],
+      "default": "not_recorded"
+    },
+    "previous_sports": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "previous_sports_response_status": {
+      "type": "string",
+      "enum": [
+        "recorded",
+        "not_recorded"
+      ],
+      "default": "not_recorded"
+    },
+    "other_sports_text": {
+      "type": "string"
+    },
+    "has_racket_sport_experience": {
+      "type": "boolean"
+    },
+    "played_target_sport_before": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "no",
+        "not_recorded"
+      ],
+      "default": "not_recorded"
+    },
+    "target_sport_experience_duration": {
+      "type": "string"
+    },
+    "target_sport_level": {
+      "type": "string"
+    },
+    "activity_background": {
+      "type": "string"
+    },
+    "activity_level": {
+      "type": "string",
+      "enum": [
+        "not_recorded",
+        "low",
+        "occasional",
+        "regular",
+        "very_active"
+      ],
+      "default": "not_recorded"
+    },
+    "medical_response_status": {
+      "type": "string",
+      "enum": [
+        "not_recorded",
+        "none",
+        "provided"
+      ],
+      "default": "not_recorded"
+    },
+    "medical_information_provided": {
+      "type": "boolean",
+      "default": false
+    },
+    "medical_notes": {
+      "type": "string"
+    },
+    "priority_flag": {
+      "type": "boolean",
+      "default": false
+    },
+    "priority_reason": {
+      "type": "string"
+    },
+    "admin_notes": {
+      "type": "string"
+    },
+    "identity_review_required": {
+      "type": "boolean",
+      "default": false
+    },
+    "data_quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_system": {
+      "type": "string"
+    },
+    "source_first_row": {
+      "type": "string"
+    },
+    "source_last_row": {
+      "type": "string"
+    },
+    "source_response_count": {
+      "type": "number",
+      "default": 1
+    },
+    "source_external_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "status",
+    "first_joined_at",
+    "full_name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
