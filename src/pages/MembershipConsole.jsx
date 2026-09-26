@@ -864,7 +864,8 @@ export default function MembershipConsole() {
       >
         <div className="flex flex-wrap items-center gap-2">
           {gateway ? <Badge variant="outline" className="gap-1.5"><WalletCards className="w-3 h-3" />{label(gateway.provider)} · {label(gateway.status)}</Badge> : null}
-          {applicationData.publicUrl ? <a href={applicationData.publicUrl} target="_blank" rel="noreferrer"><Button variant="outline" size="sm"><ExternalLink className="w-3.5 h-3.5 mr-1.5" />Membership form</Button></a> : null}
+          {applicationData.publicUrl ? <a href={applicationData.publicUrl} target="_blank" rel="noreferrer"><Button variant="outline" size="sm"><ExternalLink className="w-3.5 h-3.5 mr-1.5" />Public membership form</Button></a> : null}
+          {applicationData.publicUrl ? <Button variant="outline" size="sm" onClick={createMembershipInvite} disabled={applicationBusyId === 'membership-invite'}><Link2 className="w-3.5 h-3.5 mr-1.5" />{applicationBusyId === 'membership-invite' ? 'Creating…' : 'Invite applicant'}</Button> : null}
           <Button variant="outline" size="sm" onClick={() => setMembershipSourceOpen(true)}><Link2 className="w-3.5 h-3.5 mr-1.5" />Spond Club</Button>
           <Button size="sm" onClick={() => setAddMemberOpen(true)}><Plus className="w-3.5 h-3.5 mr-1.5" />Add member</Button>
           <Button variant="outline" size="sm" onClick={() => { refetchList(); refetchApplications(); queryClient.invalidateQueries({ queryKey: ['membership-console-meta'] }); }}>
@@ -892,13 +893,13 @@ export default function MembershipConsole() {
             <div className="px-4 py-4 border-b flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
               <div>
                 <p className="font-semibold">Membership applications</p>
-                <p className="text-xs text-muted-foreground">New members and renewals submitted through the club’s public membership form.</p>
+                <p className="text-xs text-muted-foreground">Public new-member requests wait for club approval before payment. Private admin invitations are locked to the intended email and are pre-authorised to continue.</p>
               </div>
               {applicationData.publicUrl ? <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={async () => {
-                  try { await navigator.clipboard.writeText(applicationData.publicUrl); toast.success('Membership form link copied'); }
-                  catch { window.prompt('Copy membership form link', applicationData.publicUrl); }
-                }}><ClipboardCopy className="w-3.5 h-3.5 mr-1.5" />Copy form link</Button>
+                  try { await navigator.clipboard.writeText(applicationData.publicUrl); toast.success('Public approval-required membership link copied'); }
+                  catch { window.prompt('Copy public membership form link', applicationData.publicUrl); }
+                }}><ClipboardCopy className="w-3.5 h-3.5 mr-1.5" />Copy public form</Button>
                 <a href={applicationData.publicUrl} target="_blank" rel="noreferrer"><Button size="sm"><ExternalLink className="w-3.5 h-3.5 mr-1.5" />Open form</Button></a>
               </div> : null}
             </div>
