@@ -468,6 +468,18 @@ export default function PublicClubProfile() {
                 </Link>
               </section>
             )}
+            {waitingListConfig && (
+              <section className="rounded-2xl border border-amber-400/35 bg-amber-400/10 p-5">
+                <div className="flex items-center gap-2 text-amber-300">
+                  <Users className="w-5 h-5" />
+                  <h2 className="font-bold">Waiting list</h2>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">{waitingListConfig.programmeName || ('Register your interest in ' + waitingListConfig.targetSportName)}. This is separate from club membership.</p>
+                <Link to={`/waiting-list/${club.slug}`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-amber-200 transition-colors">
+                  Join the waiting list
+                </Link>
+              </section>
+            )}
             {hasDirectoryAccess && (
               <section className="rounded-2xl border border-primary/35 bg-primary/10 p-5">
                 <div className="flex items-center gap-2 text-primary">
