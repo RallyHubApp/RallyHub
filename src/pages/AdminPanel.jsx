@@ -1713,17 +1713,18 @@ Brian`;
                     {!identityComplete && <p className="text-xs text-destructive mt-2 font-medium">Approval is blocked until the claimant supplies their own full name and a valid mobile number.</p>}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    <Button size="sm" variant="outline" onClick={() => {
+                    {reviewingDirectoryClaim === claim.id && <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary" role="status" aria-live="polite"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving decision…</span>}
+                    <Button size="sm" variant="outline" disabled={reviewingDirectoryClaim === claim.id} onClick={() => {
                       setEditingPendingDirectoryClaim(claim);
                       setPendingDirectoryIdentityForm({ fullName: claim.claimant_name || '', mobile: claim.claimant_phone || '' });
                     }} className="gap-1">
                       <Pencil className="w-3.5 h-3.5" /> Correct verification details
                     </Button>
-                    <Button size="sm" disabled={reviewingDirectoryClaim === claim.id || !identityComplete} onClick={() => reviewDirectoryClaim(claim.id, 'approved')} className="gap-1" title={!identityComplete ? 'A real full name and valid mobile number are required before approval' : undefined}>
-                      <CheckCircle className="w-3.5 h-3.5" /> {reviewingDirectoryClaim === claim.id ? '…' : 'Approve directory only'}
+                    <Button size="sm" disabled={reviewingDirectoryClaim === claim.id || !identityComplete} onClick={() => reviewDirectoryClaim(claim.id, 'approved')} className="gap-1 min-w-[164px]" title={!identityComplete ? 'A real full name and valid mobile number are required before approval' : undefined}>
+                      {reviewingDirectoryClaim === claim.id ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Approving…</> : <><CheckCircle className="w-3.5 h-3.5" /> Approve directory only</>}
                     </Button>
-                    <Button size="sm" variant="outline" disabled={reviewingDirectoryClaim === claim.id} onClick={() => reviewDirectoryClaim(claim.id, 'rejected')} className="gap-1 text-destructive border-destructive/30">
-                      <XCircle className="w-3.5 h-3.5" /> {reviewingDirectoryClaim === claim.id ? '…' : 'Reject'}
+                    <Button size="sm" variant="outline" disabled={reviewingDirectoryClaim === claim.id} onClick={() => reviewDirectoryClaim(claim.id, 'rejected')} className="gap-1 text-destructive border-destructive/30 min-w-[92px]">
+                      {reviewingDirectoryClaim === claim.id ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Working…</> : <><XCircle className="w-3.5 h-3.5" /> Reject</>}
                     </Button>
                   </div>
                 </div>
