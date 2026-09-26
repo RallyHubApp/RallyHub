@@ -3,6 +3,164 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
 const lower = (value:any) => clean(value, 240).toLowerCase();
 const dateKey = (value:any) => clean(value, 40);
+const SPOND_API_BASE = 'https://api.spond.com/core/v1';
+
+const normalisePhone = (value:any) => clean(value, 80).replace(/\D/g, '').replace(/^3530?/, '353');
+
+async function spondLoginFromSecrets() {
+  const email = Deno.env.get('SPOND_EMAIL');
+  const password = Deno.env.get('SPOND_PASSWORD');
+  if (!email || !password) return null;
+  const response = await fetch(`${SPOND_API_BASE}/auth2/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!response.ok) throw new Error(`Spond login failed ${response.status}`);
+  const data = await response.json();
+  return data.accessToken?.token || data.loginToken || data.token || null;
+}
+
+async function spondRequest(path:string, token:string) {
+  const response = await fetch(`${SPOND_API_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) throw new Error(`Spond API error ${response.status}`);
+  return response.json();
+}
+
+function spondEventStart(event:any) {
+  return event?.meetupTimestamp || event?.startTimestamp || event?.start_time || '';
+}
+
+function collectSpondRecipientIds(event:any) {
+  const ids = new Set<string>();
+  const add = (value:any) => { if (value !== undefined && value !== null && String(value).trim()) ids.add(String(value)); };
+  const addMany = (values:any) => (Array.isArray(values) ? values : []).forEach(add);
+  addMany(event?.responses?.acceptedIds);
+  addMany(event?.responses?.declinedIds);
+  addMany(event?.responses?.unansweredIds);
+  addMany(event?.responses?.waitinglistIds);
+  addMany(event?.responses?.waitingListIds);
+  addMany(event?.invitedMemberIds);
+  addMany(event?.memberIds);
+  (event?.responses?.members || []).forEach((row:any) => add(row?.uid || row?.id || row?.memberId));
+  (event?.responses?.responses || []).forEach((row:any) => add(row?.memberId || row?.uid || row?.id));
+  return ids;
+}
+
+function spondResponseStatus(event:any, memberId:string) {
+  const id = String(memberId || '');
+  const includes = (values:any) => (Array.isArray(values) ? values : []).some(value => String(value) === id);
+  if (includes(event?.responses?.acceptedIds)) return 'accepted';
+  if (includes(event?.responses?.waitinglistIds) || includes(event?.responses?.waitingListIds)) return 'waiting';
+  if (includes(event?.responses?.declinedIds)) return 'declined';
+  if (includes(event?.responses?.unansweredIds)) return 'unanswered';
+  const row = [...(event?.responses?.members || []), ...(event?.responses?.responses || [])].find((item:any) => String(item?.memberId || item?.uid || item?.id) === id);
+  return lower(row?.status || 'invited') || 'invited';
+}
+
+function groupMembers(group:any) {
+  const rows:any[] = [];
+  const seen = new Set<string>();
+  const add = (member:any) => {
+    const id = String(member?.id || member?.uid || member?.memberId || '');
+    if (!id || seen.has(id)) return;
+    seen.add(id);
+    rows.push(member);
+  };
+  (group?.members || []).forEach(add);
+  (group?.subGroups || []).forEach((sub:any) => (sub?.members || []).forEach(add));
+  return rows;
+}
+
+function matchSpondMemberId(group:any, candidates:{ emails:string[], phones:string[], explicitIds:string[] }) {
+  const members = groupMembers(group);
+  for (const explicitId of candidates.explicitIds) {
+    const found = members.find(member => String(member?.id || member?.uid || member?.memberId || '') === String(explicitId));
+    if (found) return String(found?.id || found?.uid || found?.memberId);
+  }
+  const emails = new Set(candidates.emails.map(lower).filter(Boolean));
+  const phones = new Set(candidates.phones.map(normalisePhone).filter(value => value.length >= 7));
+  for (const member of members) {
+    const profile = member?.profile || {};
+    const memberEmails = [profile.email, member?.email].map(lower).filter(Boolean);
+    if (memberEmails.some((email:string) => emails.has(email))) return String(member?.id || member?.uid || member?.memberId);
+    const memberPhones = [profile.phoneNumber, member?.phoneNumber].map(normalisePhone).filter((value:string) => value.length >= 7);
+    if (memberPhones.some((phone:string) => phones.has(phone))) return String(member?.id || member?.uid || member?.memberId);
+  }
+  return null;
+}
+
+async function loadPersonalSpondSessions(base44:any, context:any) {
+  const clubSlug = clean(context?.club?.slug, 180);
+  if (!clubSlug || !context?.tenantId || !context?.clubId) return { status:'not_configured', sessions:[] };
+  const connections = await base44.asServiceRole.entities.DirectorySpondConnection.filter({ listing_slug: clubSlug, status:'active' }, '-last_synced_at', 10);
+  const connection = connections?.[0];
+  if (!connection?.spond_group_id) return { status:'not_configured', sessions:[] };
+
+  const identities = await base44.asServiceRole.entities.SpondIdentity.filter({ tenant_id: context.tenantId, club_id: context.clubId, match_status:'matched' }, '-last_verified_at', 100);
+  const relevantIdentities = (identities || []).filter((row:any) =>
+    (context?.player?.id && String(row.player_id || '') === String(context.player.id)) ||
+    (context?.member?.id && String(row.member_id || '') === String(context.member.id))
+  );
+  const explicitIds = relevantIdentities.map((row:any) => clean(row.spond_member_id, 180)).filter(Boolean);
+  const emails = [context?.person?.primary_email, context?.player?.email, context?.member?.primary_email, context?.user?.email].map(lower).filter(Boolean);
+  const phones = [context?.person?.mobile, context?.player?.phone, context?.member?.mobile].map(clean).filter(Boolean);
+
+  try {
+    const token = await spondLoginFromSecrets();
+    if (!token) return { status:'credentials_unavailable', sessions:[] };
+    let group:any = null;
+    try {
+      group = await spondRequest(`/groups/${connection.spond_group_id}`, token);
+    } catch {
+      const groups = await spondRequest('/groups', token);
+      group = (Array.isArray(groups) ? groups : []).find((row:any) => String(row.id) === String(connection.spond_group_id));
+    }
+    if (!group) return { status:'group_unavailable', sessions:[] };
+    const memberId = matchSpondMemberId(group, { emails, phones, explicitIds });
+    if (!memberId) return { status:'identity_not_matched', sessions:[] };
+
+    const now = new Date();
+    const maxStart = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+    const params = new URLSearchParams({
+      groupId:String(connection.spond_group_id),
+      minStartTimestamp:now.toISOString(),
+      maxStartTimestamp:maxStart.toISOString(),
+      max:'300',
+      scheduled:'true',
+      includeComments:'false',
+      includeHidden:'false',
+      addProfileInfo:'false',
+    });
+    const raw = await spondRequest(`/sponds?${params.toString()}`, token);
+    const sessions = (Array.isArray(raw) ? raw : [])
+      .filter((event:any) => collectSpondRecipientIds(event).has(String(memberId)))
+      .map((event:any) => {
+        const location = event?.location || {};
+        return {
+          id:`spond:${event.id}:${spondEventStart(event)}`,
+          source_id:String(event.id),
+          source:'spond',
+          title:clean(event?.heading || 'Club session', 180),
+          start:spondEventStart(event) || null,
+          end:event?.endTimestamp || null,
+          venue:clean(location?.feature || location?.name || location?.address || '', 220) || null,
+          address:clean(location?.address || '', 320) || null,
+          latitude:Number(location?.latitude ?? location?.lat ?? location?.geometry?.coordinates?.[1]) || null,
+          longitude:Number(location?.longitude ?? location?.lng ?? location?.lon ?? location?.geometry?.coordinates?.[0]) || null,
+          response_status:spondResponseStatus(event, memberId),
+        };
+      })
+      .filter((row:any) => row.start)
+      .sort((a:any,b:any) => String(a.start).localeCompare(String(b.start)));
+    return { status:'connected', connection:{ group_id:String(connection.spond_group_id), group_name:connection.spond_group_name || null }, sessions };
+  } catch (error) {
+    console.error('memberPortal Spond feed error', error?.message || error);
+    return { status:'temporarily_unavailable', sessions:[] };
+  }
+}
 
 function ageFromDob(value:any, onDate = new Date()) {
   const s = clean(value, 20);
