@@ -130,15 +130,15 @@ async function activeClubLegalDocument(base44:any,tenantId:string,clubId:string,
   if(!doc) throw Object.assign(new Error(`This club has no active ${documentType.replaceAll('_',' ')} configured.`),{status:409});
   return doc;
 }
-async function activeAdultPolicy(base44:any,tenantId:string,clubId:string){
-  const rows=await base44.asServiceRole.entities.ClubPolicy.filter({tenant_id:tenantId,club_id:clubId,policy_type:'adult_participation',status:'active'},'-effective_from',20);
+async function activeGuestJourneyConfig(base44:any,tenantId:string,clubId:string){
+  const rows=await base44.asServiceRole.entities.ClubGuestJourneyConfig.filter({tenant_id:tenantId,club_id:clubId,active:true},'-updated_date',20);
   return rows?.[0]||null;
 }
 async function legal(base44:any,session:any){
-  const [waiver,code,adultPolicy]=await Promise.all([
+  const [waiver,code,guestConfig]=await Promise.all([
     activeClubLegalDocument(base44,session.tenant_id,session.club_id,'liability_waiver'),
     activeClubLegalDocument(base44,session.tenant_id,session.club_id,'code_of_conduct'),
-    activeAdultPolicy(base44,session.tenant_id,session.club_id)
+    activeGuestJourneyConfig(base44,session.tenant_id,session.club_id)
   ]);
   return {
     waiverVersion:waiver.version,
@@ -149,7 +149,7 @@ async function legal(base44:any,session:any){
     codeTitle:code.title,
     codeText:code.body_text,
     codeConsentLabel:code.consent_label||'I have read and agree to abide by the club Code of Conduct.',
-    minimumAge:Number(adultPolicy?.minimum_age||0)||null,
+    minimumAge:guestConfig?.adults_only===false?null:(Number(guestConfig?.minimum_age||18)||18),
     privacyVersion:PRIVACY_VERSION,
     privacyText:'Your details are used to administer this guest booking, payment, emergency/safety arrangements and necessary session communications. A guest booking does not make you a Clare Pickleball member. Your booking history may later be linked to the same RallyHub person record if you join the club, so RallyHub does not create duplicate identities.',
     cancellationVersion:CANCELLATION_VERSION,
