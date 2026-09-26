@@ -158,7 +158,7 @@ export default function PublicGuestSessionBooking(){
         <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Guest Session Request"/>
         <ShieldCheck className="mx-auto mt-7 h-11 w-11 text-primary"/>
         <h1 className="mt-4 text-2xl font-black">Club approval required</h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">This is a public or forwarded booking link, so no payment will be taken yet. Request a guest place first and Clare Pickleball will approve the visit before sending a private payment link.</p>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{error||'This is a public or forwarded booking link, so no payment will be taken yet. Request a guest place first and Clare Pickleball will approve the visit before sending a private payment link.'}</p>
         <div className="mt-5 rounded-xl border bg-secondary/30 p-4 text-left text-sm">
           <p className="font-black">{niceDate(session.sessionDate)} · {session.startTime}{session.endTime?`–${session.endTime}`:''}</p>
           <p className="mt-2 font-semibold">{session.venueName}</p>
