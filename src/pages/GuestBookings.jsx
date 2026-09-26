@@ -18,11 +18,6 @@ function niceDate(value){
 function copy(text,label='Copied'){
   navigator.clipboard.writeText(text).then(()=>toast.success(label)).catch(()=>toast.error('Could not copy'));
 }
-function shareWhatsApp(url,session){
-  const action=session.paymentMethod==='cash'?'Reserve your place':`Book & pay €${Number(session.feeAmount||0).toFixed(2)}`;
-  const msg=`Clare Pickleball guest session\n${niceDate(session.sessionDate)} · ${session.startTime}\n${session.venueName}\n\n${action}:\n${url}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
-}
 
 export default function GuestBookings(){
   const { user }=useAuth();
@@ -124,6 +119,18 @@ export default function GuestBookings(){
       await qc.invalidateQueries({queryKey:['guest-access-requests']});
       toast.success('Guest request declined');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not decline guest request')}
+    finally{setBusy('')}
+  };
+
+  const shareMagicWhatsApp=async(session)=>{
+    setBusy(`whatsapp-${session.id}`);
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_create_magic_invite',sessionId:session.id});
+      if(res.data?.error)throw new Error(res.data.error);
+      const action=session.paymentMethod==='cash'?'Reserve your place':`Book & pay €${Number(session.feeAmount||0).toFixed(2)}`;
+      const msg=`Clare Pickleball guest session\n${niceDate(session.sessionDate)} · ${session.startTime}\n${session.venueName}\n\n${action}:\n${res.data.magicInviteUrl}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not create private WhatsApp invitation')}
     finally{setBusy('')}
   };
 
@@ -290,7 +297,7 @@ export default function GuestBookings(){
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" disabled={busy===`magic-${s.id}`} onClick={()=>createMagicLink(s)}>{busy===`magic-${s.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Copy className="mr-1.5 h-3.5 w-3.5"/>}Create private link</Button>
               <Button size="sm" variant="outline" disabled={busy===`invite-${s.id}`} onClick={()=>emailInvite(s)}>{busy===`invite-${s.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Email booking link</Button>
-              <Button size="sm" variant="outline" onClick={()=>shareWhatsApp(url,s)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
+              <Button size="sm" variant="outline" disabled={busy===`whatsapp-${s.id}`} onClick={()=>shareMagicWhatsApp(s)}>{busy===`whatsapp-${s.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<MessageCircle className="mr-1.5 h-3.5 w-3.5"/>}WhatsApp</Button>
               <a href={s.mapsUrl} target="_blank" rel="noreferrer"><Button size="sm" variant="outline"><MapPin className="mr-1.5 h-3.5 w-3.5"/>Map</Button></a>
               {s.active&&<Button size="sm" variant="ghost" className="text-destructive" disabled={busy===`close-${s.id}`} onClick={()=>closeSession(s.id)}><XCircle className="mr-1.5 h-3.5 w-3.5"/>Close link</Button>}
             </div>
