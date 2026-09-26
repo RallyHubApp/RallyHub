@@ -28,6 +28,21 @@
       ],
       "default": "waiting"
     },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "deactivated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deactivation_reason": {
+      "type": "string"
+    },
+    "reactivated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "first_joined_at": {
       "type": "string",
       "format": "date-time"
