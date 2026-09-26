@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { 
   LayoutDashboard, Users, Trophy, Crown, 
-  BarChart3, X, ChevronRight, UserCircle, Shield, MapPin, CalendarCheck, ContactRound
+  BarChart3, X, ChevronRight, UserCircle, Shield, MapPin, CalendarCheck, ContactRound, ClipboardList
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,10 @@ export default function Sidebar({ isOpen, onToggle }) {
   const isSuperAdmin = role === 'super_admin';
   const mainNavItems = [
     navItems[0],
-    ...(canManageMembership ? [{ path: '/app/membership', label: 'Membership', icon: ContactRound }] : []),
+    ...(canManageMembership ? [
+      { path: '/app/membership', label: 'Membership', icon: ContactRound },
+      { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList }
+    ] : []),
     ...navItems.slice(1)
   ];
 
