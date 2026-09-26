@@ -196,7 +196,10 @@ export default function AdminPanel() {
       if (res.data?.error) throw new Error(res.data.error);
       return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [], listingRecords: res.data?.listingRecords || [], listingProfiles: res.data?.listingProfiles || [], invitations: res.data?.invitations || [] }; 
     },
-    enabled: canAccessAdmin
+    enabled: canAccessAdmin,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always'
   });
 
   const { data: directoryPlayerNetwork = { counts: {}, subscribers: [] } } = useQuery({
