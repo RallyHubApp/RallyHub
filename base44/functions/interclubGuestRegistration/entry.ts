@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 
 const FALLBACK_WAIVER_VERSION = 'interclub-event-waiver-v1-2026-09';
-const CODE_VERSION = 'interclub-code-of-conduct-v1-2026-09';
+const FALLBACK_CODE_VERSION = 'interclub-code-of-conduct-v1-2026-09';
 const PRIVACY_VERSION = 'interclub-event-privacy-v1-2026-09';
 
 function clean(value:any, max=200) {
@@ -21,52 +21,29 @@ function fallbackWaiver(event:any) {
     consent_label:'I have read and accept the event waiver and release conditions.'
   };
 }
-async function activeClubWaiver(base44:any,event:any,hostClub:any){
-  if(!hostClub?.id) return fallbackWaiver(event);
-  const rows=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:event.tenant_id,club_id:hostClub.id,document_type:'liability_waiver',active:true},'-effective_from',20);
-  return rows?.[0]||fallbackWaiver(event);
+function fallbackCode(){
+  return {
+    version:FALLBACK_CODE_VERSION,
+    title:'RallyHub Interclub Code of Conduct',
+    body_text:`Treat players, officials, volunteers and spectators with respect. Play fairly and safely, follow event instructions, stop play when a stray ball creates a hazard, make fair line calls, handle disagreements calmly, respect the venue and equipment, and represent your team positively.`,
+    consent_label:'I have read and agree to follow the Interclub Code of Conduct.'
+  };
 }
-function legalText(event:any, waiver:any) {
+async function activeClubLegalDocument(base44:any,event:any,hostClub:any,documentType:string,fallback:any){
+  if(!hostClub?.id) return fallback;
+  const rows=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:event.tenant_id,club_id:hostClub.id,document_type:documentType,active:true},'-effective_from',20);
+  return rows?.[0]||fallback;
+}
+function legalText(event:any, waiver:any, code:any) {
   return {
     waiverVersion:waiver.version,
     waiverTitle:waiver.title,
     waiverText:waiver.body_text,
     waiverConsentLabel:waiver.consent_label||'I have read and accept the participation declaration and liability notice.',
-    codeVersion:CODE_VERSION,
-    codeTitle:'RallyHub Interclub Code of Conduct',
-    codeText:`RallyHub Interclub events are intended to be welcoming, inclusive and respectful.
-
-Respect and inclusivity
-• Treat all players, officials, volunteers and spectators with respect and kindness.
-• Do not use discriminatory language or behaviour.
-• Welcome and encourage players of different skill levels and backgrounds.
-
-Good sportsmanship
-• Play fairly and with integrity.
-• Celebrate good play and encourage others.
-• Do not use aggressive, intimidating or deliberately dangerous play.
-
-Conflict resolution
-• Handle disagreements calmly and respectfully.
-• Do not argue or raise voices during games.
-• Ask an event organiser or official for help if a disagreement cannot be resolved.
-
-Safety first
-• Prioritise the safety of everyone on and around the courts.
-• Call “Ball!” clearly when a stray ball enters another court and stop play until it is safe.
-• Respect court rotation, equipment and venue instructions.
-
-Positive communication
-• Use constructive and encouraging language.
-• Do not mock, taunt or belittle another player.
-• Respect line calls and organiser decisions.
-
-Participation and team spirit
-• Be punctual and ready to play.
-• Follow the event format, pairings, rotations and scoring instructions.
-• Contribute to a friendly and enjoyable event.
-
-By participating in the event, you agree to uphold this Code of Conduct.`,
+    codeVersion:code.version,
+    codeTitle:code.title,
+    codeText:code.body_text,
+    codeConsentLabel:code.consent_label||'I have read and agree to follow the Interclub Code of Conduct.',
     privacyVersion:PRIVACY_VERSION,
     privacyText:'Your details will be used only to administer this Interclub event, including roster management, event communications and emergency/safety administration. Completing this form does not make you a member of the host club and your details will not be used for club membership marketing.',
   };
@@ -101,8 +78,11 @@ Deno.serve(async (req) => {
       : [];
     const hostClub = clubs?.[0] || null;
     const sideTeamName = link.side === 'club_a' ? event.club_a_name : event.club_b_name;
-    const waiver = await activeClubWaiver(base44,event,hostClub);
-    const legal = legalText(event,waiver);
+    const [waiver,code] = await Promise.all([
+      activeClubLegalDocument(base44,event,hostClub,'liability_waiver',fallbackWaiver(event)),
+      activeClubLegalDocument(base44,event,hostClub,'code_of_conduct',fallbackCode())
+    ]);
+    const legal = legalText(event,waiver,code);
 
     const safeEvent = {
       id:event.id,
@@ -250,7 +230,7 @@ Deno.serve(async (req) => {
       medical_note:medicalNote,
       waiver_version:legal.waiverVersion,
       waiver_accepted:true,
-      code_of_conduct_version:CODE_VERSION,
+      code_of_conduct_version:legal.codeVersion,
       code_of_conduct_accepted:true,
       privacy_notice_version:PRIVACY_VERSION,
       privacy_acknowledged:true,
@@ -267,7 +247,7 @@ Deno.serve(async (req) => {
     if (hostClubId) {
       const consents = [
         { consent_type:'interclub_event_waiver', status:'accepted', response_text:'Accepted', consent_version:legal.waiverVersion },
-        { consent_type:'interclub_code_of_conduct', status:'accepted', response_text:'Accepted', consent_version:CODE_VERSION },
+        { consent_type:'interclub_code_of_conduct', status:'accepted', response_text:'Accepted', consent_version:legal.codeVersion },
         { consent_type:'interclub_event_privacy_notice', status:'accepted', response_text:'Acknowledged', consent_version:PRIVACY_VERSION },
         { consent_type:'interclub_photo_video', status:photoVideoConsent === 'yes' ? 'accepted' : 'declined', response_text:photoVideoConsent === 'yes' ? 'Yes' : 'No', consent_version:PRIVACY_VERSION },
       ];
