@@ -106,6 +106,7 @@ Deno.serve(async (req) => {
       date:tournament?.start_date || '',
       venue:tournament?.location || '',
       hostClubName:hostClub?.name || event.club_a_name || '',
+      hostClubSlug:hostClub?.slug || '',
     };
 
     if (action === 'get') {
