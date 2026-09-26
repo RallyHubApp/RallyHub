@@ -153,6 +153,8 @@ function normaliseSourceMember(raw:any){
   const roleValue=member?.role||member?.memberRole||profile?.role||'';
   const statusValue=member?.status||member?.membershipStatus||member?.state||profile?.status||'';
   const roles=Array.isArray(member?.roles)?member.roles.map((value:any)=>typeof value==='string'?value:value?.name||value?.title||'').filter(Boolean):[];
+  const isDeactivated=boolish(member?.deleted)||boolish(member?.deactivated)||boolish(member?.isDeleted)||boolish(member?.isDeactivated);
+  const isUnprocessed=!isDeactivated&&(boolish(member?.unprocessed)||boolish(member?.isUnprocessed)||lower(statusValue)==='pending');
   return {
     external_member_id:clean(member?.id||member?.memberId||member?.uid||profile?.memberId,180),
     external_profile_id:clean(profile?.id||member?.profileId||member?.personId,180)||null,
@@ -163,6 +165,9 @@ function normaliseSourceMember(raw:any){
     source_status:clean(statusValue,80)||null,
     source_role:clean(roleValue,80)||null,
     source_roles:roles.slice(0,20),
+    source_lifecycle:isDeactivated?'deactivated':isUnprocessed?'unprocessed':'active',
+    source_deactivated:isDeactivated,
+    source_unprocessed:isUnprocessed,
     source_updated_at:clean(member?.updatedAt||member?.updatedTimestamp||profile?.updatedAt,80)||null
   };
 }
