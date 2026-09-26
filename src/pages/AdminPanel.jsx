@@ -1577,7 +1577,7 @@ Brian`;
               </button>
             </div>
 
-            {directoryToolsOpen && <div id="directory-clubs" className="glass rounded-xl p-4 sm:p-5 space-y-4 scroll-mt-24">
+            {directoryToolsOpen && <div id="directory-clubs" className="order-80 glass rounded-xl p-4 sm:p-5 space-y-4 scroll-mt-24">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Directory clubs</p>
                 <h3 className="text-lg font-bold text-foreground mt-1">Contact a club and invite them to claim</h3>
@@ -1603,9 +1603,9 @@ Brian`;
                 {filteredDirectoryAdminListings.length === 0 && <p className="p-4 text-sm text-muted-foreground">No Directory clubs match that search.</p>}
               </div>
               <p className="text-xs text-muted-foreground">{directoryAdminListings.length} Directory clubs available · showing {filteredDirectoryAdminListings.length}</p>
-            </div>
+            </div>}
 
-            <div id="directory-claim-invite" className="glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/25 scroll-mt-24">
+            {directoryToolsOpen && <div id="directory-claim-invite" className="glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/25 scroll-mt-24">
               <div className="rounded-lg border border-blue-400/25 bg-blue-400/5 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Clare Pickleball tenant email</p>
