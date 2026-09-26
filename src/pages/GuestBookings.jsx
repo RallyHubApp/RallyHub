@@ -276,7 +276,7 @@ export default function GuestBookings(){
 
       <Button onClick={createSession} disabled={busy==='create'||!templateKey||!sessionDate} className="gap-2">
         {busy==='create'?<RefreshCw className="h-4 w-4 animate-spin"/>:<CalendarCheck className="h-4 w-4"/>}
-        {busy==='create'?'Creating…':'Create & copy booking link'}
+        {busy==='create'?'Creating…':'Create guest session'}
       </Button>
     </section>
 
@@ -298,6 +298,7 @@ export default function GuestBookings(){
               <p className="mt-1 text-xs text-muted-foreground">€{Number(s.feeAmount).toFixed(2)} · {s.paymentMethod==='cash'?'Cash on arrival':'SumUp online payment'}{s.capacity?` · Capacity ${s.capacity}`:''}</p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={()=>copy(url,'Public approval-required guest link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy public link</Button>
               <Button size="sm" variant="outline" disabled={busy===`magic-${s.id}`} onClick={()=>createMagicLink(s)}>{busy===`magic-${s.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Copy className="mr-1.5 h-3.5 w-3.5"/>}Create private link</Button>
               <Button size="sm" variant="outline" disabled={busy===`invite-${s.id}`} onClick={()=>emailInvite(s)}>{busy===`invite-${s.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Email booking link</Button>
               <Button size="sm" variant="outline" disabled={busy===`whatsapp-${s.id}`} onClick={()=>shareMagicWhatsApp(s)}>{busy===`whatsapp-${s.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<MessageCircle className="mr-1.5 h-3.5 w-3.5"/>}WhatsApp</Button>
