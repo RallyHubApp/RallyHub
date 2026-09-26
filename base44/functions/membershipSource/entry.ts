@@ -11,6 +11,7 @@ const dateKey = (value:any) => {
   return iso?.[1] || s;
 };
 function parseJson(value:any,fallback:any={}){try{return typeof value==='string'&&value.trim()?JSON.parse(value):value&&typeof value==='object'?value:fallback}catch{return fallback}}
+function boolish(value:any){return value===true||value===1||['true','1','yes','y'].includes(lower(value))}
 function activeWindow(row:any){const now=Date.now();if(row?.starts_at&&Date.parse(row.starts_at)>now)return false;if(row?.ends_at&&Date.parse(row.ends_at)<now)return false;return true}
 async function assertClubAdmin(base44:any,user:any,tenantId:string,clubId:string){
   if(user?.role==='admin') return true;
