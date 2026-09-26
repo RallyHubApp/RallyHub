@@ -2,7 +2,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { createCheckout, retrievePayment, refundPayment, providerConfigured, verifyProviderConnection, type ProviderAccount } from './payments.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
-const WAIVER_VERSION='clare-guest-session-waiver-v1-2026-09';
 const CODE_VERSION='clare-guest-session-code-v1-2026-09';
 const PRIVACY_VERSION='clare-guest-session-privacy-v1-2026-09';
 const CANCELLATION_VERSION='clare-guest-session-cancellation-v1-2026-09';
@@ -78,19 +77,19 @@ async function clubBrand(base44:any,clubId:string){
     };
   }catch{return null}
 }
-function legal(){
+async function activeClubWaiver(base44:any,tenantId:string,clubId:string){
+  const rows=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:tenantId,club_id:clubId,document_type:'liability_waiver',active:true},'-effective_from',20);
+  const doc=(rows||[])[0];
+  if(!doc) throw Object.assign(new Error('This club has no active participation waiver configured.'),{status:409});
+  return doc;
+}
+async function legal(base44:any,session:any){
+  const waiver=await activeClubWaiver(base44,session.tenant_id,session.club_id);
   return {
-    waiverVersion:WAIVER_VERSION,
-    waiverTitle:'Clare Pickleball Guest Session Declaration & Liability Waiver',
-    waiverText:`I understand that taking part in pickleball and related club activities involves physical activity and carries inherent risks, including the risk of injury.
-
-I confirm that I am voluntarily participating and that I am responsible for deciding that I am fit to take part. I will not participate if I am unwell, injured, or aware of a medical or health condition that makes participation unsafe.
-
-I accept the normal risks associated with using sporting equipment and facilities and with taking part in pickleball. I agree to follow the safety instructions, rules of play and reasonable directions of Clare Pickleball, its session leaders and the venue.
-
-I release Clare Pickleball, its officers, volunteers, coaches and session leaders, and the venue/facility providers from claims arising from the ordinary risks of my participation, except where liability cannot lawfully be excluded.
-
-If emergency assistance is reasonably required, I consent to the organisers seeking appropriate medical help on my behalf.`,
+    waiverVersion:waiver.version,
+    waiverTitle:waiver.title,
+    waiverText:waiver.body_text,
+    waiverConsentLabel:waiver.consent_label||'I have read and accept the Clare Pickleball Participation Declaration, Assumption of Risk & Liability Notice.',
     codeVersion:CODE_VERSION,
     codeTitle:'Clare Pickleball Guest Code of Conduct',
     codeText:`Please play in the friendly and respectful spirit of Clare Pickleball.
@@ -700,7 +699,7 @@ ${detailRow('Reason',reason)}
     const remaining=cap>0?Math.max(0,cap-active.length):null;
 
     if(action==='public_get'){
-      return Response.json({success:true,session:safeSession(session),clubBrand:await clubBrand(base44,session.club_id),legal:legal(),spotsRemaining:remaining});
+      return Response.json({success:true,session:safeSession(session),clubBrand:await clubBrand(base44,session.club_id),legal:await legal(base44,session),spotsRemaining:remaining});
     }
 
     if(action==='public_status'){
@@ -738,6 +737,7 @@ ${detailRow('Reason',reason)}
 
     if(action!=='public_submit')return Response.json({error:'Invalid guest booking action.'},{status:400});
     if(remaining!==null&&remaining<=0)return Response.json({error:'This guest session is full.'},{status:409});
+    const legalBundle=await legal(base44,session);
 
     const fullName=clean(body.fullName,120);
     const email=emailKey(body.email);
@@ -824,7 +824,7 @@ ${detailRow('Reason',reason)}
       tenant_id:session.tenant_id,club_id:session.club_id,session_link_id:session.id,person_id:person.id,
       full_name:fullName,email,email_key:email,mobile,mobile_key:mobileK,
       emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,medical_note:medicalNote,
-      waiver_version:WAIVER_VERSION,waiver_accepted:true,
+      waiver_version:legalBundle.waiverVersion,waiver_accepted:true,
       code_of_conduct_version:CODE_VERSION,code_of_conduct_accepted:true,
       privacy_notice_version:PRIVACY_VERSION,privacy_acknowledged:true,
       cancellation_policy_version:CANCELLATION_VERSION,cancellation_policy_accepted:true,
@@ -834,7 +834,7 @@ ${detailRow('Reason',reason)}
     });
 
     for(const c of [
-      {consent_type:'guest_session_waiver',status:'accepted',response_text:'Accepted',consent_version:WAIVER_VERSION},
+      {consent_type:'guest_session_waiver',status:'accepted',response_text:'Accepted',consent_version:legalBundle.waiverVersion},
       {consent_type:'guest_session_code_of_conduct',status:'accepted',response_text:'Accepted',consent_version:CODE_VERSION},
       {consent_type:'guest_session_privacy_notice',status:'accepted',response_text:'Acknowledged',consent_version:PRIVACY_VERSION},
       {consent_type:'guest_session_cancellation_policy',status:'accepted',response_text:'Accepted',consent_version:CANCELLATION_VERSION},
