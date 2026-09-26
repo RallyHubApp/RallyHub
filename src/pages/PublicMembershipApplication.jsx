@@ -303,8 +303,19 @@ export default function PublicMembershipApplication() {
               <LegalBlock doc={legal.health} checked={consents.health_declaration} onChange={v=>setConsents(p=>({...p,health_declaration:v}))} />
               <LegalBlock doc={legal.terms} checked={consents.membership_terms} onChange={v=>setConsents(p=>({...p,membership_terms:v}))} />
               {legal.photo && <section className="rounded-2xl border border-border bg-card overflow-hidden"><div className="px-4 sm:px-5 py-4 border-b border-border bg-secondary/20"><h3 className="font-bold">{legal.photo.title}</h3><p className="text-xs text-muted-foreground mt-1">Optional choice · Version {legal.photo.version}</p></div><div className="p-4 sm:p-5"><div className="rounded-xl bg-secondary/20 border border-border p-4 text-sm leading-6 whitespace-pre-wrap">{legal.photo.bodyText}</div><div className="mt-4 grid grid-cols-2 gap-2"><button type="button" onClick={()=>setConsents(p=>({...p,photoVideo:'yes'}))} className={'rounded-xl border px-4 py-3 text-sm font-semibold ' + (consents.photoVideo==='yes'?'border-primary bg-primary text-primary-foreground':'border-border bg-background')}>Yes, I consent</button><button type="button" onClick={()=>setConsents(p=>({...p,photoVideo:'no'}))} className={'rounded-xl border px-4 py-3 text-sm font-semibold ' + (consents.photoVideo==='no'?'border-primary bg-primary text-primary-foreground':'border-border bg-background')}>No, I do not consent</button></div></div></section>}
-              <div className="rounded-2xl border border-border bg-card p-5"><div className="flex items-center justify-between gap-3"><span className="font-bold">Membership fee</span><span className="text-xl font-black">{feeLabel}</span></div><p className="mt-2 text-sm text-muted-foreground">Your application will be recorded first. You will then continue to the club’s connected secure payment gateway.</p></div>
+              <div className="rounded-2xl border border-border bg-card p-5"><div className="flex items-center justify-between gap-3"><span className="font-bold">Membership fee</span><span className="text-xl font-black">{feeLabel}</span></div><p className="mt-2 text-sm text-muted-foreground">{applicationType==='new'&&!inviteApproved?'Your application will be sent to the club for approval first. No payment will be taken until the club approves your application and sends you a private link.':'Your application will be recorded first. You will then continue to the club’s connected secure payment gateway.'}</p></div>
               <div className="flex flex-col sm:flex-row gap-2"><Button onClick={submitApplication} disabled={busy} className="sm:flex-1">{busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Submit membership application</Button><Button variant="outline" onClick={()=>setStep('details')} disabled={busy}>Back</Button></div>
+            </section>
+          )}
+
+          {step === 'approval_pending' && application && (
+            <section className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 sm:p-8 text-center">
+              <ShieldCheck className="mx-auto w-12 h-12 text-amber-500" />
+              <h2 className="mt-4 text-2xl font-black">Application awaiting approval</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{application.message}</p>
+              <p className="mt-4 text-sm font-semibold">No payment has been taken.</p>
+              <p className="mt-2 text-xs text-muted-foreground">If approved, Clare Pickleball will send you a private membership link. That link will take you through to payment without another approval step.</p>
+              <Link to={'/directory/' + clubSlug} className="mt-6 inline-flex"><Button variant="outline">Back to {club.name}</Button></Link>
             </section>
           )}
 
