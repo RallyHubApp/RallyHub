@@ -492,7 +492,10 @@ export default function PublicDirectory() {
                       <Search className="mx-auto mb-3 h-8 w-8 text-[#8792a4]" />
                       <h3 className="font-bold text-[#07184c]">No matching clubs yet</h3>
                       <p className="mt-1 text-sm text-[#6a778a]">Try removing a filter or searching a nearby county. If the club is missing, you can add it for review.</p>
-                      <Link to="/directory/add" className="mt-4 inline-flex h-10 items-center rounded-lg bg-[#078e48] px-4 text-sm font-bold text-white">Add a missing club</Link>
+                      <div className="mt-4 flex flex-wrap justify-center gap-2">
+                        <Link to="/directory/add" className="inline-flex h-10 items-center rounded-lg bg-[#078e48] px-4 text-sm font-bold text-white">Add a missing club</Link>
+                        <a href="#player-network" className="inline-flex h-10 items-center rounded-lg border border-[#cbd7dc] bg-white px-4 text-sm font-bold text-[#07184c]">Invite the club by WhatsApp / email</a>
+                      </div>
                     </div>
                   )}
                 </section>
