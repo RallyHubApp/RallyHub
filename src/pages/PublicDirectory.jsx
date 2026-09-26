@@ -10,6 +10,7 @@ import Seo, { SITE_URL } from '@/components/public/Seo';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 import PublicDirectoryLogo from '@/components/directory/PublicDirectoryLogo';
 import DirectoryPlayerNetworkPanel from '@/components/directory/DirectoryPlayerNetworkPanel';
+import { trackSiteEvent } from '@/lib/site-analytics';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -224,8 +225,33 @@ export default function PublicDirectory() {
     .sort((a, b) => query.trim() ? (b.searchScore - a.searchScore || a.club.name.localeCompare(b.club.name)) : a.club.name.localeCompare(b.club.name))
     .map(({ club }) => club), [effectiveClubs, query, county, day]);
 
+  useEffect(() => {
+    trackSiteEvent('directory_view', { metadata: { clubCount: effectiveClubs.length } });
+  }, []);
+
+  useEffect(() => {
+    const term = query.trim();
+    if (!term) return;
+    const timer = window.setTimeout(() => {
+      trackSiteEvent(filteredClubs.length ? 'directory_search' : 'directory_zero_result', {
+        searchTerm: term,
+        county: county === 'All counties' ? '' : county,
+        metadata: { results: filteredClubs.length, day: day === 'Any day' ? '' : day }
+      });
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [query, county, day, filteredClubs.length]);
+
+  useEffect(() => {
+    if (county !== 'All counties') trackSiteEvent('county_filter', { county });
+  }, [county]);
+
+  useEffect(() => {
+    if (day !== 'Any day') trackSiteEvent('day_filter', { metadata: { day } });
+  }, [day]);
+
   const shareClub = async club => {
-    const url = `${SITE_URL}/directory/${club.slug}`;
+    const url = `${SITE_URL}/directory/${club.slug}?utm_source=directory_share&utm_medium=referral&utm_campaign=club_profile_share`;
     const text = `${club.name} on the RallyHub Club Directory`;
     if (navigator.share) {
       try {
