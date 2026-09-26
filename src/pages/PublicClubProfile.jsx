@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
@@ -11,6 +11,7 @@ import PublicDirectoryLogo, { normaliseDirectoryAssetUrl } from '@/components/di
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
+import { trackSiteEvent } from '@/lib/site-analytics';
 
 const weekOrder = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const countySlug = county => String(county || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -62,6 +63,7 @@ export default function PublicClubProfile() {
   const [membershipApplicationConfig, setMembershipApplicationConfig] = useState(null);
   const [waitingListConfig, setWaitingListConfig] = useState(null);
   const [policyLibraryCount, setPolicyLibraryCount] = useState(0);
+  const analyticsViewed = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -121,6 +123,14 @@ export default function PublicClubProfile() {
       .catch(() => { if (active) setPolicyLibraryCount(0); });
     return () => { active = false; };
   }, [slug]);
+
+  useEffect(() => {
+    const knownClub = publicProfile || dynamicBase || seedClub;
+    if (!analyticsViewed.current && knownClub?.name) {
+      analyticsViewed.current = true;
+      trackSiteEvent('club_profile_view', { clubSlug: slug, clubName: knownClub.name, county: knownClub.county || seedClub?.county || '' });
+    }
+  }, [slug, seedClub, dynamicBase, publicProfile]);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) { setHasDirectoryAccess(false); return; }
@@ -276,6 +286,7 @@ export default function PublicClubProfile() {
   };
   const shareText = `${club.name} on the RallyHub Club Directory`;
   const shareClub = async () => {
+    trackSiteEvent('share_club', { clubSlug: club.slug, clubName: club.name, county: club.county, metadata: { surface: 'club_profile' } });
     if (navigator.share) {
       try {
         await navigator.share({ title: club.name, text: shareText, url: profileUrl });
@@ -345,10 +356,10 @@ export default function PublicClubProfile() {
                 <div className="flex flex-wrap items-center gap-3"><h1 className="text-4xl sm:text-5xl font-black tracking-tight">{club.name}</h1>{previewMode && <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-500">PREVIEW ONLY · NOT PUBLIC</span>}</div>
                 <p className="mt-3 text-lg text-muted-foreground max-w-3xl">{displayDescription}</p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  {club.website && <a href={club.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Globe2 className="w-4 h-4" /> Website</a>}
+                  {club.website && <a href={club.website} onClick={() => trackSiteEvent('club_website_click',{clubSlug:club.slug,clubName:club.name,county:club.county})} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Globe2 className="w-4 h-4" /> Website</a>}
                   {club.waitingListUrl && <a href={club.waitingListUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold"><Users className="w-4 h-4" /> {club.joiningCtaLabel || 'Contact club'}</a>}
-                  {!club.website && !club.waitingListUrl && club.contact?.phoneHref && <a href={club.contact.phoneHref} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Phone className="w-4 h-4" /> Contact club</a>}
-                  {!club.website && !club.waitingListUrl && !club.contact?.phoneHref && club.contact?.email && <a href={`mailto:${club.contact.email}`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Mail className="w-4 h-4" /> Contact club</a>}
+                  {!club.website && !club.waitingListUrl && club.contact?.phoneHref && <a href={club.contact.phoneHref} onClick={() => trackSiteEvent('club_whatsapp_click',{clubSlug:club.slug,clubName:club.name,county:club.county,metadata:{channel:'phone'}})} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Phone className="w-4 h-4" /> Contact club</a>}
+                  {!club.website && !club.waitingListUrl && !club.contact?.phoneHref && club.contact?.email && <a href={`mailto:${club.contact.email}`} onClick={() => trackSiteEvent('club_email_click',{clubSlug:club.slug,clubName:club.name,county:club.county})} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"><Mail className="w-4 h-4" /> Contact club</a>}
                   <div className="relative">
                     <button type="button" onClick={shareClub} aria-expanded={shareOpen} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold hover:border-primary/50 hover:bg-primary/5 transition-colors">
                       <Share2 className="w-4 h-4" /> Share club
@@ -483,7 +494,7 @@ export default function PublicClubProfile() {
                       <div className="flex items-center gap-3">
                         <Link to={venuePath(club.slug, venue.id)} className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Pickleball venue details</Link>
                         {venue.websiteUrl && <a href={venue.websiteUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Venue <ExternalLink className="w-3.5 h-3.5" /></a>}
-                        {venue.mapUrl && <a href={venue.mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Map <ExternalLink className="w-3.5 h-3.5" /></a>}
+                        {venue.mapUrl && <a href={venue.mapUrl} onClick={() => trackSiteEvent('map_click',{clubSlug:club.slug,clubName:club.name,county:club.county,venueId:venue.id,venueName:venue.name})} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Map <ExternalLink className="w-3.5 h-3.5" /></a>}
                       </div>
                     </div>
                   </article>
