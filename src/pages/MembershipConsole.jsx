@@ -259,7 +259,7 @@ export default function MembershipConsole() {
   useEffect(() => {
     const reference = membershipSourceData.connection?.credential_reference || membershipSourceData.defaultCredentialReference || '';
     if (reference) setMembershipSourceCredentialReference(reference);
-    if (membershipSourceData.connection?.external_club_id) setMembershipSourceClubId(String(membershipSourceData.connection.external_group_id));
+    if (membershipSourceData.connection?.external_club_id) setMembershipSourceClubId(String(membershipSourceData.connection.external_club_id));
   }, [membershipSourceData.connection?.credential_reference, membershipSourceData.connection?.external_club_id, membershipSourceData.defaultCredentialReference]);
 
   const currency = meta.gateways?.find(g => g.is_default)?.currency || meta.gateways?.[0]?.currency || 'EUR';
@@ -272,28 +272,28 @@ export default function MembershipConsole() {
     return response.data || {};
   };
 
-  const discoverSpondMembershipGroups = async () => {
+  const discoverSpondMembershipClubs = async () => {
     setMembershipSourceBusy('discover');
     try {
-      const data = await invokeMembershipSource('discover_groups', {
+      const data = await invokeMembershipSource('discover_clubs', {
         credentialReference: membershipSourceCredentialReference || undefined
       });
-      setMembershipSourceClubs(data.groups || []);
-      if (!(data.groups || []).length) toast.info('No Spond groups were returned for this account');
-      else toast.success(`${data.groups.length} Spond group${data.groups.length === 1 ? '' : 's'} available`);
+      setMembershipSourceClubs(data.clubs || []);
+      if (!(data.clubs || []).length) toast.info('No Spond Clubs were returned for this account');
+      else toast.success(`${data.clubs.length} Spond Club${data.clubs.length === 1 ? '' : 's'} available`);
     } catch (error) {
-      toast.error(error?.response?.data?.error || error?.message || 'Could not read Spond groups');
+      toast.error(error?.response?.data?.error || error?.message || 'Could not read Spond Clubs');
     } finally {
       setMembershipSourceBusy('');
     }
   };
 
   const saveSpondMembershipSource = async () => {
-    if (!membershipSourceClubId) return toast.error('Choose the Spond membership group');
+    if (!membershipSourceClubId) return toast.error('Choose the Spond Club membership source');
     setMembershipSourceBusy('save');
     try {
       const data = await invokeMembershipSource('save_connection', {
-        groupId: membershipSourceClubId,
+        externalClubId: membershipSourceClubId,
         credentialReference: membershipSourceCredentialReference || undefined,
         sportId: primarySport?.id || undefined,
         connectionMode: 'credentials_login'
@@ -1154,7 +1154,7 @@ export default function MembershipConsole() {
 
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
             <div className="flex flex-wrap items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" /><strong>Read-only connection</strong><Badge variant="outline">Preview only</Badge></div>
-            <p className="mt-1 text-xs text-muted-foreground">RallyHub can sign in, read the selected Spond group and compare its members with RallyHub. Preview does not create, update or delete member records in either system.</p>
+            <p className="mt-1 text-xs text-muted-foreground">RallyHub can sign in to Spond Club, read the selected Club membership roster and compare it with RallyHub. Preview does not create, update or delete member records in either system.</p>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-4">
@@ -1177,7 +1177,7 @@ export default function MembershipConsole() {
               </div>
 
               {membershipSourceData.connection ? <div className="grid sm:grid-cols-2 gap-3 text-sm">
-                <Info title="Connected group" value={membershipSourceData.connection.external_group_name || membershipSourceData.connection.external_group_id} />
+                <Info title="Connected Spond Club" value={membershipSourceData.connection.external_club_name || membershipSourceData.connection.external_club_id} />
                 <Info title="Mode" value={label(membershipSourceData.connection.connection_mode)} />
                 <Info title="Direction" value="Spond source → RallyHub preview" />
                 <Info title="Last verified" value={membershipSourceData.connection.last_verified_at ? new Date(membershipSourceData.connection.last_verified_at).toLocaleString() : null} />
@@ -1186,22 +1186,22 @@ export default function MembershipConsole() {
               {membershipSourceData.connection?.last_error ? <div className="rounded-lg border border-amber-300 bg-amber-50/60 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-200">{membershipSourceData.connection.last_error}</div> : null}
 
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={discoverSpondMembershipGroups} disabled={!!membershipSourceBusy}>
-                  <RefreshCw className={`w-4 h-4 mr-2 ${membershipSourceBusy === 'discover' ? 'animate-spin' : ''}`} />Discover groups
+                <Button variant="outline" onClick={discoverSpondMembershipClubs} disabled={!!membershipSourceBusy}>
+                  <RefreshCw className={`w-4 h-4 mr-2 ${membershipSourceBusy === 'discover' ? 'animate-spin' : ''}`} />Discover Spond Clubs
                 </Button>
                 {membershipSourceData.connection ? <Button variant="outline" onClick={verifySpondMembershipSource} disabled={!!membershipSourceBusy}><ShieldCheck className="w-4 h-4 mr-2" />Verify connection</Button> : null}
               </div>
             </div>
 
             <div className="rounded-xl border p-4 space-y-3">
-              <div><p className="font-semibold">Membership group</p><p className="text-xs text-muted-foreground">Choose the Spond group that represents this club’s membership roster. The setting is scoped to the active RallyHub tenant and club.</p></div>
+              <div><p className="font-semibold">Spond Club membership roster</p><p className="text-xs text-muted-foreground">Choose the Spond Club whose member-management roster belongs to this RallyHub club. This is separate from ordinary Spond App groups and events.</p></div>
               {membershipSourceClubs.length ? <>
                 <Select value={membershipSourceClubId || undefined} onValueChange={setMembershipSourceClubId}>
-                  <SelectTrigger><SelectValue placeholder="Choose Spond membership group" /></SelectTrigger>
-                  <SelectContent>{membershipSourceClubs.map(group => <SelectItem key={group.id} value={String(group.id)}>{group.name}{group.member_count != null ? ` · ${group.member_count} members` : ''}</SelectItem>)}</SelectContent>
+                  <SelectTrigger><SelectValue placeholder="Choose Spond Club" /></SelectTrigger>
+                  <SelectContent>{membershipSourceClubs.map(club => <SelectItem key={club.id} value={String(club.id)}>{club.name}</SelectItem>)}</SelectContent>
                 </Select>
                 <Button onClick={saveSpondMembershipSource} disabled={!!membershipSourceBusy || !membershipSourceClubId}>{membershipSourceBusy === 'save' ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}Save read-only source</Button>
-              </> : membershipSourceData.connection ? <div className="rounded-lg bg-secondary/40 p-3 text-sm"><strong>{membershipSourceData.connection.external_group_name || 'Spond group'}</strong><p className="mt-1 text-xs text-muted-foreground">Use Discover groups if you need to review or change the selected membership group.</p></div> : <div className="rounded-lg bg-secondary/40 p-3 text-sm text-muted-foreground">Discover groups after the Base44 secrets are configured, then select the membership roster.</div>}
+              </> : membershipSourceData.connection ? <div className="rounded-lg bg-secondary/40 p-3 text-sm"><strong>{membershipSourceData.connection.external_club_name || 'Spond Club'}</strong><p className="mt-1 text-xs text-muted-foreground">Use Discover Spond Clubs if you need to review or change the Club membership source.</p></div> : <div className="rounded-lg bg-secondary/40 p-3 text-sm text-muted-foreground">Discover Spond Clubs after the Base44 secrets are configured, then select the Club whose membership roster RallyHub should compare.</div>}
 
               {membershipSourceData.connection ? <div className="pt-2 border-t space-y-2">
                 <Button className="w-full" onClick={previewSpondMembershipMembers} disabled={!!membershipSourceBusy}>{membershipSourceBusy === 'preview' ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Users className="w-4 h-4 mr-2" />}Preview Spond members</Button>
@@ -1213,7 +1213,7 @@ export default function MembershipConsole() {
           {membershipSourcePreview ? <div className="rounded-xl border overflow-hidden">
             <div className="p-4 border-b">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                <div><p className="font-semibold">Read-only member preview</p><p className="text-xs text-muted-foreground">{membershipSourcePreview.source?.group_name || 'Spond membership group'} · previewed {membershipSourcePreview.previewedAt ? new Date(membershipSourcePreview.previewedAt).toLocaleString() : 'now'}</p></div>
+                <div><p className="font-semibold">Read-only member preview</p><p className="text-xs text-muted-foreground">{membershipSourcePreview.source?.club_name || 'Spond Club membership roster'} · previewed {membershipSourcePreview.previewedAt ? new Date(membershipSourcePreview.previewedAt).toLocaleString() : 'now'}</p></div>
                 <Badge variant="outline">No records changed</Badge>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-3">
