@@ -420,7 +420,15 @@ async function buildSnapshot(base44:any, targetUser:any, forcedContext:any = {})
       active_club_id: targetUser?.active_club_id || clubId || null,
       active_club_role: targetUser?.active_club_role || null,
     },
-    club: club ? { id: club.id, name: club.name, logo_url: club.logo_url || null } : null,
+    club: club ? {
+      id: club.id,
+      name: club.name,
+      slug: club.slug || null,
+      logo_url: club.logo_url || null,
+      primary_colour: club.primary_colour || null,
+      secondary_colour: club.secondary_colour || null,
+      timezone: club.timezone || 'Europe/Dublin',
+    } : null,
     person: safePerson(person),
     member: safeMember(member),
     player: safePlayer(player),
@@ -442,6 +450,39 @@ Deno.serve(async (req) => {
     if (action === 'self') {
       await requireRallyHubClubAccess(base44, user);
       return Response.json({ success: true, snapshot: await buildSnapshot(base44, user) });
+    }
+
+    if (action === 'play') {
+      await requireRallyHubClubAccess(base44, user);
+      const snapshot = await buildSnapshot(base44, user);
+      const spond = await loadPersonalSpondSessions(base44, {
+        club:snapshot.club,
+        tenantId:snapshot.user?.active_tenant_id,
+        clubId:snapshot.user?.active_club_id,
+        person:snapshot.person,
+        player:snapshot.player,
+        member:snapshot.member,
+        user:snapshot.user,
+      });
+      const competitionItems = (snapshot.myCompetitions || []).map((event:any) => ({
+        id:`rallyhub:${event.id}`,
+        source_id:String(event.id),
+        source:'rallyhub',
+        title:event.name,
+        start:event.start_date ? `${event.start_date}T12:00:00` : null,
+        end:event.end_date ? `${event.end_date}T12:00:00` : null,
+        venue:event.location || null,
+        address:null,
+        latitude:null,
+        longitude:null,
+        response_status:'entered',
+        competition_format:event.format || null,
+        competition_status:event.status || null,
+      }));
+      const items = [...(spond.sessions || []), ...competitionItems]
+        .filter((item:any) => item.start)
+        .sort((a:any,b:any) => String(a.start).localeCompare(String(b.start)));
+      return Response.json({ success:true, play:{ items, spond, club:snapshot.club } });
     }
 
     if (action === 'self_update') {
