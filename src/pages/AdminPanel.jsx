@@ -1867,7 +1867,7 @@ Brian`;
               </DialogContent>
             </Dialog>
 
-            <div id="directory-outstanding-invitations" className="space-y-2 scroll-mt-24">
+            <div id="directory-outstanding-invitations" className="order-30 space-y-2 scroll-mt-24">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Owner invitations awaiting acceptance {pendingDirectoryInvitations.length ? `· ${pendingDirectoryInvitations.length}` : ''}</p>
               {directoryInvitations.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No active directory invitations are awaiting acceptance.</p>
@@ -1915,7 +1915,17 @@ Brian`;
               </div>
             )}
 
-            <div id="directory-verified-access" className="space-y-2 scroll-mt-24">
+            <div className="order-70">
+              <button type="button" onClick={() => setDirectoryToolsOpen(open => !open)} className="w-full glass rounded-xl p-4 flex items-center justify-between gap-3 text-left hover:bg-secondary/40 transition-colors" aria-expanded={directoryToolsOpen}>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Directory tools & records</p>
+                  <p className="text-xs text-muted-foreground mt-1">Club search, claim invitations, submitted/test listings, verified owners/editors and low-frequency admin tools.</p>
+                </div>
+                <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${directoryToolsOpen ? 'rotate-90' : ''}`} />
+              </button>
+            </div>
+
+            {directoryToolsOpen && <div id="directory-verified-access" className="order-80 space-y-2 scroll-mt-24">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Verified directory owners & editors</p>
               {activeDirectoryAccesses.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No directory editor access has been granted yet.</p>
@@ -1942,7 +1952,7 @@ Brian`;
                   </div>
                 );
               })}
-            </div>
+            </div>}
           </div>
         </TabsContent>
 
