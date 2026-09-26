@@ -201,7 +201,7 @@ export default function PublicInterclubRegistration() {
           </section>
 
           <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
-            <div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary"/><h2 className="text-lg font-black">Event waiver & conduct</h2></div>
+            <div className="flex items-center justify-between gap-3 flex-wrap"><div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary"/><h2 className="text-lg font-black">Event waiver & conduct</h2></div>{event.hostClubSlug&&<a href={`/directory/${event.hostClubSlug}/policies`} target="_blank" rel="noreferrer" className="text-xs font-semibold text-primary hover:underline">View host club policy library</a>}</div>
 
             <details className="rounded-xl border bg-secondary/30 p-4">
               <summary className="cursor-pointer font-bold text-sm">{legal.waiverTitle || 'Event waiver'}</summary>
