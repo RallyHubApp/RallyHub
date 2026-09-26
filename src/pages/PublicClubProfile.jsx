@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 
 const weekOrder = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const countySlug = county => String(county || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const venuePath = (clubSlug, venueId) => `/pickleball-venues/${encodeURIComponent(clubSlug)}/${encodeURIComponent(venueId)}`;
 const groupByDay = sessions => [...(sessions || [])]
   .sort((a, b) => weekOrder.indexOf(a.day) - weekOrder.indexOf(b.day) || String(a.start || '').localeCompare(String(b.start || '')))
   .reduce((groups, session) => {
@@ -240,7 +242,38 @@ export default function PublicClubProfile() {
       } : {})
     }))
   };
-  const seoDescription = `${club.name} in County ${club.county}: venues, club information${club.sessions?.length ? ', weekly sessions' : ''} and contact details on the RallyHub all-Ireland pickleball directory.`;
+  const seoDescription = `${club.name} pickleball club in County ${club.county}. Find ${club.venues?.length || 0} venue${club.venues?.length === 1 ? '' : 's'}${club.sessions?.length ? `, ${club.sessions.length} weekly session${club.sessions.length === 1 ? '' : 's'}` : ''}, playing times, maps and club contact details on RallyHub.`;
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'RallyHub', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Pickleball Club Directory', item: `${SITE_URL}/directory` },
+      { '@type': 'ListItem', position: 3, name: `Pickleball in ${club.county}`, item: `${SITE_URL}/pickleball-clubs/${countySlug(club.county)}` },
+      { '@type': 'ListItem', position: 4, name: club.name, item: profileUrl }
+    ]
+  };
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: `Where does ${club.name} play pickleball?`,
+        acceptedAnswer: { '@type': 'Answer', text: club.venues?.length ? `${club.name} lists ${club.venues.map(venue => venue.shortName || venue.name).join(', ')} as its pickleball venue${club.venues.length === 1 ? '' : 's'} in County ${club.county}.` : `${club.name} is listed in County ${club.county}; venue details are being updated.` }
+      },
+      {
+        '@type': 'Question',
+        name: `When does ${club.name} play?`,
+        acceptedAnswer: { '@type': 'Answer', text: club.sessions?.length ? club.sessions.map(session => `${session.day} ${session.start}${session.end ? `–${session.end}` : ''} (${session.level || 'club session'})`).join('; ') : `No verified weekly session times are currently listed. Contact ${club.name} before travelling.` }
+      },
+      {
+        '@type': 'Question',
+        name: `How can I find more pickleball clubs in ${club.county}?`,
+        acceptedAnswer: { '@type': 'Answer', text: `RallyHub lists pickleball clubs and venues across County ${club.county} at ${SITE_URL}/pickleball-clubs/${countySlug(club.county)}.` }
+      }
+    ]
+  };
   const shareText = `${club.name} on the RallyHub Club Directory`;
   const shareClub = async () => {
     if (navigator.share) {
