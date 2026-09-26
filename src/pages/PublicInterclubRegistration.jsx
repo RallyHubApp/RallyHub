@@ -206,7 +206,7 @@ export default function PublicInterclubRegistration() {
             </details>
             <label className="flex items-start gap-3 rounded-xl border p-4 text-sm">
               <input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.codeAccepted} onChange={e=>set('codeAccepted',e.target.checked)} required/>
-              <span><strong>I have read and agree to follow the RallyHub Interclub Code of Conduct.</strong></span>
+              <span><strong>{legal.codeConsentLabel || 'I have read and agree to follow the Interclub Code of Conduct.'}</strong></span>
             </label>
           </section>
 
