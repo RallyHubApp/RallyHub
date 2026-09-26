@@ -81,6 +81,9 @@
     "editable": {
       "type": "boolean",
       "default": true
+    },
+    "minimum_age": {
+      "type": "number"
     }
   },
   "required": [
