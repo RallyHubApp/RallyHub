@@ -61,6 +61,9 @@ import PublicMembershipApplication from '@/pages/PublicMembershipApplication';
 import PublicWaitingList from '@/pages/PublicWaitingList';
 import PublicClubPolicies from '@/pages/PublicClubPolicies';
 import WaitingList from '@/pages/WaitingList';
+import MemberPlay from '@/pages/MemberPlay';
+import MemberClubhouse from '@/pages/MemberClubhouse';
+import MemberLearn from '@/pages/MemberLearn';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -149,6 +152,9 @@ const AuthenticatedRoutes = () => (
       <Route path="matches" element={<MatchCenter />} />
       <Route path="leaderboard" element={<Leaderboard />} />
       <Route path="analytics" element={<Analytics />} />
+      <Route path="play" element={<MemberPlay />} />
+      <Route path="clubhouse" element={<MemberClubhouse />} />
+      <Route path="learn" element={<MemberLearn />} />
       <Route path="my-profile" element={<MyProfile />} />
       <Route path="admin" element={<AdminPanel />} />
       <Route path="guest-bookings" element={<GuestBookings />} />
