@@ -16,13 +16,14 @@ import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
 import { useAuth } from '@/lib/AuthContext';
 import MemberDashboardView from '@/components/member/MemberDashboardView';
+import DirectoryAnalyticsDashboard from '@/components/admin/DirectoryAnalyticsDashboard';
 import { directoryClubs } from '@/data/directorySeed';
 
 export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
-  const allowedAdminTabs = ['approvals', 'preview', 'directory', 'directory-contacts', 'directory-players', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['approvals', 'preview', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
   const directoryFocus = searchParams.get('focus');
@@ -1268,7 +1269,7 @@ Brian`;
 
   return (
     <div className="space-y-6">
-      <PageHeader title={activeAdminTab === 'directory' ? 'Directory Admin' : activeAdminTab === 'directory-contacts' ? 'Directory Contacts' : activeAdminTab === 'directory-players' ? 'Player Network' : 'Admin Panel'} description={activeAdminTab === 'directory' ? 'Directory ownership, invitations, claims and listing access' : activeAdminTab === 'directory-contacts' ? 'Private verified owner and editor contact register' : activeAdminTab === 'directory-players' ? 'National opted-in pickleball player distribution list' : 'Site owner control panel'}>
+      <PageHeader title={activeAdminTab === 'directory' ? 'Directory Admin' : activeAdminTab === 'directory-contacts' ? 'Directory Contacts' : activeAdminTab === 'directory-players' ? 'Player Network' : activeAdminTab === 'directory-analytics' ? 'Directory Analytics' : 'Admin Panel'} description={activeAdminTab === 'directory' ? 'Directory ownership, invitations, claims and listing access' : activeAdminTab === 'directory-contacts' ? 'Private verified owner and editor contact register' : activeAdminTab === 'directory-players' ? 'National opted-in pickleball player distribution list' : activeAdminTab === 'directory-analytics' ? 'Traffic, search visibility and commercial audience evidence' : 'Site owner control panel'}>
         <Badge className="bg-destructive/20 text-destructive gap-1.5">
           <Shield className="w-3 h-3" /> Admin Only
         </Badge>
@@ -1315,7 +1316,7 @@ Brian`;
           <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-green-500">{directoryPlayerNetwork.counts?.whatsapp || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">WhatsApp opt-ins</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Available for mobile updates</p></GlassCard>
           <GlassCard className="min-h-[112px] p-3 sm:p-4"><p className="text-2xl sm:text-3xl font-black text-amber-500">{directoryPlayerNetwork.counts?.counties || 0}</p><p className="mt-1 text-xs sm:text-sm font-semibold">Counties represented</p><p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">National reach</p></GlassCard>
         </div>
-      ) : activeAdminTab === 'directory-contacts' ? null : (
+      ) : activeAdminTab === 'directory-contacts' || activeAdminTab === 'directory-analytics' ? null : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <GlassCard role="button" tabIndex={0} onClick={() => { window.location.href='/app/membership'; }} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.href='/app/membership'; } }} delay={0} className="text-center cursor-pointer select-none transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <p className="text-2xl font-bold text-foreground">{clubPlayerCount}</p>
@@ -1368,6 +1369,9 @@ Brian`;
           </TabsTrigger>
           <TabsTrigger value="directory-players" className="text-xs gap-1.5">
             <Users className="w-3.5 h-3.5" /> Player Network
+          </TabsTrigger>
+          <TabsTrigger value="directory-analytics" className="text-xs gap-1.5">
+            <Eye className="w-3.5 h-3.5" /> Directory Analytics
           </TabsTrigger>
           <TabsTrigger value="feedback" className="text-xs gap-1.5">
             <MessageCircle className="w-3.5 h-3.5" /> Feedback
@@ -2133,6 +2137,11 @@ Brian`;
               <strong className="text-foreground">Distribution rule:</strong> email only players with Email opt-in; WhatsApp/SMS only players with WhatsApp opt-in. Never use unsubscribed records as a live audience. The CSV includes consent status so external mailing tools can apply the same rule.
             </div>
           </div>
+        </TabsContent>
+
+        {/* ── DIRECTORY ANALYTICS TAB ── */}
+        <TabsContent value="directory-analytics" className="mt-4">
+          <DirectoryAnalyticsDashboard />
         </TabsContent>
 
         {/* ── CLUB FEEDBACK TAB ── */}
