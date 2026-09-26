@@ -458,16 +458,23 @@ export default function AdminPanel() {
 
   const reviewNewDirectoryRequest = async (requestId, decision) => {
     setReviewingNewDirectoryRequest(requestId);
+    const toastId = toast.loading(decision === 'approved' ? 'Approving and publishing new Directory club…' : 'Rejecting new Directory club…');
     try {
       const res = await base44.functions.invoke('directoryClaim', { action: 'review_new', requestId, decision });
       if (res.data?.error) throw new Error(res.data.error);
-      queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
+      queryClient.setQueryData(['directory-verification'], current => current ? ({
+        ...current,
+        listingRequests: (current.listingRequests || []).map(request => request.id === requestId ? { ...request, status: decision } : request),
+      }) : current);
       if (decision === 'approved') {
-        toast.success(res.data?.welcomeEmail?.sent ? 'New club published, access granted and welcome email sent' : 'New club published and access granted');
+        toast.success(res.data?.welcomeEmail?.sent ? 'New club published, access granted and welcome email sent' : 'New club published and access granted', { id: toastId });
         if (res.data?.welcomeEmail?.error) toast.warning(`Access was granted, but the welcome email was not sent: ${res.data.welcomeEmail.error}`);
-      } else toast.success('New club request rejected');
+      } else {
+        toast.success('New club request rejected', { id: toastId });
+      }
+      await queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
     } catch (error) {
-      toast.error(error.message || 'Could not update new club request');
+      toast.error(error.message || 'Could not update new club request', { id: toastId });
     } finally {
       setReviewingNewDirectoryRequest(null);
     }
