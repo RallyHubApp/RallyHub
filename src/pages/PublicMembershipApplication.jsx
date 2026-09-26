@@ -21,6 +21,11 @@ function phoneDigits(value){
   return String(value||'').replace(/\D/g,'');
 }
 
+function samePhone(a,b){
+  const aa=phoneDigits(a),bb=phoneDigits(b);
+  return !!aa&&!!bb&&(aa===bb||(aa.length>=9&&bb.length>=9&&aa.slice(-9)===bb.slice(-9)));
+}
+
 function LegalBlock({ doc, checked, onChange }) {
   if (!doc) return null;
   return (
@@ -77,7 +82,7 @@ export default function PublicMembershipApplication() {
   const legal = config?.legal || {};
   const feeLabel = useMemo(() => money(config?.membershipFee, config?.currency || 'EUR'), [config]);
   const inviteEmailMatches = !!inviteEmail && form.email.trim().toLowerCase() === inviteEmail.trim().toLowerCase();
-  const inviteMobileMatches = !!inviteMobile && phoneDigits(form.mobile) === phoneDigits(inviteMobile);
+  const inviteMobileMatches = !!inviteMobile && samePhone(form.mobile, inviteMobile);
   const inviteMatchesContact = inviteApproved && (inviteEmailMatches || inviteMobileMatches);
 
   useEffect(() => {
