@@ -464,7 +464,7 @@ Deno.serve(async(req)=>{
           {key:'membership_fee',label:'Fee',group:'Membership',default:false},
           {key:'payment_date',label:'Payment date',group:'Membership',default:false},
           {key:'date_of_birth',label:'Date of birth',group:'Personal',default:false,sensitive:true},
-          {key:'age',label:'Age',group:'Personal',default:false,sensitive:true},
+          {key:'age',label:'Age',group:'Personal',default:true,sensitive:true},
           {key:'age_group',label:'Age group',group:'Personal',default:false},
           {key:'postal_code',label:'Postcode / Eircode',group:'Contact',default:false},
           {key:'emergency_contact',label:'Emergency contact',group:'Emergency',default:false,sensitive:true},
