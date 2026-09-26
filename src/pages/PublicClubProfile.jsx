@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import { getClub } from '@/data/directorySeed';
-import { ArrowLeft, CalendarDays, Check, CheckCircle2, ExternalLink, Facebook, Globe2, Link2, Lightbulb, Lock, Mail, MapPin, MessageCircle, Phone, Share2, UserCheck, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Check, CheckCircle2, ExternalLink, Facebook, FileText, Globe2, Link2, Lightbulb, Lock, Mail, MapPin, MessageCircle, Phone, Share2, UserCheck, Users } from 'lucide-react';
 import Seo, { SITE_URL, absoluteUrl } from '@/components/public/Seo';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -59,6 +59,7 @@ export default function PublicClubProfile() {
   const [feedback, setFeedback] = useState({ category: 'improvement', area: 'directory', message: '', importance: 'important', contactOk: true });
   const [membershipApplicationConfig, setMembershipApplicationConfig] = useState(null);
   const [waitingListConfig, setWaitingListConfig] = useState(null);
+  const [policyLibraryCount, setPolicyLibraryCount] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -108,6 +109,14 @@ export default function PublicClubProfile() {
     base44.functions.invoke('waitingList', { action: 'public_get', clubSlug: slug })
       .then(res => { if (active && !res.data?.error) setWaitingListConfig(res.data?.config || null); })
       .catch(() => { if (active) setWaitingListConfig(null); });
+    return () => { active = false; };
+  }, [slug]);
+
+  useEffect(() => {
+    let active = true;
+    base44.functions.invoke('clubPolicyLibrary', { action: 'public_get', clubSlug: slug })
+      .then(res => { if (active && !res.data?.error) setPolicyLibraryCount(Number(res.data?.count || 0)); })
+      .catch(() => { if (active) setPolicyLibraryCount(0); });
     return () => { active = false; };
   }, [slug]);
 
@@ -477,6 +486,18 @@ export default function PublicClubProfile() {
                 <p className="mt-2 text-sm text-muted-foreground">{waitingListConfig.programmeName || ('Register your interest in ' + waitingListConfig.targetSportName)}. This is separate from club membership.</p>
                 <Link to={`/waiting-list/${club.slug}`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-amber-200 transition-colors">
                   Join the waiting list
+                </Link>
+              </section>
+            )}
+            {policyLibraryCount > 0 && (
+              <section className="rounded-2xl border border-border bg-card p-5">
+                <div className="flex items-center gap-2 text-primary">
+                  <FileText className="w-5 h-5" />
+                  <h2 className="font-bold">Club policies</h2>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">View the club's current Code of Conduct, participation notice and supporting policies.</p>
+                <Link to={`/directory/${club.slug}/policies`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background/40 px-4 py-3 text-sm font-bold text-foreground hover:border-primary/40 transition-colors">
+                  View policy library
                 </Link>
               </section>
             )}
