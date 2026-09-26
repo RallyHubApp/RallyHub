@@ -83,10 +83,15 @@ async function activeClubLegalDocument(base44:any,tenantId:string,clubId:string,
   if(!doc) throw Object.assign(new Error(`This club has no active ${documentType.replaceAll('_',' ')} configured.`),{status:409});
   return doc;
 }
+async function activeAdultPolicy(base44:any,tenantId:string,clubId:string){
+  const rows=await base44.asServiceRole.entities.ClubPolicy.filter({tenant_id:tenantId,club_id:clubId,policy_type:'adult_participation',status:'active'},'-effective_from',20);
+  return rows?.[0]||null;
+}
 async function legal(base44:any,session:any){
-  const [waiver,code]=await Promise.all([
+  const [waiver,code,adultPolicy]=await Promise.all([
     activeClubLegalDocument(base44,session.tenant_id,session.club_id,'liability_waiver'),
-    activeClubLegalDocument(base44,session.tenant_id,session.club_id,'code_of_conduct')
+    activeClubLegalDocument(base44,session.tenant_id,session.club_id,'code_of_conduct'),
+    activeAdultPolicy(base44,session.tenant_id,session.club_id)
   ]);
   return {
     waiverVersion:waiver.version,
@@ -96,7 +101,8 @@ async function legal(base44:any,session:any){
     codeVersion:code.version,
     codeTitle:code.title,
     codeText:code.body_text,
-    codeConsentLabel:code.consent_label||'I have read and agree to abide by the Clare Pickleball Code of Conduct, Court Etiquette & Sportsmanship.',
+    codeConsentLabel:code.consent_label||'I have read and agree to abide by the club Code of Conduct.',
+    minimumAge:Number(adultPolicy?.minimum_age||0)||null,
     privacyVersion:PRIVACY_VERSION,
     privacyText:'Your details are used to administer this guest booking, payment, emergency/safety arrangements and necessary session communications. A guest booking does not make you a Clare Pickleball member. Your booking history may later be linked to the same RallyHub person record if you join the club, so RallyHub does not create duplicate identities.',
     cancellationVersion:CANCELLATION_VERSION,
@@ -748,7 +754,7 @@ ${detailRow('Reason',reason)}
     if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return Response.json({error:'Please enter a valid email address.'},{status:400});
     if(mobileK.length<8)return Response.json({error:'Please enter a valid mobile number.'},{status:400});
     if(!emergencyName||mobileKey(emergencyMobile).length<8)return Response.json({error:'Please provide an emergency contact name and mobile number.'},{status:400});
-    if(body.ageConfirmed!==true)return Response.json({error:'Clare Pickleball guest sessions are currently for adults aged 18 or over.'},{status:400});
+    if(Number(legalBundle.minimumAge||0)>0&&body.ageConfirmed!==true)return Response.json({error:`Guest sessions are currently for participants aged ${legalBundle.minimumAge} or over.`},{status:400});
     if(body.waiverAccepted!==true||body.codeAccepted!==true||body.privacyAcknowledged!==true||body.cancellationAccepted!==true){
       return Response.json({error:'Please accept the waiver, Code of Conduct, privacy notice and cancellation policy.'},{status:400});
     }
