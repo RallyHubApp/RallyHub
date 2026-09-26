@@ -55,6 +55,7 @@ import GuestBookings from '@/pages/GuestBookings';
 import MembershipConsole from '@/pages/MembershipConsole';
 import PublicMembershipApplication from '@/pages/PublicMembershipApplication';
 import PublicWaitingList from '@/pages/PublicWaitingList';
+import PublicClubPolicies from '@/pages/PublicClubPolicies';
 import WaitingList from '@/pages/WaitingList';
 
 const LoadingScreen = () => (
@@ -196,6 +197,7 @@ function App() {
             <Route path="/events" element={<Events />} />
             <Route path="/directory" element={<PublicDirectory />} />
             <Route path="/directory/:slug" element={<PublicClubProfile />} />
+            <Route path="/directory/:slug/policies" element={<PublicClubPolicies />} />
             <Route path="/directory/add" element={<AddDirectoryClub />} />
             <Route path="/pickleball-clubs/:countySlug" element={<CountyDirectory />} />
             <Route path="/directory/:slug/claim" element={<DirectoryClaim />} />
