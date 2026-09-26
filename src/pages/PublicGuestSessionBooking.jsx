@@ -47,6 +47,9 @@ export default function PublicGuestSessionBooking(){
       const res=await base44.functions.invoke('guestSessionBooking',{action:'public_get',token,inviteToken});
       if(res.data?.error)throw new Error(res.data.error);
       setData(res.data);
+      if(res.data?.inviteApproved){
+        setForm(f=>({...f,fullName:f.fullName||res.data?.inviteName||'',email:f.email||res.data?.inviteEmail||''}));
+      }
     }catch(e){setError(e?.response?.data?.error||e?.message||'This guest booking link is unavailable.')}
     finally{setLoading(false)}
   };
@@ -97,7 +100,13 @@ export default function PublicGuestSessionBooking(){
       setDone({type:res.data?.bookingStatus==='cash_due'?'cash':'confirmed',...res.data});
       window.scrollTo({top:0,behavior:'smooth'});
     }catch(e2){
-      setError(e2?.response?.data?.error||e2?.message||'Unable to complete the guest booking.');
+      const responseData=e2?.response?.data||{};
+      if(responseData?.approvalRequired){
+        setData(prev=>prev?({...prev,approvalRequired:true}):prev);
+        setError('The email entered does not match this private invitation. You can still request the guest place through the normal club approval route.');
+      }else{
+        setError(responseData?.error||e2?.message||'Unable to complete the guest booking.');
+      }
       window.scrollTo({top:0,behavior:'smooth'});
     }finally{setSubmitting(false)}
   };
