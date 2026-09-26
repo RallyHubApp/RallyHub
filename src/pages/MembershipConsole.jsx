@@ -718,9 +718,9 @@ export default function MembershipConsole() {
       if (response.data?.error) throw new Error(response.data.error);
       try {
         await navigator.clipboard.writeText(response.data.magicInviteUrl);
-        toast.success('Private membership invitation copied');
+        toast.success(response.data.emailSent ? 'Membership invitation emailed and private link copied' : 'Private membership link copied. Email delivery failed, so send the copied link manually.');
       } catch {
-        window.prompt('Copy this private membership invitation', response.data.magicInviteUrl);
+        window.prompt(response.data.emailSent ? 'Invitation emailed. Copy this private membership link if you also want it:' : 'Email delivery failed. Copy and send this private membership invitation:', response.data.magicInviteUrl);
       }
     } catch (error) {
       toast.error(error?.response?.data?.error || error?.message || 'Could not create membership invitation');
@@ -737,9 +737,9 @@ export default function MembershipConsole() {
       if (response.data?.error) throw new Error(response.data.error);
       try {
         await navigator.clipboard.writeText(response.data.magicInviteUrl);
-        toast.success('Membership request approved. Private payment link copied.');
+        toast.success(response.data.emailSent ? 'Membership approved. Private link emailed and copied.' : 'Membership approved. Email delivery failed, so send the copied private link manually.');
       } catch {
-        window.prompt('Copy the approved private membership link', response.data.magicInviteUrl);
+        window.prompt(response.data.emailSent ? 'Membership approved and emailed. Copy the private link if needed:' : 'Membership approved but email delivery failed. Copy and send this private link:', response.data.magicInviteUrl);
       }
       await Promise.all([
         refetchApplications(),
