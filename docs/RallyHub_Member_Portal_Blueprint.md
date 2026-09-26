@@ -1,6 +1,7 @@
 # RallyHub Member Portal Blueprint
 
 Status: Phase 1 build started 26 September 2026
+Backlog sync: Phase 2 scope copied into RallyHub Master Backlog & Decisions v4 on 26 September 2026.
 
 ## Non-negotiable architecture rules
 
