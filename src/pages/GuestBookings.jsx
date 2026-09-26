@@ -229,6 +229,13 @@ export default function GuestBookings(){
       <strong>SumUp is not connected to RallyHub yet.</strong> You can create and test cash/waiver flows now. Doora Barefield and Ennistymon payment links will become live when the SumUp API key and merchant code are added to the backend.
     </div>}
 
+    <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
+      <div className="flex items-center justify-between gap-3"><div><h2 className="text-lg font-black">Guest requests awaiting approval</h2><p className="mt-1 text-xs text-muted-foreground">Requests coming from the public Directory do not reach payment until you approve them.</p></div><Badge variant="outline">{pendingRequests.length} pending</Badge></div>
+      {pendingRequests.length===0?<p className="text-sm text-muted-foreground">No guest requests are waiting for approval.</p>:pendingRequests.map(r=><div key={r.id} className="rounded-xl border bg-secondary/20 p-4">
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4"><div><div className="flex flex-wrap items-center gap-2"><p className="font-black">{r.fullName}</p><Badge variant="outline">{r.experienceLevel==='beginner'?'Beginner':'Experienced'}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{r.email} · {r.mobile}</p><p className="mt-2 text-sm font-semibold">{r.venueName} · {r.day} {r.start}{r.end?`–${r.end}`:''}</p>{r.experienceLevel==='experienced'&&<p className="mt-1 text-xs text-muted-foreground">Club: {r.homeClub||'—'} · DUPR: {r.duprId||'—'}</p>}<p className="mt-1 text-xs text-muted-foreground">Next matching date: {r.nextDate||'choose date'}</p></div><div className="flex flex-wrap gap-2"><Button size="sm" disabled={busy===`approve-${r.id}`} onClick={()=>approveRequest(r)}>{busy===`approve-${r.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<UserCheck className="mr-1.5 h-3.5 w-3.5"/>}Approve & create private link</Button><Button size="sm" variant="outline" disabled={busy===`reject-${r.id}`} onClick={()=>rejectRequest(r)}><XCircle className="mr-1.5 h-3.5 w-3.5"/>Decline</Button></div></div>
+      </div>)}
+    </section>
+
     <section className="glass rounded-2xl p-5 sm:p-6 space-y-5">
       <div><h2 className="text-lg font-black">Create guest booking link</h2><p className="mt-1 text-xs text-muted-foreground">Choose the actual session date. RallyHub checks that it matches the weekday of the selected slot.</p></div>
       <div className="grid lg:grid-cols-2 gap-4">
@@ -281,7 +288,7 @@ export default function GuestBookings(){
               <p className="mt-1 text-xs text-muted-foreground">€{Number(s.feeAmount).toFixed(2)} · {s.paymentMethod==='cash'?'Cash on arrival':'SumUp online payment'}{s.capacity?` · Capacity ${s.capacity}`:''}</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={()=>copy(url,'Booking link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy link</Button>
+              <Button size="sm" variant="outline" disabled={busy===`magic-${s.id}`} onClick={()=>createMagicLink(s)}>{busy===`magic-${s.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Copy className="mr-1.5 h-3.5 w-3.5"/>}Create private link</Button>
               <Button size="sm" variant="outline" disabled={busy===`invite-${s.id}`} onClick={()=>emailInvite(s)}>{busy===`invite-${s.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Email booking link</Button>
               <Button size="sm" variant="outline" onClick={()=>shareWhatsApp(url,s)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
               <a href={s.mapsUrl} target="_blank" rel="noreferrer"><Button size="sm" variant="outline"><MapPin className="mr-1.5 h-3.5 w-3.5"/>Map</Button></a>
