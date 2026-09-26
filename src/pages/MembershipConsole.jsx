@@ -905,16 +905,37 @@ export default function MembershipConsole() {
             </div>
 
             <div className="p-4">
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2.5 mb-4">
                 <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Applications</p><p className="mt-1 text-xl font-black">{applicationData.counts?.total || 0}</p></div>
+                <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Awaiting approval</p><p className="mt-1 text-xl font-black text-blue-600">{applicationData.counts?.awaitingApproval || 0}</p></div>
                 <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Awaiting payment</p><p className="mt-1 text-xl font-black text-amber-600">{applicationData.counts?.awaitingPayment || 0}</p></div>
                 <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Paid</p><p className="mt-1 text-xl font-black text-green-600">{applicationData.counts?.paid || 0}</p></div>
                 <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">New</p><p className="mt-1 text-xl font-black">{applicationData.counts?.newMembers || 0}</p></div>
                 <div className="rounded-lg border bg-background/40 p-3"><p className="text-[10px] uppercase text-muted-foreground">Renewals</p><p className="mt-1 text-xl font-black">{applicationData.counts?.renewals || 0}</p></div>
               </div>
 
+              {(applicationData.pendingApprovals || []).length > 0 ? <div className="mb-5 space-y-2">
+                <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-bold">Awaiting club approval</p><p className="text-xs text-muted-foreground">No payment has been taken. Approving creates a private email-bound membership link for that applicant.</p></div><Badge variant="outline">{applicationData.pendingApprovals.length}</Badge></div>
+                {(applicationData.pendingApprovals || []).map(request => {
+                  const approvalBusy = applicationBusyId === `approval-${request.id}` || applicationBusyId === `reject-${request.id}`;
+                  return <div key={request.id} className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 sm:p-4">
+                    <div className="flex flex-col xl:flex-row xl:items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{request.fullName}</p><Badge variant="outline">Awaiting approval</Badge></div>
+                        <p className="mt-1 text-xs text-muted-foreground break-words">{request.email}{request.mobile ? ` · ${request.mobile}` : ''}</p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">Submitted {request.submittedAt ? new Date(request.submittedAt).toLocaleString('en-IE') : 'recently'} · No payment taken</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 xl:justify-end">
+                        <Button size="sm" onClick={() => approveMembershipRequest(request)} disabled={approvalBusy}><CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />Approve & create private link</Button>
+                        <Button size="sm" variant="outline" onClick={() => rejectMembershipRequest(request)} disabled={approvalBusy}><X className="w-3.5 h-3.5 mr-1.5" />Decline</Button>
+                      </div>
+                    </div>
+                  </div>;
+                })}
+              </div> : null}
+
               {applicationsLoading ? <p className="py-6 text-center text-sm text-muted-foreground">Loading applications…</p> :
-                !(applicationData.applications || []).length ? <p className="py-6 text-center text-sm text-muted-foreground">No membership applications have been submitted through RallyHub yet.</p> :
+                !(applicationData.applications || []).length ? <p className="py-6 text-center text-sm text-muted-foreground">{(applicationData.pendingApprovals || []).length ? 'No approved applications have reached payment yet.' : 'No membership applications have been submitted through RallyHub yet.'}</p> :
                 <div className="space-y-2">
                   {(applicationData.applications || []).map(application => {
                     const waiting = application.paymentStatus !== 'paid';
