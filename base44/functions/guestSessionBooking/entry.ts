@@ -70,7 +70,7 @@ async function clubBrand(base44:any,clubId:string){
     const club=rows?.[0]||null;
     if(!club)return null;
     return {
-      id:club.id,name:club.name||'',
+      id:club.id,name:club.name||'',slug:club.slug||'',
       logo_url:club.logo_url||'',
       primary_colour:club.primary_colour||'',
       secondary_colour:club.secondary_colour||'',
