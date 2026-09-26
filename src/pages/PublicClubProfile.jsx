@@ -167,6 +167,7 @@ export default function PublicClubProfile() {
   const displayMembershipStatus = publicMembershipStatus(club);
   const displayLogoUrl = normaliseDirectoryAssetUrl(club.logoUrl);
   const profileUrl = `${SITE_URL}/directory/${club.slug}`;
+  const sharedProfileUrl = `${profileUrl}?utm_source=club_profile_share&utm_medium=referral&utm_campaign=directory_growth`; 
   const socialLinks = [club.website, club.facebook, club.instagram].filter(Boolean);
   const submitClubInterest = async () => {
     if (!isAuthenticated) {
@@ -289,7 +290,7 @@ export default function PublicClubProfile() {
     trackSiteEvent('share_club', { clubSlug: club.slug, clubName: club.name, county: club.county, metadata: { surface: 'club_profile' } });
     if (navigator.share) {
       try {
-        await navigator.share({ title: club.name, text: shareText, url: profileUrl });
+        await navigator.share({ title: club.name, text: shareText, url: sharedProfileUrl });
         return;
       } catch (error) {
         if (error?.name === 'AbortError') return;
@@ -299,10 +300,10 @@ export default function PublicClubProfile() {
   };
   const copyShareLink = async () => {
     try {
-      await navigator.clipboard.writeText(profileUrl);
+      await navigator.clipboard.writeText(sharedProfileUrl);
     } catch {
       const textarea = document.createElement('textarea');
-      textarea.value = profileUrl;
+      textarea.value = sharedProfileUrl;
       textarea.style.position = 'fixed';
       textarea.style.opacity = '0';
       document.body.appendChild(textarea);
@@ -313,8 +314,8 @@ export default function PublicClubProfile() {
     setShareCopied(true);
     window.setTimeout(() => setShareCopied(false), 2200);
   };
-  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${profileUrl}`)}`;
-  const emailShareUrl = `mailto:?subject=${encodeURIComponent(club.name)}&body=${encodeURIComponent(`${shareText}\n\n${profileUrl}`)}`;
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${sharedProfileUrl}`)}`;
+  const emailShareUrl = `mailto:?subject=${encodeURIComponent(club.name)}&body=${encodeURIComponent(`${shareText}\n\n${sharedProfileUrl}`)}`;
 
   return (
     <>
@@ -581,7 +582,7 @@ export default function PublicClubProfile() {
               <h2 className="text-xl font-bold mt-1">{club.contact?.name ? `Contact ${club.contact.name}` : 'Contact details'}</h2>
               <div className="mt-4 space-y-2">
                 {club.contact.phoneHref && club.contact.phone && <a href={club.contact.phoneHref} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Phone className="w-4 h-4 text-primary" /><span className="text-sm font-medium">{club.contact.phone}</span></a>}
-                {club.contact.whatsapp && <a href={club.contact.whatsapp} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><MessageCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium">WhatsApp {club.contact.name}</span></a>}
+                {club.contact.whatsapp && <a href={club.contact.whatsapp} onClick={() => trackSiteEvent('club_whatsapp_click',{clubSlug:club.slug,clubName:club.name,county:club.county,metadata:{channel:'whatsapp'}})} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><MessageCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium">WhatsApp {club.contact.name}</span></a>}
                 {club.contact.email && <a href={`mailto:${club.contact.email}`} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Mail className="w-4 h-4 text-primary" /><span className="text-sm font-medium break-all">{club.contact.email}</span></a>}
                 {!club.contact?.phoneHref && !club.contact?.email && <><p className="text-sm text-muted-foreground">No direct contact details have been supplied yet.</p>{hasDirectoryAccess && <Link to={`/directory/${club.slug}/edit#contact`} className="inline-flex mt-2 text-sm font-semibold text-primary hover:underline">Add public contact details</Link>}</>}
               </div>
