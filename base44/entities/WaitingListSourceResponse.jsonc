@@ -11,6 +11,9 @@
     "waiting_list_entry_id": {
       "type": "string"
     },
+    "entry_source_external_id": {
+      "type": "string"
+    },
     "source_system": {
       "type": "string"
     },
