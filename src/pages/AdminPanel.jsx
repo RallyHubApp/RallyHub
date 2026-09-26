@@ -1618,12 +1618,13 @@ Brian`;
                     )}
                     {request.notes && <p className="text-xs text-muted-foreground mt-2">“{request.notes}”</p>}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button size="sm" disabled={reviewingNewDirectoryRequest === request.id} onClick={() => reviewNewDirectoryRequest(request.id, 'approved')} className="gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> {reviewingNewDirectoryRequest === request.id ? '…' : 'Approve & publish'}
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {reviewingNewDirectoryRequest === request.id && <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary" role="status" aria-live="polite"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving decision…</span>}
+                    <Button size="sm" disabled={reviewingNewDirectoryRequest === request.id} onClick={() => reviewNewDirectoryRequest(request.id, 'approved')} className="gap-1 min-w-[146px]">
+                      {reviewingNewDirectoryRequest === request.id ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Publishing…</> : <><CheckCircle className="w-3.5 h-3.5" /> Approve & publish</>}
                     </Button>
-                    <Button size="sm" variant="outline" disabled={reviewingNewDirectoryRequest === request.id} onClick={() => reviewNewDirectoryRequest(request.id, 'rejected')} className="gap-1 text-destructive border-destructive/30">
-                      <XCircle className="w-3.5 h-3.5" /> {reviewingNewDirectoryRequest === request.id ? '…' : 'Reject'}
+                    <Button size="sm" variant="outline" disabled={reviewingNewDirectoryRequest === request.id} onClick={() => reviewNewDirectoryRequest(request.id, 'rejected')} className="gap-1 text-destructive border-destructive/30 min-w-[92px]">
+                      {reviewingNewDirectoryRequest === request.id ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Working…</> : <><XCircle className="w-3.5 h-3.5" /> Reject</>}
                     </Button>
                   </div>
                 </div>
