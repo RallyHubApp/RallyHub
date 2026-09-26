@@ -143,8 +143,8 @@ function normaliseSourceMember(raw:any){
   const member=raw?.member||raw||{};
   const profile=member?.profile||member?.person||member?.user||{};
   const contact=member?.contactInfo||member?.contact||profile?.contactInfo||{};
-  const firstName=clean(member?.firstName||member?.first_name||profile?.firstName||profile?.first_name,120);
-  const lastName=clean(member?.lastName||member?.last_name||profile?.lastName||profile?.last_name,120);
+  const firstName=clean(member?.firstName||member?.first_name||member?.givenName||member?.given_name||profile?.firstName||profile?.first_name||profile?.givenName||profile?.given_name,120);
+  const lastName=clean(member?.lastName||member?.last_name||member?.surname||member?.familyName||member?.family_name||profile?.lastName||profile?.last_name||profile?.surname||profile?.familyName||profile?.family_name,120);
   const fallbackName=clean(member?.fullName||member?.name||member?.displayName||profile?.fullName||profile?.name||profile?.displayName,220);
   const fullName=clean([firstName,lastName].filter(Boolean).join(' ')||fallbackName,220);
   const email=lower(member?.email||member?.emailAddress||profile?.email||profile?.emailAddress||contact?.email||contact?.emailAddress);
@@ -204,6 +204,24 @@ function matchSourceMember(source:any,people:any[],membershipByPerson:Map<string
   const nameMatches=name?people.filter((p:any)=>nameKey(p.full_name)===name):[];
   // A unique exact full-name match can safely disambiguate a shared household email in this read-only comparison.
   if(nameMatches.length===1)return matchedResult(nameMatches[0],membershipByPerson,'name_only');
+
+  // Shared household email addresses are common. If Spond has a minor first-name spelling variation
+  // (for example Vivian/Vivienne) we can still resolve safely when the surname and first initial identify
+  // exactly one of the RallyHub people who share that email. If more than one candidate fits, remain ambiguous.
+  if(emailMatches.length>1 && name){
+    const sourceParts=name.split(' ').filter(Boolean);
+    const sourceFirst=sourceParts[0]||'';
+    const sourceLast=sourceParts[sourceParts.length-1]||'';
+    const sharedEmailNameMatches=emailMatches.filter((p:any)=>{
+      const parts=nameKey(p.full_name).split(' ').filter(Boolean);
+      const first=parts[0]||'';
+      const last=parts[parts.length-1]||'';
+      const normalOrder=sourceLast===last && sourceFirst && first && sourceFirst[0]===first[0];
+      const reversedOrder=sourceFirst===last && sourceLast && first && sourceLast[0]===first[0];
+      return normalOrder||reversedOrder;
+    });
+    if(sharedEmailNameMatches.length===1)return matchedResult(sharedEmailNameMatches[0],membershipByPerson,'shared_email_name');
+  }
 
   const strong=uniquePeople([...nameDobMatches,...phoneMatches,...emailMatches,...nameMatches]);
   if(strong.length>1) return {match_status:'ambiguous',match_method:'multiple_strong_matches',matched_person_id:null,candidates:strong.slice(0,10).map((p:any)=>candidateSummary(p,membershipByPerson.get(String(p.id))))};
