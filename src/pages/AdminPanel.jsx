@@ -1697,7 +1697,7 @@ Brian`;
               </div>
             </div>}
 
-            <div id="directory-pending-actions" className="order-20 space-y-2 scroll-mt-24" className="space-y-2 scroll-mt-24" data-directory-action="new-club" data-has-pending={pendingNewDirectoryRequests.length > 0 ? "true" : "false"}>
+            <div id="directory-pending-actions" className="order-20 space-y-2 scroll-mt-24" data-directory-action="new-club" data-has-pending={pendingNewDirectoryRequests.length > 0 ? "true" : "false"}>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">New club requests</p>
               {pendingNewDirectoryRequests.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No new clubs are waiting to be added.</p>
@@ -1728,7 +1728,7 @@ Brian`;
               ))}
             </div>
 
-            <div className="space-y-2">
+            {directoryToolsOpen && <div className="order-80 space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Submitted & test listings</p>
               {activeDynamicDirectoryListings.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No active database-backed Directory listings.</p>
@@ -1748,9 +1748,9 @@ Brian`;
                   </div>
                 </div>
               ))}
-            </div>
+            </div>}
 
-            <div id="directory-pending-claims" className="space-y-2 scroll-mt-24" data-directory-action="pending-claim" data-has-pending={pendingDirectoryClaims.length > 0 ? "true" : "false"}>
+            <div id="directory-pending-claims" className="order-10 space-y-2 scroll-mt-24" data-directory-action="pending-claim" data-has-pending={pendingDirectoryClaims.length > 0 ? "true" : "false"}>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Pending verification</p>
               {pendingDirectoryClaims.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-4 px-1">No directory claims are waiting for review.</p>
