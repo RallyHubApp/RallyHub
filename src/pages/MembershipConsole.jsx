@@ -376,6 +376,13 @@ export default function MembershipConsole() {
       if (filters.quality === 'duplicates' && !(row.quality_issues || []).includes('duplicate_review')) return false;
       if (filters.sport !== 'all' && !(row.sport_profiles || []).some(profile => String(profile.sport_id) === String(filters.sport))) return false;
       if (filters.renewal !== 'all' && row.renewal_state !== filters.renewal) return false;
+      if (filters.ageBand !== 'all') {
+        const age = Number(row.age);
+        if (!Number.isFinite(age)) return false;
+        if (filters.ageBand === '18_plus' && !(age >= 18 && age < 50)) return false;
+        if (filters.ageBand === '50_plus' && !(age >= 50 && age < 65)) return false;
+        if (filters.ageBand === '65_plus' && age < 65) return false;
+      }
       return true;
     });
     result.sort((a, b) => {
