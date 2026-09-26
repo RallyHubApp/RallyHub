@@ -1,0 +1,90 @@
+{
+  "name": "DirectoryAnalyticsEvent",
+  "type": "object",
+  "properties": {
+    "event_name": {
+      "type": "string"
+    },
+    "visitor_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "is_returning": {
+      "type": "boolean"
+    },
+    "path": {
+      "type": "string"
+    },
+    "page_title": {
+      "type": "string"
+    },
+    "referrer_domain": {
+      "type": "string"
+    },
+    "traffic_source": {
+      "type": "string"
+    },
+    "club_slug": {
+      "type": "string"
+    },
+    "club_name": {
+      "type": "string"
+    },
+    "county": {
+      "type": "string"
+    },
+    "venue_id": {
+      "type": "string"
+    },
+    "venue_name": {
+      "type": "string"
+    },
+    "search_term": {
+      "type": "string"
+    },
+    "engagement_seconds": {
+      "type": "number"
+    },
+    "metadata_json": {
+      "type": "string"
+    },
+    "consent_version": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "event_name",
+    "visitor_id",
+    "session_id",
+    "path",
+    "occurred_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
