@@ -19,7 +19,8 @@ async function sendApprovedGuestInvite(base44:any,club:any,row:any,session:any,v
   const fee=money(Number(session.price||0)||(/cash/i.test(String(session.paymentMethod||''))?5:5.5));
   const payment=/cash/i.test(String(session.paymentMethod||''))?`${fee} cash on arrival`:`${fee} online`;
   const subject=`${club.name} · Guest request approved · ${formatDate(date)} ${session.start||''}`;
-  const textBody=`Hi ${hello},\n\nYour guest request has been approved.\n\nDate: ${formatDate(date)}\nTime: ${session.start||''}${session.end?`–${session.end}`:''}\nVenue: ${venue.name||''}\nFee: ${payment}\n\nComplete your waiver, Code of Conduct and booking/payment using your private link:\n${inviteUrl}\n\nThis private link is authorised for ${row.email}. If a different email is used, RallyHub will return the booking to the normal club approval route.\n\nBrian Moore\nChairperson, Clare Pickleball\n\nPowered by RallyHub`;
+  const authorisedContact=[row.email?`email ${row.email}`:'',row.mobile?`mobile ${row.mobile}`:''].filter(Boolean).join(' or ');
+  const textBody=`Hi ${hello},\n\nYour guest request has been approved.\n\nDate: ${formatDate(date)}\nTime: ${session.start||''}${session.end?`–${session.end}`:''}\nVenue: ${venue.name||''}\nFee: ${payment}\n\nComplete your waiver, Code of Conduct and booking/payment using your private link:\n${inviteUrl}\n\nThis private link is authorised for ${authorisedContact}. If neither the email nor mobile number entered matches, RallyHub will return the booking to the normal club approval route.\n\nBrian Moore\nChairperson, Clare Pickleball\n\nPowered by RallyHub`;
   const logo=escapeHtml(club.logo_url||'');
   const primary=escapeHtml(club.primary_colour||'#2667f2');
   const secondary=escapeHtml(club.secondary_colour||'#facc15');
