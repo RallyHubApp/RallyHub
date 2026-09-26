@@ -31,6 +31,8 @@ function niceDate(value){
 export default function PublicGuestSessionBooking(){
   const { token }=useParams();
   const [params]=useSearchParams();
+  const inviteToken=params.get('invite')||'';
+  const isPaymentReturn=!!params.get('booking')&&params.get('payment')==='return';
   const [data,setData]=useState(null);
   const [form,setForm]=useState(EMPTY);
   const [loading,setLoading]=useState(true);
@@ -42,14 +44,14 @@ export default function PublicGuestSessionBooking(){
   const load=async()=>{
     setLoading(true);setError('');
     try{
-      const res=await base44.functions.invoke('guestSessionBooking',{action:'public_get',token});
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'public_get',token,inviteToken});
       if(res.data?.error)throw new Error(res.data.error);
       setData(res.data);
     }catch(e){setError(e?.response?.data?.error||e?.message||'This guest booking link is unavailable.')}
     finally{setLoading(false)}
   };
 
-  useEffect(()=>{load()},[token]);
+  useEffect(()=>{load()},[token,inviteToken]);
 
   useEffect(()=>{
     const bookingId=params.get('booking');
@@ -86,7 +88,7 @@ export default function PublicGuestSessionBooking(){
     if(submitting)return;
     setSubmitting(true);setError('');
     try{
-      const res=await base44.functions.invoke('guestSessionBooking',{action:'public_submit',token,...form});
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'public_submit',token,inviteToken,...form});
       if(res.data?.error)throw new Error(res.data.error);
       if(res.data?.paymentUrl){
         window.location.assign(res.data.paymentUrl);
@@ -136,6 +138,25 @@ export default function PublicGuestSessionBooking(){
           </a>
         </div>
         <p className="mt-5 text-xs text-muted-foreground">{done.type==='cash'?'The club organiser has been notified of your booking.':'A confirmation email has been sent.'} Cancellations made less than 24 hours before the session are non-refundable.</p>
+      </div>
+    </div>
+  </div>;
+
+  if(data?.approvalRequired&&!isPaymentReturn)return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8">
+    <AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
+    <div className="mx-auto max-w-xl">
+      <div className="glass rounded-2xl p-6 sm:p-8 text-center">
+        <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Guest Session Request"/>
+        <ShieldCheck className="mx-auto mt-7 h-11 w-11 text-primary"/>
+        <h1 className="mt-4 text-2xl font-black">Club approval required</h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">This is a public or forwarded booking link, so no payment will be taken yet. Request a guest place first and Clare Pickleball will approve the visit before sending a private payment link.</p>
+        <div className="mt-5 rounded-xl border bg-secondary/30 p-4 text-left text-sm">
+          <p className="font-black">{niceDate(session.sessionDate)} · {session.startTime}{session.endTime?`–${session.endTime}`:''}</p>
+          <p className="mt-2 font-semibold">{session.venueName}</p>
+          <p className="text-muted-foreground">{session.venueAddress} · {session.eircode}</p>
+        </div>
+        <a href={data.guestRequestUrl||`/directory/${activeClubBrand?.slug||'clare-pickleball'}`} className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-black text-primary-foreground">Request a guest place</a>
+        <p className="mt-3 text-xs text-muted-foreground">If Clare Pickleball sent you a private invitation, open the exact link from that message.</p>
       </div>
     </div>
   </div>;
