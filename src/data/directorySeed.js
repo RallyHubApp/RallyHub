@@ -1,4 +1,4 @@
-import { importedDirectoryClubs } from './directoryImported';
+import { importedDirectoryClubs } from './directoryImported.js';
 
 const curatedDirectoryClubs = [
   {
