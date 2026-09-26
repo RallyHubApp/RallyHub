@@ -1,162 +1,202 @@
-import React, { useMemo, useState } from 'react';
-import { CalendarDays, ChevronRight, CircleUserRound, Crown, Trophy, Users, UserRound, Shield, MapPin } from 'lucide-react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  CalendarDays, ChevronRight, CircleUserRound, ExternalLink, MapPin,
+  MessageCircle, ShoppingBag, Trophy, UserRound, Shield, Sparkles, Medal,
+  Bell, Clock3, CheckCircle2
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import GlassCard from '@/components/shared/GlassCard';
-import PageHeader from '@/components/shared/PageHeader';
+import { getClub } from '@/data/directorySeed';
 
-const labelValue = (label, value) => ({ label, value: value || '—' });
-
-function formatDate(value) {
+function formatActivityDate(value) {
   if (!value) return 'Date to be confirmed';
-  const date = new Date(value + (String(value).length === 10 ? 'T12:00:00' : ''));
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: 'numeric' });
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date to be confirmed';
+  return date.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-export default function MemberDashboardView({ snapshot, preview = false }) {
-  const [playerSearch, setPlayerSearch] = useState('');
-  const playerDirectory = snapshot?.playerDirectory || [];
-  const filteredPlayers = useMemo(() => {
-    const q = playerSearch.trim().toLowerCase();
-    if (!q) return playerDirectory.slice(0, 12);
-    return playerDirectory.filter(p => String(p.full_name || '').toLowerCase().includes(q)).slice(0, 20);
-  }, [playerDirectory, playerSearch]);
+function formatActivityTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' });
+}
+
+function sourceLabel(item) {
+  return item?.source === 'spond' ? 'Spond' : 'RallyHub';
+}
+
+function responseLabel(status) {
+  const value = String(status || '').toLowerCase();
+  if (value === 'accepted') return 'Going';
+  if (value === 'waiting') return 'Waiting list';
+  if (value === 'declined') return 'Declined';
+  if (value === 'unanswered') return 'Response needed';
+  if (value === 'entered') return 'You’re entered';
+  return value ? value.replaceAll('_', ' ') : null;
+}
+
+function Avatar({ snapshot, size = 'lg' }) {
+  const url = snapshot?.person?.profile_photo_url || snapshot?.player?.avatar_url || null;
+  const name = snapshot?.person?.preferred_name || snapshot?.person?.full_name || snapshot?.player?.full_name || snapshot?.user?.full_name || 'Member';
+  const initials = String(name).split(' ').filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase();
+  const classes = size === 'lg' ? 'w-16 h-16 text-lg' : 'w-10 h-10 text-sm';
+  if (url) return <img src={url} alt={`${name} profile`} className={`${classes} rounded-full object-cover border-2 border-primary/30 bg-secondary`} />;
+  return <div className={`${classes} rounded-full bg-primary/15 text-primary border border-primary/30 flex items-center justify-center font-black`}>{initials}</div>;
+}
+
+export default function MemberDashboardView({ snapshot, play = null, playLoading = false, preview = false }) {
   if (!snapshot) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">No member data available.</div>;
 
-  const { user, player, person, member, club, myCompetitions = [], clubCalendar = [], clubLeaderboard = [] } = snapshot;
+  const { user, player, person, member, club, myCompetitions = [], clubLeaderboard = [] } = snapshot;
+  const directoryClub = club?.slug ? getClub(club.slug) : null;
+  const sportName = directoryClub?.sport || 'Sport';
+  const activities = play?.items || [];
+  const nextActivity = activities[0] || null;
+  const nextFew = activities.slice(0, 4);
   const myLeaderboardRow = clubLeaderboard.find(row => String(row.player_id) === String(player?.id || '')) || null;
   const name = person?.preferred_name || person?.full_name || player?.full_name || user?.full_name || user?.email || 'Member';
+  const firstName = String(name).trim().split(/\s+/)[0] || 'Member';
+  const hasPhoto = !!(person?.profile_photo_url || player?.avatar_url);
+  const profileNeedsAttention = (snapshot.profileCompletion || 0) < 100 || !hasPhoto;
+  const membershipStatus = member?.membership_status ? String(member.membership_status).replaceAll('_', ' ') : null;
+  const paymentStatus = member?.payment_status ? String(member.payment_status).replaceAll('_', ' ') : null;
 
-  const profileGroups = [
-    {
-      title: 'Personal details',
-      editable: true,
-      rows: [
-        labelValue('Full name', person?.full_name || player?.full_name || user?.full_name),
-        labelValue('Preferred name', person?.preferred_name),
-        labelValue('Email', person?.primary_email || player?.email || user?.email),
-        labelValue('Mobile', person?.mobile || player?.phone || member?.mobile),
-        labelValue('Date of birth', person?.date_of_birth || member?.date_of_birth),
-        labelValue('Gender', person?.gender || player?.gender),
-      ],
-    },
-    {
-      title: 'Address & communication',
-      editable: true,
-      rows: [
-        labelValue('Address line 1', person?.address_line1 || person?.full_postal_address),
-        labelValue('Address line 2', person?.address_line2),
-        labelValue('Town / city', person?.town_city),
-        labelValue('County / region', person?.county_region),
-        labelValue('Eircode / postcode', person?.postal_code),
-        labelValue('Country', person?.country),
-        labelValue('Preferred language', person?.preferred_language),
-        labelValue('Communication preference', person?.communication_preference),
-        labelValue('Profile visibility', person?.profile_visibility),
-        labelValue('Photo visibility', person?.photo_visibility),
-      ],
-    },
-    {
-      title: 'Emergency contacts',
-      editable: true,
-      rows: [
-        labelValue('Primary contact', person?.emergency_contact_name || member?.emergency_contact),
-        labelValue('Relationship', person?.emergency_contact_relationship),
-        labelValue('Primary mobile', person?.emergency_mobile || member?.emergency_mobile),
-        labelValue('Secondary contact', person?.secondary_emergency_contact_name),
-        labelValue('Secondary mobile', person?.secondary_emergency_contact_mobile),
-      ],
-    },
-    {
-      title: 'Playing profile',
-      editable: true,
-      rows: [
-        labelValue('DUPR ID', player?.dupr_id),
-        labelValue('DUPR rating', player?.dupr_rating != null ? Number(player.dupr_rating).toFixed(3) : null),
-        labelValue('Club rating', player?.skill_rating != null ? Number(player.skill_rating).toFixed(1) : null),
-        labelValue('Age group', player?.age_group),
-        labelValue('Preferred side', player?.preferred_position),
-        labelValue('Player status', player?.status),
-      ],
-    },
-    {
-      title: 'Membership',
-      editable: false,
-      rows: [
-        labelValue('Season', member?.membership_season),
-        labelValue('Membership status', member?.membership_status ? String(member.membership_status).replaceAll('_', ' ') : null),
-        labelValue('Membership ID', member?.club_membership_id),
-        labelValue('Membership type', member?.membership_type),
-        labelValue('Payment status', member?.payment_status ? String(member.payment_status).replaceAll('_', ' ') : null),
-        labelValue('Payment date', member?.payment_date),
-        labelValue('Membership amount', member?.membership_amount != null ? `€${Number(member.membership_amount).toFixed(2)}` : null),
-      ],
-    },
-  ];
+  const heroStyle = useMemo(() => {
+    if (!club?.primary_colour) return undefined;
+    return { backgroundImage: `linear-gradient(135deg, ${club.primary_colour}26, transparent 55%)` };
+  }, [club?.primary_colour]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 pb-20 lg:pb-0 max-w-6xl mx-auto">
       {preview && (
         <div className="rounded-xl border border-amber-400/50 bg-amber-500/10 p-4 flex items-start gap-3" data-testid="member-preview-banner">
           <Shield className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-foreground">Super Admin · Member Preview</p>
-            <p className="text-sm text-muted-foreground">Read-only preview of the member experience. You are still signed in as Super Admin and are not impersonating this member.</p>
+            <p className="text-sm text-muted-foreground">Read-only preview. Your administrator session has not changed.</p>
           </div>
         </div>
       )}
 
-      <PageHeader title={`Welcome, ${name}`} description={club?.name ? `${club.name} member dashboard` : 'Your RallyHub member dashboard'} />
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <GlassCard className="p-4">
-          <p className="text-xs text-muted-foreground">Profile complete</p>
-          <p className="text-2xl font-black text-primary mt-1">{snapshot.profileCompletion || 0}%</p>
-        </GlassCard>
-        <GlassCard className="p-4">
-          <p className="text-xs text-muted-foreground">DUPR</p>
-          <p className="text-2xl font-black text-foreground mt-1">{player?.dupr_rating != null ? Number(player.dupr_rating).toFixed(3) : '—'}</p>
-        </GlassCard>
-        <GlassCard className="p-4">
-          <p className="text-xs text-muted-foreground">My competitions</p>
-          <p className="text-2xl font-black text-foreground mt-1">{myCompetitions.length}</p>
-        </GlassCard>
-        <GlassCard className="p-4">
-          <p className="text-xs text-muted-foreground">Club players</p>
-          <p className="text-2xl font-black text-foreground mt-1">{playerDirectory.length}</p>
-        </GlassCard>
-      </div>
-
-      <div className="grid xl:grid-cols-2 gap-5">
-        <GlassCard>
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div>
-              <h3 className="font-bold flex items-center gap-2"><UserRound className="w-4 h-4 text-primary" /> My profile</h3>
-              <p className="text-xs text-muted-foreground mt-1">The personal and membership information RallyHub currently holds.</p>
-            </div>
-            {!preview && <Link to="/app/my-profile"><Button size="sm" variant="outline">Update profile</Button></Link>}
+      <section className="glass rounded-2xl p-4 sm:p-6 overflow-hidden" style={heroStyle}>
+        <div className="flex items-center gap-4">
+          <Avatar snapshot={snapshot} />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{club?.name || 'RallyHub'}</p>
+            <h1 className="text-2xl sm:text-3xl font-black text-foreground mt-1 truncate">Hi {firstName}</h1>
+            <p className="text-sm text-muted-foreground mt-1">Your club, calendar and competition life in one place.</p>
           </div>
-          <div className="space-y-5">
-            {profileGroups.map(group => (
-              <div key={group.title} className="pt-4 first:pt-0 border-t first:border-t-0 border-border">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group.title}</h4>
-                  <Badge variant="outline" className={group.editable ? 'text-[10px] border-primary/30 text-primary' : 'text-[10px]'}>
-                    {group.editable ? 'Member editable' : 'Club managed'}
-                  </Badge>
+          {club?.logo_url && <img src={club.logo_url} alt={club?.name || 'Club'} className="hidden sm:block h-14 w-14 object-contain" />}
+        </div>
+
+        {profileNeedsAttention && !preview && (
+          <Link to="/app/my-profile" className="mt-4 flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3 hover:bg-primary/10 transition-colors">
+            <Sparkles className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">Complete your member profile</p>
+              <p className="text-xs text-muted-foreground">{!hasPhoto ? 'Add your profile photo and check your details.' : `${snapshot.profileCompletion || 0}% complete`}</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-primary" />
+          </Link>
+        )}
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-bold text-foreground">Next up</h2>
+          <Link to="/app/play" className="text-xs text-primary font-semibold">View Play</Link>
+        </div>
+        <GlassCard className="p-0 overflow-hidden">
+          {playLoading ? (
+            <div className="p-5 text-sm text-muted-foreground">Checking your upcoming activity…</div>
+          ) : nextActivity ? (
+            <div className="p-4 sm:p-5">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0">
+                  <span className="text-[10px] uppercase text-muted-foreground">{formatActivityDate(nextActivity.start).split(' ')[0]}</span>
+                  <span className="text-lg font-black text-primary">{new Date(nextActivity.start).getDate()}</span>
                 </div>
-                <div className="grid sm:grid-cols-2 gap-x-5 gap-y-3">
-                  {group.rows.map(row => (
-                    <div key={`${group.title}-${row.label}`} className="min-w-0">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{row.label}</p>
-                      <p className="text-sm text-foreground mt-0.5 break-words capitalize">{row.value}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-foreground truncate">{nextActivity.title}</h3>
+                      <p className="text-xs text-muted-foreground mt-1">{formatActivityDate(nextActivity.start)}{formatActivityTime(nextActivity.start) ? ` · ${formatActivityTime(nextActivity.start)}` : ''}</p>
                     </div>
-                  ))}
+                    <Badge variant="outline" className="text-[10px] shrink-0">{sourceLabel(nextActivity)}</Badge>
+                  </div>
+                  {nextActivity.venue && <p className="text-xs text-muted-foreground mt-2 flex items-start gap-1.5"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />{nextActivity.venue}</p>}
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    {responseLabel(nextActivity.response_status) && <Badge className="bg-primary/15 text-primary text-[10px]">{responseLabel(nextActivity.response_status)}</Badge>}
+                    <Link to="/app/play" className="text-xs text-primary font-semibold inline-flex items-center gap-1">Details <ChevronRight className="w-3 h-3" /></Link>
+                  </div>
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="p-5 text-center">
+              <CalendarDays className="w-7 h-7 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm font-semibold">Nothing upcoming yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Your invited sessions and competition entries will appear here.</p>
+            </div>
+          )}
+        </GlassCard>
+      </section>
+
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Link to="/app/play" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
+          <CalendarDays className="w-5 h-5 text-primary mb-3" />
+          <p className="text-sm font-bold">Calendar</p>
+          <p className="text-[11px] text-muted-foreground mt-1">My activity</p>
+        </Link>
+        <Link to="/app/clubhouse" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
+          <MessageCircle className="w-5 h-5 text-primary mb-3" />
+          <p className="text-sm font-bold">Clubhouse</p>
+          <p className="text-[11px] text-muted-foreground mt-1">Updates & messages</p>
+        </Link>
+        <Link to="/app/my-profile" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
+          <Trophy className="w-5 h-5 text-primary mb-3" />
+          <p className="text-sm font-bold">My results</p>
+          <p className="text-[11px] text-muted-foreground mt-1">Competitions & form</p>
+        </Link>
+        {directoryClub?.shopUrl ? (
+          <a href={directoryClub.shopUrl} target="_blank" rel="noreferrer" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
+            <ShoppingBag className="w-5 h-5 text-primary mb-3" />
+            <p className="text-sm font-bold">Club shop</p>
+            <p className="text-[11px] text-muted-foreground mt-1 inline-flex items-center gap-1">Open shop <ExternalLink className="w-3 h-3" /></p>
+          </a>
+        ) : (
+          <Link to="/app/learn" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
+            <ShoppingBag className="w-5 h-5 text-primary mb-3" />
+            <p className="text-sm font-bold">Club links</p>
+            <p className="text-[11px] text-muted-foreground mt-1">Resources & more</p>
+          </Link>
+        )}
+      </section>
+
+      <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-4 sm:gap-5">
+        <GlassCard>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold flex items-center gap-2"><Clock3 className="w-4 h-4 text-primary" /> Coming up</h2>
+              <p className="text-xs text-muted-foreground mt-1">Only activity relevant to you.</p>
+            </div>
+            <Link to="/app/play" className="text-xs text-primary font-semibold">See all</Link>
+          </div>
+          <div className="space-y-2">
+            {nextFew.length === 0 && <p className="text-sm text-muted-foreground py-5 text-center">No upcoming activity.</p>}
+            {nextFew.map(item => (
+              <Link key={item.id} to="/app/play" className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-secondary/40 transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center shrink-0"><CalendarDays className="w-4 h-4 text-primary" /></div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold truncate">{item.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{formatActivityDate(item.start)} · {formatActivityTime(item.start)}{item.venue ? ` · ${item.venue}` : ''}</p>
+                </div>
+                <Badge variant="outline" className="hidden sm:inline-flex text-[9px]">{sourceLabel(item)}</Badge>
+                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+              </Link>
             ))}
           </div>
         </GlassCard>
@@ -164,96 +204,65 @@ export default function MemberDashboardView({ snapshot, preview = false }) {
         <GlassCard>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold flex items-center gap-2"><Trophy className="w-4 h-4 text-primary" /> My upcoming competitions</h3>
-              <p className="text-xs text-muted-foreground mt-1">Competitions where this member is already entered.</p>
+              <h2 className="text-sm font-bold flex items-center gap-2"><Medal className="w-4 h-4 text-primary" /> My {sportName}</h2>
+              <p className="text-xs text-muted-foreground mt-1">Membership and competition snapshot.</p>
             </div>
+            <Link to="/app/my-profile" className="text-xs text-primary font-semibold">Open</Link>
           </div>
-          <div className="space-y-2">
-            {myCompetitions.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">No upcoming competition entries yet.</p>}
-            {myCompetitions.slice(0, 8).map(event => (
-              <div key={event.id} className="rounded-lg border border-border bg-secondary/30 p-3 flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold">{event.name}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{formatDate(event.start_date)}{event.location ? ` · ${event.location}` : ''}</p>
-                </div>
-                <Badge variant="outline" className="text-[10px] shrink-0">{event.status || event.format || 'Competition'}</Badge>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-secondary/40 p-3">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Membership</p>
+              <p className="text-sm font-bold capitalize mt-1">{membershipStatus || '—'}</p>
+              {paymentStatus && <p className="text-[11px] text-muted-foreground capitalize mt-0.5">Payment {paymentStatus}</p>}
+            </div>
+            <div className="rounded-xl bg-secondary/40 p-3">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Leaderboard</p>
+              <p className="text-xl font-black mt-1">{myLeaderboardRow?.rank ? `#${myLeaderboardRow.rank}` : '—'}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{myLeaderboardRow?.leaderboard_points || 0} pts</p>
+            </div>
+            <div className="rounded-xl bg-secondary/40 p-3">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Competitions</p>
+              <p className="text-xl font-black mt-1">{myCompetitions.length}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Upcoming</p>
+            </div>
+            <div className="rounded-xl bg-secondary/40 p-3">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Rating</p>
+              <p className="text-xl font-black mt-1">{player?.dupr_rating != null ? Number(player.dupr_rating).toFixed(3) : player?.skill_rating != null ? Number(player.skill_rating).toFixed(1) : '—'}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{player?.dupr_rating != null ? 'DUPR' : 'Club rating'}</p>
+            </div>
           </div>
         </GlassCard>
       </div>
 
-      <GlassCard>
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div>
-            <h3 className="font-bold flex items-center gap-2"><Crown className="w-4 h-4 text-primary" /> Club leaderboard</h3>
-            <p className="text-xs text-muted-foreground mt-1">Competition performance across RallyHub events that count toward the club leaderboard.</p>
+      <section className="grid sm:grid-cols-2 gap-3">
+        <Link to="/app/learn" className="glass rounded-xl p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><UserRound className="w-5 h-5 text-primary" /></div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold">Learn & resources</p>
+            <p className="text-xs text-muted-foreground">Guides, coaching, rules and club information.</p>
           </div>
-          {myLeaderboardRow && <Badge className="bg-primary/15 text-primary">Your rank #{myLeaderboardRow.rank}</Badge>}
-        </div>
-        <div className="space-y-2">
-          {clubLeaderboard.length === 0 && <p className="text-sm text-muted-foreground py-5 text-center">No eligible competition results yet.</p>}
-          {clubLeaderboard.slice(0, 8).map(row => (
-            <div key={row.player_id} className={`rounded-lg border p-3 flex items-center gap-3 ${String(row.player_id) === String(player?.id || '') ? 'border-primary/40 bg-primary/5' : 'border-border bg-secondary/20'}`}>
-              <span className="w-7 text-center text-sm font-black text-muted-foreground">{row.rank}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{row.full_name}</p>
-                <p className="text-xs text-muted-foreground">{row.wins}W · {row.draws || 0}D · {row.losses}L · {row.matches_played} matches</p>
-              </div>
-              <span className="text-sm font-black text-primary">{row.leaderboard_points} pts</span>
-            </div>
-          ))}
-        </div>
-      </GlassCard>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </Link>
+        <Link to="/app/clubhouse" className="glass rounded-xl p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><Bell className="w-5 h-5 text-primary" /></div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold">Club updates</p>
+            <p className="text-xs text-muted-foreground">Official notices, discussions and messages.</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </Link>
+      </section>
 
-      <GlassCard>
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div>
-            <h3 className="font-bold flex items-center gap-2"><CalendarDays className="w-4 h-4 text-primary" /> Club calendar</h3>
-            <p className="text-xs text-muted-foreground mt-1">Upcoming RallyHub competitions and club events. Directory and broader event feeds can plug into this same calendar.</p>
-          </div>
+      {play?.spond?.status === 'identity_not_matched' && (
+        <div className="rounded-xl border border-amber-400/30 bg-amber-500/5 p-3 flex items-start gap-2">
+          <CircleUserRound className="w-4 h-4 text-amber-500 mt-0.5" />
+          <p className="text-xs text-muted-foreground">Your club uses Spond, but RallyHub has not safely matched your Spond identity yet. No Spond sessions are being shown until that match is confirmed.</p>
         </div>
-        <div className="grid md:grid-cols-2 gap-2">
-          {clubCalendar.length === 0 && <p className="text-sm text-muted-foreground py-6">Nothing upcoming has been published yet.</p>}
-          {clubCalendar.slice(0, 10).map(event => (
-            <div key={event.id} className="rounded-lg border border-border p-3 flex items-start gap-3">
-              <div className="w-12 text-center shrink-0">
-                <p className="text-[10px] uppercase text-muted-foreground">{event.start_date ? new Date(event.start_date + 'T12:00:00').toLocaleDateString('en-IE',{month:'short'}) : 'TBC'}</p>
-                <p className="text-xl font-black text-primary">{event.start_date ? new Date(event.start_date + 'T12:00:00').getDate() : '—'}</p>
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold truncate">{event.name}</p>
-                <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
-                  {event.location && <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" />{event.location}</span>}
-                  {event.entered && <Badge className="text-[10px] bg-primary/15 text-primary">You’re entered</Badge>}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </GlassCard>
+      )}
 
-      <GlassCard>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div>
-            <h3 className="font-bold flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> Player directory</h3>
-            <p className="text-xs text-muted-foreground mt-1">Club-visible player information only. Personal email, mobile and address details are not exposed here.</p>
-          </div>
-          <Input value={playerSearch} onChange={e => setPlayerSearch(e.target.value)} placeholder="Search players…" className="sm:w-64 bg-secondary" />
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {filteredPlayers.map(p => (
-            <div key={p.id} className="rounded-lg border border-border bg-secondary/20 p-3 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><CircleUserRound className="w-5 h-5 text-primary" /></div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold truncate">{p.full_name}</p>
-                <p className="text-xs text-muted-foreground">{p.dupr_rating != null ? `DUPR ${Number(p.dupr_rating).toFixed(3)}` : p.skill_rating != null ? `Club rating ${Number(p.skill_rating).toFixed(1)}` : 'Rating not added'}</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            </div>
-          ))}
-        </div>
-      </GlassCard>
+      {play?.spond?.status === 'connected' && (
+        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 justify-center"><CheckCircle2 className="w-3.5 h-3.5 text-primary" /> Personal Spond feed connected. Only sessions linked to your Spond invitation/response are shown.</p>
+      )}
     </div>
   );
 }
