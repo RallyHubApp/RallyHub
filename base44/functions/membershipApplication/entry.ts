@@ -37,6 +37,10 @@ async function configForClub(base44:any,tenantId:string,clubId:string){
   const rows=await base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',20);
   return (rows||[]).find((c:any)=>c.status==='active')||(rows||[])[0]||null;
 }
+async function activeAdultPolicy(base44:any,tenantId:string,clubId:string){
+  const rows=await base44.asServiceRole.entities.ClubPolicy.filter({tenant_id:tenantId,club_id:clubId,policy_type:'adult_participation',status:'active'},'-effective_from',20);
+  return rows?.[0]||null;
+}
 async function legalDocs(base44:any,config:any){
   const map:any={privacy:config.privacy_document_id,waiver:config.waiver_document_id,code:config.code_document_id,health:config.health_document_id,photo:config.photo_document_id,terms:config.terms_document_id};
   const out:any={};
@@ -50,11 +54,12 @@ async function legalDocs(base44:any,config:any){
   }
   return out;
 }
-function safeConfig(config:any,club:any,docs:any){
+function safeConfig(config:any,club:any,docs:any,adultPolicy:any=null){
   return {
     id:config.id,publicSlug:config.public_slug,title:config.title||`${club?.name||'Club'} Membership`,
     seasonLabel:config.season_label,membershipFee:Number(config.membership_fee||0),currency:config.currency||'EUR',
     allowNew:config.allow_new!==false,allowRenewal:config.allow_renewal!==false,paymentRequired:config.payment_required!==false,
+    minimumAge:Number(adultPolicy?.minimum_age||0)||null,
     club,legal:docs
   };
 }
@@ -469,10 +474,13 @@ Deno.serve(async(req)=>{
     const config=await activeConfig(base44,slug);
     if(!config)return Response.json({error:'Membership applications are not currently open for this club.'},{status:404});
     const club=await clubBrand(base44,config.club_id,config.tenant_id);
-    const docs=await legalDocs(base44,config);
+    const [docs,adultPolicy]=await Promise.all([
+      legalDocs(base44,config),
+      activeAdultPolicy(base44,config.tenant_id,config.club_id)
+    ]);
 
     if(action==='public_get'){
-      return Response.json({success:true,config:safeConfig(config,club,docs)});
+      return Response.json({success:true,config:safeConfig(config,club,docs,adultPolicy)});
     }
 
     if(action==='public_lookup_renewal'){
@@ -546,10 +554,13 @@ Deno.serve(async(req)=>{
     if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return Response.json({error:'Please enter a valid email address.'},{status:400});
     if(phoneDigits(mobile).length<8)return Response.json({error:'Please enter a valid mobile number.'},{status:400});
     if(!/^\d{4}-\d{2}-\d{2}$/.test(dob))return Response.json({error:'Please enter your date of birth.'},{status:400});
-    const birthDate=new Date(`${dob}T12:00:00Z`);
-    const today=new Date();
-    const eighteenthBirthday=new Date(Date.UTC(birthDate.getUTCFullYear()+18,birthDate.getUTCMonth(),birthDate.getUTCDate(),12));
-    if(!Number.isFinite(birthDate.getTime())||today.getTime()<eighteenthBirthday.getTime())return Response.json({error:'Clare Pickleball currently operates an adults-only programme. Applicants must be 18 or over.'},{status:400});
+    const minimumAge=Number(adultPolicy?.minimum_age||0);
+    if(minimumAge>0){
+      const birthDate=new Date(`${dob}T12:00:00Z`);
+      const today=new Date();
+      const qualifyingBirthday=new Date(Date.UTC(birthDate.getUTCFullYear()+minimumAge,birthDate.getUTCMonth(),birthDate.getUTCDate(),12));
+      if(!Number.isFinite(birthDate.getTime())||today.getTime()<qualifyingBirthday.getTime())return Response.json({error:`${club?.name||'This club'} currently requires applicants to be ${minimumAge} or over.`},{status:400});
+    }
     if(!emergencyName||phoneDigits(emergencyMobile).length<8)return Response.json({error:'Please provide an emergency contact name and mobile number.'},{status:400});
     if(applicationType==='renewal'&&body.dataReviewConfirmed!==true)return Response.json({error:'Please confirm that you have reviewed all of your membership details.'},{status:400});
 
