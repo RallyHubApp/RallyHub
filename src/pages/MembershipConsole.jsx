@@ -117,8 +117,8 @@ export default function MembershipConsole() {
   const [membershipSourceOpen, setMembershipSourceOpen] = useState(false);
   const [membershipSourceBusy, setMembershipSourceBusy] = useState('');
   const [membershipSourceCredentialReference, setMembershipSourceCredentialReference] = useState('');
-  const [membershipSourceGroups, setMembershipSourceGroups] = useState([]);
-  const [membershipSourceGroupId, setMembershipSourceGroupId] = useState('');
+  const [membershipSourceClubs, setMembershipSourceClubs] = useState([]);
+  const [membershipSourceClubId, setMembershipSourceClubId] = useState('');
   const [membershipSourcePreview, setMembershipSourcePreview] = useState(null);
   const [newMember, setNewMember] = useState({
     full_name: '', primary_email: '', mobile: '', date_of_birth: '', member_id: '',
@@ -259,8 +259,8 @@ export default function MembershipConsole() {
   useEffect(() => {
     const reference = membershipSourceData.connection?.credential_reference || membershipSourceData.defaultCredentialReference || '';
     if (reference) setMembershipSourceCredentialReference(reference);
-    if (membershipSourceData.connection?.external_group_id) setMembershipSourceGroupId(String(membershipSourceData.connection.external_group_id));
-  }, [membershipSourceData.connection?.credential_reference, membershipSourceData.connection?.external_group_id, membershipSourceData.defaultCredentialReference]);
+    if (membershipSourceData.connection?.external_club_id) setMembershipSourceClubId(String(membershipSourceData.connection.external_group_id));
+  }, [membershipSourceData.connection?.credential_reference, membershipSourceData.connection?.external_club_id, membershipSourceData.defaultCredentialReference]);
 
   const currency = meta.gateways?.find(g => g.is_default)?.currency || meta.gateways?.[0]?.currency || 'EUR';
   const gateway = meta.gateways?.find(g => g.is_default) || meta.gateways?.[0] || null;
@@ -278,7 +278,7 @@ export default function MembershipConsole() {
       const data = await invokeMembershipSource('discover_groups', {
         credentialReference: membershipSourceCredentialReference || undefined
       });
-      setMembershipSourceGroups(data.groups || []);
+      setMembershipSourceClubs(data.groups || []);
       if (!(data.groups || []).length) toast.info('No Spond groups were returned for this account');
       else toast.success(`${data.groups.length} Spond group${data.groups.length === 1 ? '' : 's'} available`);
     } catch (error) {
@@ -289,11 +289,11 @@ export default function MembershipConsole() {
   };
 
   const saveSpondMembershipSource = async () => {
-    if (!membershipSourceGroupId) return toast.error('Choose the Spond membership group');
+    if (!membershipSourceClubId) return toast.error('Choose the Spond membership group');
     setMembershipSourceBusy('save');
     try {
       const data = await invokeMembershipSource('save_connection', {
-        groupId: membershipSourceGroupId,
+        groupId: membershipSourceClubId,
         credentialReference: membershipSourceCredentialReference || undefined,
         sportId: primarySport?.id || undefined,
         connectionMode: 'credentials_login'
@@ -341,8 +341,8 @@ export default function MembershipConsole() {
     setMembershipSourceBusy('disconnect');
     try {
       await invokeMembershipSource('disconnect');
-      setMembershipSourceGroups([]);
-      setMembershipSourceGroupId('');
+      setMembershipSourceClubs([]);
+      setMembershipSourceClubId('');
       setMembershipSourcePreview(null);
       await refetchMembershipSource();
       toast.success('Spond Club membership source disconnected');
@@ -1195,12 +1195,12 @@ export default function MembershipConsole() {
 
             <div className="rounded-xl border p-4 space-y-3">
               <div><p className="font-semibold">Membership group</p><p className="text-xs text-muted-foreground">Choose the Spond group that represents this club’s membership roster. The setting is scoped to the active RallyHub tenant and club.</p></div>
-              {membershipSourceGroups.length ? <>
-                <Select value={membershipSourceGroupId || undefined} onValueChange={setMembershipSourceGroupId}>
+              {membershipSourceClubs.length ? <>
+                <Select value={membershipSourceClubId || undefined} onValueChange={setMembershipSourceClubId}>
                   <SelectTrigger><SelectValue placeholder="Choose Spond membership group" /></SelectTrigger>
-                  <SelectContent>{membershipSourceGroups.map(group => <SelectItem key={group.id} value={String(group.id)}>{group.name}{group.member_count != null ? ` · ${group.member_count} members` : ''}</SelectItem>)}</SelectContent>
+                  <SelectContent>{membershipSourceClubs.map(group => <SelectItem key={group.id} value={String(group.id)}>{group.name}{group.member_count != null ? ` · ${group.member_count} members` : ''}</SelectItem>)}</SelectContent>
                 </Select>
-                <Button onClick={saveSpondMembershipSource} disabled={!!membershipSourceBusy || !membershipSourceGroupId}>{membershipSourceBusy === 'save' ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}Save read-only source</Button>
+                <Button onClick={saveSpondMembershipSource} disabled={!!membershipSourceBusy || !membershipSourceClubId}>{membershipSourceBusy === 'save' ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}Save read-only source</Button>
               </> : membershipSourceData.connection ? <div className="rounded-lg bg-secondary/40 p-3 text-sm"><strong>{membershipSourceData.connection.external_group_name || 'Spond group'}</strong><p className="mt-1 text-xs text-muted-foreground">Use Discover groups if you need to review or change the selected membership group.</p></div> : <div className="rounded-lg bg-secondary/40 p-3 text-sm text-muted-foreground">Discover groups after the Base44 secrets are configured, then select the membership roster.</div>}
 
               {membershipSourceData.connection ? <div className="pt-2 border-t space-y-2">
