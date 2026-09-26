@@ -18,11 +18,10 @@ function ageFromDob(value:any,onDate=new Date()){
 }
 function ageGroup(age:any){
   if(age==null) return null;
-  if(age<18) return 'Junior (U18)';
-  if(age<35) return 'Open (18-34)';
-  if(age<50) return 'Adult (35-49)';
-  if(age<65) return 'Senior (50-64)';
-  return 'Super Senior (65+)';
+  if(age<18) return 'Under 18';
+  if(age<50) return '18+';
+  if(age<65) return '50+';
+  return '65+';
 }
 function nextSeasonLabel(labelValue:any){
   const label=clean(labelValue,40);
