@@ -130,21 +130,42 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
             <div className="flex items-center gap-2"><UserPlus2 className="h-5 w-5 text-[#078e48]"/><h3 className="font-black text-[#07184c]">Can't find your club?</h3></div>
             <p className="mt-2 text-sm leading-6 text-[#52627d]">Word of mouth will help us complete the Directory. Send a ready-made message to your club organiser. RallyHub never sees or stores the recipient's details.</p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <button type="button" onClick={()=>whatsappShare(clubShare)} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#20a766] px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4"/> WhatsApp my club</button>
-              <button type="button" onClick={()=>emailShare('Free RallyHub pickleball club listing',clubShare)} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-3 text-xs font-bold text-[#07184c]"><Mail className="h-4 w-4"/> Email my club</button>
+              <button type="button" onClick={()=>openShare('club','whatsapp')} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#20a766] px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4"/> WhatsApp my club</button>
+              <button type="button" onClick={()=>openShare('club','email')} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-3 text-xs font-bold text-[#07184c]"><Mail className="h-4 w-4"/> Email my club</button>
             </div>
           </div>
 
           <div className="rounded-2xl border border-[#dbe6e8] bg-white p-5 shadow-[0_8px_24px_rgba(8,24,77,.04)]">
-            <div className="flex items-center gap-2"><Share2 className="h-5 w-5 text-[#07528a]"/><h3 className="font-black text-[#07184c]">Know another pickleball player?</h3></div>
-            <p className="mt-2 text-sm leading-6 text-[#52627d]">Share the Directory and player update list with friends, clubs, tournament groups and WhatsApp communities.</p>
+            <div className="flex items-center gap-2"><Share2 className="h-5 w-5 text-[#07528a]"/><h3 className="font-black text-[#07184c]">Know someone who plays pickleball?</h3></div>
+            <p className="mt-2 text-sm leading-6 text-[#52627d]">Share RallyHub with a friend and help more players discover clubs, events, tournaments, coaching and playing opportunities around Ireland.</p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <button type="button" onClick={()=>whatsappShare(playerShare)} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#20a766] px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4"/> Share on WhatsApp</button>
-              <button type="button" onClick={()=>emailShare('RallyHub Irish Pickleball Directory',playerShare)} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-3 text-xs font-bold text-[#07184c]"><Mail className="h-4 w-4"/> Share by email</button>
+              <button type="button" onClick={()=>openShare('player','whatsapp')} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#20a766] px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4"/> Share with a player</button>
+              <button type="button" onClick={()=>openShare('player','email')} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-3 text-xs font-bold text-[#07184c]"><Mail className="h-4 w-4"/> Email a player</button>
             </div>
           </div>
         </div>
       </div>
+
+      {shareDraft&&<div className="mt-4 rounded-2xl border border-[#bfd5dd] bg-white p-5 shadow-[0_10px_28px_rgba(8,24,77,.06)] sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-[11px] font-extrabold uppercase tracking-[.09em] text-[#078e48]">Review before sending</p>
+            <h3 className="mt-1 text-lg font-black text-[#07184c]">{shareDraft.type==='club'?'Invite your club':'Share with a player'} · {shareDraft.channel==='email'?'Email':'WhatsApp'}</h3>
+            <p className="mt-1 text-xs leading-5 text-[#6a778a]">Edit this however you like. RallyHub does not see or store who you send it to.</p>
+          </div>
+          <button type="button" onClick={()=>setShareDraft(null)} className="text-xs font-bold text-[#6a778a] hover:text-[#07184c]">Close</button>
+        </div>
+        {shareDraft.channel==='email'&&<label className="mt-4 block text-xs font-bold text-[#07184c]">Subject
+          <input value={shareDraft.subject} onChange={e=>setShareDraft(prev=>({...prev,subject:e.target.value}))} className="mt-1.5 h-11 w-full rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm outline-none focus:border-[#078e48]" />
+        </label>}
+        <label className="mt-4 block text-xs font-bold text-[#07184c]">Message
+          <textarea value={shareDraft.message} onChange={e=>setShareDraft(prev=>({...prev,message:e.target.value}))} rows={shareDraft.channel==='email'?12:10} className="mt-1.5 w-full rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 py-3 text-sm leading-6 outline-none focus:border-[#078e48]" />
+        </label>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button type="button" onClick={sendShare} disabled={!shareDraft.message.trim()||(shareDraft.channel==='email'&&!shareDraft.subject.trim())} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#078e48] px-4 text-xs font-bold text-white disabled:opacity-50">{shareDraft.channel==='email'?<Mail className="h-4 w-4"/>:<MessageCircle className="h-4 w-4"/>} Open {shareDraft.channel==='email'?'Email':'WhatsApp'}</button>
+          <button type="button" onClick={resetShare} className="inline-flex h-10 items-center justify-center rounded-lg border border-[#cbd7dc] bg-white px-4 text-xs font-bold text-[#07184c]">Reset to suggested wording</button>
+        </div>
+      </div>}
     </div>
   </section>;
 }
