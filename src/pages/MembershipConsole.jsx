@@ -1060,6 +1060,15 @@ export default function MembershipConsole() {
                   <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="all">All sports</SelectItem>{(meta.sports || []).map(sport => <SelectItem key={sport.id} value={String(sport.id)}>{sport.name}</SelectItem>)}</SelectContent>
                 </Select>
+                <Select value={filters.ageBand} onValueChange={value => setFilters(f => ({ ...f, ageBand: value }))}>
+                  <SelectTrigger className="w-[165px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All ages</SelectItem>
+                    <SelectItem value="18_plus">18+ · ages 18–49</SelectItem>
+                    <SelectItem value="50_plus">50+ · ages 50–64</SelectItem>
+                    <SelectItem value="65_plus">65+ · ages 65+</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Popover>
                   <PopoverTrigger asChild><Button variant="outline"><Filter className="w-4 h-4 mr-1.5" />More</Button></PopoverTrigger>
                   <PopoverContent align="end" className="w-72 space-y-3">
