@@ -745,6 +745,12 @@ Deno.serve(async(req)=>{
     }
     app=await sendSubmittedEmails(base44,config,club,pay.app,pay.paymentUrl);
     if(app.payment_status==='not_required')app=await sendPaidConfirmation(base44,config,club,app);
+    if(approvedInvite){
+      try{await base44.asServiceRole.entities.AccessInviteToken.update(approvedInvite.id,{status:'used',used_at:new Date().toISOString()})}catch{}
+      if(approvedInvite.access_request_id){
+        try{await base44.asServiceRole.entities.ClubAccessRequest.update(approvedInvite.access_request_id,{status:'converted',conversion_reference:app.id})}catch{}
+      }
+    }
     try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:config.tenant_id,club_id:config.club_id,user_id:'public:membership',action:'membership_application_submitted',entity_type:'MembershipApplication',entity_id:app.id,scope_type:'Person',scope_id:person.id,after_state:JSON.stringify({applicationType,season:config.season_label,paymentStatus:app.payment_status}),reason:'Public membership application submitted'})}catch{}
     return Response.json({success:true,application:safeApplication(app,pay.paymentUrl)});
   }catch(error){
