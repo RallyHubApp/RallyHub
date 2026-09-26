@@ -89,15 +89,20 @@ async function inviteForSession(base44:any,session:any,rawToken:any,email=''){
     await base44.asServiceRole.entities.AccessInviteToken.update(invite.id,{status:'expired'}).catch(()=>{});
     return null;
   }
-  if(invite.intended_email&&email&&emailKey(invite.intended_email)!==emailKey(email))return null;
+  // A private/admin-authorised link is only valid when it is bound to a specific email address.
+  // This deliberately invalidates any older unbound invite tokens so forwarded links cannot inherit approval.
+  if(!emailKey(invite.intended_email))return null;
+  if(email&&emailKey(invite.intended_email)!==emailKey(email))return null;
   return invite;
 }
 async function createInvite(base44:any,session:any,user:any,intendedEmail='',intendedName=''){
+  const boundEmail=emailKey(intendedEmail);
+  if(!boundEmail||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(boundEmail))throw new Error('A valid guest email address is required for a private invitation.');
   const now=new Date();
   const inviteToken=`gi_${crypto.randomUUID().replaceAll('-','')}`;
   const row=await base44.asServiceRole.entities.AccessInviteToken.create({
     tenant_id:session.tenant_id,club_id:session.club_id,purpose:'guest_booking',token:inviteToken,status:'active',session_link_id:session.id,
-    intended_email:emailKey(intendedEmail),intended_name:clean(intendedName,120),expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),
+    intended_email:boundEmail,intended_name:clean(intendedName,120),expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),
     created_by_user_id:user?.id||'',created_at:now.toISOString(),notes:'Admin-issued guest booking magic link. Single-use and expires after 7 days.',
   });
   return row;
@@ -477,9 +482,8 @@ Deno.serve(async(req)=>{
           notification_email:emailKey(body.notificationEmail||user.email||''),notification_name:clean(user.full_name||user.email||'',120),
           created_by_user_id:user.id,created_at:now,
         });
-        const invite=await createInvite(base44,row,user);
-        const magicInviteUrl=`https://rallyhub.ie/book/${encodeURIComponent(row.token)}?invite=${encodeURIComponent(invite.token)}`;
-        return Response.json({success:true,session:safeSession(row),sumupConfigured,magicInviteUrl});
+        const publicSessionUrl=`https://rallyhub.ie/book/${encodeURIComponent(row.token)}`;
+        return Response.json({success:true,session:safeSession(row),sumupConfigured,publicSessionUrl});
       }
 
       if(action==='admin_close'){
@@ -494,6 +498,7 @@ Deno.serve(async(req)=>{
         const sessionId=clean(body.sessionId,100);
         const recipientEmail=emailKey(body.recipientEmail||'');
         const recipientName=clean(body.recipientName||'',120);
+        if(!recipientEmail||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail))return Response.json({error:'Enter the guest email address. Private invitations must be tied to the intended guest.'},{status:400});
         const session=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:sessionId,tenant_id:tenantId,club_id:clubId}))?.[0];
         if(!session)return Response.json({error:'Guest session not found.'},{status:404});
         if(!session.active)return Response.json({error:'This booking link is closed.'},{status:409});
