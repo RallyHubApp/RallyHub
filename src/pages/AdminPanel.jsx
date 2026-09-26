@@ -101,6 +101,7 @@ export default function AdminPanel() {
   const [directoryVisibilityBusy, setDirectoryVisibilityBusy] = useState(null);
   const [ownerInvite, setOwnerInvite] = useState({ listingSlug: '', contactName: '', contactPhone: '', contactEmail: '' });
   const [directoryClubSearch, setDirectoryClubSearch] = useState('');
+  const [directoryToolsOpen, setDirectoryToolsOpen] = useState(false);
   const [ownerInviteBusy, setOwnerInviteBusy] = useState('');
   const [ownerInviteResult, setOwnerInviteResult] = useState(null);
   const [testingClareMail, setTestingClareMail] = useState(false);
