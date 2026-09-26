@@ -35,7 +35,12 @@ async function activeClubLegalDocument(base44:any,event:any,hostClub:any,documen
   const rows=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:event.tenant_id,club_id:hostClub.id,document_type:documentType,active:true},'-effective_from',20);
   return rows?.[0]||fallback;
 }
-function legalText(event:any, waiver:any, code:any) {
+async function activeAdultPolicy(base44:any,event:any,hostClub:any){
+  if(!hostClub?.id) return null;
+  const rows=await base44.asServiceRole.entities.ClubPolicy.filter({tenant_id:event.tenant_id,club_id:hostClub.id,policy_type:'adult_participation',status:'active'},'-effective_from',20);
+  return rows?.[0]||null;
+}
+function legalText(event:any, waiver:any, code:any, adultPolicy:any=null) {
   return {
     waiverVersion:waiver.version,
     waiverTitle:waiver.title,
@@ -45,6 +50,7 @@ function legalText(event:any, waiver:any, code:any) {
     codeTitle:code.title,
     codeText:code.body_text,
     codeConsentLabel:code.consent_label||'I have read and agree to follow the Interclub Code of Conduct.',
+    minimumAge:Number(adultPolicy?.minimum_age||0)||null,
     privacyVersion:PRIVACY_VERSION,
     privacyText:'Your details will be used only to administer this Interclub event, including roster management, event communications and emergency/safety administration. Completing this form does not make you a member of the host club and your details will not be used for club membership marketing.',
   };
@@ -79,11 +85,12 @@ Deno.serve(async (req) => {
       : [];
     const hostClub = clubs?.[0] || null;
     const sideTeamName = link.side === 'club_a' ? event.club_a_name : event.club_b_name;
-    const [waiver,code] = await Promise.all([
+    const [waiver,code,adultPolicy] = await Promise.all([
       activeClubLegalDocument(base44,event,hostClub,'liability_waiver',fallbackWaiver(event)),
-      activeClubLegalDocument(base44,event,hostClub,'code_of_conduct',fallbackCode())
+      activeClubLegalDocument(base44,event,hostClub,'code_of_conduct',fallbackCode()),
+      activeAdultPolicy(base44,event,hostClub)
     ]);
-    const legal = legalText(event,waiver,code);
+    const legal = legalText(event,waiver,code,adultPolicy);
 
     const safeEvent = {
       id:event.id,
@@ -121,7 +128,7 @@ Deno.serve(async (req) => {
     if (mobileK.length < 8) return Response.json({ error:'Please enter a valid mobile number.' }, { status:400 });
     if (!['Male','Female','Non-binary','Prefer not to say'].includes(gender)) return Response.json({ error:'Please select your gender.' }, { status:400 });
     if (!emergencyName || mobileKey(emergencyMobile).length < 8) return Response.json({ error:'Please provide an emergency contact name and mobile number.' }, { status:400 });
-    if (body.ageConfirmed !== true) return Response.json({ error:'Clare Pickleball Interclub registration is currently for adults aged 18 or over.' }, { status:400 });
+    if (Number(legal.minimumAge||0)>0 && body.ageConfirmed !== true) return Response.json({ error:`This Interclub registration currently requires participants to be ${legal.minimumAge} or over.` }, { status:400 });
     if (body.waiverAccepted !== true || body.codeAccepted !== true || body.privacyAcknowledged !== true) {
       return Response.json({ error:'The event waiver, Code of Conduct and privacy notice must be accepted to register.' }, { status:400 });
     }
