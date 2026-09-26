@@ -9,10 +9,12 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
+import MemberBottomNav from '@/components/member/MemberBottomNav';
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout, isAuthenticated, navigateToLogin } = useAuth();
+  const isMemberExperience = user?.role !== 'admin' && user?.active_club_role !== 'club_admin';
 
   const initials = (user?.full_name || user?.email || 'U')
     .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -24,12 +26,14 @@ export default function AppLayout() {
       <div className="lg:pl-64">
         {/* Top bar */}
         <header className="sticky top-0 z-30 h-14 sm:h-16 glass-strong flex items-center justify-between px-3 sm:px-4 lg:px-6">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden text-muted-foreground hover:text-foreground w-10 h-10 -ml-1 flex items-center justify-center rounded-lg hover:bg-secondary"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          {!isMemberExperience && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden text-muted-foreground hover:text-foreground w-10 h-10 -ml-1 flex items-center justify-center rounded-lg hover:bg-secondary"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
 
           <div className="flex-1" />
 
@@ -72,10 +76,11 @@ export default function AppLayout() {
           </div>
         </header>
 
-        <main className="p-3 sm:p-4 lg:p-6 min-w-0 overflow-x-clip">
+        <main className={`p-3 sm:p-4 lg:p-6 min-w-0 overflow-x-clip ${isMemberExperience ? 'pb-24 lg:pb-6' : ''}`}>
           <Outlet />
         </main>
       </div>
+      {isMemberExperience && <MemberBottomNav />}
     </div>
   );
 }
