@@ -1216,7 +1216,7 @@ export default function MembershipConsole() {
                 <div><p className="font-semibold">Read-only member preview</p><p className="text-xs text-muted-foreground">{membershipSourcePreview.source?.club_name || 'Spond Club membership roster'} · previewed {membershipSourcePreview.previewedAt ? new Date(membershipSourcePreview.previewedAt).toLocaleString() : 'now'}</p></div>
                 <Badge variant="outline">No records changed</Badge>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2 mt-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-9 gap-2 mt-3">
                 {[
                   ['Spond records','total'],
                   ['Current in Spond','current'],
@@ -1224,9 +1224,15 @@ export default function MembershipConsole() {
                   ['Pending request','unprocessed'],
                   ['Deactivated','deactivated'],
                   ['Matched current','matched'],
-                  ['Current needs review','ambiguous']
+                  ['Current needs review','ambiguous'],
+                  ['RallyHub members','rallyhub_members'],
+                  ['Missing from Spond','rallyhub_missing_from_spond']
                 ].map(([title,key]) => <div key={key} className="rounded-lg bg-secondary/40 p-2.5"><p className="text-[10px] uppercase text-muted-foreground">{title}</p><p className="text-lg font-black mt-1">{membershipSourcePreview.counts?.[key] || 0}</p></div>)}
               </div>
+              {(membershipSourcePreview.rallyhubMissing || []).length ? <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50/60 dark:bg-amber-950/20 p-3">
+                <p className="text-xs font-semibold text-amber-900 dark:text-amber-100">RallyHub members with no current Spond Club record</p>
+                <div className="mt-2 space-y-1">{membershipSourcePreview.rallyhubMissing.map(member => <div key={member.person_id} className="text-xs text-amber-900 dark:text-amber-100"><strong>{member.full_name || 'Unnamed member'}</strong>{member.member_id ? ` · ${member.member_id}` : ''}{member.membership_status ? ` · ${label(member.membership_status)}` : ''}</div>)}</div>
+              </div> : <div className="mt-3 rounded-lg border border-green-300 bg-green-50/60 dark:bg-green-950/20 p-3 text-xs text-green-900 dark:text-green-100"><strong>Reverse check clear:</strong> every current RallyHub member has a current Spond Club record.</div>}
               {(membershipSourcePreview.counts?.new || membershipSourcePreview.counts?.person_without_membership) ? <p className="mt-2 text-[11px] text-muted-foreground">Current Spond records not yet reconciled: {membershipSourcePreview.counts?.new || 0} new candidate{membershipSourcePreview.counts?.new === 1 ? '' : 's'} · {membershipSourcePreview.counts?.person_without_membership || 0} existing RallyHub person{membershipSourcePreview.counts?.person_without_membership === 1 ? '' : 's'} without membership. Deactivated Spond records are historical and are not treated as new candidates.</p> : <p className="mt-2 text-[11px] text-muted-foreground">Deactivated Spond records are shown for history only and are excluded from new-candidate and current-match counts.</p>}
             </div>
             <div className="max-h-[420px] overflow-auto">
