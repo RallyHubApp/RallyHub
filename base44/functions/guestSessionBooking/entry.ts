@@ -44,6 +44,7 @@ const TEMPLATES:any={
 function clean(v:any,max=250){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
 function emailKey(v:any){return clean(v,200).toLowerCase()}
 function mobileKey(v:any){return clean(v,50).replace(/[^0-9]/g,'')}
+function sameMobile(a:any,b:any){const aa=mobileKey(a),bb=mobileKey(b);return !!aa&&!!bb&&(aa===bb||(aa.length>=9&&bb.length>=9&&aa.slice(-9)===bb.slice(-9)))}
 function token(){return `gs_${crypto.randomUUID().replaceAll('-','')}`}
 function validToken(v:string){return /^gs_[0-9a-f]{32}$/i.test(v)}
 function confirmation(){return `G${crypto.randomUUID().replaceAll('-','').slice(0,7).toUpperCase()}`}
@@ -98,7 +99,7 @@ async function inviteForSession(base44:any,session:any,rawToken:any,email='',mob
   const suppliedMobile=mobileKey(mobile);
   if(suppliedEmail||suppliedMobile){
     const emailMatch=!!boundEmail&&!!suppliedEmail&&boundEmail===suppliedEmail;
-    const mobileMatch=!!boundMobile&&!!suppliedMobile&&boundMobile===suppliedMobile;
+    const mobileMatch=!!boundMobile&&!!suppliedMobile&&sameMobile(boundMobile,suppliedMobile);
     if(!emailMatch&&!mobileMatch)return null;
   }
   return invite;
