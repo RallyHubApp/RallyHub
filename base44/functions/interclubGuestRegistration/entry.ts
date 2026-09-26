@@ -95,8 +95,9 @@ Deno.serve(async (req) => {
 
     const tournaments = await base44.asServiceRole.entities.Tournament.filter({ id:event.tournament_id });
     const tournament = tournaments?.[0] || null;
-    const clubs = event.host_club_id
-      ? await base44.asServiceRole.entities.Club.filter({ id:event.host_club_id })
+    const hostClubId = event.host_club_id || tournament?.host_club_id || '';
+    const clubs = hostClubId
+      ? await base44.asServiceRole.entities.Club.filter({ id:hostClubId })
       : [];
     const hostClub = clubs?.[0] || null;
     const sideTeamName = link.side === 'club_a' ? event.club_a_name : event.club_b_name;
@@ -263,10 +264,9 @@ Deno.serve(async (req) => {
       source_person_id:person.id,
     });
 
-    const hostClubId = event.host_club_id || tournament?.host_club_id || '';
     if (hostClubId) {
       const consents = [
-        { consent_type:'interclub_event_waiver', status:'accepted', response_text:'Accepted', consent_version:legal.waiverVersion }
+        { consent_type:'interclub_event_waiver', status:'accepted', response_text:'Accepted', consent_version:legal.waiverVersion },
         { consent_type:'interclub_code_of_conduct', status:'accepted', response_text:'Accepted', consent_version:CODE_VERSION },
         { consent_type:'interclub_event_privacy_notice', status:'accepted', response_text:'Acknowledged', consent_version:PRIVACY_VERSION },
         { consent_type:'interclub_photo_video', status:photoVideoConsent === 'yes' ? 'accepted' : 'declined', response_text:photoVideoConsent === 'yes' ? 'Yes' : 'No', consent_version:PRIVACY_VERSION },
