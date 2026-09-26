@@ -176,10 +176,10 @@ export default function PublicGuestSessionBooking(){
           </div>
         </section>
 
-        <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
-          <div><h2 className="text-lg font-black">Age eligibility</h2><p className="mt-1 text-xs text-muted-foreground">Clare Pickleball currently operates an adults-only programme.</p></div>
-          <label className="flex items-start gap-3 rounded-xl border p-4 text-sm"><input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.ageConfirmed} onChange={e=>set('ageConfirmed',e.target.checked)} required/><span><strong>I confirm that I am 18 years of age or over.</strong></span></label>
-        </section>
+        {Number(legal.minimumAge||0)>0&&<section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
+          <div><h2 className="text-lg font-black">Age eligibility</h2><p className="mt-1 text-xs text-muted-foreground">{activeClubBrand?.name||'This club'} currently requires guest participants to be at least {legal.minimumAge}.</p></div>
+          <label className="flex items-start gap-3 rounded-xl border p-4 text-sm"><input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.ageConfirmed} onChange={e=>set('ageConfirmed',e.target.checked)} required/><span><strong>I confirm that I am {legal.minimumAge} years of age or over.</strong></span></label>
+        </section>}
 
         <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
           <div><h2 className="text-lg font-black">Emergency contact</h2><p className="mt-1 text-xs text-muted-foreground">Only available to authorised club/session organisers.</p></div>
