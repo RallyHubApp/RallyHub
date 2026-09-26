@@ -51,6 +51,13 @@ const dateLabel = value => {
   }
 };
 
+const whatsappNumber = value => {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('0')) digits = `353${digits.slice(1)}`;
+  return digits;
+};
+
 const cellValue = (row, key, currency) => {
   const value = row?.[key];
   if (key === 'membership_fee') return money(value, currency);
@@ -725,7 +732,7 @@ export default function MembershipConsole() {
         toast.success(response.data.emailSent ? 'Membership invitation emailed and private link copied' : 'Private membership link copied. Email delivery failed, so send the copied link manually.');
       } else {
         const msg = `${recipientName ? `Hi ${recipientName.trim().split(/\s+/)[0]}, ` : ''}you are invited to complete your Clare Pickleball membership. Use this private link:\n${response.data.magicInviteUrl}\n\nThis link is tied to your mobile/WhatsApp number.`;
-        window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
+        window.open('https://wa.me/' + whatsappNumber(value) + '?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
         toast.success('Mobile-bound membership link created, copied and opened for WhatsApp');
       }
     } catch (error) {
