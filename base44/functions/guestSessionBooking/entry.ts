@@ -2,7 +2,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { createCheckout, retrievePayment, refundPayment, providerConfigured, verifyProviderConnection, type ProviderAccount } from './payments.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
-const CODE_VERSION='clare-guest-session-code-v1-2026-09';
 const PRIVACY_VERSION='clare-guest-session-privacy-v1-2026-09';
 const CANCELLATION_VERSION='clare-guest-session-cancellation-v1-2026-09';
 
@@ -77,30 +76,26 @@ async function clubBrand(base44:any,clubId:string){
     };
   }catch{return null}
 }
-async function activeClubWaiver(base44:any,tenantId:string,clubId:string){
-  const rows=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:tenantId,club_id:clubId,document_type:'liability_waiver',active:true},'-effective_from',20);
+async function activeClubLegalDocument(base44:any,tenantId:string,clubId:string,documentType:string){
+  const rows=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:tenantId,club_id:clubId,document_type:documentType,active:true},'-effective_from',20);
   const doc=(rows||[])[0];
-  if(!doc) throw Object.assign(new Error('This club has no active participation waiver configured.'),{status:409});
+  if(!doc) throw Object.assign(new Error(`This club has no active ${documentType.replaceAll('_',' ')} configured.`),{status:409});
   return doc;
 }
 async function legal(base44:any,session:any){
-  const waiver=await activeClubWaiver(base44,session.tenant_id,session.club_id);
+  const [waiver,code]=await Promise.all([
+    activeClubLegalDocument(base44,session.tenant_id,session.club_id,'liability_waiver'),
+    activeClubLegalDocument(base44,session.tenant_id,session.club_id,'code_of_conduct')
+  ]);
   return {
     waiverVersion:waiver.version,
     waiverTitle:waiver.title,
     waiverText:waiver.body_text,
     waiverConsentLabel:waiver.consent_label||'I have read and accept the Clare Pickleball Participation Declaration, Assumption of Risk & Liability Notice.',
-    codeVersion:CODE_VERSION,
-    codeTitle:'Clare Pickleball Guest Code of Conduct',
-    codeText:`Please play in the friendly and respectful spirit of Clare Pickleball.
-
-• Treat players, volunteers and venue staff with respect.
-• Follow court etiquette, safety instructions and the rules of play.
-• Stop immediately when “Ball on court” is called.
-• Do not use aggressive, intimidating, abusive or discriminatory language or behaviour.
-• Respect line calls, court rotation and other players’ equipment.
-• Wear suitable footwear and do not play where a court or surrounding area is unsafe.
-• Guest sessions are for players with pickleball experience. Beginners should use the club’s beginner programme rather than a guest walk-in session.`,
+    codeVersion:code.version,
+    codeTitle:code.title,
+    codeText:code.body_text,
+    codeConsentLabel:code.consent_label||'I have read and agree to abide by the Clare Pickleball Code of Conduct, Court Etiquette & Sportsmanship.',
     privacyVersion:PRIVACY_VERSION,
     privacyText:'Your details are used to administer this guest booking, payment, emergency/safety arrangements and necessary session communications. A guest booking does not make you a Clare Pickleball member. Your booking history may later be linked to the same RallyHub person record if you join the club, so RallyHub does not create duplicate identities.',
     cancellationVersion:CANCELLATION_VERSION,
@@ -825,7 +820,7 @@ ${detailRow('Reason',reason)}
       full_name:fullName,email,email_key:email,mobile,mobile_key:mobileK,
       emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,medical_note:medicalNote,
       waiver_version:legalBundle.waiverVersion,waiver_accepted:true,
-      code_of_conduct_version:CODE_VERSION,code_of_conduct_accepted:true,
+      code_of_conduct_version:legalBundle.codeVersion,code_of_conduct_accepted:true,
       privacy_notice_version:PRIVACY_VERSION,privacy_acknowledged:true,
       cancellation_policy_version:CANCELLATION_VERSION,cancellation_policy_accepted:true,
       photo_video_consent:photo,booking_status:initialStatus,payment_method:session.payment_method,payment_status:initialPayment,
@@ -835,7 +830,7 @@ ${detailRow('Reason',reason)}
 
     for(const c of [
       {consent_type:'guest_session_waiver',status:'accepted',response_text:'Accepted',consent_version:legalBundle.waiverVersion},
-      {consent_type:'guest_session_code_of_conduct',status:'accepted',response_text:'Accepted',consent_version:CODE_VERSION},
+      {consent_type:'guest_session_code_of_conduct',status:'accepted',response_text:'Accepted',consent_version:legalBundle.codeVersion},
       {consent_type:'guest_session_privacy_notice',status:'accepted',response_text:'Acknowledged',consent_version:PRIVACY_VERSION},
       {consent_type:'guest_session_cancellation_policy',status:'accepted',response_text:'Accepted',consent_version:CANCELLATION_VERSION},
       {consent_type:'guest_session_photo_video',status:photo==='yes'?'accepted':'declined',response_text:photo==='yes'?'Yes':'No',consent_version:PRIVACY_VERSION},

@@ -1,0 +1,117 @@
+{
+  "name": "ClubPolicy",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "sport_id": {
+      "type": "string"
+    },
+    "policy_type": {
+      "type": "string",
+      "enum": [
+        "health_safety",
+        "risk_assessment",
+        "venue_facilities",
+        "accident_incident_emergency",
+        "complaints_disciplinary",
+        "data_protection_privacy",
+        "adult_participation",
+        "equality_inclusion",
+        "other"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "body_text": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "effective_from": {
+      "type": "string",
+      "format": "date"
+    },
+    "review_due_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "public_visible": {
+      "type": "boolean",
+      "default": true
+    },
+    "jurisdiction": {
+      "type": "string"
+    },
+    "committee_approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approved_by": {
+      "type": "string"
+    },
+    "source_reference": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_sample_template": {
+      "type": "boolean",
+      "default": false
+    },
+    "template_key": {
+      "type": "string"
+    },
+    "editable": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "policy_type",
+    "title",
+    "version",
+    "body_text",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
