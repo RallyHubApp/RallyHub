@@ -158,8 +158,8 @@ Deno.serve(async(req)=>{
 
     if(action==='status'){
       const safe=safeConnection(connection);
-      const state=connection?credentialState(connection.credential_reference,connection.connection_mode):user.role==='admin'?credentialState(clean(body.credentialReference||'SPOND',120),'credentials_login'):{configured:false,names:null};
-      return Response.json({success:true,connection:safe,credentialsConfigured:state.configured,requiredSecretNames:state.names,canConfigureCredentialReference:user.role==='admin',defaultCredentialReference:user.role==='admin'?'SPOND':null,readOnly:true});
+      const state=connection?credentialState(connection.credential_reference,connection.connection_mode):user.role==='admin'?credentialState(clean(body.credentialReference||'SPOND_CLUB',120),'credentials_login'):{configured:false,names:null};
+      return Response.json({success:true,connection:safe,credentialsConfigured:state.configured,requiredSecretNames:state.names,canConfigureCredentialReference:user.role==='admin',defaultCredentialReference:user.role==='admin'?'SPOND_CLUB':null,readOnly:true});
     }
 
     if(action==='discover_groups'){
@@ -179,7 +179,7 @@ Deno.serve(async(req)=>{
       let credentialReference=connection?.credential_reference||'';
       let connectionMode=connection?.connection_mode||'credentials_login';
       if(user.role==='admin'){
-        credentialReference=credentialPrefix(body.credentialReference||credentialReference||'SPOND');
+        credentialReference=credentialPrefix(body.credentialReference||credentialReference||'SPOND_CLUB');
         connectionMode=clean(body.connectionMode||connectionMode||'credentials_login',40);
       }else if(!connection){
         return Response.json({error:'A platform administrator must create the secure Spond Club connection before a club administrator can use it.'},{status:403});
