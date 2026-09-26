@@ -763,7 +763,11 @@ ${detailRow('Reason',reason)}
     const remaining=cap>0?Math.max(0,cap-active.length):null;
 
     if(action==='public_get'){
-      return Response.json({success:true,session:safeSession(session),clubBrand:await clubBrand(base44,session.club_id),legal:await legal(base44,session),spotsRemaining:remaining});
+      const invite=await inviteForSession(base44,session,body.inviteToken||'');
+      const templates=await directoryTemplates(base44,session.tenant_id,session.club_id);
+      const directoryTemplate=templates.find((t:any)=>String(t.key)===String(session.session_label)) || templates.find((t:any)=>t.venueName===session.venue_name&&t.weekday===session.weekday&&t.start===session.start_time);
+      const brand=await clubBrand(base44,session.club_id);
+      return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite,approvalRequired:!invite,directorySessionId:directoryTemplate?.directorySessionId||directoryTemplate?.key||'',guestRequestUrl:brand?.slug?`/guest/${brand.slug}${directoryTemplate?.key?`?session=${encodeURIComponent(directoryTemplate.key)}`:''}`:''});
     }
 
     if(action==='public_status'){
@@ -805,6 +809,8 @@ ${detailRow('Reason',reason)}
 
     const fullName=clean(body.fullName,120);
     const email=emailKey(body.email);
+    const invite=await inviteForSession(base44,session,body.inviteToken||'',email);
+    if(!invite)return Response.json({error:'This guest booking requires club approval. Please request a guest place first, or use the private invitation link sent by Clare Pickleball.',approvalRequired:true},{status:403});
     const mobile=clean(body.mobile,50);
     const mobileK=mobileKey(mobile);
     const emergencyName=clean(body.emergencyContactName,120);
