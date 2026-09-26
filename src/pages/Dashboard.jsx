@@ -9,12 +9,15 @@ import { motion } from 'framer-motion';
 import StatCard from '@/components/shared/StatCard';
 import PageHeader from '@/components/shared/PageHeader';
 import { format } from 'date-fns';
+import MemberPortalDashboard from '@/components/member/MemberPortalDashboard';
 
 export default function Dashboard() {
   const { data: currentUser = null } = useQuery({
     queryKey: ['current-user'],
     queryFn: () => base44.auth.me().catch(() => null)
   });
+
+  const isMemberView = !!currentUser && currentUser?.role !== 'admin' && currentUser?.active_club_role !== 'club_admin';
 
   const { data: players = [] } = useQuery({
     queryKey: ['players', currentUser?.active_tenant_id, currentUser?.active_club_id],
@@ -26,7 +29,7 @@ export default function Dashboard() {
         ? base44.entities.Player.filter(filters, 'full_name', 500)
         : base44.entities.Player.list('full_name', 500);
     },
-    enabled: !!currentUser
+    enabled: !!currentUser && !isMemberView
   });
 
   const { data: tournaments = [] } = useQuery({
@@ -39,7 +42,7 @@ export default function Dashboard() {
         ? base44.entities.Tournament.filter(filters, '-created_date', 50)
         : [];
     },
-    enabled: !!currentUser
+    enabled: !!currentUser && !isMemberView
   });
 
   const { data: clubLeaderboard = { rows: [] } } = useQuery({
@@ -49,7 +52,7 @@ export default function Dashboard() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data;
     },
-    enabled: !!currentUser
+    enabled: !!currentUser && !isMemberView
   });
 
   const { data: pendingMembershipApprovalCount = 0 } = useQuery({
@@ -90,6 +93,8 @@ export default function Dashboard() {
 
   const activeTournaments = tournaments.filter(t => t.status === 'In Progress' || t.status === 'Registration Open');
   const topPlayers = (clubLeaderboard.rows || []).slice(0, 5);
+
+  if (isMemberView) return <MemberPortalDashboard />;
 
   return (
     <div className="space-y-6">
