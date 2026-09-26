@@ -197,7 +197,7 @@ export default function PublicInterclubRegistration() {
             </details>
             <label className="flex items-start gap-3 rounded-xl border p-4 text-sm">
               <input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.waiverAccepted} onChange={e=>set('waiverAccepted',e.target.checked)} required/>
-              <span><strong>I have read and accept the event waiver and release conditions.</strong></span>
+              <span><strong>{legal.waiverConsentLabel || 'I have read and accept the Clare Pickleball Participation Declaration, Assumption of Risk & Liability Notice.'}</strong></span>
             </label>
 
             <details className="rounded-xl border bg-secondary/30 p-4">
