@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { sendWithConfiguredEmailTransport } from '../guestSessionBooking/emailRouter.ts';
 
 function clean(v:any,max=250){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
 function emailKey(v:any){return clean(v,200).toLowerCase()}
@@ -7,6 +8,24 @@ function requestToken(){return `gr_${crypto.randomUUID().replaceAll('-','')}`}
 function sessionToken(){return `gs_${crypto.randomUUID().replaceAll('-','')}`}
 function inviteToken(){return `gi_${crypto.randomUUID().replaceAll('-','')}`}
 function weekday(date:string){const d=new Date(`${date}T12:00:00Z`);return Number.isFinite(d.getTime())?['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getUTCDay()]:''}
+function firstName(v:any){return clean(v,120).split(/\s+/).filter(Boolean)[0]||'there'}
+function escapeHtml(v:any){return String(v??'').replace(/[&<>"']/g,(ch)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' } as any)[ch])}
+function formatDate(v:string){try{return new Intl.DateTimeFormat('en-IE',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Europe/Dublin'}).format(new Date(`${v}T12:00:00Z`))}catch{return v}}
+function money(v:any){try{return new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR'}).format(Number(v||0))}catch{return `€${Number(v||0).toFixed(2)}`}}
+
+async function sendApprovedGuestInvite(base44:any,club:any,row:any,session:any,venue:any,date:string,inviteUrl:string){
+  const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:club.tenant_id,clubId:club.id};
+  const hello=firstName(row.full_name);
+  const fee=money(Number(session.price||0)||(/cash/i.test(String(session.paymentMethod||''))?5:5.5));
+  const payment=/cash/i.test(String(session.paymentMethod||''))?`${fee} cash on arrival`:`${fee} online`;
+  const subject=`${club.name} · Guest request approved · ${formatDate(date)} ${session.start||''}`;
+  const textBody=`Hi ${hello},\n\nYour guest request has been approved.\n\nDate: ${formatDate(date)}\nTime: ${session.start||''}${session.end?`–${session.end}`:''}\nVenue: ${venue.name||''}\nFee: ${payment}\n\nComplete your waiver, Code of Conduct and booking/payment using your private link:\n${inviteUrl}\n\nThis private link is authorised for ${row.email}. If a different email is used, RallyHub will return the booking to the normal club approval route.\n\nBrian Moore\nChairperson, Clare Pickleball\n\nPowered by RallyHub`;
+  const logo=escapeHtml(club.logo_url||'');
+  const primary=escapeHtml(club.primary_colour||'#2667f2');
+  const secondary=escapeHtml(club.secondary_colour||'#facc15');
+  const htmlBody=`<!doctype html><html><body style="margin:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border:1px solid #d9e1ec;border-radius:18px;overflow:hidden;"><tr><td style="height:6px;background:${primary};border-bottom:3px solid ${secondary};"></td></tr><tr><td style="padding:26px 28px 18px;text-align:center;">${logo?`<img src="${logo}" alt="${escapeHtml(club.name)} logo" width="72" height="72" style="display:block;margin:0 auto 12px;object-fit:contain;border-radius:12px;">`:''}<div style="font-size:25px;font-weight:800;">${escapeHtml(club.name)}</div><div style="margin-top:5px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b7280;">Guest Session</div></td></tr><tr><td style="padding:0 28px 28px;"><h1 style="margin:0 0 18px;font-size:23px;line-height:1.25;">Guest request approved</h1><p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Hi ${escapeHtml(hello)}, your guest request has been approved.</p><div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;font-size:14px;line-height:1.7;"><strong>${escapeHtml(formatDate(date))}</strong><br>${escapeHtml(`${session.start||''}${session.end?`–${session.end}`:''}`)}<br>${escapeHtml(venue.name||'')}<br>${escapeHtml(payment)}</div><div style="text-align:center;margin:6px 0 24px;"><a href="${escapeHtml(inviteUrl)}" style="display:inline-block;padding:14px 24px;border-radius:10px;background:${primary};color:#fff;text-decoration:none;font-size:16px;font-weight:800;">Complete guest booking</a></div><p style="margin:0 0 18px;font-size:12px;line-height:1.55;color:#6b7280;">This private link is authorised for ${escapeHtml(row.email)}. If a different email is entered, the booking will require club approval before payment.</p><p style="margin:0;font-size:15px;line-height:1.5;"><strong>Brian Moore</strong><br>Chairperson<br>Clare Pickleball</p></td></tr><tr><td style="padding:18px 28px;background:#f7f9fc;border-top:1px solid #e4e9f1;text-align:center;font-size:11px;color:#7b8494;">Powered by <strong>RallyHub</strong></td></tr></table></td></tr></table></body></html>`;
+  await sendWithConfiguredEmailTransport(base44,scope,{to:row.email,subject,textBody,htmlBody});
+}
 
 async function loadClub(base44:any,slug:string){
   const club=(await base44.asServiceRole.entities.Club.filter({slug,status:'active'},'-updated_date',10))?.[0];
