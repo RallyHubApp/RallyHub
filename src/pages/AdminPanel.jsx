@@ -2078,6 +2078,7 @@ Brian`;
                   <p className="text-xs text-muted-foreground mt-1">Search by name, email, mobile, club, county or DUPR. Unsubscribed records remain visible as a suppression record so they are not accidentally re-added to a campaign.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={copyDirectoryPlayerEmails} disabled={!activeDirectoryPlayerRows.some(row => row.emailOptIn && row.email)} className="gap-2"><Copy className="w-4 h-4" /> Copy opted-in emails</Button>
                   <Button type="button" variant="outline" onClick={copyDirectoryPlayerWhatsAppNumbers} disabled={!activeDirectoryPlayerRows.some(row => row.whatsappOptIn && row.mobile)} className="gap-2"><Copy className="w-4 h-4" /> Copy opted-in WhatsApp numbers</Button>
                   <Button type="button" variant="outline" onClick={downloadDirectoryPlayerCsv} disabled={!filteredDirectoryPlayerRows.length}>Export filtered CSV</Button>
                 </div>
