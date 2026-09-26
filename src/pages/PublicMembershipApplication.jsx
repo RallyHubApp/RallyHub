@@ -17,6 +17,10 @@ function money(value,currency='EUR'){
   catch { return '€' + Number(value||0).toFixed(2); }
 }
 
+function phoneDigits(value){
+  return String(value||'').replace(/\D/g,'');
+}
+
 function LegalBlock({ doc, checked, onChange }) {
   if (!doc) return null;
   return (
@@ -67,11 +71,14 @@ export default function PublicMembershipApplication() {
   const [application, setApplication] = useState(null);
   const [inviteApproved, setInviteApproved] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteMobile, setInviteMobile] = useState('');
 
   const club = config?.club || {};
   const legal = config?.legal || {};
   const feeLabel = useMemo(() => money(config?.membershipFee, config?.currency || 'EUR'), [config]);
-  const inviteMatchesEmail = inviteApproved && !!inviteEmail && form.email.trim().toLowerCase() === inviteEmail.trim().toLowerCase();
+  const inviteEmailMatches = !!inviteEmail && form.email.trim().toLowerCase() === inviteEmail.trim().toLowerCase();
+  const inviteMobileMatches = !!inviteMobile && phoneDigits(form.mobile) === phoneDigits(inviteMobile);
+  const inviteMatchesContact = inviteApproved && (inviteEmailMatches || inviteMobileMatches);
 
   useEffect(() => {
     let active = true;
@@ -84,18 +91,19 @@ export default function PublicMembershipApplication() {
         const approved = res.data?.inviteApproved === true;
         setInviteApproved(approved);
         setInviteEmail(res.data?.inviteEmail || '');
+        setInviteMobile(res.data?.inviteMobile || '');
         if (approved) {
           setApplicationType('new');
           const prefill = res.data?.prefill || null;
           if (prefill) {
             setForm({ ...EMPTY_FORM,
               fullName:prefill.fullName||'',fullPostalAddress:prefill.fullPostalAddress||'',postalCode:prefill.postalCode||'',
-              email:prefill.email||res.data?.inviteEmail||'',mobile:prefill.mobile||'',dateOfBirth:prefill.dateOfBirth||'',
+              email:prefill.email||res.data?.inviteEmail||'',mobile:prefill.mobile||res.data?.inviteMobile||'',dateOfBirth:prefill.dateOfBirth||'',
               emergencyContactName:prefill.emergencyContactName||'',emergencyContactRelationship:prefill.emergencyContactRelationship||'',emergencyMobile:prefill.emergencyMobile||''
             });
             if (prefill.consents) setConsents(prev=>({...prev,...prefill.consents}));
-          } else if (res.data?.inviteEmail) {
-            setForm(prev=>({...prev,email:res.data.inviteEmail}));
+          } else if (res.data?.inviteEmail || res.data?.inviteMobile) {
+            setForm(prev=>({...prev,email:res.data?.inviteEmail||'',mobile:res.data?.inviteMobile||''}));
           }
           setStep('details');
         }
@@ -286,8 +294,9 @@ export default function PublicMembershipApplication() {
                 <div className="sm:col-span-2"><Label>Full postal address</Label><textarea className="mt-1 min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.fullPostalAddress} onChange={e=>updateField('fullPostalAddress',e.target.value)} autoComplete="street-address" /></div>
                 <div><Label>Eircode / postcode</Label><Input className="mt-1" value={form.postalCode} onChange={e=>updateField('postalCode',e.target.value)} /></div>
                 <div><Label>Date of birth</Label><Input type="date" className="mt-1" value={form.dateOfBirth} onChange={e=>updateField('dateOfBirth',e.target.value)} />{Number(config?.minimumAge||0)>0&&<p className="mt-1 text-xs text-muted-foreground">Membership is currently for people aged {config.minimumAge} or over.</p>}</div>
-                <div><Label>Email address</Label><Input type="email" className="mt-1" value={form.email} onChange={e=>updateField('email',e.target.value)} autoComplete="email" />{inviteApproved&&inviteEmail&&<p className={`mt-1.5 text-xs ${inviteMatchesEmail?'text-muted-foreground':'font-semibold text-amber-600'}`}>{inviteMatchesEmail?`This private invitation is authorised for ${inviteEmail}.`:`This private invitation is authorised for ${inviteEmail}. If you use a different email, the application will go to Clare Pickleball for approval before any payment is taken.`}</p>}</div>
-                <div><Label>Mobile number</Label><Input className="mt-1" value={form.mobile} onChange={e=>updateField('mobile',e.target.value)} autoComplete="tel" /></div>
+                <div><Label>Email address</Label><Input type="email" className="mt-1" value={form.email} onChange={e=>updateField('email',e.target.value)} autoComplete="email" />{inviteApproved&&inviteEmail&&<p className={`mt-1.5 text-xs ${inviteMatchesContact?'text-muted-foreground':'font-semibold text-amber-600'}`}>Authorised email: {inviteEmail}</p>}</div>
+                <div><Label>Mobile number</Label><Input className="mt-1" value={form.mobile} onChange={e=>updateField('mobile',e.target.value)} autoComplete="tel" />{inviteApproved&&inviteMobile&&<p className={`mt-1.5 text-xs ${inviteMatchesContact?'text-muted-foreground':'font-semibold text-amber-600'}`}>Authorised mobile/WhatsApp: {inviteMobile}</p>}</div>
+                {inviteApproved&&!inviteMatchesContact&&<div className="sm:col-span-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs font-semibold text-amber-700">This private invitation is authorised by the email or mobile/WhatsApp number it was issued to. If neither detail matches, your application will go to Clare Pickleball for approval and no payment will be taken.</div>}
                 <div><Label>Emergency contact name</Label><Input className="mt-1" value={form.emergencyContactName} onChange={e=>updateField('emergencyContactName',e.target.value)} /></div>
                 <div><Label>Relationship to you</Label><Input className="mt-1" value={form.emergencyContactRelationship} onChange={e=>updateField('emergencyContactRelationship',e.target.value)} placeholder="e.g. spouse, parent, friend" /></div>
                 <div className="sm:col-span-2"><Label>Emergency contact mobile</Label><Input className="mt-1" value={form.emergencyMobile} onChange={e=>updateField('emergencyMobile',e.target.value)} /></div>
@@ -306,7 +315,7 @@ export default function PublicMembershipApplication() {
               <LegalBlock doc={legal.health} checked={consents.health_declaration} onChange={v=>setConsents(p=>({...p,health_declaration:v}))} />
               <LegalBlock doc={legal.terms} checked={consents.membership_terms} onChange={v=>setConsents(p=>({...p,membership_terms:v}))} />
               {legal.photo && <section className="rounded-2xl border border-border bg-card overflow-hidden"><div className="px-4 sm:px-5 py-4 border-b border-border bg-secondary/20"><h3 className="font-bold">{legal.photo.title}</h3><p className="text-xs text-muted-foreground mt-1">Optional choice · Version {legal.photo.version}</p></div><div className="p-4 sm:p-5"><div className="rounded-xl bg-secondary/20 border border-border p-4 text-sm leading-6 whitespace-pre-wrap">{legal.photo.bodyText}</div><div className="mt-4 grid grid-cols-2 gap-2"><button type="button" onClick={()=>setConsents(p=>({...p,photoVideo:'yes'}))} className={'rounded-xl border px-4 py-3 text-sm font-semibold ' + (consents.photoVideo==='yes'?'border-primary bg-primary text-primary-foreground':'border-border bg-background')}>Yes, I consent</button><button type="button" onClick={()=>setConsents(p=>({...p,photoVideo:'no'}))} className={'rounded-xl border px-4 py-3 text-sm font-semibold ' + (consents.photoVideo==='no'?'border-primary bg-primary text-primary-foreground':'border-border bg-background')}>No, I do not consent</button></div></div></section>}
-              <div className="rounded-2xl border border-border bg-card p-5"><div className="flex items-center justify-between gap-3"><span className="font-bold">Membership fee</span><span className="text-xl font-black">{feeLabel}</span></div><p className="mt-2 text-sm text-muted-foreground">{applicationType==='new'&&!inviteMatchesEmail?'Your application will be sent to the club for approval first. No payment will be taken until the club approves your application and sends you a private link.':'Your application will be recorded first. You will then continue to the club’s connected secure payment gateway.'}</p></div>
+              <div className="rounded-2xl border border-border bg-card p-5"><div className="flex items-center justify-between gap-3"><span className="font-bold">Membership fee</span><span className="text-xl font-black">{feeLabel}</span></div><p className="mt-2 text-sm text-muted-foreground">{applicationType==='new'&&!inviteMatchesContact?'Your application will be sent to the club for approval first. No payment will be taken until the club approves your application and sends you a private link.':'Your application will be recorded first. You will then continue to the club’s connected secure payment gateway.'}</p></div>
               <div className="flex flex-col sm:flex-row gap-2"><Button onClick={submitApplication} disabled={busy} className="sm:flex-1">{busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Submit membership application</Button><Button variant="outline" onClick={()=>setStep('details')} disabled={busy}>Back</Button></div>
             </section>
           )}
