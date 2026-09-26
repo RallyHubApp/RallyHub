@@ -74,18 +74,17 @@ export default function GuestBookings(){
       });
       if(res.data?.error)throw new Error(res.data.error);
       await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
-      const s=res.data.session;
-      const url=res.data.magicInviteUrl||`${window.location.origin}/book/${s.token}`;
-      copy(url,'Private guest invitation link created and copied');
-      toast.success('Guest session created');
+      toast.success('Guest session created. Create a private invitation for a specific guest, or use the public link if approval should be required.');
       setSessionDate('');setCapacity('');setFeeAmount('');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not create guest session')}
     finally{setBusy('')}
   };
 
   const createMagicLink=async(session)=>{
-    const recipientEmail=window.prompt('Guest email address (recommended – this binds the private link to that guest)')||'';
-    const recipientName=recipientEmail?(window.prompt('Guest first name or full name (optional)')||''):'';
+    const recipientEmail=window.prompt('Guest email address (required – the private link is locked to this email)');
+    if(recipientEmail===null)return;
+    if(!recipientEmail.trim()){toast.error('Enter the guest email address');return}
+    const recipientName=window.prompt('Guest first name or full name (optional)')||'';
     setBusy(`magic-${session.id}`);
     try{
       const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_create_magic_invite',sessionId:session.id,recipientEmail:recipientEmail.trim(),recipientName:recipientName.trim()});
@@ -123,9 +122,13 @@ export default function GuestBookings(){
   };
 
   const shareMagicWhatsApp=async(session)=>{
+    const recipientEmail=window.prompt('Guest email address (required – the WhatsApp link is locked to this email)');
+    if(recipientEmail===null)return;
+    if(!recipientEmail.trim()){toast.error('Enter the guest email address');return}
+    const recipientName=window.prompt('Guest first name or full name (optional)')||'';
     setBusy(`whatsapp-${session.id}`);
     try{
-      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_create_magic_invite',sessionId:session.id});
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_create_magic_invite',sessionId:session.id,recipientEmail:recipientEmail.trim(),recipientName:recipientName.trim()});
       if(res.data?.error)throw new Error(res.data.error);
       const action=session.paymentMethod==='cash'?'Reserve your place':`Book & pay €${Number(session.feeAmount||0).toFixed(2)}`;
       const msg=`Clare Pickleball guest session\n${niceDate(session.sessionDate)} · ${session.startTime}\n${session.venueName}\n\n${action}:\n${res.data.magicInviteUrl}`;
@@ -225,7 +228,7 @@ export default function GuestBookings(){
     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
       <div>
         <div className="flex items-center gap-2"><CalendarCheck className="h-6 w-6 text-primary"/><h1 className="text-2xl sm:text-3xl font-black">Guest Bookings</h1></div>
-        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">Create a dated Clare Pickleball guest-session link. The guest completes their details, waiver, cancellation terms and payment without needing a RallyHub account.</p>
+        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">Create a dated Clare Pickleball guest session. Private admin invitations are tied to the intended guest email and can proceed to payment; public or forwarded links require club approval first.</p>
       </div>
       <Badge variant="outline" className={templateData.sumupConfigured?'border-green-500/40 text-green-600':'border-amber-500/40 text-amber-600'}>
         {templateData.sumupConfigured?'SumUp connected':'SumUp setup required'}
