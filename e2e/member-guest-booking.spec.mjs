@@ -94,8 +94,8 @@ test.describe('member or guest session booking mobile flow', () => {
     await expect(page.getByRole('heading',{name:'1. About you'})).toBeVisible();
   });
 
-  test('beginner guest sees only beginner-eligible sessions and no payment is taken', async ({ page }) => {
-    await mockPublicApi(page);
+  test('beginner guest sees only eligible sessions, records multi-sport and health intake, and no payment is taken', async ({ page }) => {
+    const calls=await mockPublicApi(page);
     await page.goto('/guest/clare-pickleball');
     await page.getByRole('button',{name:/I’m a guest/}).click();
     await page.getByRole('button',{name:/Beginner/}).click();
@@ -103,6 +103,26 @@ test.describe('member or guest session booking mobile flow', () => {
     await expect(page.getByText('Doora Barefield')).toHaveCount(0);
     await expect(page.getByText('Ennistymon Community Centre')).toHaveCount(2);
     await expect(page.getByText('Corofin GAA Sports Hall')).toBeVisible();
+    await expect(page.getByRole('heading',{name:'3. Previous sporting experience'})).toBeVisible();
+    await page.getByLabel('Tennis').check();
+    await page.getByLabel('Badminton').check();
+    await page.getByLabel(/Any other sporting history/).fill('Played volleyball socially for several years.');
+    await expect(page.getByLabel('Tennis')).toBeChecked();
+    await expect(page.getByLabel('Badminton')).toBeChecked();
+    await page.getByLabel('Yes',{exact:true}).check();
+    await page.getByLabel('Please give brief details').fill('Previous knee surgery, fully recovered.');
+    await page.getByLabel('Full name').fill('Guest Tester');
+    await page.getByLabel('Email').fill('guest@example.test');
+    await page.getByLabel('Mobile').fill('0871234567');
+    await page.getByLabel(/I confirm that I am 18 years of age or over/).check();
+    await page.getByText('Ennistymon Community Centre').first().click();
     await expect(page.getByText(/No payment is taken with this request/)).toBeVisible();
+    await page.getByRole('button',{name:'Send guest request'}).click();
+    await expect(page.getByRole('heading',{name:'Request sent'})).toBeVisible();
+    const submit=calls.find(x=>x.name==='guestAccessJourney'&&x.body.action==='public_submit');
+    expect(submit.body.previousSports).toEqual(['Tennis','Badminton']);
+    expect(submit.body.sportingBackgroundNote).toContain('volleyball');
+    expect(submit.body.healthDeclarationApplies).toBe(true);
+    expect(submit.body.medicalNote).toContain('knee surgery');
   });
 });
