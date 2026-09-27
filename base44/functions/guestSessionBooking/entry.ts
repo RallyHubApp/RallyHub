@@ -145,6 +145,15 @@ function matchSpondMemberId(group:any,person:any,explicitIds:string[]=[]){
     const memberPhones=[profile.phoneNumber,member?.phoneNumber].map(normalisePhone).filter((v:string)=>v.length>=7);
     if(memberPhones.some((phone:string)=>phones.has(phone)))return String(member?.id||member?.uid||member?.memberId);
   }
+  const targetName=nameKey(person?.full_name||'');
+  if(targetName){
+    const nameMatches=members.filter((member:any)=>{
+      const profile=member?.profile||{};
+      const full=clean(`${profile.firstName||member?.firstName||''} ${profile.lastName||member?.lastName||''}`,180);
+      return nameKey(full)===targetName;
+    });
+    if(nameMatches.length===1)return String(nameMatches[0]?.id||nameMatches[0]?.uid||nameMatches[0]?.memberId);
+  }
   return null;
 }
 
