@@ -94,10 +94,38 @@ function spondRowMatchesPerson(row:any,person:any,memberId:string){
   const rowName=nameKey(`${profile.firstName||row?.firstName||''} ${profile.lastName||row?.lastName||''}`);
   return !!rowName&&rowName===nameKey(person?.full_name||'');
 }
-function memberIsInvitedToSpondEvent(event:any,person:any,memberId:string){
+function spondMemberSubgroupIds(group:any,memberId:string){
+  const ids=new Set<string>();
+  const add=(value:any)=>{const id=String(value?.id??value??'').trim();if(id)ids.add(id)};
+  const sameMember=(row:any)=>String(row?.memberId||row?.uid||row?.id||'')===String(memberId||'');
+  for(const sub of group?.subGroups||group?.subgroups||[]){
+    if((sub?.members||[]).some(sameMember))add(sub?.id||sub?.uid||sub?.subGroupId);
+  }
+  const member=spondGroupMembers(group).find((row:any)=>sameMember(row));
+  for(const value of member?.subGroups||member?.subgroups||member?.subGroupIds||member?.subgroupIds||[])add(value);
+  return ids;
+}
+function spondEventSubgroupIds(event:any){
+  const ids=new Set<string>();
+  const add=(value:any)=>{const id=String(value?.id??value?.uid??value?.subGroupId??value??'').trim();if(id)ids.add(id)};
+  const addMany=(values:any)=>(Array.isArray(values)?values:[]).forEach(add);
+  add(event?.subGroupId);add(event?.subgroupId);addMany(event?.subGroupIds);addMany(event?.subgroupIds);
+  add(event?.subGroup);add(event?.subgroup);
+  const recipients=event?.recipients||{},groupRecipients=recipients?.group||{};
+  add(groupRecipients?.subGroupId);add(groupRecipients?.subgroupId);addMany(groupRecipients?.subGroupIds);addMany(groupRecipients?.subgroupIds);addMany(groupRecipients?.subGroups);addMany(groupRecipients?.subgroups);
+  addMany(recipients?.subGroupIds);addMany(recipients?.subgroupIds);addMany(recipients?.subGroups);addMany(recipients?.subgroups);
+  return ids;
+}
+function memberIsInvitedToSpondEvent(event:any,person:any,memberId:string,memberSubgroupIds:Set<string>){
   if(collectSpondInviteIds(event).has(String(memberId)))return true;
   const rows=[...(event?.responses?.members||[]),...(event?.responses?.responses||[]),...(event?.recipients?.members||[])];
-  return rows.some((row:any)=>spondRowMatchesPerson(row,person,memberId));
+  if(rows.some((row:any)=>spondRowMatchesPerson(row,person,memberId)))return true;
+  const eventSubgroups=spondEventSubgroupIds(event);
+  if(eventSubgroups.size&&[...eventSubgroups].some(id=>memberSubgroupIds.has(id)))return true;
+  // Some scheduled Spond series expose the selected invitees under recipients.group.members.
+  // Match those by profile/email/phone/name, never by a raw recipient id alone.
+  const groupRows=event?.recipients?.group?.members||[];
+  return groupRows.some((row:any)=>spondRowMatchesPerson({...row,id:''},person,''));
 }
 function spondResponseStatus(event:any,memberId:string){
   const id=String(memberId||'');
