@@ -45,6 +45,25 @@
         "experienced"
       ]
     },
+    "previous_sports": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Guest-declared previous racket/sport experience; multiple selections allowed"
+    },
+    "sporting_background_note": {
+      "type": "string",
+      "description": "Optional additional sporting history the guest considers relevant"
+    },
+    "health_declaration_applies": {
+      "type": "boolean",
+      "description": "Whether the guest answered yes to any health/medical screening prompt"
+    },
+    "medical_note": {
+      "type": "string",
+      "description": "Guest-provided brief health/medical details for authorised organisers"
+    },
     "preferred_venue_key": {
       "type": "string"
     },
