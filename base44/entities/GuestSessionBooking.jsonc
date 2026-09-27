@@ -58,6 +58,10 @@
     "medical_note": {
       "type": "string"
     },
+    "booking_note": {
+      "type": "string",
+      "description": "Optional free-text note supplied by the member or guest for the session organiser"
+    },
     "waiver_version": {
       "type": "string"
     },
