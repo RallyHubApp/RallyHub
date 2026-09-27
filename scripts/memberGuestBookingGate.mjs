@@ -38,10 +38,18 @@ assert(memberBlock.includes('booking_note:clean(body.bookingNote,1000)'), 'Membe
 assert(booking.includes("participant_type:'guest'"), 'Guest bookings must still be recorded as guest');
 assert(booking.includes('booking_note:clean(body.bookingNote,1000)'), 'Guest host note must be stored');
 assert(booking.includes('body.waiverAccepted!==true') && booking.includes('body.codeAccepted!==true'), 'Guest legal acceptance must remain enforced');
+assert(booking.includes('resolveSessionHostContact'), 'Booking flow must resolve the configured session host from the Directory schedule');
+assert(booking.includes('sendHostBookingEmail'), 'Booking flow must email the session host after confirmation');
+assert(booking.includes("action==='admin_resend_host_email'"), 'Admin must be able to resend a booking directly to the session host');
+assert(booking.includes("hostName:host?.name||''") && booking.includes("hostMobile:host?.mobile||''"), 'Admin booking list must expose the resolved host contact for email/WhatsApp follow-up');
+assert(booking.includes('host:String(s.host||\'\')'), 'Directory session templates must retain the configured host');
 
 assert(webhook.includes("const isMember=booking.participant_type==='member'"), 'Payment webhook must distinguish member from guest');
 assert(webhook.includes("const participantLabel=isMember?'Member':'Guest'"), 'Payment webhook messaging must label participant correctly');
 assert(webhook.includes('booking.booking_note'), 'Payment webhook/session-host summary must include optional note');
+assert(webhook.includes('resolveSessionHostContact'), 'Payment webhook must resolve the configured session host');
+assert(webhook.includes('sendHostBookingEmail'), 'Successful online payments must email the session host automatically');
+assert(webhook.includes("emailKey(host.email)!==emailKey(session.notification_email||'')"), 'Webhook must avoid duplicate host/admin email when the same person receives both');
 assert(webhook.includes("${isMember?'':`<div"), 'Member webhook email must suppress guest-only waiver block');
 
 assert(schema.properties?.participant_type?.enum?.includes('member') && schema.properties?.participant_type?.enum?.includes('guest'), 'Booking schema must support member and guest participants');
