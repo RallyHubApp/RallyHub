@@ -132,7 +132,7 @@ export default function PublicKotcResults(){
     </section>}
     <header className="glass rounded-xl p-5 text-center relative" style={{borderTopWidth:data.club_brand?.primary_colour?5:undefined,borderTopColor:data.club_brand?.primary_colour||undefined,borderBottomWidth:data.club_brand?.secondary_colour?2:undefined,borderBottomColor:data.club_brand?.secondary_colour||undefined}}>
       <div className="flex flex-wrap justify-center sm:absolute sm:right-3 sm:top-3 gap-2"><AppearanceQuickButton/><Button variant="outline" size="sm" onClick={()=>toggleHall(true)} data-testid="enter-hall-display"><MonitorUp className="w-4 h-4 mr-1"/>Live Event View</Button></div>
-      <div className="flex justify-center"><RallyHubPublicBrand moduleName="King of the Court" pageLabel="Live Event View" club={data.club_brand}/></div>
+      <div className="flex justify-center"><RallyHubPublicBrand moduleName="King of the Court" pageLabel={finished?'Event Summary':'Live Event View'} club={data.club_brand}/></div>
       <Crown className="w-8 h-8 text-yellow-400 mx-auto mt-2 mb-1"/>
       <h1 className="text-xl sm:text-2xl font-bold">{data.session.name}</h1>
       <p className="text-[10px] uppercase tracking-[.22em] text-primary font-bold mt-1">{finished?'Final Results':'Live'}</p>
@@ -140,7 +140,7 @@ export default function PublicKotcResults(){
       <p className="text-xs text-muted-foreground mt-3">{finished?'Final podium and completed round results. Full individual rankings are not published here.':'This page updates automatically as the host starts rounds and scores are saved.'}</p>
     </header>
 
-    {finished&&podium.length>0&&<section className="rounded-2xl border bg-card p-4 sm:p-6 space-y-4" data-testid="public-kotc-podium"><div className="text-center"><Trophy className="w-8 h-8 text-yellow-400 mx-auto"/><p className="mt-2 text-xs sm:text-sm font-black uppercase tracking-[.18em] text-muted-foreground">Final Podium</p></div><KotcPodium podium={podium}/></section>
+    {finished&&podium.length>0&&<section className="rounded-2xl border bg-card p-4 sm:p-6 space-y-4" data-testid="public-kotc-podium"><div className="text-center"><Trophy className="w-8 h-8 text-yellow-400 mx-auto"/><p className="mt-2 text-xs sm:text-sm font-black uppercase tracking-[.18em] text-muted-foreground">Final Podium</p></div><KotcPodium podium={podium}/></section>}
 
     {!finished&&current.length>0&&<section className="space-y-3" data-testid="public-kotc-current-round"><div className="flex items-center justify-between gap-3"><h2 className="font-bold">{data.current_round?.status==='proposed'?'Round Ready':'On Court Now'} · Round {data.current_round?.round_number}</h2><Badge variant="outline">{roundStatus}</Badge></div>{(data.bench||[]).length>0&&<div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3"><p className="text-[10px] uppercase tracking-wider text-amber-500 font-bold">Bench This Round</p><p className="text-sm font-semibold mt-1">{data.bench.join(' · ')}</p></div>}<div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">{current.map(m=><CourtCard key={`${m.round_number}-${m.court}`} match={m} roundStatus={roundStatus}/>)}</div></section>}
 
