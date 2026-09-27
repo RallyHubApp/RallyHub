@@ -16,7 +16,7 @@ const CLARE_FALLBACK_BRAND={
 };
 
 const EMPTY={
-  fullName:'',email:'',mobile:'',emergencyContactName:'',emergencyContactMobile:'',medicalNote:'',bookingNote:'',ageConfirmed:false,
+  fullName:'',email:'',mobile:'',emergencyContactName:'',emergencyContactMobile:'',previousSports:[],sportingBackgroundNote:'',healthDeclarationApplies:null,medicalNote:'',bookingNote:'',ageConfirmed:false,
   waiverAccepted:false,codeAccepted:false,privacyAcknowledged:false,cancellationAccepted:false,photoVideoConsent:'',
 };
 
@@ -48,7 +48,12 @@ export default function PublicGuestSessionBooking(){
       if(res.data?.error)throw new Error(res.data.error);
       setData(res.data);
       if(res.data?.inviteApproved){
-        setForm(f=>({...f,fullName:f.fullName||res.data?.inviteName||'',email:f.email||res.data?.inviteEmail||'',mobile:f.mobile||res.data?.inviteMobile||''}));
+        setForm(f=>({...f,fullName:f.fullName||res.data?.inviteName||'',email:f.email||res.data?.inviteEmail||'',mobile:f.mobile||res.data?.inviteMobile||'',
+          previousSports:res.data?.guestIntakeCaptured?(res.data?.guestIntake?.previousSports||[]):f.previousSports,
+          sportingBackgroundNote:res.data?.guestIntakeCaptured?(res.data?.guestIntake?.sportingBackgroundNote||''):f.sportingBackgroundNote,
+          healthDeclarationApplies:res.data?.guestIntakeCaptured?res.data?.guestIntake?.healthDeclarationApplies:f.healthDeclarationApplies,
+          medicalNote:res.data?.guestIntakeCaptured?(res.data?.guestIntake?.medicalNote||''):f.medicalNote,
+        }));
       }
     }catch(e){setError(e?.response?.data?.error||e?.message||'This guest booking link is unavailable.')}
     finally{setLoading(false)}
@@ -85,6 +90,12 @@ export default function PublicGuestSessionBooking(){
   },[data,params,token]);
 
   const set=(key,value)=>setForm(f=>({...f,[key]:value}));
+  const togglePreviousSport=sport=>setForm(f=>{
+    const current=Array.isArray(f.previousSports)?f.previousSports:[];
+    if(sport==='None of these')return {...f,previousSports:current.includes(sport)?[]:['None of these']};
+    const withoutNone=current.filter(x=>x!=='None of these');
+    return {...f,previousSports:withoutNone.includes(sport)?withoutNone.filter(x=>x!==sport):[...withoutNone,sport]};
+  });
 
   const submit=async(e)=>{
     e.preventDefault();
