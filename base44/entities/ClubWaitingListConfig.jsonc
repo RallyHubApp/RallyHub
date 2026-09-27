@@ -66,6 +66,10 @@
     "signatory_title": {
       "type": "string"
     },
+    "public_entry_url": {
+      "type": "string",
+      "description": "Optional club-owned short URL for the public waiting-list form, e.g. https://club.example/waiting-list"
+    },
     "notes": {
       "type": "string"
     }
