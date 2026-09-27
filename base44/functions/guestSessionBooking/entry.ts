@@ -533,7 +533,7 @@ async function createProviderCheckout(base44:any,session:any,booking:any,req:Req
   const brand=await clubBrand(base44,session.club_id);
   const checkout=await createCheckout({
     provider,account:gateway?.account||null,amount:Number(session.fee_amount),currency:session.currency||'EUR',
-    reference:ref,description:`${brand?.name||'RallyHub club'} guest session ${session.session_date} ${session.start_time}`,
+    reference:ref,description:`${brand?.name||'RallyHub club'} ${booking.participant_type==='member'?'member':'guest'} session ${session.session_date} ${session.start_time}`,
     redirectUrl,returnUrl,
   });
   return {id:checkout.checkoutId,url:checkout.checkoutUrl,reference:checkout.reference,status:checkout.providerStatus,provider,merchantAccountId:checkout.merchantAccountId};
