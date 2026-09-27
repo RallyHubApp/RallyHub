@@ -81,10 +81,13 @@ function NotificationSetup({ config, preview = false }) {
   };
 
   if (status === 'granted') {
+    const testPush = async () => {
+      try { await base44.functions.invoke('memberMessaging', { action: 'test_push' }); } catch (error) { console.error('RallyHub push test failed', error); }
+    };
     return (
-      <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 flex items-start gap-2">
-        <BellRing className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-        <div><p className="text-xs font-bold">Push notifications enabled</p><p className="text-[11px] text-muted-foreground mt-0.5">New message alerts can appear on this device even when RallyHub is not open.</p></div>
+      <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex items-start gap-2 flex-1"><BellRing className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" /><div><p className="text-xs font-bold">Push notifications enabled</p><p className="text-[11px] text-muted-foreground mt-0.5">New message alerts can appear on this device even when RallyHub is not open.</p></div></div>
+        <Button size="sm" variant="outline" onClick={testPush}>Send test alert</Button>
       </div>
     );
   }
