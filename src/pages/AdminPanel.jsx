@@ -1577,9 +1577,19 @@ Brian`;
             {loadingMemberPreview ? (
               <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading member preview…</div>
             ) : memberPreviewError ? (
-              <div className="glass rounded-xl p-6 text-sm text-destructive">{memberPreviewError.message || 'Could not load member preview.'}</div>
+              <div className="glass rounded-xl p-6 text-sm text-destructive flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <span>{memberPreviewError.message || 'Could not load member preview.'}</span>
+                <Button type="button" size="sm" variant="outline" onClick={() => refetchMemberPreview()} className="shrink-0">Try again</Button>
+              </div>
             ) : memberPreview ? (
-              <MemberPortalPreview payload={memberPreview} />
+              <div className="space-y-3">
+                {previewLeaderboardError && (
+                  <div className="rounded-xl border border-amber-400/30 bg-amber-500/5 px-4 py-3 text-xs text-muted-foreground">
+                    Member preview is available. Leaderboard figures are temporarily unavailable and will retry independently.
+                  </div>
+                )}
+                <MemberPortalPreview payload={memberPreview} />
+              </div>
             ) : (
               <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Choose a member account to preview.</div>
             )}
