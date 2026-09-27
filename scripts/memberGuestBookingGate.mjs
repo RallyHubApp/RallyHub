@@ -25,6 +25,8 @@ assert(booking.includes('spondMemberSubgroupIds') && booking.includes('spondEven
 assert(booking.includes('member?.groups||[]') && booking.includes('membership?.subGroups'), 'Member booking must read Spond subgroup membership from member.groups[].subGroups');
 assert(booking.includes('spondEventStartCandidates') && booking.includes('event?.startTimestamp,event?.meetupTimestamp'), 'Member booking must match the actual Spond session time even when a separate meetup/arrival time exists');
 assert(booking.includes('hydrateSpondEventDistribution') && booking.includes('`/sponds/${encodeURIComponent(eventId)}`'), 'Member booking must open the exact Spond event to obtain its distribution list');
+assert(!booking.includes("if(!memberId)return {status:'identity_not_matched',sessions:[]}"), 'Member booking must not fail before checking the exact event distribution list when no stored/group Spond ID is available');
+assert(booking.includes("const eventMemberId=spondEventMemberId(event,person,memberId)"), 'Member booking must be able to resolve the Spond member ID from the exact event distribution');
 assert(booking.includes('if(event?._distributionAuthoritative)(event?.recipients?.group?.members||[]).forEach(addMember)'), 'Raw recipients.group.members IDs may only be trusted after direct event hydration');
 assert(booking.includes("scheduled:'true'"), 'Member booking must include recurring Spond occurrences whose invitations are scheduled for later delivery');
 assert(booking.includes("addProfileInfo:'true'"), 'Member booking must request Spond profile info for robust event-level identity matching');
@@ -34,6 +36,8 @@ assert(booking.includes('if(eventVenue){') && booking.includes('configuredVenue.
 assert(memberPortal.includes('memberSubgroupIds') && memberPortal.includes('eventSubgroupIds'), 'Member portal must use the same Spond subgroup-aware eligibility');
 assert(memberPortal.includes('memberIsInvitedToSpondEvent(event, { emails, phones, names }, memberId, subgroupIds)'), 'Member portal must use the same exact Spond invite rule');
 assert(memberPortal.includes('hydrateSpondEventDistribution') && memberPortal.includes('`/sponds/${encodeURIComponent(eventId)}`'), 'Member portal must open the exact Spond event when the summary payload is insufficient');
+assert(!memberPortal.includes("if (!memberId) return { status:'identity_not_matched', sessions:[] }"), 'Member portal must not fail before checking exact event distribution when no group-level Spond ID is resolved');
+assert(memberPortal.includes('eventMemberId(event, { emails, phones, names }, memberId)'), 'Member portal must resolve event-specific member identity from the exact distribution when needed');
 assert(memberPortal.includes('if (event?._distributionAuthoritative) (event?.recipients?.group?.members || []).forEach(addMember)'), 'Member portal may trust recipients.group.members IDs only on directly opened event detail');
 assert(memberPortal.includes("scheduled:'true'"), 'Member portal must include scheduled recurring Spond occurrences while still applying eligibility');
 assert(memberPortal.includes('event?.responses?.unconfirmedIds'), 'Member portal must include Spond unconfirmed invitees once invited');
