@@ -5,6 +5,7 @@ import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 const PRIVACY_VERSION='clare-guest-session-privacy-v1-2026-09';
 const CANCELLATION_VERSION='clare-guest-session-cancellation-v1-2026-09';
 const ADULT_AGE_VERSION='clare-adult-18plus-v1-2026-09';
+const SPOND_API_BASE='https://api.spond.com/core/v1';
 
 const maps=(q:string)=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 const VENUES:any={
@@ -50,6 +51,52 @@ function sameEmail(a:any,b:any){const aa=emailKey(a),bb=emailKey(b);return !!aa&
 function token(){return `gs_${crypto.randomUUID().replaceAll('-','')}`}
 function validToken(v:string){return /^gs_[0-9a-f]{32}$/i.test(v)}
 function confirmation(){return `G${crypto.randomUUID().replaceAll('-','').slice(0,7).toUpperCase()}`}
+function normalisePhone(v:any){return clean(v,80).replace(/\D/g,'').replace(/^3530?/,'353')}
+async function spondLoginFromSecrets(){
+  const email=Deno.env.get('SPOND_EMAIL'),password=Deno.env.get('SPOND_PASSWORD');
+  if(!email||!password)return null;
+  const response=await fetch(`${SPOND_API_BASE}/auth2/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+  if(!response.ok)throw new Error(`Spond login failed ${response.status}`);
+  const data=await response.json();
+  return data.accessToken?.token||data.loginToken||data.token||null;
+}
+async function spondRequest(path:string,accessToken:string){
+  const response=await fetch(`${SPOND_API_BASE}${path}`,{headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'}});
+  if(!response.ok)throw new Error(`Spond API error ${response.status}`);
+  return response.json();
+}
+function spondEventStart(event:any){return event?.meetupTimestamp||event?.startTimestamp||event?.start_time||''}
+function collectSpondRecipientIds(event:any){
+  const ids=new Set<string>();
+  const add=(value:any)=>{if(value!==undefined&&value!==null&&String(value).trim())ids.add(String(value))};
+  const addMany=(values:any)=>(Array.isArray(values)?values:[]).forEach(add);
+  addMany(event?.responses?.acceptedIds);addMany(event?.responses?.declinedIds);addMany(event?.responses?.unansweredIds);addMany(event?.responses?.waitinglistIds);addMany(event?.responses?.waitingListIds);addMany(event?.invitedMemberIds);addMany(event?.memberIds);
+  (event?.responses?.members||[]).forEach((row:any)=>add(row?.uid||row?.id||row?.memberId));
+  (event?.responses?.responses||[]).forEach((row:any)=>add(row?.memberId||row?.uid||row?.id));
+  return ids;
+}
+function spondResponseStatus(event:any,memberId:string){
+  const id=String(memberId||'');
+  const includes=(values:any)=>(Array.isArray(values)?values:[]).some(value=>String(value)===id);
+  if(includes(event?.responses?.acceptedIds))return 'accepted';
+  if(includes(event?.responses?.waitinglistIds)||includes(event?.responses?.waitingListIds))return 'waiting';
+  if(includes(event?.responses?.declinedIds))return 'declined';
+  if(includes(event?.responses?.unansweredIds))return 'unanswered';
+  const row=[...(event?.responses?.members||[]),...(event?.responses?.responses||[])].find((item:any)=>String(item?.memberId||item?.uid||item?.id)===id);
+  return clean(row?.status||'invited',40).toLowerCase()||'invited';
+}
+function spondGroupMembers(group:any){
+  const rows:any[]=[],seen=new Set<string>();
+  const add=(member:any)=>{const id=String(member?.id||member?.uid||member?.memberId||'');if(!id||seen.has(id))return;seen.add(id);rows.push(member)};
+  (group?.members||[]).forEach(add);(group?.subGroups||[]).forEach((sub:any)=>(sub?.members||[]).forEach(add));
+  return rows;
+}
+function dublinParts(value:any){
+  const d=new Date(value);if(!Number.isFinite(d.getTime()))return null;
+  const parts=new Intl.DateTimeFormat('en-IE',{timeZone:'Europe/Dublin',weekday:'long',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d);
+  const p=Object.fromEntries(parts.map(x=>[x.type,x.value]));
+  return {day:p.weekday,date:`${p.year}-${p.month}-${p.day}`,time:`${p.hour}:${p.minute}`};
+}
 function weekday(date:string){
   const d=new Date(`${date}T12:00:00Z`);
   return Number.isFinite(d.getTime())?['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getUTCDay()]:'';
