@@ -1156,10 +1156,15 @@ ${detailRow('Reason',reason)}
     const remaining=cap>0?Math.max(0,cap-active.length):null;
 
     if(action==='public_get'){
+      const returnBookingId=clean(body.bookingId,100);
+      const returnBooking=returnBookingId?(bookings||[]).find((b:any)=>b.id===returnBookingId):null;
+      const brand=await clubBrand(base44,session.club_id);
+      if(returnBooking?.participant_type==='member'){
+        return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:null,spotsRemaining:remaining,inviteApproved:true,approvalRequired:false,participantType:'member'});
+      }
       const invite=await inviteForSession(base44,session,body.inviteToken||'');
       const templates=await directoryTemplates(base44,session.tenant_id,session.club_id);
       const directoryTemplate=templates.find((t:any)=>String(t.key)===String(session.session_label)) || templates.find((t:any)=>t.venueName===session.venue_name&&t.weekday===session.weekday&&t.start===session.start_time);
-      const brand=await clubBrand(base44,session.club_id);
       return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',inviteName:invite?.intended_name||'',approvalRequired:!invite,directorySessionId:directoryTemplate?.directorySessionId||directoryTemplate?.key||'',guestRequestUrl:brand?.slug?`/guest/${brand.slug}${directoryTemplate?.key?`?session=${encodeURIComponent(directoryTemplate.key)}`:''}`:''});
     }
 
