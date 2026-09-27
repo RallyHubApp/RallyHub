@@ -113,7 +113,10 @@ check('display: not-played fixtures never appear as NOW or NEXT', contains(publi
 check('display: approved round total is shown from persisted plan', contains(publicDisplay,'plannedRounds') && contains(ui,'plannedRounds'));
 check('display: public display retains disconnect warning', contains(publicDisplay,'showing last known state'));
 check('final presentation: Interclub shows a top-three podium for each team', contains(publicDisplay,'data-testid="interclub-team-podiums"') && contains(publicDisplay,'podiumForSide'));
+check('final presentation: podium labels explicitly show 1st, 2nd and 3rd with descending visual hierarchy', contains(publicDisplay,"index===0?'1st':index===1?'2nd':'3rd'") && contains(publicDisplay,'min-h-40 sm:min-h-44') && contains(publicDisplay,'min-h-36 sm:min-h-40') && contains(publicDisplay,'min-h-32 sm:min-h-36'));
 check('final presentation: Interclub host display shows team podiums', contains(ui,'data-testid="cc-team-podiums"') && contains(ui,'finalPodiumA') && contains(ui,'finalPodiumB'));
+check('public award presentation: only the revealed winner is shown for vote mode, not the vote table', contains(publicDisplay,"winners[0]?.display_name") && !contains(publicDisplay,'publicVoteResultsA') && !contains(publicDisplay,'voteResults.map'));
+check('public award presentation: points mode is labelled Top Points Scorer and shows the winner total', contains(publicDisplay,"'Top Points Scorer'") && contains(publicDisplay,'Highest points total from the completed Interclub rounds'));
 check('print pack: roster sheets separate private ranking from alphabetical player check-in', contains(printPack,'Team Ranking · Private Host Copy') && contains(printPack,'Player Check-In · Alphabetical'));
 check('print pack: player check-in has Present and Notes columns', contains(printPack,'<th>Player Name</th><th>Present</th><th>Notes</th>') && contains(printPack,'rhpp-check-box-cell'));
 
