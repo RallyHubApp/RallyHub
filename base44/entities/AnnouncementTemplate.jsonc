@@ -50,6 +50,11 @@
       ],
       "default": "default"
     },
+    "default_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this announcement is enabled when reset to the RallyHub default"
+    },
     "enabled": {
       "type": "boolean",
       "default": true
