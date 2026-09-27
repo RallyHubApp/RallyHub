@@ -251,7 +251,8 @@ export default function RoundTimer({
       if (remaining <= 5 && remaining > 0 && !lastAnnouncedRef.current.has(`count-${remaining}`)) {
         lastAnnouncedRef.current.add(`count-${remaining}`);
         playSignal(audioRef.current, 'warning', volume * 0.9);
-        speak(String(remaining));
+        const countdownText = announcementText('countdown', String(remaining)).replace('{seconds}', String(remaining));
+        if (countdownText) speak(countdownText);
       }
       if (remaining === 0) {
         setRunning(false);
