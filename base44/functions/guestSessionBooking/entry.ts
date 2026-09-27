@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { createCheckout, retrievePayment, refundPayment, providerConfigured, verifyProviderConnection, type ProviderAccount } from './payments.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
+import { findUniqueSpondPersonRow } from '../shared/spondIdentityMatch.js';
 
 const PRIVACY_VERSION='clare-guest-session-privacy-v1-2026-09';
 const CANCELLATION_VERSION='clare-guest-session-cancellation-v1-2026-09';
@@ -177,8 +178,10 @@ function memberIsInvitedToSpondEvent(event:any,person:any,memberId:string,member
 function spondEventMemberId(event:any,person:any,fallbackMemberId=''){
   if(fallbackMemberId)return String(fallbackMemberId);
   const rows=[...(event?.responses?.members||[]),...(event?.responses?.responses||[]),...(event?.recipients?.members||[]),...(event?.recipients?.group?.members||[])];
-  const match=rows.find((row:any)=>spondRowMatchesPerson(row,person,''));
-  return String(match?.memberId||match?.uid||match?.id||'');
+  const exact=rows.find((row:any)=>spondRowMatchesPerson(row,person,''));
+  const match=exact?{row:exact}:findUniqueSpondPersonRow(rows,person,'');
+  const row=match?.row||null;
+  return String(row?.memberId||row?.uid||row?.id||'');
 }
 function spondResponseStatus(event:any,memberId:string){
   const id=String(memberId||'');
@@ -260,7 +263,11 @@ function matchSpondMemberId(group:any,person:any,explicitIds:string[]=[]){
     });
     if(nameMatches.length===1)return String(nameMatches[0]?.id||nameMatches[0]?.uid||nameMatches[0]?.memberId);
   }
-  return null;
+  // Final identity bridge for harmless name variations such as Ann/Anne. This
+  // only resolves when the strongest surname + first-initial candidate is unique.
+  const loose=findUniqueSpondPersonRow(members,person,'');
+  const looseRow=loose?.row||null;
+  return looseRow?String(looseRow?.id||looseRow?.uid||looseRow?.memberId||''):null;
 }
 
 async function persistResolvedSpondIdentity(base44:any,club:any,membership:any,person:any,spondMemberId:string,spondGroupId:string){
