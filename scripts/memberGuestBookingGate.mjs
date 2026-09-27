@@ -51,6 +51,7 @@ assert(!memberBlock.includes('codeAccepted'), 'Member flow must not require gues
 assert(memberBlock.includes("participant_type:'member'"), 'Member bookings must be recorded as member');
 assert(memberBlock.includes('booking_note:clean(body.bookingNote,1000)'), 'Member host note must be stored');
 assert(booking.includes("participant_type:'guest'"), 'Guest bookings must still be recorded as guest');
+assert(booking.includes('ensureClubGuestRelationship') && booking.includes("relationship_type:'guest'") && booking.includes("entry_route:'guest_play'"), 'Confirmed club guest journeys must create/reuse a Clare-side guest relationship without creating membership');
 assert(booking.includes('booking_note:clean(body.bookingNote,1000)'), 'Guest host note must be stored');
 assert(booking.includes('previous_sports:previousSports') && booking.includes('health_declaration_applies:healthDeclarationApplies'), 'Guest booking must retain previous sports and health screening for the host');
 assert(booking.includes('guestRequestForInvite') && booking.includes('guestIntakeCaptured'), 'Approved guest intake must carry through the private booking without being asked twice');
