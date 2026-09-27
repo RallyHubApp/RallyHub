@@ -1043,17 +1043,24 @@ ${detailRow('Reason',reason)}
       const person=resolved.match.person;
       const membership=resolved.match.membership;
       if(action==='public_member_lookup'){
-        const memberSessions=await memberDirectorySessions(base44,club);
+        const spond=await loadInvitedMemberSpondSessions(base44,club,person,membership);
+        if(spond.status!=='connected'){
+          const message=spond.status==='identity_not_matched'
+            ? 'Membership found, but RallyHub could not match your membership to the club’s Spond account. Please contact the club so we can update the link.'
+            : 'Membership found, but invited Spond sessions cannot be loaded right now. Please try again shortly or contact the club.';
+          return Response.json({error:message,code:`SPOND_${String(spond.status||'unavailable').toUpperCase()}`,memberFound:true},{status:503});
+        }
         return Response.json({
           success:true,memberFound:true,firstName:firstName(person.full_name),verificationMethod:resolved.verificationMethod,
-          message:`Membership found. Hi ${firstName(person.full_name)}, you can choose your session and go straight to payment.`,
-          sessions:memberSessions.map((s:any)=>({id:s.key,venueName:s.venueName,day:s.weekday,start:s.start,end:s.end,level:s.level,price:s.fee,paymentMethod:s.payment,nextDate:nextOccurrenceDate(s.weekday,s.start)})),
+          message:`Membership found. Hi ${firstName(person.full_name)}, choose one of the Spond sessions you are invited to and go straight to payment.`,
+          sessions:(spond.sessions||[]).map((s:any)=>({id:s.id,title:s.title,venueName:s.venueName,day:s.weekday,start:s.start,end:s.end,level:s.title,price:s.fee,paymentMethod:s.payment,nextDate:s.sessionDate,responseStatus:s.responseStatus})),
         });
       }
 
-      const memberSessions=await memberDirectorySessions(base44,club);
-      const selected=memberSessions.find((s:any)=>String(s.key)===clean(body.sessionId,120));
-      if(!selected)return Response.json({error:'Please choose a current Clare Pickleball session.'},{status:400});
+      const spond=await loadInvitedMemberSpondSessions(base44,club,person,membership);
+      if(spond.status!=='connected')return Response.json({error:'RallyHub could not confirm your invited Spond sessions right now. Please try again or contact the club.',code:`SPOND_${String(spond.status||'unavailable').toUpperCase()}`},{status:503});
+      const selected=(spond.sessions||[]).find((s:any)=>String(s.id)===clean(body.sessionId,300));
+      if(!selected)return Response.json({error:'That session is not currently available to you in Spond. Please choose one of the sessions shown after membership verification.'},{status:409});
       const session=await ensureMemberSessionLink(base44,club,selected);
       const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:session.id},'-registered_at',250);
       const active=(bookings||[]).filter((b:any)=>b.booking_status!=='cancelled');
