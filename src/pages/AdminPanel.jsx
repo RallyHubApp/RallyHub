@@ -172,27 +172,51 @@ export default function AdminPanel() {
   });
 
   const previewTargetUserId = previewUserId || user?.id || '';
-  const { data: memberPreview = null, isLoading: loadingMemberPreview, error: memberPreviewError } = useQuery({
+  const { data: memberPreviewCore = null, isLoading: loadingMemberPreview, error: memberPreviewError, refetch: refetchMemberPreview } = useQuery({
     queryKey: ['admin-member-preview', previewTargetUserId, user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
-      const [res, leaderboardRes] = await Promise.all([
-        base44.functions.invoke('memberPortal', {
+      try {
+        const res = await base44.functions.invoke('memberPortal', {
           action: 'admin_preview_full',
           userId: previewTargetUserId,
           tenantId: user?.active_tenant_id,
           clubId: user?.active_club_id,
-        }),
-        base44.functions.invoke('getClubLeaderboard', {}),
-      ]);
-      if (res.data?.error) throw new Error(res.data.error);
-      if (!res.data?.snapshot) return null;
-      return {
-        ...res.data,
-        snapshot: { ...res.data.snapshot, clubLeaderboard: leaderboardRes.data?.rows || [] },
-      };
+        });
+        if (res.data?.error) throw new Error(res.data.error);
+        return res.data?.snapshot ? res.data : null;
+      } catch (error) {
+        const detail = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'Could not load member preview.';
+        throw new Error(detail);
+      }
     },
-    enabled: canAccessAdmin && activeAdminTab === 'preview' && !!previewTargetUserId
+    enabled: canAccessAdmin && activeAdminTab === 'preview' && !!previewTargetUserId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
+
+  // Keep the leaderboard independent from the preview payload. A transient analytics/
+  // leaderboard failure must never take down the whole read-only member preview.
+  const { data: previewLeaderboardRows = [], error: previewLeaderboardError } = useQuery({
+    queryKey: ['admin-member-preview-leaderboard', user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('getClubLeaderboard', {});
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.rows || [];
+    },
+    enabled: canAccessAdmin && activeAdminTab === 'preview' && !!memberPreviewCore?.snapshot,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
+
+  const memberPreview = memberPreviewCore ? {
+    ...memberPreviewCore,
+    snapshot: {
+      ...memberPreviewCore.snapshot,
+      clubLeaderboard: previewLeaderboardRows,
+    },
+  } : null;
 
   const { data: matches = [] } = useQuery({
     queryKey: ['matches'],
