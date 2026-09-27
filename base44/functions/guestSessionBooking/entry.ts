@@ -329,13 +329,14 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
     // distribution list even when the broader Spond group payload does not
     // expose enough profile data to resolve a group member ID first.
     const memberSubgroups=memberId?spondMemberSubgroupIds(group,memberId):new Set<string>();
+    const configured=await memberDirectorySessions(base44,club);
+    const directBound=await directBoundMemberSessions(base44,club,person,membership,memberId,memberSubgroups,accessToken,configured);
     const now=new Date(),maxStart=new Date(now.getTime()+60*24*60*60*1000);
     // Include future scheduled occurrences because Clare's recurring Spond sessions can be configured
     // before their push invitation is sent. Eligibility still has to pass the event/subgroup invite test below.
     const params=new URLSearchParams({groupId:String(connection.spond_group_id),minStartTimestamp:now.toISOString(),maxStartTimestamp:maxStart.toISOString(),max:'300',scheduled:'true',includeComments:'false',includeHidden:'false',addProfileInfo:'true'});
     const raw=await spondRequest(`/sponds?${params.toString()}`,accessToken);
-    const configured=await memberDirectorySessions(base44,club);
-    const candidates=(Array.isArray(raw)?raw:[]).map((event:any)=>{
+    const candidates=(Array.isArray(raw)?raw:[]).filter((event:any)=>!directBound.boundEventIds.has(String(event?.id||''))).map((event:any)=>{
       const loc=event?.location||{};
       const eventVenue=clean(loc?.feature||loc?.name||loc?.address||'',220);
       const venueKey=nameKey(eventVenue);
@@ -367,6 +368,7 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
     }
     const sessions=hydrated.filter(({event}:any)=>memberIsInvitedToSpondEvent(event,person,memberId,memberSubgroups)).map(({event,match}:any)=>{
       const eventMemberId=spondEventMemberId(event,person,memberId);
+      if(eventMemberId)persistResolvedSpondIdentity(base44,club,membership,person,eventMemberId,String(connection.spond_group_id)).catch(()=>{});
       const status=spondResponseStatus(event,eventMemberId);
       if(['declined','waiting','waitinglist','waitlist'].includes(status))return null;
       const {startRaw,start,cfg}=match;
@@ -382,8 +384,14 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
         venueKey:cfg.venueKey,venueName:cfg.venueName,venueAddress:cfg.venueAddress,eircode:cfg.eircode,mapsUrl:cfg.mapsUrl,
         fee:Number(cfg.fee),payment:cfg.payment,capacity,acceptedCount,host:cfg.host||'',source:'spond',
       };
-    }).filter(Boolean).sort((a:any,b:any)=>`${a.sessionDate}${a.start}`.localeCompare(`${b.sessionDate}${b.start}`));
-    return {status:'connected',sessions};
+    }).filter(Boolean);
+    const merged=[...(directBound.sessions||[]),...sessions];
+    const unique=new Map<string,any>();
+    for(const session of merged){
+      const key=`${session.directorySessionId||session.venueKey}:${session.sessionDate}:${session.start}`;
+      if(!unique.has(key))unique.set(key,session);
+    }
+    return {status:'connected',sessions:[...unique.values()].sort((a:any,b:any)=>`${a.sessionDate}${a.start}`.localeCompare(`${b.sessionDate}${b.start}`))};
   }catch(error){
     console.error('member payment fallback Spond feed error',error?.message||error);
     return {status:'temporarily_unavailable',sessions:[]};
