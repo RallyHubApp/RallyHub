@@ -168,6 +168,18 @@ export default function MembershipConsole() {
     enabled: canManage
   });
 
+  const { data: dashboardData = { counts: {} }, refetch: refetchDashboard } = useQuery({
+    queryKey: ['membership-dashboard-counts', user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('membershipRecord', { action: 'admin_dashboard_counts' });
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data || { counts: {} };
+    },
+    enabled: canManage,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true
+  });
+
   const { data: applicationData = { applications: [], counts: {} }, isLoading: applicationsLoading, refetch: refetchApplications } = useQuery({
     queryKey: ['membership-applications', user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
@@ -888,7 +900,7 @@ export default function MembershipConsole() {
           {applicationData.publicUrl ? <Button variant="outline" size="sm" onClick={createMembershipInvite} disabled={applicationBusyId === 'membership-invite'}><Link2 className="w-3.5 h-3.5 mr-1.5" />{applicationBusyId === 'membership-invite' ? 'Creating…' : 'Invite applicant'}</Button> : null}
           <Button variant="outline" size="sm" onClick={() => setMembershipSourceOpen(true)}><Link2 className="w-3.5 h-3.5 mr-1.5" />Spond Club</Button>
           <Button size="sm" onClick={() => setAddMemberOpen(true)}><Plus className="w-3.5 h-3.5 mr-1.5" />Add member</Button>
-          <Button variant="outline" size="sm" onClick={() => { refetchList(); refetchApplications(); queryClient.invalidateQueries({ queryKey: ['membership-console-meta'] }); }}>
+          <Button variant="outline" size="sm" onClick={() => { refetchList(); refetchDashboard(); refetchApplications(); queryClient.invalidateQueries({ queryKey: ['membership-console-meta'] }); }}>
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />Refresh
           </Button>
         </div>
@@ -1006,10 +1018,10 @@ export default function MembershipConsole() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2.5 sm:gap-3">
-              <StatCard title="Current members" value={listData.counts?.currentMembers ?? listData.counts?.active ?? 0} icon={Users} note={listData.renewal?.currentSeason || 'Current season'} onClick={() => applyQuickFilter('all')} />
-              <StatCard title="Paid" value={listData.counts?.currentPaid ?? 0} icon={CheckCircle2} note="Current season" onClick={() => setFilters({ ...EMPTY_FILTERS, paymentStatus: 'paid' })} active={filters.paymentStatus === 'paid'} />
-              <StatCard title="Complimentary" value={listData.counts?.complimentary ?? 0} icon={ShieldCheck} note="No payment required" disabled />
-              <StatCard title="Payment due" value={listData.counts?.unpaid ?? 0} icon={WalletCards} note="Current season" onClick={() => applyQuickFilter('unpaid')} active={filters.membershipStatus === 'pending_payment'} />
+              <StatCard title="Current members" value={dashboardData.counts?.currentMembers ?? listData.counts?.currentMembers ?? listData.counts?.active ?? 0} icon={Users} note={dashboardData.currentSeason || listData.renewal?.currentSeason || 'Current season'} onClick={() => applyQuickFilter('all')} />
+              <StatCard title="Paid" value={dashboardData.counts?.currentPaid ?? listData.counts?.currentPaid ?? 0} icon={CheckCircle2} note="Current season" onClick={() => setFilters({ ...EMPTY_FILTERS, paymentStatus: 'paid' })} active={filters.paymentStatus === 'paid'} />
+              <StatCard title="Complimentary" value={dashboardData.counts?.complimentary ?? listData.counts?.complimentary ?? 0} icon={ShieldCheck} note="No payment required" disabled />
+              <StatCard title="Payment due" value={dashboardData.counts?.unpaid ?? listData.counts?.unpaid ?? 0} icon={WalletCards} note="Current season" onClick={() => applyQuickFilter('unpaid')} active={filters.membershipStatus === 'pending_payment'} />
               <StatCard
                 title={listData.renewal?.windowStatus === 'upcoming' ? 'Renewal opens' : 'Renewed'}
                 value={listData.renewal?.windowStatus === 'upcoming' ? dateLabel(listData.renewal?.opensOn).replace(/\s\d{4}$/,'') : (listData.renewal?.renewed ?? 0)}
