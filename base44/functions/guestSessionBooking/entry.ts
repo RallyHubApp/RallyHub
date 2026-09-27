@@ -70,9 +70,16 @@ function collectSpondRecipientIds(event:any){
   const ids=new Set<string>();
   const add=(value:any)=>{if(value!==undefined&&value!==null&&String(value).trim())ids.add(String(value))};
   const addMany=(values:any)=>(Array.isArray(values)?values:[]).forEach(add);
-  addMany(event?.responses?.acceptedIds);addMany(event?.responses?.declinedIds);addMany(event?.responses?.unansweredIds);addMany(event?.responses?.waitinglistIds);addMany(event?.responses?.waitingListIds);addMany(event?.invitedMemberIds);addMany(event?.memberIds);
-  (event?.responses?.members||[]).forEach((row:any)=>add(row?.uid||row?.id||row?.memberId));
-  (event?.responses?.responses||[]).forEach((row:any)=>add(row?.memberId||row?.uid||row?.id));
+  const addMember=(row:any)=>add(row?.memberId||row?.uid||row?.id);
+  addMany(event?.responses?.acceptedIds);addMany(event?.responses?.declinedIds);addMany(event?.responses?.unansweredIds);addMany(event?.responses?.unconfirmedIds);addMany(event?.responses?.waitinglistIds);addMany(event?.responses?.waitingListIds);addMany(event?.invitedMemberIds);addMany(event?.memberIds);
+  (event?.responses?.members||[]).forEach(addMember);
+  (event?.responses?.responses||[]).forEach(addMember);
+  // Spond can represent an invitation through the event recipient block even when
+  // the member has not produced a response row yet. Keep this fail-closed by only
+  // accepting member IDs that Spond explicitly returns inside the event recipients.
+  (event?.recipients?.group?.members||[]).forEach(addMember);
+  (event?.recipients?.members||[]).forEach(addMember);
+  (event?.recipients?.subGroups||event?.recipients?.subgroups||[]).forEach((sub:any)=>(sub?.members||[]).forEach(addMember));
   return ids;
 }
 function spondResponseStatus(event:any,memberId:string){
@@ -82,6 +89,7 @@ function spondResponseStatus(event:any,memberId:string){
   if(includes(event?.responses?.waitinglistIds)||includes(event?.responses?.waitingListIds))return 'waiting';
   if(includes(event?.responses?.declinedIds))return 'declined';
   if(includes(event?.responses?.unansweredIds))return 'unanswered';
+  if(includes(event?.responses?.unconfirmedIds))return 'unconfirmed';
   const row=[...(event?.responses?.members||[]),...(event?.responses?.responses||[])].find((item:any)=>String(item?.memberId||item?.uid||item?.id)===id);
   return clean(row?.status||'invited',40).toLowerCase()||'invited';
 }
