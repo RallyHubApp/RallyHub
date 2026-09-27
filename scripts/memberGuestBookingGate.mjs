@@ -20,6 +20,8 @@ assert(booking.includes("m.relationship_type==='member'"), 'Only member relation
 assert(booking.includes('methods.push(\'name\')') && booking.includes('methods.push(\'email\')') && booking.includes('methods.push(\'mobile\')'), 'Name, email and mobile matching must all remain available');
 assert(memberBlock.includes('loadInvitedMemberSpondSessions'), 'Member fallback must load personalised Spond sessions');
 assert(booking.includes('collectSpondRecipientIds(event).has(String(memberId))'), 'Spond events must be filtered to actual recipients');
+assert(booking.includes('event?.recipients?.group?.members'), 'Spond recipient-group members must count as invited even before a response row exists');
+assert(booking.includes('event?.responses?.unconfirmedIds'), 'Spond unconfirmed invitees must remain eligible until they respond');
 assert(memberBlock.includes("const selected=(spond.sessions||[]).find"), 'Selected Spond occurrence must be revalidated on submit');
 assert(!memberBlock.includes('waiverAccepted'), 'Member flow must not require the guest waiver');
 assert(!memberBlock.includes('codeAccepted'), 'Member flow must not require guest Code of Conduct re-acceptance');
