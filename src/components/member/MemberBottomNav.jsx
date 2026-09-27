@@ -1,12 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, CalendarDays, MessageCircle, BookOpen, UserRound } from 'lucide-react';
+import { Home, CalendarDays, MapPin, BookOpen, UserRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const items = [
   { to: '/app', label: 'Home', icon: Home, end: true },
   { to: '/app/play', label: 'Play', icon: CalendarDays },
-  { to: '/app/clubhouse', label: 'Clubhouse', icon: MessageCircle },
+  { to: '/app/venues', label: 'Venues', icon: MapPin },
   { to: '/app/learn', label: 'Learn', icon: BookOpen },
   { to: '/app/my-profile', label: 'Me', icon: UserRound },
 ];
