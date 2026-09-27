@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Home, CalendarDays, MessageCircle, BookOpen, UserCircle, Smartphone, Monitor, Shield } from 'lucide-react';
 import MemberDashboardView from '@/components/member/MemberDashboardView';
 import MemberPlay from '@/pages/MemberPlay';
@@ -61,9 +63,19 @@ export default function MemberPortalPreview({ payload }) {
   const [section, setSection] = useState('home');
   const [device, setDevice] = useState('mobile');
   const snapshot = payload?.snapshot || null;
+  const { data: performance = null, isLoading: performanceLoading } = useQuery({
+    queryKey: ['member-preview-performance', snapshot?.player?.id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('performanceAnalytics', { action:'self', playerId:snapshot.player.id });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data || null;
+    },
+    enabled: !!snapshot?.player?.id,
+    staleTime: 30_000,
+  });
 
   const content = section === 'home'
-    ? <MemberDashboardView snapshot={snapshot} play={payload?.play || null} preview />
+    ? <MemberDashboardView snapshot={snapshot} play={payload?.play || null} performance={performance} performanceLoading={performanceLoading} preview />
     : section === 'play'
       ? <MemberPlay previewData={payload?.play || { items:[], club:snapshot?.club, spond:{ status:'not_configured', sessions:[] } }} />
       : section === 'clubhouse'
