@@ -29,7 +29,7 @@ assert(booking.includes("scheduled:'true'"), 'Member booking must include recurr
 assert(booking.includes("addProfileInfo:'true'"), 'Member booking must request Spond profile info for robust event-level identity matching');
 assert(booking.includes('event?.responses?.unconfirmedIds'), 'Spond unconfirmed invitees must remain eligible once the invitation exists');
 assert(booking.includes("spondRowMatchesPerson({...row,id:''},person,'')"), 'Scheduled recipient rows must be matched by profile/contact identity, not by a raw broad group ID');
-assert(booking.includes('if(!venueMatch)return null'), 'Spond booking must fail closed when event venue does not match the configured session');
+assert(booking.includes('if(eventVenue){') && booking.includes('configuredVenue.includes(venueKey)') && booking.includes('if(!match)return null'), 'Spond booking must fail closed when a supplied event venue/time does not match the configured session');
 assert(memberPortal.includes('memberSubgroupIds') && memberPortal.includes('eventSubgroupIds'), 'Member portal must use the same Spond subgroup-aware eligibility');
 assert(memberPortal.includes('memberIsInvitedToSpondEvent(event, { emails, phones, names }, memberId, subgroupIds)'), 'Member portal must use the same exact Spond invite rule');
 assert(!memberPortal.includes('(event?.recipients?.group?.members || []).forEach'), 'Member portal must not accept broad group visibility by raw recipient ID');
