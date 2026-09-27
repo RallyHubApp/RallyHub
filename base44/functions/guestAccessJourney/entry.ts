@@ -12,6 +12,12 @@ function firstName(v:any){return clean(v,120).split(/\s+/).filter(Boolean)[0]||'
 function escapeHtml(v:any){return String(v??'').replace(/[&<>"']/g,(ch)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' } as any)[ch])}
 function formatDate(v:string){try{return new Intl.DateTimeFormat('en-IE',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Europe/Dublin'}).format(new Date(`${v}T12:00:00Z`))}catch{return v}}
 function money(v:any){try{return new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR'}).format(Number(v||0))}catch{return `€${Number(v||0).toFixed(2)}`}}
+const PREVIOUS_SPORT_OPTIONS=['Tennis','Badminton','Squash','Racketball','Padel','Table Tennis','None of these'];
+function previousSports(value:any){
+  const supplied=Array.isArray(value)?value:[];
+  const cleaned=[...new Set(supplied.map((v:any)=>clean(v,80)).filter((v:string)=>PREVIOUS_SPORT_OPTIONS.includes(v)))];
+  return cleaned.includes('None of these')?['None of these']:cleaned;
+}
 
 async function sendApprovedGuestInvite(base44:any,club:any,row:any,session:any,venue:any,date:string,inviteUrl:string){
   const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:club.tenant_id,clubId:club.id};
@@ -104,6 +110,11 @@ Deno.serve(async(req)=>{
       const sessionId=clean(body.sessionId,120);
       const duprId=clean(body.duprId,120);
       const homeClub=clean(body.homeClub,160);
+      const sports=previousSports(body.previousSports);
+      const sportingBackgroundNote=clean(body.sportingBackgroundNote,1200);
+      const healthAnswered=typeof body.healthDeclarationApplies==='boolean';
+      const healthDeclarationApplies=body.healthDeclarationApplies===true;
+      const medicalNote=clean(body.medicalNote,1600);
       if(!fullName||fullName.split(/\s+/).length<2)return Response.json({error:'Please enter your full name.'},{status:400});
       if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return Response.json({error:'Please enter a valid email address.'},{status:400});
       if(mobileKey(mobile).length<8)return Response.json({error:'Please enter a valid mobile number.'},{status:400});
@@ -115,13 +126,18 @@ Deno.serve(async(req)=>{
       if(experience==='experienced'&&!selected.experiencedEligible)return Response.json({error:'That session is not available for guest requests.'},{status:400});
       if(experience==='experienced'&&config.require_home_club_for_experienced===true&&!homeClub)return Response.json({error:'Please enter the club you normally play with.'},{status:400});
       if(experience==='experienced'&&config.require_dupr_for_experienced===true&&!duprId)return Response.json({error:'Please enter your DUPR details, or enter “No DUPR” if you do not have one.'},{status:400});
+      if(!sports.length)return Response.json({error:'Please tell us whether you have previously played any of the listed sports. You can choose more than one, or choose “None of these”.'},{status:400});
+      if(!healthAnswered)return Response.json({error:'Please answer the guest health and medical screening question.'},{status:400});
+      if(healthDeclarationApplies&&!medicalNote)return Response.json({error:'Please give brief details of the health, treatment, surgery, injury or other issue that may be relevant to the session host.'},{status:400});
 
       const existing=await base44.asServiceRole.entities.GuestBookingRequest.filter({tenant_id:club.tenant_id,club_id:club.id,email,status:'pending_approval',preferred_session_key:sessionId},'-submitted_at',10);
       if(existing?.[0])return Response.json({success:true,pending:true,requestToken:existing[0].request_token,message:'Your guest request is already awaiting club approval.'});
 
       const row=await base44.asServiceRole.entities.GuestBookingRequest.create({
         tenant_id:club.tenant_id,club_id:club.id,request_token:requestToken(),status:'pending_approval',source:'public_link',
-        full_name:fullName,email,mobile,experience_level:experience,preferred_venue_key:selected.venueId,preferred_session_key:selected.id,
+        full_name:fullName,email,mobile,experience_level:experience,previous_sports:sports,sporting_background_note:sportingBackgroundNote||undefined,
+        health_declaration_applies:healthDeclarationApplies,medical_note:medicalNote||undefined,
+        preferred_venue_key:selected.venueId,preferred_session_key:selected.id,
         dupr_id:duprId,home_club:homeClub,submitted_at:new Date().toISOString(),admin_notes:`Requested ${selected.day} ${selected.start}${selected.end?'–'+selected.end:''} · ${selected.venueName}`,
       });
       return Response.json({success:true,pending:true,requestToken:row.request_token,message:'Thanks. Your guest request has been sent to Clare Pickleball for approval. No payment has been taken. If approved, you will receive a private booking/payment link.'});
@@ -139,7 +155,7 @@ Deno.serve(async(req)=>{
       const requests=await base44.asServiceRole.entities.GuestBookingRequest.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',200);
       const directory=await loadDirectory(base44,club.slug);
       const options=publicOptions(directory,await loadConfig(base44,tenantId,clubId));
-      return Response.json({success:true,requests:(requests||[]).map((r:any)=>{const s=options.sessions.find((x:any)=>x.id===r.preferred_session_key);return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:s?.venueName||r.preferred_venue_key,day:s?.day||'',start:s?.start||'',end:s?.end||'',nextDate:s?nextDateForDay(s.day):'',submittedAt:r.submitted_at};})});
+      return Response.json({success:true,requests:(requests||[]).map((r:any)=>{const s=options.sessions.find((x:any)=>x.id===r.preferred_session_key);return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:s?.venueName||r.preferred_venue_key,day:s?.day||'',start:s?.start||'',end:s?.end||'',nextDate:s?nextDateForDay(s.day):'',submittedAt:r.submitted_at};})});
     }
 
     if(action==='admin_reject'){
@@ -166,7 +182,7 @@ Deno.serve(async(req)=>{
         guestSession=await base44.asServiceRole.entities.GuestSessionLink.create({tenant_id:tenantId,club_id:clubId,token:sessionToken(),active:true,session_date:date,weekday:String(session.day||''),start_time:String(session.start||''),end_time:String(session.end||''),venue_key:String(venue.id),venue_name:String(venue.name||''),venue_address:String(venue.address||''),venue_eircode:String(venue.eircode||''),google_maps_url:String(venue.mapUrl||''),session_label:String(session.id),capacity:Number(session.capacity||0)||undefined,fee_amount:price,currency:'EUR',payment_method:payment,notification_email:emailKey(user.email||''),notification_name:clean(user.full_name||user.email||'',120),created_by_user_id:user.id,created_at:new Date().toISOString()});
       }
       const now=new Date();
-      const invite=await base44.asServiceRole.entities.AccessInviteToken.create({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',token:inviteToken(),status:'active',session_link_id:guestSession.id,intended_email:row.email,intended_mobile:row.mobile||'',intended_name:row.full_name,expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),created_by_user_id:user.id,created_at:now.toISOString(),notes:`Approved guest request ${row.id} · bound to email and mobile where available`});
+      const invite=await base44.asServiceRole.entities.AccessInviteToken.create({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',token:inviteToken(),status:'active',session_link_id:guestSession.id,access_request_id:row.id,intended_email:row.email,intended_mobile:row.mobile||'',intended_name:row.full_name,expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),created_by_user_id:user.id,created_at:now.toISOString(),notes:`Approved guest request ${row.id} · bound to email and mobile where available`});
       await base44.asServiceRole.entities.GuestBookingRequest.update(row.id,{status:'approved',approved_at:now.toISOString(),approved_session_link_id:guestSession.id,admin_notes:`Approved for ${date} · ${session.day} ${session.start}`});
       const magicInviteUrl=`https://rallyhub.ie/book/${encodeURIComponent(guestSession.token)}?invite=${encodeURIComponent(invite.token)}`;
       let emailSent=false;
