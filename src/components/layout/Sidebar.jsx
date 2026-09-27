@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   LayoutDashboard, Users, Trophy, Crown,
   BarChart3, X, ChevronRight, UserCircle, Shield, MapPin, CalendarCheck, ContactRound, ClipboardList,
-  CalendarDays, MessageCircle, BookOpen, Home
+  CalendarDays, BookOpen, Home
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
