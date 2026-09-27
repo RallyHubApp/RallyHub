@@ -43,6 +43,12 @@ const TEMPLATES:any={
 };
 
 function clean(v:any,max=250){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
+const GUEST_PREVIOUS_SPORT_OPTIONS=['Tennis','Badminton','Squash','Racketball','Padel','Table Tennis','None of these'];
+function guestPreviousSports(value:any){
+  const supplied=Array.isArray(value)?value:[];
+  const cleaned=[...new Set(supplied.map((v:any)=>clean(v,80)).filter((v:string)=>GUEST_PREVIOUS_SPORT_OPTIONS.includes(v)))];
+  return cleaned.includes('None of these')?['None of these']:cleaned;
+}
 function emailKey(v:any){return clean(v,200).toLowerCase()}
 function mobileKey(v:any){return clean(v,50).replace(/[^0-9]/g,'')}
 function sameMobile(a:any,b:any){const aa=mobileKey(a),bb=mobileKey(b);return !!aa&&!!bb&&(aa===bb||(aa.length>=9&&bb.length>=9&&aa.slice(-9)===bb.slice(-9)))}
@@ -450,6 +456,11 @@ async function inviteForSession(base44:any,session:any,rawToken:any,email='',mob
     if(!emailMatch&&!mobileMatch)return null;
   }
   return invite;
+}
+async function guestRequestForInvite(base44:any,invite:any){
+  const requestId=clean(invite?.access_request_id,120);
+  if(!requestId)return null;
+  return (await base44.asServiceRole.entities.GuestBookingRequest.filter({id:requestId,tenant_id:invite.tenant_id,club_id:invite.club_id},'-submitted_at',5))?.[0]||null;
 }
 async function createInvite(base44:any,session:any,user:any,intendedEmail='',intendedName='',intendedMobile=''){
   const boundEmail=emailKey(intendedEmail);
