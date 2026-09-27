@@ -714,8 +714,22 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,user_id:userId,person_id:person.id,player_id:player.id,name_mismatch:nameMismatch,verification:nameMismatch?(dobMatch?'dob':'mobile'):'email_and_name'});
     }
 
+    if(action==='admin_dashboard_counts'){
+      const [relationships,membershipConfigs]=await Promise.all([
+        base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:tenantId,club_id:clubId},'person_id',500),
+        base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',50)
+      ]);
+      const live=(relationships||[]).filter((r:any)=>r.relationship_type==='member'&&!String(r.source_system||'').includes('membership_qa'));
+      const activePaid=live.filter((r:any)=>r.status==='active'&&r.membership_category==='paid').length;
+      const complimentary=live.filter((r:any)=>r.status==='active'&&r.membership_category==='complimentary').length;
+      const pending=live.filter((r:any)=>r.status==='pending').length;
+      const currentMembers=activePaid+complimentary+pending;
+      const membershipConfig=(membershipConfigs||[]).find((c:any)=>c.status==='active')||(membershipConfigs||[])[0]||null;
+      return Response.json({success:true,counts:{currentMembers,currentPaid:activePaid,complimentary,pending,unpaid:pending},currentSeason:membershipConfig?.season_label||null});
+    }
+
     if(action==='admin_list'){
-      const [members,people,players,sportProfiles,clubSports,allSports,relationships,membershipConfigs]=await Promise.all([
+      const [membersRaw,people,players,sportProfiles,clubSports,allSports,relationshipsRaw,membershipConfigs]=await Promise.all([
         base44.asServiceRole.entities.ClubMembership.filter({tenant_id:tenantId,club_id:clubId},'member_id',500),
         base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'full_name',500),
         base44.asServiceRole.entities.Player.filter({tenant_id:tenantId,club_id:clubId},'full_name',500),
