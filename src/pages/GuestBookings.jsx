@@ -236,8 +236,8 @@ export default function GuestBookings(){
   return <div className="mx-auto max-w-6xl space-y-6">
     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
       <div>
-        <div className="flex items-center gap-2"><CalendarCheck className="h-6 w-6 text-primary"/><h1 className="text-2xl sm:text-3xl font-black">Guest Bookings</h1></div>
-        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">Create a dated Clare Pickleball guest session. Private admin invitations are tied to the intended guest email or mobile/WhatsApp number and can proceed to payment; public or forwarded links require club approval first.</p>
+        <div className="flex items-center gap-2"><CalendarCheck className="h-6 w-6 text-primary"/><h1 className="text-2xl sm:text-3xl font-black">Session Bookings</h1></div>
+        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">Manage member payment fallbacks and guest bookings. Existing members can verify against the membership database and pay directly; guests continue through the normal approval flow.</p>
       </div>
       <Badge variant="outline" className={templateData.sumupConfigured?'border-green-500/40 text-green-600':'border-amber-500/40 text-amber-600'}>
         {templateData.sumupConfigured?'SumUp connected':'SumUp setup required'}
@@ -325,9 +325,11 @@ export default function GuestBookings(){
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2"><p className="font-black">{b.fullName}</p>
+                    <Badge variant="outline">{b.participantType==='member'?'Member':'Guest'}</Badge>
                     <Badge variant="outline" className={b.paymentStatus==='paid'?'border-green-500/40 text-green-600':b.paymentStatus==='cash_due'?'border-amber-500/40 text-amber-600':''}>{b.paymentStatus}</Badge>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">{b.email} · {b.mobile}</p>
+                  {b.bookingNote&&<p className="mt-2 rounded-lg border bg-background/60 p-2 text-xs"><strong>Note:</strong> {b.bookingNote}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">Ref {b.confirmationCode} · booked {b.registeredAt?new Date(b.registeredAt).toLocaleString('en-IE'):''}</p>
                   {Number(b.refundedAmount||0)>0&&<p className="mt-1 text-xs font-semibold text-amber-600">€{Number(b.refundedAmount).toFixed(2)} refunded · €{Number(b.refundableAmount||0).toFixed(2)} remaining refundable</p>}
                 </div>
