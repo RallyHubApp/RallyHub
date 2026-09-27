@@ -34,11 +34,15 @@ function podiumForSide(stats,participants,side){
 }
 function TeamPodiums({event,podiumA=[],podiumB=[]}){
   const medal=index=>index===0?'🥇':index===1?'🥈':'🥉';
+  const place=index=>index===0?'1st':index===1?'2nd':'3rd';
+  const sizeClass=index=>index===0?'min-h-40 sm:min-h-44 px-3 py-4':index===1?'min-h-36 sm:min-h-40 px-3 py-3.5':'min-h-32 sm:min-h-36 px-3 py-3';
+  const medalClass=index=>index===0?'text-4xl sm:text-5xl':index===1?'text-3xl sm:text-4xl':'text-2xl sm:text-3xl';
+  const nameClass=index=>index===0?'text-base sm:text-lg':index===1?'text-sm sm:text-base':'text-sm';
   return <section className="mt-6 grid gap-4 md:grid-cols-2" data-testid="interclub-team-podiums">
     {[[event.club_a_name,event.club_a_primary_colour,podiumA],[event.club_b_name,event.club_b_primary_colour,podiumB]].map(([name,colour,podium])=><div key={name} className="rounded-2xl border bg-card p-4 sm:p-5" style={{borderTopWidth:'7px',borderTopColor:colour||'#2563eb'}}>
       <p className="text-center text-xs font-black uppercase tracking-[.18em] text-muted-foreground">{name} · Top 3</p>
-      <div className="mt-4 grid grid-cols-3 gap-2 items-end">{podium.map((p,index)=><div key={p.id} className={`rounded-xl border bg-background/50 p-3 text-center ${index===0?'min-h-36':'min-h-28'}`}>
-        <div className="text-2xl">{medal(index)}</div><p className="mt-1 text-[10px] font-black uppercase tracking-wider text-muted-foreground">{index+1}{index===0?'st':index===1?'nd':'rd'}</p><p className="mt-1 text-sm font-black leading-tight">{p.display_name}</p><p className="mt-2 text-[11px] text-muted-foreground">{p.points_for} pts · {p.wins}W · {p.point_diff>0?'+':''}{p.point_diff}</p>
+      <div className="mt-4 grid grid-cols-3 gap-2 items-end">{podium.map((p,index)=><div key={p.id} className={`rounded-xl border bg-background/50 text-center flex flex-col justify-center ${sizeClass(index)}`}>
+        <div className={medalClass(index)}>{medal(index)}</div><p className="mt-1 text-[10px] sm:text-xs font-black uppercase tracking-wider text-muted-foreground">{place(index)}</p><p className={`mt-1 font-black leading-tight ${nameClass(index)}`}>{p.display_name}</p><p className="mt-2 text-[10px] sm:text-[11px] text-muted-foreground">{p.points_for} pts · {p.wins}W · {p.point_diff>0?'+':''}{p.point_diff}</p>
       </div>)}</div>
     </div>)}
   </section>;
@@ -113,10 +117,7 @@ export default function PublicClubChallengeDisplay(){
   const potWinners=Array.isArray(event.pot_winners)?event.pot_winners:[];
   const potWinnersA=potWinners.filter(p=>p.side==='club_a');
   const potWinnersB=potWinners.filter(p=>p.side==='club_b');
-  const publicVoteResults=Array.isArray(event.pot_vote_results)?event.pot_vote_results:[];
-  const publicVoteResultsA=publicVoteResults.filter(p=>p.side==='club_a');
-  const publicVoteResultsB=publicVoteResults.filter(p=>p.side==='club_b');
-  const awardLabel=event.pot_method==='points'?'Highest Scoring Players':'Players of the Tournament';
+  const awardLabel=event.pot_method==='points'?'Top Points Scorer':'Player of the Tournament';
   const awardRevealed=event.pot_status==='revealed'&&potWinners.length>0;
   const completed=['completed','archived'].includes(event.status);
   const finalTitle=s.a===s.b?'Interclub Draw':`${s.a>s.b?event.club_a_name:event.club_b_name} win the Interclub`;
@@ -156,16 +157,13 @@ export default function PublicClubChallengeDisplay(){
 
   const publicAwardPanel=awardRevealed?<section className="mt-6 rounded-3xl border-2 border-primary/30 bg-primary/5 p-5 sm:p-8 text-center shadow-sm">
     <p className="text-xs sm:text-sm font-black uppercase tracking-[.22em] text-primary">{awardLabel}</p>
-    {event.pot_method==='vote'&&event.pot_ballot_count>0&&<p className="mt-2 text-xs text-muted-foreground">{event.pot_ballot_count} ballot{event.pot_ballot_count===1?'':'s'} cast</p>}
+    <p className="mt-2 text-xs text-muted-foreground">{event.pot_method==='points'?'Highest points total from the completed Interclub rounds':'Voted winner from each team'}</p>
     <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-6">
-      {[[event.club_a_name,event.club_a_logo_url,event.club_a_primary_colour,event.club_a_secondary_colour,potWinnersA,publicVoteResultsA],[event.club_b_name,event.club_b_logo_url,event.club_b_primary_colour,event.club_b_secondary_colour,potWinnersB,publicVoteResultsB]].map(([name,logo,primary,secondary,winners,voteResults])=><div key={name} className="rounded-2xl border bg-card p-4 sm:p-6" style={{borderTopWidth:'7px',borderTopColor:primary||'#2563eb',borderBottomWidth:'3px',borderBottomColor:secondary||primary||'#2563eb'}}>
+      {[[event.club_a_name,event.club_a_logo_url,event.club_a_primary_colour,event.club_a_secondary_colour,potWinnersA],[event.club_b_name,event.club_b_logo_url,event.club_b_primary_colour,event.club_b_secondary_colour,potWinnersB]].map(([name,logo,primary,secondary,winners])=><div key={name} className="rounded-2xl border bg-card p-4 sm:p-6" style={{borderTopWidth:'7px',borderTopColor:primary||'#2563eb',borderBottomWidth:'3px',borderBottomColor:secondary||primary||'#2563eb'}}>
         {logo&&<img src={logo} alt={`${name} logo`} className="mx-auto h-14 w-14 sm:h-20 sm:w-20 rounded-xl bg-white object-contain p-1.5"/>}
         <p className="mt-3 text-xs sm:text-sm text-muted-foreground">{name}</p>
-        <p className="mt-2 text-xl sm:text-3xl font-black leading-tight">{winners.map(p=>p.display_name).join(' & ')}</p>
-        {event.pot_method==='vote'&&voteResults.length>0&&<div className="mt-4 border-t pt-3 text-left">
-          {voteResults.map((player,index)=><div key={player.id} className="flex items-center justify-between gap-3 py-1.5 text-xs sm:text-sm"><span className={index===0?'font-black':'font-medium'}>{player.display_name}</span><span className="font-black tabular-nums">{player.votes}</span></div>)}
-        </div>}
-        {event.pot_method==='points'&&winners[0]&&<p className="mt-2 text-xs text-muted-foreground">{winners[0].points_for||0} points · {winners[0].games_played||0} games · {winners[0].wins||0} wins</p>}
+        <p className="mt-2 text-xl sm:text-3xl font-black leading-tight">{winners[0]?.display_name||'Winner'}</p>
+        {event.pot_method==='points'&&winners[0]&&<p className="mt-2 text-xs sm:text-sm font-semibold text-muted-foreground">{winners[0].points_for||0} points · {winners[0].games_played||0} games · {winners[0].wins||0} wins</p>}
       </div>)}
     </div>
   </section>:null;
@@ -183,7 +181,7 @@ export default function PublicClubChallengeDisplay(){
   </div></div>;
 
   if(view==='vote') return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8"><AppearanceQuickButton className="fixed right-3 top-3 z-40 h-10 px-2 sm:px-3"/>{playerNav}<div className="mx-auto max-w-xl"><LiveEventBrand event={event} pageLabel={event.pot_method==='points'&&event.pot_status==='revealed'?'Team Player Awards':'Players of the Tournament Voting'}/><div className="mt-5 rounded-2xl border bg-card p-5 sm:p-7 shadow-sm">
-    <Trophy className="mx-auto h-10 w-10 text-primary"/><h1 className="mt-2 text-center text-2xl font-black">{event.pot_method==='points'&&event.pot_status==='revealed'?'Highest Scoring Players':'Players of the Tournament'}</h1><p className="mt-2 text-center text-sm text-muted-foreground">{event.pot_method==='points'&&event.pot_status==='revealed'?'One score-based winner from each team.':'Choose one player from each team when voting is open.'}</p>
+    <Trophy className="mx-auto h-10 w-10 text-primary"/><h1 className="mt-2 text-center text-2xl font-black">{event.pot_method==='points'&&event.pot_status==='revealed'?'Top Points Scorers':'Players of the Tournament'}</h1><p className="mt-2 text-center text-sm text-muted-foreground">{event.pot_method==='points'&&event.pot_status==='revealed'?'One top points scorer from each team.':'Choose one player from each team when voting is open.'}</p>
     {voteError&&<div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{voteError}</div>}
     {voteDone?<div className="mt-6 text-center"><CheckCircle2 className="mx-auto h-12 w-12 text-primary"/><h2 className="mt-3 text-xl font-black">Votes recorded</h2><p className="mt-2 text-sm text-muted-foreground">Thank you. Your choices for both teams have been recorded.</p><button type="button" onClick={()=>setView(completed?'results':'live')} className="mt-5 min-h-11 rounded-md border px-5 py-2 text-sm font-bold hover:bg-secondary">Back to {completed?'Summary':'Live Event'}</button></div>:potOpen?<>
       <div className="mt-5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">{potRemaining===null?<p className="text-sm font-bold">Voting is open until the host closes it</p>:<div className="flex items-center justify-center gap-2"><Clock3 className="h-4 w-4 text-primary"/><span className="text-sm font-bold">Voting closes in {potCountdown}</span></div>}<p className="mt-1 text-[11px] text-muted-foreground">One ballot per phone/browser for this Interclub.</p></div>
