@@ -43,6 +43,7 @@ assert(booking.includes('sendHostBookingEmail'), 'Booking flow must email the se
 assert(booking.includes("action==='admin_resend_host_email'"), 'Admin must be able to resend a booking directly to the session host');
 assert(booking.includes("hostName:host?.name||''") && booking.includes("hostMobile:host?.mobile||''"), 'Admin booking list must expose the resolved host contact for email/WhatsApp follow-up');
 assert(booking.includes('host:String(s.host||\'\')'), 'Directory session templates must retain the configured host');
+assert(booking.includes('link.created_by_user_id&&emailKey(link.notification_email||\'\')'), 'Auto-created member fallback sessions must reuse the club admin booking-notification address when available');
 
 assert(webhook.includes("const isMember=booking.participant_type==='member'"), 'Payment webhook must distinguish member from guest');
 assert(webhook.includes("const participantLabel=isMember?'Member':'Guest'"), 'Payment webhook messaging must label participant correctly');
