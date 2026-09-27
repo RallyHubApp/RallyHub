@@ -142,7 +142,7 @@ export default function Sidebar({ isOpen, onToggle }) {
               { path: '/directory', label: 'Switch to Directory', icon: MapPin },
               { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield }
             ] : []),
-            ...(canAccessAdmin ? [{ path: '/app/guest-bookings', label: 'Guest Bookings', icon: CalendarCheck }] : []),
+            ...(canAccessAdmin ? [{ path: '/app/guest-bookings', label: 'Session Bookings', icon: CalendarCheck }] : []),
             { path: '/app/my-profile', label: 'My Profile', icon: UserCircle },
             ...(canAccessAdmin ? [{ path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
           ].map(item => {
