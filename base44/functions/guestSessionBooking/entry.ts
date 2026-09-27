@@ -336,7 +336,7 @@ ${formatDate(session.session_date)} · ${session.start_time}${session.end_time?'
 Member: ${b.full_name}
 Mobile: ${b.mobile||'—'}
 Payment: ${pay}
-Booking ref: ${b.confirmation_code}
+Booking ref: ${b.confirmation_code}${b.booking_note?`\nNote: ${b.booking_note}`:''}
 
 Venue: ${session.venue_address}, ${session.venue_eircode}
 Map: ${session.google_maps_url}`;
@@ -348,7 +348,7 @@ Guest: ${b.full_name}
 Mobile: ${b.mobile}
 Emergency contact: ${b.emergency_contact_name} – ${b.emergency_contact_mobile}
 Payment: ${pay}
-Booking ref: ${b.confirmation_code}
+Booking ref: ${b.confirmation_code}${b.booking_note?`\nNote: ${b.booking_note}`:''}
 
 Waiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted.
 Venue: ${session.venue_address}, ${session.venue_eircode}
@@ -601,7 +601,7 @@ Deno.serve(async(req)=>{
             const originalAmount=Number(payment?.amount||b.amount||0);
             const refundedAmount=Number(payment?.amount_refunded||0);
             bookingRows.push({
-              id:b.id,fullName:b.full_name,email:b.email,mobile:b.mobile,participantType:b.participant_type||'guest',membershipId:b.membership_id||'',memberVerificationMethod:b.member_verification_method||'',bookingStatus:b.booking_status,
+              id:b.id,fullName:b.full_name,email:b.email,mobile:b.mobile,bookingNote:b.booking_note||'',participantType:b.participant_type||'guest',membershipId:b.membership_id||'',memberVerificationMethod:b.member_verification_method||'',bookingStatus:b.booking_status,
               paymentMethod:b.payment_method,paymentStatus:b.payment_status,amount:b.amount,
               refundedAmount,refundableAmount:Math.max(0,Math.round((originalAmount-refundedAmount)*100)/100),
               provider:payment?.provider||b.payment_method||'',providerTransactionId:payment?.provider_transaction_id||'',
@@ -984,6 +984,7 @@ ${detailRow('Reason',reason)}
         tenant_id:session.tenant_id,club_id:session.club_id,session_link_id:session.id,person_id:person.id,
         participant_type:'member',membership_id:membership.id,member_verification_method:resolved.verificationMethod,
         full_name:person.full_name,email:bookingEmail,email_key:bookingEmail,mobile:bookingMobile,mobile_key:mobileKey(bookingMobile),
+        booking_note:clean(body.bookingNote,1000)||undefined,
         booking_status:initialStatus,payment_method:session.payment_method,payment_status:initialPayment,
         amount:Number(session.fee_amount||0),currency:session.currency||'EUR',registered_at:now,
         confirmation_code:confirmation(),source_system:'rallyhub_member_session',
@@ -1152,7 +1153,7 @@ ${detailRow('Reason',reason)}
     let booking=await base44.asServiceRole.entities.GuestSessionBooking.create({
       tenant_id:session.tenant_id,club_id:session.club_id,session_link_id:session.id,person_id:person.id,participant_type:'guest',
       full_name:fullName,email,email_key:email,mobile,mobile_key:mobileK,
-      emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,medical_note:medicalNote,
+      emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,medical_note:medicalNote,booking_note:clean(body.bookingNote,1000)||undefined,
       waiver_version:legalBundle.waiverVersion,waiver_accepted:true,
       code_of_conduct_version:legalBundle.codeVersion,code_of_conduct_accepted:true,
       privacy_notice_version:PRIVACY_VERSION,privacy_acknowledged:true,
