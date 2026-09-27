@@ -1365,11 +1365,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!audioReady || !event?.id || voiceMode === 'off' || hallVoiceSource !== 'amplified') return;
     const label = roundLabels[currentRound] || `Round ${currentRound}`;
     const phrases = [
-      `${label}. Start round.`,
-      `${label}. Resume play.`,
-    ];
+      announcementText('round_start', `${label}. ${label} starting now.`, { round_label:label }),
+      announcementText('round_resume', `${label}. Resume play.`, { round_label:label }),
+    ].filter(Boolean);
     if (event?.include_break && Number(currentRound) === Number(event?.break_after_round || 0)) {
-      phrases.push(`${label} finished. Your ${Number(event?.break_minutes || 20)} minute break is next. Please give in your scores.`);
+      phrases.push(announcementText('scheduled_break_notice', `${label} finished. Your ${Number(event?.break_minutes || 20)} minute break is next. Please give in your scores.`, { round_label:label, break_minutes:Number(event?.break_minutes || 20) }));
     }
     void primeRallyHubHallSpeech(phrases, { eventId:event.id });
   }, [audioReady, currentRound, event?.id, event?.include_break, event?.break_after_round, event?.break_minutes, roundLabels, voiceMode, hallVoiceSource]);
@@ -1449,13 +1449,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       speak(text, { signal });
     };
     const prefix = `${currentRound}-${phase}`;
-    if (timerRemaining <= 5 && timerRemaining > 0) announceOnce(`${prefix}-count-${timerRemaining}`, String(timerRemaining));
+    if (timerRemaining <= 5 && timerRemaining > 0) announceOnce(`${prefix}-count-${timerRemaining}`, announcementText('countdown', String(timerRemaining), { seconds:timerRemaining }));
     if (timerRemaining === 0) {
+      const nextRoundLabel = roundLabel(Number(currentRound) + 1);
       const endMessage = phase === 'play'
-        ? 'Please hand in your scores.'
+        ? announcementText('round_end', 'Please hand in your scores.')
         : phase === 'changeover'
-          ? 'Changeover finished. Next round ready.'
-          : `Break finished. ${roundLabel(Number(currentRound) + 1)} is ready when the host is ready.`;
+          ? announcementText('changeover_end', 'Changeover finished. Next round ready.')
+          : announcementText('break_end', `Break finished. ${nextRoundLabel} is ready when the host is ready.`, { next_round_label:nextRoundLabel });
       announceOnce(`${prefix}-end`, endMessage, 'end');
       timerSpeechArmedRef.current = false;
       wakeLockRef.current?.release?.();
@@ -1463,11 +1464,18 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, [timerRemaining, timerState?.running, timerState?.phase, currentRound, hallVolume, voiceMode, voices, audioMuted, event?.include_break, event?.break_after_round, event?.break_minutes]);
   const runCompressedTimerAudioTest = async () => {
     if (compressedTimer.running) return;
+    const r1=roundLabel(1), r2=roundLabel(2), r3=roundLabel(3), breakMinutes=Number(event?.break_minutes || 20);
     const steps = [
-      `${roundLabel(1)}. ${roundLabel(1)} starting now.`, '5', '4', '3', '2', '1', 'Please hand in your scores.',
-      'Changeover starting now.', `${roundLabel(2)}. ${roundLabel(2)} starting now.`,
-      'Event paused.', `${roundLabel(2)}. Resume play.`, `Scheduled break. ${Number(event?.break_minutes || 20)} minutes.`, `${roundLabel(3)}. ${roundLabel(3)} starting now.`
-    ];
+      announcementText('round_start', `${r1}. ${r1} starting now.`, { round_label:r1 }),
+      ...[5,4,3,2,1].map(seconds => announcementText('countdown', String(seconds), { seconds })),
+      announcementText('round_end', 'Please hand in your scores.'),
+      announcementText('changeover_start', 'Changeover starting now.'),
+      announcementText('round_start', `${r2}. ${r2} starting now.`, { round_label:r2 }),
+      announcementText('event_paused', 'Event paused.'),
+      announcementText('round_resume', `${r2}. Resume play.`, { round_label:r2 }),
+      announcementText('break_start', `Your ${breakMinutes} minute break starts now. Enjoy your break.`, { break_minutes:breakMinutes }),
+      announcementText('round_start', `${r3}. ${r3} starting now.`, { round_label:r3 })
+    ].filter(Boolean);
     setCompressedTimer({ running: true, step: 0, text: steps[0] });
     for (let i = 0; i < steps.length; i += 1) {
       setCompressedTimer({ running: true, step: i, text: steps[i] });
@@ -1955,7 +1963,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         const message = `Round ${currentRound} play finished ✓ · ${Number(event.break_minutes || 20)}-minute break started${unresolved.length ? ` · ${unresolved.length} score${unresolved.length === 1 ? '' : 's'} still to enter` : ''}`;
         setRoundActionStatus({ state:'success', text:message });
         toast.success(message);
-        speak(`Round ${currentRound} saved. Your ${Number(event.break_minutes || 20)} minute break starts now. Please make sure all scores are in. Enjoy your break.`, { signal:'start' });
+        speak(announcementText('break_after_round_start', `${roundLabel(currentRound)} saved. Your ${Number(event.break_minutes || 20)} minute break starts now. Please make sure all scores are in. Enjoy your break.`, { round_label:roundLabel(currentRound), break_minutes:Number(event.break_minutes || 20) }), { signal:'start' });
         requestWakeLock();
       } else setRoundActionStatus({ state:'error', text:'Could not start the scheduled break.' });
       return;
@@ -2006,7 +2014,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const message = `Break ended early · Round ${nextRound} ready`;
       setRoundActionStatus({ state:'success', text:message });
       toast.success(message);
-      speak(`Break finished. ${roundLabel(nextRound)} is ready.`, { signal:'start' });
+      speak(announcementText('break_ended_early', `Break finished. ${roundLabel(nextRound)} is ready.`, { next_round_label:roundLabel(nextRound) }), { signal:'start' });
     } catch (e) {
       const message = e?.response?.data?.error || e?.message || 'Could not end the break early';
       setRoundActionStatus({ state:'error', text:message });
