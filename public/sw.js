@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rallyhub-static-v2';
+const CACHE_NAME = 'rallyhub-static-v3';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json'
@@ -56,5 +56,36 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => caches.match(event.request))
+  );
+});
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch { payload = {}; }
+  const title = payload.title || 'RallyHub';
+  const options = {
+    body: payload.body || 'You have a new RallyHub notification.',
+    icon: '/manifest.json',
+    badge: '/manifest.json',
+    tag: payload.tag || 'rallyhub-notification',
+    renotify: true,
+    data: { url: payload.url || '/app' },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = event.notification?.data?.url || '/app';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ('focus' in client) {
+          try { client.navigate(target); } catch {}
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow ? self.clients.openWindow(target) : undefined;
+    })
   );
 });
