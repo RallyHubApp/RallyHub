@@ -37,10 +37,7 @@ function collectSpondInviteIds(event:any) {
   const ids = new Set<string>();
   const add = (value:any) => { if (value !== undefined && value !== null && String(value).trim()) ids.add(String(value)); };
   const addMany = (values:any) => (Array.isArray(values) ? values : []).forEach(add);
-  const addMember = (row:any) => add(row?.memberId || row?.uid || row?.id);
-  // Only event-specific invitation/response signals belong here. The wider
-  // recipients.group.members collection can include people who can see the
-  // group/event but were not actually invited to that session.
+  const addMember = (row:any) => add(row?.memberId || row?.uid || row?.id || row);
   addMany(event?.responses?.acceptedIds);
   addMany(event?.responses?.declinedIds);
   addMany(event?.responses?.unansweredIds);
@@ -52,7 +49,38 @@ function collectSpondInviteIds(event:any) {
   (event?.responses?.members || []).forEach(addMember);
   (event?.responses?.responses || []).forEach(addMember);
   (event?.recipients?.members || []).forEach(addMember);
+  if (event?._distributionAuthoritative) (event?.recipients?.group?.members || []).forEach(addMember);
   return ids;
+}
+
+async function hydrateSpondEventDistribution(event:any, token:string, cache:Map<string,any>) {
+  const eventId = clean(event?.id, 180);
+  if (!eventId) return event;
+  let detail = cache.get(eventId);
+  if (detail === undefined) {
+    try {
+      const full = await spondRequest(`/sponds/${encodeURIComponent(eventId)}`, token);
+      detail = {
+        recipients: full?.recipients ?? null,
+        responses: full?.responses ?? null,
+        invitedMemberIds: full?.invitedMemberIds ?? null,
+        memberIds: full?.memberIds ?? null,
+      };
+    } catch (error) {
+      console.warn(`Spond event detail unavailable for ${eventId}`, error?.message || error);
+      detail = null;
+    }
+    cache.set(eventId, detail);
+  }
+  if (!detail) return event;
+  return {
+    ...event,
+    recipients: detail.recipients ?? event?.recipients,
+    responses: detail.responses ?? event?.responses,
+    invitedMemberIds: detail.invitedMemberIds ?? event?.invitedMemberIds,
+    memberIds: detail.memberIds ?? event?.memberIds,
+    _distributionAuthoritative: true,
+  };
 }
 
 function spondRowMatchesCandidates(row:any, candidates:{ emails:string[], phones:string[], names:string[] }, memberId:string) {
@@ -104,9 +132,10 @@ function memberIsInvitedToSpondEvent(event:any, candidates:{ emails:string[], ph
   if (collectSpondInviteIds(event).has(String(memberId))) return true;
   const rows = [...(event?.responses?.members || []), ...(event?.responses?.responses || []), ...(event?.recipients?.members || [])];
   if (rows.some((row:any) => spondRowMatchesCandidates(row, candidates, memberId))) return true;
+  const groupRows=event?.recipients?.group?.members || [];
+  if (event?._distributionAuthoritative && groupRows.some((row:any) => spondRowMatchesCandidates(row, candidates, memberId))) return true;
   const targetSubgroups=eventSubgroupIds(event);
   if (targetSubgroups.size && [...targetSubgroups].some(id => subgroupIds.has(id))) return true;
-  const groupRows=event?.recipients?.group?.members || [];
   return groupRows.some((row:any) => spondRowMatchesCandidates({ ...row, id:'' }, candidates, ''));
 }
 
@@ -199,8 +228,17 @@ async function loadPersonalSpondSessions(base44:any, context:any) {
       addProfileInfo:'true',
     });
     const raw = await spondRequest(`/sponds?${params.toString()}`, token);
-    const sessions = (Array.isArray(raw) ? raw : [])
-      .filter((event:any) => memberIsInvitedToSpondEvent(event, { emails, phones, names }, memberId, subgroupIds))
+    const detailCache = new Map<string,any>();
+    const eligible:any[] = [];
+    for (const listedEvent of (Array.isArray(raw) ? raw : [])) {
+      let event = listedEvent;
+      if (!memberIsInvitedToSpondEvent(event, { emails, phones, names }, memberId, subgroupIds)) {
+        event = await hydrateSpondEventDistribution(listedEvent, token, detailCache);
+      }
+      if (!memberIsInvitedToSpondEvent(event, { emails, phones, names }, memberId, subgroupIds)) continue;
+      eligible.push(event);
+    }
+    const sessions = eligible
       .map((event:any) => {
         const location = event?.location || {};
         return {
