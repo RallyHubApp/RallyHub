@@ -63,7 +63,6 @@ import PublicWaitingList from '@/pages/PublicWaitingList';
 import PublicClubPolicies from '@/pages/PublicClubPolicies';
 import WaitingList from '@/pages/WaitingList';
 import MemberPlay from '@/pages/MemberPlay';
-import MemberClubhouse from '@/pages/MemberClubhouse';
 import MemberVenues from '@/pages/MemberVenues';
 import MemberLearn from '@/pages/MemberLearn';
 import MemberForecast from '@/pages/MemberForecast';
