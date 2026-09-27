@@ -14,6 +14,26 @@
     "person_id": {
       "type": "string"
     },
+    "participant_type": {
+      "type": "string",
+      "enum": [
+        "guest",
+        "member"
+      ],
+      "default": "guest"
+    },
+    "membership_id": {
+      "type": "string"
+    },
+    "member_verification_method": {
+      "type": "string",
+      "enum": [
+        "name",
+        "email",
+        "mobile",
+        "multiple"
+      ]
+    },
     "full_name": {
       "type": "string"
     },
@@ -150,15 +170,7 @@
     "email_key",
     "mobile",
     "mobile_key",
-    "waiver_version",
-    "waiver_accepted",
-    "code_of_conduct_version",
-    "code_of_conduct_accepted",
-    "privacy_notice_version",
-    "privacy_acknowledged",
-    "cancellation_policy_version",
-    "cancellation_policy_accepted",
-    "photo_video_consent",
+    "participant_type",
     "booking_status",
     "payment_method",
     "payment_status",
