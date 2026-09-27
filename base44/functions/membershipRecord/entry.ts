@@ -739,7 +739,10 @@ Deno.serve(async(req)=>{
         base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:tenantId,club_id:clubId},'person_id',500),
         base44.asServiceRole.entities.MembershipApplicationConfig.filter({tenant_id:tenantId,club_id:clubId},'-updated_date',50)
       ]);
-      const personMap=new Map((people||[]).map((p:any)=>[String(p.id),p]));
+      const qaPersonIds=new Set((people||[]).filter((p:any)=>String(p.source_system||'').includes('membership_qa')||(p.data_quality_flags||[]).includes('qa_test_record')).map((p:any)=>String(p.id)));
+      const members=(membersRaw||[]).filter((m:any)=>!qaPersonIds.has(String(m.person_id))&&!String(m.source_system||'').includes('membership_qa')&&!(m.data_quality_flags||[]).includes('qa_test_record'));
+      const relationships=(relationshipsRaw||[]).filter((r:any)=>!qaPersonIds.has(String(r.person_id))&&!String(r.source_system||'').includes('membership_qa'));
+      const personMap=new Map((people||[]).filter((p:any)=>!qaPersonIds.has(String(p.id))).map((p:any)=>[String(p.id),p]));
       const playerMap=new Map((players||[]).filter((p:any)=>p.person_id).map((p:any)=>[String(p.person_id),p]));
       const profilesByPerson=new Map<string,any[]>();
       for(const sp of sportProfiles||[]){
