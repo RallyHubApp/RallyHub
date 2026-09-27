@@ -163,6 +163,11 @@ Deno.serve(async(req)=>{
       return Response.json({success:true});
     }
 
+    if(action==='test_push'){
+      const delivery=await sendPushToUser(base44,config,user.id,{title:'RallyHub notifications are on',body:'You’ll see a private alert here when a new RallyHub message arrives.',url:'/app/messages',tag:'rallyhub-push-test'});
+      return Response.json({success:true,delivery});
+    }
+
     if(action==='bootstrap'){
       if(chair){
         const threads=await base44.asServiceRole.entities.MemberMessageThread.filter({tenant_id:tenantId,club_id:clubId,chair_user_id:config.chair_user_id},'-last_message_at',500);
