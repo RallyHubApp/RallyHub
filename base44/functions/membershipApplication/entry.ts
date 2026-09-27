@@ -429,14 +429,16 @@ Deno.serve(async(req)=>{
 
       if(action==='admin_count'){
         const apps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300);
-        const actionable=(apps||[]).filter((app:any)=>['submitted','pending_payment','payment_failed'].includes(String(app.status||''))&&app.payment_status!=='paid');
-        return Response.json({success:true,pendingCount:actionable.length,total:(apps||[]).length});
+        const liveApps=(apps||[]).filter((app:any)=>app.status!=='withdrawn'&&!String(app.source_system||'').includes('membership_qa'));
+        const actionable=liveApps.filter((app:any)=>['submitted','pending_payment','payment_failed'].includes(String(app.status||''))&&app.payment_status!=='paid');
+        return Response.json({success:true,pendingCount:actionable.length,total:liveApps.length});
       }
 
       if(action==='admin_list'){
         const apps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300);
+        const liveApps=(apps||[]).filter((app:any)=>app.status!=='withdrawn'&&!String(app.source_system||'').includes('membership_qa'));
         const rows=[];
-        for(const app of apps||[]){
+        for(const app of liveApps){
           let paymentUrl='';
           if(app.payment_record_id){
             const p=await first(base44,'PaymentRecord',{id:app.payment_record_id,tenant_id:tenantId,club_id:clubId});
