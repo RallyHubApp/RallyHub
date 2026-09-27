@@ -104,11 +104,11 @@ test.describe('member or guest session booking mobile flow', () => {
     await expect(page.getByText('Ennistymon Community Centre')).toHaveCount(2);
     await expect(page.getByText('Corofin GAA Sports Hall')).toBeVisible();
     await expect(page.getByRole('heading',{name:'3. Previous sporting experience'})).toBeVisible();
-    await page.getByLabel('Tennis').check();
-    await page.getByLabel('Badminton').check();
+    await page.getByRole('checkbox',{name:'Tennis',exact:true}).check();
+    await page.getByRole('checkbox',{name:'Badminton',exact:true}).check();
     await page.getByLabel(/Any other sporting history/).fill('Played volleyball socially for several years.');
-    await expect(page.getByLabel('Tennis')).toBeChecked();
-    await expect(page.getByLabel('Badminton')).toBeChecked();
+    await expect(page.getByRole('checkbox',{name:'Tennis',exact:true})).toBeChecked();
+    await expect(page.getByRole('checkbox',{name:'Badminton',exact:true})).toBeChecked();
     await page.getByLabel('Yes',{exact:true}).check();
     await page.getByLabel('Please give brief details').fill('Previous knee surgery, fully recovered.');
     await page.getByLabel('Full name').fill('Guest Tester');
