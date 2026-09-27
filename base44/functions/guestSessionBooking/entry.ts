@@ -130,6 +130,76 @@ async function memberDirectorySessions(base44:any,club:any){
   }).filter(Boolean);
 }
 
+function matchSpondMemberId(group:any,person:any,explicitIds:string[]=[]){
+  const members=spondGroupMembers(group);
+  for(const explicitId of explicitIds){
+    const found=members.find((member:any)=>String(member?.id||member?.uid||member?.memberId||'')===String(explicitId));
+    if(found)return String(found?.id||found?.uid||found?.memberId);
+  }
+  const emails=new Set([person?.primary_email,...(person?.alternate_emails||[])].map(emailKey).filter(Boolean));
+  const phones=new Set([person?.mobile,...(person?.alternate_phones||[])].map(normalisePhone).filter((v:string)=>v.length>=7));
+  for(const member of members){
+    const profile=member?.profile||{};
+    const memberEmails=[profile.email,member?.email].map(emailKey).filter(Boolean);
+    if(memberEmails.some((email:string)=>emails.has(email)))return String(member?.id||member?.uid||member?.memberId);
+    const memberPhones=[profile.phoneNumber,member?.phoneNumber].map(normalisePhone).filter((v:string)=>v.length>=7);
+    if(memberPhones.some((phone:string)=>phones.has(phone)))return String(member?.id||member?.uid||member?.memberId);
+  }
+  return null;
+}
+
+async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,membership:any){
+  const connections=await base44.asServiceRole.entities.DirectorySpondConnection.filter({listing_slug:club.slug,status:'active'},'-last_synced_at',10);
+  const connection=connections?.[0];
+  if(!connection?.spond_group_id)return {status:'not_configured',sessions:[]};
+  const identities=await base44.asServiceRole.entities.SpondIdentity.filter({tenant_id:club.tenant_id,club_id:club.id,match_status:'matched'},'-last_verified_at',100);
+  const explicitIds=(identities||[]).filter((row:any)=>String(row.member_id||'')===String(membership?.id||'')).map((row:any)=>clean(row.spond_member_id,180)).filter(Boolean);
+  try{
+    const accessToken=await spondLoginFromSecrets();
+    if(!accessToken)return {status:'credentials_unavailable',sessions:[]};
+    let group:any=null;
+    try{group=await spondRequest(`/groups/${connection.spond_group_id}`,accessToken)}catch{
+      const groups=await spondRequest('/groups',accessToken);
+      group=(Array.isArray(groups)?groups:[]).find((row:any)=>String(row.id)===String(connection.spond_group_id));
+    }
+    if(!group)return {status:'group_unavailable',sessions:[]};
+    const memberId=matchSpondMemberId(group,person,explicitIds);
+    if(!memberId)return {status:'identity_not_matched',sessions:[]};
+    const now=new Date(),maxStart=new Date(now.getTime()+60*24*60*60*1000);
+    const params=new URLSearchParams({groupId:String(connection.spond_group_id),minStartTimestamp:now.toISOString(),maxStartTimestamp:maxStart.toISOString(),max:'300',scheduled:'true',includeComments:'false',includeHidden:'false',addProfileInfo:'false'});
+    const raw=await spondRequest(`/sponds?${params.toString()}`,accessToken);
+    const configured=await memberDirectorySessions(base44,club);
+    const sessions=(Array.isArray(raw)?raw:[]).filter((event:any)=>collectSpondRecipientIds(event).has(String(memberId))).map((event:any)=>{
+      const status=spondResponseStatus(event,memberId);
+      if(['declined','waiting','waitinglist','waitlist'].includes(status))return null;
+      const startRaw=spondEventStart(event),start=dublinParts(startRaw),end=dublinParts(event?.endTimestamp||'');
+      if(!start)return null;
+      const loc=event?.location||{};
+      const eventVenue=clean(loc?.feature||loc?.name||loc?.address||'',220);
+      const candidates=configured.filter((s:any)=>s.weekday===start.day&&s.start===start.time);
+      let cfg=candidates[0]||null;
+      if(candidates.length>1&&eventVenue){
+        const venueKey=nameKey(eventVenue);
+        cfg=candidates.find((s:any)=>nameKey(s.venueName).includes(venueKey)||venueKey.includes(nameKey(s.venueName)))||candidates[0];
+      }
+      if(!cfg||!Number.isFinite(Number(cfg.fee))||Number(cfg.fee)<=0)return null;
+      const acceptedCount=(event?.responses?.acceptedIds||[]).length||0;
+      const capacity=Number(event?.maxAccepted||event?.maxParticipants||cfg.capacity||0)||null;
+      return {
+        id:`spond:${String(event.id)}:${startRaw}`,
+        spondEventId:String(event.id),title:clean(event?.heading||cfg.level||'Club session',180),responseStatus:status,
+        sessionDate:start.date,weekday:start.day,start:start.time,end:end?.time||cfg.end||'',
+        venueKey:cfg.venueKey,venueName:cfg.venueName,venueAddress:cfg.venueAddress,eircode:cfg.eircode,mapsUrl:cfg.mapsUrl,
+        fee:Number(cfg.fee),payment:cfg.payment,capacity,acceptedCount,host:cfg.host||'',source:'spond',
+      };
+    }).filter(Boolean).sort((a:any,b:any)=>`${a.sessionDate}${a.start}`.localeCompare(`${b.sessionDate}${b.start}`));
+    return {status:'connected',sessions};
+  }catch(error){
+    console.error('member payment fallback Spond feed error',error?.message||error);
+    return {status:'temporarily_unavailable',sessions:[]};
+  }
+}
+
 async function resolveActiveMember(base44:any,club:any,identity:any){
   const suppliedName=nameKey(identity?.fullName||'');
   const suppliedEmail=emailKey(identity?.email||'');
