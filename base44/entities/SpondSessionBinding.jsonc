@@ -1,0 +1,68 @@
+{
+  "name": "SpondSessionBinding",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "listing_slug": {
+      "type": "string"
+    },
+    "directory_session_key": {
+      "type": "string",
+      "description": "RallyHub Directory session id/key this Spond series/event powers"
+    },
+    "spond_group_id": {
+      "type": "string"
+    },
+    "spond_event_id": {
+      "type": "string",
+      "description": "Stable Spond event/series id from the Spond event URL"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "notes": {
+      "type": "string"
+    },
+    "last_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "listing_slug",
+    "directory_session_key",
+    "spond_group_id",
+    "spond_event_id",
+    "active"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

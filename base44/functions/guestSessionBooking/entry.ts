@@ -263,6 +263,52 @@ function matchSpondMemberId(group:any,person:any,explicitIds:string[]=[]){
   return null;
 }
 
+async function persistResolvedSpondIdentity(base44:any,club:any,membership:any,person:any,spondMemberId:string,spondGroupId:string){
+  if(!membership?.id||!spondMemberId)return;
+  try{
+    const existing=(await base44.asServiceRole.entities.SpondIdentity.filter({tenant_id:club.tenant_id,club_id:club.id,member_id:membership.id},'-last_verified_at',10))?.[0];
+    const data:any={
+      tenant_id:club.tenant_id,club_id:club.id,member_id:membership.id,spond_member_id:spondMemberId,
+      spond_group_id:spondGroupId||'',spond_name:clean(person?.full_name||'',180),spond_email:emailKey(person?.primary_email||''),spond_phone:clean(person?.mobile||'',80),
+      match_status:'matched',match_method:'spond_id',last_verified_at:new Date().toISOString(),notes:'Resolved from an exact Spond event distribution list during member session lookup.',
+    };
+    if(existing)await base44.asServiceRole.entities.SpondIdentity.update(existing.id,data);
+    else await base44.asServiceRole.entities.SpondIdentity.create(data);
+  }catch(error){console.warn('Could not persist Spond identity',error?.message||error)}
+}
+
+async function directBoundMemberSessions(base44:any,club:any,person:any,membership:any,memberId:string,memberSubgroups:Set<string>,accessToken:string,configured:any[]){
+  const bindings=await base44.asServiceRole.entities.SpondSessionBinding.filter({tenant_id:club.tenant_id,club_id:club.id,listing_slug:club.slug,active:true},'directory_session_key',100);
+  const sessions:any[]=[];
+  for(const binding of bindings||[]){
+    const cfg=configured.find((s:any)=>String(s.directorySessionId||s.key)===String(binding.directory_session_key||''));
+    if(!cfg)continue;
+    try{
+      const full=await spondRequest(`/sponds/${encodeURIComponent(String(binding.spond_event_id||''))}`,accessToken);
+      const event={...full,_distributionAuthoritative:true};
+      if(!memberIsInvitedToSpondEvent(event,person,memberId,memberSubgroups))continue;
+      const resolvedMemberId=spondEventMemberId(event,person,memberId);
+      if(resolvedMemberId)await persistResolvedSpondIdentity(base44,club,membership,person,resolvedMemberId,String(binding.spond_group_id||''));
+      const status=spondResponseStatus(event,resolvedMemberId);
+      if(['declined','waiting','waitinglist','waitlist'].includes(status))continue;
+      const sessionDate=nextOccurrenceDate(cfg.weekday,cfg.start);
+      if(!sessionDate)continue;
+      const acceptedCount=(event?.responses?.acceptedIds||[]).length||0;
+      const capacity=Number(event?.maxAccepted||event?.maxParticipants||cfg.capacity||0)||null;
+      if(status!=='accepted'&&capacity&&acceptedCount>=capacity)continue;
+      sessions.push({
+        id:`spond:${String(binding.spond_event_id)}:${sessionDate}:${cfg.start}`,
+        spondEventId:String(binding.spond_event_id),title:clean(event?.heading||cfg.level||'Club session',180),responseStatus:status,
+        sessionDate,weekday:cfg.weekday,start:cfg.start,end:cfg.end||'',
+        venueKey:cfg.venueKey,venueName:cfg.venueName,venueAddress:cfg.venueAddress,eircode:cfg.eircode,mapsUrl:cfg.mapsUrl,
+        fee:Number(cfg.fee),payment:cfg.payment,capacity,acceptedCount,host:cfg.host||'',source:'spond-binding',directorySessionId:cfg.directorySessionId||cfg.key,
+        clubContactEmail:cfg.clubContactEmail||'',clubContactName:cfg.clubContactName||'',
+      });
+    }catch(error){console.warn(`Direct Spond event binding failed for ${binding?.spond_event_id||'unknown'}`,error?.message||error)}
+  }
+  return {sessions,boundEventIds:new Set((bindings||[]).map((b:any)=>String(b.spond_event_id||'')).filter(Boolean))};
+}
+
 async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,membership:any){
   const connections=await base44.asServiceRole.entities.DirectorySpondConnection.filter({listing_slug:club.slug,status:'active'},'-last_synced_at',10);
   const connection=connections?.[0];
