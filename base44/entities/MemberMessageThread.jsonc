@@ -1,0 +1,78 @@
+{
+  "name": "MemberMessageThread",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "member_user_id": {
+      "type": "string"
+    },
+    "member_person_id": {
+      "type": "string"
+    },
+    "member_player_id": {
+      "type": "string"
+    },
+    "member_name": {
+      "type": "string"
+    },
+    "chair_user_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "closed"
+      ],
+      "default": "open"
+    },
+    "last_message_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_message_preview": {
+      "type": "string"
+    },
+    "unread_for_member": {
+      "type": "number",
+      "default": 0
+    },
+    "unread_for_chair": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "member_user_id",
+    "chair_user_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
