@@ -622,7 +622,7 @@ export default function DirectoryListingEdit() {
             <div className="glass rounded-2xl p-7 max-w-xl mx-auto text-center">
               <h1 className="text-2xl font-black">Verification required</h1>
               <p className="text-sm text-muted-foreground mt-2">You need verified directory-editor access before you can edit this club.</p>
-              <Link to={`/directory/${slug}/claim`}><Button className="mt-5">Claim this listing</Button></Link>
+              <Link to={`/directory/${slug}/claim`}><Button className="mt-5">Verify & update this club</Button></Link>
             </div>
           ) : form ? (
             <div className="space-y-5">
