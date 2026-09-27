@@ -1109,7 +1109,7 @@ ${detailRow('Reason',reason)}
       }
 
       const bookingEmail=emailKey(person.primary_email||'');
-      if(!bookingEmail)return Response.json({error:'Membership found, but there is no email address on the member record. Please contact Clare Pickleball so we can update your details before taking payment.',code:'MEMBER_EMAIL_MISSING'},{status:409});
+      if(!bookingEmail)return Response.json({error:`Membership found, but there is no email address on the member record. Please contact ${club.name} so the club can update your details before taking payment.`,code:'MEMBER_EMAIL_MISSING'},{status:409});
       const bookingMobile=clean(person.mobile||'',50);
       const now=new Date().toISOString();
       const initialStatus=session.payment_method==='cash'?'cash_due':'pending_payment';
@@ -1141,7 +1141,7 @@ ${detailRow('Reason',reason)}
         return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'pending_payment',paymentStatus:'pending',participantType:'member',paymentUrl:checkout.url,message:`Complete the €${Number(session.fee_amount||0).toFixed(2)} payment to confirm your place.`});
       }catch(e){
         console.error('member SumUp create failed',e?.message||e);
-        return Response.json({error:e?.message||'Your booking was saved, but RallyHub could not open SumUp payment. Please contact Clare Pickleball.',bookingId:booking.id},{status:503});
+        return Response.json({error:e?.message||`Your booking was saved, but RallyHub could not open the payment page. Please contact ${club.name}.`,bookingId:booking.id},{status:503});
       }
     }
 
