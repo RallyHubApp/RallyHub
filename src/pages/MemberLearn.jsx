@@ -31,7 +31,7 @@ export default function MemberLearn({ previewData = null }) {
   const builtInLinks = useMemo(() => {
     const links = [];
     if (directoryClub?.website) links.push({ id:'club-website', title:'Club website', description:'Official club website', category:'Club Information', resource_type:'link', url:directoryClub.website });
-    if (directoryClub?.shopUrl) links.push({ id:'club-shop', title:'Club shop', description:'Club clothing, equipment or merchandise', category:'Club Information', resource_type:'link', url:directoryClub.shopUrl });
+    if (directoryClub?.shopUrl) links.push({ id:'club-shop', title:'Club shop', description:'Club gear, sizes, offers and ordering information', category:'Club Information', resource_type:'link', url:'/app/shop' });
     if (directoryClub?.slug) links.push({ id:'directory-profile', title:'Public club profile', description:'Venues, sessions and public club information on RallyHub', category:'Club Information', resource_type:'link', url:`/directory/${directoryClub.slug}` });
     return links;
   }, [directoryClub]);
