@@ -44,7 +44,7 @@ export default function PublicGuestSessionBooking(){
   const load=async()=>{
     setLoading(true);setError('');
     try{
-      const res=await base44.functions.invoke('guestSessionBooking',{action:'public_get',token,inviteToken});
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'public_get',token,inviteToken,bookingId:params.get('booking')||''});
       if(res.data?.error)throw new Error(res.data.error);
       setData(res.data);
       if(res.data?.inviteApproved){
