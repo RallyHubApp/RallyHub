@@ -120,6 +120,9 @@ export default function PublicClubChallengeDisplay(){
   const awardRevealed=event.pot_status==='revealed'&&potWinners.length>0;
   const completed=['completed','archived'].includes(event.status);
   const finalTitle=s.a===s.b?'Interclub Draw':`${s.a>s.b?event.club_a_name:event.club_b_name} win the Interclub`;
+  const performance=individualPerformance(matches,participants);
+  const podiumA=podiumForSide(performance,participants,'club_a');
+  const podiumB=podiumForSide(performance,participants,'club_b');
   const alphabeticalTeamSort=(a,b)=>String(a.display_name||'').localeCompare(String(b.display_name||''),'en',{sensitivity:'base'});
   const teamAPlayers=participants.filter(p=>p.side==='club_a').sort(alphabeticalTeamSort);
   const teamBPlayers=participants.filter(p=>p.side==='club_b').sort(alphabeticalTeamSort);
