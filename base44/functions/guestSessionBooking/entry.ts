@@ -66,21 +66,38 @@ async function spondRequest(path:string,accessToken:string){
   return response.json();
 }
 function spondEventStart(event:any){return event?.meetupTimestamp||event?.startTimestamp||event?.start_time||''}
-function collectSpondRecipientIds(event:any){
+function collectSpondInviteIds(event:any){
   const ids=new Set<string>();
   const add=(value:any)=>{if(value!==undefined&&value!==null&&String(value).trim())ids.add(String(value))};
   const addMany=(values:any)=>(Array.isArray(values)?values:[]).forEach(add);
   const addMember=(row:any)=>add(row?.memberId||row?.uid||row?.id);
+  // These are response/invitation signals for the specific event occurrence.
+  // Do NOT use recipients.group.members here: Spond can populate that with the
+  // wider group/visibility audience, which is not the same as the invite list.
   addMany(event?.responses?.acceptedIds);addMany(event?.responses?.declinedIds);addMany(event?.responses?.unansweredIds);addMany(event?.responses?.unconfirmedIds);addMany(event?.responses?.waitinglistIds);addMany(event?.responses?.waitingListIds);addMany(event?.invitedMemberIds);addMany(event?.memberIds);
   (event?.responses?.members||[]).forEach(addMember);
   (event?.responses?.responses||[]).forEach(addMember);
-  // Spond can represent an invitation through the event recipient block even when
-  // the member has not produced a response row yet. Keep this fail-closed by only
-  // accepting member IDs that Spond explicitly returns inside the event recipients.
-  (event?.recipients?.group?.members||[]).forEach(addMember);
   (event?.recipients?.members||[]).forEach(addMember);
-  (event?.recipients?.subGroups||event?.recipients?.subgroups||[]).forEach((sub:any)=>(sub?.members||[]).forEach(addMember));
   return ids;
+}
+function spondRowMatchesPerson(row:any,person:any,memberId:string){
+  if(!row)return false;
+  const rowId=String(row?.memberId||row?.uid||row?.id||'');
+  if(rowId&&rowId===String(memberId||''))return true;
+  const profile=row?.profile||{};
+  const emails=new Set([person?.primary_email,...(person?.alternate_emails||[])].map(emailKey).filter(Boolean));
+  const phones=new Set([person?.mobile,...(person?.alternate_phones||[])].map(normalisePhone).filter((v:string)=>v.length>=7));
+  const rowEmails=[profile.email,row?.email].map(emailKey).filter(Boolean);
+  if(rowEmails.some((email:string)=>emails.has(email)))return true;
+  const rowPhones=[profile.phoneNumber,row?.phoneNumber].map(normalisePhone).filter((v:string)=>v.length>=7);
+  if(rowPhones.some((phone:string)=>phones.has(phone)))return true;
+  const rowName=nameKey(`${profile.firstName||row?.firstName||''} ${profile.lastName||row?.lastName||''}`);
+  return !!rowName&&rowName===nameKey(person?.full_name||'');
+}
+function memberIsInvitedToSpondEvent(event:any,person:any,memberId:string){
+  if(collectSpondInviteIds(event).has(String(memberId)))return true;
+  const rows=[...(event?.responses?.members||[]),...(event?.responses?.responses||[]),...(event?.recipients?.members||[])];
+  return rows.some((row:any)=>spondRowMatchesPerson(row,person,memberId));
 }
 function spondResponseStatus(event:any,memberId:string){
   const id=String(memberId||'');
