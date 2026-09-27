@@ -8,6 +8,7 @@ const memberPortal = read('base44/functions/memberPortal/entry.ts');
 const schema = JSON.parse(read('base44/entities/GuestSessionBooking.jsonc'));
 const publicRequest = read('src/pages/PublicGuestRequest.jsx');
 const privateBooking = read('src/pages/PublicGuestSessionBooking.jsx');
+const guestJourney = read('base44/functions/guestAccessJourney/entry.ts');
 
 const memberStart = booking.indexOf("if(action==='public_member_lookup'||action==='public_member_submit')");
 const guestStart = booking.indexOf('const tokenValue=clean(body.token,80)', memberStart);
@@ -80,8 +81,11 @@ assert(required.has('participant_type'), 'participant_type must remain required'
 assert(publicRequest.includes('I’m an existing member') && publicRequest.includes('I’m a guest'), 'Public entry must offer member and guest journeys');
 assert(publicRequest.includes('Only upcoming Spond sessions you are invited to are shown'), 'Member UI must state personalised Spond visibility');
 assert(publicRequest.includes('bookingNote:memberForm.bookingNote'), 'Member note must be sent to booking backend');
-assert(publicRequest.includes('previousSports:[]') && publicRequest.includes("'Tennis','Badminton','Squash','Racketball','Padel','Table Tennis','None of these'"), 'Public guest request must support multi-select previous sports including None');
-assert(publicRequest.includes('sportingBackgroundNote') && publicRequest.includes('healthDeclarationApplies') && publicRequest.includes('guestMedicalNote'), 'Public guest request must collect optional sporting background plus required health screening/details');
+assert(publicRequest.includes('previousSports:[]') && publicRequest.includes("'Tennis','Badminton','Squash','Racketball','Padel','Table Tennis','None of these'"), 'Beginner public guest request must support multi-select previous sports including None');
+assert(publicRequest.includes("guestForm.experienceLevel==='beginner'&&<section") && publicRequest.includes("experienceLevel:'experienced',previousSports:[],sportingBackgroundNote:''"), 'Experienced pickleball guests must skip and clear the previous-sport intake');
+assert(publicRequest.includes('Beginner guest places are currently available only at Ennistymon and Corofin, as Ennis is full at the moment.'), 'Beginner session chooser must explain why Ennis is not available');
+assert(guestJourney.includes("const sports=experience==='beginner'?previousSports(body.previousSports):[]") && guestJourney.includes("if(experience==='beginner'&&!sports.length)"), 'Backend must require previous sports for beginners only, never experienced pickleball guests');
+assert(publicRequest.includes('sportingBackgroundNote') && publicRequest.includes('healthDeclarationApplies') && publicRequest.includes('guestMedicalNote'), 'Public guest request must collect optional sporting background for beginners plus required health screening/details for all guests');
 assert(publicRequest.includes('htmlFor="memberFullName"') && publicRequest.includes('id="memberFullName"'), 'Member form labels must be accessible/tappable');
 assert(privateBooking.includes("bookingNote:''"), 'Private guest booking must retain host note state');
 assert(privateBooking.includes('guestIntakeCaptured') && privateBooking.includes('Guest information already received'), 'Approved guests must not repeat the sports/health intake on the private booking page');
