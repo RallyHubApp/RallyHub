@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Home, CalendarDays, MessageCircle, BookOpen, UserCircle, Smartphone, Monitor, Shield } from 'lucide-react';
+import { Home, CalendarDays, MapPin, BookOpen, UserCircle, Smartphone, Monitor, Shield } from 'lucide-react';
 import MemberDashboardView from '@/components/member/MemberDashboardView';
 import MemberPlay from '@/pages/MemberPlay';
-import MemberClubhouse from '@/pages/MemberClubhouse';
+import MemberVenues from '@/pages/MemberVenues';
 import MemberLearn from '@/pages/MemberLearn';
 import GlassCard from '@/components/shared/GlassCard';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 const sections = [
   ['home', Home, 'Home'],
   ['play', CalendarDays, 'Play'],
-  ['clubhouse', MessageCircle, 'Clubhouse'],
+  ['venues', MapPin, 'Venues'],
   ['learn', BookOpen, 'Learn'],
   ['me', UserCircle, 'Me'],
 ];
@@ -78,8 +78,8 @@ export default function MemberPortalPreview({ payload }) {
     ? <MemberDashboardView snapshot={snapshot} play={payload?.play || null} performance={performance} performanceLoading={performanceLoading} preview />
     : section === 'play'
       ? <MemberPlay previewData={payload?.play || { items:[], club:snapshot?.club, spond:{ status:'not_configured', sessions:[] } }} />
-      : section === 'clubhouse'
-        ? <MemberClubhouse previewData={payload?.clubhouse || { posts:[], playerDirectory:snapshot?.playerDirectory || [], club:snapshot?.club }} />
+      : section === 'venues'
+        ? <MemberVenues />
         : section === 'learn'
           ? <MemberLearn previewData={payload?.learn || { resources:[], club:snapshot?.club }} />
           : <MePreview snapshot={snapshot} />;
