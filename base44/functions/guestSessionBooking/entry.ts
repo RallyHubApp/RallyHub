@@ -601,7 +601,7 @@ Deno.serve(async(req)=>{
             const originalAmount=Number(payment?.amount||b.amount||0);
             const refundedAmount=Number(payment?.amount_refunded||0);
             bookingRows.push({
-              id:b.id,fullName:b.full_name,email:b.email,mobile:b.mobile,bookingStatus:b.booking_status,
+              id:b.id,fullName:b.full_name,email:b.email,mobile:b.mobile,participantType:b.participant_type||'guest',membershipId:b.membership_id||'',memberVerificationMethod:b.member_verification_method||'',bookingStatus:b.booking_status,
               paymentMethod:b.payment_method,paymentStatus:b.payment_status,amount:b.amount,
               refundedAmount,refundableAmount:Math.max(0,Math.round((originalAmount-refundedAmount)*100)/100),
               provider:payment?.provider||b.payment_method||'',providerTransactionId:payment?.provider_transaction_id||'',
@@ -1054,7 +1054,7 @@ ${detailRow('Reason',reason)}
       }
 
       return Response.json({success:true,booking:{
-        id:booking.id,fullName:booking.full_name,bookingStatus:booking.booking_status,paymentStatus:booking.payment_status,
+        id:booking.id,fullName:booking.full_name,participantType:booking.participant_type||'guest',bookingStatus:booking.booking_status,paymentStatus:booking.payment_status,
         paymentMethod:booking.payment_method,confirmationCode:booking.confirmation_code,
       },session:safeSession(session)});
     }
@@ -1148,7 +1148,7 @@ ${detailRow('Reason',reason)}
     const initialStatus=session.payment_method==='cash'?'cash_due':'pending_payment';
     const initialPayment=session.payment_method==='cash'?'cash_due':'pending';
     let booking=await base44.asServiceRole.entities.GuestSessionBooking.create({
-      tenant_id:session.tenant_id,club_id:session.club_id,session_link_id:session.id,person_id:person.id,
+      tenant_id:session.tenant_id,club_id:session.club_id,session_link_id:session.id,person_id:person.id,participant_type:'guest',
       full_name:fullName,email,email_key:email,mobile,mobile_key:mobileK,
       emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,medical_note:medicalNote,
       waiver_version:legalBundle.waiverVersion,waiver_accepted:true,
