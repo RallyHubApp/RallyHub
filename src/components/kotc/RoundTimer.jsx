@@ -103,6 +103,7 @@ export default function RoundTimer({
   const [position, setPosition] = useState({ x: 12, y: 76 });
   const [audioReady, setAudioReady] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [announcementByKey, setAnnouncementByKey] = useState({});
   const audioRef = useRef(null);
   const timerRef = useRef(null);
   const deadlineRef = useRef(null);
@@ -111,6 +112,24 @@ export default function RoundTimer({
   const dragRef = useRef(null);
   const autoStartedKeyRef = useRef(null);
   const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await base44.functions.invoke('announcementSettings', { action:'resolved', module:'kotc' });
+        if (!cancelled && res.data?.byKey) setAnnouncementByKey(res.data.byKey);
+      } catch { /* defaults below remain authoritative if settings cannot be loaded */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const announcementText = (key, fallback) => {
+    const item = announcementByKey?.[key];
+    if (!item) return fallback;
+    if (item.enabled === false) return '';
+    return item.text || fallback;
+  };
 
   const persistTimer = async (action, remaining = seconds) => {
     if (!sessionId || !roundId) return;
@@ -145,7 +164,9 @@ export default function RoundTimer({
   const startPhase = async (nextPhase, { unlock = true } = {}) => {
     if (unlock) unlockAudio().catch(() => {});
     const duration = nextPhase === 'play' ? playSeconds : restSeconds;
-    const label = nextPhase === 'play' ? 'Start round.' : 'Rest time.';
+    const label = nextPhase === 'play'
+      ? announcementText('round_start', 'Start round.')
+      : announcementText('rest_start', 'Rest time.');
 
     // Fire the audible start cue before any best-effort wake-lock work so the
     // host hears the instruction at the same moment the sporting timer starts.
@@ -213,8 +234,15 @@ export default function RoundTimer({
       setSeconds(remaining);
 
       const announcements = phase === 'play'
-        ? { 60: 'One minute remaining.', 30: 'Thirty seconds.', 10: 'Ten seconds.' }
-        : { 30: 'Thirty seconds until next round.', 10: 'Ten seconds.' };
+        ? {
+            60: announcementText('one_minute', 'One minute remaining.'),
+            30: announcementText('thirty_seconds', 'Thirty seconds.'),
+            10: announcementText('ten_seconds', 'Ten seconds.'),
+          }
+        : {
+            30: announcementText('rest_thirty_seconds', 'Thirty seconds until next round.'),
+            10: announcementText('ten_seconds', 'Ten seconds.'),
+          };
 
       if (announcements[remaining] && !lastAnnouncedRef.current.has(remaining)) {
         lastAnnouncedRef.current.add(remaining);
@@ -228,14 +256,14 @@ export default function RoundTimer({
       if (remaining === 0) {
         setRunning(false);
         if (phase === 'play') {
-          announce('Round finished. Please give your scores.', 'end');
+          announce(announcementText('round_end', 'Round finished. Please give your scores.'), 'end');
         } else {
-          announce('Rest finished.', 'end');
+          announce(announcementText('rest_end', 'Rest finished.'), 'end');
         }
       }
     }, 250);
     return () => clearInterval(tick);
-  }, [running, phase, volume]);
+  }, [running, phase, volume, announcementByKey]);
 
   useEffect(() => {
     const onFullscreenChange = () => setFullscreen(document.fullscreenElement === timerRef.current);
