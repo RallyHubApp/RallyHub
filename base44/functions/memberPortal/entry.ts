@@ -800,10 +800,17 @@ Deno.serve(async (req) => {
       let clubhouse = { posts:[], playerDirectory:snapshot.playerDirectory || [], club:snapshot.club };
       let learn = { resources:[], club:snapshot.club };
       if (tenantId && clubId) {
-        const [postRows, resourceRows] = await Promise.all([
+        // Bulletin/resources are optional preview enhancements. If either auxiliary
+        // query has a transient backend failure, keep the member preview available
+        // instead of turning the entire preview into a 500 error.
+        const [postResult, resourceResult] = await Promise.allSettled([
           base44.asServiceRole.entities.ClubBulletinPost.filter({ tenant_id:tenantId, club_id:clubId, status:'published' }, '-published_at', 200),
           base44.asServiceRole.entities.ClubResource.filter({ tenant_id:tenantId, club_id:clubId, status:'published' }, 'sort_order', 500),
         ]);
+        const postRows:any[] = postResult.status === 'fulfilled' ? (postResult.value || []) : [];
+        const resourceRows:any[] = resourceResult.status === 'fulfilled' ? (resourceResult.value || []) : [];
+        if (postResult.status === 'rejected') console.warn('memberPortal preview bulletin unavailable', postResult.reason?.message || postResult.reason);
+        if (resourceResult.status === 'rejected') console.warn('memberPortal preview resources unavailable', resourceResult.reason?.message || resourceResult.reason);
         const now = Date.now();
         const identityIds = new Set([target.id, snapshot.person?.id, snapshot.player?.id, snapshot.member?.id].filter(Boolean).map(String));
         clubhouse = {
