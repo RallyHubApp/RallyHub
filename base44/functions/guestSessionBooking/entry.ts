@@ -325,9 +325,22 @@ function detailRow(label:string,value:any){
   return `<tr><td style="padding:7px 0;color:#6b7280;font-size:13px;width:38%;vertical-align:top;">${escapeHtml(label)}</td><td style="padding:7px 0;color:#172033;font-size:13px;font-weight:700;vertical-align:top;">${escapeHtml(value)}</td></tr>`;
 }
 function hostText(session:any,b:any){
+  const isMember=b.participant_type==='member';
   const pay=b.payment_method==='cash'
     ? (b.payment_status==='paid'?'Cash €'+Number(b.amount).toFixed(2)+' paid':'€'+Number(b.amount).toFixed(2)+' cash due on arrival')
     : '€'+Number(b.amount).toFixed(2)+' paid online';
+  if(isMember){
+    return `MEMBER BOOKING – ${session.venue_name}
+${formatDate(session.session_date)} · ${session.start_time}${session.end_time?'–'+session.end_time:''}
+
+Member: ${b.full_name}
+Mobile: ${b.mobile||'—'}
+Payment: ${pay}
+Booking ref: ${b.confirmation_code}
+
+Venue: ${session.venue_address}, ${session.venue_eircode}
+Map: ${session.google_maps_url}`;
+  }
   return `GUEST BOOKING – ${session.venue_name}
 ${formatDate(session.session_date)} · ${session.start_time}${session.end_time?'–'+session.end_time:''}
 
@@ -359,49 +372,47 @@ async function sendConfirmations(base44:any,session:any,booking:any,force=false)
     ? (booking.payment_status==='paid'? `${amount} cash paid` : `${amount} cash on arrival`)
     : `${amount} paid online`;
 
+  const isMember=booking.participant_type==='member';
   if((force||!booking.notification_sent_at) && session.notification_email){
     try{
-      const adminText=`New Clare Pickleball guest booking confirmed.
+      const typeLabel=isMember?'member':'guest';
+      const adminText=`New Clare Pickleball ${typeLabel} booking confirmed.
 
 ${summary}
 
-Guest email: ${booking.email}
+${isMember?'Member':'Guest'} email: ${booking.email||'—'}
 
-Copy the host block above into WhatsApp, or forward this email.
+This session notification was generated automatically by RallyHub.
 
 Clare Pickleball
 Powered by RallyHub`;
       const adminHtml=emailShell({
         club,
-        headline:'New guest booking confirmed',
+        headline:`New ${typeLabel} booking confirmed`,
         preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
         content:`
-<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">A guest booking has been confirmed and payment status verified.</p>
+<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">A ${typeLabel} booking has been confirmed and payment status verified.</p>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 20px;">
-${detailRow('Guest',booking.full_name)}
-${detailRow('Email',booking.email)}
-${detailRow('Mobile',booking.mobile)}
+${detailRow(isMember?'Member':'Guest',booking.full_name)}
+${detailRow('Email',booking.email||'—')}
+${detailRow('Mobile',booking.mobile||'—')}
 ${detailRow('Session',`${dateLabel} · ${timeLabel}`)}
 ${detailRow('Venue',session.venue_name)}
 ${detailRow('Payment',paymentLabel)}
 ${detailRow('Booking reference',booking.confirmation_code)}
 </table>
-<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#eef8f1;border:1px solid #b9e2c4;font-size:13px;line-height:1.55;color:#23452d;">
-<strong>Waiver and policies recorded</strong><br>
-Guest waiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted.
-</div>
-<div style="margin:0 0 8px;font-size:13px;font-weight:800;color:#172033;">Copy for the session host / WhatsApp</div>
-<div style="white-space:pre-wrap;margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#f7f9fc;border:1px solid #dfe5ee;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#172033;">${escapeHtml(summary)}</div>
-<p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">You can forward this email directly to the session host if preferred.</p>`,
+${isMember?'':`<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#eef8f1;border:1px solid #b9e2c4;font-size:13px;line-height:1.55;color:#23452d;"><strong>Waiver and policies recorded</strong><br>Guest waiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted.</div>`}
+<div style="margin:0 0 8px;font-size:13px;font-weight:800;color:#172033;">Session host summary</div>
+<div style="white-space:pre-wrap;margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#f7f9fc;border:1px solid #dfe5ee;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#172033;">${escapeHtml(summary)}</div>`,
       });
       await sendWithConfiguredEmailTransport(base44,scope,{
         to:session.notification_email,
-        subject:`Guest booking confirmed · ${booking.full_name} · ${session.venue_name} · ${session.start_time}`,
+        subject:`${isMember?'Member':'Guest'} booking confirmed · ${booking.full_name} · ${session.venue_name} · ${session.start_time}`,
         textBody:adminText,
         htmlBody:adminHtml,
       });
       updates.notification_sent_at=now;
-    }catch(e){console.error('guest admin notification failed',e?.message||e)}
+    }catch(e){console.error('session host notification failed',e?.message||e)}
   }
 
   const guestEligible=booking.email && (
@@ -411,7 +422,28 @@ Guest waiver, Code of Conduct, privacy notice and 24-hour cancellation policy ac
   if((force||!booking.guest_confirmation_sent_at) && guestEligible){
     try{
       const guestFirst=firstName(booking.full_name);
-      const guestText=`Hi ${guestFirst},
+      const guestText=isMember?`Hi ${guestFirst},
+
+Thank you for your booking. Your ${club.name} session is confirmed.
+
+Session: ${dateLabel} · ${timeLabel}
+Venue: ${session.venue_name}
+Address: ${session.venue_address}, ${session.venue_eircode}
+Payment: ${paymentLabel}
+Booking reference: ${booking.confirmation_code}
+
+Google Maps:
+${session.google_maps_url}
+
+Cancellation policy:
+Cancellations made less than 24 hours before the session are non-refundable.
+
+Thank you for your booking.
+
+Brian Moore
+Chairperson, Clare Pickleball
+
+Powered by RallyHub`:`Hi ${guestFirst},
 
 Thank you for your booking. Your ${club.name} guest session is confirmed.
 
@@ -440,7 +472,7 @@ Powered by RallyHub`;
         headline:`Thanks for your booking, ${guestFirst}`,
         preheader:`${dateLabel} · ${timeLabel} · ${session.venue_name}`,
         content:`
-<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Your guest session is confirmed. We look forward to welcoming you on court.</p>
+<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Your ${isMember?'club':'guest'} session is confirmed. We look forward to seeing you on court.</p>
 <div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
 ${detailRow('Date',dateLabel)}
@@ -458,13 +490,13 @@ ${detailRow('Booking reference',booking.confirmation_code)}
 <strong>Cancellation policy</strong><br>
 Cancellations made less than 24 hours before the session are non-refundable.
 </div>
-<p style="margin:0 0 22px;font-size:12px;line-height:1.55;color:#6b7280;">Your guest waiver, Code of Conduct and privacy acknowledgement have been recorded with this booking.</p>
+${isMember?'':`<p style="margin:0 0 22px;font-size:12px;line-height:1.55;color:#6b7280;">Your guest waiver, Code of Conduct and privacy acknowledgement have been recorded with this booking.</p>`}
 <p style="margin:0;font-size:15px;line-height:1.65;color:#374151;">Thank you for your booking.</p>
 <p style="margin:10px 0 0;font-size:15px;line-height:1.5;color:#172033;"><strong>Brian Moore</strong><br>Chairperson<br>Clare Pickleball</p>`,
       });
       await sendWithConfiguredEmailTransport(base44,scope,{
         to:booking.email,
-        subject:`${club.name} · Guest booking confirmed · ${dateLabel} ${session.start_time}`,
+        subject:`${club.name} · ${isMember?'Member':'Guest'} booking confirmed · ${dateLabel} ${session.start_time}`,
         textBody:guestText,
         htmlBody:guestHtml,
       });
