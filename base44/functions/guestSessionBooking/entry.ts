@@ -299,27 +299,53 @@ function nextOccurrenceDate(day:string,start:string){
   return d.toISOString().slice(0,10);
 }
 
-async function sessionHostNotification(base44:any,club:any,session:any){
-  if(session.host){
-    const people=await base44.asServiceRole.entities.Person.filter({tenant_id:club.tenant_id},'full_name',500);
-    const host=(people||[]).find((p:any)=>nameKey(p.full_name)===nameKey(session.host)&&emailKey(p.primary_email));
-    if(host)return {email:emailKey(host.primary_email),name:clean(host.full_name,120)};
-  }
-  return {email:emailKey(session.clubContactEmail||club.public_contact_email||''),name:clean(session.host||session.clubContactName||club.name,120)};
+async function hostContactFromName(base44:any,tenantId:string,hostName:any){
+  const wanted=nameKey(hostName||'');
+  if(!wanted)return null;
+  const people=await base44.asServiceRole.entities.Person.filter({tenant_id:tenantId},'full_name',500);
+  const person=(people||[]).find((p:any)=>nameKey(p.full_name)===wanted);
+  if(!person)return {personId:'',name:clean(hostName,120),email:'',mobile:''};
+  return {personId:String(person.id||''),name:clean(person.full_name||hostName,120),email:emailKey(person.primary_email||''),mobile:clean(person.mobile||'',80)};
+}
+
+async function resolveSessionHostContact(base44:any,session:any){
+  try{
+    const club=(await base44.asServiceRole.entities.Club.filter({id:session.club_id,tenant_id:session.tenant_id},'-updated_date',5))?.[0];
+    if(!club?.slug)return null;
+    const profile=(await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:club.slug,status:'active'},'-updated_at',5))?.[0];
+    const data=profile?.public_json?JSON.parse(profile.public_json):{};
+    const sessions=Array.isArray(data?.sessions)?data.sessions:[];
+    let configured=sessions.find((s:any)=>String(s.id||'')===String(session.session_label||''));
+    if(!configured){
+      configured=sessions.find((s:any)=>String(s.venueId||'')===String(session.venue_key||'')&&String(s.day||'')===String(session.weekday||'')&&String(s.start||'')===String(session.start_time||''));
+    }
+    if(!configured?.host)return null;
+    return await hostContactFromName(base44,session.tenant_id,configured.host);
+  }catch(e){console.error('session host resolution failed',e?.message||e);return null}
 }
 
 async function ensureMemberSessionLink(base44:any,club:any,memberSession:any){
   const date=clean(memberSession.sessionDate,20)||nextOccurrenceDate(memberSession.weekday,memberSession.start);
   if(!date)throw Object.assign(new Error('RallyHub could not determine the date for that session.'),{status:409});
+  const adminEmail=emailKey(memberSession.clubContactEmail||club.public_contact_email||'');
+  const adminName=clean(memberSession.clubContactName||club.name,120);
   let row=(await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:club.tenant_id,club_id:club.id,session_date:date,start_time:memberSession.start,venue_key:memberSession.venueKey,active:true},'-created_at',10))?.[0];
-  if(row)return row;
-  const notify=await sessionHostNotification(base44,club,memberSession);
+  if(row){
+    // Older auto-created links used the session host as the sole notification target.
+    // Keep an explicit admin/club notification as primary, while host notification is resolved separately.
+    const host=await hostContactFromName(base44,club.tenant_id,memberSession.host);
+    const existing=emailKey(row.notification_email||'');
+    if(adminEmail&&(!existing||(host?.email&&existing===host.email&&adminEmail!==host.email))){
+      row=await base44.asServiceRole.entities.GuestSessionLink.update(row.id,{notification_email:adminEmail,notification_name:adminName});
+    }
+    return row;
+  }
   row=await base44.asServiceRole.entities.GuestSessionLink.create({
     tenant_id:club.tenant_id,club_id:club.id,token:token(),active:true,
     session_date:date,weekday:memberSession.weekday,start_time:memberSession.start,end_time:memberSession.end,
     venue_key:memberSession.venueKey,venue_name:memberSession.venueName,venue_address:memberSession.venueAddress,venue_eircode:memberSession.eircode,google_maps_url:memberSession.mapsUrl,
     session_label:memberSession.directorySessionId||memberSession.key,capacity:memberSession.capacity||undefined,fee_amount:Number(memberSession.fee||0),currency:'EUR',payment_method:memberSession.payment,
-    notification_email:notify.email||undefined,notification_name:notify.name||undefined,
+    notification_email:adminEmail||undefined,notification_name:adminName||undefined,
     created_by_user_id:'',created_at:new Date().toISOString(),notes:`Auto-created for an existing member session booking/payment fallback${memberSession.spondEventId?` · Spond event ${memberSession.spondEventId}`:''}.`,
   });
   return row;
@@ -342,8 +368,9 @@ async function directoryTemplates(base44:any,tenantId:string,clubId:string){
       return {
         key:String(s.id),directorySessionId:String(s.id),venueKey:String(v.id),weekday:String(s.day||''),
         start:String(s.start||''),end:String(s.end||''),fee:Number.isFinite(price)&&price>0?price:(payment==='cash'?5:5.5),
-        payment,label:`${s.day||''} ${s.start||''}`.trim(),level:String(s.level||''),
+        payment,label:`${s.day||''} ${s.start||''}`.trim(),level:String(s.level||''),host:String(s.host||''),
         venueName:String(v.name||''),venueAddress:String(v.address||''),eircode:String(v.eircode||''),mapsUrl:String(v.mapUrl||''),
+        clubContactEmail:emailKey(data?.contact?.email||club.public_contact_email||''),clubContactName:clean(data?.contact?.name||club.name,120),
         beginnerGuestEligible:s.beginnerGuestEligible===true,
       };
     }).filter(Boolean);
