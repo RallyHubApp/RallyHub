@@ -677,6 +677,12 @@ For meaningful changes:
 
 The user should not be used as the primary integration tester for defects the robot could have found first.
 
+### Development-block stop-and-test rule
+
+During exploratory/product-build sessions it is acceptable to keep brainstorming and adding closely related features for a short development block. However, before handing that block back for user testing, or once several connected changes have accumulated, ChatGPT must explicitly stop feature work and run the appropriate RallyHub test gates against everything changed in that block. The handoff must state what was built, what was tested, what passed, what was fixed during testing, what remains unproven, and the exact evidence state. Build/lint alone is never the handoff standard for a meaningful block.
+
+For payment, membership, guest/member booking, messaging, permissions, tenant isolation, competition logic, timers, public links or other production-sensitive workflows, this stop-and-test checkpoint is mandatory before asking the user to try it on a live device.
+
 ---
 
 ## 17. Mandatory RallyHub Testing Operating Prompt
