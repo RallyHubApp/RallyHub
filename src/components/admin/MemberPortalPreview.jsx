@@ -6,6 +6,7 @@ import MemberDashboardView from '@/components/member/MemberDashboardView';
 import MemberPlay from '@/pages/MemberPlay';
 import MemberVenues from '@/pages/MemberVenues';
 import MemberLearn from '@/pages/MemberLearn';
+import MemberShop from '@/pages/MemberShop';
 import GlassCard from '@/components/shared/GlassCard';
 import { Badge } from '@/components/ui/badge';
 
@@ -75,14 +76,16 @@ export default function MemberPortalPreview({ payload }) {
   });
 
   const content = section === 'home'
-    ? <MemberDashboardView snapshot={snapshot} play={payload?.play || null} performance={performance} performanceLoading={performanceLoading} preview />
+    ? <MemberDashboardView snapshot={snapshot} play={payload?.play || null} performance={performance} performanceLoading={performanceLoading} preview onOpenShop={() => setSection('shop')} />
     : section === 'play'
       ? <MemberPlay previewData={payload?.play || { items:[], club:snapshot?.club, spond:{ status:'not_configured', sessions:[] } }} />
       : section === 'venues'
         ? <MemberVenues />
         : section === 'learn'
           ? <MemberLearn previewData={payload?.learn || { resources:[], club:snapshot?.club }} />
-          : <MePreview snapshot={snapshot} />;
+          : section === 'shop'
+            ? <MemberShop previewSnapshot={snapshot} onPreviewBack={() => setSection('home')} />
+            : <MePreview snapshot={snapshot} />;
 
   return (
     <div className="space-y-3">
