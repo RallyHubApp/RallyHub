@@ -1376,16 +1376,24 @@ ${detailRow('Reason',reason)}
     const mobile=clean(body.mobile,50);
     const invite=await inviteForSession(base44,session,body.inviteToken||'',email,mobile);
     if(!invite)return Response.json({error:'This guest booking requires club approval. Please request a guest place first, or use the private invitation link sent by Clare Pickleball.',approvalRequired:true},{status:403});
+    const approvedRequest=await guestRequestForInvite(base44,invite);
     const mobileK=mobileKey(mobile);
     const emergencyName=clean(body.emergencyContactName,120);
     const emergencyMobile=clean(body.emergencyContactMobile,50);
-    const medicalNote=clean(body.medicalNote,1200);
+    const previousSports=approvedRequest?guestPreviousSports(approvedRequest.previous_sports):guestPreviousSports(body.previousSports);
+    const sportingBackgroundNote=clean(approvedRequest?.sporting_background_note||body.sportingBackgroundNote,1200);
+    const healthAnswered=approvedRequest?typeof approvedRequest.health_declaration_applies==='boolean':typeof body.healthDeclarationApplies==='boolean';
+    const healthDeclarationApplies=approvedRequest?approvedRequest.health_declaration_applies===true:body.healthDeclarationApplies===true;
+    const medicalNote=clean(approvedRequest?.medical_note||body.medicalNote,1600);
     const photo=clean(body.photoVideoConsent,10).toLowerCase();
 
     if(!fullName||fullName.split(' ').length<2)return Response.json({error:'Please enter your full name.'},{status:400});
     if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return Response.json({error:'Please enter a valid email address.'},{status:400});
     if(mobileK.length<8)return Response.json({error:'Please enter a valid mobile number.'},{status:400});
     if(!emergencyName||mobileKey(emergencyMobile).length<8)return Response.json({error:'Please provide an emergency contact name and mobile number.'},{status:400});
+    if(!previousSports.length)return Response.json({error:'Please tell us whether you have previously played any of the listed sports. You can choose more than one, or choose “None of these”.'},{status:400});
+    if(!healthAnswered)return Response.json({error:'Please answer the guest health and medical screening question.'},{status:400});
+    if(healthDeclarationApplies&&!medicalNote)return Response.json({error:'Please give brief details of the health, treatment, surgery, injury or other issue that may be relevant to the session host.'},{status:400});
     if(Number(legalBundle.minimumAge||0)>0&&body.ageConfirmed!==true)return Response.json({error:`Guest sessions are currently for participants aged ${legalBundle.minimumAge} or over.`},{status:400});
     if(body.waiverAccepted!==true||body.codeAccepted!==true||body.privacyAcknowledged!==true||body.cancellationAccepted!==true){
       return Response.json({error:'Please accept the waiver, Code of Conduct, privacy notice and cancellation policy.'},{status:400});
@@ -1458,7 +1466,8 @@ ${detailRow('Reason',reason)}
     let booking=await base44.asServiceRole.entities.GuestSessionBooking.create({
       tenant_id:session.tenant_id,club_id:session.club_id,session_link_id:session.id,person_id:person.id,participant_type:'guest',
       full_name:fullName,email,email_key:email,mobile,mobile_key:mobileK,
-      emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,medical_note:medicalNote,booking_note:clean(body.bookingNote,1000)||undefined,
+      emergency_contact_name:emergencyName,emergency_contact_mobile:emergencyMobile,
+      previous_sports:previousSports,sporting_background_note:sportingBackgroundNote||undefined,health_declaration_applies:healthDeclarationApplies,medical_note:medicalNote||undefined,booking_note:clean(body.bookingNote,1000)||undefined,
       waiver_version:legalBundle.waiverVersion,waiver_accepted:true,
       code_of_conduct_version:legalBundle.codeVersion,code_of_conduct_accepted:true,
       privacy_notice_version:PRIVACY_VERSION,privacy_acknowledged:true,
