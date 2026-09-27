@@ -770,7 +770,7 @@ Deno.serve(async(req)=>{
     const body=await req.json().catch(()=>({}));
     const action=clean(body.action||'public_get',40);
 
-    if(['admin_templates','admin_list','admin_create','admin_close','admin_send_invite','admin_create_magic_invite','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment','admin_resend_emails'].includes(action)){
+    if(['admin_templates','admin_list','admin_create','admin_close','admin_send_invite','admin_create_magic_invite','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment','admin_resend_emails','admin_resend_host_email'].includes(action)){
       const user=await base44.auth.me();
       if(!user)return Response.json({error:'Unauthorized'},{status:401});
       if(user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
@@ -807,6 +807,7 @@ Deno.serve(async(req)=>{
         const sessions=await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-session_date',100);
         const rows=[];
         for(const s of sessions||[]){
+          const host=await resolveSessionHostContact(base44,s);
           const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:s.id},'-registered_at',200);
           const bookingRows=[];
           for(const b of bookings||[]){
@@ -823,7 +824,7 @@ Deno.serve(async(req)=>{
               hostMessage:hostText(s,b),
             });
           }
-          rows.push({...safeSession(s),notificationEmail:s.notification_email||'',bookings:bookingRows});
+          rows.push({...safeSession(s),notificationEmail:s.notification_email||'',hostName:host?.name||'',hostEmail:host?.email||'',hostMobile:host?.mobile||'',bookings:bookingRows});
         }
         return Response.json({success:true,sessions:rows,sumupConfigured});
       }
@@ -968,6 +969,18 @@ ${detailRow('Fee',session.payment_method==='cash'?`${amount} cash on arrival`:`$
         }
         const updated=await sendConfirmations(base44,session,booking,true);
         return Response.json({success:true,booking:updated});
+      }
+
+      if(action==='admin_resend_host_email'){
+        const host=await resolveSessionHostContact(base44,session);
+        if(!host?.email)return Response.json({error:'No email address is available for this session host.'},{status:409});
+        const paidLike=['paid','partially_refunded','refunded'].includes(String(booking.payment_status||''));
+        const cashReserved=booking.payment_method==='cash'&&booking.booking_status==='cash_due';
+        if(!paidLike&&!cashReserved)return Response.json({error:'The booking must be confirmed before notifying the session host.'},{status:409});
+        const club=(await clubBrand(base44,session.club_id))||{name:'Clare Pickleball',logo_url:'',primary_colour:'#2667f2',secondary_colour:'#facc15'};
+        const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:session.tenant_id,clubId:session.club_id};
+        await sendHostBookingEmail(base44,scope,club,session,booking,host,hostText(session,booking));
+        return Response.json({success:true,hostName:host.name,hostEmail:host.email});
       }
 
       if(action==='admin_verify_payment'){
