@@ -6,6 +6,7 @@ const raw=(v:any,max=4000)=>String(v??'').trim().slice(0,max);
 const lower=(v:any)=>clean(v,240).toLowerCase();
 const digits=(v:any)=>clean(v,80).replace(/\D/g,'');
 const yesNo=(v:any)=>['yes','no'].includes(String(v||'').toLowerCase())?String(v).toLowerCase():'not_recorded';
+const safeUrl=(v:any)=>{const value=clean(v,500);if(!value)return '';try{const url=new URL(value);return ['http:','https:'].includes(url.protocol)?url.toString():''}catch{return ''}};
 const escapeHtml=(v:any)=>String(v??'').replace(/[&<>"']/g,(c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' } as any)[c]);
 const firstName=(v:any)=>clean(v,160).split(/\s+/).filter(Boolean)[0]||'there';
 
