@@ -2417,7 +2417,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               { key:'score', label:'Master Score Sheet', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)), note:'Blank score boxes for use during the event' },
               ...(hasPlannedHandoverCopy ? [{ key:'handoverScore', label:`Master Score Sheet · Handover from Round ${firstPlannedHandoverRound}`, pages:handoverScorePages, note:'Uses recorded replacements and the effective round automatically' }] : []),
               { key:'schedule', label:'Master Schedule / Court Assignment', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)), note:'Two rounds per A4 page' },
-              { key:'roster', label:'Team Rosters', pages:2, note:'Ranked host copy + alphabetical hall-display copy' },
+              { key:'roster', label:'Team Rosters / Check-In', pages:2, note:'Private ranked host copy + alphabetical player check-in copy' },
               { key:'briefing', label:'Event Briefing & Rules', pages:1, note:'Operational rules for the event' },
               { key:'final', label:'Final Result / Sign-off', pages:1, note:['completed','archived'].includes(event?.status) ? 'Completed result and signatures' : 'Available after the event is completed', disabled:!['completed','archived'].includes(event?.status) },
             ].map(item => <label key={item.key} className={cn('flex items-start gap-3 rounded-xl border p-3 transition-colors', item.disabled ? 'opacity-50 cursor-not-allowed bg-muted/30' : 'cursor-pointer hover:bg-secondary/40', printSelection[item.key] && !item.disabled ? 'border-primary/50 bg-primary/5' : 'border-border')}>
