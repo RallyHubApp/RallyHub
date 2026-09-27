@@ -110,8 +110,8 @@ Deno.serve(async(req)=>{
       const sessionId=clean(body.sessionId,120);
       const duprId=clean(body.duprId,120);
       const homeClub=clean(body.homeClub,160);
-      const sports=previousSports(body.previousSports);
-      const sportingBackgroundNote=clean(body.sportingBackgroundNote,1200);
+      const sports=experience==='beginner'?previousSports(body.previousSports):[];
+      const sportingBackgroundNote=experience==='beginner'?clean(body.sportingBackgroundNote,1200):'';
       const healthAnswered=typeof body.healthDeclarationApplies==='boolean';
       const healthDeclarationApplies=body.healthDeclarationApplies===true;
       const medicalNote=clean(body.medicalNote,1600);
@@ -126,7 +126,7 @@ Deno.serve(async(req)=>{
       if(experience==='experienced'&&!selected.experiencedEligible)return Response.json({error:'That session is not available for guest requests.'},{status:400});
       if(experience==='experienced'&&config.require_home_club_for_experienced===true&&!homeClub)return Response.json({error:'Please enter the club you normally play with.'},{status:400});
       if(experience==='experienced'&&config.require_dupr_for_experienced===true&&!duprId)return Response.json({error:'Please enter your DUPR details, or enter “No DUPR” if you do not have one.'},{status:400});
-      if(!sports.length)return Response.json({error:'Please tell us whether you have previously played any of the listed sports. You can choose more than one, or choose “None of these”.'},{status:400});
+      if(experience==='beginner'&&!sports.length)return Response.json({error:'Please tell us whether you have previously played any of the listed sports. You can choose more than one, or choose “None of these”.'},{status:400});
       if(!healthAnswered)return Response.json({error:'Please answer the guest health and medical screening question.'},{status:400});
       if(healthDeclarationApplies&&!medicalNote)return Response.json({error:'Please give brief details of the health, treatment, surgery, injury or other issue that may be relevant to the session host.'},{status:400});
 
