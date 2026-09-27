@@ -322,11 +322,8 @@ export default function PublicDirectory() {
                 </p>
 
                 <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
-                  <Link to="/directory?manage=1" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#078e48] px-5 text-[13px] font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] transition hover:bg-[#067b3f]">
-                    <UserCheck className="h-4 w-4" /> Manage a listing
-                  </Link>
-                  <Link to="/directory/add" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-5 text-[13px] font-bold text-[#0c2257] transition hover:bg-[#f7faf9]">
-                    <PlusCircle className="h-4 w-4" /> Add a missing club
+                  <Link to="/directory/add" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#078e48] px-5 text-[13px] font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] transition hover:bg-[#067b3f]">
+                    <Building2 className="h-4 w-4" /> Add or update your club
                   </Link>
                   <a href="#player-network" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#b8dfc7] bg-[#eef9f3] px-5 text-[13px] font-bold text-[#067b3f] transition hover:bg-[#e4f5eb]">
                     <BellRing className="h-4 w-4" /> Player updates
@@ -360,8 +357,8 @@ export default function PublicDirectory() {
             <div className="mx-auto max-w-[1380px] px-4 pt-4 sm:px-6 lg:px-10 xl:px-12">
               <div className="flex flex-col justify-between gap-4 rounded-2xl border border-[#b8dfc7] bg-[#eef9f3] p-4 sm:flex-row sm:items-center sm:p-5">
                 <div>
-                  <p className="font-extrabold text-[#07184c]">Manage an existing club listing</p>
-                  <p className="mt-1 text-sm text-[#52627d]">Search for your club below, open its profile and choose <strong className="text-[#07184c]">Claim this listing</strong>. RallyHub reviews the representative before granting editing access.</p>
+                  <p className="font-extrabold text-[#07184c]">Update an existing club</p>
+                  <p className="mt-1 text-sm text-[#52627d]">Search for your club below, open its profile and choose <strong className="text-[#07184c]">Update this club</strong>. RallyHub verifies your connection before granting editing access.</p>
                 </div>
                 <Link to="/directory/add" className="shrink-0">
                   <button className="h-10 rounded-lg border border-[#d5c18c] bg-white px-4 text-sm font-bold text-[#8e610b] transition hover:bg-[#fffaf0]">Club not listed? Add it</button>
@@ -477,11 +474,6 @@ export default function PublicDirectory() {
                               {club.venues.filter(venue => venue.shortName || venue.name).slice(0,4).map(venue => <span key={venue.id} className="rounded-full bg-[#f3f7f7] px-2.5 py-1 text-[10px] font-medium text-[#506078]">{venue.shortName || venue.name}</span>)}
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                              {club.verificationStatus === 'unclaimed' && (
-                                <Link to={`/directory/${club.slug}/claim`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#ecd49e] bg-[#fff8e8] px-3 text-[11px] font-bold text-[#946109] transition hover:bg-[#fff5db]">
-                                  <UserCheck className="h-3.5 w-3.5" /> Claim this listing
-                                </Link>
-                              )}
                               <button type="button" onClick={() => shareClub(club)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#cfdbdf] bg-white px-3 text-[11px] font-bold text-[#07184c] transition hover:bg-[#f7faf9]" aria-label={`Share ${club.name}`}>
                                 {shareCopiedSlug === club.slug ? <Check className="h-3.5 w-3.5 text-[#078e48]" /> : <Share2 className="h-3.5 w-3.5" />} {shareCopiedSlug === club.slug ? 'Link copied' : 'Share'}
                               </button>
