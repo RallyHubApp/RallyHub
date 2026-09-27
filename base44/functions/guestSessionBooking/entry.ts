@@ -925,9 +925,11 @@ ${detailRow('Reason',reason)}
       const person=resolved.match.person;
       const membership=resolved.match.membership;
       if(action==='public_member_lookup'){
+        const memberSessions=await memberDirectorySessions(base44,club);
         return Response.json({
           success:true,memberFound:true,firstName:firstName(person.full_name),verificationMethod:resolved.verificationMethod,
           message:`Membership found. Hi ${firstName(person.full_name)}, you can choose your session and go straight to payment.`,
+          sessions:memberSessions.map((s:any)=>({id:s.key,venueName:s.venueName,day:s.weekday,start:s.start,end:s.end,level:s.level,price:s.fee,paymentMethod:s.payment,nextDate:nextOccurrenceDate(s.weekday,s.start)})),
         });
       }
 
