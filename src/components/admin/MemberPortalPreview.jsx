@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Home, CalendarDays, MapPin, BookOpen, UserCircle, Smartphone, Monitor, Shield } from 'lucide-react';
+import { Home, CalendarDays, MapPin, BookOpen, UserCircle, Smartphone, Monitor, Shield, MessageCircle } from 'lucide-react';
 import MemberDashboardView from '@/components/member/MemberDashboardView';
 import MemberPlay from '@/pages/MemberPlay';
 import MemberVenues from '@/pages/MemberVenues';
@@ -15,6 +15,7 @@ const sections = [
   ['home', Home, 'Home'],
   ['play', CalendarDays, 'Play'],
   ['venues', MapPin, 'Venues'],
+  ['messages', MessageCircle, 'Messages'],
   ['learn', BookOpen, 'Learn'],
   ['me', UserCircle, 'Me'],
 ];
@@ -117,7 +118,7 @@ export default function MemberPortalPreview({ payload }) {
             {content}
           </div>
           {device === 'mobile' && (
-            <div className="sticky bottom-0 grid grid-cols-5 border-t border-border bg-background/95 backdrop-blur px-1 py-1.5">
+            <div className="sticky bottom-0 grid grid-cols-6 border-t border-border bg-background/95 backdrop-blur px-1 py-1.5">
               {sections.map(([key, Icon, label]) => <button key={key} type="button" onClick={() => setSection(key)} className={`flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] ${section === key ? 'text-primary font-semibold' : 'text-muted-foreground'}`}><Icon className="w-4 h-4" />{label}</button>)}
             </div>
           )}
