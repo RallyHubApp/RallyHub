@@ -9,6 +9,19 @@ import { toast } from 'sonner';
 
 const moduleLabels = { kotc:'King of the Court', interclub:'RallyHub Interclub', tournament:'Tournament', shared:'Shared', league:'League', ladder:'Ladder', other:'Other' };
 
+const previewValues = {
+  round_label:'Round 1',
+  break_minutes:'20',
+  next_round_label:'Round 7',
+  seconds:'5',
+};
+
+function spokenPreview(row, text) {
+  if (!text) return '';
+  if (row?.key === 'countdown') return '5, 4, 3, 2, 1';
+  return String(text).replace(/\{([a-z0-9_]+)\}/gi, (_, key) => previewValues[key] ?? `{${key}}`);
+}
+
 export default function AnnouncementSettingsPanel() {
   const queryClient = useQueryClient();
   const [openModules, setOpenModules] = useState({ kotc:true, interclub:true });
@@ -70,7 +83,7 @@ export default function AnnouncementSettingsPanel() {
         <Megaphone className="w-5 h-5 text-primary mt-0.5 shrink-0" />
         <div>
           <h3 className="font-bold text-foreground">Automatic hall announcements</h3>
-          <p className="text-sm text-muted-foreground mt-1">RallyHub defaults are used automatically. Open a module to see every phrase. Switch an individual announcement to Custom only when you want different wording. Reset returns it to the platform default.</p>
+          <p className="text-sm text-muted-foreground mt-1">Open a module to see exactly what players will hear. Each announcement can be switched on or off, left on RallyHub wording, or changed to your own text. Reset restores both the default wording and the default on/off setting.</p>
         </div>
       </div>
     </div>
@@ -78,9 +91,10 @@ export default function AnnouncementSettingsPanel() {
     {grouped.map(([moduleName, rows]) => {
       const open = !!openModules[moduleName];
       const customCount = rows.filter(r => r.mode === 'custom').length;
+      const enabledCount = rows.filter(r => r.enabled !== false).length;
       return <div key={moduleName} className="glass rounded-xl overflow-hidden">
         <button type="button" onClick={() => setOpenModules(v => ({...v,[moduleName]:!open}))} className="w-full p-4 flex items-center justify-between gap-3 text-left hover:bg-secondary/30">
-          <div><p className="font-bold">{moduleLabels[moduleName] || moduleName}</p><p className="text-xs text-muted-foreground mt-1">{rows.length} automatic announcement{rows.length===1?'':'s'}{customCount ? ` · ${customCount} customised` : ' · all using defaults'}</p></div>
+          <div><p className="font-bold">{moduleLabels[moduleName] || moduleName}</p><p className="text-xs text-muted-foreground mt-1">{enabledCount} on · {rows.length-enabledCount} off{customCount ? ` · ${customCount} customised` : ' · default wording'}</p></div>
           <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${open?'rotate-90':''}`} />
         </button>
         {open && <div className="border-t divide-y divide-border">
@@ -88,17 +102,23 @@ export default function AnnouncementSettingsPanel() {
             const draft = draftFor(row);
             const dirty = !!drafts[row.id];
             const selectedText = draft.mode === 'custom' ? draft.customText : row.default_text;
+            const previewText = draft.enabled ? spokenPreview(row, selectedText || row.default_text) : '';
             return <div key={row.id} className="p-4 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-sm">{row.label}</p><Badge variant="outline" className="text-[10px]">{draft.mode === 'custom' ? 'Custom' : 'Default'}</Badge>{!draft.enabled && <Badge variant="outline" className="text-[10px] text-muted-foreground">Off</Badge>}</div><p className="text-xs text-muted-foreground mt-1">{row.trigger_description}</p>{row.variables_help && <p className="text-[11px] text-primary mt-1">Available placeholders: {row.variables_help}</p>}</div>
+                <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-sm">{row.label}</p><Badge variant="outline" className="text-[10px]">{draft.mode === 'custom' ? 'Custom' : 'Default'}</Badge><Badge variant="outline" className={`text-[10px] ${row.default_enabled === false ? 'text-muted-foreground' : 'text-primary'}`}>RallyHub default: {row.default_enabled === false ? 'Off' : 'On'}</Badge>{!draft.enabled && <Badge variant="outline" className="text-[10px] text-muted-foreground">Currently Off</Badge>}</div><p className="text-xs text-muted-foreground mt-1">{row.trigger_description}</p></div>
                 <div className="flex gap-2 shrink-0">
                   <Select value={draft.mode} onValueChange={value => setDraft(row,{mode:value})}><SelectTrigger className="w-28 h-9 text-xs"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="default">Default</SelectItem><SelectItem value="custom">Custom</SelectItem></SelectContent></Select>
                   <button type="button" onClick={() => setDraft(row,{enabled:!draft.enabled})} className={`h-9 rounded-md border px-3 text-xs font-semibold ${draft.enabled?'border-primary/30 bg-primary/10 text-primary':'border-border text-muted-foreground'}`}>{draft.enabled?'On':'Off'}</button>
                 </div>
               </div>
-              {draft.mode === 'default' ? <div className="rounded-lg border bg-background/35 p-3 text-sm">{row.default_text}</div> : <textarea value={draft.customText} onChange={e=>setDraft(row,{customText:e.target.value})} rows={3} maxLength={1000} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-6" placeholder={row.default_text} />}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] text-muted-foreground truncate">Will play: <span className="text-foreground">{draft.enabled ? (selectedText || row.default_text) : 'Disabled'}</span></p>
+              {draft.mode === 'custom' && <textarea value={draft.customText} onChange={e=>setDraft(row,{customText:e.target.value})} rows={3} maxLength={1000} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-6" placeholder={row.default_text} />}
+              <div className={`rounded-lg border p-3 ${draft.enabled ? 'bg-primary/5 border-primary/20' : 'bg-secondary/30'}`}>
+                <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">What RallyHub will say</p>
+                <p className={`mt-1 text-sm font-semibold ${draft.enabled ? 'text-foreground' : 'text-muted-foreground'}`}>{draft.enabled ? previewText : 'Nothing. This automatic announcement is switched off.'}</p>
+                {draft.enabled && row.variables_help && <p className="mt-1 text-[11px] text-muted-foreground">Shown with a real-world example. Round numbers and timings are inserted automatically during the event.</p>}
+                {row.variables_help && <details className="mt-2 text-[11px] text-muted-foreground"><summary className="cursor-pointer select-none">Show template details</summary><p className="mt-1 break-words">Template: <span className="text-foreground">{selectedText || row.default_text}</span></p><p className="mt-1">Available values: {row.variables_help}</p></details>}
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 <div className="flex gap-2"><Button type="button" size="sm" variant="ghost" onClick={()=>reset(row)} disabled={busyId===row.id} className="h-8 gap-1 text-xs"><RotateCcw className="w-3.5 h-3.5"/>Reset</Button><Button type="button" size="sm" onClick={()=>save(row)} disabled={!dirty || busyId===row.id || (draft.mode==='custom' && !draft.customText.trim())} className="h-8 gap-1 text-xs"><Save className="w-3.5 h-3.5"/>{busyId===row.id?'Saving…':'Save'}</Button></div>
               </div>
             </div>;
