@@ -16,6 +16,33 @@ function score(matches, event) {
   }
   return {a,b};
 }
+function individualPerformance(matches=[], participants=[]) {
+  const byId=new Map(participants.map(p=>[String(p.id),p]));
+  const stats={};
+  const ensure=(id,side)=>stats[id]||(stats[id]={id,side,games_played:0,points_for:0,points_against:0,wins:0,draws:0,losses:0,point_diff:0});
+  for(const m of matches){
+    if(m.is_showcase||!['completed','draw','retired','forfeit'].includes(m.status)) continue;
+    const a=Number(m.score_a||0),b=Number(m.score_b||0);
+    for(const rawId of (m.club_a_participant_ids||[])){const id=String(rawId);const p=byId.get(id);if(!p||p.side!=='club_a')continue;const s=ensure(id,'club_a');s.games_played++;s.points_for+=a;s.points_against+=b;if(m.winner==='club_a')s.wins++;else if(m.winner==='draw')s.draws++;else s.losses++;}
+    for(const rawId of (m.club_b_participant_ids||[])){const id=String(rawId);const p=byId.get(id);if(!p||p.side!=='club_b')continue;const s=ensure(id,'club_b');s.games_played++;s.points_for+=b;s.points_against+=a;if(m.winner==='club_b')s.wins++;else if(m.winner==='draw')s.draws++;else s.losses++;}
+  }
+  Object.values(stats).forEach(s=>{s.point_diff=s.points_for-s.points_against;});
+  return stats;
+}
+function podiumForSide(stats,participants,side){
+  return participants.filter(p=>p.side===side&&stats[String(p.id)]?.games_played>0).map(p=>({...p,...stats[String(p.id)]})).sort((a,b)=>b.points_for-a.points_for||b.wins-a.wins||b.point_diff-a.point_diff||String(a.display_name||'').localeCompare(String(b.display_name||''),'en',{sensitivity:'base'})).slice(0,3);
+}
+function TeamPodiums({event,podiumA=[],podiumB=[]}){
+  const medal=index=>index===0?'🥇':index===1?'🥈':'🥉';
+  return <section className="mt-6 grid gap-4 md:grid-cols-2" data-testid="interclub-team-podiums">
+    {[[event.club_a_name,event.club_a_primary_colour,podiumA],[event.club_b_name,event.club_b_primary_colour,podiumB]].map(([name,colour,podium])=><div key={name} className="rounded-2xl border bg-card p-4 sm:p-5" style={{borderTopWidth:'7px',borderTopColor:colour||'#2563eb'}}>
+      <p className="text-center text-xs font-black uppercase tracking-[.18em] text-muted-foreground">{name} · Top 3</p>
+      <div className="mt-4 grid grid-cols-3 gap-2 items-end">{podium.map((p,index)=><div key={p.id} className={`rounded-xl border bg-background/50 p-3 text-center ${index===0?'min-h-36':'min-h-28'}`}>
+        <div className="text-2xl">{medal(index)}</div><p className="mt-1 text-[10px] font-black uppercase tracking-wider text-muted-foreground">{index+1}{index===0?'st':index===1?'nd':'rd'}</p><p className="mt-1 text-sm font-black leading-tight">{p.display_name}</p><p className="mt-2 text-[11px] text-muted-foreground">{p.points_for} pts · {p.wins}W · {p.point_diff>0?'+':''}{p.point_diff}</p>
+      </div>)}</div>
+    </div>)}
+  </section>;
+}
 function fmt(seconds){ const s=Math.max(0,Number(seconds||0)); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
 function getDeviceId() {
   const key='rallyhub-pot-device-id';
