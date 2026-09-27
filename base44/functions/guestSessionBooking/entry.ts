@@ -227,11 +227,14 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
     if(!group)return {status:'group_unavailable',sessions:[]};
     const memberId=matchSpondMemberId(group,person,explicitIds);
     if(!memberId)return {status:'identity_not_matched',sessions:[]};
+    const memberSubgroups=spondMemberSubgroupIds(group,memberId);
     const now=new Date(),maxStart=new Date(now.getTime()+60*24*60*60*1000);
-    const params=new URLSearchParams({groupId:String(connection.spond_group_id),minStartTimestamp:now.toISOString(),maxStartTimestamp:maxStart.toISOString(),max:'300',scheduled:'false',includeComments:'false',includeHidden:'false',addProfileInfo:'true'});
+    // Include future scheduled occurrences because Clare's recurring Spond sessions can be configured
+    // before their push invitation is sent. Eligibility still has to pass the event/subgroup invite test below.
+    const params=new URLSearchParams({groupId:String(connection.spond_group_id),minStartTimestamp:now.toISOString(),maxStartTimestamp:maxStart.toISOString(),max:'300',scheduled:'true',includeComments:'false',includeHidden:'false',addProfileInfo:'true'});
     const raw=await spondRequest(`/sponds?${params.toString()}`,accessToken);
     const configured=await memberDirectorySessions(base44,club);
-    const sessions=(Array.isArray(raw)?raw:[]).filter((event:any)=>memberIsInvitedToSpondEvent(event,person,memberId)).map((event:any)=>{
+    const sessions=(Array.isArray(raw)?raw:[]).filter((event:any)=>memberIsInvitedToSpondEvent(event,person,memberId,memberSubgroups)).map((event:any)=>{
       const status=spondResponseStatus(event,memberId);
       if(['declined','waiting','waitinglist','waitlist'].includes(status))return null;
       const startRaw=spondEventStart(event),start=dublinParts(startRaw),end=dublinParts(event?.endTimestamp||'');
