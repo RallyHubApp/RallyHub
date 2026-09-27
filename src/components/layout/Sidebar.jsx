@@ -4,13 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   LayoutDashboard, Users, Trophy, Crown,
   BarChart3, X, ChevronRight, UserCircle, Shield, MapPin, CalendarCheck, ContactRound, ClipboardList,
-  CalendarDays, BookOpen, Home
+  CalendarDays, BookOpen, Home, MessageCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import useKotcRole from '@/hooks/useKotcRole';
+import useMemberMessageUnread from '@/hooks/useMemberMessageUnread';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 
@@ -31,15 +32,18 @@ export default function Sidebar({ isOpen, onToggle }) {
   const canManageMembership = user?.role === 'admin' || user?.active_club_role === 'club_admin';
   const isMemberExperience = !!user?.id && user?.role !== 'admin' && user?.active_club_role !== 'club_admin';
   const isSuperAdmin = role === 'super_admin';
+  const { data: memberMessageUnread = 0 } = useMemberMessageUnread();
   const memberNavItems = [
     { path: '/app', label: 'Home', icon: Home },
     { path: '/app/play', label: 'Play', icon: CalendarDays },
     { path: '/app/venues', label: 'Venues', icon: MapPin },
+    { path: '/app/messages', label: 'Messages', icon: MessageCircle, messages: true },
     { path: '/app/learn', label: 'Learn', icon: BookOpen },
     { path: '/app/my-profile', label: 'Me', icon: UserCircle },
-  ];
+  ]; 
   const mainNavItems = isMemberExperience ? memberNavItems : [
     navItems[0],
+    ...(canAccessAdmin ? [{ path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true }] : []),
     ...(canManageMembership ? [
       { path: '/app/membership', label: 'Membership', icon: ContactRound },
       { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList }
@@ -127,7 +131,10 @@ export default function Sidebar({ isOpen, onToggle }) {
               >
                 <item.icon className={cn("w-4.5 h-4.5", isActive && "text-primary")} />
                 {item.label}
-                {isActive && (
+                {item.messages && memberMessageUnread > 0 && (
+                  <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center">{memberMessageUnread > 99 ? '99+' : memberMessageUnread}</span>
+                )}
+                {isActive && !item.messages && (
                   <ChevronRight className="w-3.5 h-3.5 ml-auto text-primary/60" />
                 )}
               </Link>
