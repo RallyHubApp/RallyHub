@@ -596,12 +596,14 @@ ${formatDate(session.session_date)} · ${session.start_time}${session.end_time?'
 Guest: ${b.full_name}
 Mobile: ${b.mobile}
 Emergency contact: ${b.emergency_contact_name} – ${b.emergency_contact_mobile}
+Previous sports: ${(b.previous_sports||[]).join(', ')||'—'}${b.sporting_background_note?`\nOther sporting background: ${b.sporting_background_note}`:''}
+Health/medical screening: ${b.health_declaration_applies?'YES – details supplied':'No issues declared'}${b.health_declaration_applies&&b.medical_note?`\nHealth/medical details: ${b.medical_note}`:''}
 Payment: ${pay}
 Booking ref: ${b.confirmation_code}${b.booking_note?`\nNote: ${b.booking_note}`:''}
 
 Waiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted.
 Venue: ${session.venue_address}, ${session.venue_eircode}
-Map: ${session.google_maps_url}${b.medical_note ? `\nEmergency note: ${b.medical_note}` : ''}`;
+Map: ${session.google_maps_url}`;
 }
 async function sendHostBookingEmail(base44:any,scope:any,club:any,session:any,booking:any,host:any,summary:string){
   if(!host?.email)return false;
@@ -878,7 +880,7 @@ Deno.serve(async(req)=>{
             const originalAmount=Number(payment?.amount||b.amount||0);
             const refundedAmount=Number(payment?.amount_refunded||0);
             bookingRows.push({
-              id:b.id,fullName:b.full_name,email:b.email,mobile:b.mobile,bookingNote:b.booking_note||'',participantType:b.participant_type||'guest',membershipId:b.membership_id||'',memberVerificationMethod:b.member_verification_method||'',bookingStatus:b.booking_status,
+              id:b.id,fullName:b.full_name,email:b.email,mobile:b.mobile,bookingNote:b.booking_note||'',participantType:b.participant_type||'guest',membershipId:b.membership_id||'',memberVerificationMethod:b.member_verification_method||'',previousSports:b.previous_sports||[],sportingBackgroundNote:b.sporting_background_note||'',healthDeclarationApplies:b.health_declaration_applies===true,medicalNote:b.medical_note||'',bookingStatus:b.booking_status,
               paymentMethod:b.payment_method,paymentStatus:b.payment_status,amount:b.amount,
               refundedAmount,refundableAmount:Math.max(0,Math.round((originalAmount-refundedAmount)*100)/100),
               provider:payment?.provider||b.payment_method||'',providerTransactionId:payment?.provider_transaction_id||'',
