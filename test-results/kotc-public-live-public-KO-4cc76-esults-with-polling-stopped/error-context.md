@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: club-challenge-browser-robot.spec.mjs >> Live recovery robot: stale timer is silent, break controls work, and host returns to the next round
-- Location: e2e/club-challenge-browser-robot.spec.mjs:364:1
+- Name: kotc-public-live.spec.mjs >> public KOTC link: assignments → live scores → permanent final results with polling stopped
+- Location: e2e/kotc-public-live.spec.mjs:25:1
 
 # Error details
 

@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: club-challenge-browser-robot.spec.mjs >> Club Challenge public voter robot: one browser ballot across both teams
-- Location: e2e/club-challenge-browser-robot.spec.mjs:310:1
+- Name: kotc-public-live.spec.mjs >> finished KOTC host management: secure menu, local share, explicit email and post-event correction
+- Location: e2e/kotc-public-live.spec.mjs:72:1
 
 # Error details
 

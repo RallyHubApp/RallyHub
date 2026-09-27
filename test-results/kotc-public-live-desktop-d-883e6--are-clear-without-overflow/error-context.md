@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: club-challenge-browser-robot.spec.mjs >> Completed player link robot: Final landing, alphabetical teams, Summary and integrated voting have no dead end
-- Location: e2e/club-challenge-browser-robot.spec.mjs:331:1
+- Name: kotc-public-live-desktop.spec.mjs >> desktop public KOTC: live session and round history are clear without overflow
+- Location: e2e/kotc-public-live-desktop.spec.mjs:25:1
 
 # Error details
 

@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: club-challenge-browser-robot.spec.mjs >> Club Challenge public Hall Display robot: now/resting/next + disconnect truth
-- Location: e2e/club-challenge-browser-robot.spec.mjs:321:1
+- Name: kotc-hall-display.spec.mjs >> hall display: current round, big timer, four courts and podium remain glanceable
+- Location: e2e/kotc-hall-display.spec.mjs:39:1
 
 # Error details
 
