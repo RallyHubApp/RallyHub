@@ -201,9 +201,25 @@ export default function GuestBookings(){
       const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_resend_emails',bookingId});
       if(res.data?.error)throw new Error(res.data.error);
       await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
-      toast.success('Clare Pickleball booking emails resent');
+      toast.success('Booking, organiser and host emails resent');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not resend booking emails')}
     finally{setBusy('')}
+  };
+
+  const emailHost=async(bookingId,hostName)=>{
+    setBusy(`host-email-${bookingId}`);
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_resend_host_email',bookingId});
+      if(res.data?.error)throw new Error(res.data.error);
+      toast.success(`Booking confirmation emailed to ${res.data?.hostName||hostName||'session host'}`);
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not email the session host')}
+    finally{setBusy('')}
+  };
+
+  const whatsappHost=(session,booking)=>{
+    const target=whatsappNumber(session.hostMobile);
+    if(!target){toast.error('No mobile number is saved for this session host');return}
+    window.open(`https://wa.me/${target}?text=${encodeURIComponent(booking.hostMessage)}`,'_blank','noopener,noreferrer');
   };
 
   const issueRefund=async(booking)=>{
@@ -290,7 +306,7 @@ export default function GuestBookings(){
     </section>
 
     <section className="space-y-3">
-      <div><h2 className="text-lg font-black">Guest sessions</h2><p className="mt-1 text-xs text-muted-foreground">Each link is tied to one date/time, so you always know exactly where the guest is booked.</p></div>
+      <div><h2 className="text-lg font-black">Session booking links</h2><p className="mt-1 text-xs text-muted-foreground">Each link is tied to one date/time, so member fallbacks and guest bookings are always attached to the correct session and host.</p></div>
       {sessions.length===0?<div className="glass rounded-2xl p-6 text-sm text-muted-foreground">No guest booking links have been created yet.</div>:sessions.map(s=>{
         const url=`${window.location.origin}/book/${s.token}`;
         const confirmed=(s.bookings||[]).filter(b=>['confirmed','cash_due'].includes(b.bookingStatus)).length;
@@ -300,11 +316,12 @@ export default function GuestBookings(){
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-black">{niceDate(s.sessionDate)} · {s.startTime}{s.endTime?`–${s.endTime}`:''}</h3>
                 <Badge variant="outline">{s.active?'Open':'Closed'}</Badge>
-                <Badge variant="outline">{confirmed} guest{confirmed===1?'':'s'}</Badge>
+                <Badge variant="outline">{confirmed} booking{confirmed===1?'':'s'}</Badge>
               </div>
               <p className="mt-2 font-semibold">{s.venueName}</p>
               <p className="text-sm text-muted-foreground">{s.venueAddress}, {s.eircode}</p>
               <p className="mt-1 text-xs text-muted-foreground">€{Number(s.feeAmount).toFixed(2)} · {s.paymentMethod==='cash'?'Cash on arrival':'SumUp online payment'}{s.capacity?` · Capacity ${s.capacity}`:''}</p>
+              {s.hostName&&<p className="mt-1 text-xs font-semibold text-muted-foreground">Host: {s.hostName}{s.hostEmail?` · ${s.hostEmail}`:''}{s.hostMobile?` · ${s.hostMobile}`:''}</p>}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" onClick={()=>copy(url,'Public approval-required guest link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy public link</Button>
@@ -334,9 +351,11 @@ export default function GuestBookings(){
                   {Number(b.refundedAmount||0)>0&&<p className="mt-1 text-xs font-semibold text-amber-600">€{Number(b.refundedAmount).toFixed(2)} refunded · €{Number(b.refundableAmount||0).toFixed(2)} remaining refundable</p>}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={()=>copy(b.hostMessage,'Host WhatsApp message copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy host message</Button>
+                  {s.hostMobile&&<Button size="sm" variant="outline" onClick={()=>whatsappHost(s,b)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp host</Button>}
+                  <Button size="sm" variant="outline" onClick={()=>copy(b.hostMessage,'Host message copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy host message</Button>
+                  {s.hostEmail&&(['paid','partially_refunded','refunded'].includes(b.paymentStatus)||(b.paymentMethod==='cash'&&b.bookingStatus==='cash_due'))&&<Button size="sm" variant="outline" disabled={busy===`host-email-${b.id}`} onClick={()=>emailHost(b.id,s.hostName)}>{busy===`host-email-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Email host</Button>}
                   {b.paymentMethod==='sumup'&&!['paid','partially_refunded','refunded'].includes(b.paymentStatus)&&<Button size="sm" variant="outline" disabled={busy===`verify-${b.id}`} onClick={()=>verifyPayment(b.id)}>{busy===`verify-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
-                  {['paid','partially_refunded','refunded'].includes(b.paymentStatus)&&<Button size="sm" variant="outline" disabled={busy===`email-${b.id}`} onClick={()=>resendEmails(b.id)}>{busy===`email-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend emails</Button>}
+                  {['paid','partially_refunded','refunded'].includes(b.paymentStatus)&&<Button size="sm" variant="outline" disabled={busy===`email-${b.id}`} onClick={()=>resendEmails(b.id)}>{busy===`email-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend all emails</Button>}
                   {b.paymentMethod!=='cash'&&['paid','partially_refunded'].includes(b.paymentStatus)&&Number(b.refundableAmount||0)>0&&<Button size="sm" variant="outline" disabled={busy===`refund-${b.id}`} onClick={()=>issueRefund(b)}>{busy===`refund-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Refund</Button>}
                   {b.paymentMethod==='cash'&&b.paymentStatus!=='paid'&&<Button size="sm" variant="outline" disabled={busy===`cash-${b.id}`} onClick={()=>markCashPaid(b.id)}><CheckCircle2 className="mr-1.5 h-3.5 w-3.5"/>Mark cash paid</Button>}
                 </div>
