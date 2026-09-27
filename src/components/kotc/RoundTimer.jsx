@@ -235,20 +235,20 @@ export default function RoundTimer({
 
       const announcements = phase === 'play'
         ? {
-            60: announcementText('one_minute', 'One minute remaining.'),
-            30: announcementText('thirty_seconds', 'Thirty seconds.'),
-            10: announcementText('ten_seconds', 'Ten seconds.'),
+            60: announcementText('one_minute', ''),
+            30: announcementText('thirty_seconds', ''),
+            10: announcementText('ten_seconds', ''),
           }
         : {
-            30: announcementText('rest_thirty_seconds', 'Thirty seconds until next round.'),
-            10: announcementText('ten_seconds', 'Ten seconds.'),
+            30: announcementText('rest_thirty_seconds', ''),
+            10: '',
           };
 
       if (announcements[remaining] && !lastAnnouncedRef.current.has(remaining)) {
         lastAnnouncedRef.current.add(remaining);
         announce(announcements[remaining], 'warning');
       }
-      if (remaining <= 5 && remaining > 0 && !lastAnnouncedRef.current.has(`count-${remaining}`)) {
+      if (phase === 'play' && remaining <= 5 && remaining > 0 && !lastAnnouncedRef.current.has(`count-${remaining}`)) {
         lastAnnouncedRef.current.add(`count-${remaining}`);
         playSignal(audioRef.current, 'warning', volume * 0.9);
         const countdownText = announcementText('countdown', String(remaining)).replace('{seconds}', String(remaining));
@@ -257,7 +257,7 @@ export default function RoundTimer({
       if (remaining === 0) {
         setRunning(false);
         if (phase === 'play') {
-          announce(announcementText('round_end', 'Round finished. Please give your scores.'), 'end');
+          announce(announcementText('round_end', 'Round over. Please give in your scores.'), 'end');
         } else {
           announce(announcementText('rest_end', 'Rest finished.'), 'end');
         }
