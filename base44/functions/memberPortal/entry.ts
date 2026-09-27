@@ -178,6 +178,7 @@ async function loadPersonalSpondSessions(base44:any, context:any) {
     if (!group) return { status:'group_unavailable', sessions:[] };
     const memberId = matchSpondMemberId(group, { emails, phones, explicitIds });
     if (!memberId) return { status:'identity_not_matched', sessions:[] };
+    const subgroupIds = memberSubgroupIds(group, memberId);
 
     const now = new Date();
     const maxStart = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
@@ -186,14 +187,14 @@ async function loadPersonalSpondSessions(base44:any, context:any) {
       minStartTimestamp:now.toISOString(),
       maxStartTimestamp:maxStart.toISOString(),
       max:'300',
-      scheduled:'false',
+      scheduled:'true',
       includeComments:'false',
       includeHidden:'false',
       addProfileInfo:'true',
     });
     const raw = await spondRequest(`/sponds?${params.toString()}`, token);
     const sessions = (Array.isArray(raw) ? raw : [])
-      .filter((event:any) => memberIsInvitedToSpondEvent(event, { emails, phones, names }, memberId))
+      .filter((event:any) => memberIsInvitedToSpondEvent(event, { emails, phones, names }, memberId, subgroupIds))
       .map((event:any) => {
         const location = event?.location || {};
         return {
