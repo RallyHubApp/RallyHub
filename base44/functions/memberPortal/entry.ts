@@ -74,12 +74,18 @@ function spondRowMatchesCandidates(row:any, candidates:{ emails:string[], phones
 function memberSubgroupIds(group:any, memberId:string) {
   const ids = new Set<string>();
   const add = (value:any) => { const id=String(value?.id ?? value?.uid ?? value?.subGroupId ?? value ?? '').trim(); if(id) ids.add(id); };
-  const sameMember = (row:any) => String(row?.memberId || row?.uid || row?.id || '') === String(memberId || '');
+  const sameMember = (row:any) => String(row?.memberId ?? row?.uid ?? row?.id ?? row ?? '') === String(memberId || '');
   for (const sub of group?.subGroups || group?.subgroups || []) {
-    if ((sub?.members || []).some(sameMember)) add(sub?.id || sub?.uid || sub?.subGroupId);
+    const members=[...(sub?.members || []), ...(sub?.memberIds || [])];
+    if (members.some(sameMember)) add(sub?.id || sub?.uid || sub?.subGroupId);
   }
   const member = groupMembers(group).find((row:any) => sameMember(row));
   for (const value of member?.subGroups || member?.subgroups || member?.subGroupIds || member?.subgroupIds || []) add(value);
+  const groupId=String(group?.id || group?.uid || '');
+  for (const membership of member?.groups || []) {
+    if (groupId && String(membership?.groupId || membership?.id || '') !== groupId) continue;
+    for (const value of membership?.subGroups || membership?.subgroups || membership?.subGroupIds || membership?.subgroupIds || []) add(value);
+  }
   return ids;
 }
 
