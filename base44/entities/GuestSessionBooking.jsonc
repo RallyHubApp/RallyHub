@@ -55,6 +55,21 @@
     "emergency_contact_mobile": {
       "type": "string"
     },
+    "previous_sports": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Guest-declared previous racket/sport experience"
+    },
+    "sporting_background_note": {
+      "type": "string",
+      "description": "Optional additional sporting history supplied by a guest"
+    },
+    "health_declaration_applies": {
+      "type": "boolean",
+      "description": "Whether any health/medical screening question applies"
+    },
     "medical_note": {
       "type": "string"
     },
