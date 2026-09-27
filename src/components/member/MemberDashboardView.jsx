@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  CalendarDays, ChevronRight, CircleUserRound, ExternalLink, MapPin,
+  CalendarDays, ChevronRight, CircleUserRound, MapPin,
   ShoppingBag, Trophy, UserRound, Shield, Sparkles, Medal,
   Clock3, CheckCircle2
 } from 'lucide-react';
