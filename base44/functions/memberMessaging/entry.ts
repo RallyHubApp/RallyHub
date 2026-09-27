@@ -50,7 +50,6 @@ async function ensureMemberThread(base44:any,user:any,config:any,tenantId:string
     member_name:identity.name,
     chair_user_id:config.chair_user_id,
     status:'open',
-    last_message_at:null,
     last_message_preview:'',
     unread_for_member:0,
     unread_for_chair:0,
