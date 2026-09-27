@@ -2,6 +2,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
 function clean(v:any,max=500){return String(v??'').trim().slice(0,max)}
+function nameKey(v:any){return clean(v,180).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
+function emailKey(v:any){return clean(v,240).toLowerCase()}
 function formatDate(d:string){
   try{return new Intl.DateTimeFormat('en-IE',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Europe/Dublin'}).format(new Date(`${d}T12:00:00Z`))}catch{return d}
 }
@@ -36,8 +38,42 @@ async function clubBrand(base44:any,clubId:string){
     const rows=await base44.asServiceRole.entities.Club.filter({id:clubId},'-updated_date',5);
     const club=rows?.[0]||null;
     if(!club)return null;
-    return {id:club.id,name:club.name||'',logo_url:club.logo_url||'',primary_colour:club.primary_colour||'',secondary_colour:club.secondary_colour||''};
+    return {id:club.id,name:club.name||'',slug:club.slug||'',logo_url:club.logo_url||'',primary_colour:club.primary_colour||'',secondary_colour:club.secondary_colour||''};
   }catch{return null}
+}
+
+async function resolveSessionHostContact(base44:any,session:any){
+  try{
+    const club=(await base44.asServiceRole.entities.Club.filter({id:session.club_id,tenant_id:session.tenant_id},'-updated_date',5))?.[0];
+    if(!club?.slug)return null;
+    const profile=(await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:club.slug,status:'active'},'-updated_at',5))?.[0];
+    const data=profile?.public_json?JSON.parse(profile.public_json):{};
+    const sessions=Array.isArray(data?.sessions)?data.sessions:[];
+    let configured=sessions.find((s:any)=>String(s.id||'')===String(session.session_label||''));
+    if(!configured){
+      configured=sessions.find((s:any)=>String(s.venueId||'')===String(session.venue_key||'')&&String(s.day||'')===String(session.weekday||'')&&String(s.start||'')===String(session.start_time||''));
+    }
+    const hostName=clean(configured?.host||'',120);
+    if(!hostName)return null;
+    const people=await base44.asServiceRole.entities.Person.filter({tenant_id:session.tenant_id},'full_name',500);
+    const person=(people||[]).find((p:any)=>nameKey(p.full_name)===nameKey(hostName));
+    return {name:clean(person?.full_name||hostName,120),email:emailKey(person?.primary_email||''),mobile:clean(person?.mobile||'',80)};
+  }catch(e){console.error('webhook session host resolution failed',e?.message||e);return null}
+}
+
+async function sendHostBookingEmail(base44:any,scope:any,club:any,session:any,booking:any,host:any,summary:string){
+  if(!host?.email)return false;
+  const isMember=booking.participant_type==='member';
+  const dateLabel=formatDate(session.session_date);
+  const timeLabel=`${session.start_time}${session.end_time?'–'+session.end_time:''}`;
+  const hostFirst=firstName(host.name||'');
+  const textBody=`Hi ${hostFirst},\n\nA ${isMember?'member':'guest'} has booked your ${club.name} session.\n\n${summary}\n\nThis notification was generated automatically by RallyHub.\n\n${club.name}\nPowered by RallyHub`;
+  const htmlBody=emailShell({club,headline:`New ${isMember?'member':'guest'} booking for your session`,preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">Hi ${escapeHtml(hostFirst)}, a ${isMember?'member':'guest'} booking has been confirmed for the session you host.</p>
+<div style="white-space:pre-wrap;margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#f7f9fc;border:1px solid #dfe5ee;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#172033;">${escapeHtml(summary)}</div>
+<p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">You are receiving this because you are recorded as the host for this club session.</p>`});
+  await sendWithConfiguredEmailTransport(base44,scope,{to:host.email,subject:`Session booking confirmed · ${booking.full_name} · ${session.venue_name} · ${session.start_time}`,textBody,htmlBody});
+  return true;
 }
 
 async function membershipConfig(base44:any,tenantId:string,clubId:string,configId=''){
@@ -156,20 +192,29 @@ async function sendBookingEmails(base44:any,session:any,booking:any){
     ? `MEMBER BOOKING – ${session.venue_name}\n${dateLabel} · ${timeLabel}\n\nMember: ${booking.full_name}\nMobile: ${booking.mobile||'—'}\nPayment: ${paymentLabel}\nBooking ref: ${booking.confirmation_code}${booking.booking_note?`\nNote: ${booking.booking_note}`:''}\n\nVenue: ${session.venue_address}, ${session.venue_eircode}\nMap: ${session.google_maps_url}`
     : `GUEST BOOKING – ${session.venue_name}\n${dateLabel} · ${timeLabel}\n\nGuest: ${booking.full_name}\nMobile: ${booking.mobile}\nEmergency contact: ${booking.emergency_contact_name} – ${booking.emergency_contact_mobile}\nPayment: ${paymentLabel}\nBooking ref: ${booking.confirmation_code}${booking.booking_note?`\nNote: ${booking.booking_note}`:''}\n\nWaiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted.\nVenue: ${session.venue_address}, ${session.venue_eircode}\nMap: ${session.google_maps_url}${booking.medical_note?`\nEmergency note: ${booking.medical_note}`:''}`;
 
-  if(!booking.notification_sent_at && session.notification_email){
-    const adminText=`New ${club.name} ${participantLabel.toLowerCase()} booking confirmed.\n\n${summary}\n\n${participantLabel} email: ${booking.email||'—'}\n\nThis session notification was generated automatically by RallyHub.\n\n${club.name}\nPowered by RallyHub`;
-    const adminHtml=emailShell({
-      club,headline:`New ${participantLabel.toLowerCase()} booking confirmed`,preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
-      content:`<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">A ${participantLabel.toLowerCase()} booking has been confirmed and payment status verified automatically.</p>
+  if(!booking.notification_sent_at){
+    const host=await resolveSessionHostContact(base44,session);
+    let organiserExpected=false;
+    if(session.notification_email){
+      organiserExpected=true;
+      const adminText=`New ${club.name} ${participantLabel.toLowerCase()} booking confirmed.\n\n${summary}\n\n${participantLabel} email: ${booking.email||'—'}\n\nThis session notification was generated automatically by RallyHub.\n\n${club.name}\nPowered by RallyHub`;
+      const adminHtml=emailShell({
+        club,headline:`New ${participantLabel.toLowerCase()} booking confirmed`,preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
+        content:`<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">A ${participantLabel.toLowerCase()} booking has been confirmed and payment status verified automatically.</p>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 20px;">
 ${detailRow(participantLabel,booking.full_name)}${detailRow('Email',booking.email||'—')}${detailRow('Mobile',booking.mobile||'—')}${detailRow('Session',`${dateLabel} · ${timeLabel}`)}${detailRow('Venue',session.venue_name)}${detailRow('Payment',paymentLabel)}${detailRow('Booking reference',booking.confirmation_code)}${booking.booking_note?detailRow('Note',booking.booking_note):''}
 </table>
 ${isMember?'':`<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#eef8f1;border:1px solid #b9e2c4;font-size:13px;line-height:1.55;color:#23452d;"><strong>Waiver and policies recorded</strong><br>Guest waiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted.</div>`}
 <div style="margin:0 0 8px;font-size:13px;font-weight:800;color:#172033;">Session host summary</div>
 <div style="white-space:pre-wrap;margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#f7f9fc;border:1px solid #dfe5ee;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#172033;">${escapeHtml(summary)}</div>`,
-    });
-    await sendWithConfiguredEmailTransport(base44,scope,{to:session.notification_email,subject:`${participantLabel} booking confirmed · ${booking.full_name} · ${session.venue_name} · ${session.start_time}`,textBody:adminText,htmlBody:adminHtml});
-    updates.notification_sent_at=now;
+      });
+      await sendWithConfiguredEmailTransport(base44,scope,{to:session.notification_email,subject:`${participantLabel} booking confirmed · ${booking.full_name} · ${session.venue_name} · ${session.start_time}`,textBody:adminText,htmlBody:adminHtml});
+    }
+    if(host?.email&&emailKey(host.email)!==emailKey(session.notification_email||'')){
+      organiserExpected=true;
+      await sendHostBookingEmail(base44,scope,club,session,booking,host,summary);
+    }
+    if(organiserExpected)updates.notification_sent_at=now;
   }
 
   if(!booking.guest_confirmation_sent_at && booking.email){
