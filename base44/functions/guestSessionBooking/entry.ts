@@ -914,6 +914,100 @@ ${detailRow('Reason',reason)}
       }
     }
 
+    if(action==='public_member_lookup'||action==='public_member_submit'){
+      const clubSlug=clean(body.clubSlug,120);
+      const club=(await base44.asServiceRole.entities.Club.filter({slug:clubSlug,status:'active'},'-updated_date',5))?.[0];
+      if(!club)return Response.json({error:'Club booking is unavailable.'},{status:404});
+      const resolved=await resolveActiveMember(base44,club,{fullName:body.fullName,email:body.email,mobile:body.mobile});
+      if(!resolved.match){
+        return Response.json({error:resolved.error,code:resolved.code,memberFound:false},{status:resolved.code==='MEMBERSHIP_MATCH_AMBIGUOUS'?409:404});
+      }
+      const person=resolved.match.person;
+      const membership=resolved.match.membership;
+      if(action==='public_member_lookup'){
+        return Response.json({
+          success:true,memberFound:true,firstName:firstName(person.full_name),verificationMethod:resolved.verificationMethod,
+          message:`Membership found. Hi ${firstName(person.full_name)}, you can choose your session and go straight to payment.`,
+        });
+      }
+
+      const memberSessions=await memberDirectorySessions(base44,club);
+      const selected=memberSessions.find((s:any)=>String(s.key)===clean(body.sessionId,120));
+      if(!selected)return Response.json({error:'Please choose a current Clare Pickleball session.'},{status:400});
+      const session=await ensureMemberSessionLink(base44,club,selected);
+      const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:session.id},'-registered_at',250);
+      const active=(bookings||[]).filter((b:any)=>b.booking_status!=='cancelled');
+      const cap=Number(session.capacity||0);
+      if(cap>0&&active.length>=cap)return Response.json({error:'This session is currently full. Please contact the session host.'},{status:409});
+
+      let duplicate=(bookings||[]).find((b:any)=>String(b.person_id||'')===String(person.id)&&b.booking_status!=='cancelled');
+      if(duplicate){
+        let paymentUrl=duplicate.sumup_checkout_url||'';
+        let paymentStatus=duplicate.payment_status;
+        if(session.payment_method==='sumup'&&duplicate.booking_status!=='confirmed'&&duplicate.sumup_checkout_id&&!['failed','expired'].includes(String(paymentStatus||'').toLowerCase())){
+          try{
+            const existingCheckout=await retrieveProviderCheckout(base44,session,duplicate.sumup_checkout_id);
+            const remoteStatus=String(existingCheckout?.status||'PENDING').toUpperCase();
+            if(remoteStatus==='PAID'){
+              const now=new Date().toISOString();
+              duplicate=await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{payment_status:'paid',booking_status:'confirmed',paid_at:now});
+              const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
+              if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'paid',payment_date:now.slice(0,10),provider:existingCheckout?.provider||'sumup',provider_account_id:existingCheckout?.merchant_account_id||'',provider_transaction_id:existingCheckout?.transaction_id||existingCheckout?.transactions?.[0]?.id||'',provider_payment_reference:existingCheckout?.transaction_code||existingCheckout?.transactions?.[0]?.transaction_code||'',provider_status:'PAID'});
+              duplicate=await sendConfirmations(base44,session,duplicate);
+              return Response.json({success:true,alreadyBooked:true,bookingId:duplicate.id,paymentUrl:'',session:safeSession(session),bookingStatus:'confirmed',paymentStatus:'paid',participantType:'member',message:'Your payment is already confirmed for this session.'});
+            }
+            if(remoteStatus==='FAILED'||remoteStatus==='EXPIRED'){
+              paymentStatus=remoteStatus.toLowerCase();
+              await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{payment_status:paymentStatus});
+            }
+          }catch(e){console.error('member SumUp duplicate status check failed',e?.message||e)}
+        }
+        if(session.payment_method==='sumup'&&duplicate.booking_status!=='confirmed'&&(!paymentUrl||['failed','expired'].includes(String(paymentStatus||'').toLowerCase()))){
+          const checkout=await createProviderCheckout(base44,session,duplicate,req);
+          duplicate=await base44.asServiceRole.entities.GuestSessionBooking.update(duplicate.id,{sumup_checkout_id:checkout.id,sumup_checkout_url:checkout.url,sumup_checkout_reference:checkout.reference,payment_status:'pending',booking_status:'pending_payment'});
+          const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:duplicate.id},'-created_date',10);
+          if(payments?.[0])await base44.asServiceRole.entities.PaymentRecord.update(payments[0].id,{payment_status:'pending',provider:checkout.provider||'sumup',provider_account_id:checkout.merchantAccountId||'',provider_checkout_id:checkout.id,provider_checkout_url:checkout.url,provider_payment_reference:checkout.reference,provider_status:checkout.status||'PENDING',sumup_checkout_id:checkout.id,sumup_payment_link:checkout.url,external_payment_reference:checkout.reference});
+          paymentUrl=checkout.url;paymentStatus='pending';
+        }
+        return Response.json({success:true,alreadyBooked:true,bookingId:duplicate.id,paymentUrl,session:safeSession(session),bookingStatus:duplicate.booking_status,paymentStatus,participantType:'member',message:duplicate.booking_status==='confirmed'?'You are already confirmed for this session.':'You already started this booking. Complete payment to confirm your place.'});
+      }
+
+      const bookingEmail=emailKey(person.primary_email||'');
+      if(!bookingEmail)return Response.json({error:'Membership found, but there is no email address on the member record. Please contact Clare Pickleball so we can update your details before taking payment.',code:'MEMBER_EMAIL_MISSING'},{status:409});
+      const bookingMobile=clean(person.mobile||'',50);
+      const now=new Date().toISOString();
+      const initialStatus=session.payment_method==='cash'?'cash_due':'pending_payment';
+      const initialPayment=session.payment_method==='cash'?'cash_due':'pending';
+      let booking=await base44.asServiceRole.entities.GuestSessionBooking.create({
+        tenant_id:session.tenant_id,club_id:session.club_id,session_link_id:session.id,person_id:person.id,
+        participant_type:'member',membership_id:membership.id,member_verification_method:resolved.verificationMethod,
+        full_name:person.full_name,email:bookingEmail,email_key:bookingEmail,mobile:bookingMobile,mobile_key:mobileKey(bookingMobile),
+        booking_status:initialStatus,payment_method:session.payment_method,payment_status:initialPayment,
+        amount:Number(session.fee_amount||0),currency:session.currency||'EUR',registered_at:now,
+        confirmation_code:confirmation(),source_system:'rallyhub_member_session',
+      });
+      let paymentRecord=await base44.asServiceRole.entities.PaymentRecord.create({
+        tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,club_membership_id:membership.id,membership_season:membership.membership_season||'',
+        purpose_type:'booking',purpose_id:booking.id,payment_type:'member_session',
+        amount:Number(session.fee_amount||0),currency:session.currency||'EUR',payment_method:session.payment_method,payment_status:'pending',provider:session.payment_method,amount_refunded:0,
+        source_system:'rallyhub_member_session',source_row:booking.id,
+        notes:`${session.venue_name} · ${session.session_date} · ${session.start_time}`,
+      });
+      if(session.payment_method==='cash'){
+        booking=await sendConfirmations(base44,session,booking);
+        return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'cash_due',paymentStatus:'cash_due',participantType:'member',paymentUrl:'',message:`Your place is reserved. Please bring €${Number(session.fee_amount||0).toFixed(2)} cash on arrival.`});
+      }
+      try{
+        const checkout=await createProviderCheckout(base44,session,booking,req);
+        booking=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{sumup_checkout_id:checkout.id,sumup_checkout_url:checkout.url,sumup_checkout_reference:checkout.reference});
+        await base44.asServiceRole.entities.PaymentRecord.update(paymentRecord.id,{provider:checkout.provider||'sumup',provider_account_id:checkout.merchantAccountId||'',provider_checkout_id:checkout.id,provider_checkout_url:checkout.url,provider_payment_reference:checkout.reference,provider_status:checkout.status||'PENDING',sumup_checkout_id:checkout.id,sumup_payment_link:checkout.url,external_payment_reference:checkout.reference});
+        return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'pending_payment',paymentStatus:'pending',participantType:'member',paymentUrl:checkout.url,message:`Complete the €${Number(session.fee_amount||0).toFixed(2)} payment to confirm your place.`});
+      }catch(e){
+        console.error('member SumUp create failed',e?.message||e);
+        return Response.json({error:e?.message||'Your booking was saved, but RallyHub could not open SumUp payment. Please contact Clare Pickleball.',bookingId:booking.id},{status:503});
+      }
+    }
+
     const tokenValue=clean(body.token,80);
     if(!validToken(tokenValue))return Response.json({error:'Guest booking link is invalid or unavailable.'},{status:404});
     const session=(await base44.asServiceRole.entities.GuestSessionLink.filter({token:tokenValue,active:true},'-created_at',5))?.[0];
