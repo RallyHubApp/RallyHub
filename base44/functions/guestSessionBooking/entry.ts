@@ -45,6 +45,8 @@ function clean(v:any,max=250){return String(v??'').trim().replace(/\s+/g,' ').sl
 function emailKey(v:any){return clean(v,200).toLowerCase()}
 function mobileKey(v:any){return clean(v,50).replace(/[^0-9]/g,'')}
 function sameMobile(a:any,b:any){const aa=mobileKey(a),bb=mobileKey(b);return !!aa&&!!bb&&(aa===bb||(aa.length>=9&&bb.length>=9&&aa.slice(-9)===bb.slice(-9)))}
+function nameKey(v:any){return clean(v,180).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
+function sameEmail(a:any,b:any){const aa=emailKey(a),bb=emailKey(b);return !!aa&&!!bb&&aa===bb}
 function token(){return `gs_${crypto.randomUUID().replaceAll('-','')}`}
 function validToken(v:string){return /^gs_[0-9a-f]{32}$/i.test(v)}
 function confirmation(){return `G${crypto.randomUUID().replaceAll('-','').slice(0,7).toUpperCase()}`}
@@ -56,6 +58,113 @@ function templateOut(t:any){
   const v=VENUES[t.venueKey];
   return {...t,venueName:v.name,venueAddress:v.address,eircode:v.eircode,mapsUrl:v.mapsUrl};
 }
+async function directoryProfile(base44:any,club:any){
+  const profile=(await base44.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:club.slug,status:'active'},'-updated_at',5))?.[0];
+  const data=profile?.public_json?JSON.parse(profile.public_json):{};
+  return {profile,data,venues:Array.isArray(data?.venues)?data.venues:[],sessions:Array.isArray(data?.sessions)?data.sessions:[]};
+}
+
+async function memberDirectorySessions(base44:any,club:any){
+  const directory=await directoryProfile(base44,club);
+  return (directory.sessions||[]).map((s:any)=>{
+    const v=(directory.venues||[]).find((x:any)=>String(x.id)===String(s.venueId));
+    if(!v)return null;
+    const payment=/cash/i.test(String(s.paymentMethod||''))?'cash':'sumup';
+    const price=Number(s.price);
+    return {
+      key:String(s.id),directorySessionId:String(s.id),venueKey:String(v.id),weekday:String(s.day||''),
+      start:String(s.start||''),end:String(s.end||''),fee:Number.isFinite(price)&&price>0?price:(payment==='cash'?5:5.5),
+      payment,label:`${s.day||''} ${s.start||''}`.trim(),level:String(s.level||''),host:String(s.host||''),
+      capacity:Number(s.capacity||0)||null,
+      venueName:String(v.name||''),venueAddress:String(v.address||''),eircode:String(v.eircode||''),mapsUrl:String(v.mapUrl||''),
+      clubContactEmail:emailKey(directory.data?.contact?.email||club.public_contact_email||''),
+      clubContactName:clean(directory.data?.contact?.name||'',120),
+    };
+  }).filter(Boolean);
+}
+
+async function resolveActiveMember(base44:any,club:any,identity:any){
+  const suppliedName=nameKey(identity?.fullName||'');
+  const suppliedEmail=emailKey(identity?.email||'');
+  const suppliedMobile=mobileKey(identity?.mobile||'');
+  if(!suppliedName&&!suppliedEmail&&!suppliedMobile){
+    return {match:null,error:'Enter your name, email or mobile number so RallyHub can check your membership.',code:'MEMBERSHIP_DETAILS_REQUIRED'};
+  }
+  const [memberships,people]=await Promise.all([
+    base44.asServiceRole.entities.ClubMembership.filter({tenant_id:club.tenant_id,club_id:club.id},'-updated_date',500),
+    base44.asServiceRole.entities.Person.filter({tenant_id:club.tenant_id},'full_name',500),
+  ]);
+  const activeMemberships=(memberships||[]).filter((m:any)=>m.membership_status==='paid_active'&&m.relationship_type==='member'&&m.include_in_rallyhub!==false);
+  const membershipByPerson=new Map(activeMemberships.map((m:any)=>[String(m.person_id),m]));
+  const matches:any[]=[];
+  for(const person of people||[]){
+    const membership=membershipByPerson.get(String(person.id));
+    if(!membership)continue;
+    const methods:string[]=[];
+    const emailCandidates=[person.primary_email,...(person.alternate_emails||[]),...(membership.alternate_emails||[])].filter(Boolean);
+    const mobileCandidates=[person.mobile,...(person.alternate_phones||[])].filter(Boolean);
+    const nameCandidates=[person.full_name,...(membership.alternate_names||[])].filter(Boolean).map(nameKey);
+    if(suppliedEmail&&emailCandidates.some((x:any)=>sameEmail(x,suppliedEmail)))methods.push('email');
+    if(suppliedMobile&&mobileCandidates.some((x:any)=>sameMobile(x,suppliedMobile)))methods.push('mobile');
+    if(suppliedName&&nameCandidates.includes(suppliedName))methods.push('name');
+    if(methods.length)matches.push({person,membership,methods});
+  }
+  const distinct=new Map(matches.map((m:any)=>[String(m.person.id),m]));
+  const rows=[...distinct.values()];
+  if(rows.length===1){
+    const row:any=rows[0];
+    return {match:row,verificationMethod:row.methods.length>1?'multiple':row.methods[0]};
+  }
+  if(rows.length>1){
+    return {match:null,error:'More than one membership record matches those details. Please enter the email or mobile number held by the club.',code:'MEMBERSHIP_MATCH_AMBIGUOUS'};
+  }
+  return {match:null,error:'No membership record found. Please follow the guest booking process.',code:'MEMBERSHIP_NOT_FOUND'};
+}
+
+function nextOccurrenceDate(day:string,start:string){
+  const parts=new Intl.DateTimeFormat('en-IE',{timeZone:'Europe/Dublin',weekday:'long',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
+  const get=(type:string)=>parts.find(p=>p.type===type)?.value||'';
+  const names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const todayName=get('weekday');
+  const target=names.indexOf(day),todayIndex=names.indexOf(todayName);
+  const todayIso=`${get('year')}-${get('month')}-${get('day')}`;
+  if(target<0||todayIndex<0)return '';
+  let diff=(target-todayIndex+7)%7;
+  const nowMinutes=Number(get('hour')||0)*60+Number(get('minute')||0);
+  const [hh,mm]=String(start||'00:00').split(':').map(Number);
+  const startMinutes=(Number.isFinite(hh)?hh:0)*60+(Number.isFinite(mm)?mm:0);
+  if(diff===0&&nowMinutes>=startMinutes)diff=7;
+  const d=new Date(`${todayIso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate()+diff);
+  return d.toISOString().slice(0,10);
+}
+
+async function sessionHostNotification(base44:any,club:any,session:any){
+  if(session.host){
+    const people=await base44.asServiceRole.entities.Person.filter({tenant_id:club.tenant_id},'full_name',500);
+    const host=(people||[]).find((p:any)=>nameKey(p.full_name)===nameKey(session.host)&&emailKey(p.primary_email));
+    if(host)return {email:emailKey(host.primary_email),name:clean(host.full_name,120)};
+  }
+  return {email:emailKey(session.clubContactEmail||club.public_contact_email||''),name:clean(session.host||session.clubContactName||club.name,120)};
+}
+
+async function ensureMemberSessionLink(base44:any,club:any,memberSession:any){
+  const date=nextOccurrenceDate(memberSession.weekday,memberSession.start);
+  if(!date)throw Object.assign(new Error('RallyHub could not determine the next date for that session.'),{status:409});
+  let row=(await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:club.tenant_id,club_id:club.id,session_date:date,start_time:memberSession.start,venue_key:memberSession.venueKey,active:true},'-created_at',10))?.[0];
+  if(row)return row;
+  const notify=await sessionHostNotification(base44,club,memberSession);
+  row=await base44.asServiceRole.entities.GuestSessionLink.create({
+    tenant_id:club.tenant_id,club_id:club.id,token:token(),active:true,
+    session_date:date,weekday:memberSession.weekday,start_time:memberSession.start,end_time:memberSession.end,
+    venue_key:memberSession.venueKey,venue_name:memberSession.venueName,venue_address:memberSession.venueAddress,venue_eircode:memberSession.eircode,google_maps_url:memberSession.mapsUrl,
+    session_label:memberSession.directorySessionId||memberSession.key,capacity:memberSession.capacity||undefined,fee_amount:Number(memberSession.fee||0),currency:'EUR',payment_method:memberSession.payment,
+    notification_email:notify.email||undefined,notification_name:notify.name||undefined,
+    created_by_user_id:'',created_at:new Date().toISOString(),notes:'Auto-created for an existing member session booking/payment fallback.',
+  });
+  return row;
+}
+
 async function directoryTemplates(base44:any,tenantId:string,clubId:string){
   try{
     const club=(await base44.asServiceRole.entities.Club.filter({id:clubId,tenant_id:tenantId},'-updated_date',5))?.[0];
