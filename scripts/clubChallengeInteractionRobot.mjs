@@ -134,7 +134,7 @@ check('sound: mobile audio is unlocked from the host play gesture', contains(ui,
 check('sound: wake lock is requested during the authoritative timer', contains(ui,"navigator.wakeLock.request('screen')"));
 check('sound: legacy one-minute, 30-second and 10-second warnings are removed', !contains(ui,'One minute remaining.') && !contains(ui,'Thirty seconds.') && !contains(ui,'Ten seconds.'));
 check('sound: final countdown is only 5, 4, 3, 2, 1', contains(ui,'timerRemaining <= 5 && timerRemaining > 0'));
-check('sound: round-end cue asks for scores without replaying the round-finished speech', contains(ui,"? 'Please hand in your scores.'") && !contains(ui,'Round finished. Please give your scores.'));
+check('sound: round-end cue asks for scores without replaying the round-finished speech', contains(ui,"announcementText('round_end', 'Please hand in your scores.')") && !contains(ui,'Round finished. Please give your scores.'));
 check('sound: historic timer state cannot speak merely because the host reloads or refreshes', contains(ui,'timerSpeechArmedRef.current') && contains(ui,"!['in_progress','paused'].includes(event?.status)"));
 check('sound: round start is concise but explicit', contains(ui,'${label}. ${label} starting now.') && !contains(ui,'${label}. ${label} starting now. ${label} starting now.'));
 check('Base44 control: timer actions are single-flight', contains(ui,'timerCommandRef.current'));
