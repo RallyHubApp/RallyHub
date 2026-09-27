@@ -17,7 +17,7 @@ const curatedDirectoryClubs = [
     website: 'https://clarepickleball.ie/',
     instagram: 'https://www.instagram.com/clarepickleball',
     facebook: 'https://www.facebook.com/profile.php?id=61576112630693',
-    waitingListUrl: 'https://forms.gle/gWYZHHLBeUwyU3u17',
+    waitingListUrl: 'https://clarepickleball.ie/waiting-list',
     joiningCtaLabel: 'Join waiting list',
     policyLabel: 'Guest policy',
     shopUrl: 'https://borusports.ie/product-category/club-shop/clare-pickleball/',
