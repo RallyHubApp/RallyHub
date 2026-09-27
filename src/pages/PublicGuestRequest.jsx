@@ -151,7 +151,7 @@ export default function PublicGuestRequest(){
           <div><Label htmlFor="memberNote">Anything you want the session host to know? <span className="font-normal text-muted-foreground">(optional)</span></Label><textarea id="memberNote" value={memberForm.bookingNote} onChange={e=>setMember('bookingNote',e.target.value)} rows={3} maxLength={1000} placeholder="For example: my phone was stolen so I couldn't book through Spond." className="mt-1.5 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"/></div>
         </section>
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm"><CreditCard className="mr-2 inline h-4 w-4 text-primary"/><strong>No guest forms or waivers are repeated.</strong> Once membership is confirmed, you go directly to payment for the selected session.</div>
-        <Button type="submit" className="w-full min-h-12 font-black" disabled={busy||!memberForm.sessionId}>{busy?<><RefreshCw className="mr-2 h-4 w-4 animate-spin"/>Opening payment…</>:`Continue to payment · €${Number((memberVerified.sessions||[]).find(s=>s.id===memberForm.sessionId)?.price||0).toFixed(2)}`}</Button>
+        <Button type="submit" className="w-full min-h-12 font-black" disabled={busy||!memberForm.sessionId}>{busy?<><RefreshCw className="mr-2 h-4 w-4 animate-spin"/>Opening payment…</>:memberForm.sessionId?`Continue to payment · €${Number((memberVerified.sessions||[]).find(s=>s.id===memberForm.sessionId)?.price||0).toFixed(2)}`:'Choose a session to continue'}</Button>
       </>}
     </form>}
 
