@@ -1,0 +1,75 @@
+{
+  "name": "InterclubParticipantResultToken",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "challenge_event_id": {
+      "type": "string"
+    },
+    "participant_id": {
+      "type": "string"
+    },
+    "token": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "revoked"
+      ],
+      "default": "active"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "member_lookup",
+        "guest_email",
+        "admin_test",
+        "system"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_used_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "challenge_event_id",
+    "participant_id",
+    "token",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "name": "ParticipantResultAccessToken",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "competition_type": {
+      "type": "string",
+      "enum": [
+        "interclub",
+        "kotc"
+      ]
+    },
+    "competition_id": {
+      "type": "string"
+    },
+    "participant_id": {
+      "type": "string"
+    },
+    "token": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "revoked"
+      ],
+      "default": "active"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_accessed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "purpose": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "competition_type",
+    "competition_id",
+    "participant_id",
+    "token",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
