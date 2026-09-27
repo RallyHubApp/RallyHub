@@ -551,6 +551,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryFn: () => event ? base44.entities.ClubChallengeParticipant.filter({ challenge_event_id: event.id }, 'event_rank', 100) : [],
     enabled: isAdmin && !!event?.id,
   });
+  const { data: interclubRegistrations = [], refetch: refetchInterclubRegistrations, isFetching: interclubRegistrationsLoading } = useQuery({
+    queryKey: ['club-challenge-registrations', event?.id],
+    queryFn: () => event ? base44.entities.InterclubGuestRegistration.filter({ challenge_event_id:event.id, status:'active' }, '-registered_at', 200) : [],
+    enabled: isAdmin && !!event?.id,
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+  });
   const participants = isAdmin ? adminParticipants : secureState?.participants || [];
   const { data: adminMatches = [], refetch: refetchAdminMatches } = useQuery({
     queryKey: ['club-challenge-matches', event?.id],
@@ -2603,9 +2610,35 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                   </div>;
                 })}
               </div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
-                <p className="text-[11px] text-muted-foreground">As players submit, use Refresh Roster to see them here. The form does not ask the player to grade themselves.</p>
-                <Button type="button" size="sm" variant="outline" onClick={sync} disabled={saving || !!hostAction}><RefreshCw className="w-3.5 h-3.5 mr-1.5" />Refresh Roster</Button>
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-semibold">Registration results</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">These are stored against this Interclub event in the host club tenant. Visiting players remain event-only players, not Clare members.</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">{setup.clubAName || event.club_a_name || 'Team A'}: {interclubRegistrations.filter(r => r.side === 'club_a').length}</Badge>
+                    <Badge variant="outline">{setup.clubBName || event.club_b_name || 'Team B'}: {interclubRegistrations.filter(r => r.side === 'club_b').length}</Badge>
+                    <Button type="button" size="sm" variant="outline" onClick={() => { refetchInterclubRegistrations(); refetchParticipants(); }} disabled={interclubRegistrationsLoading || saving || !!hostAction}><RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${interclubRegistrationsLoading ? 'animate-spin' : ''}`} />Refresh</Button>
+                  </div>
+                </div>
+                {interclubRegistrations.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No completed registration forms have been received yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {interclubRegistrations.map(r => {
+                      const teamName = r.side === 'club_a' ? (setup.clubAName || event.club_a_name || 'Team A') : (setup.clubBName || event.club_b_name || 'Team B');
+                      return <div key={r.id} className="rounded-lg border border-border bg-background/70 px-3 py-2.5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-bold">{r.full_name}</p><Badge variant="outline">{teamName}</Badge>{r.medical_note && <Badge variant="outline" className="border-amber-500/40 text-amber-700">Medical note supplied</Badge>}</div>
+                          <p className="mt-1 text-xs text-muted-foreground break-all">{r.email}{r.mobile ? ` · ${r.mobile}` : ''}</p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground shrink-0">{r.registered_at ? new Date(r.registered_at).toLocaleString('en-IE') : ''}</p>
+                      </div>;
+                    })}
+                  </div>
+                )}
+                <p className="text-[11px] text-muted-foreground">As players submit, RallyHub also adds them to the event roster. The form does not ask the player to grade themselves.</p>
               </div>
             </div>
             <TeamBuilder
