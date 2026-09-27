@@ -37,15 +37,22 @@ function collectSpondRecipientIds(event:any) {
   const ids = new Set<string>();
   const add = (value:any) => { if (value !== undefined && value !== null && String(value).trim()) ids.add(String(value)); };
   const addMany = (values:any) => (Array.isArray(values) ? values : []).forEach(add);
+  const addMember = (row:any) => add(row?.memberId || row?.uid || row?.id);
   addMany(event?.responses?.acceptedIds);
   addMany(event?.responses?.declinedIds);
   addMany(event?.responses?.unansweredIds);
+  addMany(event?.responses?.unconfirmedIds);
   addMany(event?.responses?.waitinglistIds);
   addMany(event?.responses?.waitingListIds);
   addMany(event?.invitedMemberIds);
   addMany(event?.memberIds);
-  (event?.responses?.members || []).forEach((row:any) => add(row?.uid || row?.id || row?.memberId));
-  (event?.responses?.responses || []).forEach((row:any) => add(row?.memberId || row?.uid || row?.id));
+  (event?.responses?.members || []).forEach(addMember);
+  (event?.responses?.responses || []).forEach(addMember);
+  // Spond can carry invitees in recipients before a response row exists. Only
+  // IDs explicitly returned in the event recipient block are treated as invited.
+  (event?.recipients?.group?.members || []).forEach(addMember);
+  (event?.recipients?.members || []).forEach(addMember);
+  (event?.recipients?.subGroups || event?.recipients?.subgroups || []).forEach((sub:any) => (sub?.members || []).forEach(addMember));
   return ids;
 }
 
@@ -56,6 +63,7 @@ function spondResponseStatus(event:any, memberId:string) {
   if (includes(event?.responses?.waitinglistIds) || includes(event?.responses?.waitingListIds)) return 'waiting';
   if (includes(event?.responses?.declinedIds)) return 'declined';
   if (includes(event?.responses?.unansweredIds)) return 'unanswered';
+  if (includes(event?.responses?.unconfirmedIds)) return 'unconfirmed';
   const row = [...(event?.responses?.members || []), ...(event?.responses?.responses || [])].find((item:any) => String(item?.memberId || item?.uid || item?.id) === id);
   return lower(row?.status || 'invited') || 'invited';
 }
