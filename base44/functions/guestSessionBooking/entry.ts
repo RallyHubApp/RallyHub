@@ -79,15 +79,44 @@ function collectSpondInviteIds(event:any){
   const ids=new Set<string>();
   const add=(value:any)=>{if(value!==undefined&&value!==null&&String(value).trim())ids.add(String(value))};
   const addMany=(values:any)=>(Array.isArray(values)?values:[]).forEach(add);
-  const addMember=(row:any)=>add(row?.memberId||row?.uid||row?.id);
-  // These are response/invitation signals for the specific event occurrence.
-  // Do NOT use recipients.group.members here: Spond can populate that with the
-  // wider group/visibility audience, which is not the same as the invite list.
+  const addMember=(row:any)=>add(row?.memberId||row?.uid||row?.id||row);
   addMany(event?.responses?.acceptedIds);addMany(event?.responses?.declinedIds);addMany(event?.responses?.unansweredIds);addMany(event?.responses?.unconfirmedIds);addMany(event?.responses?.waitinglistIds);addMany(event?.responses?.waitingListIds);addMany(event?.invitedMemberIds);addMany(event?.memberIds);
   (event?.responses?.members||[]).forEach(addMember);
   (event?.responses?.responses||[]).forEach(addMember);
   (event?.recipients?.members||[]).forEach(addMember);
+  // For a directly opened Spond event, recipients.group.members is the event's
+  // own distribution list. That is authoritative for this session, unlike the
+  // lighter list payload where it can be ambiguous.
+  if(event?._distributionAuthoritative)(event?.recipients?.group?.members||[]).forEach(addMember);
   return ids;
+}
+async function hydrateSpondEventDistribution(event:any,accessToken:string,cache:Map<string,any>){
+  const eventId=clean(event?.id,180);
+  if(!eventId)return event;
+  let detail=cache.get(eventId);
+  if(detail===undefined){
+    try{
+      const full=await spondRequest(`/sponds/${encodeURIComponent(eventId)}`,accessToken);
+      detail={
+        recipients:full?.recipients??null,
+        responses:full?.responses??null,
+        invitedMemberIds:full?.invitedMemberIds??null,
+        memberIds:full?.memberIds??null,
+      };
+    }catch(error){
+      console.warn(`Spond event detail unavailable for ${eventId}`,error?.message||error);
+      detail=null;
+    }
+    cache.set(eventId,detail);
+  }
+  if(!detail)return event;
+  return {...event,
+    recipients:detail.recipients??event?.recipients,
+    responses:detail.responses??event?.responses,
+    invitedMemberIds:detail.invitedMemberIds??event?.invitedMemberIds,
+    memberIds:detail.memberIds??event?.memberIds,
+    _distributionAuthoritative:true,
+  };
 }
 function spondRowMatchesPerson(row:any,person:any,memberId:string){
   if(!row)return false;
@@ -137,11 +166,12 @@ function memberIsInvitedToSpondEvent(event:any,person:any,memberId:string,member
   if(collectSpondInviteIds(event).has(String(memberId)))return true;
   const rows=[...(event?.responses?.members||[]),...(event?.responses?.responses||[]),...(event?.recipients?.members||[])];
   if(rows.some((row:any)=>spondRowMatchesPerson(row,person,memberId)))return true;
+  const groupRows=event?.recipients?.group?.members||[];
+  if(event?._distributionAuthoritative&&groupRows.some((row:any)=>spondRowMatchesPerson(row,person,memberId)))return true;
   const eventSubgroups=spondEventSubgroupIds(event);
   if(eventSubgroups.size&&[...eventSubgroups].some(id=>memberSubgroupIds.has(id)))return true;
-  // Some scheduled Spond series expose the selected invitees under recipients.group.members.
-  // Match those by profile/email/phone/name, never by a raw recipient id alone.
-  const groupRows=event?.recipients?.group?.members||[];
+  // Fallback only for summary/list payloads where Spond supplied recipient
+  // profiles but the direct event detail could not be opened.
   return groupRows.some((row:any)=>spondRowMatchesPerson({...row,id:''},person,''));
 }
 function spondResponseStatus(event:any,memberId:string){
@@ -251,9 +281,7 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
     const params=new URLSearchParams({groupId:String(connection.spond_group_id),minStartTimestamp:now.toISOString(),maxStartTimestamp:maxStart.toISOString(),max:'300',scheduled:'true',includeComments:'false',includeHidden:'false',addProfileInfo:'true'});
     const raw=await spondRequest(`/sponds?${params.toString()}`,accessToken);
     const configured=await memberDirectorySessions(base44,club);
-    const sessions=(Array.isArray(raw)?raw:[]).filter((event:any)=>memberIsInvitedToSpondEvent(event,person,memberId,memberSubgroups)).map((event:any)=>{
-      const status=spondResponseStatus(event,memberId);
-      if(['declined','waiting','waitinglist','waitlist'].includes(status))return null;
+    const candidates=(Array.isArray(raw)?raw:[]).map((event:any)=>{
       const loc=event?.location||{};
       const eventVenue=clean(loc?.feature||loc?.name||loc?.address||'',220);
       const venueKey=nameKey(eventVenue);
@@ -261,11 +289,11 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
       for(const startRaw of spondEventStartCandidates(event)){
         const start=dublinParts(startRaw);
         if(!start)continue;
-        const candidates=configured.filter((s:any)=>s.weekday===start.day&&s.start===start.time);
-        if(!candidates.length)continue;
-        let cfg=candidates[0]||null;
+        const possible=configured.filter((s:any)=>s.weekday===start.day&&s.start===start.time);
+        if(!possible.length)continue;
+        let cfg=possible[0]||null;
         if(eventVenue){
-          cfg=candidates.find((s:any)=>{
+          cfg=possible.find((s:any)=>{
             const configuredVenue=nameKey(s.venueName);
             const configuredAddress=nameKey(s.venueAddress);
             return configuredVenue.includes(venueKey)||venueKey.includes(configuredVenue)||configuredAddress.includes(venueKey)||venueKey.includes(configuredAddress);
@@ -273,10 +301,19 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
         }
         if(cfg){match={startRaw,start,cfg};break}
       }
-      // Time and venue together identify the Clare session. Trying both Spond's
-      // startTimestamp and meetupTimestamp avoids losing a valid session when a
-      // series also has a separate meet/arrival time.
-      if(!match)return null;
+      return match?{event,match}:null;
+    }).filter(Boolean);
+    // The Spond event itself is now the source of truth for invitation/distribution.
+    // Hydrate each unique event ID directly (the same series ID can appear in many
+    // upcoming occurrences), then ask whether this member is on that event's list.
+    const detailCache=new Map<string,any>();
+    const hydrated=[];
+    for(const item of candidates){
+      hydrated.push({event:await hydrateSpondEventDistribution(item.event,accessToken,detailCache),match:item.match});
+    }
+    const sessions=hydrated.filter(({event}:any)=>memberIsInvitedToSpondEvent(event,person,memberId,memberSubgroups)).map(({event,match}:any)=>{
+      const status=spondResponseStatus(event,memberId);
+      if(['declined','waiting','waitinglist','waitlist'].includes(status))return null;
       const {startRaw,start,cfg}=match;
       const end=dublinParts(event?.endTimestamp||event?.endTime||'');
       if(!Number.isFinite(Number(cfg.fee))||Number(cfg.fee)<=0)return null;
