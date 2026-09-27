@@ -188,8 +188,8 @@ export default function DirectoryClaim() {
   return (
     <>
       <Seo
-        title={`Claim ${club.name} Directory Listing | RallyHub`}
-        description={`Verification page for authorised representatives requesting access to manage the ${club.name} public RallyHub directory listing.`}
+        title={`Update ${club.name} Directory Listing | RallyHub`}
+        description={`Verification page for club representatives requesting access to update the ${club.name} public RallyHub directory listing.`}
         path={`/directory/${club.slug}/claim`}
         robots="noindex,follow"
       />
@@ -208,9 +208,9 @@ export default function DirectoryClaim() {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Directory verification</p>
-                <h1 className="text-3xl font-black mt-1">Claim {club.name}</h1>
+                <h1 className="text-3xl font-black mt-1">Update {club.name}</h1>
                 <p className="text-muted-foreground mt-2">
-                  Club representatives can request permission to maintain this public directory listing. Directory access is separate from RallyHub club membership and the RallyHub club-management app.
+                  If you help run this club, verify your connection and request permission to keep its public Directory information accurate. Directory access is separate from RallyHub club membership and the RallyHub club-management app.
                 </p>
                 {inviteToken && <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-300"><strong>Secure invitation detected.</strong> This one-time link was sent by RallyHub for this club, usually by WhatsApp or email. If it came by WhatsApp, use the same mobile number. If it came by email, use the same email address. After you confirm your details, your Directory request is sent to RallyHub for approval.</div>}
               </div>
@@ -313,7 +313,7 @@ export default function DirectoryClaim() {
                   </label>
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" checked={publicPhoneOptOut} onChange={e => setPublicPhoneOptOut(e.target.checked)} className="mt-0.5 h-4 w-4 accent-primary" />
-                    <span className="text-sm"><strong>Do not display my mobile number publicly</strong><span className="block text-xs text-muted-foreground mt-0.5">RallyHub will still retain your mobile privately so the Directory claim can be checked and supported.</span></span>
+                    <span className="text-sm"><strong>Do not display my mobile number publicly</strong><span className="block text-xs text-muted-foreground mt-0.5">RallyHub will still retain your mobile privately so the Directory access request can be checked and supported.</span></span>
                   </label>
                 </div>
                 <div className="space-y-2">
