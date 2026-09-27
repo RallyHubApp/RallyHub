@@ -163,7 +163,7 @@ function spondEventSubgroupIds(event:any){
   return ids;
 }
 function memberIsInvitedToSpondEvent(event:any,person:any,memberId:string,memberSubgroupIds:Set<string>){
-  if(collectSpondInviteIds(event).has(String(memberId)))return true;
+  if(memberId&&collectSpondInviteIds(event).has(String(memberId)))return true;
   const rows=[...(event?.responses?.members||[]),...(event?.responses?.responses||[]),...(event?.recipients?.members||[])];
   if(rows.some((row:any)=>spondRowMatchesPerson(row,person,memberId)))return true;
   const groupRows=event?.recipients?.group?.members||[];
@@ -173,6 +173,12 @@ function memberIsInvitedToSpondEvent(event:any,person:any,memberId:string,member
   // Fallback only for summary/list payloads where Spond supplied recipient
   // profiles but the direct event detail could not be opened.
   return groupRows.some((row:any)=>spondRowMatchesPerson({...row,id:''},person,''));
+}
+function spondEventMemberId(event:any,person:any,fallbackMemberId=''){
+  if(fallbackMemberId)return String(fallbackMemberId);
+  const rows=[...(event?.responses?.members||[]),...(event?.responses?.responses||[]),...(event?.recipients?.members||[]),...(event?.recipients?.group?.members||[])];
+  const match=rows.find((row:any)=>spondRowMatchesPerson(row,person,''));
+  return String(match?.memberId||match?.uid||match?.id||'');
 }
 function spondResponseStatus(event:any,memberId:string){
   const id=String(memberId||'');
@@ -272,9 +278,11 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
       group=(Array.isArray(groups)?groups:[]).find((row:any)=>String(row.id)===String(connection.spond_group_id));
     }
     if(!group)return {status:'group_unavailable',sessions:[]};
-    const memberId=matchSpondMemberId(group,person,explicitIds);
-    if(!memberId)return {status:'identity_not_matched',sessions:[]};
-    const memberSubgroups=spondMemberSubgroupIds(group,memberId);
+    const memberId=matchSpondMemberId(group,person,explicitIds)||'';
+    // Do not fail here. A member can be identifiable on the exact event's
+    // distribution list even when the broader Spond group payload does not
+    // expose enough profile data to resolve a group member ID first.
+    const memberSubgroups=memberId?spondMemberSubgroupIds(group,memberId):new Set<string>();
     const now=new Date(),maxStart=new Date(now.getTime()+60*24*60*60*1000);
     // Include future scheduled occurrences because Clare's recurring Spond sessions can be configured
     // before their push invitation is sent. Eligibility still has to pass the event/subgroup invite test below.
@@ -312,7 +320,8 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
       hydrated.push({event:await hydrateSpondEventDistribution(item.event,accessToken,detailCache),match:item.match});
     }
     const sessions=hydrated.filter(({event}:any)=>memberIsInvitedToSpondEvent(event,person,memberId,memberSubgroups)).map(({event,match}:any)=>{
-      const status=spondResponseStatus(event,memberId);
+      const eventMemberId=spondEventMemberId(event,person,memberId);
+      const status=spondResponseStatus(event,eventMemberId);
       if(['declined','waiting','waitinglist','waitlist'].includes(status))return null;
       const {startRaw,start,cfg}=match;
       const end=dublinParts(event?.endTimestamp||event?.endTime||'');
