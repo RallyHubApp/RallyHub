@@ -185,6 +185,7 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
       if(!cfg||!Number.isFinite(Number(cfg.fee))||Number(cfg.fee)<=0)return null;
       const acceptedCount=(event?.responses?.acceptedIds||[]).length||0;
       const capacity=Number(event?.maxAccepted||event?.maxParticipants||cfg.capacity||0)||null;
+      if(status!=='accepted'&&capacity&&acceptedCount>=capacity)return null;
       return {
         id:`spond:${String(event.id)}:${startRaw}`,
         spondEventId:String(event.id),title:clean(event?.heading||cfg.level||'Club session',180),responseStatus:status,
@@ -266,8 +267,8 @@ async function sessionHostNotification(base44:any,club:any,session:any){
 }
 
 async function ensureMemberSessionLink(base44:any,club:any,memberSession:any){
-  const date=nextOccurrenceDate(memberSession.weekday,memberSession.start);
-  if(!date)throw Object.assign(new Error('RallyHub could not determine the next date for that session.'),{status:409});
+  const date=clean(memberSession.sessionDate,20)||nextOccurrenceDate(memberSession.weekday,memberSession.start);
+  if(!date)throw Object.assign(new Error('RallyHub could not determine the date for that session.'),{status:409});
   let row=(await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:club.tenant_id,club_id:club.id,session_date:date,start_time:memberSession.start,venue_key:memberSession.venueKey,active:true},'-created_at',10))?.[0];
   if(row)return row;
   const notify=await sessionHostNotification(base44,club,memberSession);
@@ -277,7 +278,7 @@ async function ensureMemberSessionLink(base44:any,club:any,memberSession:any){
     venue_key:memberSession.venueKey,venue_name:memberSession.venueName,venue_address:memberSession.venueAddress,venue_eircode:memberSession.eircode,google_maps_url:memberSession.mapsUrl,
     session_label:memberSession.directorySessionId||memberSession.key,capacity:memberSession.capacity||undefined,fee_amount:Number(memberSession.fee||0),currency:'EUR',payment_method:memberSession.payment,
     notification_email:notify.email||undefined,notification_name:notify.name||undefined,
-    created_by_user_id:'',created_at:new Date().toISOString(),notes:'Auto-created for an existing member session booking/payment fallback.',
+    created_by_user_id:'',created_at:new Date().toISOString(),notes:`Auto-created for an existing member session booking/payment fallback${memberSession.spondEventId?` · Spond event ${memberSession.spondEventId}`:''}.`,
   });
   return row;
 }
