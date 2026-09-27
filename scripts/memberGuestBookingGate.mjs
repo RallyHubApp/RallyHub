@@ -22,6 +22,8 @@ assert(booking.includes('methods.push(\'name\')') && booking.includes('methods.p
 assert(memberBlock.includes('loadInvitedMemberSpondSessions'), 'Member fallback must load personalised Spond sessions');
 assert(booking.includes('memberIsInvitedToSpondEvent(event,person,memberId,memberSubgroups)'), 'Spond booking events must be filtered to the exact member/event eligibility');
 assert(booking.includes('spondMemberSubgroupIds') && booking.includes('spondEventSubgroupIds'), 'Member booking must understand Spond subgroup membership and subgroup-targeted events');
+assert(booking.includes('member?.groups||[]') && booking.includes('membership?.subGroups'), 'Member booking must read Spond subgroup membership from member.groups[].subGroups');
+assert(booking.includes('spondEventStartCandidates') && booking.includes('event?.startTimestamp,event?.meetupTimestamp'), 'Member booking must match the actual Spond session time even when a separate meetup/arrival time exists');
 assert(!booking.includes('(event?.recipients?.group?.members||[]).forEach'), 'Broad Spond group visibility must not be accepted by raw recipient ID');
 assert(booking.includes("scheduled:'true'"), 'Member booking must include recurring Spond occurrences whose invitations are scheduled for later delivery');
 assert(booking.includes("addProfileInfo:'true'"), 'Member booking must request Spond profile info for robust event-level identity matching');
@@ -40,6 +42,8 @@ assert(memberBlock.includes("participant_type:'member'"), 'Member bookings must 
 assert(memberBlock.includes('booking_note:clean(body.bookingNote,1000)'), 'Member host note must be stored');
 assert(booking.includes("participant_type:'guest'"), 'Guest bookings must still be recorded as guest');
 assert(booking.includes('booking_note:clean(body.bookingNote,1000)'), 'Guest host note must be stored');
+assert(booking.includes('previous_sports:previousSports') && booking.includes('health_declaration_applies:healthDeclarationApplies'), 'Guest booking must retain previous sports and health screening for the host');
+assert(booking.includes('guestRequestForInvite') && booking.includes('guestIntakeCaptured'), 'Approved guest intake must carry through the private booking without being asked twice');
 assert(booking.includes('body.waiverAccepted!==true') && booking.includes('body.codeAccepted!==true'), 'Guest legal acceptance must remain enforced');
 assert(booking.includes('resolveSessionHostContact'), 'Booking flow must resolve the configured session host from the Directory schedule');
 assert(booking.includes('sendHostBookingEmail'), 'Booking flow must email the session host after confirmation');
@@ -67,8 +71,11 @@ assert(required.has('participant_type'), 'participant_type must remain required'
 assert(publicRequest.includes('I’m an existing member') && publicRequest.includes('I’m a guest'), 'Public entry must offer member and guest journeys');
 assert(publicRequest.includes('Only upcoming Spond sessions you are invited to are shown'), 'Member UI must state personalised Spond visibility');
 assert(publicRequest.includes('bookingNote:memberForm.bookingNote'), 'Member note must be sent to booking backend');
+assert(publicRequest.includes('previousSports:[]') && publicRequest.includes("'Tennis','Badminton','Squash','Racketball','Padel','Table Tennis','None of these'"), 'Public guest request must support multi-select previous sports including None');
+assert(publicRequest.includes('sportingBackgroundNote') && publicRequest.includes('healthDeclarationApplies') && publicRequest.includes('guestMedicalNote'), 'Public guest request must collect optional sporting background plus required health screening/details');
 assert(publicRequest.includes('htmlFor="memberFullName"') && publicRequest.includes('id="memberFullName"'), 'Member form labels must be accessible/tappable');
 assert(privateBooking.includes("bookingNote:''"), 'Private guest booking must retain host note state');
+assert(privateBooking.includes('guestIntakeCaptured') && privateBooking.includes('Guest information already received'), 'Approved guests must not repeat the sports/health intake on the private booking page');
 assert(privateBooking.includes("bookingNote',e.target.value"), 'Private guest booking must allow entering a host note');
 
 console.log('MEMBER/GUEST BOOKING GATE: PASS');
