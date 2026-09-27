@@ -46,9 +46,20 @@ function NotificationSetup({ config, preview = false }) {
   const [status, setStatus] = useState(() => {
     if (preview) return 'preview';
     if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return 'unsupported';
-    return Notification.permission === 'granted' ? 'granted' : Notification.permission === 'denied' ? 'denied' : 'prompt';
+    return Notification.permission === 'granted' ? 'checking' : Notification.permission === 'denied' ? 'denied' : 'prompt';
   });
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (preview || status !== 'checking') return;
+    let cancelled = false;
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => navigator.serviceWorker.ready)
+      .then(registration => registration.pushManager.getSubscription())
+      .then(subscription => { if (!cancelled) setStatus(subscription ? 'granted' : 'prompt'); })
+      .catch(() => { if (!cancelled) setStatus('prompt'); });
+    return () => { cancelled = true; };
+  }, [preview, status]);
 
   const enable = async () => {
     if (preview || busy) return;
