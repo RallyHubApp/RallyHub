@@ -384,7 +384,7 @@ export default function PublicClubProfile() {
                   )}
                   {!hasDirectoryAccess && club.verificationStatus === 'unclaimed' && (
                     <Link to={`/directory/${club.slug}/claim`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-amber-300/60 bg-amber-300 text-slate-950 text-sm font-bold hover:bg-amber-200 transition-colors shadow-sm">
-                      <UserCheck className="w-4 h-4" /> Claim this listing
+                      <UserCheck className="w-4 h-4" /> Update this club
                     </Link>
                   )}
                 </div>
@@ -571,9 +571,9 @@ export default function PublicClubProfile() {
                   <UserCheck className="w-5 h-5" />
                   <h2 className="font-bold">Is this your club?</h2>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">Claim the listing to verify your connection and manage the club's public directory details.</p>
+                <p className="text-sm text-muted-foreground mt-2">If you help run this club, verify your connection and keep its public Directory information up to date.</p>
                 <Link to={`/directory/${club.slug}/claim`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-amber-200 transition-colors">
-                  Claim this listing
+                  Update this club
                 </Link>
               </section>
             )}
