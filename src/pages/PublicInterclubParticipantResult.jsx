@@ -5,7 +5,14 @@ import {Badge} from '@/components/ui/badge';
 import {Trophy,RefreshCw,ShieldCheck} from 'lucide-react';
 import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
 
-function Podium({title,rows=[]}){return <section className="rounded-2xl border bg-card p-4"><p className="text-center text-xs font-black uppercase tracking-[.18em] text-muted-foreground">{title}</p><div className="mt-3 grid grid-cols-3 gap-2">{rows.map((p,i)=><div key={p.id} className="rounded-xl border p-3 text-center"><div className="text-2xl">{i===0?'🥇':i===1?'🥈':'🥉'}</div><p className="mt-1 text-sm font-bold leading-tight">{p.display_name}</p><p className="mt-1 text-[10px] text-muted-foreground">{p.pointsFor} pts · {p.wins}W</p></div>)}</div></section>}
+function Podium({title,rows=[]}){
+ const medal=i=>i===0?'🥇':i===1?'🥈':'🥉';
+ const place=i=>i===0?'1st':i===1?'2nd':'3rd';
+ const sizeClass=i=>i===0?'min-h-40 sm:min-h-44 px-3 py-4':i===1?'min-h-36 sm:min-h-40 px-3 py-3.5':'min-h-32 sm:min-h-36 px-3 py-3';
+ const medalClass=i=>i===0?'text-4xl sm:text-5xl':i===1?'text-3xl sm:text-4xl':'text-2xl sm:text-3xl';
+ const nameClass=i=>i===0?'text-base sm:text-lg':i===1?'text-sm sm:text-base':'text-sm';
+ return <section className="rounded-2xl border bg-card p-4"><p className="text-center text-xs font-black uppercase tracking-[.18em] text-muted-foreground">{title}</p><div className="mt-4 grid grid-cols-3 gap-2 items-end">{rows.map((p,i)=><div key={p.id} className={`rounded-xl border text-center flex flex-col justify-center ${sizeClass(i)}`}><div className={medalClass(i)}>{medal(i)}</div><p className="mt-1 text-[10px] sm:text-xs font-black uppercase tracking-wider text-muted-foreground">{place(i)}</p><p className={`mt-1 font-black leading-tight ${nameClass(i)}`}>{p.display_name}</p><p className="mt-2 text-[10px] sm:text-[11px] text-muted-foreground">{p.pointsFor} pts · {p.wins}W · {Number(p.pointDiff||0)>0?'+':''}{p.pointDiff||0}</p></div>)}</div></section>
+}
 export default function PublicInterclubParticipantResult(){
  const {token}=useParams();const [data,setData]=useState(null),[error,setError]=useState('');
  useEffect(()=>{let active=true;base44.functions.invoke('getInterclubParticipantResult',{token}).then(r=>{if(!active)return;if(r.data?.error)throw new Error(r.data.error);setData(r.data);}).catch(e=>active&&setError(e?.response?.data?.error||e?.message||'Results unavailable'));return()=>{active=false};},[token]);
