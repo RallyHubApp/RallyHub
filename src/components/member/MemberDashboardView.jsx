@@ -163,11 +163,11 @@ export default function MemberDashboardView({ snapshot, play = null, playLoading
           <p className="text-[11px] text-muted-foreground mt-1">Competitions & form</p>
         </Link>
         {directoryClub?.shopUrl ? (
-          <a href={directoryClub.shopUrl} target="_blank" rel="noreferrer" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
+          <Link to="/app/shop" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
             <ShoppingBag className="w-5 h-5 text-primary mb-3" />
             <p className="text-sm font-bold">Club shop</p>
-            <p className="text-[11px] text-muted-foreground mt-1 inline-flex items-center gap-1">Open shop <ExternalLink className="w-3 h-3" /></p>
-          </a>
+            <p className="text-[11px] text-muted-foreground mt-1">Gear, sizes & offers</p>
+          </Link>
         ) : (
           <Link to="/app/learn" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
             <ShoppingBag className="w-5 h-5 text-primary mb-3" />
