@@ -47,7 +47,7 @@ function Avatar({ snapshot, size = 'lg' }) {
   return <div className={`${classes} rounded-full bg-primary/15 text-primary border border-primary/30 flex items-center justify-center font-black`}>{initials}</div>;
 }
 
-export default function MemberDashboardView({ snapshot, play = null, playLoading = false, performance = null, performanceLoading = false, preview = false }) {
+export default function MemberDashboardView({ snapshot, play = null, playLoading = false, performance = null, performanceLoading = false, preview = false, onOpenShop = null }) {
   if (!snapshot) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">No member data available.</div>;
 
   const { user, player, person, member, club, myCompetitions = [], clubLeaderboard = [] } = snapshot;
@@ -163,11 +163,19 @@ export default function MemberDashboardView({ snapshot, play = null, playLoading
           <p className="text-[11px] text-muted-foreground mt-1">Competitions & form</p>
         </Link>
         {directoryClub?.shopUrl ? (
-          <Link to="/app/shop" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
-            <ShoppingBag className="w-5 h-5 text-primary mb-3" />
-            <p className="text-sm font-bold">Club shop</p>
-            <p className="text-[11px] text-muted-foreground mt-1">Gear, sizes & offers</p>
-          </Link>
+          preview && onOpenShop ? (
+            <button type="button" onClick={onOpenShop} className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors text-left">
+              <ShoppingBag className="w-5 h-5 text-primary mb-3" />
+              <p className="text-sm font-bold">Club shop</p>
+              <p className="text-[11px] text-muted-foreground mt-1">Gear, sizes & offers</p>
+            </button>
+          ) : (
+            <Link to="/app/shop" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
+              <ShoppingBag className="w-5 h-5 text-primary mb-3" />
+              <p className="text-sm font-bold">Club shop</p>
+              <p className="text-[11px] text-muted-foreground mt-1">Gear, sizes & offers</p>
+            </Link>
+          )
         ) : (
           <Link to="/app/learn" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
             <ShoppingBag className="w-5 h-5 text-primary mb-3" />
