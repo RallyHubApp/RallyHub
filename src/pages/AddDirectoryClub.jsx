@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, CheckCircle2, Clock3, PlusCircle, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Building2, CheckCircle2, Clock3, PlusCircle, Search, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { directoryClubs, irelandCounties } from '@/data/directorySeed';
@@ -20,6 +20,7 @@ export default function AddDirectoryClub() {
   const navigate = useNavigate();
   const isSuperAdmin = user?.role === 'admin';
   const [clubName, setClubName] = useState('');
+  const [existingSearch, setExistingSearch] = useState('');
   const [county, setCounty] = useState('');
   const [town, setTown] = useState('');
   const [primaryVenue, setPrimaryVenue] = useState('');
@@ -79,10 +80,27 @@ export default function AddDirectoryClub() {
     return () => { active = false; };
   }, [isAuthenticated, user?.role]);
 
+  const knownClubs = useMemo(() => {
+    const bySlug = new Map();
+    [...directoryClubs, ...dynamicClubs].forEach(club => {
+      if (!club?.slug) return;
+      bySlug.set(club.slug, club);
+    });
+    return [...bySlug.values()];
+  }, [dynamicClubs]);
+
+  const existingMatches = useMemo(() => {
+    const needle = normalise(existingSearch);
+    if (needle.length < 2) return [];
+    return knownClubs
+      .filter(club => normalise(`${club.name} ${club.town || ''} ${club.county || ''}`).includes(needle))
+      .slice(0, 6);
+  }, [existingSearch, knownClubs]);
+
   const exactExisting = useMemo(() => {
     if (!clubName.trim() || !county) return null;
-    return [...directoryClubs, ...dynamicClubs].find(club => normalise(club.name) === normalise(clubName) && normalise(club.county) === normalise(county)) || null;
-  }, [clubName, county, dynamicClubs]);
+    return knownClubs.find(club => normalise(club.name) === normalise(clubName) && normalise(club.county) === normalise(county)) || null;
+  }, [clubName, county, knownClubs]);
 
   const submit = async event => {
     event.preventDefault();
@@ -150,8 +168,8 @@ export default function AddDirectoryClub() {
   return (
     <>
       <Seo
-        title="Add Your Pickleball Club to the RallyHub Ireland Directory"
-        description="Can't find your pickleball club in RallyHub? Submit a club from anywhere on the island of Ireland for review and inclusion in the public RallyHub Club Directory."
+        title="Add or Update Your Pickleball Club | RallyHub Ireland Directory"
+        description="Find your existing pickleball club listing and update it, or submit a missing club from anywhere on the island of Ireland for the RallyHub Club Directory."
         path="/directory/add"
       />
       <div className="min-h-screen bg-background text-foreground">
@@ -161,6 +179,33 @@ export default function AddDirectoryClub() {
           <ArrowLeft className="w-4 h-4" /> Back to club directory
         </Link>
 
+        {!isSuperAdmin && (
+          <section className="mb-6 rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"><Search className="w-5 h-5 text-primary" /></div>
+              <div className="flex-1">
+                <h1 className="text-2xl sm:text-3xl font-black">Add or update your club</h1>
+                <p className="mt-2 text-sm text-muted-foreground">First check whether your club is already listed. If it is, open the club and choose <strong className="text-foreground">Update this club</strong>. If it is not listed, continue below to add it.</p>
+                <Label htmlFor="existingClubSearch" className="sr-only">Find your club</Label>
+                <div className="relative mt-4">
+                  <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
+                  <Input id="existingClubSearch" value={existingSearch} onChange={e => setExistingSearch(e.target.value)} placeholder="Search by club, town or county" className="pl-9" />
+                </div>
+                {existingSearch.trim().length >= 2 && (
+                  <div className="mt-3 space-y-2">
+                    {existingMatches.length ? existingMatches.map(club => (
+                      <Link key={club.slug} to={`/directory/${club.slug}`} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/70 px-4 py-3 hover:border-primary/40 transition-colors">
+                        <div><p className="font-semibold">{club.name}</p><p className="text-xs text-muted-foreground">{[club.town, club.county].filter(Boolean).join(' · ')}</p></div>
+                        <span className="text-xs font-bold text-primary">Open club</span>
+                      </Link>
+                    )) : <div className="rounded-xl border border-border bg-background/50 p-4 text-sm text-muted-foreground">No matching club found. You can add it below.</div>}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
         <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
           <section className="glass rounded-2xl p-6 sm:p-8">
             <div className="flex items-start gap-3">
@@ -169,11 +214,11 @@ export default function AddDirectoryClub() {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">RallyHub Directory</p>
-                <h1 className="text-3xl font-black mt-1">{isSuperAdmin ? 'Add an unclaimed club' : 'Add your club'}</h1>
+                <h2 className="text-3xl font-black mt-1">{isSuperAdmin ? 'Add an unclaimed club' : 'Add a new club'}</h2>
                 <p className="text-muted-foreground mt-2">
                   {isSuperAdmin
                     ? 'Create and pre-populate a public club listing without claiming it. Add the club contact now, then continue to the editor to upload the logo and complete any other details before sending the claim invitation.'
-                    : "Can't find your club in the directory? Send us the basic details and RallyHub will review the listing before it is added."}
+                    : "If your club is not already listed, send us the basic details and RallyHub will review the listing before it is added."}
                 </p>
               </div>
             </div>
@@ -239,8 +284,8 @@ export default function AddDirectoryClub() {
                 {exactExisting && (
                   <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm">
                     <p className="font-semibold text-foreground">We found this club already.</p>
-                    <p className="text-muted-foreground mt-1">Open the existing listing instead of creating another one.</p>
-                    <Link to={`/directory/${exactExisting.slug}`} className="inline-flex mt-3 font-semibold text-primary hover:underline">View {exactExisting.name}</Link>
+                    <p className="text-muted-foreground mt-1">Open the existing listing instead of creating another one. From there, choose <strong className="text-foreground">Update this club</strong>.</p>
+                    <Link to={`/directory/${exactExisting.slug}`} className="inline-flex mt-3 font-semibold text-primary hover:underline">Open {exactExisting.name}</Link>
                   </div>
                 )}
 
@@ -299,8 +344,8 @@ export default function AddDirectoryClub() {
             </div>
             <div className="glass rounded-2xl p-5">
               <div className="flex items-center gap-2"><Building2 className="w-4 h-4 text-primary" /><h2 className="font-bold">Already listed?</h2></div>
-              <p className="text-sm text-muted-foreground mt-3">If you find your club in the directory, open the existing profile and choose <strong className="text-foreground">Claim this listing</strong> instead.</p>
-              <Link to="/directory?manage=1" className="inline-flex mt-3 text-sm font-semibold text-primary hover:underline">Find and claim your club</Link>
+              <p className="text-sm text-muted-foreground mt-3">Use the search above to open the existing club profile, then choose <strong className="text-foreground">Update this club</strong>. RallyHub will verify your connection before giving editing access.</p>
+              <Link to="/directory" className="inline-flex mt-3 text-sm font-semibold text-primary hover:underline">Browse the club directory</Link>
             </div>
           </aside>
         </div>
