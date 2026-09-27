@@ -1,7 +1,7 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import rallyHubLogoApprovedBase64 from '@/assets/rallyhub-logo-approved.b64?raw';
-const RALLYHUB_LOGO_URL = `data:image/webp;base64,${rallyHubLogoApprovedBase64.trim()}`;
+import rallyHubLogoApprovedUrl from '@/assets/rallyhub-logo-approved.webp';
+const RALLYHUB_LOGO_URL = rallyHubLogoApprovedUrl;
 const NAVY = '#0b2e59';
 const BLUE = '#07558d';
 const GREEN = '#0b914a';
