@@ -94,12 +94,39 @@ test.describe('member or guest session booking mobile flow', () => {
     await expect(page.getByRole('heading',{name:'1. About you'})).toBeVisible();
   });
 
+  test('experienced pickleball guest skips previous sports, keeps health screening, and sees all experienced sessions', async ({ page }) => {
+    const calls=await mockPublicApi(page);
+    await page.goto('/guest/clare-pickleball');
+    await page.getByRole('button',{name:/I’m a guest/}).click();
+    await page.getByRole('button',{name:/Experienced pickleball player/}).click();
+    await expect(page.getByRole('heading',{name:'3. Previous sporting experience'})).toHaveCount(0);
+    await expect(page.getByRole('heading',{name:'3. Health & medical information'})).toBeVisible();
+    await expect(page.getByText('Doora Barefield')).toBeVisible();
+    await expect(page.getByText('Ennistymon Community Centre')).toHaveCount(2);
+    await expect(page.getByText('Corofin GAA Sports Hall')).toBeVisible();
+    await page.getByLabel('DUPR').fill('No DUPR');
+    await page.getByLabel('Club you normally play with').fill('Galway Pickleball');
+    await page.getByLabel('No',{exact:true}).check();
+    await page.getByLabel('Full name').fill('Experienced Guest');
+    await page.getByLabel('Email').fill('experienced@example.test');
+    await page.getByLabel('Mobile').fill('0877654321');
+    await page.getByLabel(/I confirm that I am 18 years of age or over/).check();
+    await page.getByText('Doora Barefield').click();
+    await page.getByRole('button',{name:'Send guest request'}).click();
+    await expect(page.getByRole('heading',{name:'Request sent'})).toBeVisible();
+    const submit=calls.find(x=>x.name==='guestAccessJourney'&&x.body.action==='public_submit');
+    expect(submit.body.experienceLevel).toBe('experienced');
+    expect(submit.body.previousSports).toEqual([]);
+    expect(submit.body.sportingBackgroundNote).toBe('');
+    expect(submit.body.healthDeclarationApplies).toBe(false);
+  });
+
   test('beginner guest sees only eligible sessions, records multi-sport and health intake, and no payment is taken', async ({ page }) => {
     const calls=await mockPublicApi(page);
     await page.goto('/guest/clare-pickleball');
     await page.getByRole('button',{name:/I’m a guest/}).click();
     await page.getByRole('button',{name:/Beginner/}).click();
-    await expect(page.getByText(/Beginner guest places are currently available only at Ennistymon and Corofin/)).toBeVisible();
+    await expect(page.getByText('Beginner guest places are currently available only at Ennistymon and Corofin, as Ennis is full at the moment.')).toBeVisible();
     await expect(page.getByText('Doora Barefield')).toHaveCount(0);
     await expect(page.getByText('Ennistymon Community Centre')).toHaveCount(2);
     await expect(page.getByText('Corofin GAA Sports Hall')).toBeVisible();
