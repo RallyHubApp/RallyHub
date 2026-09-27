@@ -1325,9 +1325,13 @@ ${detailRow('Reason',reason)}
         return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:null,spotsRemaining:remaining,inviteApproved:true,approvalRequired:false,participantType:'member'});
       }
       const invite=await inviteForSession(base44,session,body.inviteToken||'');
+      const approvedRequest=invite?await guestRequestForInvite(base44,invite):null;
       const templates=await directoryTemplates(base44,session.tenant_id,session.club_id);
       const directoryTemplate=templates.find((t:any)=>String(t.key)===String(session.session_label)) || templates.find((t:any)=>t.venueName===session.venue_name&&t.weekday===session.weekday&&t.start===session.start_time);
-      return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',inviteName:invite?.intended_name||'',approvalRequired:!invite,directorySessionId:directoryTemplate?.directorySessionId||directoryTemplate?.key||'',guestRequestUrl:brand?.slug?`/guest/${brand.slug}${directoryTemplate?.key?`?session=${encodeURIComponent(directoryTemplate.key)}`:''}`:''});
+      return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',inviteName:invite?.intended_name||'',approvalRequired:!invite,
+        guestIntakeCaptured:!!approvedRequest,
+        guestIntake:approvedRequest?{previousSports:approvedRequest.previous_sports||[],sportingBackgroundNote:approvedRequest.sporting_background_note||'',healthDeclarationApplies:approvedRequest.health_declaration_applies===true,medicalNote:approvedRequest.medical_note||''}:null,
+        directorySessionId:directoryTemplate?.directorySessionId||directoryTemplate?.key||'',guestRequestUrl:brand?.slug?`/guest/${brand.slug}${directoryTemplate?.key?`?session=${encodeURIComponent(directoryTemplate.key)}`:''}`:''});
     }
 
     if(action==='public_status'){
