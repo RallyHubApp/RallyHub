@@ -2,8 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   CalendarDays, ChevronRight, CircleUserRound, ExternalLink, MapPin,
-  MessageCircle, ShoppingBag, Trophy, UserRound, Shield, Sparkles, Medal,
-  Bell, Clock3, CheckCircle2
+  ShoppingBag, Trophy, UserRound, Shield, Sparkles, Medal,
+  Clock3, CheckCircle2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import GlassCard from '@/components/shared/GlassCard';
@@ -152,10 +152,10 @@ export default function MemberDashboardView({ snapshot, play = null, playLoading
           <p className="text-sm font-bold">Calendar</p>
           <p className="text-[11px] text-muted-foreground mt-1">My activity</p>
         </Link>
-        <Link to="/app/clubhouse" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
-          <MessageCircle className="w-5 h-5 text-primary mb-3" />
-          <p className="text-sm font-bold">Clubhouse</p>
-          <p className="text-[11px] text-muted-foreground mt-1">Updates & messages</p>
+        <Link to="/app/venues" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
+          <MapPin className="w-5 h-5 text-primary mb-3" />
+          <p className="text-sm font-bold">Venues</p>
+          <p className="text-[11px] text-muted-foreground mt-1">Times & directions</p>
         </Link>
         <Link to="/app/my-profile" className="glass rounded-xl p-4 hover:bg-secondary/60 transition-colors">
           <Trophy className="w-5 h-5 text-primary mb-3" />
@@ -244,11 +244,11 @@ export default function MemberDashboardView({ snapshot, play = null, playLoading
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </Link>
-        <Link to="/app/clubhouse" className="glass rounded-xl p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><Bell className="w-5 h-5 text-primary" /></div>
+        <Link to="/app/venues" className="glass rounded-xl p-4 flex items-center gap-3 hover:bg-secondary/50 transition-colors">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><MapPin className="w-5 h-5 text-primary" /></div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold">Club updates</p>
-            <p className="text-xs text-muted-foreground">Official notices, discussions and messages.</p>
+            <p className="text-sm font-bold">Venues & weekly play</p>
+            <p className="text-xs text-muted-foreground">Addresses, regular session times and map directions.</p>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </Link>
