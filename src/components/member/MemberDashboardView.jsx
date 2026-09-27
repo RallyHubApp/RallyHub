@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  CalendarDays, ChevronRight, CircleUserRound, MapPin,
+  CalendarDays, ChevronRight, CircleUserRound, MapPin, MessageCircle,
   ShoppingBag, Trophy, UserRound, Shield, Sparkles, Medal,
   Clock3, CheckCircle2
 } from 'lucide-react';
@@ -47,7 +47,7 @@ function Avatar({ snapshot, size = 'lg' }) {
   return <div className={`${classes} rounded-full bg-primary/15 text-primary border border-primary/30 flex items-center justify-center font-black`}>{initials}</div>;
 }
 
-export default function MemberDashboardView({ snapshot, play = null, playLoading = false, performance = null, performanceLoading = false, preview = false, onOpenShop = null }) {
+export default function MemberDashboardView({ snapshot, play = null, playLoading = false, performance = null, performanceLoading = false, preview = false, onOpenShop = null, onOpenMessages = null }) {
   if (!snapshot) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">No member data available.</div>;
 
   const { user, player, person, member, club, myCompetitions = [], clubLeaderboard = [] } = snapshot;
@@ -104,6 +104,22 @@ export default function MemberDashboardView({ snapshot, play = null, playLoading
       </section>
 
       <MemberPerformanceSummary performance={performance} loading={performanceLoading} />
+
+      <section>
+        {preview && onOpenMessages ? (
+          <button type="button" onClick={onOpenMessages} className="w-full glass rounded-2xl p-4 sm:p-5 text-left flex items-center gap-4 hover:bg-secondary/50 transition-colors">
+            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><MessageCircle className="w-5 h-5 text-primary" /></div>
+            <div className="min-w-0 flex-1"><p className="text-sm font-black">Need help? Message Brian</p><p className="text-xs text-muted-foreground mt-1">Private message to the Clare Pickleball Chairperson. Your contact details stay private.</p></div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+          </button>
+        ) : (
+          <Link to="/app/messages" className="glass rounded-2xl p-4 sm:p-5 flex items-center gap-4 hover:bg-secondary/50 transition-colors">
+            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><MessageCircle className="w-5 h-5 text-primary" /></div>
+            <div className="min-w-0 flex-1"><p className="text-sm font-black">Need help? Message Brian</p><p className="text-xs text-muted-foreground mt-1">Private message to the Clare Pickleball Chairperson. Your contact details stay private.</p></div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+          </Link>
+        )}
+      </section>
 
       <section>
         <div className="flex items-center justify-between mb-2">
