@@ -46,9 +46,9 @@ export default function Dashboard() {
   });
 
   const { data: clubLeaderboard = { rows: [] } } = useQuery({
-    queryKey: ['club-leaderboard'],
+    queryKey: ['performance-analytics-club'],
     queryFn: async () => {
-      const res = await base44.functions.invoke('getClubLeaderboard', {});
+      const res = await base44.functions.invoke('performanceAnalytics', { action: 'club' });
       if (res.data?.error) throw new Error(res.data.error);
       return res.data;
     },
