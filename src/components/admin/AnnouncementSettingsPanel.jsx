@@ -18,7 +18,9 @@ const previewValues = {
 
 function spokenPreview(row, text) {
   if (!text) return '';
-  if (row?.key === 'countdown') return '5, 4, 3, 2, 1';
+  if (row?.key === 'countdown') {
+    return [5,4,3,2,1].map(seconds => String(text).replace(/\{seconds\}/gi, String(seconds))).join(', ');
+  }
   return String(text).replace(/\{([a-z0-9_]+)\}/gi, (_, key) => previewValues[key] ?? `{${key}}`);
 }
 
