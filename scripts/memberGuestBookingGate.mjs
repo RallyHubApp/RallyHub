@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const read = path => fs.readFileSync(path, 'utf8');
 const booking = read('base44/functions/guestSessionBooking/entry.ts');
 const webhook = read('base44/functions/paymentGatewayWebhook/entry.ts');
+const memberPortal = read('base44/functions/memberPortal/entry.ts');
 const schema = JSON.parse(read('base44/entities/GuestSessionBooking.jsonc'));
 const publicRequest = read('src/pages/PublicGuestRequest.jsx');
 const privateBooking = read('src/pages/PublicGuestSessionBooking.jsx');
@@ -22,6 +23,8 @@ assert(memberBlock.includes('loadInvitedMemberSpondSessions'), 'Member fallback 
 assert(booking.includes('collectSpondRecipientIds(event).has(String(memberId))'), 'Spond events must be filtered to actual recipients');
 assert(booking.includes('event?.recipients?.group?.members'), 'Spond recipient-group members must count as invited even before a response row exists');
 assert(booking.includes('event?.responses?.unconfirmedIds'), 'Spond unconfirmed invitees must remain eligible until they respond');
+assert(memberPortal.includes('event?.recipients?.group?.members'), 'Member portal must use the same Spond recipient-group invitation rule');
+assert(memberPortal.includes('event?.responses?.unconfirmedIds'), 'Member portal must include Spond unconfirmed invitees');
 assert(memberBlock.includes("const selected=(spond.sessions||[]).find"), 'Selected Spond occurrence must be revalidated on submit');
 assert(!memberBlock.includes('waiverAccepted'), 'Member flow must not require the guest waiver');
 assert(!memberBlock.includes('codeAccepted'), 'Member flow must not require guest Code of Conduct re-acceptance');
