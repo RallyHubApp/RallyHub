@@ -492,7 +492,7 @@ export const publicDirectoryFallbackSnapshot = {
       "website": "https://clarepickleball.ie/",
       "facebook": "https://www.facebook.com/profile.php?id=61576112630693",
       "instagram": "https://www.instagram.com/clarepickleball",
-      "waitingListUrl": "https://forms.gle/gWYZHHLBeUwyU3u17",
+      "waitingListUrl": "https://clarepickleball.ie/waiting-list",
       "joiningCtaLabel": "Join waiting list",
       "logoUrl": "https://clarepickleball.ie/wp-content/uploads/2025/06/491439977_17843980809473841_8409446969161026129_n-removebg-preview.png",
       "contact": {
