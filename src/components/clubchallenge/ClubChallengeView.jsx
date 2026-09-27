@@ -473,6 +473,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [announcementDraft, setAnnouncementDraft] = useState('');
   const [announcementSpeaking, setAnnouncementSpeaking] = useState(false);
   const [announcementStatus, setAnnouncementStatus] = useState('');
+  const [announcementByKey, setAnnouncementByKey] = useState({});
   const [playerControlBusy, setPlayerControlBusy] = useState(false);
   const [playerControlStatus, setPlayerControlStatus] = useState(null);
   const [quickReserveOutgoing, setQuickReserveOutgoing] = useState({});
@@ -1244,6 +1245,24 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await unlockHallAudio();
     toast.success('RallyHub event audio is ON.');
   };
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await base44.functions.invoke('announcementSettings', { action:'resolved', module:'interclub', tenantId:event?.tenant_id || undefined });
+        if (!cancelled && res.data?.byKey) setAnnouncementByKey(res.data.byKey);
+      } catch { /* current RallyHub wording remains the safe fallback */ }
+    })();
+    return () => { cancelled = true; };
+  }, [event?.tenant_id]);
+
+  const announcementText = (key, fallback, variables = {}) => {
+    const item = announcementByKey?.[key];
+    if (item?.enabled === false) return '';
+    const source = item?.text || fallback || '';
+    return String(source).replace(/\{([a-z0-9_]+)\}/gi, (_, variable) => variables[variable] === undefined || variables[variable] === null ? `{${variable}}` : String(variables[variable]));
+  };
+
   const speak = (text, { signal = null } = {}) => {
     if (audioMuted) return false;
     const ctx = window.__rallyhubAudioContext || null;
@@ -1266,7 +1285,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!changedAt || lastShowcaseSideChangeRef.current === changedAt) return;
     lastShowcaseSideChangeRef.current = changedAt;
     if (Date.now() - new Date(changedAt).getTime() > 30000) return;
-    speak('Change ends', { signal:'warning' });
+    speak(announcementText('side_change', 'Change ends'), { signal:'warning' });
   }, [showcaseMatch?.side_change_at]);
 
   React.useEffect(() => {
@@ -1275,7 +1294,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!completedAt || lastShowcaseCompleteRef.current === completedAt) return;
     lastShowcaseCompleteRef.current = completedAt;
     if (showcaseMatch.scored_at && Date.now() - new Date(showcaseMatch.scored_at).getTime() > 30000) return;
-    speak('Match complete', { signal:'end' });
+    speak(announcementText('match_complete', 'Match complete'), { signal:'end' });
   }, [showcaseMatch?.status, showcaseMatch?.scored_at, showcaseMatch?.revision]);
   const announceCustom = async () => {
     const text = announcementDraft.trim();
@@ -1391,20 +1410,20 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         if (!announcedRoundStartsRef.current.has(Number(currentRound))) {
           announcedRoundStartsRef.current.add(Number(currentRound));
           const label = roundLabel(currentRound);
-          speak(`${label}. ${label} starting now.`, { signal:'start' });
+          speak(announcementText('round_start', `${label}. ${label} starting now.`, { round_label:label }), { signal:'start' });
         }
       } else if (phase === 'changeover') {
         timerSpeechArmedRef.current = true;
-        speak('Changeover starting now.', { signal:'start' });
+        speak(announcementText('changeover_start', 'Changeover starting now.'), { signal:'start' });
       } else {
         timerSpeechArmedRef.current = true;
-        speak(`Your ${Number(event?.break_minutes || 20)} minute break starts now. Enjoy your break.`, { signal:'start' });
+        speak(announcementText('break_start', `Your ${Number(event?.break_minutes || 20)} minute break starts now. Enjoy your break.`, { break_minutes:Number(event?.break_minutes || 20) }), { signal:'start' });
       }
       requestWakeLock();
     }
   };
-  const pauseTimer = async () => { if (await timerAction('pause')) { timerSpeechArmedRef.current = false; speak('Event paused.'); wakeLockRef.current?.release?.(); } };
-  const resumeTimer = async () => { await unlockHallAudio(); if (await timerAction('resume')) { timerSpeechArmedRef.current = true; speak(String(timerState?.phase || '') === 'break' ? 'Break resumed.' : String(timerState?.phase || '') === 'changeover' ? 'Changeover resumed.' : `${roundLabel(currentRound)}. Resume play.`, { signal:'start' }); requestWakeLock(); } };
+  const pauseTimer = async () => { if (await timerAction('pause')) { timerSpeechArmedRef.current = false; speak(announcementText('event_paused', 'Event paused.')); wakeLockRef.current?.release?.(); } };
+  const resumeTimer = async () => { await unlockHallAudio(); if (await timerAction('resume')) { timerSpeechArmedRef.current = true; const phase=String(timerState?.phase || ''); const label=roundLabel(currentRound); const text=phase==='break' ? announcementText('break_resume','Break resumed.') : phase==='changeover' ? announcementText('changeover_resume','Changeover resumed.') : announcementText('round_resume',`${label}. Resume play.`,{round_label:label}); speak(text, { signal:'start' }); requestWakeLock(); } };
   const resetTimer = async () => { timerSpeechArmedRef.current = false; return timerAction('reset'); };
   const preparedRoundMinutes = ['ready','play'].includes(String(timerState?.phase || '')) && Number(timerState?.round || 0) === Number(currentRound) && !timerState?.running && Number(timerState?.remaining_seconds || 0) > 0
     ? Math.max(1, Math.round(Number(timerState.remaining_seconds) / 60))
