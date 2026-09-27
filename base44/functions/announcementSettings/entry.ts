@@ -68,7 +68,13 @@ Deno.serve(async (req) => {
     if (action === 'admin_reset') {
       const id = clean(body.id, 180);
       if (!id) return Response.json({ error:'id required' }, { status:400 });
-      await base44.asServiceRole.entities.AnnouncementTemplate.update(id, { mode:'default', custom_text:'', enabled:true });
+      const row = await base44.asServiceRole.entities.AnnouncementTemplate.get(id);
+      if (!row) return Response.json({ error:'Announcement not found' }, { status:404 });
+      await base44.asServiceRole.entities.AnnouncementTemplate.update(id, {
+        mode:'default',
+        custom_text:'',
+        enabled:row.default_enabled !== false,
+      });
       return Response.json({ success:true });
     }
 
