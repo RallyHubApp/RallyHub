@@ -34,6 +34,7 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import PublicClubChallengeDisplay from '@/pages/PublicClubChallengeDisplay';
+import PublicInterclubParticipantResult from '@/pages/PublicInterclubParticipantResult';
 import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
 import PublicClubChallengeShowcaseScorer from '@/pages/PublicClubChallengeShowcaseScorer';
 import PublicInterclubRegistration from '@/pages/PublicInterclubRegistration';
@@ -231,6 +232,7 @@ function App() {
             <Route path="/waiting-list/:clubSlug" element={<PublicWaitingList />} />
             <Route path="/book/:token" element={<PublicGuestSessionBooking />} />
             <Route path="/club-challenge/display/:token" element={<PublicClubChallengeDisplay />} />
+            <Route path="/interclub-results/:token" element={<PublicInterclubParticipantResult />} />
             <Route path="/club-challenge/vote/:token" element={<PublicClubChallengeVote />} />
             <Route path="/club-challenge/showcase-score/:token" element={<PublicClubChallengeShowcaseScorer />} />
             <Route path="/kotc-results/:token" element={<PublicKotcResults />} />
