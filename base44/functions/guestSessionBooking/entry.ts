@@ -541,6 +541,30 @@ Waiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted
 Venue: ${session.venue_address}, ${session.venue_eircode}
 Map: ${session.google_maps_url}${b.medical_note ? `\nEmergency note: ${b.medical_note}` : ''}`;
 }
+async function sendHostBookingEmail(base44:any,scope:any,club:any,session:any,booking:any,host:any,summary:string){
+  if(!host?.email)return false;
+  const isMember=booking.participant_type==='member';
+  const dateLabel=formatDate(session.session_date);
+  const timeLabel=`${session.start_time}${session.end_time?'–'+session.end_time:''}`;
+  const hostFirst=firstName(host.name||'');
+  const textBody=`Hi ${hostFirst},\n\nA ${isMember?'member':'guest'} has booked your ${club.name} session.\n\n${summary}\n\nThis notification was generated automatically by RallyHub.\n\n${club.name}\nPowered by RallyHub`;
+  const htmlBody=emailShell({
+    club,
+    headline:`New ${isMember?'member':'guest'} booking for your session`,
+    preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
+    content:`
+<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">Hi ${escapeHtml(hostFirst)}, a ${isMember?'member':'guest'} booking has been confirmed for the session you host.</p>
+<div style="white-space:pre-wrap;margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#f7f9fc;border:1px solid #dfe5ee;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#172033;">${escapeHtml(summary)}</div>
+<p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">You are receiving this because you are recorded as the host for this club session.</p>`,
+  });
+  await sendWithConfiguredEmailTransport(base44,scope,{
+    to:host.email,
+    subject:`Session booking confirmed · ${booking.full_name} · ${session.venue_name} · ${session.start_time}`,
+    textBody,htmlBody,
+  });
+  return true;
+}
+
 async function sendConfirmations(base44:any,session:any,booking:any,force=false){
   if(!force && booking.notification_sent_at && booking.guest_confirmation_sent_at) return booking;
   const summary=hostText(session,booking);
@@ -560,24 +584,20 @@ async function sendConfirmations(base44:any,session:any,booking:any,force=false)
     : `${amount} paid online`;
 
   const isMember=booking.participant_type==='member';
-  if((force||!booking.notification_sent_at) && session.notification_email){
-    try{
-      const typeLabel=isMember?'member':'guest';
-      const adminText=`New Clare Pickleball ${typeLabel} booking confirmed.
-
-${summary}
-
-${isMember?'Member':'Guest'} email: ${booking.email||'—'}
-
-This session notification was generated automatically by RallyHub.
-
-Clare Pickleball
-Powered by RallyHub`;
-      const adminHtml=emailShell({
-        club,
-        headline:`New ${typeLabel} booking confirmed`,
-        preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
-        content:`
+  if(force||!booking.notification_sent_at){
+    let organiserNotificationsOk=true;
+    let organiserNotificationExpected=false;
+    const host=await resolveSessionHostContact(base44,session);
+    if(session.notification_email){
+      organiserNotificationExpected=true;
+      try{
+        const typeLabel=isMember?'member':'guest';
+        const adminText=`New ${club.name} ${typeLabel} booking confirmed.\n\n${summary}\n\n${isMember?'Member':'Guest'} email: ${booking.email||'—'}\n\nThis session notification was generated automatically by RallyHub.\n\n${club.name}\nPowered by RallyHub`;
+        const adminHtml=emailShell({
+          club,
+          headline:`New ${typeLabel} booking confirmed`,
+          preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
+          content:`
 <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">A ${typeLabel} booking has been confirmed and payment status verified.</p>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 20px;">
 ${detailRow(isMember?'Member':'Guest',booking.full_name)}
@@ -587,19 +607,26 @@ ${detailRow('Session',`${dateLabel} · ${timeLabel}`)}
 ${detailRow('Venue',session.venue_name)}
 ${detailRow('Payment',paymentLabel)}
 ${detailRow('Booking reference',booking.confirmation_code)}
+${booking.booking_note?detailRow('Note',booking.booking_note):''}
 </table>
 ${isMember?'':`<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#eef8f1;border:1px solid #b9e2c4;font-size:13px;line-height:1.55;color:#23452d;"><strong>Waiver and policies recorded</strong><br>Guest waiver, Code of Conduct, privacy notice and 24-hour cancellation policy accepted.</div>`}
 <div style="margin:0 0 8px;font-size:13px;font-weight:800;color:#172033;">Session host summary</div>
 <div style="white-space:pre-wrap;margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#f7f9fc;border:1px solid #dfe5ee;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#172033;">${escapeHtml(summary)}</div>`,
-      });
-      await sendWithConfiguredEmailTransport(base44,scope,{
-        to:session.notification_email,
-        subject:`${isMember?'Member':'Guest'} booking confirmed · ${booking.full_name} · ${session.venue_name} · ${session.start_time}`,
-        textBody:adminText,
-        htmlBody:adminHtml,
-      });
-      updates.notification_sent_at=now;
-    }catch(e){console.error('session host notification failed',e?.message||e)}
+        });
+        await sendWithConfiguredEmailTransport(base44,scope,{
+          to:session.notification_email,
+          subject:`${isMember?'Member':'Guest'} booking confirmed · ${booking.full_name} · ${session.venue_name} · ${session.start_time}`,
+          textBody:adminText,
+          htmlBody:adminHtml,
+        });
+      }catch(e){organiserNotificationsOk=false;console.error('club/admin booking notification failed',e?.message||e)}
+    }
+    if(host?.email&&emailKey(host.email)!==emailKey(session.notification_email||'')){
+      organiserNotificationExpected=true;
+      try{await sendHostBookingEmail(base44,scope,club,session,booking,host,summary)}
+      catch(e){organiserNotificationsOk=false;console.error('session host booking notification failed',e?.message||e)}
+    }
+    if(organiserNotificationExpected&&organiserNotificationsOk)updates.notification_sent_at=now;
   }
 
   const guestEligible=booking.email && (
