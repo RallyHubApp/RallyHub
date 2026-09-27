@@ -16,7 +16,7 @@ const CLARE_FALLBACK_BRAND={
 };
 
 const EMPTY={
-  fullName:'',email:'',mobile:'',emergencyContactName:'',emergencyContactMobile:'',medicalNote:'',ageConfirmed:false,
+  fullName:'',email:'',mobile:'',emergencyContactName:'',emergencyContactMobile:'',medicalNote:'',bookingNote:'',ageConfirmed:false,
   waiverAccepted:false,codeAccepted:false,privacyAcknowledged:false,cancellationAccepted:false,photoVideoConsent:'',
 };
 
@@ -133,10 +133,10 @@ export default function PublicGuestSessionBooking(){
     <AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
     <div className="mx-auto max-w-xl">
       <div className="glass rounded-2xl p-6 sm:p-8 text-center">
-        <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Guest Session Booking"/>
+        <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Session Booking"/>
         <CheckCircle2 className="mx-auto mt-7 h-12 w-12 text-primary"/>
         <h1 className="mt-4 text-2xl font-black">{done.type==='cash'?'Place reserved':'Booking confirmed'}</h1>
-        <p className="mt-3 text-sm text-muted-foreground">{done.message||'Your guest booking is confirmed.'}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{done.message||(done.booking?.participantType==='member'?'Your member session booking is confirmed.':'Your guest booking is confirmed.')}</p>
         <div className="mt-5 rounded-xl border border-primary/20 bg-primary/5 p-4 text-left text-sm">
           <p className="font-black">{niceDate(done.session?.sessionDate||session.sessionDate)} · {done.session?.startTime||session.startTime}</p>
           <p className="mt-2 font-semibold">{done.session?.venueName||session.venueName}</p>
@@ -147,6 +147,19 @@ export default function PublicGuestSessionBooking(){
           </a>
         </div>
         <p className="mt-5 text-xs text-muted-foreground">{done.type==='cash'?'The club organiser has been notified of your booking.':'A confirmation email has been sent.'} Cancellations made less than 24 hours before the session are non-refundable.</p>
+      </div>
+    </div>
+  </div>;
+
+  if(isPaymentReturn&&!done)return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8">
+    <AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
+    <div className="mx-auto max-w-xl">
+      <div className="glass rounded-2xl p-6 sm:p-8 text-center">
+        <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Session Booking"/>
+        <RefreshCw className={`mx-auto mt-7 h-11 w-11 text-primary ${checkingPayment?'animate-spin':''}`}/>
+        <h1 className="mt-4 text-2xl font-black">Checking your payment</h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{checkingPayment?'RallyHub is confirming the payment and booking your place.':'Payment confirmation is taking longer than expected.'}</p>
+        {error&&<div className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-semibold text-destructive">{error}</div>}
       </div>
     </div>
   </div>;
@@ -174,7 +187,7 @@ export default function PublicGuestSessionBooking(){
     <AppearanceQuickButton className="fixed right-3 top-3 z-50 h-10 px-2 sm:px-3"/>
     <div className="mx-auto max-w-2xl space-y-5">
       <header className="glass rounded-2xl p-5 sm:p-7 text-center">
-        <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Guest Session Booking"/>
+        <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Session Booking"/>
         <h1 className="mt-5 text-2xl sm:text-3xl font-black">Guest Session</h1>
         <p className="mt-2 text-base font-bold">{niceDate(session.sessionDate)} · {session.startTime}{session.endTime?`–${session.endTime}`:''}</p>
         <div className="mx-auto mt-4 max-w-lg rounded-xl border bg-secondary/30 p-4 text-left">
@@ -218,6 +231,11 @@ export default function PublicGuestSessionBooking(){
             <div><Label htmlFor="emergencyMobile">Contact mobile</Label><Input id="emergencyMobile" type="tel" value={form.emergencyContactMobile} onChange={e=>set('emergencyContactMobile',e.target.value)} required className="mt-1.5 bg-secondary"/></div>
           </div>
           <div><Label htmlFor="medical">Anything an organiser should know in an emergency? <span className="font-normal text-muted-foreground">(optional)</span></Label><textarea id="medical" value={form.medicalNote} onChange={e=>set('medicalNote',e.target.value)} rows={3} maxLength={1200} className="mt-1.5 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"/></div>
+        </section>
+
+        <section className="glass rounded-2xl p-5 sm:p-6 space-y-3">
+          <div><h2 className="text-lg font-black">Note for the session host <span className="text-sm font-normal text-muted-foreground">(optional)</span></h2><p className="mt-1 text-xs text-muted-foreground">Add any practical information you want the organiser to know about this booking.</p></div>
+          <textarea value={form.bookingNote} onChange={e=>set('bookingNote',e.target.value)} rows={3} maxLength={1000} placeholder="Anything else we should know?" className="w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"/>
         </section>
 
         <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
