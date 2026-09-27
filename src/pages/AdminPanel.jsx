@@ -1594,6 +1594,11 @@ Brian`;
               </div>
             ) : memberPreview ? (
               <div className="space-y-3">
+                {memberPreview.previewDegraded && (
+                  <div className="rounded-xl border border-amber-400/30 bg-amber-500/5 px-4 py-3 text-xs text-muted-foreground">
+                    The core member preview loaded, but one optional feed was temporarily unavailable. Home and profile data remain usable.
+                  </div>
+                )}
                 {previewLeaderboardError && (
                   <div className="rounded-xl border border-amber-400/30 bg-amber-500/5 px-4 py-3 text-xs text-muted-foreground">
                     Member preview is available. Leaderboard figures are temporarily unavailable and will retry independently.
