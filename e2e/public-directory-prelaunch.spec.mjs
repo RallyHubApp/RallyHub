@@ -71,6 +71,23 @@ for (const config of viewports) {
   });
 }
 
+test('directory uses one clear add-or-update club journey', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/directory');
+  const clubCta = page.getByRole('link', { name: 'Add or update your club' });
+  await expect(clubCta).toBeVisible();
+  await expect(page.getByText('Claim this listing', { exact: true })).toHaveCount(0);
+  await clubCta.click();
+  await expect(page).toHaveURL(/\/directory\/add$/);
+  await expect(page.getByRole('heading', { name: 'Add or update your club' })).toBeVisible();
+  const existingSearch = page.getByRole('textbox', { name: 'Find your club' });
+  await expect(existingSearch).toBeVisible();
+  await existingSearch.fill('Clare');
+  await expect(page.getByText('Clare Pickleball', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Claim this listing', { exact: true })).toHaveCount(0);
+  await assertNoHorizontalOverflow(page);
+});
+
 test('public routes, deep links, refresh, back and forward remain usable', async ({ page }) => {
   const routes = [
     '/',
