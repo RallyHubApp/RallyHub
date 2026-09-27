@@ -1562,6 +1562,11 @@ Brian`;
           </div>
         </TabsContent>
 
+        {/* ── ANNOUNCEMENT SETTINGS TAB ── */}
+        <TabsContent value="announcements" className="mt-4">
+          <AnnouncementSettingsPanel />
+        </TabsContent>
+
         {/* ── DIRECTORY CLAIMS TAB ── */}
         <TabsContent value="directory" className="mt-4">
           <div className="flex flex-col gap-5">
