@@ -185,6 +185,17 @@ export default function AdminPanel() {
         if (res.data?.error) throw new Error(res.data.error);
         return res.data?.snapshot ? res.data : null;
       } catch (error) {
+        try {
+          const fallback = await base44.functions.invoke('memberPortal', {
+            action: 'admin_preview',
+            userId: previewTargetUserId,
+            tenantId: user?.active_tenant_id,
+            clubId: user?.active_club_id,
+          });
+          if (fallback.data?.snapshot) return { ...fallback.data, previewDegraded: true };
+        } catch (_) {
+          // Use the original full-preview error below.
+        }
         const detail = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'Could not load member preview.';
         throw new Error(detail);
       }
