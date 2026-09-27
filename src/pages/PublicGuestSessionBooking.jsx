@@ -235,13 +235,29 @@ export default function PublicGuestSessionBooking(){
           <label className="flex items-start gap-3 rounded-xl border p-4 text-sm"><input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.ageConfirmed} onChange={e=>set('ageConfirmed',e.target.checked)} required/><span><strong>I confirm that I am {legal.minimumAge} years of age or over.</strong></span></label>
         </section>}
 
+        {data?.guestIntakeCaptured?<section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
+          <div><h2 className="text-lg font-black">Guest information already received</h2><p className="mt-1 text-xs text-muted-foreground">You supplied this information with your guest request, so RallyHub will not ask you to complete it again.</p></div>
+          <div className="rounded-xl border bg-secondary/20 p-4 text-sm space-y-2"><p><strong>Previous sports:</strong> {(form.previousSports||[]).join(', ')||'None recorded'}</p>{form.sportingBackgroundNote&&<p><strong>Other sporting background:</strong> {form.sportingBackgroundNote}</p>}<p><strong>Health/medical screening:</strong> {form.healthDeclarationApplies?'Yes, details provided':'No issues declared'}</p>{form.healthDeclarationApplies&&form.medicalNote&&<p><strong>Details for organiser:</strong> {form.medicalNote}</p>}</div>
+        </section>:<>
+          <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
+            <div><h2 className="text-lg font-black">Previous sporting experience</h2><p className="mt-1 text-sm text-muted-foreground">Please indicate if you have ever played any of these sports previously, even if only briefly or at school. Tick all that apply.</p></div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">{['Tennis','Badminton','Squash','Racketball','Padel','Table Tennis','None of these'].map(sport=><label key={sport} className={`flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm ${form.previousSports.includes(sport)?'border-primary bg-primary/10':''}`}><input type="checkbox" checked={form.previousSports.includes(sport)} onChange={()=>togglePreviousSport(sport)}/><span>{sport}</span></label>)}</div>
+            <div><Label htmlFor="sportingBackground">Any other sporting history or background you think may be relevant? <span className="font-normal text-muted-foreground">(optional)</span></Label><textarea id="sportingBackground" value={form.sportingBackgroundNote} onChange={e=>set('sportingBackgroundNote',e.target.value)} rows={3} maxLength={1200} className="mt-1.5 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"/></div>
+          </section>
+          <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
+            <div><h2 className="text-lg font-black">Health & medical information</h2><p className="mt-1 text-xs text-muted-foreground">Only authorised club/session organisers can use this information for the session.</p></div>
+            <div className="space-y-3 rounded-xl border bg-secondary/20 p-4 text-sm leading-6"><p><strong>Are you currently receiving medical treatment for any serious illness, or taking heart or blood pressure medication?</strong></p><p><strong>Have you had surgery or sustained an injury through sport or another activity that required medical intervention or treatment in the last 3 years?</strong></p><p><strong>Do you have balance, hearing, sight or other health issues that might be pertinent?</strong></p></div>
+            <fieldset><legend className="text-sm font-bold">Does any of the above apply to you?</legend><div className="mt-3 flex gap-3"><label className={`flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm ${form.healthDeclarationApplies===true?'border-primary bg-primary/10':''}`}><input type="radio" name="health" checked={form.healthDeclarationApplies===true} onChange={()=>set('healthDeclarationApplies',true)} required/> Yes</label><label className={`flex min-h-11 items-center gap-2 rounded-xl border px-4 py-2 text-sm ${form.healthDeclarationApplies===false?'border-primary bg-primary/10':''}`}><input type="radio" name="health" checked={form.healthDeclarationApplies===false} onChange={()=>{set('healthDeclarationApplies',false);set('medicalNote','')}} required/> No</label></div></fieldset>
+            {form.healthDeclarationApplies===true&&<div><Label htmlFor="medical">Please give brief details</Label><textarea id="medical" value={form.medicalNote} onChange={e=>set('medicalNote',e.target.value)} rows={4} maxLength={1600} required className="mt-1.5 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"/></div>}
+          </section>
+        </>}
+
         <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
           <div><h2 className="text-lg font-black">Emergency contact</h2><p className="mt-1 text-xs text-muted-foreground">Only available to authorised club/session organisers.</p></div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div><Label htmlFor="emergencyName">Contact name</Label><Input id="emergencyName" value={form.emergencyContactName} onChange={e=>set('emergencyContactName',e.target.value)} required className="mt-1.5 bg-secondary"/></div>
             <div><Label htmlFor="emergencyMobile">Contact mobile</Label><Input id="emergencyMobile" type="tel" value={form.emergencyContactMobile} onChange={e=>set('emergencyContactMobile',e.target.value)} required className="mt-1.5 bg-secondary"/></div>
           </div>
-          <div><Label htmlFor="medical">Anything an organiser should know in an emergency? <span className="font-normal text-muted-foreground">(optional)</span></Label><textarea id="medical" value={form.medicalNote} onChange={e=>set('medicalNote',e.target.value)} rows={3} maxLength={1200} className="mt-1.5 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"/></div>
         </section>
 
         <section className="glass rounded-2xl p-5 sm:p-6 space-y-3">
