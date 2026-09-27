@@ -121,7 +121,7 @@ export default function MyProfile() {
 
   const activePlayer = memberSnapshot?.player || linkedPlayer;
   const playerId = activePlayer?.id;
-  const clubStats = clubLeaderboard.find(row => String(row.player_id) === String(playerId || '')) || null;
+  const clubStats = performance?.profile?.season || clubLeaderboard.find(row => String(row.player_id) === String(playerId || '')) || null;
 
   // My matches — where this player appears as a participant
   const myMatches = allMatches.filter(m => {
