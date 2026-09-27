@@ -60,8 +60,8 @@ function ProductCard({ product }) {
   );
 }
 
-export default function MemberShop() {
-  const { data: snapshot = null, isLoading, error } = useQuery({
+export default function MemberShop({ previewSnapshot = null, onPreviewBack = null }) {
+  const { data: fetchedSnapshot = null, isLoading, error } = useQuery({
     queryKey: ['member-portal-self'],
     queryFn: async () => {
       const res = await base44.functions.invoke('memberPortal', { action: 'self' });
@@ -69,16 +69,21 @@ export default function MemberShop() {
       return res.data?.snapshot || null;
     },
     staleTime: 60_000,
+    enabled: !previewSnapshot,
   });
+  const snapshot = previewSnapshot || fetchedSnapshot;
 
-  if (isLoading) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading club shop…</div>;
-  if (error) return <div className="glass rounded-xl p-6 text-sm text-destructive">{error.message || 'Could not load the club shop.'}</div>;
+  if (!previewSnapshot && isLoading) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading club shop…</div>;
+  if (!previewSnapshot && error) return <div className="glass rounded-xl p-6 text-sm text-destructive">{error.message || 'Could not load the club shop.'}</div>;
 
+  const backControl = onPreviewBack
+    ? <button type="button" onClick={onPreviewBack} className="text-xs font-semibold text-primary inline-flex items-center gap-1"><ArrowLeft className="w-3.5 h-3.5" /> Back to Home</button>
+    : <Link to="/app" className="text-xs font-semibold text-primary inline-flex items-center gap-1"><ArrowLeft className="w-3.5 h-3.5" /> Back to Home</Link>;
   const shop = getMemberShopConfig(snapshot?.club?.slug);
   if (!shop) {
     return (
       <div className="space-y-4 max-w-4xl mx-auto pb-20 lg:pb-0">
-        <Link to="/app" className="text-xs font-semibold text-primary inline-flex items-center gap-1"><ArrowLeft className="w-3.5 h-3.5" /> Back to Home</Link>
+        {backControl}
         <GlassCard className="text-center py-12">
           <ShoppingBag className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
           <h1 className="text-xl font-black">Club shop coming soon</h1>
@@ -95,7 +100,7 @@ export default function MemberShop() {
 
   return (
     <div className="space-y-5 sm:space-y-7 pb-24 lg:pb-4 max-w-6xl mx-auto">
-      <Link to="/app" className="text-xs font-semibold text-primary inline-flex items-center gap-1"><ArrowLeft className="w-3.5 h-3.5" /> Back to Home</Link>
+      {backControl}
 
       <section className="glass rounded-2xl p-5 sm:p-7 overflow-hidden" style={heroStyle}>
         <div className="grid md:grid-cols-[1fr_auto] gap-5 items-center">
