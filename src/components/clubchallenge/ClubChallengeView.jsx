@@ -2305,6 +2305,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const potWinnersA = potWinnerIds.map(id => participants.find(p => p.id === id)).filter(p => p?.side === 'club_a');
   const potWinnersB = potWinnerIds.map(id => participants.find(p => p.id === id)).filter(p => p?.side === 'club_b');
   const individualPointStats = useMemo(() => calculateIndividualPointStats(normalMatches, participants), [normalMatches, participants]);
+  const finalPodiumForSide = side => participants
+    .filter(p => p.side === side && Number(individualPointStats[p.id]?.gamesPlayed || 0) > 0)
+    .map(p => ({ ...p, performance:individualPointStats[p.id] }))
+    .sort((a,b) => Number(b.performance?.pointsFor||0)-Number(a.performance?.pointsFor||0) || Number(b.performance?.wins||0)-Number(a.performance?.wins||0) || Number(b.performance?.pointDiff||0)-Number(a.performance?.pointDiff||0) || String(a.display_name||'').localeCompare(String(b.display_name||''),'en',{sensitivity:'base'}))
+    .slice(0,3);
+  const finalPodiumA = finalPodiumForSide('club_a');
+  const finalPodiumB = finalPodiumForSide('club_b');
   const awardMethod = event?.pot_method || 'none';
   const awardTitle = awardMethod === 'points' ? 'Highest Scoring Players' : awardMethod === 'vote' ? 'Players of the Tournament' : 'Team Player Awards';
   const potTopCandidates = side => {
@@ -2347,7 +2354,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           <div className="flex flex-col items-center gap-3 rounded-3xl border bg-card p-5" style={{borderTopWidth:'8px',borderTopColor:event.club_b_primary_colour||'#7f1d1d',borderBottomWidth:'4px',borderBottomColor:event.club_b_secondary_colour||event.club_b_primary_colour||'#7f1d1d'}}>{event.club_b_logo_url&&<img src={event.club_b_logo_url} alt={`${event.club_b_name} logo`} className="w-24 h-24 sm:w-36 sm:h-36 object-contain rounded-2xl bg-white p-2"/>}<h2 className="text-2xl sm:text-5xl font-black">{event.club_b_name}</h2></div>
         </div>
         <p className="mt-7 text-2xl sm:text-4xl font-black">{displayFinalTitle}</p>
-        {event.pot_status==='revealed'&&potWinnerIds.length>0&&<div className="mt-8 rounded-3xl border-2 border-primary/30 bg-primary/5 p-5 sm:p-8"><p className="text-sm sm:text-lg uppercase tracking-[.2em] text-primary font-black">{awardTitle}</p><div className="mt-5 grid sm:grid-cols-2 gap-4"><div className="rounded-2xl bg-card border p-5"><p className="text-sm text-muted-foreground">{event.club_a_name}</p><p className="mt-2 text-xl sm:text-3xl font-black">{potWinnersA.map(p=>privacyName(p.display_name, !!event.junior_display_mode)).join(' & ')}</p></div><div className="rounded-2xl bg-card border p-5"><p className="text-sm text-muted-foreground">{event.club_b_name}</p><p className="mt-2 text-xl sm:text-3xl font-black">{potWinnersB.map(p=>privacyName(p.display_name, !!event.junior_display_mode)).join(' & ')}</p></div></div></div>}
+        <div className="mt-8 grid gap-4 md:grid-cols-2" data-testid="cc-team-podiums">
+          {[[event.club_a_name,event.club_a_primary_colour,finalPodiumA],[event.club_b_name,event.club_b_primary_colour,finalPodiumB]].map(([teamName,colour,podium])=><div key={teamName} className="rounded-3xl border bg-card p-4 sm:p-6" style={{borderTopWidth:'7px',borderTopColor:colour||'#2563eb'}}><p className="text-xs sm:text-sm font-black uppercase tracking-[.18em] text-muted-foreground">{teamName} · Top 3</p><div className="mt-4 grid grid-cols-3 gap-2 items-end">{podium.map((p,index)=><div key={p.id} className={`rounded-xl border p-3 ${index===0?'min-h-36':'min-h-28'} flex flex-col justify-center`}><div className="text-2xl">{index===0?'🥇':index===1?'🥈':'🥉'}</div><p className="mt-1 text-[10px] font-black uppercase tracking-wider text-muted-foreground">{index+1}{index===0?'st':index===1?'nd':'rd'}</p><p className="mt-1 text-sm sm:text-base font-black leading-tight">{privacyName(p.display_name, !!event.junior_display_mode)}</p><p className="mt-2 text-[10px] sm:text-xs text-muted-foreground">{p.performance?.pointsFor||0} pts · {p.performance?.wins||0}W · {(p.performance?.pointDiff||0)>0?'+':''}{p.performance?.pointDiff||0}</p></div>)}</div></div>)}
+        </div>
         <HallPoweredByRallyHub />
       </div>
     </div>
