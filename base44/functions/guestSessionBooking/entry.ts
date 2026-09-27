@@ -1326,11 +1326,12 @@ ${detailRow('Reason',reason)}
       }
       const invite=await inviteForSession(base44,session,body.inviteToken||'');
       const approvedRequest=invite?await guestRequestForInvite(base44,invite):null;
+      const intakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
       const templates=await directoryTemplates(base44,session.tenant_id,session.club_id);
       const directoryTemplate=templates.find((t:any)=>String(t.key)===String(session.session_label)) || templates.find((t:any)=>t.venueName===session.venue_name&&t.weekday===session.weekday&&t.start===session.start_time);
       return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',inviteName:invite?.intended_name||'',approvalRequired:!invite,
-        guestIntakeCaptured:!!approvedRequest,
-        guestIntake:approvedRequest?{previousSports:approvedRequest.previous_sports||[],sportingBackgroundNote:approvedRequest.sporting_background_note||'',healthDeclarationApplies:approvedRequest.health_declaration_applies===true,medicalNote:approvedRequest.medical_note||''}:null,
+        guestIntakeCaptured:intakeCaptured,
+        guestIntake:intakeCaptured?{previousSports:guestPreviousSports(approvedRequest.previous_sports),sportingBackgroundNote:approvedRequest.sporting_background_note||'',healthDeclarationApplies:approvedRequest.health_declaration_applies===true,medicalNote:approvedRequest.medical_note||''}:null,
         directorySessionId:directoryTemplate?.directorySessionId||directoryTemplate?.key||'',guestRequestUrl:brand?.slug?`/guest/${brand.slug}${directoryTemplate?.key?`?session=${encodeURIComponent(directoryTemplate.key)}`:''}`:''});
     }
 
@@ -1377,14 +1378,15 @@ ${detailRow('Reason',reason)}
     const invite=await inviteForSession(base44,session,body.inviteToken||'',email,mobile);
     if(!invite)return Response.json({error:'This guest booking requires club approval. Please request a guest place first, or use the private invitation link sent by Clare Pickleball.',approvalRequired:true},{status:403});
     const approvedRequest=await guestRequestForInvite(base44,invite);
+    const approvedIntakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
     const mobileK=mobileKey(mobile);
     const emergencyName=clean(body.emergencyContactName,120);
     const emergencyMobile=clean(body.emergencyContactMobile,50);
-    const previousSports=approvedRequest?guestPreviousSports(approvedRequest.previous_sports):guestPreviousSports(body.previousSports);
-    const sportingBackgroundNote=clean(approvedRequest?.sporting_background_note||body.sportingBackgroundNote,1200);
-    const healthAnswered=approvedRequest?typeof approvedRequest.health_declaration_applies==='boolean':typeof body.healthDeclarationApplies==='boolean';
-    const healthDeclarationApplies=approvedRequest?approvedRequest.health_declaration_applies===true:body.healthDeclarationApplies===true;
-    const medicalNote=clean(approvedRequest?.medical_note||body.medicalNote,1600);
+    const previousSports=approvedIntakeCaptured?guestPreviousSports(approvedRequest.previous_sports):guestPreviousSports(body.previousSports);
+    const sportingBackgroundNote=clean(approvedIntakeCaptured?approvedRequest?.sporting_background_note:body.sportingBackgroundNote,1200);
+    const healthAnswered=approvedIntakeCaptured?true:typeof body.healthDeclarationApplies==='boolean';
+    const healthDeclarationApplies=approvedIntakeCaptured?approvedRequest.health_declaration_applies===true:body.healthDeclarationApplies===true;
+    const medicalNote=clean(approvedIntakeCaptured?approvedRequest?.medical_note:body.medicalNote,1600);
     const photo=clean(body.photoVideoConsent,10).toLowerCase();
 
     if(!fullName||fullName.split(' ').length<2)return Response.json({error:'Please enter your full name.'},{status:400});
