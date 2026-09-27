@@ -65,7 +65,10 @@ async function spondRequest(path:string,accessToken:string){
   if(!response.ok)throw new Error(`Spond API error ${response.status}`);
   return response.json();
 }
-function spondEventStart(event:any){return event?.meetupTimestamp||event?.startTimestamp||event?.start_time||''}
+function spondEventStart(event:any){return event?.startTimestamp||event?.meetupTimestamp||event?.start_time||event?.startTime||''}
+function spondEventStartCandidates(event:any){
+  return [...new Set([event?.startTimestamp,event?.meetupTimestamp,event?.start_time,event?.startTime].filter(Boolean).map(String))];
+}
 function collectSpondInviteIds(event:any){
   const ids=new Set<string>();
   const add=(value:any)=>{if(value!==undefined&&value!==null&&String(value).trim())ids.add(String(value))};
@@ -245,25 +248,32 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
     const sessions=(Array.isArray(raw)?raw:[]).filter((event:any)=>memberIsInvitedToSpondEvent(event,person,memberId,memberSubgroups)).map((event:any)=>{
       const status=spondResponseStatus(event,memberId);
       if(['declined','waiting','waitinglist','waitlist'].includes(status))return null;
-      const startRaw=spondEventStart(event),start=dublinParts(startRaw),end=dublinParts(event?.endTimestamp||'');
-      if(!start)return null;
       const loc=event?.location||{};
       const eventVenue=clean(loc?.feature||loc?.name||loc?.address||'',220);
-      const candidates=configured.filter((s:any)=>s.weekday===start.day&&s.start===start.time);
-      let cfg=candidates[0]||null;
-      if(eventVenue&&candidates.length){
-        const venueKey=nameKey(eventVenue);
-        const venueMatch=candidates.find((s:any)=>{
-          const configuredVenue=nameKey(s.venueName);
-          const configuredAddress=nameKey(s.venueAddress);
-          return configuredVenue.includes(venueKey)||venueKey.includes(configuredVenue)||configuredAddress.includes(venueKey)||venueKey.includes(configuredAddress);
-        });
-        // Never relabel a Spond event as a different Clare session just because
-        // the weekday/time happen to match. Venue is part of the session identity.
-        if(!venueMatch)return null;
-        cfg=venueMatch;
+      const venueKey=nameKey(eventVenue);
+      let match:any=null;
+      for(const startRaw of spondEventStartCandidates(event)){
+        const start=dublinParts(startRaw);
+        if(!start)continue;
+        const candidates=configured.filter((s:any)=>s.weekday===start.day&&s.start===start.time);
+        if(!candidates.length)continue;
+        let cfg=candidates[0]||null;
+        if(eventVenue){
+          cfg=candidates.find((s:any)=>{
+            const configuredVenue=nameKey(s.venueName);
+            const configuredAddress=nameKey(s.venueAddress);
+            return configuredVenue.includes(venueKey)||venueKey.includes(configuredVenue)||configuredAddress.includes(venueKey)||venueKey.includes(configuredAddress);
+          })||null;
+        }
+        if(cfg){match={startRaw,start,cfg};break}
       }
-      if(!cfg||!Number.isFinite(Number(cfg.fee))||Number(cfg.fee)<=0)return null;
+      // Time and venue together identify the Clare session. Trying both Spond's
+      // startTimestamp and meetupTimestamp avoids losing a valid session when a
+      // series also has a separate meet/arrival time.
+      if(!match)return null;
+      const {startRaw,start,cfg}=match;
+      const end=dublinParts(event?.endTimestamp||event?.endTime||'');
+      if(!Number.isFinite(Number(cfg.fee))||Number(cfg.fee)<=0)return null;
       const acceptedCount=(event?.responses?.acceptedIds||[]).length||0;
       const capacity=Number(event?.maxAccepted||event?.maxParticipants||cfg.capacity||0)||null;
       if(status!=='accepted'&&capacity&&acceptedCount>=capacity)return null;
