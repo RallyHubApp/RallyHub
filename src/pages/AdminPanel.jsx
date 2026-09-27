@@ -10,20 +10,21 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
-import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, Send, Clock, XCircle, CheckCircle, Trash2, RefreshCw, Eye, MessageCircle, Copy, Upload } from 'lucide-react';
+import { Search, Users, Swords, Link2, Edit2, Shield, CheckCircle2, UserCheck, Unlink, Mail, UserPlus, ShieldCheck, ShieldOff, Pencil, Send, Clock, XCircle, CheckCircle, Trash2, RefreshCw, Eye, MessageCircle, Copy, Upload, Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
 import { useAuth } from '@/lib/AuthContext';
 import MemberPortalPreview from '@/components/admin/MemberPortalPreview';
 import DirectoryAnalyticsDashboard from '@/components/admin/DirectoryAnalyticsDashboard';
+import AnnouncementSettingsPanel from '@/components/admin/AnnouncementSettingsPanel';
 import { directoryClubs } from '@/data/directorySeed';
 
 export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
-  const allowedAdminTabs = ['approvals', 'preview', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['approvals', 'preview', 'announcements', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'feedback', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
   const directoryFocus = searchParams.get('focus');
@@ -1286,7 +1287,7 @@ Brian`;
 
   return (
     <div className="space-y-6">
-      <PageHeader title={activeAdminTab === 'directory' ? 'Directory Admin' : activeAdminTab === 'directory-contacts' ? 'Directory Contacts' : activeAdminTab === 'directory-players' ? 'Player Network' : activeAdminTab === 'directory-analytics' ? 'Directory Analytics' : 'Admin Panel'} description={activeAdminTab === 'directory' ? 'Directory ownership, invitations, claims and listing access' : activeAdminTab === 'directory-contacts' ? 'Private verified owner and editor contact register' : activeAdminTab === 'directory-players' ? 'National opted-in pickleball player distribution list' : activeAdminTab === 'directory-analytics' ? 'Traffic, search visibility and commercial audience evidence' : 'Site owner control panel'}>
+      <PageHeader title={activeAdminTab === 'directory' ? 'Directory Admin' : activeAdminTab === 'directory-contacts' ? 'Directory Contacts' : activeAdminTab === 'directory-players' ? 'Player Network' : activeAdminTab === 'directory-analytics' ? 'Directory Analytics' : activeAdminTab === 'announcements' ? 'Announcements' : 'Admin Panel'} description={activeAdminTab === 'directory' ? 'Directory ownership, invitations, claims and listing access' : activeAdminTab === 'directory-contacts' ? 'Private verified owner and editor contact register' : activeAdminTab === 'directory-players' ? 'National opted-in pickleball player distribution list' : activeAdminTab === 'directory-analytics' ? 'Traffic, search visibility and commercial audience evidence' : activeAdminTab === 'announcements' ? 'Review and customise automatic hall announcements' : 'Site owner control panel'}>
         <Badge className="bg-destructive/20 text-destructive gap-1.5">
           <Shield className="w-3 h-3" /> Admin Only
         </Badge>
@@ -1369,6 +1370,9 @@ Brian`;
           </TabsTrigger>
           <TabsTrigger value="preview" className="text-xs gap-1.5">
             <Eye className="w-3.5 h-3.5" /> Member Preview
+          </TabsTrigger>
+          <TabsTrigger value="announcements" className="text-xs gap-1.5">
+            <Megaphone className="w-3.5 h-3.5" /> Announcements
           </TabsTrigger>
           <TabsTrigger value="directory" className="text-xs gap-1.5" onClick={() => {
             if (activeAdminTab !== 'directory' || pendingDirectoryActionCount <= 0) return;
