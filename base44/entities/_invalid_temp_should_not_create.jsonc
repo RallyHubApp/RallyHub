@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "x": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "_invalid_temp_should_not_create"
+}
