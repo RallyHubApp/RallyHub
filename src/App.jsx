@@ -64,6 +64,7 @@ import PublicClubPolicies from '@/pages/PublicClubPolicies';
 import WaitingList from '@/pages/WaitingList';
 import MemberPlay from '@/pages/MemberPlay';
 import MemberClubhouse from '@/pages/MemberClubhouse';
+import MemberVenues from '@/pages/MemberVenues';
 import MemberLearn from '@/pages/MemberLearn';
 import MemberForecast from '@/pages/MemberForecast';
 
@@ -155,7 +156,8 @@ const AuthenticatedRoutes = () => (
       <Route path="leaderboard" element={<Leaderboard />} />
       <Route path="analytics" element={<Analytics />} />
       <Route path="play" element={<MemberPlay />} />
-      <Route path="clubhouse" element={<MemberClubhouse />} />
+      <Route path="venues" element={<MemberVenues />} />
+      <Route path="clubhouse" element={<MemberVenues />} />
       <Route path="learn" element={<MemberLearn />} />
       <Route path="forecast" element={<MemberForecast />} />
       <Route path="my-profile" element={<MyProfile />} />
