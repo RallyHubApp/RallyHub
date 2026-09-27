@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: member-guest-booking.spec.mjs >> member or guest session booking mobile flow >> beginner guest sees only eligible sessions, records multi-sport and health intake, and no payment is taken
-- Location: e2e/member-guest-booking.spec.mjs:124:3
+- Name: club-challenge-browser-robot.spec.mjs >> Club Challenge public Hall Display robot: now/resting/next + disconnect truth
+- Location: e2e/club-challenge-browser-robot.spec.mjs:321:1
 
 # Error details
 

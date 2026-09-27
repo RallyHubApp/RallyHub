@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: member-guest-booking.spec.mjs >> member or guest session booking mobile flow >> unknown member fails closed and can switch into guest journey
-- Location: e2e/member-guest-booking.spec.mjs:86:3
+- Name: club-challenge-browser-robot.spec.mjs >> Club Challenge public voter robot: one browser ballot across both teams
+- Location: e2e/club-challenge-browser-robot.spec.mjs:310:1
 
 # Error details
 

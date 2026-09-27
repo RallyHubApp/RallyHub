@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: member-guest-booking.spec.mjs >> member or guest session booking mobile flow >> member verifies, sees only personalised Spond sessions, note travels to checkout
-- Location: e2e/member-guest-booking.spec.mjs:57:3
+- Name: club-challenge-browser-robot.spec.mjs >> Completed player link robot: Final landing, alphabetical teams, Summary and integrated voting have no dead end
+- Location: e2e/club-challenge-browser-robot.spec.mjs:331:1
 
 # Error details
 

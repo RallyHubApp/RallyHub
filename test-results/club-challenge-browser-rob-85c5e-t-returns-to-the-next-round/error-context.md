@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: member-guest-booking.spec.mjs >> member or guest session booking mobile flow >> experienced pickleball guest skips previous sports, keeps health screening, and sees all experienced sessions
-- Location: e2e/member-guest-booking.spec.mjs:97:3
+- Name: club-challenge-browser-robot.spec.mjs >> Live recovery robot: stale timer is silent, break controls work, and host returns to the next round
+- Location: e2e/club-challenge-browser-robot.spec.mjs:364:1
 
 # Error details
 
