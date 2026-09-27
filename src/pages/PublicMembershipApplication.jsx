@@ -12,6 +12,20 @@ const EMPTY_FORM = {
   emergencyContactName:'', emergencyContactRelationship:'', emergencyMobile:''
 };
 
+const QA_NEW_FORM = {
+  fullName:'RallyHub QA New Member',
+  fullPostalAddress:'1 Test Street, Ennis, Co. Clare',
+  postalCode:'V95 X9X9',
+  email:'membership.new.test@example.com',
+  mobile:'0870000002',
+  dateOfBirth:'1985-02-02',
+  emergencyContactName:'Test Contact',
+  emergencyContactRelationship:'Friend',
+  emergencyMobile:'0870000003'
+};
+
+const QA_RENEWAL_LOOKUP = { email:'membership.test@example.com', dateOfBirth:'1980-01-01' };
+
 function money(value,currency='EUR'){
   try { return new Intl.NumberFormat('en-IE',{style:'currency',currency}).format(Number(value||0)); }
   catch { return '€' + Number(value||0).toFixed(2); }
@@ -77,6 +91,7 @@ export default function PublicMembershipApplication() {
   const [inviteApproved, setInviteApproved] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteMobile, setInviteMobile] = useState('');
+  const [qaEnabled, setQaEnabled] = useState(false);
 
   const club = config?.club || {};
   const legal = config?.legal || {};
@@ -84,6 +99,21 @@ export default function PublicMembershipApplication() {
   const inviteEmailMatches = !!inviteEmail && form.email.trim().toLowerCase() === inviteEmail.trim().toLowerCase();
   const inviteMobileMatches = !!inviteMobile && samePhone(form.mobile, inviteMobile);
   const inviteMatchesContact = inviteApproved && (inviteEmailMatches || inviteMobileMatches);
+
+  useEffect(() => {
+    let active = true;
+    if (searchParams.get('qa') !== '1') {
+      setQaEnabled(false);
+      return () => { active = false; };
+    }
+    base44.auth.me()
+      .then(user => {
+        if (!active) return;
+        setQaEnabled(user?.role === 'admin' || user?.active_club_role === 'club_admin');
+      })
+      .catch(() => { if (active) setQaEnabled(false); });
+    return () => { active = false; };
+  }, [searchParams]);
 
   useEffect(() => {
     let active = true;
@@ -145,6 +175,35 @@ export default function PublicMembershipApplication() {
     if (type === 'renewal') setStep('renewal_lookup');
     else { setForm(EMPTY_FORM); setStep('details'); }
   };
+
+  const startQaNewMember = () => {
+    setError('');
+    setApplication(null);
+    setApplicationType('new');
+    setRenewalToken('');
+    setForm(QA_NEW_FORM);
+    setChangedFields([]);
+    setReviewConfirmed(false);
+    setConsents({privacy:false,liability_waiver:false,code_of_conduct:false,health_declaration:false,membership_terms:false,photoVideo:''});
+    setStep('details');
+  };
+
+  const startQaRenewal = () => {
+    setError('');
+    setApplication(null);
+    setApplicationType('renewal');
+    setRenewalToken('');
+    setLookup(QA_RENEWAL_LOOKUP);
+    setForm(EMPTY_FORM);
+    setChangedFields([]);
+    setReviewConfirmed(false);
+    setConsents({privacy:false,liability_waiver:false,code_of_conduct:false,health_declaration:false,membership_terms:false,photoVideo:''});
+    setStep('renewal_lookup');
+  };
+
+  const fillQaConsents = () => setConsents({
+    privacy:true,liability_waiver:true,code_of_conduct:true,health_declaration:true,membership_terms:true,photoVideo:'no'
+  });
 
   const verifyRenewal = async e => {
     e.preventDefault();
@@ -269,6 +328,19 @@ export default function PublicMembershipApplication() {
             <h1 className="mt-4 text-2xl sm:text-3xl font-black">{config.title}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{config.seasonLabel} · {feeLabel}</p>
           </section>
+
+          {qaEnabled && (
+            <section className="rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4">
+              <div className="font-bold text-sm">QA test helper</div>
+              <p className="mt-1 text-xs text-muted-foreground">Admin-only test controls. These are never shown to a normal public applicant.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button type="button" size="sm" variant="outline" onClick={startQaNewMember}>Fill new-member test</Button>
+                <Button type="button" size="sm" variant="outline" onClick={startQaRenewal}>Load renewal test</Button>
+                {step === 'details' && applicationType === 'renewal' && <Button type="button" size="sm" variant="outline" onClick={() => setReviewConfirmed(true)}>Confirm renewal details</Button>}
+                {step === 'declarations' && <Button type="button" size="sm" variant="outline" onClick={fillQaConsents}>Fill test consents</Button>}
+              </div>
+            </section>
+          )}
 
           {error && <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>}
 
