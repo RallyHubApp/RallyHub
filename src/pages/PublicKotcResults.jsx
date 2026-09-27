@@ -15,28 +15,19 @@ function hasScore(match){return match.team_a_score!=null&&match.team_b_score!=nu
 
 function KotcPodium({podium=[],large=false}){
   const ranked=(podium||[]).slice(0,3).map((player,index)=>({...player,place:index+1}));
-  const display=[ranked[1],ranked[0],ranked[2]].filter(Boolean);
-  const cardClass=place=>{
-    if(large){
-      if(place===1)return 'h-[320px] sm:h-[360px] border-2 border-yellow-400/80 shadow-[0_0_45px_rgba(250,204,21,.18)]';
-      if(place===2)return 'h-[275px] sm:h-[305px] border-2 border-slate-200/80 shadow-[0_0_0_1px_rgba(15,23,42,.85),0_0_24px_rgba(226,232,240,.10)]';
-      return 'h-[235px] sm:h-[270px] border border-amber-800/30';
-    }
-    if(place===1)return 'h-[225px] sm:h-[240px] border-2 border-yellow-400/75 shadow-[0_0_30px_rgba(250,204,21,.12)]';
-    if(place===2)return 'h-[195px] sm:h-[210px] border-2 border-slate-200/75 shadow-[0_0_0_1px_rgba(15,23,42,.85),0_0_18px_rgba(226,232,240,.08)]';
-    return 'h-[170px] sm:h-[185px] border border-amber-800/25';
-  };
-  const medal=place=>place===1?'🥇':place===2?'🥈':'🥉';
-  const label=place=>place===1?'1st':place===2?'2nd':'3rd';
-  return <div className={`grid grid-cols-3 ${large?'gap-3 sm:gap-5 max-w-6xl':'gap-2 sm:gap-3 max-w-3xl'} mx-auto items-end`} role="list" aria-label="Final podium">
-    {display.map(p=><div key={p.id} role="listitem" aria-label={`${label(p.place)} place: ${p.name}`} className={`rounded-t-2xl rounded-b-lg border bg-card text-center flex flex-col justify-end ${large?'p-4 sm:p-7':'p-3 sm:p-4'} ${cardClass(p.place)}`}>
-      <div className={`${large?'text-4xl sm:text-6xl':'text-3xl sm:text-4xl'}`}>{medal(p.place)}</div>
-      <p className={`${large?'text-sm sm:text-base':'text-xs'} uppercase tracking-[.16em] font-black mt-2 ${p.place===1?'text-yellow-400':'text-muted-foreground'}`}>{label(p.place)} place</p>
-      <p title={p.name} className={`${large?'text-lg sm:text-3xl':'text-xs sm:text-lg'} font-bold mt-2 leading-tight break-words line-clamp-3`}>{p.name}</p>
-      <p className={`${large?'text-xs sm:text-base':'text-[11px] sm:text-xs'} text-muted-foreground mt-2`}>{p.wins}W · {p.losses}L · {p.differential>0?'+':''}{p.differential}</p>
-      <div className={`${p.place===1?(large?'h-14 sm:h-20':'h-9 sm:h-12'):p.place===2?(large?'h-9 sm:h-12':'h-6 sm:h-8'):(large?'h-5 sm:h-7':'h-3 sm:h-5')} mt-3 rounded-t-lg ${p.place===1?'bg-yellow-400/15 border border-yellow-400/35':p.place===2?'bg-slate-200/12 border-2 border-slate-200/35':'bg-amber-900/8 border border-amber-800/15'} flex items-center justify-center`}>
-        <span className={`${large?'text-2xl sm:text-4xl':'text-lg sm:text-2xl'} font-black`}>{p.place}</span>
-      </div>
+  const sizeClass=index=>large
+    ? (index===0?'min-h-52 sm:min-h-60 px-4 py-6':index===1?'min-h-44 sm:min-h-52 px-4 py-5':'min-h-40 sm:min-h-48 px-4 py-4')
+    : (index===0?'min-h-40 sm:min-h-44 px-3 py-4':index===1?'min-h-36 sm:min-h-40 px-3 py-3.5':'min-h-32 sm:min-h-36 px-3 py-3');
+  const medal=index=>index===0?'🥇':index===1?'🥈':'🥉';
+  const place=index=>index===0?'1st':index===1?'2nd':'3rd';
+  const medalClass=index=>large?(index===0?'text-5xl sm:text-6xl':index===1?'text-4xl sm:text-5xl':'text-3xl sm:text-4xl'):(index===0?'text-4xl sm:text-5xl':index===1?'text-3xl sm:text-4xl':'text-2xl sm:text-3xl');
+  const nameClass=index=>large?(index===0?'text-xl sm:text-2xl':index===1?'text-lg sm:text-xl':'text-base sm:text-lg'):(index===0?'text-base sm:text-lg':index===1?'text-sm sm:text-base':'text-sm');
+  return <div className={`grid grid-cols-3 ${large?'gap-3 sm:gap-5 max-w-5xl':'gap-2 max-w-3xl'} mx-auto items-end`} role="list" aria-label="Final podium">
+    {ranked.map((p,index)=><div key={p.id} role="listitem" aria-label={`${place(index)} place: ${p.name}`} className={`rounded-xl border bg-card text-center flex flex-col justify-center ${sizeClass(index)}`}>
+      <div className={medalClass(index)}>{medal(index)}</div>
+      <p className="mt-1 text-[10px] sm:text-xs font-black uppercase tracking-wider text-muted-foreground">{place(index)}</p>
+      <p title={p.name} className={`mt-1 font-black leading-tight break-words ${nameClass(index)}`}>{p.name}</p>
+      <p className={`${large?'text-xs sm:text-sm':'text-[10px] sm:text-[11px]'} text-muted-foreground mt-2`}>{p.wins}W · {p.losses}L · {p.differential>0?'+':''}{p.differential}</p>
     </div>)}
   </div>;
 }
@@ -146,12 +137,12 @@ export default function PublicKotcResults(){
       <h1 className="text-xl sm:text-2xl font-bold">{data.session.name}</h1>
       <p className="text-[10px] uppercase tracking-[.22em] text-primary font-bold mt-1">{finished?'Final Results':'Live'}</p>
       <div className="flex flex-wrap gap-2 justify-center mt-3"><Badge variant="outline">Round {data.session.current_round_number||'-'}</Badge><Badge variant="outline">{roundStatus||'WAITING'}</Badge>{data.session.scoring_mode==='timed'&&!finished&&<Badge className="text-base tabular-nums">{fmt(remaining)}</Badge>}<Badge variant="outline">{data.completed_rounds} round{data.completed_rounds===1?'':'s'} completed</Badge></div>
-      <p className="text-xs text-muted-foreground mt-3">{finished?'The final screen celebrates the podium. Saved round scores remain available below for players to check.':'This page updates automatically as the host starts rounds and scores are saved.'}</p>
+      <p className="text-xs text-muted-foreground mt-3">{finished?'Final podium and completed round results. Full individual rankings are not published here.':'This page updates automatically as the host starts rounds and scores are saved.'}</p>
     </header>
 
-    {finished&&podium.length>0&&<section className="space-y-3" data-testid="public-kotc-podium"><div className="flex items-center gap-2"><Trophy className="w-5 h-5 text-yellow-400"/><h2 className="font-bold">Podium</h2></div><KotcPodium podium={podium}/></section>}
+    {finished&&podium.length>0&&<section className="rounded-2xl border bg-card p-4 sm:p-6 space-y-4" data-testid="public-kotc-podium"><div className="text-center"><Trophy className="w-8 h-8 text-yellow-400 mx-auto"/><p className="mt-2 text-xs sm:text-sm font-black uppercase tracking-[.18em] text-muted-foreground">Final Podium</p></div><KotcPodium podium={podium}/></section>
 
-    {current.length>0&&<section className="space-y-3" data-testid="public-kotc-current-round"><div className="flex items-center justify-between gap-3"><h2 className="font-bold">{finished?'Final Round':data.current_round?.status==='proposed'?'Round Ready':'On Court Now'} · Round {data.current_round?.round_number}</h2><Badge variant="outline">{roundStatus}</Badge></div>{(data.bench||[]).length>0&&<div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3"><p className="text-[10px] uppercase tracking-wider text-amber-500 font-bold">Bench This Round</p><p className="text-sm font-semibold mt-1">{data.bench.join(' · ')}</p></div>}<div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">{current.map(m=><CourtCard key={`${m.round_number}-${m.court}`} match={m} roundStatus={roundStatus}/>)}</div></section>}
+    {!finished&&current.length>0&&<section className="space-y-3" data-testid="public-kotc-current-round"><div className="flex items-center justify-between gap-3"><h2 className="font-bold">{data.current_round?.status==='proposed'?'Round Ready':'On Court Now'} · Round {data.current_round?.round_number}</h2><Badge variant="outline">{roundStatus}</Badge></div>{(data.bench||[]).length>0&&<div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3"><p className="text-[10px] uppercase tracking-wider text-amber-500 font-bold">Bench This Round</p><p className="text-sm font-semibold mt-1">{data.bench.join(' · ')}</p></div>}<div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3">{current.map(m=><CourtCard key={`${m.round_number}-${m.court}`} match={m} roundStatus={roundStatus}/>)}</div></section>}
 
     {!finished&&<section className="glass rounded-xl overflow-hidden"><div className="p-3 border-b flex items-center gap-2"><Trophy className="w-4 h-4 text-yellow-400"/><h2 className="font-semibold">Live Standings</h2></div><div className="grid grid-cols-[36px_1fr_42px_42px_58px] text-[10px] uppercase text-muted-foreground p-2 border-b"><span>#</span><span>Player</span><span>W</span><span>L</span><span>Diff</span></div>{(data.standings||[]).map(s=><div key={s.id} className="grid grid-cols-[36px_1fr_42px_42px_58px] p-2 border-b last:border-b-0 text-sm"><span>{s.rank}</span><span className="font-medium">{s.name}</span><span>{s.wins}</span><span>{s.losses}</span><span>{s.differential>0?'+':''}{s.differential}</span></div>)}</section>}
 
