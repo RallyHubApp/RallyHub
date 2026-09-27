@@ -76,8 +76,11 @@ function invalidatePublicGetCache(listingSlug:string) {
 }
 
 async function buildPublicClub(base44:any, listingSlug:string) {
-  const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5);
-  const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5);
+  const [rows, dynamicRows, waitingListConfigs] = await Promise.all([
+    base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug: listingSlug, status: 'active' }, '-updated_at', 5),
+    base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug: listingSlug, status: 'active' }, '-published_at', 5),
+    base44.asServiceRole.entities.ClubWaitingListConfig.filter({ public_slug:listingSlug, status:'active' }, '-updated_date', 5),
+  ]);
   const row = rows?.[0] || null;
   const dynamic = dynamicRows?.[0] || null;
   if (dynamic?.visibility === 'preview_only') {
@@ -85,6 +88,11 @@ async function buildPublicClub(base44:any, listingSlug:string) {
   }
   const profile = parseJson(row?.public_json);
   const base = parseJson(dynamic?.base_json);
+  const waitingListUrl = safeUrl(waitingListConfigs?.[0]?.public_entry_url);
+  if (waitingListUrl) {
+    if (profile) profile.waitingListUrl = waitingListUrl;
+    if (base) base.waitingListUrl = waitingListUrl;
+  }
   const verificationStatus = await verifiedStatus(base44, listingSlug);
   return { success:true, listingSlug, verificationStatus, profile, base };
 }
@@ -125,9 +133,12 @@ async function getPublicClub(base44:any, listingSlug:string) {
 }
 
 async function buildPublicDirectoryList(base44:any) {
-  const rows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ status: 'active' }, '-updated_at', 500);
-  const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ status: 'active' }, '-granted_at', 500);
-  const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500);
+  const [rows, accesses, dynamicRows, waitingListConfigs] = await Promise.all([
+    base44.asServiceRole.entities.DirectoryListingProfile.filter({ status: 'active' }, '-updated_at', 500),
+    base44.asServiceRole.entities.DirectoryListingAccess.filter({ status: 'active' }, '-granted_at', 500),
+    base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500),
+    base44.asServiceRole.entities.ClubWaitingListConfig.filter({ status:'active' }, '-updated_date', 500),
+  ]);
   const hidden = new Set((dynamicRows || []).filter((x:any) => x.visibility === 'preview_only').map((x:any) => x.slug));
   const verified = new Set((accesses || []).filter((x:any) => !hidden.has(x.listing_slug)).map((x:any) => x.listing_slug));
   const result:any = {};
@@ -144,6 +155,14 @@ async function buildPublicDirectoryList(base44:any) {
   }
   for (const slug of verified) {
     if (!result[slug]) result[slug] = { base: null, profile: null, verificationStatus: 'verified' };
+  }
+  for (const config of waitingListConfigs || []) {
+    const slug = clean(config?.public_slug, 180);
+    const url = safeUrl(config?.public_entry_url);
+    const current = slug ? result[slug] : null;
+    if (!current || !url) continue;
+    if (current.profile) current.profile.waitingListUrl = url;
+    if (current.base) current.base.waitingListUrl = url;
   }
   return result;
 }
