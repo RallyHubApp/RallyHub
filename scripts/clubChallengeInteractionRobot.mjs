@@ -204,7 +204,7 @@ check('post-event awards: host can choose Highest Scorers or Player Vote at the 
 check('post-event awards: score-based winners use only normal completed rounds', contains(potFn,"action === 'calculate_points'") && contains(potFn,'match.is_showcase') && contains(potFn,"new Set(['completed','draw','retired','forfeit'])"));
 check('post-event awards: each player receives their side score for every match played', contains(potFn,'s.pointsFor += scoreA') && contains(potFn,'s.pointsFor += scoreB') && contains(potFn,'s.gamesPlayed++'));
 check('post-event awards: score ties break by wins, point differential, then secure coin toss', contains(potFn,'b.pointsFor-a.pointsFor || b.wins-a.wins || b.pointDiff-a.pointDiff') && contains(potFn,'secureRandomIndex(tied.length)'));
-check('post-event awards: public display distinguishes Highest Scoring Players from voting awards', contains(publicDisplayPage,"event.pot_method==='points'?'Highest Scoring Players':'Players of the Tournament'"));
+check('post-event awards: public display distinguishes Top Points Scorer from voting awards', contains(publicDisplayPage,"event.pot_method==='points'?'Top Points Scorer':'Player of the Tournament'"));
 
 // 8. Voting all the way to the end.
 check('player: public voting uses one ballot with one choice from each team', contains(publicVote,'Choose one player from each team.') && contains(publicVote,'clubANomineeParticipantId') && contains(publicVote,'clubBNomineeParticipantId'));
