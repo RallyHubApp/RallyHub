@@ -25,6 +25,9 @@ assert(booking.includes('spondMemberSubgroupIds') && booking.includes('spondEven
 assert(booking.includes('member?.groups||[]') && booking.includes('membership?.subGroups'), 'Member booking must read Spond subgroup membership from member.groups[].subGroups');
 assert(booking.includes('spondEventStartCandidates') && booking.includes('event?.startTimestamp,event?.meetupTimestamp'), 'Member booking must match the actual Spond session time even when a separate meetup/arrival time exists');
 assert(booking.includes('hydrateSpondEventDistribution') && booking.includes('`/sponds/${encodeURIComponent(eventId)}`'), 'Member booking must open the exact Spond event to obtain its distribution list');
+assert(booking.includes('SpondSessionBinding.filter') && booking.includes('directBoundMemberSessions'), 'Known recurring sessions must support direct Directory-session to exact-Spond-event binding instead of relying only on event discovery');
+assert(booking.includes('persistResolvedSpondIdentity') && booking.includes('SpondIdentity.create'), 'A successful exact-event identity resolution must be persisted so the same member is not rediscovered on every request');
+assert(booking.includes("findUniqueSpondPersonRow(members,person,'')"), 'Spond group identity must safely bridge a unique Ann/Anne-style name variation while failing closed on ambiguity');
 assert(!booking.includes("if(!memberId)return {status:'identity_not_matched',sessions:[]}"), 'Member booking must not fail before checking the exact event distribution list when no stored/group Spond ID is available');
 assert(booking.includes("const eventMemberId=spondEventMemberId(event,person,memberId)"), 'Member booking must be able to resolve the Spond member ID from the exact event distribution');
 assert(booking.includes('if(event?._distributionAuthoritative)(event?.recipients?.group?.members||[]).forEach(addMember)'), 'Raw recipients.group.members IDs may only be trusted after direct event hydration');
