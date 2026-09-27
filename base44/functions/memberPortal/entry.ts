@@ -33,11 +33,14 @@ function spondEventStart(event:any) {
   return event?.meetupTimestamp || event?.startTimestamp || event?.start_time || '';
 }
 
-function collectSpondRecipientIds(event:any) {
+function collectSpondInviteIds(event:any) {
   const ids = new Set<string>();
   const add = (value:any) => { if (value !== undefined && value !== null && String(value).trim()) ids.add(String(value)); };
   const addMany = (values:any) => (Array.isArray(values) ? values : []).forEach(add);
   const addMember = (row:any) => add(row?.memberId || row?.uid || row?.id);
+  // Only event-specific invitation/response signals belong here. The wider
+  // recipients.group.members collection can include people who can see the
+  // group/event but were not actually invited to that session.
   addMany(event?.responses?.acceptedIds);
   addMany(event?.responses?.declinedIds);
   addMany(event?.responses?.unansweredIds);
@@ -48,12 +51,30 @@ function collectSpondRecipientIds(event:any) {
   addMany(event?.memberIds);
   (event?.responses?.members || []).forEach(addMember);
   (event?.responses?.responses || []).forEach(addMember);
-  // Spond can carry invitees in recipients before a response row exists. Only
-  // IDs explicitly returned in the event recipient block are treated as invited.
-  (event?.recipients?.group?.members || []).forEach(addMember);
   (event?.recipients?.members || []).forEach(addMember);
-  (event?.recipients?.subGroups || event?.recipients?.subgroups || []).forEach((sub:any) => (sub?.members || []).forEach(addMember));
   return ids;
+}
+
+function spondRowMatchesCandidates(row:any, candidates:{ emails:string[], phones:string[], names:string[] }, memberId:string) {
+  if (!row) return false;
+  const rowId = String(row?.memberId || row?.uid || row?.id || '');
+  if (rowId && rowId === String(memberId || '')) return true;
+  const profile = row?.profile || {};
+  const emailSet = new Set(candidates.emails.map(lower).filter(Boolean));
+  const phoneSet = new Set(candidates.phones.map(normalisePhone).filter(value => value.length >= 7));
+  const nameSet = new Set(candidates.names.map(lower).filter(Boolean));
+  const rowEmails = [profile.email, row?.email].map(lower).filter(Boolean);
+  if (rowEmails.some((email:string) => emailSet.has(email))) return true;
+  const rowPhones = [profile.phoneNumber, row?.phoneNumber].map(normalisePhone).filter((value:string) => value.length >= 7);
+  if (rowPhones.some((phone:string) => phoneSet.has(phone))) return true;
+  const rowName = lower(`${profile.firstName || row?.firstName || ''} ${profile.lastName || row?.lastName || ''}`);
+  return !!rowName && nameSet.has(rowName);
+}
+
+function memberIsInvitedToSpondEvent(event:any, candidates:{ emails:string[], phones:string[], names:string[] }, memberId:string) {
+  if (collectSpondInviteIds(event).has(String(memberId))) return true;
+  const rows = [...(event?.responses?.members || []), ...(event?.responses?.responses || []), ...(event?.recipients?.members || [])];
+  return rows.some((row:any) => spondRowMatchesCandidates(row, candidates, memberId));
 }
 
 function spondResponseStatus(event:any, memberId:string) {
@@ -115,6 +136,7 @@ async function loadPersonalSpondSessions(base44:any, context:any) {
   const explicitIds = relevantIdentities.map((row:any) => clean(row.spond_member_id, 180)).filter(Boolean);
   const emails = [context?.person?.primary_email, context?.player?.email, context?.member?.primary_email, context?.user?.email].map(lower).filter(Boolean);
   const phones = [context?.person?.mobile, context?.player?.phone, context?.member?.mobile].map(clean).filter(Boolean);
+  const names = [context?.person?.full_name, context?.player?.full_name, context?.member?.full_name, context?.user?.full_name, context?.user?.display_name].map(lower).filter(Boolean);
 
   try {
     const token = await spondLoginFromSecrets();
@@ -137,14 +159,14 @@ async function loadPersonalSpondSessions(base44:any, context:any) {
       minStartTimestamp:now.toISOString(),
       maxStartTimestamp:maxStart.toISOString(),
       max:'300',
-      scheduled:'true',
+      scheduled:'false',
       includeComments:'false',
       includeHidden:'false',
-      addProfileInfo:'false',
+      addProfileInfo:'true',
     });
     const raw = await spondRequest(`/sponds?${params.toString()}`, token);
     const sessions = (Array.isArray(raw) ? raw : [])
-      .filter((event:any) => collectSpondRecipientIds(event).has(String(memberId)))
+      .filter((event:any) => memberIsInvitedToSpondEvent(event, { emails, phones, names }, memberId))
       .map((event:any) => {
         const location = event?.location || {};
         return {
