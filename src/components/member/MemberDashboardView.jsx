@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import GlassCard from '@/components/shared/GlassCard';
+import MemberPerformanceSummary from '@/components/member/MemberPerformanceSummary';
 import { getClub } from '@/data/directorySeed';
 
 function formatActivityDate(value) {
@@ -46,7 +47,7 @@ function Avatar({ snapshot, size = 'lg' }) {
   return <div className={`${classes} rounded-full bg-primary/15 text-primary border border-primary/30 flex items-center justify-center font-black`}>{initials}</div>;
 }
 
-export default function MemberDashboardView({ snapshot, play = null, playLoading = false, preview = false }) {
+export default function MemberDashboardView({ snapshot, play = null, playLoading = false, performance = null, performanceLoading = false, preview = false }) {
   if (!snapshot) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">No member data available.</div>;
 
   const { user, player, person, member, club, myCompetitions = [], clubLeaderboard = [] } = snapshot;
@@ -101,6 +102,8 @@ export default function MemberDashboardView({ snapshot, play = null, playLoading
           </Link>
         )}
       </section>
+
+      <MemberPerformanceSummary performance={performance} loading={performanceLoading} />
 
       <section>
         <div className="flex items-center justify-between mb-2">
