@@ -112,6 +112,10 @@ check('display: Hall Display exposes Up Next', contains(ui,'Up Next') && contain
 check('display: not-played fixtures never appear as NOW or NEXT', contains(publicDisplay,"m.status!=='not_played'") && contains(ui,"m.status !== 'not_played'"));
 check('display: approved round total is shown from persisted plan', contains(publicDisplay,'plannedRounds') && contains(ui,'plannedRounds'));
 check('display: public display retains disconnect warning', contains(publicDisplay,'showing last known state'));
+check('final presentation: Interclub shows a top-three podium for each team', contains(publicDisplay,'data-testid="interclub-team-podiums"') && contains(publicDisplay,'podiumForSide'));
+check('final presentation: Interclub host display shows team podiums', contains(ui,'data-testid="cc-team-podiums"') && contains(ui,'finalPodiumA') && contains(ui,'finalPodiumB'));
+check('print pack: roster sheets separate private ranking from alphabetical player check-in', contains(printPack,'Team Ranking · Private Host Copy') && contains(printPack,'Player Check-In · Alphabetical'));
+check('print pack: player check-in has Present and Notes columns', contains(printPack,'<th>Player Name</th><th>Present</th><th>Notes</th>') && contains(printPack,'rhpp-check-box-cell'));
 
 // 5. Per-round timer flexibility without weakening the authoritative clock.
 check('host: per-round duration has minus control', contains(ui,'Reduce this round by one minute'));
