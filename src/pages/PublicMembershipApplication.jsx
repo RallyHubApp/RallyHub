@@ -17,6 +17,19 @@ function money(value,currency='EUR'){
   catch { return '€' + Number(value||0).toFixed(2); }
 }
 
+function membershipYearLabel(config){
+  const formatMonthYear=value=>{
+    if(!value)return '';
+    const date=new Date(`${value}T12:00:00Z`);
+    if(!Number.isFinite(date.getTime()))return '';
+    return new Intl.DateTimeFormat('en-IE',{month:'long',year:'numeric',timeZone:'UTC'}).format(date);
+  };
+  const start=formatMonthYear(config?.activeFrom);
+  const end=formatMonthYear(config?.activeUntil);
+  if(start&&end)return `Membership year: ${start} – ${end}`;
+  return config?.seasonLabel ? `Membership year: ${config.seasonLabel}` : 'Membership year';
+}
+
 function phoneDigits(value){
   return String(value||'').replace(/\D/g,'');
 }
@@ -267,7 +280,7 @@ export default function PublicMembershipApplication() {
           <section className="rounded-3xl border border-border bg-card p-5 sm:p-7 text-center shadow-sm" style={{borderTop:'7px solid ' + (club.primary_colour || '#2563eb')}}>
             {club.logo_url && <img src={club.logo_url} alt={(club.name || 'Club') + ' logo'} className="mx-auto h-20 w-20 rounded-2xl bg-white object-contain p-1.5 shadow-sm" />}
             <h1 className="mt-4 text-2xl sm:text-3xl font-black">{config.title}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{config.seasonLabel} · {feeLabel}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{membershipYearLabel(config)} · {feeLabel}</p>
           </section>
 
           {error && <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>}
