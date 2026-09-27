@@ -73,6 +73,8 @@ export default function MemberPortalPreview({ payload }) {
     },
     enabled: !!snapshot?.player?.id,
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   const content = section === 'home'
