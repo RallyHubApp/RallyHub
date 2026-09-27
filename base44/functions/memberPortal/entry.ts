@@ -129,7 +129,7 @@ function eventSubgroupIds(event:any) {
 }
 
 function memberIsInvitedToSpondEvent(event:any, candidates:{ emails:string[], phones:string[], names:string[] }, memberId:string, subgroupIds:Set<string>) {
-  if (collectSpondInviteIds(event).has(String(memberId))) return true;
+  if (memberId && collectSpondInviteIds(event).has(String(memberId))) return true;
   const rows = [...(event?.responses?.members || []), ...(event?.responses?.responses || []), ...(event?.recipients?.members || [])];
   if (rows.some((row:any) => spondRowMatchesCandidates(row, candidates, memberId))) return true;
   const groupRows=event?.recipients?.group?.members || [];
@@ -137,6 +137,13 @@ function memberIsInvitedToSpondEvent(event:any, candidates:{ emails:string[], ph
   const targetSubgroups=eventSubgroupIds(event);
   if (targetSubgroups.size && [...targetSubgroups].some(id => subgroupIds.has(id))) return true;
   return groupRows.some((row:any) => spondRowMatchesCandidates({ ...row, id:'' }, candidates, ''));
+}
+
+function eventMemberId(event:any, candidates:{ emails:string[], phones:string[], names:string[] }, fallbackMemberId='') {
+  if (fallbackMemberId) return String(fallbackMemberId);
+  const rows=[...(event?.responses?.members || []), ...(event?.responses?.responses || []), ...(event?.recipients?.members || []), ...(event?.recipients?.group?.members || [])];
+  const match=rows.find((row:any) => spondRowMatchesCandidates(row, candidates, ''));
+  return String(match?.memberId || match?.uid || match?.id || '');
 }
 
 function spondResponseStatus(event:any, memberId:string) {
@@ -211,9 +218,10 @@ async function loadPersonalSpondSessions(base44:any, context:any) {
       group = (Array.isArray(groups) ? groups : []).find((row:any) => String(row.id) === String(connection.spond_group_id));
     }
     if (!group) return { status:'group_unavailable', sessions:[] };
-    const memberId = matchSpondMemberId(group, { emails, phones, explicitIds });
-    if (!memberId) return { status:'identity_not_matched', sessions:[] };
-    const subgroupIds = memberSubgroupIds(group, memberId);
+    const memberId = matchSpondMemberId(group, { emails, phones, explicitIds }) || '';
+    // The exact Spond event distribution list can identify the member even if
+    // the broader group payload does not expose enough profile detail first.
+    const subgroupIds = memberId ? memberSubgroupIds(group, memberId) : new Set<string>();
 
     const now = new Date();
     const maxStart = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
@@ -252,7 +260,7 @@ async function loadPersonalSpondSessions(base44:any, context:any) {
           address:clean(location?.address || '', 320) || null,
           latitude:Number(location?.latitude ?? location?.lat ?? location?.geometry?.coordinates?.[1]) || null,
           longitude:Number(location?.longitude ?? location?.lng ?? location?.lon ?? location?.geometry?.coordinates?.[0]) || null,
-          response_status:spondResponseStatus(event, memberId),
+          response_status:spondResponseStatus(event, eventMemberId(event, { emails, phones, names }, memberId)),
         };
       })
       .filter((row:any) => row.start)
