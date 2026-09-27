@@ -107,12 +107,12 @@ export default function MemberShop() {
             <p className="text-sm sm:text-base text-muted-foreground mt-2 max-w-2xl">{shop.subtitle}</p>
             <div className="flex flex-wrap gap-2 mt-5">
               <a href={shop.supplierShopUrl} target="_blank" rel="noreferrer">
-                <Button className="gap-2">Shop Clare Pickleball Gear <ExternalLink className="w-4 h-4" /></Button>
+                <Button className="gap-2">Shop {shop.clubName} Gear <ExternalLink className="w-4 h-4" /></Button>
               </a>
               <a href="#sizes"><Button variant="outline" className="gap-2"><Ruler className="w-4 h-4" /> Sizes & try-on</Button></a>
             </div>
           </div>
-          {shop.logoUrl && <img src={shop.logoUrl} alt="Clare Pickleball" className="hidden md:block w-28 h-28 object-contain" />}
+          {shop.logoUrl && <img src={shop.logoUrl} alt={shop.clubName} className="hidden md:block w-28 h-28 object-contain" />}
         </div>
       </section>
 
@@ -156,7 +156,7 @@ export default function MemberShop() {
               <div className="flex items-center gap-2"><Ruler className="w-5 h-5 text-primary" /><h2 className="text-lg font-black">{shop.tryOn.title}</h2></div>
               <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{shop.tryOn.description}</p>
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 mt-4">
-                <p className="text-sm font-semibold">Ennis shop for Clare Pickleball try-ons</p>
+                <p className="text-sm font-semibold">Ennis shop for {shop.clubName} try-ons</p>
                 <p className="text-xs text-muted-foreground mt-1">{shop.tryOn.locationNote}</p>
               </div>
             </div>
@@ -192,7 +192,7 @@ export default function MemberShop() {
         <Sparkles className="w-7 h-7 text-primary mx-auto" />
         <h2 className="text-xl sm:text-2xl font-black mt-2">Ready to order?</h2>
         <p className="text-sm text-muted-foreground mt-1 max-w-xl mx-auto">Choose your club gear and complete your order directly with Boru Sports.</p>
-        <a href={shop.supplierShopUrl} target="_blank" rel="noreferrer" className="inline-block mt-4"><Button size="lg" className="gap-2">Shop Clare Pickleball Gear <ExternalLink className="w-4 h-4" /></Button></a>
+        <a href={shop.supplierShopUrl} target="_blank" rel="noreferrer" className="inline-block mt-4"><Button size="lg" className="gap-2">Shop {shop.clubName} Gear <ExternalLink className="w-4 h-4" /></Button></a>
         <p className="text-[11px] text-muted-foreground mt-3">{shop.fulfilmentNote}</p>
       </section>
     </div>
