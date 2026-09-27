@@ -270,6 +270,24 @@ function matchSpondMemberId(group:any,person:any,explicitIds:string[]=[]){
   return looseRow?String(looseRow?.id||looseRow?.uid||looseRow?.memberId||''):null;
 }
 
+async function ensureClubGuestRelationship(base44:any,session:any,person:any){
+  if(!session?.tenant_id||!session?.club_id||!person?.id)return null;
+  try{
+    const memberRows=await base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,relationship_type:'member',status:'active'},'-updated_date',5);
+    if(memberRows?.[0])return memberRows[0];
+    const existing=(await base44.asServiceRole.entities.ClubRelationship.filter({tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,relationship_type:'guest'},'-updated_date',10))?.[0];
+    const data:any={
+      tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,
+      relationship_type:'guest',status:'active',entry_route:'guest_play',source_system:'rallyhub_guest_session',
+      start_date:String(existing?.start_date||session.session_date||new Date().toISOString().slice(0,10)),
+      notes:existing?.notes||'Club guest created through RallyHub session booking.',
+      last_synced_at:new Date().toISOString(),
+    };
+    if(existing)return await base44.asServiceRole.entities.ClubRelationship.update(existing.id,data);
+    return await base44.asServiceRole.entities.ClubRelationship.create(data);
+  }catch(error){console.warn('Could not persist club guest relationship',error?.message||error);return null}
+}
+
 async function persistResolvedSpondIdentity(base44:any,club:any,membership:any,person:any,spondMemberId:string,spondGroupId:string){
   if(!membership?.id||!spondMemberId)return;
   try{
@@ -1570,6 +1588,7 @@ ${detailRow('Reason',reason)}
     };
     if(person) person=await base44.asServiceRole.entities.Person.update(person.id,personData);
     else person=await base44.asServiceRole.entities.Person.create({tenant_id:session.tenant_id,...personData});
+    await ensureClubGuestRelationship(base44,session,person);
 
     const now=new Date().toISOString();
     const initialStatus=session.payment_method==='cash'?'cash_due':'pending_payment';
