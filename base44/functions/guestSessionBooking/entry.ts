@@ -200,10 +200,10 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
     const memberId=matchSpondMemberId(group,person,explicitIds);
     if(!memberId)return {status:'identity_not_matched',sessions:[]};
     const now=new Date(),maxStart=new Date(now.getTime()+60*24*60*60*1000);
-    const params=new URLSearchParams({groupId:String(connection.spond_group_id),minStartTimestamp:now.toISOString(),maxStartTimestamp:maxStart.toISOString(),max:'300',scheduled:'true',includeComments:'false',includeHidden:'false',addProfileInfo:'false'});
+    const params=new URLSearchParams({groupId:String(connection.spond_group_id),minStartTimestamp:now.toISOString(),maxStartTimestamp:maxStart.toISOString(),max:'300',scheduled:'false',includeComments:'false',includeHidden:'false',addProfileInfo:'true'});
     const raw=await spondRequest(`/sponds?${params.toString()}`,accessToken);
     const configured=await memberDirectorySessions(base44,club);
-    const sessions=(Array.isArray(raw)?raw:[]).filter((event:any)=>collectSpondRecipientIds(event).has(String(memberId))).map((event:any)=>{
+    const sessions=(Array.isArray(raw)?raw:[]).filter((event:any)=>memberIsInvitedToSpondEvent(event,person,memberId)).map((event:any)=>{
       const status=spondResponseStatus(event,memberId);
       if(['declined','waiting','waitinglist','waitlist'].includes(status))return null;
       const startRaw=spondEventStart(event),start=dublinParts(startRaw),end=dublinParts(event?.endTimestamp||'');
@@ -212,9 +212,17 @@ async function loadInvitedMemberSpondSessions(base44:any,club:any,person:any,mem
       const eventVenue=clean(loc?.feature||loc?.name||loc?.address||'',220);
       const candidates=configured.filter((s:any)=>s.weekday===start.day&&s.start===start.time);
       let cfg=candidates[0]||null;
-      if(candidates.length>1&&eventVenue){
+      if(eventVenue&&candidates.length){
         const venueKey=nameKey(eventVenue);
-        cfg=candidates.find((s:any)=>nameKey(s.venueName).includes(venueKey)||venueKey.includes(nameKey(s.venueName)))||candidates[0];
+        const venueMatch=candidates.find((s:any)=>{
+          const configuredVenue=nameKey(s.venueName);
+          const configuredAddress=nameKey(s.venueAddress);
+          return configuredVenue.includes(venueKey)||venueKey.includes(configuredVenue)||configuredAddress.includes(venueKey)||venueKey.includes(configuredAddress);
+        });
+        // Never relabel a Spond event as a different Clare session just because
+        // the weekday/time happen to match. Venue is part of the session identity.
+        if(!venueMatch)return null;
+        cfg=venueMatch;
       }
       if(!cfg||!Number.isFinite(Number(cfg.fee))||Number(cfg.fee)<=0)return null;
       const acceptedCount=(event?.responses?.acceptedIds||[]).length||0;
