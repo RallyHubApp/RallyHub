@@ -30,7 +30,7 @@ async function spondRequest(path:string, token:string) {
 }
 
 function spondEventStart(event:any) {
-  return event?.meetupTimestamp || event?.startTimestamp || event?.start_time || '';
+  return event?.startTimestamp || event?.meetupTimestamp || event?.start_time || event?.startTime || '';
 }
 
 function collectSpondInviteIds(event:any) {
