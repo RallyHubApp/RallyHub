@@ -15,6 +15,7 @@ import PageHeader from '@/components/shared/PageHeader';
 import GlassCard from '@/components/shared/GlassCard';
 import ProfileAvatarUpload from '@/components/profile/ProfileAvatarUpload';
 import LinkPlayerModal from '@/components/profile/LinkPlayerModal';
+import MemberPerformanceDetails from '@/components/member/MemberPerformanceDetails';
 
 export default function MyProfile() {
   const { user } = useAuth();
@@ -55,6 +56,18 @@ export default function MyProfile() {
       return res.data?.rows || [];
     },
     enabled: !!user?.active_tenant_id && !!user?.active_club_id
+  });
+
+  const { data: performance = null } = useQuery({
+    queryKey: ['performance-analytics-self'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('performanceAnalytics', { action: 'self' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data || null;
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
   });
 
   const { data: fullMemberRecord } = useQuery({
@@ -329,7 +342,7 @@ export default function MyProfile() {
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="profile">
+      <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') === 'results' ? 'results' : new URLSearchParams(window.location.search).get('tab') === 'fixtures' ? 'fixtures' : 'profile'}>
         <TabsList className="bg-secondary">
           <TabsTrigger value="profile" className="text-xs gap-1.5"><User className="w-3.5 h-3.5" /> Profile</TabsTrigger>
           <TabsTrigger value="fixtures" className="text-xs gap-1.5"><Calendar className="w-3.5 h-3.5" /> Fixtures ({upcoming.length})</TabsTrigger>
@@ -521,7 +534,8 @@ export default function MyProfile() {
         </TabsContent>
 
         {/* ── RESULTS TAB ── */}
-        <TabsContent value="results" className="mt-4">
+        <TabsContent value="results" className="mt-4 space-y-4">
+          <MemberPerformanceDetails performance={performance} />
           <GlassCard>
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
               <div>
