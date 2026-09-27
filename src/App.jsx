@@ -66,6 +66,7 @@ import MemberPlay from '@/pages/MemberPlay';
 import MemberVenues from '@/pages/MemberVenues';
 import MemberLearn from '@/pages/MemberLearn';
 import MemberShop from '@/pages/MemberShop';
+import MemberMessages from '@/pages/MemberMessages';
 import MemberForecast from '@/pages/MemberForecast';
 
 const LoadingScreen = () => (
@@ -160,6 +161,7 @@ const AuthenticatedRoutes = () => (
       <Route path="clubhouse" element={<MemberVenues />} />
       <Route path="learn" element={<MemberLearn />} />
       <Route path="shop" element={<MemberShop />} />
+      <Route path="messages" element={<MemberMessages />} />
       <Route path="forecast" element={<MemberForecast />} />
       <Route path="my-profile" element={<MyProfile />} />
       <Route path="admin" element={<AdminPanel />} />
