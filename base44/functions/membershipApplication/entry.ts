@@ -98,7 +98,7 @@ async function legalDocs(base44:any,config:any){
 function safeConfig(config:any,club:any,docs:any,adultPolicy:any=null){
   return {
     id:config.id,publicSlug:config.public_slug,title:config.title||`${club?.name||'Club'} Membership`,
-    seasonLabel:config.season_label,membershipFee:Number(config.membership_fee||0),currency:config.currency||'EUR',
+    seasonLabel:config.season_label,activeFrom:config.active_from||'',activeUntil:config.active_until||'',membershipFee:Number(config.membership_fee||0),currency:config.currency||'EUR',
     allowNew:config.allow_new!==false,allowRenewal:config.allow_renewal!==false,paymentRequired:config.payment_required!==false,
     minimumAge:Number(adultPolicy?.minimum_age||0)||null,
     club,legal:docs
