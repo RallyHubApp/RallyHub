@@ -34,7 +34,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   const memberNavItems = [
     { path: '/app', label: 'Home', icon: Home },
     { path: '/app/play', label: 'Play', icon: CalendarDays },
-    { path: '/app/clubhouse', label: 'Clubhouse', icon: MessageCircle },
+    { path: '/app/venues', label: 'Venues', icon: MapPin },
     { path: '/app/learn', label: 'Learn', icon: BookOpen },
     { path: '/app/my-profile', label: 'Me', icon: UserCircle },
   ];
