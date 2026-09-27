@@ -44,7 +44,7 @@ async function sportName(base44:any,id:string){
 function safeConfig(config:any,club:any,sport:string){
   return {
     id:config.id,title:config.title||`${club?.name||'Club'} Waiting List`,programmeName:config.programme_name||'',description:config.description||'',
-    publicSlug:config.public_slug,targetSportId:config.target_sport_id||'',targetSportName:sport,
+    publicSlug:config.public_slug,publicEntryUrl:safeUrl(config.public_entry_url),targetSportId:config.target_sport_id||'',targetSportName:sport,
     previousSportsOptions:Array.isArray(config.previous_sports_options)?config.previous_sports_options:[],
     askTargetSportExperience:config.ask_target_sport_experience!==false,askActivityBackground:config.ask_activity_background!==false,
     askMedicalInformation:config.ask_medical_information!==false,consentText:config.consent_text||'',photoVideoText:config.photo_video_text||'',club
@@ -98,8 +98,9 @@ Deno.serve(async(req)=>{
         const active=(all||[]).filter((x:any)=>x.active!==false&&!['removed','declined','completed_course'].includes(String(x.status||'')));
         const inactive=(all||[]).filter((x:any)=>x.active===false);
         const counts={total:(all||[]).length,waiting:active.filter((x:any)=>x.status==='waiting').length,active:active.length,inactive:inactive.length,priority:active.filter((x:any)=>x.priority_flag===true).length,targetExperience:active.filter((x:any)=>x.played_target_sport_before==='yes').length,racketExperience:active.filter((x:any)=>x.has_racket_sport_experience===true).length,medicalProvided:active.filter((x:any)=>x.medical_response_status==='provided').length,review:active.filter((x:any)=>x.identity_review_required===true||(x.data_quality_flags||[]).length>0).length};
-        if(action==='admin_count')return Response.json({success:true,counts,oldestJoinedAt:active[0]?.first_joined_at||null,publicUrl:`https://rallyhub.ie/waiting-list/${encodeURIComponent(config.public_slug)}`});
-        return Response.json({success:true,config:safeConfig(config,club,sport),counts,publicUrl:`https://rallyhub.ie/waiting-list/${encodeURIComponent(config.public_slug)}`,rows:(all||[]).map(clientRow)});
+        const publicUrl=safeUrl(config.public_entry_url)||`https://rallyhub.ie/waiting-list/${encodeURIComponent(config.public_slug)}`;
+        if(action==='admin_count')return Response.json({success:true,counts,oldestJoinedAt:active[0]?.first_joined_at||null,publicUrl});
+        return Response.json({success:true,config:safeConfig(config,club,sport),counts,publicUrl,rows:(all||[]).map(clientRow)});
       }
       if(action==='admin_update'){
         const id=clean(body.entryId,160); const entry=await first(base44,'WaitingListEntry',{id,tenant_id:tenantId,club_id:clubId});
