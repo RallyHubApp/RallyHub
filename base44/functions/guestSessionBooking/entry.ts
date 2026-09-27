@@ -327,8 +327,10 @@ async function resolveSessionHostContact(base44:any,session:any){
 async function ensureMemberSessionLink(base44:any,club:any,memberSession:any){
   const date=clean(memberSession.sessionDate,20)||nextOccurrenceDate(memberSession.weekday,memberSession.start);
   if(!date)throw Object.assign(new Error('RallyHub could not determine the date for that session.'),{status:409});
-  const adminEmail=emailKey(memberSession.clubContactEmail||club.public_contact_email||'');
-  const adminName=clean(memberSession.clubContactName||club.name,120);
+  const priorLinks=await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:club.tenant_id,club_id:club.id},'-created_at',50);
+  const explicitAdmin=(priorLinks||[]).find((link:any)=>link.created_by_user_id&&emailKey(link.notification_email||''));
+  const adminEmail=emailKey(explicitAdmin?.notification_email||memberSession.clubContactEmail||club.public_contact_email||'');
+  const adminName=clean(explicitAdmin?.notification_name||memberSession.clubContactName||club.name,120);
   let row=(await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:club.tenant_id,club_id:club.id,session_date:date,start_time:memberSession.start,venue_key:memberSession.venueKey,active:true},'-created_at',10))?.[0];
   if(row){
     // Older auto-created links used the session host as the sole notification target.
