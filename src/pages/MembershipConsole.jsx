@@ -478,6 +478,91 @@ export default function MembershipConsole() {
       : new Set(rows.map(row => row.person_id)));
   };
 
+  const openBroadcast = () => {
+    setBroadcastResult(null);
+    setBroadcastOpen(true);
+  };
+
+  const selectedBroadcastUserIds = () => [...new Set(
+    (listData.rows || [])
+      .filter(row => selected.has(row.person_id) && row.linked_user_id)
+      .map(row => String(row.linked_user_id))
+  )];
+
+  const publishBroadcast = async () => {
+    if (!broadcastForm.title.trim() || !broadcastForm.message.trim()) return toast.error('Add a title and message');
+    if (broadcastForm.audienceType === 'selected' && selected.size === 0) return toast.error('Select members in the membership list first');
+    const audienceUserIds = broadcastForm.audienceType === 'selected' ? selectedBroadcastUserIds() : [];
+    if (broadcastForm.audienceType === 'selected' && audienceUserIds.length === 0) return toast.error('The selected members are not linked to RallyHub accounts yet');
+    setBroadcastBusy(true);
+    try {
+      const response = await base44.functions.invoke('clubBroadcast', {
+        action: 'publish',
+        title: broadcastForm.title.trim(),
+        message: broadcastForm.message.trim(),
+        linkUrl: broadcastForm.linkUrl.trim() || undefined,
+        audienceType: broadcastForm.audienceType,
+        audienceUserIds,
+        whatsappGroupKey: broadcastForm.whatsappGroupKey || undefined,
+        sendPush: broadcastForm.sendPush,
+        includeWhatsApp: broadcastForm.includeWhatsApp,
+        pinned: broadcastForm.pinned,
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      setBroadcastResult(response.data);
+      await refetchBroadcasts();
+      queryClient.invalidateQueries({ queryKey: ['member-announcements'] });
+      toast.success('Published in RallyHub' + (broadcastForm.sendPush ? ' and push alerts sent' : ''));
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not publish broadcast');
+    } finally {
+      setBroadcastBusy(false);
+    }
+  };
+
+  const copyWhatsAppBroadcast = async () => {
+    const text = broadcastResult?.whatsappText || '';
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`WhatsApp message copied. Send it to ${broadcastResult?.whatsappGroupName || 'the chosen group'}.`);
+    } catch {
+      window.prompt('Copy WhatsApp message', text);
+    }
+  };
+
+  const shareBroadcastToWhatsApp = async () => {
+    const text = broadcastResult?.whatsappText || '';
+    if (!text) return;
+    const groupName = broadcastResult?.whatsappGroupName || 'the chosen WhatsApp group';
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: broadcastForm.title.trim() || 'Clare Pickleball update', text });
+        toast.success(`Choose ${groupName} in WhatsApp`);
+        return;
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
+      }
+    }
+    try { await navigator.clipboard.writeText(text); } catch {}
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+    toast.success(`Message copied. Choose ${groupName} in WhatsApp.`);
+  };
+
+  const markWhatsAppPosted = async () => {
+    const broadcastId = broadcastResult?.broadcast?.id;
+    if (!broadcastId) return;
+    try {
+      const response = await base44.functions.invoke('clubBroadcast', { action:'mark_whatsapp_posted', broadcastId });
+      if (response.data?.error) throw new Error(response.data.error);
+      setBroadcastResult(previous => ({ ...previous, broadcast: response.data.broadcast }));
+      await refetchBroadcasts();
+      toast.success('WhatsApp post recorded');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Could not record WhatsApp post');
+    }
+  };
+
   const applySavedView = view => {
     setVisibleFields(view.visible_fields?.length ? view.visible_fields : meta.fieldCatalog.filter(f => f.default).map(f => f.key));
     setFilters({ ...EMPTY_FILTERS, ...parseJson(view.filters_json, {}) });
