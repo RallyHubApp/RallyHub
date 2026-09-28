@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
 import { directoryClubs, irelandCounties, weekDays } from '@/data/directorySeed';
-import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, Check, CheckCircle2, Share2, BellRing } from 'lucide-react';
+import { Search, MapPin, CalendarDays, Building2, SlidersHorizontal, ArrowRight, Check, Share2, BellRing } from 'lucide-react';
 import Seo, { SITE_URL } from '@/components/public/Seo';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 import PublicDirectoryLogo from '@/components/directory/PublicDirectoryLogo';
@@ -34,7 +34,7 @@ const compactSearchText = value => normaliseSearchText(value).replace(/\s+/g, ''
 
 const publicDescription = club => {
   const description = String(club?.description || '').trim();
-  if (club?.verificationStatus === 'verified' && /has not yet been claimed|listing is currently unclaimed|unclaimed listing/i.test(description)) {
+  if (/has not yet been claimed|listing is currently unclaimed|unclaimed listing/i.test(description)) {
     return `${club.name} is listed in the RallyHub Club Directory for County ${club.county}.`;
   }
   return description;
@@ -452,13 +452,7 @@ export default function PublicDirectory() {
                                   <p className="text-[10px] font-extrabold uppercase tracking-[.09em] text-[#078e48]">{club.sport} · County {club.county}</p>
                                   <h3 className="mt-1 text-[18px] font-extrabold tracking-[-.02em] text-[#07184c] sm:text-[20px]">{club.name}</h3>
                                 </div>
-                                {club.verificationStatus === 'unclaimed' ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-[#ecd49e] bg-[#fff8e8] px-2 py-1 text-[10px] font-extrabold text-[#9b6508]"><CheckCircle2 className="h-3 w-3" /> Unclaimed listing</span>
-                                ) : club.verificationStatus === 'verified' ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-[#c2e3ce] bg-[#eaf8ef] px-2 py-1 text-[10px] font-extrabold text-[#067b3f]"><CheckCircle2 className="h-3 w-3" /> Verified club listing</span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-[#c2e3ce] bg-[#eaf8ef] px-2 py-1 text-[10px] font-extrabold text-[#067b3f]"><CheckCircle2 className="h-3 w-3" /> Active listing</span>
-                                )}
+
                               </div>
                               <p className="mt-2 line-clamp-2 text-[12.5px] leading-[1.45] text-[#405174]">{publicDescription(club)}</p>
                               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-[#67748a]">
