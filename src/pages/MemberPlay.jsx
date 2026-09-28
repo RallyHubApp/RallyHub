@@ -94,8 +94,6 @@ function downloadCalendar(items, filename = 'rallyhub-calendar.ics', name = 'Ral
 function addToCalendar(item) {
   const start = icsDate(item.start);
   if (!start) return;
-  const fallbackEnd = new Date(new Date(item.start).getTime() + 90 * 60 * 1000).toISOString();
-  const end = icsDate(item.end || fallbackEnd);
   downloadCalendar([item], `${String(item.title || 'rallyhub-event').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}.ics`, item.title || 'RallyHub Event');
 }
 
