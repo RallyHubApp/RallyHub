@@ -45,9 +45,9 @@ export default function Sidebar({ isOpen, onToggle }) {
     navItems[0],
     ...(canAccessAdmin ? [{ path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true }] : []),
     ...(canManageMembership ? [
-      { path: '/app/events', label: 'Events', icon: CalendarDays },
       { path: '/app/membership', label: 'Membership', icon: ContactRound },
-      { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList }
+      { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList },
+      { path: '/app/events', label: 'Events', icon: CalendarDays }
     ] : []),
     ...navItems.slice(1)
   ];
