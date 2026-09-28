@@ -2685,12 +2685,16 @@ Brian`;
             <p className="mt-2 text-xs text-muted-foreground">Securely upload approved production artwork and PDF guides to RallyHub. PNG, JPG, WEBP or PDF · up to 20 MB. This area is available only inside the platform Admin Panel.</p>
             <div className="mt-4 max-w-md"><Label className="text-xs text-muted-foreground">Asset name</Label><Input value={assetName} onChange={e=>setAssetName(e.target.value)} placeholder="e.g. About page hero" className="mt-1 bg-secondary border-border" /></div>
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <label className="inline-flex cursor-pointer items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
-                <Upload className="mr-2 h-4 w-4" />{assetUploading ? 'Uploading…' : 'Upload approved asset'}
-                <input type="file" className="hidden" disabled={assetUploading} onChange={async e=>{const file=e.target.files?.[0];await uploadSiteAsset(file);e.target.value='';}}/>
-              </label>
+              <Button type="button" variant="outline" disabled={assetUploading} onClick={()=>assetFileInputRef.current?.click()}>
+                <Upload className="mr-2 h-4 w-4" />Choose file
+              </Button>
+              <input ref={assetFileInputRef} type="file" className="hidden" disabled={assetUploading} onChange={e=>{const file=e.target.files?.[0];e.target.value='';chooseSiteAsset(file);}}/>
+              <Button type="button" disabled={assetUploading||!assetSelectedFile} onClick={uploadSiteAsset}>
+                {assetUploading?<RefreshCw className="mr-2 h-4 w-4 animate-spin"/>:<Upload className="mr-2 h-4 w-4"/>}{assetUploading?'Uploading to RallyHub…':'Upload to RallyHub'}
+              </Button>
               {assetUploadUrl && <Badge className="bg-green-500/15 text-green-500"><CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Uploaded & stored</Badge>}
             </div>
+            {assetUploadMessage && <div aria-live="polite" className={`mt-3 rounded-md border p-3 text-xs font-medium ${assetUploadMessage.startsWith('Upload failed')?'border-destructive/30 bg-destructive/10 text-destructive':assetUploadMessage.startsWith('Uploaded ✓')?'border-green-500/30 bg-green-500/10 text-green-600':'border-border bg-secondary text-muted-foreground'}`}>{assetUploadMessage}</div>}
             {assetUploadUrl && <div className="mt-3 break-all rounded-md bg-secondary p-3 text-[11px] text-muted-foreground">{assetUploadUrl}</div>}
           </GlassCard>
         </TabsContent>
