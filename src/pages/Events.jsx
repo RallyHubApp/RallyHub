@@ -112,7 +112,7 @@ export default function Events(){
       return String(a.start_date||'9999').localeCompare(String(b.start_date||'9999'));
     });
   },[upcoming,query,status,type,month,county,country,host,level,age,discipline,environment,sort]);
-  const featured=filtered.find(e=>e.event_featured_public)||upcoming.find(e=>e.event_featured_public)||null;
+  const featured=filtered.find(e=>e.event_featured_public)||null;
   const gridEvents=featured?filtered.filter(e=>e.id!==featured.id):filtered;
   const openRegistration=event=>{if(event.event_registration_mode==='contact'&&event.event_contact){window.location.href=`mailto:${event.event_contact}?subject=${encodeURIComponent(`Invitation request: ${event.name}`)}`;return}if(event.event_registration_url)window.open(event.event_registration_url,'_blank','noopener,noreferrer');else navigate(eventPath(event))};
   const showResults=()=>document.getElementById('events-results')?.scrollIntoView({behavior:'smooth',block:'start'});
