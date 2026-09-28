@@ -141,7 +141,7 @@ function Conversation({ thread, mode, config, onSend, sending, preview = false }
   return (
     <div className="flex flex-col min-h-[520px]">
       <div className="border-b border-border p-4 flex items-center gap-3">
-        {mode === 'member' ? <img src={BRIAN_PHOTO} alt="" className="w-11 h-11 rounded-full object-cover object-top border border-border" /> : <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center"><MessageCircle className="w-5 h-5 text-primary" /></div>}
+        {mode === 'member' ? <div className="w-11 h-11 rounded-full overflow-hidden border border-border"><img src={BRIAN_PHOTO} alt="" className="w-full h-full object-cover" style={{ objectPosition:'50% 35%', transform:'scale(1.35)', transformOrigin:'50% 35%' }} /></div> : <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center"><MessageCircle className="w-5 h-5 text-primary" /></div>}
         <div className="min-w-0 flex-1">
           <p className="font-black truncate">{mode === 'member' ? config?.chairName || 'Chairperson' : thread?.memberName || 'Member'}</p>
           <p className="text-xs text-muted-foreground">{mode === 'member' ? `${config?.chairTitle || 'Chairperson'} · Private club contact` : 'Private member conversation'}</p>
