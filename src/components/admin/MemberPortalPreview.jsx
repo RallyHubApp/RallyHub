@@ -10,6 +10,8 @@ import MemberShop from '@/pages/MemberShop';
 import MemberMessages from '@/pages/MemberMessages';
 import GlassCard from '@/components/shared/GlassCard';
 import { Badge } from '@/components/ui/badge';
+import ProfileAvatarUpload from '@/components/profile/ProfileAvatarUpload';
+import { toast } from 'sonner';
 
 const sections = [
   ['home', Home, 'Home'],
@@ -21,15 +23,50 @@ const sections = [
 ];
 
 function MePreview({ snapshot }) {
+  const [photoState, setPhotoState] = useState(() => ({
+    url: snapshot?.person?.profile_photo_url || snapshot?.player?.avatar_url || null,
+    positionX: Number(snapshot?.photoSettings?.positionX ?? 50),
+    positionY: Number(snapshot?.photoSettings?.positionY ?? 50),
+    zoom: Number(snapshot?.photoSettings?.zoom ?? 1),
+  }));
+
+  const saveAdminPhoto = async (url, settings = {}) => {
+    const next = {
+      url: url ?? photoState.url,
+      positionX: Number(settings.positionX ?? photoState.positionX ?? 50),
+      positionY: Number(settings.positionY ?? photoState.positionY ?? 50),
+      zoom: Number(settings.zoom ?? photoState.zoom ?? 1),
+    };
+    if (snapshot?.person?.id) await base44.entities.Person.update(snapshot.person.id, { profile_photo_url: next.url });
+    if (snapshot?.player?.id) await base44.entities.Player.update(snapshot.player.id, { avatar_url: next.url });
+    const userId = snapshot?.user?.id || snapshot?.player?.user_id;
+    if (!userId) throw new Error('This member is not linked to a RallyHub user account.');
+    const existing = await base44.entities.ProfilePhotoSetting.filter({ user_id: userId });
+    const record = {
+      tenant_id: snapshot?.player?.tenant_id || snapshot?.person?.tenant_id || null,
+      club_id: snapshot?.player?.club_id || null,
+      user_id: userId,
+      person_id: snapshot?.person?.id || null,
+      player_id: snapshot?.player?.id || null,
+      position_x: next.positionX,
+      position_y: next.positionY,
+      zoom: next.zoom,
+      updated_at: new Date().toISOString(),
+    };
+    if (existing?.[0]?.id) await base44.entities.ProfilePhotoSetting.update(existing[0].id, record);
+    else await base44.entities.ProfilePhotoSetting.create(record);
+    setPhotoState(next);
+    return next;
+  };
   const person = snapshot?.person || {};
   const player = snapshot?.player || {};
   const member = snapshot?.member || {};
   const name = person.preferred_name || person.full_name || player.full_name || snapshot?.user?.full_name || 'Member';
-  const photo = person.profile_photo_url || player.avatar_url || null;
+  const photo = photoState.url;
   const initials = String(name).split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0,2).toUpperCase();
-  const positionX = Number(snapshot?.photoSettings?.positionX ?? 50);
-  const positionY = Number(snapshot?.photoSettings?.positionY ?? 50);
-  const zoom = Number(snapshot?.photoSettings?.zoom ?? 1);
+  const positionX = photoState.positionX;
+  const positionY = photoState.positionY;
+  const zoom = photoState.zoom;
   const rows = [
     ['Membership', member.membership_status ? String(member.membership_status).replaceAll('_',' ') : 'Not linked'],
     ['Season', member.membership_season || '—'],
@@ -46,7 +83,13 @@ function MePreview({ snapshot }) {
       </div>
       <GlassCard className="p-5">
         <div className="flex items-center gap-4">
-          {photo ? <div className="w-20 h-20 rounded-full overflow-hidden border border-border"><img src={photo} alt="" className="w-full h-full object-cover" style={{ objectPosition:`${positionX}% ${positionY}%`, transform:`scale(${zoom})`, transformOrigin:`${positionX}% ${positionY}%` }} /></div> : <div className="w-20 h-20 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xl font-black">{initials}</div>}
+          <ProfileAvatarUpload
+            currentUrl={photo}
+            initials={initials}
+            position={{ positionX, positionY, zoom }}
+            onUploaded={async (url, settings) => { await saveAdminPhoto(url, settings); toast.success('Member profile photo updated by Super Admin'); }}
+            onPositionSaved={async (settings) => { await saveAdminPhoto(photo, settings); toast.success('Member photo crop saved by Super Admin'); }}
+          />
           <div className="min-w-0 flex-1">
             <h2 className="text-xl font-black truncate">{name}</h2>
             <p className="text-sm text-muted-foreground truncate">{snapshot?.club?.name || 'Club member'}</p>
@@ -59,7 +102,7 @@ function MePreview({ snapshot }) {
       </div>
       <GlassCard>
         <h2 className="font-bold">Private member record</h2>
-        <p className="text-xs text-muted-foreground mt-1">The live member can edit their permitted personal and playing details here. Super Admin preview remains read-only.</p>
+        <p className="text-xs text-muted-foreground mt-1">Member data remains read-only in preview. Profile photo upload and crop are the exception and can be edited here by Super Admin.</p>
       </GlassCard>
     </div>
   );
@@ -111,7 +154,7 @@ export default function MemberPortalPreview({ payload }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3">
         <div className="flex items-start gap-2">
           <Shield className="w-4 h-4 text-primary mt-0.5" />
-          <div><p className="text-sm font-semibold">Read-only member preview</p><p className="text-xs text-muted-foreground">No impersonation, no session switching and no member data can be edited from this preview.</p></div>
+          <div><p className="text-sm font-semibold">Member preview</p><p className="text-xs text-muted-foreground">No impersonation or session switching. Member data is read-only except the profile photo, which Super Admin can upload and crop from Me.</p></div>
         </div>
         <div className="inline-flex rounded-lg bg-secondary/70 p-1 self-start sm:self-auto">
           <button type="button" onClick={() => setDevice('mobile')} className={`h-9 px-3 rounded-md inline-flex items-center gap-1.5 text-xs font-semibold ${device === 'mobile' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground'}`}><Smartphone className="w-4 h-4" /> Mobile</button>
