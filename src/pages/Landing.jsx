@@ -34,7 +34,7 @@ const features = [
     title: 'Join Events',
     description: 'See what’s on and get involved.',
     action: 'Browse Events',
-    to: '/directory',
+    to: '/events',
   },
   {
     icon: Users,
@@ -126,7 +126,7 @@ export default function Landing() {
               <Link to="/" className="hover:text-[#078e48]">Home</Link>
               <Link to="/directory" className="hover:text-[#078e48]">Directory</Link>
               <Link to="/directory" className="hover:text-[#078e48]">Clubs</Link>
-              <Link to="/directory" className="hover:text-[#078e48]">Events</Link>
+              <Link to="/events" className="hover:text-[#078e48]">Events</Link>
               <Link to="/about" className="hover:text-[#078e48]">About</Link>
             </nav>
 
@@ -159,7 +159,7 @@ export default function Landing() {
           {menuOpen && (
             <div className="absolute left-0 right-0 top-full border-t border-[#e8edef] bg-white px-4 py-4 shadow-xl lg:hidden">
               <div className="mx-auto max-w-[1380px] space-y-1">
-                {[['Home','/'],['Directory','/directory'],['Clubs','/directory'],['Events','/directory'],['About','/about']].map(([label,to])=>(
+                {[['Home','/'],['Directory','/directory'],['Clubs','/directory'],['Events','/events'],['About','/about']].map(([label,to])=>(
                   <Link key={label} to={to} onClick={()=>setMenuOpen(false)} className="flex items-center justify-between rounded-lg px-3 py-3 font-semibold text-[#0c2257] hover:bg-[#f4faf7]">
                     {label}<ChevronRight className="h-4 w-4 text-[#078e48]"/>
                   </Link>
