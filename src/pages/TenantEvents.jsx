@@ -30,11 +30,11 @@ export default function TenantEvents(){
  const {data:user}=useQuery({queryKey:['current-user'],queryFn:()=>base44.auth.me()});
  const canManage=user?.role==='admin'||user?.active_club_role==='club_admin'||user?.approval_status==='approved';
  const {data:venues=[]}=useQuery({queryKey:['event-venues',user?.active_tenant_id,user?.active_club_id],queryFn:()=>base44.entities.Venue.filter({tenant_id:user.active_tenant_id,club_id:user.active_club_id,status:'active'},'name',100),enabled:!!user?.active_tenant_id&&!!user?.active_club_id});
- const {data:events=[]}=useQuery({queryKey:['tenant-events',user?.active_tenant_id,user?.active_club_id],queryFn:()=>base44.entities.Tournament.filter({tenant_id:user.active_tenant_id,host_club_id:user.active_club_id},'-start_date',100),enabled:!!user?.active_tenant_id&&!!user?.active_club_id});
+ const {data:events=[]}=useQuery({queryKey:['tenant-events',user?.active_tenant_id,user?.active_club_id],queryFn:()=>base44.entities.Tournament.filter({tenant_id:user.active_tenant_id,host_club_id:user.active_club_id,status:{$ne:'Archived'}},'start_date',40),enabled:!!user?.active_tenant_id&&!!user?.active_club_id,staleTime:30000});
  const today=new Date().toISOString().slice(0,10);
  const eventSort=(a,b)=>(a.start_date||'9999-12-31').localeCompare(b.start_date||'9999-12-31');
- const currentEvents=useMemo(()=>events.filter(e=>(e.start_date||'')>=today).sort(eventSort),[events,today]);
- const olderEvents=useMemo(()=>events.filter(e=>(e.start_date||'')<today).sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||'')),[events,today]);
+ const currentEvents=useMemo(()=>events.filter(e=>e.status!=='Archived'&&(e.start_date||'')>=today).sort(eventSort),[events,today]);
+ const olderEvents=useMemo(()=>events.filter(e=>e.status!=='Archived'&&(e.start_date||'')<today).sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||'')),[events,today]);
  const published=useMemo(()=>currentEvents.filter(e=>e.event_member_visible||e.event_publish_status==='published'),[currentEvents]);
  const drafts=useMemo(()=>currentEvents.filter(e=>e.event_publish_status!=='published'&&!e.event_member_visible),[currentEvents]);
  const visibleDrafts=showOlder?drafts:drafts.slice(0,3);
