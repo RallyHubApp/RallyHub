@@ -25,7 +25,7 @@ function EventPreview({draft}){
 }
 
 export default function TenantEvents(){
- const qc=useQueryClient(); const [draft,setDraft]=useState(blank); const [preview,setPreview]=useState(false);
+ const qc=useQueryClient(); const [draft,setDraft]=useState(blank); const [preview,setPreview]=useState(false); const [editingId,setEditingId]=useState(null);
  const {data:user}=useQuery({queryKey:['current-user'],queryFn:()=>base44.auth.me()});
  const canManage=user?.role==='admin'||user?.active_club_role==='club_admin'||user?.approval_status==='approved';
  const {data:venues=[]}=useQuery({queryKey:['event-venues',user?.active_tenant_id,user?.active_club_id],queryFn:()=>base44.entities.Venue.filter({tenant_id:user.active_tenant_id,club_id:user.active_club_id,status:'active'},'name',100),enabled:!!user?.active_tenant_id&&!!user?.active_club_id});
@@ -36,7 +36,7 @@ export default function TenantEvents(){
  return <div className="space-y-6"><PageHeader title="Events" description="Create once, preview it, then publish it to your members."/>
    <div className="grid gap-6 xl:grid-cols-[1.05fr_.95fr]">
     <div className="glass rounded-xl p-5 space-y-5">
-      <div className="flex items-center gap-2"><Plus className="h-5 w-5 text-primary"/><h2 className="font-bold">Create event</h2></div>
+      <div className="flex items-center gap-2"><Plus className="h-5 w-5 text-primary"/><h2 className="font-bold">{editingId?'Edit event':'Create event'}</h2></div>
       <div className="grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold sm:col-span-2">Event name<Input className="mt-1" value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label><label className="text-sm font-semibold">Category<select className="mt-1 h-10 w-full rounded-md border bg-background px-3" value={draft.category} onChange={e=>setDraft({...draft,category:e.target.value})}>{Object.entries(labels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><label className="text-sm font-semibold">Date<Input type="date" className="mt-1" value={draft.date} onChange={e=>setDraft({...draft,date:e.target.value})}/></label><label className="text-sm font-semibold">Starts<Input type="time" className="mt-1" value={draft.start} onChange={e=>setDraft({...draft,start:e.target.value})}/></label><label className="text-sm font-semibold">Ends<Input type="time" className="mt-1" value={draft.end} onChange={e=>setDraft({...draft,end:e.target.value})}/></label><label className="text-sm font-semibold sm:col-span-2">Venue<select className="mt-1 h-10 w-full rounded-md border bg-background px-3" value={draft.venue_id} onChange={e=>{const v=venues.find(x=>x.id===e.target.value);setDraft({...draft,venue_id:e.target.value,location:v?.name||''})}}><option value="">Choose venue</option>{venues.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label></div>
       <label className="block text-sm font-semibold">Event description<textarea className="mt-1 min-h-28 w-full rounded-md border bg-background p-3 font-normal" value={draft.description} onChange={e=>setDraft({...draft,description:e.target.value})}/></label>
       <label className="block text-sm font-semibold">Member-only information<textarea className="mt-1 min-h-24 w-full rounded-md border bg-background p-3 font-normal" placeholder="Fees, member instructions or other information that must not appear publicly." value={draft.internal} onChange={e=>setDraft({...draft,internal:e.target.value})}/></label>
