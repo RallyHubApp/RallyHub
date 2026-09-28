@@ -25,6 +25,18 @@ function publicEvent(event:any, host:any=null) {
   return out;
 }
 
+async function retry<T>(fn:()=>Promise<T>, attempts=2):Promise<T> {
+  let lastError:any;
+  for (let attempt=0; attempt<attempts; attempt++) {
+    try { return await fn(); }
+    catch (error) {
+      lastError=error;
+      if (attempt < attempts-1) await new Promise(resolve=>setTimeout(resolve,150));
+    }
+  }
+  throw lastError;
+}
+
 async function loadHosts(base44:any, events:any[]) {
   const ids = [...new Set((events || []).map((e:any)=>String(e.host_club_id || '')).filter(Boolean))];
   const hostMap = new Map<string,any>();
@@ -42,10 +54,10 @@ Deno.serve(async (req) => {
     const action = String(body.action || 'list');
 
     if (action === 'list') {
-      const rows = await base44.asServiceRole.entities.Tournament.filter({
+      const rows = await retry(()=>base44.asServiceRole.entities.Tournament.filter({
         event_public_visible: true,
         event_publish_status: 'published',
-      }, 'start_date', 500);
+      }, 'start_date', 500));
       const visible = (rows || []).filter((event:any) => event.status !== 'Archived');
       const hostMap = await loadHosts(base44, visible);
       return Response.json({
@@ -60,7 +72,7 @@ Deno.serve(async (req) => {
       if (!slug && !id) return Response.json({ error:'Event identifier required' }, { status:400 });
       const query:any = { event_public_visible:true, event_publish_status:'published' };
       if (id) query.id = id; else query.event_slug = slug;
-      const rows = await base44.asServiceRole.entities.Tournament.filter(query, '-updated_date', 2);
+      const rows = await retry(()=>base44.asServiceRole.entities.Tournament.filter(query, '-updated_date', 2));
       const event = (rows || []).find((row:any)=>row.status !== 'Archived');
       if (!event) return Response.json({ error:'Public event not found' }, { status:404 });
       const hostRows = event.host_club_id ? await base44.asServiceRole.entities.Club.filter({id:event.host_club_id}, '-updated_date', 1).catch(()=>[]) : [];
