@@ -92,14 +92,11 @@ test('public Events desktop: discover, filter, open detail, save, calendar and c
   await noHorizontalOverflow(page);
 });
 
-test('public Events: a transient 500 gives a clear retry and recovers without losing the journey',async({page})=>{
-  await installPublicBackend(page,{listFailures:2});
+test('public Events: transient 500s recover without losing the journey',async({page})=>{
+  const calls=await installPublicBackend(page,{listFailures:2});
   await page.goto('/events');
-  await expect(page.getByText('Temporary events service error')).toBeVisible({timeout:8000});
-  const retry=page.getByRole('button',{name:'Try again'});
-  await expect(retry).toBeVisible();
-  await retry.click();
-  await expect(page.getByText('Kukri Irish Nationals 2026').first()).toBeVisible({timeout:5000});
+  await expect(page.getByText('Kukri Irish Nationals 2026').first()).toBeVisible({timeout:10000});
+  expect(calls.filter(call=>call.name==='publicEvents'&&call.body.action==='list').length).toBeGreaterThanOrEqual(3);
   await expect(page.getByRole('button',{name:'Try again'})).toHaveCount(0);
 });
 
