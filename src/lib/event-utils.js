@@ -55,7 +55,9 @@ export function registrationState(event, now = new Date()) {
   const close = event?.event_registration_close_at ? new Date(event.event_registration_close_at) : null;
   const mode = event?.event_registration_mode || (event?.event_registration_url ? 'external' : 'none');
   const hasRegistration = mode !== 'none';
+  const invitationOnly = (event?.event_tags || []).some(tag => String(tag || '').trim().toLowerCase() === 'invitation only');
   if (!hasRegistration) return { key:'none', label:'No booking required', tone:'neutral', actionable:false };
+  if (invitationOnly && mode === 'contact') return { key:'invite_only', label:'Invitation only', tone:'amber', actionable:true };
   if (open && !Number.isNaN(open.getTime()) && now < open) {
     const days = Math.ceil((open.getTime() - now.getTime()) / 86400000);
     return { key:'opening_soon', label:days <= 14 ? `Opens in ${days} day${days===1?'':'s'}` : `Opens ${open.toLocaleDateString('en-IE',{day:'numeric',month:'short'})}`, tone:'blue', actionable:false, date:open };
