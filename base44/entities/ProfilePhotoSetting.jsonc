@@ -1,0 +1,62 @@
+{
+  "name": "ProfilePhotoSetting",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "position_x": {
+      "type": "number",
+      "default": 50
+    },
+    "position_y": {
+      "type": "number",
+      "default": 50
+    },
+    "zoom": {
+      "type": "number",
+      "default": 1
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

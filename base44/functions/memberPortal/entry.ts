@@ -520,6 +520,18 @@ async function buildSnapshot(base44:any, targetUser:any, forcedContext:any = {})
   ];
   const completion = Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100);
 
+  let photoSettings:any = null;
+  try {
+    photoSettings = await firstBy(base44, 'ProfilePhotoSetting', [
+      { user_id: targetUser?.id, tenant_id: tenantId, club_id: clubId },
+      { user_id: targetUser?.id },
+      { person_id: person?.id },
+      { player_id: player?.id },
+    ]);
+  } catch (error) {
+    console.warn('profile photo settings unavailable', error?.message || error);
+  }
+
   return {
     user: {
       id: targetUser?.id,
@@ -543,6 +555,11 @@ async function buildSnapshot(base44:any, targetUser:any, forcedContext:any = {})
     member: safeMember(member),
     player: safePlayer(player),
     profileCompletion: completion,
+    photoSettings: {
+      positionX: Number(photoSettings?.position_x ?? 50),
+      positionY: Number(photoSettings?.position_y ?? 50),
+      zoom: Number(photoSettings?.zoom ?? 1),
+    },
     playerDirectory,
     myCompetitions,
     clubCalendar,
