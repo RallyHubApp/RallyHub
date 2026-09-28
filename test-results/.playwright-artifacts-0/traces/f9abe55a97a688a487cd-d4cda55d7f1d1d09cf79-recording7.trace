@@ -1,0 +1,1 @@
+{"version":9,"type":"context-options","origin":"library","browserName":"","playwrightVersion":"1.63.0","options":{},"platform":"linux","wallTime":1790628259801,"monotonicTime":50578.28,"sdkLanguage":"javascript","title":"public-events.spec.mjs:113 › public Events: transient 500s give a clear retry and recover without losing the journey"}
