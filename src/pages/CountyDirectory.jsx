@@ -9,6 +9,13 @@ import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 
 const countySlug = county => county.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const venuePath = (clubSlug, venueId) => `/pickleball-venues/${encodeURIComponent(clubSlug)}/${encodeURIComponent(venueId)}`;
+const publicDescription = club => {
+  const description = String(club?.description || '').trim();
+  if (/has not yet been claimed|listing is currently unclaimed|unclaimed listing/i.test(description)) {
+    return `${club.name} is listed in the RallyHub Club Directory for County ${club.county}.`;
+  }
+  return description;
+};
 
 export default function CountyDirectory() {
   const { countySlug: slug } = useParams();
@@ -136,7 +143,7 @@ export default function CountyDirectory() {
                       <h2 className="text-xl font-bold mt-1">{club.name}</h2>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{club.description}</p>
+                  <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{publicDescription(club)}</p>
                   <div className="flex flex-wrap gap-3 mt-4 text-xs text-muted-foreground">
                     <span>{club.venues?.length || 0} venue{club.venues?.length === 1 ? '' : 's'}</span>
                     <span>{club.sessions?.length ? `${club.sessions.length} weekly session${club.sessions.length === 1 ? '' : 's'}` : 'Schedule pending'}</span>
