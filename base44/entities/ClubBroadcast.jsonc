@@ -1,0 +1,144 @@
+{
+  "name": "ClubBroadcast",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "bulletin_post_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "link_url": {
+      "type": "string"
+    },
+    "audience_type": {
+      "type": "string",
+      "enum": [
+        "all_active",
+        "selected"
+      ],
+      "default": "all_active"
+    },
+    "audience_user_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "audience_label": {
+      "type": "string"
+    },
+    "eligible_member_count": {
+      "type": "number",
+      "default": 0
+    },
+    "linked_target_count": {
+      "type": "number",
+      "default": 0
+    },
+    "unlinked_count": {
+      "type": "number",
+      "default": 0
+    },
+    "target_count": {
+      "type": "number",
+      "default": 0
+    },
+    "push_subscription_count": {
+      "type": "number",
+      "default": 0
+    },
+    "push_sent": {
+      "type": "number",
+      "default": 0
+    },
+    "push_failed": {
+      "type": "number",
+      "default": 0
+    },
+    "whatsapp_group_key": {
+      "type": "string"
+    },
+    "whatsapp_group_name": {
+      "type": "string"
+    },
+    "whatsapp_status": {
+      "type": "string",
+      "enum": [
+        "not_requested",
+        "pending",
+        "posted"
+      ],
+      "default": "pending"
+    },
+    "whatsapp_posted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "whatsapp_posted_by_user_id": {
+      "type": "string"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "created_by_name": {
+      "type": "string"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "published",
+        "archived"
+      ],
+      "default": "published"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "title",
+    "message",
+    "audience_type",
+    "created_by_user_id",
+    "published_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
