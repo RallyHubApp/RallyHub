@@ -57,6 +57,7 @@ export default function MemberDashboardView({ snapshot, play = null, playLoading
   const directoryClub = club?.slug ? getClub(club.slug) : null;
   const sportName = directoryClub?.sport || 'Sport';
   const activities = play?.items || [];
+  const featuredEvent = activities.find(item => item?.source === 'club_event' && item?.featured) || null;
   const nextActivity = activities[0] || null;
   const nextFew = activities.slice(0, 4);
   const myLeaderboardRow = clubLeaderboard.find(row => String(row.player_id) === String(player?.id || '')) || null;
@@ -129,6 +130,18 @@ export default function MemberDashboardView({ snapshot, play = null, playLoading
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {featuredEvent && (
+        <section>
+          <div className="mb-2"><h2 className="text-sm font-bold flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" /> Featured fixture</h2><p className="text-xs text-muted-foreground mt-0.5">A highlighted event from {club?.name || 'your club'}.</p></div>
+          <Link to="/app/play" className="glass block overflow-hidden rounded-2xl border border-primary/20 hover:bg-secondary/30 transition-colors">
+            <div className="grid sm:grid-cols-[180px_1fr]">
+              {featuredEvent.image_url ? <div className="aspect-[1.4142/1] sm:aspect-auto sm:min-h-[190px] bg-secondary overflow-hidden"><img src={featuredEvent.image_url} alt={`${featuredEvent.title} poster`} className="w-full h-full object-cover" /></div> : <div className="min-h-32 bg-primary/10 flex items-center justify-center"><CalendarDays className="w-9 h-9 text-primary" /></div>}
+              <div className="p-4 sm:p-5 min-w-0"><Badge className="bg-primary/15 text-primary text-[10px]">Featured club event</Badge><h2 className="mt-2 text-xl font-black">{featuredEvent.title}</h2><p className="mt-2 text-sm text-muted-foreground">{formatActivityDate(featuredEvent.start)}{formatActivityTime(featuredEvent.start) ? ` · ${formatActivityTime(featuredEvent.start)}` : ''}</p>{featuredEvent.venue&&<p className="mt-2 text-sm text-muted-foreground flex gap-1.5"><MapPin className="w-4 h-4 mt-0.5 shrink-0"/>{featuredEvent.venue}</p>}<span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary">View event <ChevronRight className="w-4 h-4"/></span></div>
+            </div>
+          </Link>
         </section>
       )}
 
