@@ -68,7 +68,7 @@ async function getDirectoryVenues(base44:any, listing:any) {
 const EVENT_FIELDS = [
   'name','format','status','start_date','end_date','location','venue_id','description','event_category','event_slug','event_start_time','event_end_time',
   'event_image_url','event_image_position_x','event_image_position_y','event_image_zoom','event_card_image_url','event_card_position_x','event_card_position_y','event_card_zoom','event_image_original_url','event_image_source_type',
-  'event_internal_info','event_contact','event_registration_url','event_registration_mode','event_registration_open_at','event_registration_close_at','event_fee_text','event_fee_amount','event_currency','event_capacity','event_waitlist_enabled',
+  'event_internal_info','event_contact','event_contact_phone','event_contact_phone_hidden_until','event_contact_phone_keep_private','event_status_override','event_registration_url','event_registration_mode','event_registration_open_at','event_registration_close_at','event_fee_text','event_fee_amount','event_currency','event_capacity','event_waitlist_enabled',
   'event_public_summary','event_county','event_country','event_indoor_outdoor','event_levels','event_age_groups','event_disciplines','event_tags','event_schedule','event_eligibility','event_player_info','event_fees_cancellation','event_source_url','event_map_url','event_latitude','event_longitude'
 ];
 
@@ -83,6 +83,10 @@ function eventPayload(body:any) {
   out.event_county = clean(out.event_county, 120);
   out.location = clean(out.location, 400);
   out.event_contact = clean(out.event_contact, 300);
+  out.event_contact_phone = clean(out.event_contact_phone, 120);
+  out.event_status_override = ['full','cancelled','postponed'].includes(clean(out.event_status_override,40)) ? clean(out.event_status_override,40) : '';
+  out.event_contact_phone_keep_private = out.event_contact_phone_keep_private === true;
+  out.event_contact_phone_hidden_until = out.event_contact_phone_hidden_until || null;
   out.event_registration_url = clean(out.event_registration_url, 1000);
   out.event_source_url = clean(out.event_source_url, 1000);
   out.event_map_url = clean(out.event_map_url, 1000);
