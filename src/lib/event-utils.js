@@ -56,6 +56,10 @@ export function registrationState(event, now = new Date()) {
   const mode = event?.event_registration_mode || (event?.event_registration_url ? 'external' : 'none');
   const hasRegistration = mode !== 'none';
   const invitationOnly = (event?.event_tags || []).some(tag => String(tag || '').trim().toLowerCase() === 'invitation only');
+  const override = String(event?.event_status_override || '').trim().toLowerCase();
+  if (override === 'full') return { key:'full', label:'EVENT FULL', detail:'This event is now full. No places are available for this event.', tone:'red', actionable:false, futureInvitation:invitationOnly };
+  if (override === 'cancelled') return { key:'cancelled', label:'Event cancelled', detail:'This event has been cancelled.', tone:'red', actionable:false };
+  if (override === 'postponed') return { key:'postponed', label:'Event postponed', detail:'This event has been postponed. Check the organiser information for updates.', tone:'amber', actionable:false };
   if (!hasRegistration) return { key:'none', label:'No booking required', tone:'neutral', actionable:false };
   if (invitationOnly && mode === 'contact') return { key:'invite_only', label:'Invitation only', tone:'amber', actionable:true };
   if (open && !Number.isNaN(open.getTime()) && now < open) {
@@ -84,6 +88,7 @@ export function registrationActionLabel(event, state = registrationState(event))
 }
 
 export const eventStatusClass = state => ({
+  red:'bg-[#b42318] text-white border-[#b42318]',
   green:'bg-[#078e48] text-white border-[#078e48]',
   blue:'bg-[#eaf3ff] text-[#1459b7] border-[#b9d3f7]',
   amber:'bg-[#fff2c8] text-[#8b5a00] border-[#f0cd63]',
