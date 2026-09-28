@@ -1748,6 +1748,41 @@ Brian`;
               <p className="text-xs text-muted-foreground">{directoryAdminListings.length} Directory clubs available · showing {filteredDirectoryAdminListings.length}</p>
             </div>}
 
+            {directoryToolsOpen && <div id="directory-event-host-placeholder" className="order-80 glass rounded-xl p-4 sm:p-5 space-y-4 border border-blue-400/25 scroll-mt-24">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-500">Super Admin event host</p>
+                  <h3 className="text-lg font-bold text-foreground mt-1">Create an internal club / organisation placeholder</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Use this when you need an organisation to exist inside RallyHub so you can create an event for it, even if it is not really a club or should not appear in the public Directory. For example: Pickleball Ireland.</p>
+                </div>
+                <CalendarDays className="w-5 h-5 text-blue-500 shrink-0 mt-1" />
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="event-host-placeholder-name">Organisation / event host name</Label>
+                  <Input id="event-host-placeholder-name" value={eventHostPlaceholder.name} onChange={e => { setEventHostPlaceholder(v => ({ ...v, name:e.target.value })); setEventHostPlaceholderResult(null); }} placeholder="e.g. Pickleball Ireland" />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="event-host-placeholder-email">Contact email <span className="text-muted-foreground">(optional)</span></Label>
+                  <Input id="event-host-placeholder-email" type="email" value={eventHostPlaceholder.email} onChange={e => setEventHostPlaceholder(v => ({ ...v, email:e.target.value }))} placeholder="Optional" />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="event-host-placeholder-notes">Notes <span className="text-muted-foreground">(optional)</span></Label>
+                  <textarea id="event-host-placeholder-notes" value={eventHostPlaceholder.notes} onChange={e => setEventHostPlaceholder(v => ({ ...v, notes:e.target.value }))} rows={3} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Why this placeholder exists, event details, contact notes…" />
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button type="button" onClick={createEventHostPlaceholder} disabled={eventHostPlaceholderBusy || !eventHostPlaceholder.name.trim()} className="gap-2">
+                  <Plus className="w-4 h-4" /> {eventHostPlaceholderBusy ? 'Creating…' : 'Create event host placeholder'}
+                </Button>
+                <p className="text-xs text-muted-foreground">Internal only. This does not create a public Directory listing or membership club.</p>
+              </div>
+              {eventHostPlaceholderResult && <div className="rounded-lg border border-green-400/30 bg-green-400/5 p-3 text-sm">
+                <p className="font-semibold text-foreground">{eventHostPlaceholderResult.name} is ready to use as an event host.</p>
+                <p className="mt-1 text-xs text-muted-foreground">It now exists as an internal RallyHub organisation/club placeholder and will be available to Super Admin in the Events host selector.</p>
+              </div>}
+            </div>}
+
             {directoryToolsOpen && <div id="directory-claim-invite" className="order-80 glass rounded-xl p-4 sm:p-5 space-y-4 border border-primary/25 scroll-mt-24">
               <div className="flex items-start justify-between gap-3">
                 <div>
