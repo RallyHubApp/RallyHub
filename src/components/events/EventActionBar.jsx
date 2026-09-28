@@ -19,6 +19,7 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   const [busy,setBusy]=useState('');
   const [clubShared,setClubShared]=useState(false);
   const state=registrationState(event);
+  const invitationOnly=state.key==='invite_only';
   const path=eventPath(event);
   const url=useMemo(()=>typeof window!=='undefined'?`${window.location.origin}${path}`:`https://rallyhub.ie${path}`,[path]);
   const canClubShare=!!user?.active_club_id&&!!user?.active_tenant_id&&(user?.role==='admin'||user?.active_club_role==='club_admin');
@@ -54,7 +55,7 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
 
   return <>
     <div className={`flex flex-wrap gap-2 ${compact?'':'w-full'}`}>
-      {(state.actionable||state.key==='opening_soon')&&<Button onClick={openRegistration} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]" disabled={busy==='remind'}>{state.key==='opening_soon'?<><Bell className="mr-2 h-4 w-4"/>{busy==='remind'?'Saving…':'Remind me'}</>:<><ExternalLink className="mr-2 h-4 w-4"/>Register / Book</>}</Button>}
+      {(state.actionable||state.key==='opening_soon')&&<Button onClick={openRegistration} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]" disabled={busy==='remind'}>{state.key==='opening_soon'?<><Bell className="mr-2 h-4 w-4"/>{busy==='remind'?'Saving…':'Remind me'}</>:invitationOnly?<><Mail className="mr-2 h-4 w-4"/>Request invitation</>:<><ExternalLink className="mr-2 h-4 w-4"/>Register / Book</>}</Button>}
       <Button variant="outline" className="min-h-11" onClick={saved?unsave:()=>saveEvent(false)} disabled={busy==='save'}>{saved?<BookmarkCheck className="mr-2 h-4 w-4 text-[#078e48]"/>:<Bookmark className="mr-2 h-4 w-4"/>}{busy==='save'?'Saving…':saved?'Saved':'Save event'}</Button>
       <Button variant="outline" className="min-h-11" onClick={()=>setCalendarOpen(true)}><CalendarPlus className="mr-2 h-4 w-4"/>Add to calendar</Button>
       <Button variant="outline" className="min-h-11" onClick={()=>setShareOpen(true)}><Share2 className="mr-2 h-4 w-4"/>Share</Button>
