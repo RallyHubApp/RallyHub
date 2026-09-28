@@ -11,9 +11,19 @@ import PublicSiteFooter from '@/components/public/PublicSiteFooter';
 import EventActionBar from '@/components/events/EventActionBar';
 import { EVENT_TYPES, eventStatusClass, eventTags, prettyEventDateRange, registrationState } from '@/lib/event-utils';
 
+const validMapPoint=(latValue,lngValue)=>{
+  if(latValue===null||latValue===undefined||latValue===''||lngValue===null||lngValue===undefined||lngValue==='')return false;
+  const lat=Number(latValue),lng=Number(lngValue);
+  return Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180;
+};
+const infoPreview=value=>{
+  const text=String(value||'').replace(/\s+/g,' ').trim();
+  return text.length>130?`${text.slice(0,127)}…`:text;
+};
+
 function InfoRow({title,summary,children}){
   if(!children)return null;
-  return <details className="group rounded-xl border border-[#dbe6e8] bg-white"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4"><div><p className="text-sm font-black text-[#07184c]">{title}</p>{summary&&<p className="mt-1 text-xs text-[#52627d]">{summary}</p>}</div><span className="text-xl font-bold text-[#078e48] transition group-open:rotate-45">+</span></summary><div className="border-t border-[#edf1f2] px-4 py-4 text-sm leading-6 text-[#405270] whitespace-pre-wrap">{children}</div></details>;
+  return <details className="group rounded-xl border border-[#dbe6e8] bg-white"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4"><div><p className="text-sm font-black text-[#07184c]">{title}</p>{summary&&<p className="mt-1 text-xs leading-5 text-[#52627d]">{summary}</p>}</div><span className="text-xl font-bold text-[#078e48] transition group-open:rotate-45">+</span></summary><div className="border-t border-[#edf1f2] px-4 py-4 text-sm leading-6 text-[#405270] whitespace-pre-wrap">{children}</div></details>;
 }
 
 function Schedule({event}){
@@ -36,7 +46,7 @@ export default function PublicEventDetail(){
   const tags=eventTags(event,8);
   const fullPoster=event.event_image_url;
   const originalPoster=event.event_image_original_url||event.event_image_url;
-  const mapped=Number.isFinite(Number(event.event_latitude))&&Number.isFinite(Number(event.event_longitude));
+  const mapped=validMapPoint(event.event_latitude,event.event_longitude);
   const updated=event.updated_date?new Date(event.updated_date):null;
   const canonical=`https://rallyhub.ie/events/${event.event_slug}`;
 
@@ -79,10 +89,10 @@ export default function PublicEventDetail(){
 
       <section className="mt-5 grid gap-5 lg:grid-cols-[58%_42%]">
         <div className="space-y-3">
-          <InfoRow title="Eligibility & levels" summary="Age groups, eligibility and competition format">{event.event_eligibility}</InfoRow>
-          <InfoRow title="Player information" summary="Useful information before you travel or play">{event.event_player_info||event.description}</InfoRow>
-          <InfoRow title="Fees & cancellation" summary="Entry fees, payment and refund information">{event.event_fees_cancellation}</InfoRow>
-          <InfoRow title="Contact organiser" summary={event.host?.name||'Event organiser'}>{event.event_contact}</InfoRow>
+          <InfoRow title="Eligibility & levels" summary={infoPreview(event.event_eligibility)}>{event.event_eligibility}</InfoRow>
+          <InfoRow title="Player information" summary={infoPreview(event.event_player_info||event.description)}>{event.event_player_info||event.description}</InfoRow>
+          <InfoRow title="Fees & cancellation" summary={infoPreview(event.event_fees_cancellation)}>{event.event_fees_cancellation}</InfoRow>
+          <InfoRow title="Contact organiser" summary={event.event_contact?`Contact: ${event.event_contact}`:(event.host?.name||'Event organiser')}>{event.event_contact}</InfoRow>
         </div>
 
         <div className="space-y-5">
