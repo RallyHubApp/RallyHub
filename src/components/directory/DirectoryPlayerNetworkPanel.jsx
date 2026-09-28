@@ -75,9 +75,9 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
   };
 
   return <section id="player-network" className="bg-[#f6faf9] border-y border-[#e0ece8]">
-    <div className="mx-auto max-w-[1380px] px-4 py-6 sm:px-6 lg:px-10 xl:px-12">
-      <div className="grid gap-4 xl:grid-cols-[1.35fr_.65fr]">
-        <div className="rounded-2xl border border-[#cfe4d8] bg-white p-5 shadow-[0_8px_24px_rgba(8,24,77,.045)] sm:p-6">
+    <div className="mx-auto max-w-[1380px] px-4 py-4 sm:px-6 lg:px-10 xl:px-12">
+      <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-[1.35fr_.9fr_.9fr]">
+        <div className={`rounded-2xl border border-[#cfe4d8] bg-white p-4 shadow-[0_8px_24px_rgba(8,24,77,.045)] ${signupOpen ? 'md:col-span-2 xl:col-span-3' : 'md:col-span-2 xl:col-span-1'}`}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-3">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#e8f7ee] text-[#078e48]"><BellRing className="h-5 w-5"/></div>
@@ -87,7 +87,7 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[#52627d]">Get occasional RallyHub updates about tournaments, events, coaching and other worthwhile pickleball opportunities around Ireland.</p>
               </div>
             </div>
-            {!done&&!signupOpen&&<button type="button" onClick={()=>setSignupOpen(true)} className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-[#078e48] px-5 text-sm font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f]">Keep me updated</button>}
+            {!done&&!signupOpen&&<button type="button" onClick={()=>setSignupOpen(true)} className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-[#078e48] px-4 text-xs font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f]">Sign up for updates</button>}
           </div>
 
           {done ? <div className="mt-5 rounded-xl border border-[#b8dfc7] bg-[#eef9f3] p-5">
@@ -137,29 +137,27 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
             </div>
             {error&&<div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
             <div className="flex flex-wrap items-center gap-3">
-              <button type="submit" disabled={busy} className="inline-flex h-11 items-center justify-center rounded-lg bg-[#078e48] px-5 text-sm font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f] disabled:opacity-60">{busy?'Saving…':'Keep me updated'}</button>
+              <button type="submit" disabled={busy} className="inline-flex h-11 items-center justify-center rounded-lg bg-[#078e48] px-5 text-sm font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f] disabled:opacity-60">{busy?'Saving…':'Join the update list'}</button>
               <button type="button" onClick={()=>{setSignupOpen(false);setError('')}} className="h-11 px-2 text-sm font-bold text-[#66758b] hover:text-[#07184c]">Hide form</button>
             </div>
           </form> : null}
         </div>
 
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-[#dbe6e8] bg-white p-5 shadow-[0_8px_24px_rgba(8,24,77,.04)]">
-            <div className="flex items-center gap-2"><UserPlus2 className="h-5 w-5 text-[#078e48]"/><h3 className="font-black text-[#07184c]">Can't find your club?</h3></div>
-            <p className="mt-2 text-sm leading-6 text-[#52627d]">Word of mouth will help us complete the Directory. Send a ready-made message to your club organiser. RallyHub never sees or stores the recipient's details.</p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <button type="button" onClick={()=>openShare('club','whatsapp')} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#20a766] px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4"/> WhatsApp my club</button>
-              <button type="button" onClick={()=>openShare('club','email')} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-3 text-xs font-bold text-[#07184c]"><Mail className="h-4 w-4"/> Email my club</button>
-            </div>
+        <div className="rounded-2xl border border-[#dbe6e8] bg-white p-4 shadow-[0_8px_24px_rgba(8,24,77,.04)]">
+          <div className="flex items-center gap-2"><UserPlus2 className="h-5 w-5 text-[#078e48]"/><h3 className="font-black text-[#07184c]">Can't find your club?</h3></div>
+          <p className="mt-2 text-sm leading-5 text-[#52627d]">Send a ready-made message to your club organiser and help us complete the Directory.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+            <button type="button" onClick={()=>openShare('club','whatsapp')} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#20a766] px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4"/> WhatsApp my club</button>
+            <button type="button" onClick={()=>openShare('club','email')} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-3 text-xs font-bold text-[#07184c]"><Mail className="h-4 w-4"/> Email my club</button>
           </div>
+        </div>
 
-          <div className="rounded-2xl border border-[#dbe6e8] bg-white p-5 shadow-[0_8px_24px_rgba(8,24,77,.04)]">
-            <div className="flex items-center gap-2"><Share2 className="h-5 w-5 text-[#07528a]"/><h3 className="font-black text-[#07184c]">Know someone who plays pickleball?</h3></div>
-            <p className="mt-2 text-sm leading-6 text-[#52627d]">Share RallyHub with a friend and help more players discover clubs, events, tournaments, coaching and playing opportunities around Ireland.</p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <button type="button" onClick={()=>openShare('player','whatsapp')} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#20a766] px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4"/> Share with a player</button>
-              <button type="button" onClick={()=>openShare('player','email')} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-3 text-xs font-bold text-[#07184c]"><Mail className="h-4 w-4"/> Email a player</button>
-            </div>
+        <div className="rounded-2xl border border-[#dbe6e8] bg-white p-4 shadow-[0_8px_24px_rgba(8,24,77,.04)]">
+          <div className="flex items-center gap-2"><Share2 className="h-5 w-5 text-[#07528a]"/><h3 className="font-black text-[#07184c]">Know someone who plays pickleball?</h3></div>
+          <p className="mt-2 text-sm leading-5 text-[#52627d]">Share RallyHub with a friend and help more players discover places to play around Ireland.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+            <button type="button" onClick={()=>openShare('player','whatsapp')} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#20a766] px-3 text-xs font-bold text-white"><MessageCircle className="h-4 w-4"/> Share with a player</button>
+            <button type="button" onClick={()=>openShare('player','email')} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-[#cbd7dc] bg-white px-3 text-xs font-bold text-[#07184c]"><Mail className="h-4 w-4"/> Email a player</button>
           </div>
         </div>
       </div>
