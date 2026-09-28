@@ -11,6 +11,7 @@ const event={
 };
 const second={...event,id:'event-clare',name:'Clare v Galway Interclub',event_slug:'clare-v-galway-interclub',start_date:'2026-10-04',end_date:'2026-10-04',location:"St Joseph's, Doora Barefield",event_county:'Clare',event_country:'Ireland',event_category:'interclub',event_featured_public:false,event_registration_open_at:null,event_registration_close_at:null,event_registration_mode:'none',event_registration_url:'',event_levels:['Social','Improver'],event_age_groups:['All ages'],event_disciplines:['Team'],event_public_summary:'Clare and Galway meet in a social interclub fixture.',host:{id:'club-clare',name:'Clare Pickleball',slug:'clare-pickleball',logo_url:onePixel}};
 const opening={...event,id:'event-opening',name:'Opening Soon Test',event_slug:'opening-soon-test',start_date:'2026-12-01',end_date:'2026-12-01',event_featured_public:false,event_registration_open_at:'2099-01-01T00:00:00.000Z',event_registration_close_at:'2099-02-01T00:00:00.000Z'};
+const eyva={...event,id:'event-eyva',name:"Eyva's Invitational Series – Autumn Classic 2026",event_slug:'eyva-autumn-classic-2026',start_date:'2026-10-17',end_date:'2026-10-17',location:"The Dome, Our Lady's School, Terenure, Dublin 6",event_county:'Dublin',event_country:'Ireland',event_featured_public:false,event_registration_open_at:null,event_registration_close_at:null,event_registration_mode:'contact',event_registration_url:'',event_contact:'eyvainvitationalseries@gmail.com',event_levels:['3.0-','3.5-'],event_age_groups:['18+'],event_disciplines:['Gender Doubles','Mixed Doubles'],event_tags:['DUPR Rated','Invitation only','Limited spaces'],event_public_summary:'Invitation-only DUPR-rated Autumn Classic.',host:{id:'club-eyva',name:"Eyva's Invitational Series",slug:'eyva-s-invitational-series'}};
 const json=(route,body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
 
 async function installPublicBackend(page){
@@ -28,8 +29,8 @@ async function installPublicBackend(page){
       const name=decodeURIComponent(path.slice(i+marker.length).split('/')[0]);let body={};try{body=req.postDataJSON()||{};}catch{}
       calls.push({name,body});
       if(name==='publicEvents'){
-        if(body.action==='detail'){const found=[event,second,opening].find(e=>e.event_slug===body.slug);return found?json(route,{success:true,event:found}):json(route,{error:'Public event not found'},404)}
-        return json(route,{success:true,events:[second,event,opening]});
+        if(body.action==='detail'){const found=[event,second,opening,eyva].find(e=>e.event_slug===body.slug);return found?json(route,{success:true,event:found}):json(route,{error:'Public event not found'},404)}
+        return json(route,{success:true,events:[second,event,opening,eyva]});
       }
       if(name==='eventEngagement')return json(route,{success:true,saved:{id:'saved-1'},share:{id:'share-1'},items:[]});
       if(name==='securityContext')return json(route,{success:true,context:null});
@@ -52,6 +53,13 @@ test('public Events desktop: discover, filter, open detail, save, calendar and c
   await expect(page.getByRole('heading',{name:'Kukri Irish Nationals 2026'})).toBeVisible();
   await expect(page.getByText('Open for booking').first()).toBeVisible();
   await expect(page.getByText('Clare v Galway Interclub')).toBeVisible();
+  await expect(page.getByText("Eyva's Invitational Series – Autumn Classic 2026")).toBeVisible();
+  await expect(page.getByText('Invitation only').first()).toBeVisible();
+  await page.getByRole('button',{name:'Invitation only'}).click();
+  await expect(page.getByText("Eyva's Invitational Series – Autumn Classic 2026")).toBeVisible();
+  await expect(page.getByRole('button',{name:'Request invitation'})).toBeVisible();
+  await expect(page.getByText('Kukri Irish Nationals 2026')).toHaveCount(0);
+  await page.getByRole('button',{name:'All upcoming'}).click();
   await page.getByLabel('Country').selectOption({label:'Northern Ireland'});
   await page.getByLabel('Discipline').selectOption({label:'Singles'});
   await expect(page.getByText('Kukri Irish Nationals 2026').first()).toBeVisible();
