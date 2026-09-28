@@ -36,9 +36,11 @@ function EventPreview({draft,mode,onClose,hostName}){
   return <div className="overflow-hidden rounded-2xl border bg-card shadow-sm"><div className="grid md:grid-cols-[42%_58%]">{image?<div className="flex min-h-64 max-h-[620px] items-center justify-center overflow-hidden bg-secondary"><img src={image} alt="Event poster preview" className="block max-h-[620px] w-full object-contain" style={{objectPosition:`${draft.imageX}% ${draft.imageY}%`,transform:`scale(${draft.imageZoom})`,transformOrigin:`${draft.imageX}% ${draft.imageY}%`}}/></div>:<div className="flex min-h-64 items-center justify-center bg-secondary text-muted-foreground">Full artwork</div>}<div className="space-y-4 p-5"><div className="flex items-center justify-between gap-3"><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">{typeLabels[draft.category]||'Event'}</span><span className="text-xs text-muted-foreground">{member?'Member preview':'Public detail preview'}</span></div><h2 className="text-2xl font-black">{draft.name||'Event name'}</h2><div className="space-y-1 text-sm text-muted-foreground"><p className="flex gap-2"><CalendarDays className="h-4 w-4"/>{draft.date||'Date'}{draft.endDate&&draft.endDate!==draft.date?` – ${draft.endDate}`:''}{draft.start?` · ${draft.start}`:''}{draft.end?`–${draft.end}`:''}</p><p className="flex gap-2"><MapPin className="h-4 w-4"/>{draft.location||'Venue'}</p></div>{draft.summary&&<p className="text-sm leading-6">{draft.summary}</p>}{member&&draft.internal&&<div className="rounded-xl border border-primary/20 bg-primary/5 p-3"><p className="text-xs font-black uppercase tracking-wide text-primary">Member information</p><p className="mt-1 whitespace-pre-wrap text-sm">{draft.internal}</p></div>}<div className="grid grid-cols-2 gap-2"><Button>Register / Book</Button><Button variant="outline">Save event</Button></div><Button variant="ghost" className="w-full" onClick={onClose}>Back to editor</Button></div></div></div>;
 }
 
-export default function TenantEvents(){
+export default function TenantEvents({directoryListingSlug='', embedded=false}){
+  const directoryMode=!!directoryListingSlug;
+  const freshBlank=()=>directoryMode?{...blank,member:false,public:true}:({...blank});
   const qc=useQueryClient();
-  const [draft,setDraft]=useState(blank);
+  const [draft,setDraft]=useState(freshBlank);
   const [preview,setPreview]=useState(null);
   const [editingId,setEditingId]=useState(null);
   const [showOlder,setShowOlder]=useState(false);
@@ -46,15 +48,20 @@ export default function TenantEvents(){
   const [saveState,setSaveState]=useState('');
   const {data:user}=useQuery({queryKey:['current-user'],queryFn:()=>base44.auth.me()});
   const isAdmin=user?.role==='admin';
-  const canManage=isAdmin||user?.active_club_role==='club_admin'||user?.approval_status==='approved';
-  const {data:adminClubs=[]}=useQuery({queryKey:['admin-event-host-clubs'],queryFn:()=>base44.entities.Club.filter({status:'active'},'name',500),enabled:isAdmin,staleTime:30000});
-  const effectiveHostClubId=isAdmin?(adminHostClubId||user?.active_club_id||''):(user?.active_club_id||'');
-  const selectedAdminHost=isAdmin?adminClubs.find(c=>c.id===effectiveHostClubId):null;
-  const effectiveTenantId=isAdmin?(selectedAdminHost?.tenant_id||(effectiveHostClubId===user?.active_club_id?user?.active_tenant_id:'')||''):(user?.active_tenant_id||'');
-  const hostName=isAdmin?selectedAdminHost?.name:user?.active_club_name;
-  const {data:venues=[]}=useQuery({queryKey:['event-venues',effectiveTenantId,effectiveHostClubId],queryFn:()=>base44.entities.Venue.filter({tenant_id:effectiveTenantId,club_id:effectiveHostClubId,status:'active'},'name',100),enabled:!!effectiveTenantId&&!!effectiveHostClubId});
-  const {data:events=[]}=useQuery({queryKey:['tenant-events',effectiveTenantId,effectiveHostClubId],queryFn:()=>base44.entities.Tournament.filter({tenant_id:effectiveTenantId,host_club_id:effectiveHostClubId,status:{$ne:'Archived'}},'start_date',100),enabled:!!effectiveTenantId&&!!effectiveHostClubId,staleTime:30000});
-  const {data:sharedData=[]}=useQuery({queryKey:['club-shared-public-events',effectiveTenantId,effectiveHostClubId],queryFn:async()=>{const payload={action:'club_shared'};if(isAdmin){payload.clubId=effectiveHostClubId;payload.tenantId=effectiveTenantId}const res=await base44.functions.invoke('eventEngagement',payload);return res.data?.items||[]},enabled:!!effectiveTenantId&&!!effectiveHostClubId,staleTime:30000});
+  const {data:directoryContext,isLoading:directoryLoading,error:directoryError}=useQuery({queryKey:['directory-event-context',directoryListingSlug],queryFn:async()=>{const res=await base44.functions.invoke('directoryEvents',{action:'list',listingSlug:directoryListingSlug});if(res.data?.error)throw new Error(res.data.error);return res.data},enabled:directoryMode,staleTime:15000});
+  const canManage=directoryMode?!!directoryContext?.canManage:(isAdmin||user?.active_club_role==='club_admin'||user?.approval_status==='approved');
+  const {data:adminClubs=[]}=useQuery({queryKey:['admin-event-host-clubs'],queryFn:()=>base44.entities.Club.filter({status:'active'},'name',500),enabled:isAdmin&&!directoryMode,staleTime:30000});
+  const directoryHostClubId=directoryContext?.host?.id||'';
+  const directoryTenantId=directoryContext?.tenant?.id||'';
+  const effectiveHostClubId=directoryMode?directoryHostClubId:(isAdmin?(adminHostClubId||user?.active_club_id||''):(user?.active_club_id||''));
+  const selectedAdminHost=!directoryMode&&isAdmin?adminClubs.find(c=>c.id===effectiveHostClubId):null;
+  const effectiveTenantId=directoryMode?directoryTenantId:(isAdmin?(selectedAdminHost?.tenant_id||(effectiveHostClubId===user?.active_club_id?user?.active_tenant_id:'')||''):(user?.active_tenant_id||''));
+  const hostName=directoryMode?(directoryContext?.host?.name||directoryContext?.listing?.name):(isAdmin?selectedAdminHost?.name:user?.active_club_name);
+  const {data:tenantVenues=[]}=useQuery({queryKey:['event-venues',effectiveTenantId,effectiveHostClubId],queryFn:()=>base44.entities.Venue.filter({tenant_id:effectiveTenantId,club_id:effectiveHostClubId,status:'active'},'name',100),enabled:!directoryMode&&!!effectiveTenantId&&!!effectiveHostClubId});
+  const {data:tenantEvents=[]}=useQuery({queryKey:['tenant-events',effectiveTenantId,effectiveHostClubId],queryFn:()=>base44.entities.Tournament.filter({tenant_id:effectiveTenantId,host_club_id:effectiveHostClubId,status:{$ne:'Archived'}},'start_date',100),enabled:!directoryMode&&!!effectiveTenantId&&!!effectiveHostClubId,staleTime:30000});
+  const venues=directoryMode?(directoryContext?.venues||[]):tenantVenues;
+  const events=directoryMode?(directoryContext?.events||[]):tenantEvents;
+  const {data:sharedData=[]}=useQuery({queryKey:['club-shared-public-events',effectiveTenantId,effectiveHostClubId],queryFn:async()=>{const payload={action:'club_shared'};if(isAdmin){payload.clubId=effectiveHostClubId;payload.tenantId=effectiveTenantId}const res=await base44.functions.invoke('eventEngagement',payload);return res.data?.items||[]},enabled:!directoryMode&&!!effectiveTenantId&&!!effectiveHostClubId,staleTime:30000});
   const today=new Date().toISOString().slice(0,10);
   const currentEvents=useMemo(()=>events.filter(e=>e.status!=='Archived'&&(e.end_date||e.start_date||'')>=today).sort(eventSort),[events,today]);
   const olderEvents=useMemo(()=>events.filter(e=>e.status!=='Archived'&&(e.end_date||e.start_date||'')<today).sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||'')),[events,today]);
