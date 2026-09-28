@@ -114,36 +114,29 @@
     },
     "kotc_num_courts": {
       "type": "number",
-      "description": "King of the Court / Tournival: number of courts",
       "default": 4
     },
     "kotc_num_rounds": {
       "type": "number",
-      "description": "King of the Court: total rounds",
       "default": 9
     },
     "kotc_score_format": {
-      "type": "string",
-      "description": "King of the Court: scoring format"
+      "type": "string"
     },
     "kotc_state": {
-      "type": "string",
-      "description": "King of the Court / Tournival: JSON-serialised engine state"
+      "type": "string"
     },
     "kotc_current_round": {
-      "type": "number",
-      "description": "King of the Court / Tournival: current round number"
+      "type": "number"
     },
     "kotc_player_order": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Confirmed KOTC ranking order as roster keys (member Player IDs or one-off guest IDs)"
+      }
     },
     "kotc_guest_roster": {
       "type": "array",
-      "description": "One-off KOTC guests stored only on this event before session creation; never creates a permanent Person/Player/member record",
       "items": {
         "type": "object",
         "properties": {
@@ -165,41 +158,33 @@
       }
     },
     "kotc_spond_group_id": {
-      "type": "string",
-      "description": "Optional linked Spond group ID for automated imports"
+      "type": "string"
     },
     "kotc_spond_event_id": {
-      "type": "string",
-      "description": "Optional linked Spond event ID for automated imports"
+      "type": "string"
     },
     "kotc_session_venue": {
       "type": "string",
       "enum": [
         "ennis",
         "corofin"
-      ],
-      "description": "Legacy KOTC session venue identifier"
+      ]
     },
     "kotc_last_import_message": {
-      "type": "string",
-      "description": "Host-visible message from the latest automated import"
+      "type": "string"
     },
     "kotc_last_imported_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Timestamp of the latest automated import"
+      "format": "date-time"
     },
     "tenant_id": {
-      "type": "string",
-      "description": "Owning Tenant ID"
+      "type": "string"
     },
     "host_club_id": {
-      "type": "string",
-      "description": "Owning/host Club ID; may be blank for tenant-run events"
+      "type": "string"
     },
     "venue_id": {
-      "type": "string",
-      "description": "Primary Venue ID, if applicable"
+      "type": "string"
     },
     "roster_status": {
       "type": "string",
@@ -215,6 +200,55 @@
       "format": "date-time"
     },
     "finalised_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event_category": {
+      "type": "string",
+      "enum": [
+        "tournament",
+        "coaching",
+        "holiday",
+        "other"
+      ],
+      "default": "other"
+    },
+    "event_start_time": {
+      "type": "string"
+    },
+    "event_end_time": {
+      "type": "string"
+    },
+    "event_image_url": {
+      "type": "string"
+    },
+    "event_internal_info": {
+      "type": "string"
+    },
+    "event_contact": {
+      "type": "string"
+    },
+    "event_registration_url": {
+      "type": "string"
+    },
+    "event_member_visible": {
+      "type": "boolean",
+      "default": false
+    },
+    "event_public_visible": {
+      "type": "boolean",
+      "default": false
+    },
+    "event_publish_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "event_published_at": {
       "type": "string",
       "format": "date-time"
     }
