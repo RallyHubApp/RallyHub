@@ -99,7 +99,7 @@ function gmailRawEmail({
 export async function sendWithConfiguredEmailTransport(
   base44: any,
   scope: EmailScope,
-  message: { to: string; subject: string; textBody: string; htmlBody?: string | null; replyTo?: string | null },
+  message: { to: string; subject: string; textBody: string; htmlBody?: string | null; replyTo?: string | null; senderName?: string | null },
 ) {
   const config = await requireConfiguredEmailTransport(base44, scope);
 
@@ -116,7 +116,7 @@ export async function sendWithConfiguredEmailTransport(
         raw: gmailRawEmail({
           to: message.to,
           senderEmail: config.sender_email,
-          senderName: config.sender_name,
+          senderName: message.senderName || config.sender_name,
           replyTo: message.replyTo || config.reply_to,
           subject: message.subject,
           textBody: message.textBody,
@@ -144,7 +144,7 @@ export async function sendWithConfiguredEmailTransport(
         subject: message.subject,
         textBody: message.textBody,
         htmlBody: message.htmlBody || '',
-        senderName: config.sender_name,
+        senderName: message.senderName || config.sender_name,
         replyTo: message.replyTo || config.reply_to || config.sender_email,
       }),
     });
@@ -158,7 +158,7 @@ export async function sendWithConfiguredEmailTransport(
   if (config.provider === 'base44_core') {
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: message.to,
-      from_name: config.sender_name,
+      from_name: message.senderName || config.sender_name,
       subject: message.subject,
       body: message.textBody,
     });
