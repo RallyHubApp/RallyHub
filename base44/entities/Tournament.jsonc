@@ -170,6 +170,9 @@
     "event_category": {
       "type": "string"
     },
+    "event_slug": {
+      "type": "string"
+    },
     "event_start_time": {
       "type": "string"
     },
@@ -191,6 +194,21 @@
       "type": "number",
       "default": 1
     },
+    "event_card_image_url": {
+      "type": "string"
+    },
+    "event_card_position_x": {
+      "type": "number",
+      "default": 50
+    },
+    "event_card_position_y": {
+      "type": "number",
+      "default": 50
+    },
+    "event_card_zoom": {
+      "type": "number",
+      "default": 1
+    },
     "event_image_original_url": {
       "type": "string"
     },
@@ -205,6 +223,134 @@
     },
     "event_registration_url": {
       "type": "string"
+    },
+    "event_registration_mode": {
+      "type": "string",
+      "enum": [
+        "external",
+        "rallyhub",
+        "contact",
+        "none"
+      ]
+    },
+    "event_registration_open_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "event_registration_close_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "event_fee_text": {
+      "type": "string"
+    },
+    "event_fee_amount": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "event_currency": {
+      "type": "string"
+    },
+    "event_capacity": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "event_waitlist_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "event_public_summary": {
+      "type": "string"
+    },
+    "event_county": {
+      "type": "string"
+    },
+    "event_country": {
+      "type": "string"
+    },
+    "event_indoor_outdoor": {
+      "type": "string",
+      "enum": [
+        "indoor",
+        "outdoor",
+        "mixed",
+        ""
+      ]
+    },
+    "event_levels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "event_age_groups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "event_disciplines": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "event_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "event_schedule": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "event_eligibility": {
+      "type": "string"
+    },
+    "event_player_info": {
+      "type": "string"
+    },
+    "event_fees_cancellation": {
+      "type": "string"
+    },
+    "event_source_url": {
+      "type": "string"
+    },
+    "event_map_url": {
+      "type": "string"
+    },
+    "event_latitude": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "event_longitude": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "event_featured_public": {
+      "type": "boolean",
+      "default": false
+    },
+    "event_verified_organiser": {
+      "type": "boolean",
+      "default": false
     },
     "event_member_visible": {
       "type": "boolean",
