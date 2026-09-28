@@ -20,7 +20,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const statusFilters=[
-  ['all','All upcoming'],['open','Open for booking'],['opening_soon','Opening soon'],['closing_soon','Closing soon'],['closed','Registration closed']
+  ['all','All upcoming'],['open','Open for booking'],['invite_only','Invitation only'],['opening_soon','Opening soon'],['closing_soon','Closing soon'],['closed','Registration closed']
 ];
 const today=()=>new Date().toISOString().slice(0,10);
 const monthKey=value=>value?String(value).slice(0,7):'';
