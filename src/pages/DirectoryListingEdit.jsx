@@ -28,9 +28,10 @@ const emptyVenue = index => ({
   courts: '', latitude: '', longitude: '', mapUrl: '', websiteUrl: '', playType: ''
 });
 const newSessionId = () => `session-${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}`;
-const emptySession = venueId => ({
-  id: newSessionId(), venueId: venueId || '', day: 'Monday', meetTime: '', start: '19:00', end: '',
-  level: 'Club Session', price: '', paymentMethod: '', capacity: '', host: '', showPublicJoinLink: false, publicJoinUrl: ''
+const emptySession = () => ({
+  id: newSessionId(), venueId: '', day: '', meetTime: '', start: '', end: '',
+  level: '', price: '', paymentMethod: '', capacity: '', host: '', showPublicJoinLink: false, publicJoinUrl: '',
+  recurringWeekly: true, source: null
 });
 const dayOrder = new Map(weekDays.map((day, index) => [day, index]));
 const sortSessions = sessions => [...(sessions || [])].sort((a, b) =>
@@ -38,6 +39,22 @@ const sortSessions = sessions => [...(sessions || [])].sort((a, b) =>
   String(a.start || '').localeCompare(String(b.start || '')) ||
   String(a.level || '').localeCompare(String(b.level || ''))
 );
+const canonicalVenueName = value => String(value || '')
+  .toLowerCase()
+  .replace(/&/g, ' and ')
+  .replace(/[^a-z0-9]+/g, ' ')
+  .split(/\s+/)
+  .filter(Boolean)
+  .filter(token => !new Set(['the','st','saint','club','gaa','sports','sport','hall','centre','center','community','scouts','scout']).has(token));
+const venueNamesLikelyMatch = (a, b) => {
+  const left = canonicalVenueName(a);
+  const right = canonicalVenueName(b);
+  if (!left.length || !right.length) return false;
+  const l = new Set(left), r = new Set(right);
+  const overlap = [...l].filter(token => r.has(token)).length;
+  return overlap >= Math.min(l.size, r.size) && overlap >= 1;
+};
+const defaultPublicJoinUrl = (slug, sessionId) => `https://rallyhub.ie/guest/${encodeURIComponent(slug)}?session=${encodeURIComponent(sessionId)}`;
 
 function mergeProfile(base, override) {
   if (!base) return null;
@@ -294,7 +311,20 @@ export default function DirectoryListingEdit() {
       })
     }));
   };
-  const setSession = (index, key, value) => { setSaved(false); setForm(prev => ({ ...prev, sessions: sortSessions(prev.sessions.map((s, i) => i === index ? { ...s, [key]: value } : s)) })); };
+  const setSession = (sessionId, key, value) => {
+    setSaved(false);
+    setForm(prev => ({
+      ...prev,
+      sessions: prev.sessions.map(session => {
+        if (session.id !== sessionId) return session;
+        const updated = { ...session, [key]: value };
+        if (key === 'showPublicJoinLink' && value === true && !String(updated.publicJoinUrl || '').trim()) {
+          updated.publicJoinUrl = defaultPublicJoinUrl(slug, session.id);
+        }
+        return updated;
+      })
+    }));
+  };
 
   const validate = () => {
     const issues = [];
@@ -311,6 +341,7 @@ export default function DirectoryListingEdit() {
       if (!isValidUrl(venue.websiteUrl)) issues.push(`Venue ${index + 1} website link is not valid.`);
     });
     (form?.sessions || []).forEach((session, index) => {
+      if (!session.day) issues.push(`Session ${index + 1} needs a day.`);
       if (!session.venueId) issues.push(`Session ${index + 1} needs a venue.`);
       if (!session.start) issues.push(`Session ${index + 1} needs a start time.`);
       if (session.showPublicJoinLink && !isValidUrl(session.publicJoinUrl)) issues.push(`Session ${index + 1} public join link is not valid.`);
@@ -327,7 +358,8 @@ export default function DirectoryListingEdit() {
     }
     setSaving(true); setSaved(false); setError('');
     try {
-      const res = await base44.functions.invoke('directoryListingProfile', { action: 'save', listingSlug: slug, profile: form, town: baseClub?.town || '', county: baseClub?.county || '' });
+      const profileToSave = { ...form, sessions: sortSessions(form.sessions || []) };
+      const res = await base44.functions.invoke('directoryListingProfile', { action: 'save', listingSlug: slug, profile: profileToSave, town: baseClub?.town || '', county: baseClub?.county || '' });
       if (res.data?.error) throw new Error(res.data.error);
       const merged = mergeProfile(baseClub, res.data.profile || {});
       setForm(merged);
@@ -520,22 +552,29 @@ export default function DirectoryListingEdit() {
   };
   const addSession = () => {
     if (!form?.venues?.length) { setSessionNotice('Add a venue before adding a weekly session.'); return; }
-    const created = emptySession(form.venues[0]?.id || '');
+    const created = emptySession();
     setSaved(false);
-    setForm(prev => ({ ...prev, sessions: sortSessions([...(prev.sessions || []), created]) }));
-    revealSession(created.id, 'New blank session added — complete the details below.');
+    setForm(prev => ({ ...prev, sessions: [...(prev.sessions || []), created] }));
+    revealSession(created.id, 'New blank weekly session added — choose the day, venue and time below. Nothing has been copied from another session.');
   };
   const cloneSession = index => {
     const source = form?.sessions?.[index];
     if (!source) return;
-    const duplicated = { ...clone(source), id: newSessionId() };
+    const duplicatedId = newSessionId();
+    const duplicated = {
+      ...clone(source),
+      id: duplicatedId,
+      source: null,
+      recurringWeekly: true,
+      publicJoinUrl: source.showPublicJoinLink ? defaultPublicJoinUrl(slug, duplicatedId) : '',
+    };
     setSaved(false);
     setForm(prev => {
       const sessions = [...(prev.sessions || [])];
       sessions.splice(index + 1, 0, duplicated);
-      return { ...prev, sessions: sortSessions(sessions) };
+      return { ...prev, sessions };
     });
-    revealSession(duplicated.id, 'Session duplicated — edit only the details that are different.');
+    revealSession(duplicated.id, 'Session duplicated with its own new booking link — edit the details that are different.');
   };
   const removeSession = index => {
     if (!window.confirm('Remove this weekly session?')) return;
@@ -543,7 +582,7 @@ export default function DirectoryListingEdit() {
     setForm(prev => ({ ...prev, sessions: prev.sessions.filter((_, i) => i !== index) }));
   };
 
-  const importSpondDirectoryData = ({ venues = [], sessions = [] }) => {
+  const importSpondDirectoryData = ({ venues = [], sessions = [], mode = 'merge' }) => {
     setSaved(false);
     setForm(prev => {
       const existingVenues = [...(prev?.venues || [])];
@@ -552,8 +591,8 @@ export default function DirectoryListingEdit() {
 
       for (const incoming of venues) {
         const match = existingVenues.find(v =>
-          norm(v.name) === norm(incoming.name) &&
-          (!incoming.address || !v.address || norm(v.address) === norm(incoming.address))
+          venueNamesLikelyMatch(v.name, incoming.name) ||
+          (norm(v.name) === norm(incoming.name) && (!incoming.address || !v.address || norm(v.address) === norm(incoming.address)))
         );
         if (match) {
           venueIdMap.set(incoming.id, match.id);
@@ -571,26 +610,33 @@ export default function DirectoryListingEdit() {
         }
       }
 
-      const existingSessions = [...(prev?.sessions || [])].filter(s => s.source !== 'Spond');
+      const existingSessions = mode === 'replace_spond'
+        ? [...(prev?.sessions || [])].filter(session => session.source !== 'Spond')
+        : [...(prev?.sessions || [])];
+
       for (const incoming of sessions) {
-        const remapped = { ...incoming, id: newSessionId(), venueId: venueIdMap.get(incoming.venueId) || incoming.venueId };
-        const matchIndex = existingSessions.findIndex(s =>
-          s.day === remapped.day &&
-          s.start === remapped.start &&
-          String(s.end || '') === String(remapped.end || '') &&
-          s.venueId === remapped.venueId &&
-          String(s.level || '').trim().toLowerCase() === String(remapped.level || '').trim().toLowerCase()
+        const remapped = {
+          ...incoming,
+          id: newSessionId(),
+          venueId: venueIdMap.get(incoming.venueId) || incoming.venueId,
+          source: 'Spond',
+          recurringWeekly: true,
+        };
+        const matchIndex = existingSessions.findIndex(session =>
+          session.day === remapped.day &&
+          session.start === remapped.start &&
+          String(session.end || '') === String(remapped.end || '') &&
+          session.venueId === remapped.venueId
         );
-        if (matchIndex >= 0) {
-          existingSessions[matchIndex] = { ...existingSessions[matchIndex], ...remapped, id: existingSessions[matchIndex].id };
-        } else {
-          existingSessions.push(remapped);
-        }
+        if (matchIndex >= 0) continue;
+        existingSessions.push(remapped);
       }
 
       return { ...prev, venues: existingVenues, sessions: sortSessions(existingSessions) };
     });
-    setSessionNotice('Spond venues and sessions imported into the form. Review them below, then press Save changes to publish.');
+    setSessionNotice(mode === 'replace_spond'
+      ? 'Previous Spond-imported sessions were replaced. Manually entered sessions were preserved. Review the result below, then press Save changes.'
+      : 'Spond import merged safely. Existing sessions were preserved and matching duplicates were skipped. Review the result below, then press Save changes.');
   };
 
   if (!loadingListing && !baseClub) return <Navigate to="/directory" replace />;
