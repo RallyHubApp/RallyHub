@@ -40,7 +40,10 @@ test('directory editor: Add session is visible, adds a card, and Duplicate clone
 
   await page.getByTestId('directory-add-session').click();
   await expect(cards).toHaveCount(8);
-  await expect(page.getByTestId('directory-session-notice')).toContainText('New blank session added');
+  await expect(page.getByTestId('directory-session-notice')).toContainText('New blank weekly session added');
+  await expect(newCard.locator('select').nth(0)).toHaveValue('');
+  await expect(newCard.locator('select').nth(1)).toHaveValue('');
+  await expect(newCard.locator('input[type="time"]').nth(1)).toHaveValue('');
 
   const newCard=page.locator('[data-testid="directory-session-card"].ring-2.border-primary');
   await expect(newCard).toHaveCount(1);
@@ -62,6 +65,25 @@ test('directory editor: Add session is visible, adds a card, and Duplicate clone
   expect(await originalTimes.nth(1).inputValue()).toBe(await duplicateTimes.nth(1).inputValue());
   expect(await originalTimes.nth(2).inputValue()).toBe(await duplicateTimes.nth(2).inputValue());
   expect(errors).toEqual([]);
+});
+
+test('directory editor: changing a new weekly session does not mutate or jump into another session',async({page})=>{
+  await installDirectoryBackend(page);
+  await page.goto('/directory/clare-pickleball/edit?access_token=e2e');
+  await page.getByRole('heading',{name:'Weekly sessions'}).scrollIntoViewIfNeeded();
+  const cards=page.getByTestId('directory-session-card');
+  const firstBefore=await cards.first().locator('select').nth(0).inputValue();
+  const firstStartBefore=await cards.first().locator('input[type="time"]').nth(1).inputValue();
+
+  await page.getByTestId('directory-add-session').click();
+  const newCard=page.locator('[data-testid="directory-session-card"].ring-2.border-primary');
+  await newCard.locator('select').nth(0).selectOption('Thursday');
+  await newCard.locator('select').nth(1).selectOption({index:4});
+  await newCard.locator('input[type="time"]').nth(1).fill('10:30');
+
+  await expect(newCard).toContainText('Thursday · 10:30');
+  expect(await cards.first().locator('select').nth(0).inputValue()).toBe(firstBefore);
+  expect(await cards.first().locator('input[type="time"]').nth(1).inputValue()).toBe(firstStartBefore);
 });
 
 test('Clare public listing shows Corofin Wednesday session with €5 cash',async({page})=>{
