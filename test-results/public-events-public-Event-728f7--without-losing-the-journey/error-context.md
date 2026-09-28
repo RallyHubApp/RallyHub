@@ -6,7 +6,7 @@
 
 # Test info
 
-- Name: public-events.spec.mjs >> public Events: a transient 500 gives a clear retry and recovers without losing the journey
+- Name: public-events.spec.mjs >> public Events: transient 500s recover without losing the journey
 - Location: e2e/public-events.spec.mjs:95:1
 
 # Error details
@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('Temporary events service error')
+Locator: getByText('Kukri Irish Nationals 2026').first()
 Expected: visible
-Timeout: 8000ms
+Timeout: 10000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('Temporary events service error') with timeout 8000ms
-  - waiting for getByText('Temporary events service error')
+  - Expect "toBeVisible" getByText('Kukri Irish Nationals 2026').first() with timeout 10000ms
+  - waiting for getByText('Kukri Irish Nationals 2026').first()
 
 ```
 
@@ -235,33 +235,30 @@ Call log:
   92  |   await noHorizontalOverflow(page);
   93  | });
   94  | 
-  95  | test('public Events: a transient 500 gives a clear retry and recovers without losing the journey',async({page})=>{
-  96  |   await installPublicBackend(page,{listFailures:2});
+  95  | test('public Events: transient 500s recover without losing the journey',async({page})=>{
+  96  |   const calls=await installPublicBackend(page,{listFailures:2});
   97  |   await page.goto('/events');
-> 98  |   await expect(page.getByText('Temporary events service error')).toBeVisible({timeout:8000});
-      |                                                                  ^ Error: expect(locator).toBeVisible() failed
-  99  |   const retry=page.getByRole('button',{name:'Try again'});
-  100 |   await expect(retry).toBeVisible();
-  101 |   await retry.click();
-  102 |   await expect(page.getByText('Kukri Irish Nationals 2026').first()).toBeVisible({timeout:5000});
-  103 |   await expect(page.getByRole('button',{name:'Try again'})).toHaveCount(0);
-  104 | });
-  105 | 
-  106 | test.describe('public Events mobile',()=>{
-  107 |   test.use({viewport:{width:390,height:844}});
-  108 |   test('mobile layout has working menu, filter drawer, cards and no body overflow',async({page})=>{
-  109 |     await installPublicBackend(page);
-  110 |     await page.goto('/events');
-  111 |     await expect(page.getByRole('button',{name:'Menu'})).toBeVisible();
-  112 |     await page.getByRole('button',{name:'Menu'}).click();
-  113 |     await expect(page.getByRole('link',{name:'Events',exact:true})).toBeVisible();
-  114 |     await page.getByRole('button',{name:'Menu'}).click();
-  115 |     await expect(page.getByText('More filters')).toBeVisible();
-  116 |     await page.getByText('More filters').click();
-  117 |     await expect(page.locator('select').first()).toBeVisible();
-  118 |     await expect(page.getByText('Kukri Irish Nationals 2026').first()).toBeVisible();
-  119 |     await noHorizontalOverflow(page);
-  120 |   });
-  121 | });
-  122 | 
+> 98  |   await expect(page.getByText('Kukri Irish Nationals 2026').first()).toBeVisible({timeout:10000});
+      |                                                                      ^ Error: expect(locator).toBeVisible() failed
+  99  |   expect(calls.filter(call=>call.name==='publicEvents'&&call.body.action==='list').length).toBeGreaterThanOrEqual(3);
+  100 |   await expect(page.getByRole('button',{name:'Try again'})).toHaveCount(0);
+  101 | });
+  102 | 
+  103 | test.describe('public Events mobile',()=>{
+  104 |   test.use({viewport:{width:390,height:844}});
+  105 |   test('mobile layout has working menu, filter drawer, cards and no body overflow',async({page})=>{
+  106 |     await installPublicBackend(page);
+  107 |     await page.goto('/events');
+  108 |     await expect(page.getByRole('button',{name:'Menu'})).toBeVisible();
+  109 |     await page.getByRole('button',{name:'Menu'}).click();
+  110 |     await expect(page.getByRole('link',{name:'Events',exact:true})).toBeVisible();
+  111 |     await page.getByRole('button',{name:'Menu'}).click();
+  112 |     await expect(page.getByText('More filters')).toBeVisible();
+  113 |     await page.getByText('More filters').click();
+  114 |     await expect(page.locator('select').first()).toBeVisible();
+  115 |     await expect(page.getByText('Kukri Irish Nationals 2026').first()).toBeVisible();
+  116 |     await noHorizontalOverflow(page);
+  117 |   });
+  118 | });
+  119 | 
 ```
