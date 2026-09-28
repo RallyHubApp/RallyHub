@@ -27,6 +27,9 @@ function MePreview({ snapshot }) {
   const name = person.preferred_name || person.full_name || player.full_name || snapshot?.user?.full_name || 'Member';
   const photo = person.profile_photo_url || player.avatar_url || null;
   const initials = String(name).split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0,2).toUpperCase();
+  const positionX = Number(snapshot?.photoSettings?.positionX ?? 50);
+  const positionY = Number(snapshot?.photoSettings?.positionY ?? 50);
+  const zoom = Number(snapshot?.photoSettings?.zoom ?? 1);
   const rows = [
     ['Membership', member.membership_status ? String(member.membership_status).replaceAll('_',' ') : 'Not linked'],
     ['Season', member.membership_season || '—'],
@@ -43,7 +46,7 @@ function MePreview({ snapshot }) {
       </div>
       <GlassCard className="p-5">
         <div className="flex items-center gap-4">
-          {photo ? <img src={photo} alt="" className="w-20 h-20 rounded-full object-cover border border-border" /> : <div className="w-20 h-20 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xl font-black">{initials}</div>}
+          {photo ? <div className="w-20 h-20 rounded-full overflow-hidden border border-border"><img src={photo} alt="" className="w-full h-full object-cover" style={{ objectPosition:`${positionX}% ${positionY}%`, transform:`scale(${zoom})`, transformOrigin:`${positionX}% ${positionY}%` }} /></div> : <div className="w-20 h-20 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xl font-black">{initials}</div>}
           <div className="min-w-0 flex-1">
             <h2 className="text-xl font-black truncate">{name}</h2>
             <p className="text-sm text-muted-foreground truncate">{snapshot?.club?.name || 'Club member'}</p>
