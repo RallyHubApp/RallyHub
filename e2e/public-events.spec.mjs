@@ -14,6 +14,7 @@ const opening={...event,id:'event-opening',name:'Opening Soon Test',event_slug:'
 const json=(route,body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
 
 async function installPublicBackend(page){
+  await page.addInitScript(()=>localStorage.setItem('base44_access_token','events-e2e-token'));
   const calls=[];
   await page.route('**/api/apps/**',async route=>{
     const req=route.request(),url=new URL(req.url()),path=url.pathname;
