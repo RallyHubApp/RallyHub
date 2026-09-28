@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const sessionKey = s => [s.day, s.start, s.end || '', s.level || '', s.venueId || ''].join('|');
 const normaliseClubName = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport, onSave, saveBusy = false, hasUnsavedChanges = false, saved = false }) {
+export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport, onSave, saveBusy = false, hasUnsavedChanges = false, saved = false, existingSessions = [] }) {
   const { user } = useAuth();
   const [connection, setConnection] = useState(null);
   const [groups, setGroups] = useState([]);
@@ -37,6 +37,8 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
   const selectedGroup = useMemo(() => groups.find(g => String(g.id) === String(selectedGroupId)) || null, [groups, selectedGroupId]);
   const currentSelectionSignature = useMemo(() => `${selectedGroupId}::${[...selectedSessions].sort().join('||')}`, [selectedGroupId, selectedSessions]);
   const importComplete = lastImportedCount > 0 && importedSelectionSignature === currentSelectionSignature;
+  const existingSessionCount = existingSessions.length;
+  const existingSpondSessionCount = existingSessions.filter(session => session?.source === 'Spond').length;
 
   useEffect(() => {
     let active = true;
@@ -136,10 +138,19 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
     } finally { setLoadingEvents(false); }
   };
 
-  const importSelected = async () => {
+  const importSelected = async (mode = 'merge') => {
     if (!preview) return;
     const sessions = (preview.sessions || []).filter(s => selectedSessions.has(sessionKey(s)));
     if (!sessions.length) { setError('Select at least one Spond session to import.'); return; }
+
+    if (mode === 'replace_spond' && existingSpondSessionCount > 0) {
+      const ok = window.confirm(`Replace the ${existingSpondSessionCount} session${existingSpondSessionCount === 1 ? '' : 's'} previously imported from Spond?\n\nManually entered sessions will be kept. The selected Spond patterns will be rebuilt from the latest scan.`);
+      if (!ok) return;
+    } else if (existingSessionCount > 0) {
+      const ok = window.confirm(`This Directory already has ${existingSessionCount} weekly session${existingSessionCount === 1 ? '' : 's'}.\n\nRallyHub will keep them, skip matching duplicates and add only missing Spond sessions. Existing session details will not be overwritten.\n\nContinue with the safe merge?`);
+      if (!ok) return;
+    }
+
     setSavingConnection(true); setError(''); setMessage('');
     try {
       const usedVenueIds = new Set(sessions.map(s => s.venueId));
@@ -147,13 +158,13 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
       const eventSync = await invokeDirectory('directory_sync_events', { groupId:selectedGroupId });
       const data = await invokeDirectory('directory_save_connection', {
         groupId:selectedGroupId,
-        summary:`Imported ${sessions.length} directory session pattern${sessions.length === 1 ? '' : 's'} from Spond; ${eventSync.active || 0} upcoming event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} retained for RallyHub calendar use.`
+        summary:`${mode === 'replace_spond' ? 'Replaced' : 'Merged'} ${sessions.length} directory session pattern${sessions.length === 1 ? '' : 's'} from Spond; ${eventSync.active || 0} upcoming event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} retained for RallyHub calendar use.`
       });
-      onImport?.({ venues, sessions, group:selectedGroup });
+      onImport?.({ venues, sessions, group:selectedGroup, mode });
       setConnection(data.connection || connection);
       setLastImportedCount(sessions.length);
       setImportedSelectionSignature(currentSelectionSignature);
-      setMessage(`Imported ${sessions.length} Spond session pattern${sessions.length === 1 ? '' : 's'} into the Directory form and synced ${eventSync.active || 0} upcoming Spond event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} for the RallyHub calendar. The import is complete; press Save changes to publish the Directory sessions.`);
+      setMessage(`${mode === 'replace_spond' ? 'Rebuilt' : 'Safely merged'} ${sessions.length} Spond session pattern${sessions.length === 1 ? '' : 's'} and synced ${eventSync.active || 0} upcoming Spond event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} for the RallyHub calendar. Press Save changes to publish the Directory sessions.`);
     } catch (err) {
       setError(err.message || 'Could not import the Spond sessions.');
     } finally { setSavingConnection(false); }
@@ -241,6 +252,7 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
               <div className="rounded-lg border border-primary/25 bg-primary/5 p-3 text-xs text-muted-foreground">
                 RallyHub groups matching Spond occurrences by weekday, start/end time, venue and event name. Repeating patterns are selected automatically; one-off events can be selected manually if they are also regular club sessions.
               </div>
+              {existingSessionCount > 0 && <div className="rounded-lg border border-amber-400/35 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200"><strong>This listing already has {existingSessionCount} weekly session{existingSessionCount === 1 ? '' : 's'}.</strong> Safe merge preserves them and skips matching duplicates. {existingSpondSessionCount > 0 ? `${existingSpondSessionCount} came from an earlier Spond import; use “Replace previous Spond import” only if you deliberately want to rebuild those.` : 'Nothing already entered will be overwritten.'}</div>}
               {(preview.sessions || []).length === 0 ? <p className="text-sm text-muted-foreground py-3">No usable upcoming Spond sessions were found.</p> : (
                 <div className="space-y-2">
                   {(preview.sessions || []).map(row => {
@@ -263,14 +275,15 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
-                  onClick={importSelected}
+                  onClick={() => importSelected('merge')}
                   disabled={savingConnection || selectedSessions.size === 0 || importComplete}
                   variant={importComplete ? 'outline' : 'default'}
                   className={`gap-2 ${importComplete ? 'cursor-default border-border bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground' : ''}`}
                 >
                   {savingConnection ? <Loader2 className="w-4 h-4 animate-spin" /> : importComplete ? <CheckCircle2 className="w-4 h-4" /> : <CalendarDays className="w-4 h-4" />}
-                  {savingConnection ? 'Importing…' : importComplete ? `Imported ${lastImportedCount}` : `Import ${selectedSessions.size} selected session${selectedSessions.size === 1 ? '' : 's'}`}
+                  {savingConnection ? 'Importing…' : importComplete ? `Imported ${lastImportedCount}` : `Safe merge ${selectedSessions.size} selected session${selectedSessions.size === 1 ? '' : 's'}`}
                 </Button>
+                {existingSpondSessionCount > 0 && !importComplete && <Button type="button" variant="outline" onClick={() => importSelected('replace_spond')} disabled={savingConnection || selectedSessions.size === 0} className="gap-2"><RefreshCw className="w-4 h-4" /> Replace previous Spond import</Button>}
                 {importComplete && onSave && (
                   <Button type="button" onClick={onSave} disabled={saveBusy || !hasUnsavedChanges} className="gap-2">
                     {saveBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : !hasUnsavedChanges && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
