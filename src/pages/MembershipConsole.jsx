@@ -20,7 +20,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
   AlertTriangle, CheckCircle2, ClipboardCopy, Columns3, Download, ExternalLink, FileText, Filter, Link2,
-  Mail, MessageCircle, Pencil, Plus, Printer, RefreshCw, Save, Search, ShieldCheck, Users, WalletCards, X
+  Mail, MessageCircle, Pencil, Plus, Printer, RefreshCw, Save, Search, ShieldCheck, Users, WalletCards, X,
+  Megaphone, Share2, Send, Smartphone
 } from 'lucide-react';
 
 const EMPTY_FILTERS = { membershipStatus: 'all', paymentStatus: 'all', account: 'all', quality: 'all', sport: 'all', renewal: 'all', ageBand: 'all' };
@@ -127,6 +128,13 @@ export default function MembershipConsole() {
   const [membershipSourceClubs, setMembershipSourceClubs] = useState([]);
   const [membershipSourceClubId, setMembershipSourceClubId] = useState('');
   const [membershipSourcePreview, setMembershipSourcePreview] = useState(null);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [broadcastBusy, setBroadcastBusy] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState(null);
+  const [broadcastForm, setBroadcastForm] = useState({
+    title: '', message: '', linkUrl: '', audienceType: 'all_active', whatsappGroupKey: '',
+    sendPush: true, includeWhatsApp: true, pinned: false
+  });
   const [newMember, setNewMember] = useState({
     full_name: '', primary_email: '', mobile: '', date_of_birth: '', member_id: '',
     membership_season: '', membership_type: '', membership_status: 'pending_payment',
