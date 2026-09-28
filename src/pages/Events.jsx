@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarDays, ChevronDown, Clock3, List, Map as MapIcon, MapPin, Search, SlidersHorizontal, Star, UserRound } from 'lucide-react';
+import { BookOpen, CalendarDays, ChevronDown, Clock3, List, Map as MapIcon, MapPin, Search, SlidersHorizontal, Star, UserRound } from 'lucide-react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -172,6 +172,7 @@ export default function Events(){
           <div className="grid grid-cols-2 rounded-lg border border-[#cad7dd] p-1"><button type="button" onClick={()=>setView('list')} className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-bold ${view==='list'?'bg-[#078e48] text-white':''}`}><List className="h-4 w-4"/>List</button><button type="button" onClick={()=>setView('map')} className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-bold ${view==='map'?'bg-[#078e48] text-white':''}`}><MapIcon className="h-4 w-4"/>Map</button></div>
         </div></div>
         <div className="mt-6">{isLoading?<div className="rounded-2xl border border-[#dbe6e8] bg-white py-20 text-center text-sm text-[#52627d]">Loading events…</div>:error?<div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-16 text-center text-sm text-red-700"><p>{error.message||'Could not load events.'}</p><button type="button" disabled={isFetching} onClick={()=>refetch()} className="mt-4 min-h-10 rounded-lg border border-red-300 bg-white px-4 font-bold text-red-700 disabled:opacity-60">{isFetching?'Retrying…':'Try again'}</button></div>:view==='map'?<EventMap events={filtered}/>:gridEvents.length?<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{gridEvents.map(event=><EventCard key={event.id} event={event} onRegister={openRegistration}/>)}</div>:<div className="rounded-2xl border border-[#dbe6e8] bg-white py-16 text-center"><Search className="mx-auto h-8 w-8 text-[#078e48]"/><p className="mt-3 font-black">No events match those filters</p><button type="button" className="mt-3 text-sm font-bold text-[#078e48]" onClick={()=>{setQuery('');setStatus('all');setType('all');setMonth('all');setCounty('all');setCountry('all');setHost('all');setLevel('all');setAge('all');setDiscipline('all');setEnvironment('all')}}>Clear filters</button></div>}</div>
+        <div className="mt-9 flex flex-col gap-3 rounded-2xl border border-[#bfe3cf] bg-[#eff9f3] p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-[#078e48]"/><div><p className="font-black text-[#07184c]">Adding or updating an event?</p><p className="mt-1 text-sm text-[#52627d]">Use the RallyHub Events Quick Start Guide for the seven-step editor, artwork, registration and publishing.</p></div></div><Link to="/events/quick-start" className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-[#078e48] px-4 text-sm font-bold text-white hover:bg-[#067b3f]">View Quick Start Guide</Link></div>
       </section>
     </main><PublicSiteFooter/></div>
   </>;
