@@ -54,6 +54,7 @@ test('public Events desktop: discover, filter, open detail, save, calendar and c
   await expect(page.getByText('© 2026 RallyHub All rights reserved.')).toBeVisible();
   await expect(page.getByRole('heading',{name:'Kukri Irish Nationals 2026'})).toBeVisible();
   await expect(page.getByText('Open for booking').first()).toBeVisible();
+  await expect(page.getByText(/Closes in \d+ days/).first()).toBeVisible();
   await expect(page.getByText('Clare v Galway Interclub')).toBeVisible();
   await expect(page.getByText("Eyva's Invitational Series – Autumn Classic 2026")).toBeVisible();
   await expect(page.getByText('Invitation only').first()).toBeVisible();
