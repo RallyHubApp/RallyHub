@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { CheckCircle2, FileImage, Loader2, RotateCcw, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function EventMediaEditor({ value = '', position = null, cardPosition = null, onChange }) {
+export default function EventMediaEditor({ value = '', position = null, cardPosition = null, onChange, listingSlug = '' }) {
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(value);
   const [uploading, setUploading] = useState(false);
@@ -29,7 +29,7 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
     try {
       const local = okImage ? URL.createObjectURL(file) : '';
       if (local) setPreview(local);
-      const r = await base44.functions.invoke('secureCreditAction',{action:'upload_image',purpose:'event_poster',file,convert_pdf_preview:okPdf});
+      const r = await base44.functions.invoke('secureCreditAction',{action:'upload_image',purpose:'event_poster',file,listingSlug,convert_pdf_preview:okPdf});
       if (r.data?.error) throw new Error(r.data.error);
       const url = r.data?.preview_url || r.data?.file_url;
       if (!url) throw new Error('Upload did not return a poster preview');
