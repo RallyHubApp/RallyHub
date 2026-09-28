@@ -242,12 +242,6 @@
         {
           "$and": [
             {
-              "data.tenant_id": "{{user.data.active_tenant_id}}"
-            },
-            {
-              "data.host_club_id": "{{user.data.active_club_id}}"
-            },
-            {
               "user_condition": {
                 "role": "user"
               }
@@ -302,15 +296,15 @@
         {
           "$and": [
             {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
               "data.tenant_id": "{{user.data.active_tenant_id}}"
             },
             {
               "data.host_club_id": "{{user.data.active_club_id}}"
-            },
-            {
-              "user_condition": {
-                "role": "user"
-              }
             },
             {
               "user_condition": {
@@ -336,15 +330,15 @@
         {
           "$and": [
             {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
               "data.tenant_id": "{{user.data.active_tenant_id}}"
             },
             {
               "data.host_club_id": "{{user.data.active_club_id}}"
-            },
-            {
-              "user_condition": {
-                "role": "user"
-              }
             },
             {
               "user_condition": {
