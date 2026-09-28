@@ -233,9 +233,38 @@
   "required": [],
   "rls": {
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.host_club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            },
+            {
+              "user_condition": {
+                "data.active_club_role": "club_admin"
+              }
+            }
+          ]
+        }
+      ]
     },
     "read": {
       "$or": [
@@ -264,14 +293,72 @@
       ]
     },
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.host_club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            },
+            {
+              "user_condition": {
+                "data.active_club_role": "club_admin"
+              }
+            }
+          ]
+        }
+      ]
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.host_club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            },
+            {
+              "user_condition": {
+                "data.active_club_role": "club_admin"
+              }
+            }
+          ]
+        }
+      ]
     }
   }
 }
