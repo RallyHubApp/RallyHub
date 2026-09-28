@@ -83,11 +83,20 @@ export default function AdminPanel() {
     setAssetUploading(true);
     setAssetUploadMessage(`Uploading ${file.name}…`);
     try {
-      const request = base44.functions.invoke('secureCreditAction', { action:'upload_image', purpose:'site_asset', assetKey, file });
+      // Upload directly through Base44's browser upload integration. This is the SDK's
+      // native File/FormData path and avoids serialising the File through a backend function.
+      const request = base44.integrations.Core.UploadFile({ file });
       const timeout = new Promise((_, reject) => window.setTimeout(() => reject(new Error('Upload timed out. Please try again.')), 45000));
       const res = await Promise.race([request, timeout]);
-      const url = res?.data?.file_url || res?.file_url;
+      const url = res?.file_url || res?.data?.file_url;
       if (!url) throw new Error(res?.data?.error || 'No file URL returned');
+
+      // Keep a named RallyHub asset record so the same uploaded file can be reused by pages
+      // without hard-coding a storage URL. SiteAsset is admin-only through RLS.
+      const existing = await base44.entities.SiteAsset.filter({ key:assetKey }, '-updated_date', 1);
+      if (existing?.[0]?.id) await base44.entities.SiteAsset.update(existing[0].id, { file_url:url, updated_by_user_id:user?.id || '' });
+      else await base44.entities.SiteAsset.create({ key:assetKey, file_url:url, updated_by_user_id:user?.id || '' });
+
       setAssetUploadUrl(url);
       setAssetUploadMessage(`Uploaded ✓ ${file.name}`);
       setAssetSelectedFile(null);
