@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, nextRound, skipBreak = false, allowPendingScores = false } = body;
+    const { eventId, nextRound, skipBreak = false, skipChangeover = false, allowPendingScores = false } = body;
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id: eventId });
     const event = events?.[0];
     if (!event) return Response.json({ error: 'Interclub Challenge event not found' }, { status: 404 });
@@ -47,9 +47,13 @@ Deno.serve(async (req) => {
     const nowMs = Date.now();
     const elapsed = timer.running && timer.started_at ? Math.max(0, Math.floor((nowMs - Date.parse(timer.started_at)) / 1000)) : 0;
     const timerRemainingNow = Math.max(0, Number(timer.remaining_seconds || 0) - elapsed);
-    if (advancing && unresolved.length) {
-      if (!allowPendingScores) return Response.json({ error: `${unresolved.length} result(s) still unresolved in Round ${previousRound}` }, { status: 409 });
-      if (!skipBreak && timer.running && timerRemainingNow > 0 && ['play','changeover'].includes(String(timer.phase || ''))) {
+    if (advancing && unresolved.length && !allowPendingScores) {
+      return Response.json({ error: `${unresolved.length} result(s) still unresolved in Round ${previousRound}` }, { status: 409 });
+    }
+    const activeTimerPhase = String(timer.phase || '');
+    if (advancing && !skipBreak && timer.running && timerRemainingNow > 0 && ['play','changeover'].includes(activeTimerPhase)) {
+      const deliberatelySkippingChangeover = activeTimerPhase === 'changeover' && skipChangeover === true;
+      if (!deliberatelySkippingChangeover) {
         return Response.json({ error:`Round ${previousRound} is still running. Finish or stop the round before preparing Round ${round}.` }, { status:409 });
       }
     }
@@ -83,7 +87,7 @@ Deno.serve(async (req) => {
       user_id:user.id,
       occurred_at:new Date().toISOString(),
       old_value_json:JSON.stringify({current_round:event.current_round,status:event.status,timer_state_json:event.timer_state_json || ''}),
-      new_value_json:JSON.stringify({current_round:round,status:'in_progress',timer_state:nextTimer,timer_revision:nextTimerRevision,break_skipped:!!skipBreak,pending_previous_scores:unresolved.length}),
+      new_value_json:JSON.stringify({current_round:round,status:'in_progress',timer_state:nextTimer,timer_revision:nextTimerRevision,break_skipped:!!skipBreak,changeover_skipped:!!skipChangeover,pending_previous_scores:unresolved.length}),
     });
     return Response.json({ success:true, event:updated, timer_state:nextTimer, timer_revision:nextTimerRevision, break_skipped:!!skipBreak });
   } catch (error) {
