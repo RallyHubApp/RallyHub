@@ -51,6 +51,20 @@ const faqs = [
     a: 'Claim status is controlled by RallyHub, not by the club description. Once the listing is verified, RallyHub removes the unclaimed status wording automatically. You do not need to find and delete that system wording yourself.'
   },
   {
+    q: 'How do I add or manage an event?',
+    a: (
+      <div className="space-y-3">
+        <p>If you manage a claimed Directory listing, open <strong>Manage listing</strong> and choose <strong>Manage events</strong>. The event editor uses the same seven steps as RallyHub Club: Basics, Artwork, Registration, Who is it for?, Event information, Audience, and Preview & publish.</p>
+        <p>Upload the real event poster once, adjust the separate public-card crop, add registration opening and closing dates if applicable, then preview before publishing. RallyHub automatically calculates Opening soon, Open, Closing soon and Registration closed.</p>
+        <Link to="/events/quick-start" className="inline-flex font-semibold text-primary hover:underline">Open the RallyHub Events Quick Start Guide →</Link>
+      </div>
+    )
+  },
+  {
+    q: 'Will the Events editor change if my club later uses RallyHub Club?',
+    a: 'No. The Directory and RallyHub Club use the same event editor and the same canonical event record. RallyHub Club adds member-only audience options in the same place, rather than replacing the workflow with a different one.'
+  },
+  {
     q: 'What is Spond connection for?',
     a: 'It is optional. Clubs using Spond can connect their club group, scan upcoming Spond events and import regular venues and session times into the RallyHub Directory. You can ignore it completely if your club does not use Spond.'
   },
