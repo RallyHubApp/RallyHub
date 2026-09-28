@@ -664,6 +664,38 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, snapshot: await buildSnapshot(base44, user) });
     }
 
+    if (action === 'announcements') {
+      await requireRallyHubClubAccess(base44, user);
+      const snapshot = await buildPreviewSnapshot(base44, user);
+      const tenantId = snapshot.user?.active_tenant_id;
+      const clubId = snapshot.user?.active_club_id;
+      if (!tenantId || !clubId) return Response.json({ success:true, announcements:[] });
+      try {
+        const rows = await base44.asServiceRole.entities.ClubBulletinPost.filter({ tenant_id:tenantId, club_id:clubId, status:'published' }, '-published_at', 100);
+        const now = Date.now();
+        const identityIds = new Set([user.id, snapshot.person?.id, snapshot.player?.id, snapshot.member?.id].filter(Boolean).map(String));
+        const announcements = (rows || [])
+          .filter((post:any) => !post.expires_at || Date.parse(post.expires_at) >= now)
+          .filter((post:any) => post.audience_scope === 'club' || (post.audience_scope === 'member' && (post.audience_ids || []).some((id:any) => identityIds.has(String(id)))))
+          .map((post:any) => ({
+            id:post.id,
+            postType:post.post_type || 'announcement',
+            title:post.title,
+            body:post.body || '',
+            imageUrl:post.image_url || null,
+            linkUrl:post.link_url || null,
+            isPinned:post.is_pinned === true,
+            publishedAt:post.published_at || post.created_date || null,
+          }))
+          .sort((a:any,b:any) => Number(b.isPinned) - Number(a.isPinned) || String(b.publishedAt || '').localeCompare(String(a.publishedAt || '')))
+          .slice(0, 12);
+        return Response.json({ success:true, announcements });
+      } catch (error) {
+        console.warn('member announcements unavailable', error?.message || error);
+        return Response.json({ success:true, announcements:[] });
+      }
+    }
+
     if (action === 'play') {
       await requireRallyHubClubAccess(base44, user);
       const snapshot = await buildSnapshot(base44, user);
