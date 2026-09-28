@@ -6,13 +6,16 @@ const PUBLIC_FIELDS = [
   'event_card_image_url','event_card_position_x','event_card_position_y','event_card_zoom','event_image_original_url','event_image_source_type','event_public_summary','event_registration_url','event_registration_mode',
   'event_registration_open_at','event_registration_close_at','event_fee_text','event_fee_amount','event_currency','event_capacity','event_waitlist_enabled',
   'event_county','event_country','event_indoor_outdoor','event_levels','event_age_groups','event_disciplines','event_tags','event_schedule',
-  'event_eligibility','event_player_info','event_fees_cancellation','event_contact','event_source_url','event_map_url','event_latitude','event_longitude',
+  'event_eligibility','event_player_info','event_fees_cancellation','event_contact','event_contact_phone_hidden_until','event_status_override','event_source_url','event_map_url','event_latitude','event_longitude',
   'event_featured_public','event_verified_organiser','event_published_at','updated_date'
 ];
 
 function publicEvent(event:any, host:any=null) {
   const out:any = {};
   for (const key of PUBLIC_FIELDS) if (event?.[key] !== undefined) out[key] = event[key];
+  const phoneHiddenUntil = event?.event_contact_phone_hidden_until ? new Date(event.event_contact_phone_hidden_until) : null;
+  const phoneUnlocked = !event?.event_contact_phone_keep_private && (!phoneHiddenUntil || Number.isNaN(phoneHiddenUntil.getTime()) || Date.now() >= phoneHiddenUntil.getTime());
+  if (phoneUnlocked && event?.event_contact_phone) out.event_contact_phone = event.event_contact_phone;
   out.host = host ? {
     id: host.id,
     name: host.name || 'Event organiser',
