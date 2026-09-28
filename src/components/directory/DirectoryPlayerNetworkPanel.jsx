@@ -53,6 +53,14 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
       subject:isEmail?(isClub?'Free listing for our club on the RallyHub Pickleball Directory':'Thought you might like RallyHub'):'',
       message:isClub?(isEmail?clubEmail:clubWhatsApp):(isEmail?playerEmail:playerWhatsApp)
     });
+    // The review panel sits below the two cards. Without moving the viewport it can look
+    // as though the share buttons did nothing, especially on mobile and smaller laptops.
+    window.setTimeout(()=>{
+      const panel=document.getElementById('directory-share-review');
+      if(!panel)return;
+      panel.scrollIntoView({behavior:'smooth',block:'start'});
+      panel.focus({preventScroll:true});
+    },0);
   };
   const resetShare=()=>{
     if(!shareDraft)return;
@@ -149,7 +157,7 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
         </div>
       </div>
 
-      {shareDraft&&<div className="mt-4 rounded-2xl border border-[#bfd5dd] bg-white p-5 shadow-[0_10px_28px_rgba(8,24,77,.06)] sm:p-6">
+      {shareDraft&&<div id="directory-share-review" role="region" aria-live="polite" tabIndex={-1} className="mt-4 scroll-mt-24 rounded-2xl border border-[#bfd5dd] bg-white p-5 shadow-[0_10px_28px_rgba(8,24,77,.06)] outline-none sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-[11px] font-extrabold uppercase tracking-[.09em] text-[#078e48]">Review before sending</p>
