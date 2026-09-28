@@ -101,6 +101,17 @@ export default function TournamentDetail() {
     enabled: !!tournamentId
   });
 
+  const { data: headerChallengeEvent = null } = useQuery({
+    queryKey: ['tournament-header-club-challenge-event', tournamentId],
+    queryFn: async () => (await base44.entities.ClubChallengeEvent.filter({ tournament_id: tournamentId }, '-updated_date', 1))[0] || null,
+    enabled: !!tournamentId && tournament?.format === INTERCLUB_INTERNAL_FORMAT,
+  });
+  const { data: headerChallengeParticipants = [] } = useQuery({
+    queryKey: ['tournament-header-club-challenge-participants', headerChallengeEvent?.id],
+    queryFn: () => headerChallengeEvent ? base44.entities.ClubChallengeParticipant.filter({ challenge_event_id: headerChallengeEvent.id }, 'event_rank', 100) : [],
+    enabled: !!headerChallengeEvent?.id,
+  });
+
   if (isLoading || !tournament) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -280,7 +291,7 @@ export default function TournamentDetail() {
               {tournament.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {tournament.location}</span>}
               <span className="flex items-center gap-1">
                 <Users className="w-3 h-3" />
-                {isFixedPartners ? `${pairs.length} pairs` : `${registeredPlayers.length} players`}
+                {isClubChallenge ? `${headerChallengeParticipants.length} players` : isFixedPartners ? `${pairs.length} pairs` : `${registeredPlayers.length} players`}
               </span>
             </div>
           </div>
