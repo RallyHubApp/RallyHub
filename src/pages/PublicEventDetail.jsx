@@ -66,6 +66,7 @@ export default function PublicEventDetail(){
           </div>
 
           {event.event_public_summary&&<p className="mt-5 text-sm leading-6 text-[#405270]">{event.event_public_summary}</p>}
+          {state.detail&&<div className={`mt-5 flex items-start gap-2 rounded-xl border px-4 py-3 text-sm font-bold ${state.key==='closed'?'border-[#d5dae2] bg-[#f3f5f7] text-[#69758a]':state.key==='closing_soon'?'border-[#f0cd63] bg-[#fff8df] text-[#8b5a00]':'border-[#bfe3cf] bg-[#eff9f3] text-[#067b3f]'}`}><Clock3 className="mt-0.5 h-4 w-4 shrink-0"/><span>{state.detail}</span></div>}
           {!!tags.length&&<div className="mt-5 flex flex-wrap gap-2">{tags.map(tag=><span key={tag} className="rounded-full bg-[#f1f6f7] px-2.5 py-1 text-[10px] font-semibold text-[#38506f]">{tag}</span>)}</div>}
           <div className="mt-6"><EventActionBar event={event} initiallySaved={savedRows.length>0}/></div>
         </div>
