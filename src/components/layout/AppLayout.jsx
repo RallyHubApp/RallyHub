@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Outlet, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Menu, LogOut, UserCircle, LogIn } from 'lucide-react';
@@ -15,6 +17,20 @@ export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout, isAuthenticated, navigateToLogin } = useAuth();
   const isMemberExperience = !!user?.id && user?.role !== 'admin' && user?.active_club_role !== 'club_admin';
+  const { data: headerProfile } = useQuery({
+    queryKey: ['header-profile', user?.id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('memberPortal', { action: 'self' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.snapshot || null;
+    },
+    enabled: !!user?.id,
+    staleTime: 30_000,
+  });
+  const headerPhoto = headerProfile?.person?.profile_photo_url || headerProfile?.player?.avatar_url || null;
+  const headerPositionX = Number(headerProfile?.photoSettings?.positionX ?? 50);
+  const headerPositionY = Number(headerProfile?.photoSettings?.positionY ?? 50);
+  const headerZoom = Number(headerProfile?.photoSettings?.zoom ?? 1);
 
   const initials = (user?.full_name || user?.email || 'U')
     .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -44,8 +60,10 @@ export default function AppLayout() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-secondary transition-colors">
-                  <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary">
-                    {initials}
+                  <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary overflow-hidden">
+                    {headerPhoto ? (
+                      <img src={headerPhoto} alt="" className="w-full h-full object-cover" style={{ objectPosition: `${headerPositionX}% ${headerPositionY}%`, transform: `scale(${headerZoom})`, transformOrigin: `${headerPositionX}% ${headerPositionY}%` }} />
+                    ) : initials}
                   </div>
                   <div className="text-left hidden sm:block">
                     <p className="text-xs font-medium text-foreground leading-none">{user?.full_name || 'Player'}</p>
