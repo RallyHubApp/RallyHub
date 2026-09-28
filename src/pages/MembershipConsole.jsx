@@ -1023,6 +1023,35 @@ export default function MembershipConsole() {
         <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">Loading membership console…</div>
       ) : (
         <>
+          <section className="glass rounded-xl p-4 sm:p-5 border-l-4 border-l-green-500">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2"><Megaphone className="w-5 h-5 text-green-500" /><h2 className="font-bold">Broadcast Centre</h2><Badge variant="outline">RallyHub + WhatsApp</Badge></div>
+                <p className="mt-1 text-sm text-muted-foreground">Write once, publish inside RallyHub, send push alerts, then hand the same message to the correct Clare Pickleball WhatsApp group.</p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-full bg-secondary px-2.5 py-1">{broadcastData.audience?.eligibleMemberCount || 0} active members</span>
+                  <span className="rounded-full bg-secondary px-2.5 py-1">{broadcastData.audience?.linkedTargetCount || 0} linked to RallyHub</span>
+                  <span className="rounded-full bg-secondary px-2.5 py-1">Default WhatsApp: {(broadcastData.groups || []).find(group => group.isDefault)?.name || 'Clare Pickleball Members'}</span>
+                </div>
+              </div>
+              <Button onClick={openBroadcast} className="shrink-0"><Send className="w-4 h-4 mr-1.5" />New broadcast</Button>
+            </div>
+            {(broadcastData.broadcasts || []).length > 0 && (
+              <div className="mt-4 border-t border-border pt-3 space-y-2">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Recent broadcasts</p>
+                {(broadcastData.broadcasts || []).slice(0, 3).map(item => (
+                  <div key={item.id} className="rounded-lg border border-border bg-background/35 px-3 py-2.5 flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold truncate">{item.title}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{item.audienceLabel || 'Members'} · Push {item.pushSent}/{item.pushSubscriptionCount} · WhatsApp {item.whatsappGroupName || 'not selected'}</p>
+                    </div>
+                    <Badge variant={item.whatsappStatus === 'posted' ? 'default' : 'outline'} className="self-start sm:self-auto">{item.whatsappStatus === 'posted' ? 'WhatsApp posted' : item.whatsappStatus === 'pending' ? 'WhatsApp pending' : 'In-app only'}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
           <section className="glass rounded-xl p-4 sm:p-5 border-l-4 border-l-primary">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
