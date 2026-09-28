@@ -69,9 +69,11 @@ export default function Events(){
   const [type,setType]=useState('all');
   const [month,setMonth]=useState('all');
   const [county,setCounty]=useState('all');
+  const [country,setCountry]=useState('all');
   const [host,setHost]=useState('all');
   const [level,setLevel]=useState('all');
   const [age,setAge]=useState('all');
+  const [discipline,setDiscipline]=useState('all');
   const [environment,setEnvironment]=useState('all');
   const [view,setView]=useState('list');
   const [sort,setSort]=useState('date');
@@ -81,9 +83,11 @@ export default function Events(){
   const options=useMemo(()=>({
     months:uniqueSorted(upcoming.map(e=>monthKey(e.start_date))),
     counties:uniqueSorted(upcoming.map(e=>e.event_county)),
+    countries:uniqueSorted(upcoming.map(e=>e.event_country)),
     hosts:uniqueSorted(upcoming.map(e=>e.host?.name)),
     levels:uniqueSorted(upcoming.flatMap(e=>e.event_levels||[])),
     ages:uniqueSorted(upcoming.flatMap(e=>e.event_age_groups||[])),
+    disciplines:uniqueSorted(upcoming.flatMap(e=>e.event_disciplines||[])),
   }),[upcoming]);
   const filtered=useMemo(()=>{
     const q=normal(query);
@@ -93,9 +97,11 @@ export default function Events(){
       if(type!=='all'&&e.event_category!==type)return false;
       if(month!=='all'&&monthKey(e.start_date)!==month)return false;
       if(county!=='all'&&e.event_county!==county)return false;
+      if(country!=='all'&&e.event_country!==country)return false;
       if(host!=='all'&&e.host?.name!==host)return false;
       if(level!=='all'&&!(e.event_levels||[]).includes(level))return false;
       if(age!=='all'&&!(e.event_age_groups||[]).includes(age))return false;
+      if(discipline!=='all'&&!(e.event_disciplines||[]).includes(discipline))return false;
       if(environment!=='all'&&e.event_indoor_outdoor!==environment)return false;
       if(q){const hay=normal([e.name,e.location,e.event_county,e.event_country,e.host?.name,e.event_public_summary,...(e.event_levels||[]),...(e.event_age_groups||[]),...(e.event_disciplines||[])].join(' '));if(!hay.includes(q))return false}
       return true;
@@ -105,10 +111,11 @@ export default function Events(){
       if(sort==='newest')return String(b.event_published_at||b.updated_date||'').localeCompare(String(a.event_published_at||a.updated_date||''));
       return String(a.start_date||'9999').localeCompare(String(b.start_date||'9999'));
     });
-  },[upcoming,query,status,type,month,county,host,level,age,environment,sort]);
+  },[upcoming,query,status,type,month,county,country,host,level,age,discipline,environment,sort]);
   const featured=filtered.find(e=>e.event_featured_public)||upcoming.find(e=>e.event_featured_public)||null;
   const gridEvents=featured?filtered.filter(e=>e.id!==featured.id):filtered;
   const openRegistration=event=>{if(event.event_registration_url)window.open(event.event_registration_url,'_blank','noopener,noreferrer');else navigate(eventPath(event))};
+  const showResults=()=>document.getElementById('events-results')?.scrollIntoView({behavior:'smooth',block:'start'});
 
   const selectClass="h-11 w-full rounded-lg border border-[#cfdcdf] bg-white px-3 text-[12px] font-semibold text-[#17325f] outline-none focus:border-[#078e48]";
   return <>
@@ -118,7 +125,7 @@ export default function Events(){
         <div className="mx-auto grid max-w-[1380px] lg:grid-cols-[53%_47%]">
           <div className="relative z-10 flex min-h-[330px] items-center px-5 py-9 sm:px-7 lg:min-h-[360px] lg:px-10 xl:px-12">
             <div className="w-full max-w-[700px]"><p className="text-[10px] font-black uppercase tracking-[.18em] text-[#078e48]">RallyHub Events</p><h1 className="mt-2 text-[2.55rem] font-black leading-[.98] tracking-[-.045em] sm:text-[3.6rem]">Find your next <span className="text-[#078e48]">event</span></h1><p className="mt-4 max-w-[620px] text-[15px] leading-6 text-[#263d6b]">Tournaments, interclubs, leagues, coaching and social events — built around the information players actually need.</p>
-              <div className="mt-6 flex min-h-12 items-center rounded-xl border border-[#cfdcdf] bg-white p-1.5 shadow-[0_8px_24px_rgba(8,24,77,.05)]"><Search className="ml-3 h-5 w-5 shrink-0 text-[#52627d]"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search events by name, location, host or keyword…" className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none"/><button type="button" className="hidden h-10 rounded-lg bg-[#078e48] px-6 text-sm font-bold text-white sm:block" onClick={()=>{}}>Search</button></div>
+              <div className="mt-6 flex min-h-12 items-center rounded-xl border border-[#cfdcdf] bg-white p-1.5 shadow-[0_8px_24px_rgba(8,24,77,.05)]"><Search className="ml-3 h-5 w-5 shrink-0 text-[#52627d]"/><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')showResults()}} placeholder="Search events by name, location, host or keyword…" className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none"/><button type="button" className="hidden h-10 rounded-lg bg-[#078e48] px-6 text-sm font-bold text-white sm:block" onClick={showResults}>Search</button></div>
             </div>
           </div>
           <div className="relative hidden min-h-[360px] overflow-hidden lg:block"><img src="/assets/about/card-competitions.webp" alt="Pickleball competition" className="absolute inset-0 h-full w-full object-cover"/><div className="absolute inset-0 bg-[linear-gradient(90deg,#f4fbfc_0%,rgba(244,251,252,.58)_18%,rgba(244,251,252,0)_45%)]"/></div>
@@ -131,30 +138,34 @@ export default function Events(){
           <select className={selectClass} value={type} onChange={e=>setType(e.target.value)}>{EVENT_TYPES.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
           <select className={selectClass} value={month} onChange={e=>setMonth(e.target.value)}><option value="all">Any month</option>{options.months.map(v=><option key={v} value={v}>{new Date(`${v}-01T12:00:00`).toLocaleDateString('en-IE',{month:'long',year:'numeric'})}</option>)}</select>
           <select className={selectClass} value={county} onChange={e=>setCounty(e.target.value)}><option value="all">Any county / region</option>{options.counties.map(v=><option key={v}>{v}</option>)}</select>
+          <select className={selectClass} value={country} onChange={e=>setCountry(e.target.value)}><option value="all">Any country</option>{options.countries.map(v=><option key={v}>{v}</option>)}</select>
           <select className={selectClass} value={host} onChange={e=>setHost(e.target.value)}><option value="all">Any host</option>{options.hosts.map(v=><option key={v}>{v}</option>)}</select>
           <select className={selectClass} value={level} onChange={e=>setLevel(e.target.value)}><option value="all">Any level</option>{options.levels.map(v=><option key={v}>{v}</option>)}</select>
           <select className={selectClass} value={age} onChange={e=>setAge(e.target.value)}><option value="all">Any age group</option>{options.ages.map(v=><option key={v}>{v}</option>)}</select>
+          <select className={selectClass} value={discipline} onChange={e=>setDiscipline(e.target.value)}><option value="all">Any discipline</option>{options.disciplines.map(v=><option key={v}>{v}</option>)}</select>
           <select className={selectClass} value={environment} onChange={e=>setEnvironment(e.target.value)}><option value="all">Indoor / outdoor</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option><option value="mixed">Mixed</option></select>
         </div></details>
-        <div className="mt-4 hidden grid-cols-7 gap-2 lg:grid">
+        <div className="mt-4 hidden grid-cols-3 gap-2 lg:grid xl:grid-cols-9">
           <label className="text-[10px] font-bold text-[#52627d]">Event type<select className={selectClass} value={type} onChange={e=>setType(e.target.value)}>{EVENT_TYPES.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>
           <label className="text-[10px] font-bold text-[#52627d]">Month<select className={selectClass} value={month} onChange={e=>setMonth(e.target.value)}><option value="all">All</option>{options.months.map(v=><option key={v} value={v}>{new Date(`${v}-01T12:00:00`).toLocaleDateString('en-IE',{month:'short',year:'numeric'})}</option>)}</select></label>
           <label className="text-[10px] font-bold text-[#52627d]">County / region<select className={selectClass} value={county} onChange={e=>setCounty(e.target.value)}><option value="all">All</option>{options.counties.map(v=><option key={v}>{v}</option>)}</select></label>
+          <label className="text-[10px] font-bold text-[#52627d]">Country<select className={selectClass} value={country} onChange={e=>setCountry(e.target.value)}><option value="all">All</option>{options.countries.map(v=><option key={v}>{v}</option>)}</select></label>
           <label className="text-[10px] font-bold text-[#52627d]">Host<select className={selectClass} value={host} onChange={e=>setHost(e.target.value)}><option value="all">All</option>{options.hosts.map(v=><option key={v}>{v}</option>)}</select></label>
           <label className="text-[10px] font-bold text-[#52627d]">Playing level<select className={selectClass} value={level} onChange={e=>setLevel(e.target.value)}><option value="all">All</option>{options.levels.map(v=><option key={v}>{v}</option>)}</select></label>
           <label className="text-[10px] font-bold text-[#52627d]">Age group<select className={selectClass} value={age} onChange={e=>setAge(e.target.value)}><option value="all">All</option>{options.ages.map(v=><option key={v}>{v}</option>)}</select></label>
+          <label className="text-[10px] font-bold text-[#52627d]">Discipline<select className={selectClass} value={discipline} onChange={e=>setDiscipline(e.target.value)}><option value="all">All</option>{options.disciplines.map(v=><option key={v}>{v}</option>)}</select></label>
           <label className="text-[10px] font-bold text-[#52627d]">Indoor / Outdoor<select className={selectClass} value={environment} onChange={e=>setEnvironment(e.target.value)}><option value="all">All</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option><option value="mixed">Mixed</option></select></label>
         </div>
       </div></section>
 
-      <section className="mx-auto max-w-[1380px] px-5 pb-12 sm:px-7 lg:px-10 xl:px-12">
+      <section id="events-results" className="mx-auto max-w-[1380px] scroll-mt-24 px-5 pb-12 sm:px-7 lg:px-10 xl:px-12">
         {featured&&<FeaturedEvent event={featured} onRegister={openRegistration}/>} 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="text-2xl font-black tracking-[-.03em]">All Events <span className="text-base font-semibold text-[#52627d]">({filtered.length})</span></h2><p className="mt-1 text-sm text-[#52627d]">One event record, kept up to date by the organiser and shared wherever players need it.</p></div><div className="flex flex-wrap gap-2">
           {isAuthenticated&&<Link to="/events/my" className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#cad7dd] px-3 text-xs font-bold"><UserRound className="h-4 w-4"/>My Events</Link>}
           <select className="h-10 rounded-lg border border-[#cad7dd] bg-white px-3 text-xs font-bold" value={sort} onChange={e=>setSort(e.target.value)}><option value="date">Date (soonest first)</option><option value="closing">Registration closing soon</option><option value="newest">Recently added</option></select>
           <div className="grid grid-cols-2 rounded-lg border border-[#cad7dd] p-1"><button type="button" onClick={()=>setView('list')} className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-bold ${view==='list'?'bg-[#078e48] text-white':''}`}><List className="h-4 w-4"/>List</button><button type="button" onClick={()=>setView('map')} className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-bold ${view==='map'?'bg-[#078e48] text-white':''}`}><MapIcon className="h-4 w-4"/>Map</button></div>
         </div></div>
-        <div className="mt-6">{isLoading?<div className="rounded-2xl border border-[#dbe6e8] bg-white py-20 text-center text-sm text-[#52627d]">Loading events…</div>:error?<div className="rounded-2xl border border-red-200 bg-red-50 py-16 text-center text-sm text-red-700">{error.message||'Could not load events.'}</div>:view==='map'?<EventMap events={filtered}/>:gridEvents.length?<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{gridEvents.map(event=><EventCard key={event.id} event={event} onRegister={openRegistration}/>)}</div>:<div className="rounded-2xl border border-[#dbe6e8] bg-white py-16 text-center"><Search className="mx-auto h-8 w-8 text-[#078e48]"/><p className="mt-3 font-black">No events match those filters</p><button type="button" className="mt-3 text-sm font-bold text-[#078e48]" onClick={()=>{setQuery('');setStatus('all');setType('all');setMonth('all');setCounty('all');setHost('all');setLevel('all');setAge('all');setEnvironment('all')}}>Clear filters</button></div>}</div>
+        <div className="mt-6">{isLoading?<div className="rounded-2xl border border-[#dbe6e8] bg-white py-20 text-center text-sm text-[#52627d]">Loading events…</div>:error?<div className="rounded-2xl border border-red-200 bg-red-50 py-16 text-center text-sm text-red-700">{error.message||'Could not load events.'}</div>:view==='map'?<EventMap events={filtered}/>:gridEvents.length?<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{gridEvents.map(event=><EventCard key={event.id} event={event} onRegister={openRegistration}/>)}</div>:<div className="rounded-2xl border border-[#dbe6e8] bg-white py-16 text-center"><Search className="mx-auto h-8 w-8 text-[#078e48]"/><p className="mt-3 font-black">No events match those filters</p><button type="button" className="mt-3 text-sm font-bold text-[#078e48]" onClick={()=>{setQuery('');setStatus('all');setType('all');setMonth('all');setCounty('all');setCountry('all');setHost('all');setLevel('all');setAge('all');setDiscipline('all');setEnvironment('all')}}>Clear filters</button></div>}</div>
       </section>
     </main><PublicSiteFooter/></div>
   </>;
