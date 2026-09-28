@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Bell, CalendarPlus, Check, Copy, ExternalLink, Mail, QrCode, Share2, Users, Bookmark, BookmarkCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +22,7 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   const path=eventPath(event);
   const url=useMemo(()=>typeof window!=='undefined'?`${window.location.origin}${path}`:`https://rallyhub.ie${path}`,[path]);
   const canClubShare=!!user?.active_club_id&&!!user?.active_tenant_id&&(user?.role==='admin'||user?.active_club_role==='club_admin');
+  useEffect(()=>setSaved(!!initiallySaved),[initiallySaved]);
 
   const signIn=()=>navigate(`/login?returnTo=${encodeURIComponent(path)}`);
   const saveEvent=async(remindOpen=false)=>{
@@ -43,7 +44,7 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
     try{setBusy('club');const payload={action:'share_to_club',eventId:event.id};if(user?.role==='admin'){payload.clubId=user.active_club_id;payload.tenantId=user.active_tenant_id}const res=await base44.functions.invoke('eventEngagement',payload);if(res.data?.error)throw new Error(res.data.error);setClubShared(true);toast.success('Shared with your club — members will see it in Play')}catch(e){toast.error(e?.message||'Could not share event to your club')}finally{setBusy('')}
   };
   const copy=async()=>{try{await navigator.clipboard.writeText(url);toast.success('Event link copied')}catch{toast.error('Could not copy link')}};
-  const nativeShare=async()=>{if(navigator.share){try{await navigator.share({title:event.name,text:event.event_public_summary||event.description||'',url});return}catch(e){if(e?.name==='AbortError')return}}setShareOpen(true)};
+  const nativeShare=async()=>{if(!navigator.share)return;try{await navigator.share({title:event.name,text:event.event_public_summary||event.description||'',url})}catch(e){if(e?.name!=='AbortError')toast.error('Could not open device share')}};
   const openRegistration=()=>{
     if(state.key==='opening_soon')return saveEvent(true);
     if(!state.actionable)return;
@@ -56,7 +57,7 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
       {(state.actionable||state.key==='opening_soon')&&<Button onClick={openRegistration} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]" disabled={busy==='remind'}>{state.key==='opening_soon'?<><Bell className="mr-2 h-4 w-4"/>{busy==='remind'?'Saving…':'Remind me'}</>:<><ExternalLink className="mr-2 h-4 w-4"/>Register / Book</>}</Button>}
       <Button variant="outline" className="min-h-11" onClick={saved?unsave:()=>saveEvent(false)} disabled={busy==='save'}>{saved?<BookmarkCheck className="mr-2 h-4 w-4 text-[#078e48]"/>:<Bookmark className="mr-2 h-4 w-4"/>}{busy==='save'?'Saving…':saved?'Saved':'Save event'}</Button>
       <Button variant="outline" className="min-h-11" onClick={()=>setCalendarOpen(true)}><CalendarPlus className="mr-2 h-4 w-4"/>Add to calendar</Button>
-      <Button variant="outline" className="min-h-11" onClick={nativeShare}><Share2 className="mr-2 h-4 w-4"/>Share</Button>
+      <Button variant="outline" className="min-h-11" onClick={()=>setShareOpen(true)}><Share2 className="mr-2 h-4 w-4"/>Share</Button>
     </div>
 
     <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
@@ -76,6 +77,7 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
           <Button variant="outline" onClick={()=>{window.location.href=`mailto:?subject=${encodeURIComponent(event.name)}&body=${encodeURIComponent(`Have a look at this event on RallyHub:\n${url}`)}`}}><Mail className="mr-2 h-4 w-4"/>Email</Button>
           <Button variant="outline" onClick={copy}><Copy className="mr-2 h-4 w-4"/>Copy link</Button>
           <Button variant="outline" onClick={()=>{setShareOpen(false);setQrOpen(true)}}><QrCode className="mr-2 h-4 w-4"/>QR code</Button>
+          {typeof navigator!=='undefined'&&navigator.share&&<Button variant="outline" className="sm:col-span-2" onClick={nativeShare}><Share2 className="mr-2 h-4 w-4"/>Share using this device</Button>}
           {canClubShare&&<Button className="sm:col-span-2 bg-[#078e48] text-white hover:bg-[#067b3f]" onClick={shareToClub} disabled={busy==='club'||clubShared}><Users className="mr-2 h-4 w-4"/>{busy==='club'?'Sharing…':clubShared?<><Check className="mr-1 h-4 w-4"/>Shared with your club</>:'Share to my club'}</Button>}
         </div>
       </DialogContent>
