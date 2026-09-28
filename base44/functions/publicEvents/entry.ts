@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 const PUBLIC_FIELDS = [
   'id','name','format','status','start_date','end_date','location','venue_id','description','host_club_id','inter_club',
   'event_category','event_slug','event_start_time','event_end_time','event_image_url','event_image_position_x','event_image_position_y','event_image_zoom',
-  'event_card_image_url','event_card_position_x','event_card_position_y','event_card_zoom','event_public_summary','event_registration_url','event_registration_mode',
+  'event_card_image_url','event_card_position_x','event_card_position_y','event_card_zoom','event_image_original_url','event_image_source_type','event_public_summary','event_registration_url','event_registration_mode',
   'event_registration_open_at','event_registration_close_at','event_fee_text','event_fee_amount','event_currency','event_capacity','event_waitlist_enabled',
   'event_county','event_country','event_indoor_outdoor','event_levels','event_age_groups','event_disciplines','event_tags','event_schedule',
   'event_eligibility','event_player_info','event_fees_cancellation','event_contact','event_source_url','event_map_url','event_latitude','event_longitude',
