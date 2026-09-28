@@ -82,8 +82,18 @@ export default function MemberPortalPreview({ payload }) {
     retry: 1,
   });
 
+  const previewAnnouncements = (payload?.clubhouse?.posts || []).map(post => ({
+    id: post.id,
+    title: post.title,
+    body: post.body || '',
+    imageUrl: post.image_url || null,
+    linkUrl: post.link_url || null,
+    isPinned: post.is_pinned === true,
+    publishedAt: post.published_at || null,
+  }));
+
   const content = section === 'home'
-    ? <MemberDashboardView snapshot={snapshot} play={payload?.play || null} performance={performance} performanceLoading={performanceLoading} preview onOpenShop={() => setSection('shop')} onOpenMessages={() => setSection('messages')} />
+    ? <MemberDashboardView snapshot={snapshot} play={payload?.play || null} performance={performance} performanceLoading={performanceLoading} announcements={previewAnnouncements} preview onOpenShop={() => setSection('shop')} onOpenMessages={() => setSection('messages')} />
     : section === 'play'
       ? <MemberPlay previewData={payload?.play || { items:[], club:snapshot?.club, spond:{ status:'not_configured', sessions:[] } }} />
       : section === 'venues'
