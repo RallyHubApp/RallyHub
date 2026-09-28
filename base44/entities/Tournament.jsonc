@@ -221,6 +221,30 @@
     "event_contact": {
       "type": "string"
     },
+    "event_contact_phone": {
+      "type": "string"
+    },
+    "event_contact_phone_hidden_until": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "event_contact_phone_keep_private": {
+      "type": "boolean",
+      "default": false
+    },
+    "event_status_override": {
+      "type": "string",
+      "enum": [
+        "",
+        "full",
+        "cancelled",
+        "postponed"
+      ],
+      "default": ""
+    },
     "event_registration_url": {
       "type": "string"
     },

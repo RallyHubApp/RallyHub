@@ -1,0 +1,91 @@
+{
+  "name": "EventEnquiry",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "event_slug": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "host_club_id": {
+      "type": "string"
+    },
+    "host_name": {
+      "type": "string"
+    },
+    "enquiry_type": {
+      "type": "string",
+      "enum": [
+        "future_invitation",
+        "general"
+      ]
+    },
+    "sender_name": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "sender_email": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "message": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "source_path": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "delivery_status": {
+      "type": "string",
+      "enum": [
+        "sent",
+        "failed"
+      ],
+      "default": "sent"
+    },
+    "delivery_provider": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "event_id",
+    "event_slug",
+    "event_name",
+    "enquiry_type",
+    "sender_email",
+    "delivery_status",
+    "sent_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
