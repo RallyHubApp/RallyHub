@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, MapPin, ShieldCheck, Ticket, UsersRound } from 'lucide-react';
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import Seo from '@/components/public/Seo';
@@ -11,11 +10,6 @@ import PublicSiteFooter from '@/components/public/PublicSiteFooter';
 import EventActionBar from '@/components/events/EventActionBar';
 import { EVENT_TYPES, eventStatusClass, eventTags, prettyEventDateRange, registrationState } from '@/lib/event-utils';
 
-const validMapPoint=(latValue,lngValue)=>{
-  if(latValue===null||latValue===undefined||latValue===''||lngValue===null||lngValue===undefined||lngValue==='')return false;
-  const lat=Number(latValue),lng=Number(lngValue);
-  return Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180;
-};
 const infoPreview=value=>{
   const text=String(value||'').replace(/\s+/g,' ').trim();
   return text.length>130?`${text.slice(0,127)}…`:text;
@@ -46,7 +40,6 @@ export default function PublicEventDetail(){
   const tags=eventTags(event,8);
   const fullPoster=event.event_image_url;
   const originalPoster=event.event_image_original_url||event.event_image_url;
-  const mapped=validMapPoint(event.event_latitude,event.event_longitude);
   const updated=event.updated_date?new Date(event.updated_date):null;
   const canonical=`https://rallyhub.ie/events/${event.event_slug}`;
 
@@ -96,7 +89,7 @@ export default function PublicEventDetail(){
         </div>
 
         <div className="space-y-5">
-          <section className="overflow-hidden rounded-2xl border border-[#dbe6e8] bg-white"><div className="p-5"><h2 className="text-lg font-black">Venue</h2><p className="mt-2 font-bold">{event.location||'Venue TBC'}</p><p className="mt-1 text-sm text-[#52627d]">{[event.event_county,event.event_country].filter(Boolean).join(', ')}</p>{event.event_map_url&&<a href={event.event_map_url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#cad7dd] px-3 text-sm font-bold"><MapPin className="h-4 w-4"/>Get directions</a>}</div>{mapped&&<MapContainer center={[Number(event.event_latitude),Number(event.event_longitude)]} zoom={12} scrollWheelZoom={false} className="h-[260px] w-full"><TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/><Marker position={[Number(event.event_latitude),Number(event.event_longitude)]}><Popup>{event.location||event.name}</Popup></Marker></MapContainer>}</section>
+          <section className="overflow-hidden rounded-2xl border border-[#dbe6e8] bg-white"><div className="p-5"><h2 className="text-lg font-black">Venue</h2><p className="mt-2 font-bold">{event.location||'Venue TBC'}</p><p className="mt-1 text-sm text-[#52627d]">{[event.event_county,event.event_country].filter(Boolean).join(', ')}</p>{event.event_map_url&&<a href={event.event_map_url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#cad7dd] px-3 text-sm font-bold"><MapPin className="h-4 w-4"/>Get directions</a>}</div><div className="border-t border-[#edf1f2] bg-[#f7fafb] p-5"><div className="rounded-2xl border border-[#dbe6e8] bg-white p-5 text-sm leading-6 text-[#405270]"><p className="font-bold text-[#07184c]">Directions open in Google Maps.</p><p className="mt-1">This avoids showing a broken or misleading embedded map if map tiles fail to load.</p></div></div></section>
           {event.host&&<section className="rounded-2xl border border-[#dbe6e8] bg-white p-5"><div className="flex items-center gap-3">{event.host.logo_url&&<img src={event.host.logo_url} alt="" className="h-12 w-12 rounded-full object-contain"/>}<div><p className="text-[10px] uppercase tracking-wider text-[#7b8799]">Organiser</p><h2 className="font-black">{event.host.name}</h2></div></div>{event.event_source_url&&<a href={event.event_source_url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#078e48]"><ExternalLink className="h-4 w-4"/>Official event information</a>}</section>}
         </div>
       </section>
