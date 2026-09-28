@@ -267,18 +267,34 @@ export default function MyProfile() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-6 glow-green">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <ProfileAvatarUpload
-            currentUrl={activePlayer?.avatar_url}
+            currentUrl={memberSnapshot?.person?.profile_photo_url || activePlayer?.avatar_url}
             initials={initials}
-            onUploaded={async (url) => {
-              if (activePlayer) {
-                await base44.entities.Player.update(activePlayer.id, { avatar_url: url });
-                await Promise.all([
-                  queryClient.invalidateQueries({ queryKey: ['my-player'] }),
-                  queryClient.invalidateQueries({ queryKey: ['member-profile-self'] }),
-                  queryClient.invalidateQueries({ queryKey: ['member-portal-self'] }),
-                ]);
-                toast.success('Avatar updated!');
-              }
+            position={memberSnapshot?.photoSettings}
+            onUploaded={async (url, settings) => {
+              const res = await base44.functions.invoke('memberPortal', {
+                action: 'photo_update',
+                url,
+                positionX: settings?.positionX ?? memberSnapshot?.photoSettings?.positionX ?? 50,
+                positionY: settings?.positionY ?? memberSnapshot?.photoSettings?.positionY ?? 50,
+                zoom: settings?.zoom ?? memberSnapshot?.photoSettings?.zoom ?? 1,
+              });
+              if (res.data?.error) throw new Error(res.data.error);
+              await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['my-player'] }),
+                queryClient.invalidateQueries({ queryKey: ['member-profile-self'] }),
+                queryClient.invalidateQueries({ queryKey: ['member-portal-self'] }),
+              ]);
+              toast.success('Profile photo updated');
+            }}
+            onPositionSaved={async (settings) => {
+              const url = memberSnapshot?.person?.profile_photo_url || activePlayer?.avatar_url;
+              const res = await base44.functions.invoke('memberPortal', { action: 'photo_update', url, ...settings });
+              if (res.data?.error) throw new Error(res.data.error);
+              await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['member-profile-self'] }),
+                queryClient.invalidateQueries({ queryKey: ['member-portal-self'] }),
+              ]);
+              toast.success('Photo position saved');
             }}
           />
           <div className="flex-1 min-w-0">
