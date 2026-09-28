@@ -746,6 +746,7 @@ Deno.serve(async (req) => {
           description:event.description||'',
           member_info:event.event_internal_info||'',
           image_url:event.event_image_url||null,
+          featured:event.event_featured_member===true,
         }));
       const items = [...(spond.sessions || []), ...competitionItems, ...memberEventItems]
         .filter((item:any) => item.start)
