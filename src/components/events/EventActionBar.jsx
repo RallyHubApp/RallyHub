@@ -15,11 +15,16 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   const [shareOpen,setShareOpen]=useState(false);
   const [calendarOpen,setCalendarOpen]=useState(false);
   const [qrOpen,setQrOpen]=useState(false);
+  const [interestOpen,setInterestOpen]=useState(false);
+  const [interestEmail,setInterestEmail]=useState(user?.email||'');
+  const [interestBusy,setInterestBusy]=useState(false);
+  const [interestSent,setInterestSent]=useState(false);
   const [saved,setSaved]=useState(initiallySaved);
   const [busy,setBusy]=useState('');
   const [clubShared,setClubShared]=useState(false);
   const state=registrationState(event);
   const invitationOnly=state.key==='invite_only';
+  const futureInvitation=state.key==='full'&&state.futureInvitation===true;
   const path=eventPath(event);
   const url=useMemo(()=>typeof window!=='undefined'?`${window.location.origin}${path}`:`https://rallyhub.ie${path}`,[path]);
   const canClubShare=!!user?.active_club_id&&!!user?.active_tenant_id&&(user?.role==='admin'||user?.active_club_role==='club_admin');
@@ -46,6 +51,17 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   };
   const copy=async()=>{try{await navigator.clipboard.writeText(url);toast.success('Event link copied')}catch{toast.error('Could not copy link')}};
   const nativeShare=async()=>{if(!navigator.share)return;try{await navigator.share({title:event.name,text:event.event_public_summary||event.description||'',url})}catch(e){if(e?.name!=='AbortError')toast.error('Could not open device share')}};
+  const sendFutureInvitation=async()=>{
+    const email=String(interestEmail||'').trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return toast.error('Enter a valid email address');
+    try{
+      setInterestBusy(true);
+      const res=await base44.functions.invoke('eventInterest',{action:'future_invitation',eventId:event.id,eventSlug:event.event_slug,email,website:''});
+      if(res.data?.error)throw new Error(res.data.error);
+      setInterestSent(true);
+      toast.success(res.data?.alreadySent?'Your earlier request is already with the organiser':'Request sent to the organiser through RallyHub');
+    }catch(e){toast.error(e?.message||'Could not send your request')}finally{setInterestBusy(false)}
+  };
   const openRegistration=()=>{
     if(state.key==='opening_soon')return saveEvent(true);
     if(!state.actionable)return;
@@ -55,11 +71,18 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
 
   return <>
     <div className={`flex flex-wrap gap-2 ${compact?'':'w-full'}`}>
+      {futureInvitation&&<Button onClick={()=>setInterestOpen(true)} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]"><Mail className="mr-2 h-4 w-4"/>Request a future invitation</Button>}
       {(state.actionable||state.key==='opening_soon')&&<Button onClick={openRegistration} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]" disabled={busy==='remind'}>{state.key==='opening_soon'?<><Bell className="mr-2 h-4 w-4"/>{busy==='remind'?'Saving…':'Remind me'}</>:invitationOnly?<><Mail className="mr-2 h-4 w-4"/>Request invitation</>:<><ExternalLink className="mr-2 h-4 w-4"/>Register / Book</>}</Button>}
       <Button variant="outline" className="min-h-11" onClick={saved?unsave:()=>saveEvent(false)} disabled={busy==='save'}>{saved?<BookmarkCheck className="mr-2 h-4 w-4 text-[#078e48]"/>:<Bookmark className="mr-2 h-4 w-4"/>}{busy==='save'?'Saving…':saved?'Saved':'Save event'}</Button>
       <Button variant="outline" className="min-h-11" onClick={()=>setCalendarOpen(true)}><CalendarPlus className="mr-2 h-4 w-4"/>Add to calendar</Button>
       <Button variant="outline" className="min-h-11" onClick={()=>setShareOpen(true)}><Share2 className="mr-2 h-4 w-4"/>Share</Button>
     </div>
+
+    <Dialog open={interestOpen} onOpenChange={open=>{setInterestOpen(open);if(!open)setInterestSent(false)}}>
+      <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Request a future invitation</DialogTitle><DialogDescription>This event is full. {event.host?.name||'The organiser'} runs invitation-only events. Enter your email and RallyHub will pass your interest to the organiser for a future event.</DialogDescription></DialogHeader>
+        {interestSent?<div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm font-semibold text-emerald-700">Sent ✓ The organiser has received your future-invitation request through RallyHub.</div>:<div className="space-y-3"><label className="block text-sm font-semibold">Email address<input type="email" autoComplete="email" value={interestEmail} onChange={e=>setInterestEmail(e.target.value)} className="mt-1 h-11 w-full rounded-md border border-input bg-background px-3 text-sm" placeholder="you@example.com"/></label><Button className="w-full bg-[#078e48] text-white hover:bg-[#067b3f]" onClick={sendFutureInvitation} disabled={interestBusy}>{interestBusy?'Sending through RallyHub…':'Send request'}</Button><p className="text-[11px] leading-5 text-muted-foreground">Your email is sent to the organiser for this request. RallyHub records that the enquiry was successfully generated through the event page so organisers can understand the value of their listing.</p></div>}
+      </DialogContent>
+    </Dialog>
 
     <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
       <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Add to calendar</DialogTitle><DialogDescription>Keep this event with the rest of your plans.</DialogDescription></DialogHeader>
