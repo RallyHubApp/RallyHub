@@ -66,28 +66,37 @@ function escapeIcs(value) {
   return String(value || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
 }
 
+function calendarContent(items, name = 'RallyHub Calendar') {
+  const now = icsDate(new Date().toISOString());
+  const events = items.map(item => {
+    const start = icsDate(item.start);
+    if (!start) return '';
+    const fallbackEnd = new Date(new Date(item.start).getTime() + 90 * 60 * 1000).toISOString();
+    const end = icsDate(item.end || fallbackEnd);
+    return ['BEGIN:VEVENT', `UID:${escapeIcs(item.id)}@rallyhub.ie`, `DTSTAMP:${now}`, `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${escapeIcs(item.title)}`, `LOCATION:${escapeIcs([item.venue, item.address].filter(Boolean).join(', '))}`, `DESCRIPTION:${escapeIcs(item.source === 'spond' ? 'Session shown through your club Spond connection.' : 'RallyHub competition or event.')}`, 'END:VEVENT'].join('\r\n');
+  }).filter(Boolean).join('\r\n');
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'PRODID:-//RallyHub//Member Calendar//EN', `X-WR-CALNAME:${escapeIcs(name)}`, events, 'END:VCALENDAR'].join('\r\n');
+}
+
+function downloadCalendar(items, filename = 'rallyhub-calendar.ics', name = 'RallyHub Calendar') {
+  if (!items.length) return;
+  const blob = new Blob([calendarContent(items, name)], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 function addToCalendar(item) {
   const start = icsDate(item.start);
   if (!start) return;
   const fallbackEnd = new Date(new Date(item.start).getTime() + 90 * 60 * 1000).toISOString();
   const end = icsDate(item.end || fallbackEnd);
-  const content = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//RallyHub//Member Calendar//EN', 'BEGIN:VEVENT',
-    `UID:${escapeIcs(item.id)}@rallyhub.ie`, `DTSTAMP:${icsDate(new Date().toISOString())}`,
-    `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${escapeIcs(item.title)}`,
-    `LOCATION:${escapeIcs([item.venue, item.address].filter(Boolean).join(', '))}`,
-    `DESCRIPTION:${escapeIcs(item.source === 'spond' ? 'Session shown through your club Spond connection.' : 'RallyHub competition or event.')}`,
-    'END:VEVENT', 'END:VCALENDAR'
-  ].join('\r\n');
-  const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `${String(item.title || 'rallyhub-event').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}.ics`;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
+  downloadCalendar([item], `${String(item.title || 'rallyhub-event').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}.ics`, item.title || 'RallyHub Event');
 }
 
 function MonthView({ items }) {
@@ -160,6 +169,10 @@ export default function MemberPlay({ previewData = null }) {
         <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{play?.club?.name || 'RallyHub'}</p>
         <h1 className="text-2xl sm:text-3xl font-black mt-1">Play</h1>
         <p className="text-sm text-muted-foreground mt-1">Your personal schedule. Spond sessions are included only when the connector identifies you as an invited participant.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" disabled={!items.length} onClick={() => downloadCalendar(items, 'rallyhub-calendar.ics', `${play?.club?.name || 'RallyHub'} Calendar`)}><Download className="w-3.5 h-3.5" /> Connect / export calendar</Button>
+          <span className="text-[11px] text-muted-foreground">Works with Apple Calendar, Google Calendar, Outlook and other calendar apps that import .ics files.</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2 rounded-xl bg-secondary/40 p-1">
