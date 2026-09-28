@@ -1011,6 +1011,7 @@ export default function MembershipConsole() {
           {applicationData.publicUrl ? <a href={applicationData.publicUrl} target="_blank" rel="noreferrer"><Button variant="outline" size="sm"><ExternalLink className="w-3.5 h-3.5 mr-1.5" />Public membership form</Button></a> : null}
           {applicationData.publicUrl ? <Button variant="outline" size="sm" onClick={createMembershipInvite} disabled={applicationBusyId === 'membership-invite'}><Link2 className="w-3.5 h-3.5 mr-1.5" />{applicationBusyId === 'membership-invite' ? 'Creating…' : 'Invite applicant'}</Button> : null}
           <Button variant="outline" size="sm" onClick={() => setMembershipSourceOpen(true)}><Link2 className="w-3.5 h-3.5 mr-1.5" />Spond Club</Button>
+          <Button variant="outline" size="sm" onClick={openBroadcast}><Megaphone className="w-3.5 h-3.5 mr-1.5" />New broadcast</Button>
           <Button size="sm" onClick={() => setAddMemberOpen(true)}><Plus className="w-3.5 h-3.5 mr-1.5" />Add member</Button>
           <Button variant="outline" size="sm" onClick={() => { refetchList(); refetchDashboard(); refetchApplications(); queryClient.invalidateQueries({ queryKey: ['membership-console-meta'] }); }}>
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />Refresh
