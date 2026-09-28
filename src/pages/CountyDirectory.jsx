@@ -135,7 +135,6 @@ export default function CountyDirectory() {
                       <p className="text-xs font-semibold uppercase tracking-wider text-primary">{club.sport || 'Pickleball'} · County {county}</p>
                       <h2 className="text-xl font-bold mt-1">{club.name}</h2>
                     </div>
-                    <span className={`text-[11px] font-semibold ${club.verificationStatus === 'verified' ? 'text-green-400' : 'text-amber-300'}`}>{club.verificationStatus === 'verified' ? 'Verified' : 'Unclaimed'}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{club.description}</p>
                   <div className="flex flex-wrap gap-3 mt-4 text-xs text-muted-foreground">
@@ -145,7 +144,7 @@ export default function CountyDirectory() {
                   {club.venues?.length ? <div className="mt-3 flex flex-wrap gap-2">{club.venues.slice(0,4).map(venue => <Link key={venue.id} to={venuePath(club.slug,venue.id)} className="rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-primary hover:border-primary/40">{venue.shortName || venue.name}</Link>)}</div> : null}
                   <div className="mt-auto pt-5 flex flex-wrap gap-2">
                     <Link to={`/directory/${club.slug}`} className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground">View club</Link>
-                    {club.verificationStatus !== 'verified' && <Link to={`/directory/${club.slug}/claim`} className="inline-flex h-9 items-center rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 text-sm font-semibold text-amber-700 dark:text-amber-200">Claim listing</Link>}
+                    <Link to={`/directory/${club.slug}/claim`} className="inline-flex h-9 items-center rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground hover:border-primary/40">Update club details</Link>
                   </div>
                 </article>
               ))}
