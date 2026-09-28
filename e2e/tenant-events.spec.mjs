@@ -8,6 +8,7 @@ const venues=[{id:'venue-doora',tenant_id:'tenant-clare',club_id:'club-clare',na
 const json=(route,body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
 
 async function installBackend(page){
+  await page.addInitScript(()=>localStorage.setItem('base44_access_token','tenant-events-e2e-token'));
   const model={events:[],writes:[],functions:[]};
   await page.route('**/api/apps/**',async route=>{
     const req=route.request(),url=new URL(req.url()),path=url.pathname;
