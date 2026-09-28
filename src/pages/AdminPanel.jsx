@@ -172,6 +172,7 @@ export default function AdminPanel() {
   });
 
   const previewTargetUserId = previewUserId || user?.id || '';
+  const previewTargetUser = allUsers.find(row => String(row.id) === String(previewTargetUserId)) || (String(user?.id || '') === String(previewTargetUserId) ? user : null);
   const { data: memberPreviewCore = null, isLoading: loadingMemberPreview, error: memberPreviewError, refetch: refetchMemberPreview } = useQuery({
     queryKey: ['admin-member-preview', previewTargetUserId, user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
@@ -181,6 +182,16 @@ export default function AdminPanel() {
           userId: previewTargetUserId,
           tenantId: user?.active_tenant_id,
           clubId: user?.active_club_id,
+          targetUser: previewTargetUser ? {
+            id: previewTargetUser.id,
+            email: previewTargetUser.email || null,
+            full_name: previewTargetUser.full_name || previewTargetUser.display_name || null,
+            display_name: previewTargetUser.display_name || null,
+            approval_status: previewTargetUser.approval_status || null,
+            active_tenant_id: previewTargetUser.active_tenant_id || user?.active_tenant_id || null,
+            active_club_id: previewTargetUser.active_club_id || user?.active_club_id || null,
+            active_club_role: previewTargetUser.active_club_role || null,
+          } : undefined,
         });
         if (res.data?.error) throw new Error(res.data.error);
         return res.data?.snapshot ? res.data : null;
@@ -191,6 +202,16 @@ export default function AdminPanel() {
             userId: previewTargetUserId,
             tenantId: user?.active_tenant_id,
             clubId: user?.active_club_id,
+            targetUser: previewTargetUser ? {
+              id: previewTargetUser.id,
+              email: previewTargetUser.email || null,
+              full_name: previewTargetUser.full_name || previewTargetUser.display_name || null,
+              display_name: previewTargetUser.display_name || null,
+              approval_status: previewTargetUser.approval_status || null,
+              active_tenant_id: previewTargetUser.active_tenant_id || user?.active_tenant_id || null,
+              active_club_id: previewTargetUser.active_club_id || user?.active_club_id || null,
+              active_club_role: previewTargetUser.active_club_role || null,
+            } : undefined,
           });
           if (fallback.data?.snapshot) return { ...fallback.data, previewDegraded: true };
         } catch (_) {
