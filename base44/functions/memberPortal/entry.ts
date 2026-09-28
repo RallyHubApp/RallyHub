@@ -738,8 +738,9 @@ Deno.serve(async (req) => {
           end:event.end_date ? `${event.end_date}T${event.event_end_time||event.event_start_time||'12:00'}:00` : null,
           venue:event.location||null,
           address:null,
-          latitude:null,
-          longitude:null,
+          latitude:Number.isFinite(Number(event.event_latitude))?Number(event.event_latitude):null,
+          longitude:Number.isFinite(Number(event.event_longitude))?Number(event.event_longitude):null,
+          venueMapUrl:event.event_map_url||null,
           response_status:'club_event',
           competition_format:event.event_category||event.format||null,
           competition_status:event.event_publish_status||event.status||null,
@@ -747,8 +748,37 @@ Deno.serve(async (req) => {
           member_info:event.event_internal_info||'',
           image_url:event.event_image_url||null,
           featured:event.event_featured_member===true,
+          public_event_url:event.event_slug?`https://rallyhub.ie/events/${event.event_slug}`:null,
         }));
-      const items = [...(spond.sessions || []), ...competitionItems, ...memberEventItems]
+      const ownedMemberIds=new Set(memberEventItems.map((item:any)=>String(item.source_id)));
+      const sharedRows=(tenantId&&clubId) ? await base44.asServiceRole.entities.ClubEventShare.filter({tenant_id:tenantId,club_id:clubId,status:'active',member_visible:true},'-shared_at',200).catch(()=>[]) : [];
+      const sharedEventItems:any[]=[];
+      for(const share of sharedRows||[]){
+        const eventRows=await base44.asServiceRole.entities.Tournament.filter({id:share.tournament_id,event_public_visible:true,event_publish_status:'published'},'-updated_date',1).catch(()=>[]);
+        const event=eventRows?.[0];
+        if(!event||event.status==='Archived'||existingCompetitionIds.has(String(event.id))||ownedMemberIds.has(String(event.id))) continue;
+        sharedEventItems.push({
+          id:`shared-event:${event.id}`,
+          source_id:String(event.id),
+          source:'shared_event',
+          title:event.name,
+          start:event.start_date ? `${event.start_date}T${event.event_start_time||'12:00'}:00` : null,
+          end:event.end_date ? `${event.end_date}T${event.event_end_time||event.event_start_time||'12:00'}:00` : null,
+          venue:event.location||null,
+          address:null,
+          latitude:Number.isFinite(Number(event.event_latitude))?Number(event.event_latitude):null,
+          longitude:Number.isFinite(Number(event.event_longitude))?Number(event.event_longitude):null,
+          venueMapUrl:event.event_map_url||null,
+          response_status:'shared_by_club',
+          competition_format:event.event_category||event.format||null,
+          competition_status:event.event_publish_status||event.status||null,
+          description:event.event_public_summary||event.description||'',
+          image_url:event.event_card_image_url||event.event_image_url||null,
+          featured:false,
+          public_event_url:event.event_slug?`https://rallyhub.ie/events/${event.event_slug}`:null,
+        });
+      }
+      const items = [...(spond.sessions || []), ...competitionItems, ...memberEventItems, ...sharedEventItems]
         .filter((item:any) => item.start)
         .sort((a:any,b:any) => String(a.start).localeCompare(String(b.start)));
       return Response.json({ success:true, play:{ items, spond, club:snapshot.club } });
