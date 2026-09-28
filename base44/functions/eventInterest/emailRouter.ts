@@ -99,7 +99,7 @@ function gmailRawEmail({
 export async function sendWithConfiguredEmailTransport(
   base44: any,
   scope: EmailScope,
-  message: { to: string; subject: string; textBody: string; htmlBody?: string | null },
+  message: { to: string; subject: string; textBody: string; htmlBody?: string | null; replyTo?: string | null },
 ) {
   const config = await requireConfiguredEmailTransport(base44, scope);
 
@@ -117,7 +117,7 @@ export async function sendWithConfiguredEmailTransport(
           to: message.to,
           senderEmail: config.sender_email,
           senderName: config.sender_name,
-          replyTo: config.reply_to,
+          replyTo: message.replyTo || config.reply_to,
           subject: message.subject,
           textBody: message.textBody,
           htmlBody: message.htmlBody,
@@ -145,7 +145,7 @@ export async function sendWithConfiguredEmailTransport(
         textBody: message.textBody,
         htmlBody: message.htmlBody || '',
         senderName: config.sender_name,
-        replyTo: config.reply_to || config.sender_email,
+        replyTo: message.replyTo || config.reply_to || config.sender_email,
       }),
     });
     const payload = await response.json().catch(() => ({}));
