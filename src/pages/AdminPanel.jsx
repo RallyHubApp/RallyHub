@@ -174,7 +174,7 @@ export default function AdminPanel() {
   const previewTargetUserId = previewUserId || user?.id || '';
   const previewTargetUser = allUsers.find(row => String(row.id) === String(previewTargetUserId)) || (String(user?.id || '') === String(previewTargetUserId) ? user : null);
   const { data: memberPreviewCore = null, isLoading: loadingMemberPreview, error: memberPreviewError, refetch: refetchMemberPreview } = useQuery({
-    queryKey: ['admin-member-preview', previewTargetUserId, user?.active_tenant_id, user?.active_club_id],
+    queryKey: ['admin-member-preview', previewTargetUserId, previewTargetUser?.email || '', user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
       try {
         const res = await base44.functions.invoke('memberPortal', {
