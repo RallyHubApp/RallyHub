@@ -25,7 +25,7 @@ const groupByDay = sessions => [...(sessions || [])]
 
 const publicDescription = club => {
   const description = String(club?.description || '').trim();
-  if (club?.verificationStatus === 'verified' && /has not yet been claimed|listing is currently unclaimed|unclaimed listing/i.test(description)) {
+  if (/has not yet been claimed|listing is currently unclaimed|unclaimed listing/i.test(description)) {
     return `${club.name} is listed in the RallyHub Club Directory for County ${club.county}.`;
   }
   return description;
@@ -33,7 +33,7 @@ const publicDescription = club => {
 
 const publicMembershipStatus = club => {
   const status = String(club?.membershipStatus || '').trim();
-  if (club?.verificationStatus === 'verified' && /unclaimed/i.test(status)) return 'Contact club';
+  if (/unclaimed/i.test(status)) return 'Contact club';
   return status;
 };
 
@@ -346,13 +346,7 @@ export default function PublicClubProfile() {
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="rounded-full bg-primary/10 text-primary border border-primary/20 px-3 py-1 text-xs font-semibold">{club.sport}</span>
-                  {club.verificationStatus === 'unclaimed' ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-amber-300"><CheckCircle2 className="w-3.5 h-3.5" /> Unclaimed listing</span>
-                  ) : club.verificationStatus === 'verified' ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Verified club listing</span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3.5 h-3.5" /> Active listing</span>
-                  )}
+
                 </div>
                 <div className="flex flex-wrap items-center gap-3"><h1 className="text-4xl sm:text-5xl font-black tracking-tight">{club.name}</h1>{previewMode && <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-500">PREVIEW ONLY · NOT PUBLIC</span>}</div>
                 <p className="mt-3 text-lg text-muted-foreground max-w-3xl">{displayDescription}</p>
@@ -379,10 +373,10 @@ export default function PublicClubProfile() {
                   </div>
                   {hasDirectoryAccess && (
                     <Link to={`/directory/${club.slug}/edit`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm">
-                      <UserCheck className="w-4 h-4" /> {user?.role === 'admin' && club.verificationStatus === 'unclaimed' ? 'Manage / invite club' : 'Edit your listing'}
+                      <UserCheck className="w-4 h-4" /> Edit your listing
                     </Link>
                   )}
-                  {!hasDirectoryAccess && club.verificationStatus === 'unclaimed' && (
+                  {!hasDirectoryAccess && (
                     <Link to={`/directory/${club.slug}/claim`} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-amber-300/60 bg-amber-300 text-slate-950 text-sm font-bold hover:bg-amber-200 transition-colors shadow-sm">
                       <UserCheck className="w-4 h-4" /> Update this club
                     </Link>
@@ -551,11 +545,11 @@ export default function PublicClubProfile() {
               <section className="rounded-2xl border border-primary/35 bg-primary/10 p-5">
                 <div className="flex items-center gap-2 text-primary">
                   <UserCheck className="w-5 h-5" />
-                  <h2 className="font-bold">{user?.role === 'admin' && club.verificationStatus === 'unclaimed' ? 'Super Admin · Unclaimed listing' : 'You manage this listing'}</h2>
+                  <h2 className="font-bold">You manage this listing</h2>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">{user?.role === 'admin' && club.verificationStatus === 'unclaimed' ? 'Check the club details and contact the representative to offer them their free Directory listing.' : "Update the club's public contact details, venues, sessions and joining information."}</p>
+                <p className="text-sm text-muted-foreground mt-2">Update the club's public contact details, venues, sessions and joining information.</p>
                 <Link to={`/directory/${club.slug}/edit`} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
-                  {user?.role === 'admin' && club.verificationStatus === 'unclaimed' ? 'Manage / invite club' : 'Edit your listing'}
+                  Edit your listing
                 </Link>
                 <button type="button" onClick={() => { setClubInterestDone(false); setClubInterestMessage(''); setClubInterestOpen(true); }} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background/40 px-4 py-3 text-sm font-semibold text-foreground hover:border-primary/40 transition-colors">
                   <Lock className="w-4 h-4" /> RallyHub Club — join the waiting list
@@ -565,7 +559,7 @@ export default function PublicClubProfile() {
                 </button>
               </section>
             )}
-            {!hasDirectoryAccess && club.verificationStatus === 'unclaimed' && (
+            {!hasDirectoryAccess && (
               <section className="rounded-2xl border border-amber-400/35 bg-amber-400/10 p-5">
                 <div className="flex items-center gap-2 text-amber-200">
                   <UserCheck className="w-5 h-5" />
@@ -596,7 +590,7 @@ export default function PublicClubProfile() {
                 {club.founded && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Founded</dt><dd>{club.founded}</dd></div>}
                 {club.affiliation && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Affiliation</dt><dd>{club.affiliation}</dd></div>}
                 {displayMembershipStatus && <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Membership</dt><dd className="text-right">{displayMembershipStatus}</dd></div>}
-                <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Listing</dt><dd className="text-right">{club.verificationStatus === 'verified' ? 'Verified club representative' : 'RallyHub directory listing'}</dd></div>
+
               </dl>
             </section>
 
