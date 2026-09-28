@@ -1417,6 +1417,120 @@ export default function MembershipConsole() {
         </SheetContent>
       </Sheet>
 
+      <Dialog open={broadcastOpen} onOpenChange={open => { setBroadcastOpen(open); if (!open) setBroadcastResult(null); }}>
+        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Megaphone className="w-5 h-5 text-primary" />Club Broadcast Centre</DialogTitle>
+            <DialogDescription>Publish once in RallyHub, alert linked members, then share the same message to the appropriate existing Clare Pickleball WhatsApp group.</DialogDescription>
+          </DialogHeader>
+
+          {!broadcastResult ? (
+            <div className="space-y-5">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <Label>Title</Label>
+                  <Input className="mt-1" value={broadcastForm.title} onChange={event => setBroadcastForm(previous => ({ ...previous, title:event.target.value }))} placeholder="e.g. Monday session update" maxLength={220} />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>Message</Label>
+                  <Textarea className="mt-1 min-h-32" value={broadcastForm.message} onChange={event => setBroadcastForm(previous => ({ ...previous, message:event.target.value }))} placeholder="Write the club message once. RallyHub will use the same wording for the in-app post and WhatsApp handoff." maxLength={8000} />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>Optional link</Label>
+                  <Input className="mt-1" value={broadcastForm.linkUrl} onChange={event => setBroadcastForm(previous => ({ ...previous, linkUrl:event.target.value }))} placeholder="https://rallyhub.ie/..." />
+                </div>
+                <div>
+                  <Label>RallyHub audience</Label>
+                  <Select value={broadcastForm.audienceType} onValueChange={value => setBroadcastForm(previous => ({ ...previous, audienceType:value }))}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all_active">All active members</SelectItem>
+                      <SelectItem value="selected" disabled={selected.size === 0}>Selected members ({selected.size})</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {broadcastForm.audienceType === 'selected'
+                      ? `${selected.size} selected in the membership table · ${selectedBroadcastUserIds().length} linked RallyHub account${selectedBroadcastUserIds().length === 1 ? '' : 's'}`
+                      : `${broadcastData.audience?.eligibleMemberCount || 0} active membership records · ${broadcastData.audience?.linkedTargetCount || 0} currently linked to RallyHub`}
+                  </p>
+                </div>
+                <div>
+                  <Label>Suggested WhatsApp group</Label>
+                  <Select value={broadcastForm.whatsappGroupKey} onValueChange={value => setBroadcastForm(previous => ({ ...previous, whatsappGroupKey:value }))} disabled={!broadcastForm.includeWhatsApp}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Choose group" /></SelectTrigger>
+                    <SelectContent>
+                      {(broadcastData.groups || []).map(group => <SelectItem key={group.key} value={group.key}>{group.name}{group.isDefault ? ' · default' : ''}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-[11px] text-muted-foreground">RallyHub cannot silently post into an existing WhatsApp Community group. It opens the prepared message and tells you which group to choose.</p>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-3 gap-2">
+                <label className="rounded-xl border border-border p-3 flex items-start gap-2 cursor-pointer">
+                  <Checkbox checked disabled className="mt-0.5" />
+                  <span><span className="text-sm font-semibold block">In-app</span><span className="text-[11px] text-muted-foreground">Always published to RallyHub</span></span>
+                </label>
+                <label className="rounded-xl border border-border p-3 flex items-start gap-2 cursor-pointer">
+                  <Checkbox checked={broadcastForm.sendPush} onCheckedChange={checked => setBroadcastForm(previous => ({ ...previous, sendPush:checked === true }))} className="mt-0.5" />
+                  <span><span className="text-sm font-semibold block">Push alert</span><span className="text-[11px] text-muted-foreground">Notify linked members who enabled push</span></span>
+                </label>
+                <label className="rounded-xl border border-border p-3 flex items-start gap-2 cursor-pointer">
+                  <Checkbox checked={broadcastForm.includeWhatsApp} onCheckedChange={checked => setBroadcastForm(previous => ({ ...previous, includeWhatsApp:checked === true }))} className="mt-0.5" />
+                  <span><span className="text-sm font-semibold block">WhatsApp</span><span className="text-[11px] text-muted-foreground">Prepare a one-tap group handoff</span></span>
+                </label>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm"><Checkbox checked={broadcastForm.pinned} onCheckedChange={checked => setBroadcastForm(previous => ({ ...previous, pinned:checked === true }))} /> Pin this update above other club updates</label>
+
+              {(broadcastForm.title || broadcastForm.message) && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Member preview</p>
+                  <p className="mt-2 font-black">{broadcastForm.title || 'Broadcast title'}</p>
+                  <p className="mt-2 text-sm text-muted-foreground whitespace-pre-line">{broadcastForm.message || 'Your message will appear here.'}</p>
+                  {broadcastForm.linkUrl && <p className="mt-2 text-xs text-primary break-all">{broadcastForm.linkUrl}</p>}
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setBroadcastOpen(false)} disabled={broadcastBusy}>Cancel</Button>
+                <Button onClick={publishBroadcast} disabled={broadcastBusy || !broadcastForm.title.trim() || !broadcastForm.message.trim()}><Send className="w-4 h-4 mr-1.5" />{broadcastBusy ? 'Publishing…' : 'Publish in RallyHub'}</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div className="rounded-xl border border-green-500/25 bg-green-500/5 p-4 flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                <div><p className="font-bold">Published in RallyHub</p><p className="text-sm text-muted-foreground mt-1">{broadcastResult.broadcast?.linkedTargetCount || 0} linked member{broadcastResult.broadcast?.linkedTargetCount === 1 ? '' : 's'} can see this update in the member app. Push delivered to {broadcastResult.broadcast?.pushSent || 0} subscribed device{broadcastResult.broadcast?.pushSent === 1 ? '' : 's'}.</p></div>
+              </div>
+
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div className="rounded-xl border p-3"><p className="text-[10px] uppercase text-muted-foreground">In-app</p><p className="mt-1 font-black">Published ✓</p></div>
+                <div className="rounded-xl border p-3"><p className="text-[10px] uppercase text-muted-foreground">Push</p><p className="mt-1 font-black">{broadcastResult.broadcast?.pushSent || 0}/{broadcastResult.broadcast?.pushSubscriptionCount || 0}</p></div>
+                <div className="rounded-xl border p-3"><p className="text-[10px] uppercase text-muted-foreground">WhatsApp</p><p className="mt-1 font-black">{broadcastResult.broadcast?.whatsappStatus === 'posted' ? 'Posted ✓' : broadcastResult.broadcast?.whatsappStatus === 'pending' ? 'Ready to share' : 'Not selected'}</p></div>
+              </div>
+
+              {broadcastResult.broadcast?.whatsappStatus !== 'not_requested' && (
+                <div className="rounded-xl border border-green-500/25 p-4 space-y-3">
+                  <div className="flex items-start gap-3"><Smartphone className="w-5 h-5 text-green-500 mt-0.5" /><div><p className="font-bold">Post to {broadcastResult.whatsappGroupName || 'WhatsApp'}</p><p className="text-xs text-muted-foreground mt-1">Tap Share to WhatsApp on your phone, choose <strong className="text-foreground">{broadcastResult.whatsappGroupName || 'the suggested group'}</strong>, then send. RallyHub never exposes or uploads the Community membership list.</p></div></div>
+                  <div className="rounded-lg bg-secondary/40 p-3 text-sm whitespace-pre-line">{broadcastResult.whatsappText}</div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={shareBroadcastToWhatsApp}><Share2 className="w-4 h-4 mr-1.5" />Share to WhatsApp</Button>
+                    <Button variant="outline" onClick={copyWhatsAppBroadcast}><ClipboardCopy className="w-4 h-4 mr-1.5" />Copy message</Button>
+                    {broadcastResult.broadcast?.whatsappStatus !== 'posted' && <Button variant="outline" onClick={markWhatsAppPosted}><CheckCircle2 className="w-4 h-4 mr-1.5" />Mark as posted</Button>}
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="outline" onClick={() => { setBroadcastResult(null); setBroadcastForm(previous => ({ ...previous, title:'', message:'', linkUrl:'', pinned:false })); }}>New broadcast</Button>
+                <Button onClick={() => setBroadcastOpen(false)}>Done</Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={membershipSourceOpen} onOpenChange={setMembershipSourceOpen}>
         <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
