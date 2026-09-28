@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -49,25 +49,53 @@ export default function AdminPanel() {
   const [assetUploading, setAssetUploading] = useState(false);
   const [assetUploadUrl, setAssetUploadUrl] = useState('');
   const [assetName, setAssetName] = useState('');
-  const uploadSiteAsset = async (file) => {
+  const [assetSelectedFile, setAssetSelectedFile] = useState(null);
+  const [assetUploadMessage, setAssetUploadMessage] = useState('');
+  const assetFileInputRef = useRef(null);
+  const chooseSiteAsset = (file) => {
+    setAssetUploadUrl('');
+    setAssetUploadMessage('');
     if (!file) return;
+    const fileName = String(file.name || '');
+    const lowerName = fileName.toLowerCase();
+    const fileType = String(file.type || '').toLowerCase();
+    const supported = fileType.startsWith('image/') || fileType === 'application/pdf' || lowerName.endsWith('.pdf');
+    if (!supported) {
+      setAssetSelectedFile(null);
+      setAssetUploadMessage('Choose a PNG, JPG, WEBP or PDF file.');
+      return;
+    }
+    if (!file.size || file.size > 20 * 1024 * 1024) {
+      setAssetSelectedFile(null);
+      setAssetUploadMessage('Asset must be 20 MB or smaller.');
+      return;
+    }
+    setAssetSelectedFile(file);
+    if (!assetName.trim()) setAssetName(fileName.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '));
+    setAssetUploadMessage(`Selected: ${fileName} · ${(file.size / 1024).toFixed(0)} KB`);
+  };
+  const uploadSiteAsset = async () => {
+    const file = assetSelectedFile;
+    if (!file) { setAssetUploadMessage('Choose a file first.'); return; }
+    const assetKey = assetName.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+    if (!assetKey) { setAssetUploadMessage('Enter an asset name first.'); return; }
     setAssetUploadUrl('');
     setAssetUploading(true);
+    setAssetUploadMessage(`Uploading ${file.name}…`);
     try {
-      const assetKey = assetName.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
-      if (!assetKey) throw new Error('Enter an asset name first');
-      const fileName = String(file.name || '').toLowerCase();
-      const fileType = String(file.type || '').toLowerCase();
-      const supported = fileType.startsWith('image/') || fileType === 'application/pdf' || fileName.endsWith('.pdf');
-      if (!supported) throw new Error('Choose a PNG, JPG, WEBP or PDF file.');
-      if (!file.size || file.size > 20 * 1024 * 1024) throw new Error('Asset must be 20 MB or smaller.');
-      const res = await base44.functions.invoke('secureCreditAction', { action:'upload_image', purpose:'site_asset', assetKey, file });
+      const request = base44.functions.invoke('secureCreditAction', { action:'upload_image', purpose:'site_asset', assetKey, file });
+      const timeout = new Promise((_, reject) => window.setTimeout(() => reject(new Error('Upload timed out. Please try again.')), 45000));
+      const res = await Promise.race([request, timeout]);
       const url = res?.data?.file_url || res?.file_url;
       if (!url) throw new Error(res?.data?.error || 'No file URL returned');
       setAssetUploadUrl(url);
+      setAssetUploadMessage(`Uploaded ✓ ${file.name}`);
+      setAssetSelectedFile(null);
       toast.success('Asset uploaded and stored in RallyHub');
     } catch (e) {
-      toast.error(e?.response?.data?.error || e?.message || 'Asset upload failed');
+      const message = e?.response?.data?.error || e?.message || 'Asset upload failed';
+      setAssetUploadMessage(`Upload failed: ${message}`);
+      toast.error(message);
     } finally { setAssetUploading(false); }
   };
   const [playerSearch, setPlayerSearch] = useState('');
