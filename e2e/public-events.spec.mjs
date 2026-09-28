@@ -92,12 +92,15 @@ test('public Events desktop: discover, filter, open detail, save, calendar and c
   await noHorizontalOverflow(page);
 });
 
-test('public Events: transient 500s recover without losing the journey',async({page})=>{
+test('public Events: transient 500s give a clear retry and recover without losing the journey',async({page})=>{
   const calls=await installPublicBackend(page,{listFailures:2});
   await page.goto('/events');
-  await expect(page.getByText('Kukri Irish Nationals 2026').first()).toBeVisible({timeout:10000});
+  const retry=page.getByRole('button',{name:'Try again'});
+  await expect(retry).toBeVisible({timeout:10000});
+  await retry.click();
+  await expect(page.getByText('Kukri Irish Nationals 2026').first()).toBeVisible({timeout:5000});
   expect(calls.filter(call=>call.name==='publicEvents'&&call.body.action==='list').length).toBeGreaterThanOrEqual(3);
-  await expect(page.getByRole('button',{name:'Try again'})).toHaveCount(0);
+  await expect(retry).toHaveCount(0);
 });
 
 test.describe('public Events mobile',()=>{
