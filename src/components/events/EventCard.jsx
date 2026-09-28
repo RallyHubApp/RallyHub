@@ -11,6 +11,7 @@ export default function EventCard({ event, onRegister }) {
   const y = Number(event.event_card_position_y ?? event.event_image_position_y ?? 50);
   const zoom = Number(event.event_card_zoom ?? event.event_image_zoom ?? 1);
   const canRegister = state.actionable && event.event_registration_mode !== 'none' && (event.event_registration_url || event.event_registration_mode === 'contact' || event.event_registration_mode === 'rallyhub');
+  const actionLabel = state.key === 'invite_only' ? 'Request invitation' : 'Register';
 
   return (
     <article className="overflow-hidden rounded-[16px] border border-[#dbe6e8] bg-white shadow-[0_8px_24px_rgba(8,24,77,.06)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(8,24,77,.10)]">
@@ -40,7 +41,7 @@ export default function EventCard({ event, onRegister }) {
         <div className="mt-4 grid grid-cols-2 gap-2">
           <Link to={eventPath(event)} className="inline-flex min-h-10 items-center justify-center rounded-lg bg-[#078e48] px-3 text-center text-[12px] font-bold text-white hover:bg-[#067b3f]">View event</Link>
           {canRegister ? (
-            <button type="button" onClick={()=>onRegister?.(event)} className="min-h-10 rounded-lg border border-[#078e48] bg-white px-3 text-[12px] font-bold text-[#078e48] hover:bg-[#f1fbf5]">Register</button>
+            <button type="button" onClick={()=>onRegister?.(event)} className="min-h-10 rounded-lg border border-[#078e48] bg-white px-3 text-[12px] font-bold text-[#078e48] hover:bg-[#f1fbf5]">{actionLabel}</button>
           ) : (
             <Link to={eventPath(event)} className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[#cad7dd] bg-white px-3 text-center text-[12px] font-bold text-[#17325f]">{state.key==='opening_soon'?'Remind me':'Details'}</Link>
           )}
