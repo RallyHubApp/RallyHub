@@ -151,8 +151,12 @@ Deno.serve(async (req) => {
         const listingSlug = clean(body.listingSlug, 180);
         allowed = await hasDirectoryAccess(base44, user, listingSlug);
         contextId = listingSlug || user.id;
-      } else if (purpose === 'profile_avatar' || purpose === 'event_poster') {
+      } else if (purpose === 'profile_avatar') {
         allowed = await hasRallyHubClubAccess(base44, user);
+      } else if (purpose === 'event_poster') {
+        const listingSlug = clean(body.listingSlug, 180);
+        allowed = listingSlug ? await hasDirectoryAccess(base44, user, listingSlug) : await hasRallyHubClubAccess(base44, user);
+        contextId = listingSlug || user.id;
       } else if (purpose === 'club_challenge_logo') {
         const tournamentId = clean(body.tournamentId, 180);
         allowed = await canManageTournament(base44, user, tournamentId);
