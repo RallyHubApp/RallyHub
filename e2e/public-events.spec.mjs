@@ -95,6 +95,21 @@ test('public Events desktop: discover, filter, open detail, save, calendar and c
   await noHorizontalOverflow(page);
 });
 
+test('full invitation-only event replaces registration with a tracked future-invitation email flow',async({page})=>{
+  const calls=await installPublicBackend(page);
+  await page.goto('/events/eyva-full-test');
+  await expect(page.getByText('EVENT FULL').first()).toBeVisible();
+  await expect(page.getByText('This event is full.').first()).toBeVisible();
+  await expect(page.getByText(/mobile number is being kept private/i)).toBeVisible();
+  await expect(page.getByRole('button',{name:'Register / Book'})).toHaveCount(0);
+  await page.getByRole('button',{name:'Request a future invitation'}).click();
+  await expect(page.getByRole('heading',{name:'Request a future invitation'})).toBeVisible();
+  await page.getByLabel('Email address').fill('player@example.test');
+  await page.getByRole('button',{name:'Send request'}).click();
+  await expect(page.getByText(/organiser has received your future-invitation request/i)).toBeVisible();
+  expect(calls.some(c=>c.name==='eventInterest'&&c.body.action==='future_invitation'&&c.body.eventId==='event-eyva-full'&&c.body.email==='player@example.test')).toBe(true);
+});
+
 test('public Events: transient 500s give a clear retry and recover without losing the journey',async({page})=>{
   const calls=await installPublicBackend(page,{listFailures:2});
   await page.goto('/events');
