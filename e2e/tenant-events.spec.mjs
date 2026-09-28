@@ -74,7 +74,7 @@ test('tenant Events: create, upload/crop, preview and publish one canonical publ
   await page.getByRole('button',{name:'Back to editor'}).click();
 
   await page.getByRole('button',{name:'Publish selected audiences'}).click();
-  await expect(page.getByText('Published ✓')).toBeVisible();
+  await expect(page.getByText('Published to members + public Events ✓')).toBeVisible();
   expect(model.writes.filter(w=>w.entity==='Tournament'&&w.method==='POST')).toHaveLength(1);
   const payload=model.writes.find(w=>w.entity==='Tournament')?.body;
   expect(payload.event_public_visible).toBe(true);
