@@ -11,7 +11,7 @@ import Seo from '@/components/public/Seo';
 import PublicSiteHeader from '@/components/public/PublicSiteHeader';
 import PublicSiteFooter from '@/components/public/PublicSiteFooter';
 import EventCard from '@/components/events/EventCard';
-import { EVENT_TYPES, eventPath, eventStatusClass, eventTags, prettyEventDateRange, registrationState } from '@/lib/event-utils';
+import { EVENT_TYPES, eventPath, eventStatusClass, eventTags, prettyEventDateRange, registrationActionLabel, registrationState } from '@/lib/event-utils';
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -53,7 +53,7 @@ function FeaturedEvent({event,onRegister}){
         {event.event_public_summary&&<p className="mt-4 line-clamp-3 text-sm leading-6 text-[#52627d]">{event.event_public_summary}</p>}
         {event.host&&<div className="mt-4 flex items-center gap-2 text-sm"><span className="text-[#52627d]">Hosted by</span>{event.host.logo_url&&<img src={event.host.logo_url} alt="" className="h-7 w-7 rounded-full object-contain"/>}<span className="font-bold text-[#07184c]">{event.host.name}</span></div>}
         <div className="mt-4 flex flex-wrap gap-2">{eventTags(event,4).map(tag=><span key={tag} className="rounded-full bg-[#f1f6f7] px-2.5 py-1 text-[10px] font-semibold text-[#38506f]">{tag}</span>)}</div>
-        <div className="mt-6 grid gap-2 sm:grid-cols-2"><Link to={eventPath(event)} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#078e48] px-4 text-sm font-bold text-white hover:bg-[#067b3f]">View event</Link>{state.actionable&&event.event_registration_url?<button type="button" onClick={()=>onRegister(event)} className="min-h-11 rounded-lg border border-[#078e48] bg-white px-4 text-sm font-bold text-[#078e48] hover:bg-[#f1fbf5]">Register / Book</button>:<Link to={eventPath(event)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#cad7dd] px-4 text-sm font-bold text-[#17325f]">{state.key==='opening_soon'?'Remind me':'Event details'}</Link>}</div>
+        <div className="mt-6 grid gap-2 sm:grid-cols-2"><Link to={eventPath(event)} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#078e48] px-4 text-sm font-bold text-white hover:bg-[#067b3f]">View event</Link>{state.actionable&&(event.event_registration_url||event.event_registration_mode==='contact')?<button type="button" onClick={()=>onRegister(event)} className="min-h-11 rounded-lg border border-[#078e48] bg-white px-4 text-sm font-bold text-[#078e48] hover:bg-[#f1fbf5]">{registrationActionLabel(event,state)}</button>:<Link to={eventPath(event)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#cad7dd] px-4 text-sm font-bold text-[#17325f]">{state.key==='opening_soon'?'Remind me':'Event details'}</Link>}</div>
       </div>
     </div>
   </section>;
@@ -119,7 +119,7 @@ export default function Events(){
   },[upcoming,query,status,type,month,county,country,host,level,age,discipline,environment,sort]);
   const featured=filtered.find(e=>e.event_featured_public)||null;
   const gridEvents=featured?filtered.filter(e=>e.id!==featured.id):filtered;
-  const openRegistration=event=>{if(event.event_registration_mode==='contact'&&event.event_contact){window.location.href=`mailto:${event.event_contact}?subject=${encodeURIComponent(`Invitation request: ${event.name}`)}`;return}if(event.event_registration_url)window.open(event.event_registration_url,'_blank','noopener,noreferrer');else navigate(eventPath(event))};
+  const openRegistration=event=>{if(event.event_registration_mode==='contact'&&event.event_contact){const state=registrationState(event);const url=`${window.location.origin}${eventPath(event)}`;const subject=state.key==='invite_only'?`Invitation request: ${event.name}`:`Event enquiry: ${event.name}`;const body=state.key==='invite_only'?`Hi,\n\nI would like to be considered for an invitation to ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`:`Hi,\n\nI have a question about ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`;window.location.href=`mailto:${event.event_contact}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;return}if(event.event_registration_url)window.open(event.event_registration_url,'_blank','noopener,noreferrer');else navigate(eventPath(event))};
   const showResults=()=>document.getElementById('events-results')?.scrollIntoView({behavior:'smooth',block:'start'});
 
   const selectClass="h-11 w-full rounded-lg border border-[#cfdcdf] bg-white px-3 text-[12px] font-semibold text-[#17325f] outline-none focus:border-[#078e48]";
