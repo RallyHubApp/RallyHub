@@ -179,6 +179,24 @@
     "event_image_url": {
       "type": "string"
     },
+    "event_image_position_x": {
+      "type": "number",
+      "default": 50
+    },
+    "event_image_position_y": {
+      "type": "number",
+      "default": 50
+    },
+    "event_image_zoom": {
+      "type": "number",
+      "default": 1
+    },
+    "event_image_original_url": {
+      "type": "string"
+    },
+    "event_image_source_type": {
+      "type": "string"
+    },
     "event_internal_info": {
       "type": "string"
     },
@@ -212,6 +230,7 @@
       "format": "date-time"
     }
   },
+  "required": [],
   "rls": {
     "create": {
       "user_condition": {
@@ -254,6 +273,5 @@
         "role": "admin"
       }
     }
-  },
-  "required": []
+  }
 }
