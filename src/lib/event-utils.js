@@ -59,17 +59,21 @@ export function registrationState(event, now = new Date()) {
   if (!hasRegistration) return { key:'none', label:'No booking required', tone:'neutral', actionable:false };
   if (invitationOnly && mode === 'contact') return { key:'invite_only', label:'Invitation only', tone:'amber', actionable:true };
   if (open && !Number.isNaN(open.getTime()) && now < open) {
-    const days = Math.ceil((open.getTime() - now.getTime()) / 86400000);
-    return { key:'opening_soon', label:days <= 14 ? `Opens in ${days} day${days===1?'':'s'}` : `Opens ${open.toLocaleDateString('en-IE',{day:'numeric',month:'short'})}`, tone:'blue', actionable:false, date:open };
+    const days = Math.max(1, Math.ceil((open.getTime() - now.getTime()) / 86400000));
+    const openDate = open.toLocaleDateString('en-IE',{day:'numeric',month:'short',year:'numeric'});
+    return { key:'opening_soon', label:days <= 14 ? `Opens in ${days} day${days===1?'':'s'}` : `Opens ${open.toLocaleDateString('en-IE',{day:'numeric',month:'short'})}`, detail:`Registration opens ${openDate}`, tone:'blue', actionable:false, date:open };
   }
   if (close && !Number.isNaN(close.getTime()) && now > close) {
-    return { key:'closed', label:'Registration closed', tone:'slate', actionable:false, date:close };
+    const closeDate = close.toLocaleDateString('en-IE',{day:'numeric',month:'short',year:'numeric'});
+    return { key:'closed', label:'Registration closed', detail:`Closed ${closeDate}`, tone:'slate', actionable:false, date:close };
   }
   if (close && !Number.isNaN(close.getTime())) {
-    const days = Math.ceil((close.getTime() - now.getTime()) / 86400000);
-    if (days <= 7) return { key:'closing_soon', label:days <= 1 ? 'Closes today' : `Closes in ${days} days`, tone:'amber', actionable:true, date:close };
+    const days = Math.max(0, Math.ceil((close.getTime() - now.getTime()) / 86400000));
+    const closeDate = close.toLocaleDateString('en-IE',{day:'numeric',month:'short',year:'numeric'});
+    if (days <= 7) return { key:'closing_soon', label:days <= 1 ? 'Closes today' : `Closes in ${days} days`, detail:`Registration closes ${closeDate}`, tone:'amber', actionable:true, date:close };
+    return { key:'open', label:'Open for booking', detail:`Closes in ${days} days · ${closeDate}`, tone:'green', actionable:true, date:close };
   }
-  return { key:'open', label:'Open for booking', tone:'green', actionable:true, date:close };
+  return { key:'open', label:'Open for booking', detail:'Registration open', tone:'green', actionable:true, date:null };
 }
 
 export function registrationActionLabel(event, state = registrationState(event)) {
