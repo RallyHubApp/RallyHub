@@ -1,6 +1,127 @@
 {
+  "name": "Tournament",
   "type": "object",
   "properties": {
+    "name": {
+      "type": "string"
+    },
+    "format": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "start_date": {
+      "type": "string"
+    },
+    "end_date": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "venue_id": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "host_club_id": {
+      "type": "string"
+    },
+    "inter_club": {
+      "type": "boolean"
+    },
+    "clubs_involved": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "player_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "max_players": {
+      "type": "number"
+    },
+    "partnership_type": {
+      "type": "string"
+    },
+    "skill_range_min": {
+      "type": "number"
+    },
+    "skill_range_max": {
+      "type": "number"
+    },
+    "counts_toward_leaderboard": {
+      "type": "boolean"
+    },
+    "prize_info": {
+      "type": "string"
+    },
+    "roster_status": {
+      "type": "string"
+    },
+    "roster_locked_at": {
+      "type": "string"
+    },
+    "finalised_at": {
+      "type": "string"
+    },
+    "partner_pairs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "kotc_last_import_message": {
+      "type": "string"
+    },
+    "kotc_session_venue": {
+      "type": "string"
+    },
+    "kotc_player_order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "kotc_guest_roster": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "kotc_state": {
+      "type": "object"
+    },
+    "kotc_num_courts": {
+      "type": "number"
+    },
+    "kotc_num_rounds": {
+      "type": "number"
+    },
+    "kotc_current_round": {
+      "type": "number"
+    },
+    "kotc_score_format": {
+      "type": "string"
+    },
+    "kotc_spond_event_id": {
+      "type": "string"
+    },
+    "kotc_spond_group_id": {
+      "type": "string"
+    },
+    "kotc_last_imported_at": {
+      "type": "string"
+    },
     "event_category": {
       "type": "string"
     },
@@ -86,6 +207,5 @@
       }
     }
   },
-  "required": [],
-  "name": "Tournament"
+  "required": []
 }
