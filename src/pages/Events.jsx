@@ -1,22 +1,161 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { CalendarDays, ChevronDown, List, Map as MapIcon, MapPin, Search, SlidersHorizontal, Star, UserRound } from 'lucide-react';
+import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { base44 } from '@/api/base44Client';
-import { CalendarDays, Mail, MapPin, MessageCircle } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 import Seo from '@/components/public/Seo';
-import PublicDirectoryHeader from '@/components/public/PublicDirectoryHeader';
+import PublicSiteHeader from '@/components/public/PublicSiteHeader';
+import PublicSiteFooter from '@/components/public/PublicSiteFooter';
+import EventCard from '@/components/events/EventCard';
+import { EVENT_TYPES, eventPath, eventStatusClass, eventTags, prettyEventDateRange, registrationState } from '@/lib/event-utils';
 
-const filters=[['all','All'],['tournament','Tournaments'],['coaching','Coaching'],['holiday','Holidays'],['other','Other']];
-const prettyDate=value=>{const d=new Date(`${value}T12:00:00`);return Number.isNaN(d.getTime())?value:d.toLocaleDateString('en-IE',{weekday:'short',day:'numeric',month:'short',year:'numeric'})};
-export default function Events() {
- const [filter,setFilter]=useState('all');
- const {data:events=[],isLoading}=useQuery({queryKey:['public-events'],queryFn:()=>base44.entities.Tournament.filter({event_public_visible:true,event_publish_status:'published'},'start_date',100),staleTime:60000});
- const visible=useMemo(()=>events.filter(e=>filter==='all'||e.event_category===filter),[events,filter]);
- return <><Seo title="Pickleball Events, Tournaments & Coaching in Ireland | RallyHub" description="Discover upcoming pickleball events, tournaments, competitions, social events and coaching opportunities in Ireland." path="/events" robots="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
- <div className="min-h-screen bg-white text-[#07184c]"><PublicDirectoryHeader/><main className="bg-[linear-gradient(135deg,#f8fcfd_0%,#f1faf6_100%)] px-4 py-12 sm:px-6 sm:py-16">
-  <section className="mx-auto max-w-[1180px]"><div className="text-center"><p className="text-xs font-extrabold uppercase tracking-[.16em] text-[#078e48]">RallyHub Events</p><h1 className="mt-2 text-4xl font-black tracking-[-.04em] sm:text-5xl">Events, tournaments & coaching</h1><p className="mx-auto mt-4 max-w-[720px] text-base leading-7 text-[#52627d]">Discover upcoming playing opportunities. Clubs can publish events from RallyHub while the national Events page remains open to organisers who want an event considered for listing.</p></div>
-  <div className="mt-7 flex flex-wrap justify-center gap-2">{filters.map(([v,l])=><button key={v} onClick={()=>setFilter(v)} className={`rounded-full border px-4 py-2 text-sm font-bold ${filter===v?'border-[#078e48] bg-[#078e48] text-white':'border-[#cfdcdf] bg-white text-[#0c2257]'}`}>{l}</button>)}</div>
-  <div className="mt-9 grid gap-6 md:grid-cols-2 lg:grid-cols-3">{isLoading?<p className="col-span-full text-center text-sm text-[#52627d]">Loading events…</p>:visible.map(e=><article key={e.id} className="overflow-hidden rounded-[20px] border border-[#dbe6e8] bg-white shadow-[0_12px_35px_rgba(8,30,70,.08)]">{e.event_image_url?<div className="aspect-[1/1.4142] overflow-hidden bg-[#eef4f5]"><img src={e.event_image_url} alt="" className="h-full w-full object-cover" style={{objectPosition:`${Number(e.event_image_position_x??50)}% ${Number(e.event_image_position_y??50)}%`,transform:`scale(${Number(e.event_image_zoom??1)})`,transformOrigin:`${Number(e.event_image_position_x??50)}% ${Number(e.event_image_position_y??50)}%`}}/></div>:<div className="flex aspect-[1/1.4142] items-center justify-center bg-[#eef7f3]"><CalendarDays className="h-12 w-12 text-[#078e48]"/></div>}<div className="p-5"><span className="text-[10px] font-black uppercase tracking-wider text-[#078e48]">{e.event_category||'Event'}</span><h2 className="mt-1 text-xl font-black">{e.name}</h2><p className="mt-3 text-sm font-semibold">{prettyDate(e.start_date)} {e.event_start_time&&`· ${e.event_start_time}`}{e.event_end_time&&`–${e.event_end_time}`}</p>{e.location&&<p className="mt-2 flex gap-1.5 text-sm text-[#52627d]"><MapPin className="mt-0.5 h-4 w-4 shrink-0"/>{e.location}</p>}{e.description&&<p className="mt-4 line-clamp-5 whitespace-pre-line text-sm leading-6 text-[#52627d]">{e.description}</p>}</div></article>)}{!isLoading&&!visible.length&&<p className="col-span-full py-8 text-center text-sm text-[#52627d]">No events in this category yet.</p>}</div>
-  <section className="mx-auto mt-12 max-w-[820px] rounded-[20px] border border-[#dbe6e8] bg-white p-6 text-center"><h2 className="text-xl font-black">Thinking about an event?</h2><p className="mx-auto mt-2 max-w-[620px] text-sm leading-6 text-[#52627d]">If your club is not yet publishing through RallyHub, get in touch and we can help you get your event listed.</p><div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row"><a href="mailto:rallyhubapp@gmail.com" className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-bold"><Mail className="h-4 w-4"/>Email Brian</a><a href="https://wa.me/353878100333" target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#078e48] px-4 text-sm font-bold text-white"><MessageCircle className="h-4 w-4"/>WhatsApp Brian</a></div></section>
-  </section></main><footer className="bg-[#053c56] px-4 py-5 text-center text-xs text-white/75">© 2026 RallyHub All rights reserved. · <Link to="/directory">Directory</Link> · <Link to="/contact">Contact</Link></footer></div></>;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
+
+const statusFilters=[
+  ['all','All upcoming'],['open','Open for booking'],['opening_soon','Opening soon'],['closing_soon','Closing soon'],['closed','Registration closed']
+];
+const today=()=>new Date().toISOString().slice(0,10);
+const monthKey=value=>value?String(value).slice(0,7):'';
+const uniqueSorted=values=>[...new Set(values.filter(Boolean).map(String))].sort((a,b)=>a.localeCompare(b));
+const normal=value=>String(value||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+
+function FeaturedEvent({event,onRegister}){
+  if(!event)return null;
+  const state=registrationState(event);
+  const image=event.event_card_image_url||event.event_image_url;
+  const x=Number(event.event_card_position_x??event.event_image_position_x??50);
+  const y=Number(event.event_card_position_y??event.event_image_position_y??50);
+  const zoom=Number(event.event_card_zoom??event.event_image_zoom??1);
+  return <section className="mt-8 overflow-hidden rounded-[18px] border border-[#dbe6e8] bg-white shadow-[0_10px_30px_rgba(8,24,77,.07)]">
+    <div className="grid lg:grid-cols-[44%_56%]">
+      <Link to={eventPath(event)} className="relative min-h-[230px] overflow-hidden bg-[#eaf4ef] sm:min-h-[300px] lg:min-h-[330px]">
+        {image?<img src={image} alt={`${event.name} artwork`} className="absolute inset-0 h-full w-full object-cover" style={{objectPosition:`${x}% ${y}%`,transform:`scale(${zoom})`,transformOrigin:`${x}% ${y}%`}}/>:<div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,#073b57,#078e48)] p-8 text-center text-white"><div><CalendarDays className="mx-auto h-12 w-12"/><p className="mt-4 text-3xl font-black">{event.name}</p></div></div>}
+        <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-[#078e48] px-3 py-1.5 text-[11px] font-black text-white shadow"><Star className="h-3.5 w-3.5 fill-current"/>Featured Event</span>
+      </Link>
+      <div className="flex flex-col justify-center p-5 sm:p-7 lg:p-9">
+        <div className="flex flex-wrap items-center gap-2"><span className={`rounded-full border px-2.5 py-1 text-[10px] font-black ${eventStatusClass(state)}`}>{state.label}</span>{event.event_verified_organiser&&<span className="rounded-full bg-[#eef8f2] px-2.5 py-1 text-[10px] font-black text-[#078e48]">VERIFIED ORGANISER</span>}</div>
+        <h2 className="mt-4 text-2xl font-black tracking-[-.03em] text-[#07184c] sm:text-3xl">{event.name}</h2>
+        <p className="mt-4 flex items-start gap-2 text-sm font-semibold text-[#17325f]"><CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#078e48]"/>{prettyEventDateRange(event)}</p>
+        {event.location&&<p className="mt-2 flex items-start gap-2 text-sm text-[#52627d]"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#078e48]"/>{event.location}{event.event_county?`, ${event.event_county}`:''}</p>}
+        {event.event_public_summary&&<p className="mt-4 line-clamp-3 text-sm leading-6 text-[#52627d]">{event.event_public_summary}</p>}
+        {event.host&&<div className="mt-4 flex items-center gap-2 text-sm"><span className="text-[#52627d]">Hosted by</span>{event.host.logo_url&&<img src={event.host.logo_url} alt="" className="h-7 w-7 rounded-full object-contain"/>}<span className="font-bold text-[#07184c]">{event.host.name}</span></div>}
+        <div className="mt-4 flex flex-wrap gap-2">{eventTags(event,4).map(tag=><span key={tag} className="rounded-full bg-[#f1f6f7] px-2.5 py-1 text-[10px] font-semibold text-[#38506f]">{tag}</span>)}</div>
+        <div className="mt-6 grid gap-2 sm:grid-cols-2"><Link to={eventPath(event)} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#078e48] px-4 text-sm font-bold text-white hover:bg-[#067b3f]">View event</Link>{state.actionable&&event.event_registration_url?<button type="button" onClick={()=>onRegister(event)} className="min-h-11 rounded-lg border border-[#078e48] bg-white px-4 text-sm font-bold text-[#078e48] hover:bg-[#f1fbf5]">Register / Book</button>:<Link to={eventPath(event)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#cad7dd] px-4 text-sm font-bold text-[#17325f]">{state.key==='opening_soon'?'Remind me':'Event details'}</Link>}</div>
+      </div>
+    </div>
+  </section>;
+}
+
+function EventMap({events}){
+  const points=events.filter(e=>Number.isFinite(Number(e.event_latitude))&&Number.isFinite(Number(e.event_longitude)));
+  if(!points.length)return <div className="rounded-2xl border border-[#dbe6e8] bg-white px-6 py-16 text-center"><MapPin className="mx-auto h-9 w-9 text-[#078e48]"/><h2 className="mt-3 text-lg font-black text-[#07184c]">Map locations are being added</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#52627d]">Events still appear in the complete list. When an organiser provides a mapped venue, it will appear here automatically.</p></div>;
+  const center=[Number(points[0].event_latitude),Number(points[0].event_longitude)];
+  return <div className="overflow-hidden rounded-2xl border border-[#dbe6e8] bg-white"><MapContainer center={center} zoom={7} scrollWheelZoom className="h-[620px] w-full"><TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>{points.map(event=><Marker key={event.id} position={[Number(event.event_latitude),Number(event.event_longitude)]}><Popup><div className="min-w-[210px]"><strong>{event.name}</strong><br/>{prettyEventDateRange(event)}<br/>{event.location||''}<br/><a href={eventPath(event)} className="font-bold text-[#078e48]">View event</a></div></Popup></Marker>)}</MapContainer></div>;
+}
+
+export default function Events(){
+  const navigate=useNavigate();
+  const {isAuthenticated}=useAuth();
+  const [query,setQuery]=useState('');
+  const [status,setStatus]=useState('all');
+  const [type,setType]=useState('all');
+  const [month,setMonth]=useState('all');
+  const [county,setCounty]=useState('all');
+  const [host,setHost]=useState('all');
+  const [level,setLevel]=useState('all');
+  const [age,setAge]=useState('all');
+  const [environment,setEnvironment]=useState('all');
+  const [view,setView]=useState('list');
+  const [sort,setSort]=useState('date');
+  const {data,isLoading,error}=useQuery({queryKey:['public-events-v2'],queryFn:async()=>{const res=await base44.functions.invoke('publicEvents',{action:'list'});if(res.data?.error)throw new Error(res.data.error);return res.data?.events||[]},staleTime:60000,refetchOnWindowFocus:true});
+  const events=data||[];
+  const upcoming=useMemo(()=>events.filter(e=>(e.end_date||e.start_date||'9999-12-31')>=today()),[events]);
+  const options=useMemo(()=>({
+    months:uniqueSorted(upcoming.map(e=>monthKey(e.start_date))),
+    counties:uniqueSorted(upcoming.map(e=>e.event_county)),
+    hosts:uniqueSorted(upcoming.map(e=>e.host?.name)),
+    levels:uniqueSorted(upcoming.flatMap(e=>e.event_levels||[])),
+    ages:uniqueSorted(upcoming.flatMap(e=>e.event_age_groups||[])),
+  }),[upcoming]);
+  const filtered=useMemo(()=>{
+    const q=normal(query);
+    const rows=upcoming.filter(e=>{
+      const state=registrationState(e);
+      if(status!=='all'&&state.key!==status)return false;
+      if(type!=='all'&&e.event_category!==type)return false;
+      if(month!=='all'&&monthKey(e.start_date)!==month)return false;
+      if(county!=='all'&&e.event_county!==county)return false;
+      if(host!=='all'&&e.host?.name!==host)return false;
+      if(level!=='all'&&!(e.event_levels||[]).includes(level))return false;
+      if(age!=='all'&&!(e.event_age_groups||[]).includes(age))return false;
+      if(environment!=='all'&&e.event_indoor_outdoor!==environment)return false;
+      if(q){const hay=normal([e.name,e.location,e.event_county,e.event_country,e.host?.name,e.event_public_summary,...(e.event_levels||[]),...(e.event_age_groups||[]),...(e.event_disciplines||[])].join(' '));if(!hay.includes(q))return false}
+      return true;
+    });
+    return rows.sort((a,b)=>{
+      if(sort==='closing'){const aa=a.event_registration_close_at||'9999',bb=b.event_registration_close_at||'9999';return aa.localeCompare(bb)}
+      if(sort==='newest')return String(b.event_published_at||b.updated_date||'').localeCompare(String(a.event_published_at||a.updated_date||''));
+      return String(a.start_date||'9999').localeCompare(String(b.start_date||'9999'));
+    });
+  },[upcoming,query,status,type,month,county,host,level,age,environment,sort]);
+  const featured=filtered.find(e=>e.event_featured_public)||upcoming.find(e=>e.event_featured_public)||null;
+  const gridEvents=featured?filtered.filter(e=>e.id!==featured.id):filtered;
+  const openRegistration=event=>{if(event.event_registration_url)window.open(event.event_registration_url,'_blank','noopener,noreferrer');else navigate(eventPath(event))};
+
+  const selectClass="h-11 w-full rounded-lg border border-[#cfdcdf] bg-white px-3 text-[12px] font-semibold text-[#17325f] outline-none focus:border-[#078e48]";
+  return <>
+    <Seo title="Pickleball Events, Tournaments & Coaching | RallyHub" description="Find upcoming pickleball tournaments, interclubs, leagues, social events, coaching and camps across Ireland and beyond." path="/events" robots="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"/>
+    <div className="min-h-screen bg-white text-[#07184c]"><PublicSiteHeader/><main>
+      <section className="relative overflow-hidden bg-[#f4fbfc]">
+        <div className="mx-auto grid max-w-[1380px] lg:grid-cols-[53%_47%]">
+          <div className="relative z-10 flex min-h-[330px] items-center px-5 py-9 sm:px-7 lg:min-h-[360px] lg:px-10 xl:px-12">
+            <div className="w-full max-w-[700px]"><p className="text-[10px] font-black uppercase tracking-[.18em] text-[#078e48]">RallyHub Events</p><h1 className="mt-2 text-[2.55rem] font-black leading-[.98] tracking-[-.045em] sm:text-[3.6rem]">Find your next <span className="text-[#078e48]">event</span></h1><p className="mt-4 max-w-[620px] text-[15px] leading-6 text-[#263d6b]">Tournaments, interclubs, leagues, coaching and social events — built around the information players actually need.</p>
+              <div className="mt-6 flex min-h-12 items-center rounded-xl border border-[#cfdcdf] bg-white p-1.5 shadow-[0_8px_24px_rgba(8,24,77,.05)]"><Search className="ml-3 h-5 w-5 shrink-0 text-[#52627d]"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search events by name, location, host or keyword…" className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none"/><button type="button" className="hidden h-10 rounded-lg bg-[#078e48] px-6 text-sm font-bold text-white sm:block" onClick={()=>{}}>Search</button></div>
+            </div>
+          </div>
+          <div className="relative hidden min-h-[360px] overflow-hidden lg:block"><img src="/assets/about/card-competitions.webp" alt="Pickleball competition" className="absolute inset-0 h-full w-full object-cover"/><div className="absolute inset-0 bg-[linear-gradient(90deg,#f4fbfc_0%,rgba(244,251,252,.58)_18%,rgba(244,251,252,0)_45%)]"/></div>
+        </div>
+      </section>
+
+      <section className="border-y border-[#e7edef] bg-white"><div className="mx-auto max-w-[1380px] px-5 py-5 sm:px-7 lg:px-10 xl:px-12">
+        <div className="flex gap-2 overflow-x-auto pb-1">{statusFilters.map(([key,label])=><button key={key} type="button" onClick={()=>setStatus(key)} className={`whitespace-nowrap rounded-full border px-4 py-2 text-[12px] font-bold ${status===key?'border-[#078e48] bg-[#078e48] text-white':'border-[#cfdbdf] bg-white text-[#17325f]'}`}>{label}</button>)}</div>
+        <details className="mt-4 lg:hidden"><summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-[#cfdbdf] px-4 py-3 text-sm font-bold"><SlidersHorizontal className="h-4 w-4"/>More filters<ChevronDown className="ml-auto h-4 w-4"/></summary><div className="mt-3 grid grid-cols-2 gap-2">
+          <select className={selectClass} value={type} onChange={e=>setType(e.target.value)}>{EVENT_TYPES.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
+          <select className={selectClass} value={month} onChange={e=>setMonth(e.target.value)}><option value="all">Any month</option>{options.months.map(v=><option key={v} value={v}>{new Date(`${v}-01T12:00:00`).toLocaleDateString('en-IE',{month:'long',year:'numeric'})}</option>)}</select>
+          <select className={selectClass} value={county} onChange={e=>setCounty(e.target.value)}><option value="all">Any county / region</option>{options.counties.map(v=><option key={v}>{v}</option>)}</select>
+          <select className={selectClass} value={host} onChange={e=>setHost(e.target.value)}><option value="all">Any host</option>{options.hosts.map(v=><option key={v}>{v}</option>)}</select>
+          <select className={selectClass} value={level} onChange={e=>setLevel(e.target.value)}><option value="all">Any level</option>{options.levels.map(v=><option key={v}>{v}</option>)}</select>
+          <select className={selectClass} value={age} onChange={e=>setAge(e.target.value)}><option value="all">Any age group</option>{options.ages.map(v=><option key={v}>{v}</option>)}</select>
+          <select className={selectClass} value={environment} onChange={e=>setEnvironment(e.target.value)}><option value="all">Indoor / outdoor</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option><option value="mixed">Mixed</option></select>
+        </div></details>
+        <div className="mt-4 hidden grid-cols-7 gap-2 lg:grid">
+          <label className="text-[10px] font-bold text-[#52627d]">Event type<select className={selectClass} value={type} onChange={e=>setType(e.target.value)}>{EVENT_TYPES.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>
+          <label className="text-[10px] font-bold text-[#52627d]">Month<select className={selectClass} value={month} onChange={e=>setMonth(e.target.value)}><option value="all">All</option>{options.months.map(v=><option key={v} value={v}>{new Date(`${v}-01T12:00:00`).toLocaleDateString('en-IE',{month:'short',year:'numeric'})}</option>)}</select></label>
+          <label className="text-[10px] font-bold text-[#52627d]">County / region<select className={selectClass} value={county} onChange={e=>setCounty(e.target.value)}><option value="all">All</option>{options.counties.map(v=><option key={v}>{v}</option>)}</select></label>
+          <label className="text-[10px] font-bold text-[#52627d]">Host<select className={selectClass} value={host} onChange={e=>setHost(e.target.value)}><option value="all">All</option>{options.hosts.map(v=><option key={v}>{v}</option>)}</select></label>
+          <label className="text-[10px] font-bold text-[#52627d]">Playing level<select className={selectClass} value={level} onChange={e=>setLevel(e.target.value)}><option value="all">All</option>{options.levels.map(v=><option key={v}>{v}</option>)}</select></label>
+          <label className="text-[10px] font-bold text-[#52627d]">Age group<select className={selectClass} value={age} onChange={e=>setAge(e.target.value)}><option value="all">All</option>{options.ages.map(v=><option key={v}>{v}</option>)}</select></label>
+          <label className="text-[10px] font-bold text-[#52627d]">Indoor / Outdoor<select className={selectClass} value={environment} onChange={e=>setEnvironment(e.target.value)}><option value="all">All</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option><option value="mixed">Mixed</option></select></label>
+        </div>
+      </div></section>
+
+      <section className="mx-auto max-w-[1380px] px-5 pb-12 sm:px-7 lg:px-10 xl:px-12">
+        {featured&&<FeaturedEvent event={featured} onRegister={openRegistration}/>} 
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="text-2xl font-black tracking-[-.03em]">All Events <span className="text-base font-semibold text-[#52627d]">({filtered.length})</span></h2><p className="mt-1 text-sm text-[#52627d]">One event record, kept up to date by the organiser and shared wherever players need it.</p></div><div className="flex flex-wrap gap-2">
+          {isAuthenticated&&<Link to="/events/my" className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#cad7dd] px-3 text-xs font-bold"><UserRound className="h-4 w-4"/>My Events</Link>}
+          <select className="h-10 rounded-lg border border-[#cad7dd] bg-white px-3 text-xs font-bold" value={sort} onChange={e=>setSort(e.target.value)}><option value="date">Date (soonest first)</option><option value="closing">Registration closing soon</option><option value="newest">Recently added</option></select>
+          <div className="grid grid-cols-2 rounded-lg border border-[#cad7dd] p-1"><button type="button" onClick={()=>setView('list')} className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-bold ${view==='list'?'bg-[#078e48] text-white':''}`}><List className="h-4 w-4"/>List</button><button type="button" onClick={()=>setView('map')} className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-bold ${view==='map'?'bg-[#078e48] text-white':''}`}><MapIcon className="h-4 w-4"/>Map</button></div>
+        </div></div>
+        <div className="mt-6">{isLoading?<div className="rounded-2xl border border-[#dbe6e8] bg-white py-20 text-center text-sm text-[#52627d]">Loading events…</div>:error?<div className="rounded-2xl border border-red-200 bg-red-50 py-16 text-center text-sm text-red-700">{error.message||'Could not load events.'}</div>:view==='map'?<EventMap events={filtered}/>:gridEvents.length?<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{gridEvents.map(event=><EventCard key={event.id} event={event} onRegister={openRegistration}/>)}</div>:<div className="rounded-2xl border border-[#dbe6e8] bg-white py-16 text-center"><Search className="mx-auto h-8 w-8 text-[#078e48]"/><p className="mt-3 font-black">No events match those filters</p><button type="button" className="mt-3 text-sm font-bold text-[#078e48]" onClick={()=>{setQuery('');setStatus('all');setType('all');setMonth('all');setCounty('all');setHost('all');setLevel('all');setAge('all');setEnvironment('all')}}>Clear filters</button></div>}</div>
+      </section>
+    </main><PublicSiteFooter/></div>
+  </>;
 }
