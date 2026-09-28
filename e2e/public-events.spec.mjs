@@ -7,16 +7,17 @@ const host={id:'club-pbi',name:'Pickleball Ireland',slug:'pickleball-ireland',lo
 const event={
   id:'event-kukri',name:'Kukri Irish Nationals 2026',start_date:'2026-11-19',end_date:'2026-11-22',location:'Lagan Valley LeisurePlex',event_county:'Lisburn',event_country:'Northern Ireland',
   event_slug:'kukri-irish-nationals-2026',event_category:'tournament',event_start_time:'09:30',event_end_time:'18:00',event_image_url:onePixel,event_card_image_url:onePixel,event_card_position_x:50,event_card_position_y:44,event_card_zoom:1.2,
-  event_public_summary:'Four days of national pickleball competition.',event_registration_mode:'external',event_registration_url:'https://register.example.test/kukri',event_registration_open_at:'2026-09-01T18:00:00.000Z',event_registration_close_at:'2026-11-10T23:00:00.000Z',event_fee_text:'€45 per event',event_levels:['Competition'],event_age_groups:['18+','50+','60+','70+'],event_disciplines:['Singles','Gender Doubles','Mixed Doubles'],event_indoor_outdoor:'indoor',event_featured_public:true,event_verified_organiser:true,event_publish_status:'published',event_public_visible:true,event_schedule:[{day:'Thu 19 Nov',time:'09:30–15:00',title:'70+ Gender Doubles'},{day:'Fri 20 Nov',time:'09:30–18:00',title:'60+ competition'}],event_eligibility:'Age-group competition.',event_player_info:'Minimum four matches.',event_fees_cancellation:'See organiser policy.',event_contact:'events@example.test',host
+  event_public_summary:'Four days of national pickleball competition.',event_registration_mode:'external',event_registration_url:'https://register.example.test/kukri',event_registration_open_at:'2026-09-01T18:00:00.000Z',event_registration_close_at:'2026-11-10T23:00:00.000Z',event_fee_text:'€45 per event',event_levels:['Competition'],event_age_groups:['18+','50+','60+','70+'],event_disciplines:['Singles','Gender Doubles','Mixed Doubles'],event_indoor_outdoor:'indoor',event_featured_public:true,event_verified_organiser:true,event_publish_status:'published',event_public_visible:true,event_latitude:null,event_longitude:null,event_schedule:[{day:'Thu 19 Nov',time:'09:30–15:00',title:'70+ Gender Doubles'},{day:'Fri 20 Nov',time:'09:30–18:00',title:'60+ competition'}],event_eligibility:'Age-group competition.',event_player_info:'Minimum four matches.',event_fees_cancellation:'See organiser policy.',event_contact:'events@example.test',host
 };
 const second={...event,id:'event-clare',name:'Clare v Galway Interclub',event_slug:'clare-v-galway-interclub',start_date:'2026-10-04',end_date:'2026-10-04',location:"St Joseph's, Doora Barefield",event_county:'Clare',event_country:'Ireland',event_category:'interclub',event_featured_public:false,event_registration_open_at:null,event_registration_close_at:null,event_registration_mode:'none',event_registration_url:'',event_levels:['Social','Improver'],event_age_groups:['All ages'],event_disciplines:['Team'],event_public_summary:'Clare and Galway meet in a social interclub fixture.',host:{id:'club-clare',name:'Clare Pickleball',slug:'clare-pickleball',logo_url:onePixel}};
 const opening={...event,id:'event-opening',name:'Opening Soon Test',event_slug:'opening-soon-test',start_date:'2026-12-01',end_date:'2026-12-01',event_featured_public:false,event_registration_open_at:'2099-01-01T00:00:00.000Z',event_registration_close_at:'2099-02-01T00:00:00.000Z'};
 const eyva={...event,id:'event-eyva',name:"Eyva's Invitational Series – Autumn Classic 2026",event_slug:'eyva-autumn-classic-2026',start_date:'2026-10-17',end_date:'2026-10-17',location:"The Dome, Our Lady's School, Terenure, Dublin 6",event_county:'Dublin',event_country:'Ireland',event_featured_public:false,event_registration_open_at:null,event_registration_close_at:null,event_registration_mode:'contact',event_registration_url:'',event_contact:'eyvainvitationalseries@gmail.com',event_levels:['3.0-','3.5-'],event_age_groups:['18+'],event_disciplines:['Gender Doubles','Mixed Doubles'],event_tags:['DUPR Rated','Invitation only','Limited spaces'],event_public_summary:'Invitation-only DUPR-rated Autumn Classic.',host:{id:'club-eyva',name:"Eyva's Invitational Series",slug:'eyva-s-invitational-series'}};
 const json=(route,body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
 
-async function installPublicBackend(page){
+async function installPublicBackend(page,{listFailures=0}={}){
   await page.addInitScript(()=>localStorage.setItem('base44_access_token','events-e2e-token'));
   const calls=[];
+  let remainingListFailures=listFailures;
   await page.route('**/api/apps/**',async route=>{
     const req=route.request(),url=new URL(req.url()),path=url.pathname;
     if(path.includes('/public-settings/'))return json(route,{id:APP_ID,public_settings:{}});
@@ -30,6 +31,7 @@ async function installPublicBackend(page){
       calls.push({name,body});
       if(name==='publicEvents'){
         if(body.action==='detail'){const found=[event,second,opening,eyva].find(e=>e.event_slug===body.slug);return found?json(route,{success:true,event:found}):json(route,{error:'Public event not found'},404)}
+        if(remainingListFailures>0){remainingListFailures--;return json(route,{error:'Temporary events service error'},500)}
         return json(route,{success:true,events:[second,event,opening,eyva]});
       }
       if(name==='eventEngagement')return json(route,{success:true,saved:{id:'saved-1'},share:{id:'share-1'},items:[]});
@@ -74,6 +76,7 @@ test('public Events desktop: discover, filter, open detail, save, calendar and c
   await expect(page).toHaveURL(/\/events\/kukri-irish-nationals-2026/);
   await expect(page.getByRole('heading',{name:'Kukri Irish Nationals 2026'})).toBeVisible();
   await expect(page.getByRole('link',{name:/View original poster/i})).toBeVisible();
+  await expect(page.locator('.leaflet-container')).toHaveCount(0);
   await page.getByRole('button',{name:'Save event'}).click();
   await expect(page.getByRole('button',{name:'Saved'})).toBeVisible();
   expect(calls.some(c=>c.name==='eventEngagement'&&c.body.action==='save'&&c.body.eventId==='event-kukri')).toBe(true);
@@ -87,6 +90,17 @@ test('public Events desktop: discover, filter, open detail, save, calendar and c
   await page.getByRole('button',{name:/Share to my club/i}).click();
   await expect.poll(()=>calls.filter(c=>c.name==='eventEngagement'&&c.body.action==='share_to_club').length).toBe(1);
   await noHorizontalOverflow(page);
+});
+
+test('public Events: a transient 500 gives a clear retry and recovers without losing the journey',async({page})=>{
+  await installPublicBackend(page,{listFailures:2});
+  await page.goto('/events');
+  await expect(page.getByText('Temporary events service error')).toBeVisible({timeout:8000});
+  const retry=page.getByRole('button',{name:'Try again'});
+  await expect(retry).toBeVisible();
+  await retry.click();
+  await expect(page.getByText('Kukri Irish Nationals 2026').first()).toBeVisible({timeout:5000});
+  await expect(page.getByRole('button',{name:'Try again'})).toHaveCount(0);
 });
 
 test.describe('public Events mobile',()=>{
