@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: directory-editor-sessions.spec.mjs >> directory editor: changing a new weekly session does not mutate or jump into another session
-- Location: e2e/directory-editor-sessions.spec.mjs:70:1
+- Name: club-challenge-browser-robot.spec.mjs >> Live recovery robot: stale timer is silent, break controls work, and host returns to the next round
+- Location: e2e/club-challenge-browser-robot.spec.mjs:364:1
 
 # Error details
 

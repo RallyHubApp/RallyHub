@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: directory-editor-sessions.spec.mjs >> Clare public listing shows Corofin Wednesday session with €5 cash
-- Location: e2e/directory-editor-sessions.spec.mjs:89:1
+- Name: club-challenge-browser-robot.spec.mjs >> Club Challenge public voter robot: one browser ballot across both teams
+- Location: e2e/club-challenge-browser-robot.spec.mjs:310:1
 
 # Error details
 
