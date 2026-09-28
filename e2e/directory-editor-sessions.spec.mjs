@@ -41,11 +41,11 @@ test('directory editor: Add session is visible, adds a card, and Duplicate clone
   await page.getByTestId('directory-add-session').click();
   await expect(cards).toHaveCount(8);
   await expect(page.getByTestId('directory-session-notice')).toContainText('New blank weekly session added');
+
+  const newCard=page.locator('[data-testid="directory-session-card"].ring-2.border-primary');
   await expect(newCard.locator('select').nth(0)).toHaveValue('');
   await expect(newCard.locator('select').nth(1)).toHaveValue('');
   await expect(newCard.locator('input[type="time"]').nth(1)).toHaveValue('');
-
-  const newCard=page.locator('[data-testid="directory-session-card"].ring-2.border-primary');
   await expect(newCard).toHaveCount(1);
   await expect(newCard).toBeVisible();
 
@@ -78,7 +78,7 @@ test('directory editor: changing a new weekly session does not mutate or jump in
   await page.getByTestId('directory-add-session').click();
   const newCard=page.locator('[data-testid="directory-session-card"].ring-2.border-primary');
   await newCard.locator('select').nth(0).selectOption('Thursday');
-  await newCard.locator('select').nth(1).selectOption({index:4});
+  await newCard.locator('select').nth(1).selectOption({index:1});
   await newCard.locator('input[type="time"]').nth(1).fill('10:30');
 
   await expect(newCard).toContainText('Thursday · 10:30');
