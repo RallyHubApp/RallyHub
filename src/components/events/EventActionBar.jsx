@@ -49,7 +49,7 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   const openRegistration=()=>{
     if(state.key==='opening_soon')return saveEvent(true);
     if(!state.actionable)return;
-    if(event.event_registration_mode==='contact'&&event.event_contact){window.location.href=`mailto:${event.event_contact}`;return}
+    if(event.event_registration_mode==='contact'&&event.event_contact){const subject=state.key==='invite_only'?`Invitation request: ${event.name}`:`Event enquiry: ${event.name}`;const body=state.key==='invite_only'?`Hi,\n\nI would like to be considered for an invitation to ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`:`Hi,\n\nI have a question about ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`;window.location.href=`mailto:${event.event_contact}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;return}
     if(event.event_registration_url)window.open(event.event_registration_url,'_blank','noopener,noreferrer');
   };
 
