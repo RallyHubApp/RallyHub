@@ -65,6 +65,7 @@ test('tenant Events: create, upload/crop, preview and publish one canonical publ
   await expect(page.getByText('Uploaded',{exact:true})).toBeVisible();
   await expect(page.getByText('Event-card crop',{exact:true}).first()).toBeVisible();
   const crop=page.getByTestId('event-card-crop');
+  await crop.scrollIntoViewIfNeeded();
   const box=await crop.boundingBox();
   expect(box).toBeTruthy();
   await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
