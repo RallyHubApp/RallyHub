@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_SITE_ASSET_BYTES = 20 * 1024 * 1024;
 const MAX_IMPORT_BYTES = 12 * 1024 * 1024;
 const HOUR = 60 * 60 * 1000;
 
@@ -102,6 +103,16 @@ function validateImage(file:any) {
   return '';
 }
 
+function validateSiteAsset(file:any) {
+  if (!(file instanceof File)) return 'Asset file required.';
+  const type = String(file.type || '').toLowerCase();
+  const name = String(file.name || '').toLowerCase();
+  const allowed = type.startsWith('image/') || type === 'application/pdf' || name.endsWith('.pdf');
+  if (!allowed) return 'Only PNG, JPG, WEBP or PDF files are allowed.';
+  if (file.size <= 0 || file.size > MAX_SITE_ASSET_BYTES) return 'Asset must be 20 MB or smaller.';
+  return '';
+}
+
 function validateImport(file:any) {
   if (!(file instanceof File)) return 'Spreadsheet file required.';
   const name = String(file.name || '').toLowerCase();
@@ -142,8 +153,8 @@ Deno.serve(async (req) => {
     if (action === 'upload_image') {
       const purpose = clean(body.purpose, 80);
       const file = body.file;
-      const imageError = validateImage(file);
-      if (imageError) return Response.json({ error:imageError }, { status:400 });
+      const uploadError = purpose === 'site_asset' ? validateSiteAsset(file) : validateImage(file);
+      if (uploadError) return Response.json({ error:uploadError }, { status:400 });
 
       let allowed = false;
       let contextId = user.id;
@@ -165,7 +176,7 @@ Deno.serve(async (req) => {
         allowed = user.role === 'admin';
         contextId = user.id;
       }
-      if (!allowed) return Response.json({ error:'You do not have permission to upload this image.' }, { status:403 });
+      if (!allowed) return Response.json({ error: purpose === 'site_asset' ? 'You do not have permission to upload this asset.' : 'You do not have permission to upload this image.' }, { status:403 });
 
       const perUserLimit = purpose === 'directory_logo' ? 5 : 12;
       const globalLimitForAction = purpose === 'directory_logo' ? 40 : 100;
