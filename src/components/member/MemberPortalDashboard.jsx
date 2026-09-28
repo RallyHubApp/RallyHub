@@ -46,6 +46,7 @@ export default function MemberPortalDashboard() {
       }
     },
     staleTime: 30_000,
+    refetchInterval: 60_000,
     refetchOnWindowFocus: false,
     retry: false,
   });
