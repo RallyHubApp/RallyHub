@@ -28,6 +28,8 @@ import Landing from '@/pages/Landing';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
 import Events from '@/pages/Events';
+import PublicEventDetail from '@/pages/PublicEventDetail';
+import MyEvents from '@/pages/MyEvents';
 import PendingApprovalScreen from '@/components/PendingApprovalScreen';
 import AndroidInstallPrompt from '@/components/AndroidInstallPrompt';
 import Login from '@/pages/Login';
@@ -215,6 +217,8 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/events/my" element={<MyEvents />} />
+            <Route path="/events/:slug" element={<PublicEventDetail />} />
             <Route path="/directory" element={<PublicDirectory />} />
             <Route path="/directory/:slug" element={<PublicClubProfile />} />
             <Route path="/pickleball-venues/:clubSlug/:venueId" element={<PublicVenueProfile />} />
