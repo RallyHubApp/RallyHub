@@ -117,6 +117,9 @@ export default function AdminPanel() {
   const [savingDirectoryIdentity, setSavingDirectoryIdentity] = useState(false);
   const [directoryBroadcast, setDirectoryBroadcast] = useState({ subject: '', message: '', audience: 'service' });
   const [directoryBroadcastBusy, setDirectoryBroadcastBusy] = useState('');
+  const [eventHostPlaceholder, setEventHostPlaceholder] = useState({ name: '', email: '', notes: '' });
+  const [eventHostPlaceholderBusy, setEventHostPlaceholderBusy] = useState(false);
+  const [eventHostPlaceholderResult, setEventHostPlaceholderResult] = useState(null);
   const [updatingFeedbackId, setUpdatingFeedbackId] = useState('');
 
   const { data: players = [] } = useQuery({
@@ -1325,7 +1328,7 @@ Brian`;
   const directoryNeedsAttentionCount = pendingDirectoryClaims.length + pendingNewDirectoryRequests.length;
   const directoryAttentionTarget = pendingDirectoryClaims.length ? 'directory-pending-claims' : 'directory-pending-actions';
   const scrollToDirectorySection = id => {
-    const hiddenToolSections = new Set(['directory-clubs','directory-claim-invite','directory-verified-access']);
+    const hiddenToolSections = new Set(['directory-clubs','directory-event-host-placeholder','directory-claim-invite','directory-verified-access']);
     if (hiddenToolSections.has(id) && !directoryToolsOpen) {
       setDirectoryToolsOpen(true);
       window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior:'smooth', block:'start' }), 80);
