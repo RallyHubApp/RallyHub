@@ -723,7 +723,31 @@ Deno.serve(async (req) => {
         competition_format:event.format || null,
         competition_status:event.status || null,
       }));
-      const items = [...(spond.sessions || []), ...competitionItems]
+      const tenantId=snapshot.user?.active_tenant_id;
+      const clubId=snapshot.user?.active_club_id;
+      const memberEventRows=(tenantId&&clubId) ? await base44.asServiceRole.entities.Tournament.filter({tenant_id:tenantId,host_club_id:clubId,event_member_visible:true,event_publish_status:'published'},'start_date',100).catch(()=>[]) : [];
+      const existingCompetitionIds=new Set(competitionItems.map((item:any)=>String(item.source_id)));
+      const memberEventItems=(memberEventRows||[])
+        .filter((event:any)=>!existingCompetitionIds.has(String(event.id)))
+        .map((event:any)=>({
+          id:`club-event:${event.id}`,
+          source_id:String(event.id),
+          source:'club_event',
+          title:event.name,
+          start:event.start_date ? `${event.start_date}T${event.event_start_time||'12:00'}:00` : null,
+          end:event.end_date ? `${event.end_date}T${event.event_end_time||event.event_start_time||'12:00'}:00` : null,
+          venue:event.location||null,
+          address:null,
+          latitude:null,
+          longitude:null,
+          response_status:'club_event',
+          competition_format:event.event_category||event.format||null,
+          competition_status:event.event_publish_status||event.status||null,
+          description:event.description||'',
+          member_info:event.event_internal_info||'',
+          image_url:event.event_image_url||null,
+        }));
+      const items = [...(spond.sessions || []), ...competitionItems, ...memberEventItems]
         .filter((item:any) => item.start)
         .sort((a:any,b:any) => String(a.start).localeCompare(String(b.start)));
       return Response.json({ success:true, play:{ items, spond, club:snapshot.club } });
