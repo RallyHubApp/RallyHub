@@ -36,7 +36,7 @@ test('admin Asset Uploader accepts a PDF and gives visible selection/upload feed
   await page.locator('input[type=file]').setInputFiles({name:'RallyHub-Events-Quick-Start-Guide.pdf',mimeType:'application/pdf',buffer:pdf});
 
   await expect(page.getByText(/Selected: RallyHub-Events-Quick-Start-Guide\.pdf/)).toBeVisible();
-  await expect(page.getByLabel('Asset name')).toHaveValue('RallyHub Events Quick Start Guide');
+  await expect(page.locator('input[placeholder="e.g. About page hero"]')).toHaveValue('RallyHub Events Quick Start Guide');
   await page.getByRole('button',{name:'Upload to RallyHub'}).click();
   await expect(page.getByText('Uploaded ✓ RallyHub-Events-Quick-Start-Guide.pdf')).toBeVisible();
   await expect(page.getByText('https://files.example.test/rallyhub-events-guide.pdf')).toBeVisible();
