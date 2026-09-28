@@ -56,6 +56,11 @@ export default function AdminPanel() {
     try {
       const assetKey = assetName.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
       if (!assetKey) throw new Error('Enter an asset name first');
+      const fileName = String(file.name || '').toLowerCase();
+      const fileType = String(file.type || '').toLowerCase();
+      const supported = fileType.startsWith('image/') || fileType === 'application/pdf' || fileName.endsWith('.pdf');
+      if (!supported) throw new Error('Choose a PNG, JPG, WEBP or PDF file.');
+      if (!file.size || file.size > 20 * 1024 * 1024) throw new Error('Asset must be 20 MB or smaller.');
       const res = await base44.functions.invoke('secureCreditAction', { action:'upload_image', purpose:'site_asset', assetKey, file });
       const url = res?.data?.file_url || res?.file_url;
       if (!url) throw new Error(res?.data?.error || 'No file URL returned');
@@ -2654,7 +2659,7 @@ Brian`;
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <label className="inline-flex cursor-pointer items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
                 <Upload className="mr-2 h-4 w-4" />{assetUploading ? 'Uploading…' : 'Upload approved asset'}
-                <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf,.pdf" className="hidden" disabled={assetUploading} onChange={async e=>{const file=e.target.files?.[0];await uploadSiteAsset(file);e.target.value='';}}/>
+                <input type="file" className="hidden" disabled={assetUploading} onChange={async e=>{const file=e.target.files?.[0];await uploadSiteAsset(file);e.target.value='';}}/>
               </label>
               {assetUploadUrl && <Badge className="bg-green-500/15 text-green-500"><CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Uploaded & stored</Badge>}
             </div>
