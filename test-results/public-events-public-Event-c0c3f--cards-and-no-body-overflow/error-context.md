@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: tenant-events.spec.mjs >> tenant Events mobile >> editor remains usable on phone without horizontal body scrolling
-- Location: e2e/tenant-events.spec.mjs:92:3
+- Name: public-events.spec.mjs >> public Events mobile >> mobile layout has working menu, filter drawer, cards and no body overflow
+- Location: e2e/public-events.spec.mjs:77:3
 
 # Error details
 
