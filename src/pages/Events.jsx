@@ -26,6 +26,11 @@ const today=()=>new Date().toISOString().slice(0,10);
 const monthKey=value=>value?String(value).slice(0,7):'';
 const uniqueSorted=values=>[...new Set(values.filter(Boolean).map(String))].sort((a,b)=>a.localeCompare(b));
 const normal=value=>String(value||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+const validMapPoint=(latValue,lngValue)=>{
+  if(latValue===null||latValue===undefined||latValue===''||lngValue===null||lngValue===undefined||lngValue==='')return false;
+  const lat=Number(latValue),lng=Number(lngValue);
+  return Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180;
+};
 
 function FeaturedEvent({event,onRegister}){
   if(!event)return null;
@@ -55,7 +60,7 @@ function FeaturedEvent({event,onRegister}){
 }
 
 function EventMap({events}){
-  const points=events.filter(e=>Number.isFinite(Number(e.event_latitude))&&Number.isFinite(Number(e.event_longitude)));
+  const points=events.filter(e=>validMapPoint(e.event_latitude,e.event_longitude));
   if(!points.length)return <div className="rounded-2xl border border-[#dbe6e8] bg-white px-6 py-16 text-center"><MapPin className="mx-auto h-9 w-9 text-[#078e48]"/><h2 className="mt-3 text-lg font-black text-[#07184c]">Map locations are being added</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#52627d]">Events still appear in the complete list. When an organiser provides a mapped venue, it will appear here automatically.</p></div>;
   const center=[Number(points[0].event_latitude),Number(points[0].event_longitude)];
   return <div className="overflow-hidden rounded-2xl border border-[#dbe6e8] bg-white"><MapContainer center={center} zoom={7} scrollWheelZoom className="h-[620px] w-full"><TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>{points.map(event=><Marker key={event.id} position={[Number(event.event_latitude),Number(event.event_longitude)]}><Popup><div className="min-w-[210px]"><strong>{event.name}</strong><br/>{prettyEventDateRange(event)}<br/>{event.location||''}<br/><a href={eventPath(event)} className="font-bold text-[#078e48]">View event</a></div></Popup></Marker>)}</MapContainer></div>;
@@ -77,7 +82,7 @@ export default function Events(){
   const [environment,setEnvironment]=useState('all');
   const [view,setView]=useState('list');
   const [sort,setSort]=useState('date');
-  const {data,isLoading,error}=useQuery({queryKey:['public-events-v2'],queryFn:async()=>{const res=await base44.functions.invoke('publicEvents',{action:'list'});if(res.data?.error)throw new Error(res.data.error);return res.data?.events||[]},staleTime:60000,refetchOnWindowFocus:true});
+  const {data,isLoading,error,refetch,isFetching}=useQuery({queryKey:['public-events-v2'],queryFn:async()=>{const res=await base44.functions.invoke('publicEvents',{action:'list'});if(res.data?.error)throw new Error(res.data.error);return res.data?.events||[]},staleTime:60000,refetchOnWindowFocus:true,retry:1});
   const events=data||[];
   const upcoming=useMemo(()=>events.filter(e=>(e.end_date||e.start_date||'9999-12-31')>=today()),[events]);
   const options=useMemo(()=>({
@@ -165,7 +170,7 @@ export default function Events(){
           <select className="h-10 rounded-lg border border-[#cad7dd] bg-white px-3 text-xs font-bold" value={sort} onChange={e=>setSort(e.target.value)}><option value="date">Date (soonest first)</option><option value="closing">Registration closing soon</option><option value="newest">Recently added</option></select>
           <div className="grid grid-cols-2 rounded-lg border border-[#cad7dd] p-1"><button type="button" onClick={()=>setView('list')} className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-bold ${view==='list'?'bg-[#078e48] text-white':''}`}><List className="h-4 w-4"/>List</button><button type="button" onClick={()=>setView('map')} className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-bold ${view==='map'?'bg-[#078e48] text-white':''}`}><MapIcon className="h-4 w-4"/>Map</button></div>
         </div></div>
-        <div className="mt-6">{isLoading?<div className="rounded-2xl border border-[#dbe6e8] bg-white py-20 text-center text-sm text-[#52627d]">Loading events…</div>:error?<div className="rounded-2xl border border-red-200 bg-red-50 py-16 text-center text-sm text-red-700">{error.message||'Could not load events.'}</div>:view==='map'?<EventMap events={filtered}/>:gridEvents.length?<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{gridEvents.map(event=><EventCard key={event.id} event={event} onRegister={openRegistration}/>)}</div>:<div className="rounded-2xl border border-[#dbe6e8] bg-white py-16 text-center"><Search className="mx-auto h-8 w-8 text-[#078e48]"/><p className="mt-3 font-black">No events match those filters</p><button type="button" className="mt-3 text-sm font-bold text-[#078e48]" onClick={()=>{setQuery('');setStatus('all');setType('all');setMonth('all');setCounty('all');setCountry('all');setHost('all');setLevel('all');setAge('all');setDiscipline('all');setEnvironment('all')}}>Clear filters</button></div>}</div>
+        <div className="mt-6">{isLoading?<div className="rounded-2xl border border-[#dbe6e8] bg-white py-20 text-center text-sm text-[#52627d]">Loading events…</div>:error?<div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-16 text-center text-sm text-red-700"><p>{error.message||'Could not load events.'}</p><button type="button" disabled={isFetching} onClick={()=>refetch()} className="mt-4 min-h-10 rounded-lg border border-red-300 bg-white px-4 font-bold text-red-700 disabled:opacity-60">{isFetching?'Retrying…':'Try again'}</button></div>:view==='map'?<EventMap events={filtered}/>:gridEvents.length?<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{gridEvents.map(event=><EventCard key={event.id} event={event} onRegister={openRegistration}/>)}</div>:<div className="rounded-2xl border border-[#dbe6e8] bg-white py-16 text-center"><Search className="mx-auto h-8 w-8 text-[#078e48]"/><p className="mt-3 font-black">No events match those filters</p><button type="button" className="mt-3 text-sm font-bold text-[#078e48]" onClick={()=>{setQuery('');setStatus('all');setType('all');setMonth('all');setCounty('all');setCountry('all');setHost('all');setLevel('all');setAge('all');setDiscipline('all');setEnvironment('all')}}>Clear filters</button></div>}</div>
       </section>
     </main><PublicSiteFooter/></div>
   </>;
