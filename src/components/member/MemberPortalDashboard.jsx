@@ -35,7 +35,22 @@ export default function MemberPortalDashboard() {
     refetchOnWindowFocus: true,
   });
 
+  const { data: announcements = [] } = useQuery({
+    queryKey: ['member-announcements'],
+    queryFn: async () => {
+      try {
+        const res = await base44.functions.invoke('memberPortal', { action: 'announcements' });
+        return res.data?.announcements || [];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
   if (isLoading) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">Loading your RallyHub home…</div>;
   if (error) return <div className="glass rounded-xl p-6 text-sm text-destructive">{error.message || 'Could not load your RallyHub home.'}</div>;
-  return <MemberDashboardView snapshot={data} play={play} playLoading={isLoadingPlay} performance={performance} performanceLoading={isLoadingPerformance} />;
+  return <MemberDashboardView snapshot={data} play={play} playLoading={isLoadingPlay} performance={performance} performanceLoading={isLoadingPerformance} announcements={announcements} />;
 }
