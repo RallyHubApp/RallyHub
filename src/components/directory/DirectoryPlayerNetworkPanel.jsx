@@ -14,6 +14,7 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [done,setDone]=useState(null);
+  const [signupOpen,setSignupOpen]=useState(false);
   const [shareDraft,setShareDraft]=useState(null);
 
   const clubOptions=useMemo(()=>[...clubs]
@@ -77,20 +78,23 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
     <div className="mx-auto max-w-[1380px] px-4 py-6 sm:px-6 lg:px-10 xl:px-12">
       <div className="grid gap-4 xl:grid-cols-[1.35fr_.65fr]">
         <div className="rounded-2xl border border-[#cfe4d8] bg-white p-5 shadow-[0_8px_24px_rgba(8,24,77,.045)] sm:p-6">
-          <div className="flex items-start gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#e8f7ee] text-[#078e48]"><BellRing className="h-5 w-5"/></div>
-            <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[.09em] text-[#078e48]">For players across Ireland</p>
-              <h2 className="mt-1 text-[24px] font-black tracking-[-.03em] text-[#07184c]">Playing pickleball? Stay in the loop.</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-[#52627d]">Get occasional RallyHub updates about tournaments, social events, coaching and other worthwhile pickleball opportunities. This is a national RallyHub player list and is completely separate from any individual club membership.</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#e8f7ee] text-[#078e48]"><BellRing className="h-5 w-5"/></div>
+              <div>
+                <p className="text-[11px] font-extrabold uppercase tracking-[.09em] text-[#078e48]">For players across Ireland</p>
+                <h2 className="mt-1 text-[24px] font-black tracking-[-.03em] text-[#07184c]">Playing pickleball? Stay in the loop.</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[#52627d]">Get occasional RallyHub updates about tournaments, events, coaching and other worthwhile pickleball opportunities around Ireland.</p>
+              </div>
             </div>
+            {!done&&!signupOpen&&<button type="button" onClick={()=>setSignupOpen(true)} className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-[#078e48] px-5 text-sm font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f]">Keep me updated</button>}
           </div>
 
           {done ? <div className="mt-5 rounded-xl border border-[#b8dfc7] bg-[#eef9f3] p-5">
             <div className="flex items-center gap-2 font-bold text-[#067b3f]"><CheckCircle2 className="h-5 w-5"/> You're on the RallyHub player update list</div>
             <p className="mt-2 text-sm text-[#405174]">{done.message}</p>
             {done.preferencesUrl&&<a href={done.preferencesUrl} className="mt-3 inline-flex text-sm font-bold text-[#07528a] hover:underline">Manage or unsubscribe from updates</a>}
-          </div> : <form onSubmit={submit} className="mt-5 space-y-4">
+          </div> : signupOpen ? <form onSubmit={submit} className="mt-5 space-y-4">
             <input tabIndex={-1} autoComplete="off" value={form.website} onChange={e=>set('website',e.target.value)} className="hidden" aria-hidden="true" />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <label className="text-xs font-bold text-[#07184c]">First name
@@ -132,8 +136,11 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
               <p className="mt-3 text-[11px] leading-5 text-[#748196]">Choose at least one option. RallyHub will use these details only for relevant pickleball updates and service administration. We won't sell your information. You can change your preferences or unsubscribe at any time.</p>
             </div>
             {error&&<div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
-            <button type="submit" disabled={busy} className="inline-flex h-11 items-center justify-center rounded-lg bg-[#078e48] px-5 text-sm font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f] disabled:opacity-60">{busy?'Saving…':'Keep me updated'}</button>
-          </form>}
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="submit" disabled={busy} className="inline-flex h-11 items-center justify-center rounded-lg bg-[#078e48] px-5 text-sm font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f] disabled:opacity-60">{busy?'Saving…':'Keep me updated'}</button>
+              <button type="button" onClick={()=>{setSignupOpen(false);setError('')}} className="h-11 px-2 text-sm font-bold text-[#66758b] hover:text-[#07184c]">Hide form</button>
+            </div>
+          </form> : null}
         </div>
 
         <div className="space-y-4">
