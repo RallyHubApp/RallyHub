@@ -54,6 +54,8 @@ import DirectoryClaim from '@/pages/DirectoryClaim';
 import AddDirectoryClub from '@/pages/AddDirectoryClub';
 import CountyDirectory from '@/pages/CountyDirectory';
 import DirectoryListingEdit from '@/pages/DirectoryListingEdit';
+import DirectoryEvents from '@/pages/DirectoryEvents';
+import EventQuickStart from '@/pages/EventQuickStart';
 import DirectoryHelp from '@/pages/DirectoryHelp';
 import DirectoryStory from '@/pages/DirectoryStory';
 import DirectoryQuickStart from '@/pages/DirectoryQuickStart';
@@ -217,6 +219,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/events/quick-start" element={<EventQuickStart />} />
             <Route path="/events/my" element={<MyEvents />} />
             <Route path="/events/:slug" element={<PublicEventDetail />} />
             <Route path="/directory" element={<PublicDirectory />} />
@@ -227,6 +230,7 @@ function App() {
             <Route path="/pickleball-clubs/:countySlug" element={<CountyDirectory />} />
             <Route path="/directory/:slug/claim" element={<DirectoryClaim />} />
             <Route path="/directory/:slug/edit" element={<DirectoryListingEdit />} />
+            <Route path="/directory/:slug/events" element={<DirectoryEvents />} />
             <Route path="/directory/help" element={<DirectoryHelp />} />
             <Route path="/directory/story" element={<DirectoryStory />} />
             <Route path="/directory/quick-start" element={<DirectoryQuickStart />} />
