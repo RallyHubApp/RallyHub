@@ -43,7 +43,10 @@ function Avatar({ snapshot, size = 'lg' }) {
   const name = snapshot?.person?.preferred_name || snapshot?.person?.full_name || snapshot?.player?.full_name || snapshot?.user?.full_name || 'Member';
   const initials = String(name).split(' ').filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase();
   const classes = size === 'lg' ? 'w-16 h-16 text-lg' : 'w-10 h-10 text-sm';
-  if (url) return <img src={url} alt={`${name} profile`} className={`${classes} rounded-full object-cover border-2 border-primary/30 bg-secondary`} />;
+  const positionX = Number(snapshot?.photoSettings?.positionX ?? 50);
+  const positionY = Number(snapshot?.photoSettings?.positionY ?? 50);
+  const zoom = Number(snapshot?.photoSettings?.zoom ?? 1);
+  if (url) return <div className={`${classes} rounded-full overflow-hidden border-2 border-primary/30 bg-secondary`}><img src={url} alt={`${name} profile`} className="w-full h-full object-cover" style={{ objectPosition:`${positionX}% ${positionY}%`, transform:`scale(${zoom})`, transformOrigin:`${positionX}% ${positionY}%` }} /></div>;
   return <div className={`${classes} rounded-full bg-primary/15 text-primary border border-primary/30 flex items-center justify-center font-black`}>{initials}</div>;
 }
 
