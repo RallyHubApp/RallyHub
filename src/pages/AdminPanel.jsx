@@ -1664,10 +1664,15 @@ Brian`;
             </div>
 
             {directoryToolsOpen && <div id="directory-clubs" className="order-80 glass rounded-xl p-4 sm:p-5 space-y-4 scroll-mt-24">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Directory clubs</p>
-                <h3 className="text-lg font-bold text-foreground mt-1">Contact a club and invite them to claim</h3>
-                <p className="text-sm text-muted-foreground mt-1">Search by club, county, contact name, mobile or email. RallyHub will prefill the known contact details and create the secure claim link for you.</p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary">Directory clubs</p>
+                  <h3 className="text-lg font-bold text-foreground mt-1">Contact a club and invite them to claim</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Search by club, county, contact name, mobile or email. If the club is not in the Directory yet, add an unclaimed listing first using whichever contact detail you have — email or mobile.</p>
+                </div>
+                <Button type="button" variant="outline" onClick={() => { window.location.href = '/directory/add'; }} className="shrink-0 gap-2">
+                  <UserPlus className="w-4 h-4" /> Add missing club
+                </Button>
               </div>
               <Input value={directoryClubSearch} onChange={e => setDirectoryClubSearch(e.target.value)} placeholder="Search club, contact name, mobile or email…" aria-label="Search Directory clubs and contacts" />
               <div className="max-h-72 overflow-y-auto rounded-lg border border-border divide-y divide-border">
