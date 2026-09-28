@@ -106,6 +106,11 @@ export default function AddDirectoryClub() {
     event.preventDefault();
     setError('');
     if (exactExisting) return;
+    if (isSuperAdmin && !claimantEmail.trim() && !claimantPhone.trim()) {
+      setError('For Super Admin outreach, enter either an email address or a mobile / WhatsApp number. You do not need both.');
+      document.getElementById('claimantEmail')?.focus();
+      return;
+    }
     setSubmitting(true);
     try {
       if (isSuperAdmin) {
@@ -217,7 +222,7 @@ export default function AddDirectoryClub() {
                 <h2 className="text-3xl font-black mt-1">{isSuperAdmin ? 'Add an unclaimed club' : 'Add a new club'}</h2>
                 <p className="text-muted-foreground mt-2">
                   {isSuperAdmin
-                    ? 'Create and pre-populate a public club listing without claiming it. Add the club contact now, then continue to the editor to upload the logo and complete any other details before sending the claim invitation.'
+                    ? 'Create and pre-populate a public club listing without claiming it. Club name and county are enough to start; add either an email address or a mobile / WhatsApp number for outreach, plus any other information you have. You can complete the listing later before or after sending the claim invitation.'
                     : "If your club is not already listed, send us the basic details and RallyHub will review the listing before it is added."}
                 </p>
               </div>
@@ -276,8 +281,8 @@ export default function AddDirectoryClub() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="town">Town / area</Label>
-                    <Input id="town" value={town} onChange={e => setTown(e.target.value)} required maxLength={120} />
+                    <Label htmlFor="town">Town / area {isSuperAdmin && <span className="text-muted-foreground font-normal">(optional)</span>}</Label>
+                    <Input id="town" value={town} onChange={e => setTown(e.target.value)} required={!isSuperAdmin} maxLength={120} />
                   </div>
                 </div>
 
@@ -314,10 +319,10 @@ export default function AddDirectoryClub() {
                 <div className="border-t border-border pt-5">
                   <h2 className="font-bold mb-4">{isSuperAdmin ? 'Club contact' : 'About you'}</h2>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label htmlFor="claimantName">{isSuperAdmin ? 'Contact name' : 'Your name'}</Label><Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} required maxLength={160} /></div>
+                    <div className="space-y-2"><Label htmlFor="claimantName">{isSuperAdmin ? <>Contact name <span className="text-muted-foreground font-normal">(optional)</span></> : 'Your name'}</Label><Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} required={!isSuperAdmin} maxLength={160} /></div>
                     <div className="space-y-2"><Label htmlFor="claimantRole">{isSuperAdmin ? 'Role / connection' : 'Your role / connection'}</Label><Input id="claimantRole" value={claimantRole} onChange={e => setClaimantRole(e.target.value)} placeholder="e.g. Chairperson, organiser" required={!isSuperAdmin} maxLength={160} /></div>
-                    <div className="space-y-2 sm:col-span-2"><Label htmlFor="claimantEmail">Email address</Label>{isSuperAdmin ? <Input id="claimantEmail" type="email" value={claimantEmail} onChange={e => setClaimantEmail(e.target.value)} placeholder="Club contact email (optional)" /> : <Input id="claimantEmail" value={user?.email || ''} readOnly className="bg-background/40" />}<p className="text-xs text-muted-foreground">{isSuperAdmin ? 'Optional. If you have it, RallyHub can also send the claim link by email and use it as a trusted verification signal. A mobile number is enough to continue and use WhatsApp.' : 'This is your signed-in RallyHub email. It is used for the review and, if you leave the public-contact option selected below, it will also appear on the approved club listing.'}</p></div>
-                    <div className="space-y-2"><Label htmlFor="claimantPhone">{isSuperAdmin ? 'Mobile / WhatsApp number' : 'Mobile number'}</Label><Input id="claimantPhone" type="tel" inputMode="tel" autoComplete="tel" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="e.g. 087 123 4567" required maxLength={80} /><p className="text-xs text-muted-foreground">Enter the number and continue to the next field; it is saved when you submit the form.</p></div>
+                    <div className="space-y-2 sm:col-span-2"><Label htmlFor="claimantEmail">Email address {isSuperAdmin && <span className="text-muted-foreground font-normal">(email or mobile required)</span>}</Label>{isSuperAdmin ? <Input id="claimantEmail" type="email" value={claimantEmail} onChange={e => setClaimantEmail(e.target.value)} placeholder="Club contact email" required={!claimantPhone.trim()} /> : <Input id="claimantEmail" value={user?.email || ''} readOnly className="bg-background/40" />}<p className="text-xs text-muted-foreground">{isSuperAdmin ? 'Use whichever contact detail you actually have. Email alone is enough to create the unclaimed listing and send an email claim invitation.' : 'This is your signed-in RallyHub email. It is used for the review and, if you leave the public-contact option selected below, it will also appear on the approved club listing.'}</p></div>
+                    <div className="space-y-2"><Label htmlFor="claimantPhone">{isSuperAdmin ? <>Mobile / WhatsApp number <span className="text-muted-foreground font-normal">(email or mobile required)</span></> : 'Mobile number'}</Label><Input id="claimantPhone" type="tel" inputMode="tel" autoComplete="tel" value={claimantPhone} onChange={e => setClaimantPhone(e.target.value)} placeholder="e.g. 087 123 4567" required={!isSuperAdmin || !claimantEmail.trim()} maxLength={80} /><p className="text-xs text-muted-foreground">{isSuperAdmin ? 'Optional when you have an email address. Add it when available for WhatsApp outreach and later identity matching.' : 'Enter the number and continue to the next field; it is saved when you submit the form.'}</p></div>
                   </div>
                   <label className="mt-4 flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4 cursor-pointer">
                     <input type="checkbox" checked={publishContact} onChange={e => setPublishContact(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
