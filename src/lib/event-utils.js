@@ -11,7 +11,7 @@ export const EVENT_TYPES = [
   ['other','Other'],
 ];
 
-export const EVENT_LEVELS = ['Beginner','Recreational','Social','Improver','Intermediate','Advanced','Competition','Open'];
+export const EVENT_LEVELS = ['Beginner','Recreational','Social','Improver','Intermediate','Advanced','Competition','Open','3.0-','3.5-','4.0+'];
 export const EVENT_AGE_GROUPS = ['All ages','18+','35+','40+','50+','60+','65+','70+','Junior'];
 export const EVENT_DISCIPLINES = ['Singles','Gender Doubles','Mixed Doubles','Open Doubles','Team'];
 
@@ -70,6 +70,13 @@ export function registrationState(event, now = new Date()) {
     if (days <= 7) return { key:'closing_soon', label:days <= 1 ? 'Closes today' : `Closes in ${days} days`, tone:'amber', actionable:true, date:close };
   }
   return { key:'open', label:'Open for booking', tone:'green', actionable:true, date:close };
+}
+
+export function registrationActionLabel(event, state = registrationState(event)) {
+  if (state.key === 'opening_soon') return 'Remind me';
+  if (event?.event_registration_mode === 'contact') return state.key === 'invite_only' ? 'Request invitation' : 'Contact organiser';
+  if (event?.event_registration_mode === 'none') return 'Event details';
+  return 'Register / Book';
 }
 
 export const eventStatusClass = state => ({
