@@ -896,29 +896,51 @@ Deno.serve(async (req) => {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
       const userId = clean(body.userId, 180);
       if (!userId) return Response.json({ error: 'userId required' }, { status: 400 });
-      const users = await base44.asServiceRole.entities.User.filter({ id: userId });
-      const target = users?.[0];
+
+      let target:any = null;
+      const supplied = body.targetUser && typeof body.targetUser === 'object' ? body.targetUser : null;
+      if (supplied && String(supplied.id || '') === userId) {
+        target = supplied;
+      } else {
+        try {
+          const users = await base44.asServiceRole.entities.User.filter({ id: userId });
+          target = users?.[0] || null;
+        } catch (error) {
+          console.warn('preview user lookup unavailable', error?.message || error);
+        }
+      }
       if (!target) return Response.json({ error: 'User not found' }, { status: 404 });
-      // Preview is read-only and does not change authentication or permissions, so an
-      // administrator may also preview their own linked member identity as a normal member.
+
       const previewContext = {
         tenant_id: clean(body.tenantId || user.active_tenant_id, 180),
         club_id: clean(body.clubId || user.active_club_id, 180),
       };
-      const snapshot = await buildSnapshot(base44, target, previewContext);
+
+      let snapshot = await buildPreviewSnapshot(base44, target, previewContext);
+      try {
+        const enriched = await buildSnapshot(base44, target, previewContext);
+        snapshot = { ...snapshot, ...enriched, photoSettings: enriched.photoSettings || snapshot.photoSettings };
+      } catch (error) {
+        console.warn('full preview enrichment unavailable; using core snapshot', error?.message || error);
+      }
       if (action === 'admin_preview') return Response.json({ success: true, preview: true, snapshot });
 
       const tenantId = snapshot.user?.active_tenant_id;
       const clubId = snapshot.user?.active_club_id;
-      const spond = await loadPersonalSpondSessions(base44, {
-        club:snapshot.club,
-        tenantId,
-        clubId,
-        person:snapshot.person,
-        player:snapshot.player,
-        member:snapshot.member,
-        user:snapshot.user,
-      });
+      let spond:any = { status:'temporarily_unavailable', sessions:[] };
+      try {
+        spond = await loadPersonalSpondSessions(base44, {
+          club:snapshot.club,
+          tenantId,
+          clubId,
+          person:snapshot.person,
+          player:snapshot.player,
+          member:snapshot.member,
+          user:snapshot.user,
+        });
+      } catch (error) {
+        console.warn('preview Spond feed unavailable', error?.message || error);
+      }
       const competitionItems = (snapshot.myCompetitions || []).map((event:any) => ({
         id:`rallyhub:${event.id}`,
         source_id:String(event.id),
