@@ -5,7 +5,10 @@ import { toast } from 'sonner';
 
 export default function EventMediaEditor({ value = '', position = null, cardPosition = null, onChange, listingSlug = '' }) {
   const inputRef = useRef(null);
+  const cardCropRef = useRef(null);
+  const cardDragRef = useRef(null);
   const [preview, setPreview] = useState(value);
+  const [draggingCard, setDraggingCard] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [x, setX] = useState(Number(position?.x ?? 50));
   const [y, setY] = useState(Number(position?.y ?? 50));
@@ -41,6 +44,31 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
   };
   const reset=()=>{setX(50);setY(50);setZoom(1);setCardX(50);setCardY(50);setCardZoom(1);emit(preview,50,50,1,50,50,1)};
   const remove=()=>{setPreview('');setX(50);setY(50);setZoom(1);setCardX(50);setCardY(50);setCardZoom(1);onChange?.({url:'',x:50,y:50,zoom:1,cardX:50,cardY:50,cardZoom:1,originalUrl:'',sourceType:''})};
+  const clamp=value=>Math.max(0,Math.min(100,value));
+  const startCardDrag=e=>{
+    if(!preview)return;
+    const rect=cardCropRef.current?.getBoundingClientRect();
+    if(!rect?.width||!rect?.height)return;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    cardDragRef.current={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,cardX,cardY,width:rect.width,height:rect.height};
+    setDraggingCard(true);
+  };
+  const moveCardDrag=e=>{
+    const drag=cardDragRef.current;
+    if(!drag||drag.pointerId!==e.pointerId)return;
+    e.preventDefault();
+    const nextX=clamp(drag.cardX-((e.clientX-drag.startX)/drag.width)*100);
+    const nextY=clamp(drag.cardY-((e.clientY-drag.startY)/drag.height)*100);
+    setCardX(nextX);setCardY(nextY);
+    onChange?.({url:preview,x,y,zoom,cardX:nextX,cardY:nextY,cardZoom});
+  };
+  const endCardDrag=e=>{
+    const drag=cardDragRef.current;
+    if(!drag||drag.pointerId!==e.pointerId)return;
+    cardDragRef.current=null;
+    setDraggingCard(false);
+    try{e.currentTarget.releasePointerCapture?.(e.pointerId)}catch{}
+  };
 
   return <div className="rounded-xl border p-4 space-y-5">
     <div><p className="text-sm font-bold">Event poster / artwork</p><p className="mt-1 text-xs text-muted-foreground">Upload once. RallyHub keeps the full poster and lets you make a separate wide crop for public event cards. JPG, PNG, WEBP or PDF · up to 20 MB.</p></div>
