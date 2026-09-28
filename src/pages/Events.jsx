@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarDays, ChevronDown, List, Map as MapIcon, MapPin, Search, SlidersHorizontal, Star, UserRound } from 'lucide-react';
+import { CalendarDays, ChevronDown, Clock3, List, Map as MapIcon, MapPin, Search, SlidersHorizontal, Star, UserRound } from 'lucide-react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -50,6 +50,7 @@ function FeaturedEvent({event,onRegister}){
         <h2 className="mt-4 text-2xl font-black tracking-[-.03em] text-[#07184c] sm:text-3xl">{event.name}</h2>
         <p className="mt-4 flex items-start gap-2 text-sm font-semibold text-[#17325f]"><CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#078e48]"/>{prettyEventDateRange(event)}</p>
         {event.location&&<p className="mt-2 flex items-start gap-2 text-sm text-[#52627d]"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#078e48]"/>{event.location}{event.event_county?`, ${event.event_county}`:''}</p>}
+        {state.detail&&<p className={`mt-2 flex items-start gap-2 text-sm font-bold ${state.key==='closed'?'text-[#69758a]':state.key==='closing_soon'?'text-[#9a6400]':'text-[#078e48]'}`}><Clock3 className="mt-0.5 h-4 w-4 shrink-0"/>{state.detail}</p>}
         {event.event_public_summary&&<p className="mt-4 line-clamp-3 text-sm leading-6 text-[#52627d]">{event.event_public_summary}</p>}
         {event.host&&<div className="mt-4 flex items-center gap-2 text-sm"><span className="text-[#52627d]">Hosted by</span>{event.host.logo_url&&<img src={event.host.logo_url} alt="" className="h-7 w-7 rounded-full object-contain"/>}<span className="font-bold text-[#07184c]">{event.host.name}</span></div>}
         <div className="mt-4 flex flex-wrap gap-2">{eventTags(event,4).map(tag=><span key={tag} className="rounded-full bg-[#f1f6f7] px-2.5 py-1 text-[10px] font-semibold text-[#38506f]">{tag}</span>)}</div>
