@@ -166,6 +166,19 @@ export default function MembershipConsole() {
     retry: false
   });
 
+  const { data: broadcastData = { groups: [], broadcasts: [], audience: {} }, refetch: refetchBroadcasts } = useQuery({
+    queryKey: ['club-broadcasts', user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('clubBroadcast', { action: 'bootstrap' });
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data || { groups: [], broadcasts: [], audience: {} };
+    },
+    enabled: canManage,
+    staleTime: 20_000,
+    refetchOnWindowFocus: false,
+    retry: false
+  });
+
   const { data: listData = { rows: [], counts: {} }, isLoading: listLoading, refetch: refetchList } = useQuery({
     queryKey: ['membership-console-list', user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
