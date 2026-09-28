@@ -11,16 +11,18 @@ async function installBackend(page){
     if(path.includes('/public-settings/'))return json(route,{id:APP_ID,public_settings:{}});
     if(path.includes('/analytics/'))return json(route,{});
     if(path.endsWith('/entities/User/me'))return json(route,user);
+    if(path.endsWith(`/api/apps/${APP_ID}/integration-endpoints/Core/UploadFile`))return json(route,{file_url:'https://files.example.test/rallyhub-events-guide.pdf'});
     const fnMarker=`/api/apps/${APP_ID}/functions/`;const fi=path.indexOf(fnMarker);
     if(fi>=0){
       const name=decodeURIComponent(path.slice(fi+fnMarker.length).split('/')[0]);
       if(name==='securityContext')return json(route,{success:true,context:null});
-      if(name==='secureCreditAction')return json(route,{success:true,file_url:'https://files.example.test/rallyhub-events-guide.pdf'});
       return json(route,{success:true,rows:[],items:[]});
     }
     const entityMarker=`/api/apps/${APP_ID}/entities/`;const ei=path.indexOf(entityMarker);
     if(ei>=0){
+      const rest=path.slice(ei+entityMarker.length);const [entity]=rest.split('/').map(decodeURIComponent);
       if(req.method()==='GET')return json(route,[]);
+      if(req.method()==='POST'&&entity==='SiteAsset')return json(route,{id:'asset-1',key:'rallyhub_events_quick_start_guide'});
       return json(route,{});
     }
     return json(route,{});
