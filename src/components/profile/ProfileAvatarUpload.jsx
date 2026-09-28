@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Camera, Loader2, SlidersHorizontal } from 'lucide-react';
+import { Camera, Loader2, SlidersHorizontal, ImagePlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ProfileAvatarUpload({ currentUrl, initials, onUploaded, position = null, onPositionSaved }) {
@@ -65,7 +65,7 @@ export default function ProfileAvatarUpload({ currentUrl, initials, onUploaded, 
   return (
     <div className="shrink-0">
       <div className="relative group w-20 h-20">
-        <div className="w-20 h-20 rounded-2xl bg-primary/10 border-2 border-primary/30 flex items-center justify-center overflow-hidden">
+        <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className="w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center overflow-hidden cursor-pointer" aria-label="Choose profile photo">
           {(preview || currentUrl) ? (
             <img src={preview || currentUrl} alt="" className="w-full h-full object-cover transition-transform" style={imageStyle} />
           ) : (
@@ -76,7 +76,7 @@ export default function ProfileAvatarUpload({ currentUrl, initials, onUploaded, 
               <Loader2 className="w-6 h-6 text-white animate-spin" />
             </div>
           )}
-        </div>
+        </button>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -96,11 +96,16 @@ export default function ProfileAvatarUpload({ currentUrl, initials, onUploaded, 
             <SlidersHorizontal className="w-3.5 h-3.5" />
           </button>
         )}
-        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => handleFile(e.target.files?.[0])} />
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => { handleFile(e.target.files?.[0]); e.target.value = ''; }} />
       </div>
+      <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:underline">
+        <ImagePlus className="w-3.5 h-3.5" /> {preview || currentUrl ? 'Change photo' : 'Add photo'}
+      </button>
 
       {adjusting && (preview || currentUrl) && (
-        <div className="mt-3 w-64 rounded-xl border border-border bg-background p-3 shadow-lg space-y-3">
+        <div className="mt-3 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-background p-3 shadow-lg space-y-3">
+          <p className="text-xs font-bold">Adjust circular crop</p>
+          <p className="text-[11px] text-muted-foreground">Move the sliders until your face is centred, then save.</p>
           <div>
             <div className="flex justify-between text-[11px] text-muted-foreground"><span>Left / right</span><span>{Math.round(positionX)}%</span></div>
             <input type="range" min="0" max="100" step="1" value={positionX} onChange={e => setPositionX(Number(e.target.value))} className="w-full accent-current" />
