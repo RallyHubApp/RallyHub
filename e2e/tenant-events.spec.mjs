@@ -70,7 +70,7 @@ test('tenant Events: create, upload/crop, preview and publish one canonical publ
   await page.getByLabel('Publish on RallyHub public Events').check();
   await page.getByRole('button',{name:'Public card'}).click();
   await expect(page.getByText('Test RallyHub Open').last()).toBeVisible();
-  await expect(page.getByText('This is the snippet players see first')).toBeHidden();
+  await expect(page.getByText('PREVIEW',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Back to editor'}).click();
 
   await page.getByRole('button',{name:'Publish selected audiences'}).click();
