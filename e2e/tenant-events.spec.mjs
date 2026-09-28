@@ -64,6 +64,13 @@ test('tenant Events: create, upload/crop, preview and publish one canonical publ
   await page.locator('input[type=file]').setInputFiles({name:'event-poster.png',mimeType:'image/png',buffer:png});
   await expect(page.getByText('Uploaded',{exact:true})).toBeVisible();
   await expect(page.getByText('Event-card crop',{exact:true}).first()).toBeVisible();
+  const crop=page.getByTestId('event-card-crop');
+  const box=await crop.boundingBox();
+  expect(box).toBeTruthy();
+  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+  await page.mouse.down();
+  await page.mouse.move(box.x+box.width/2,box.y+box.height*0.72,{steps:5});
+  await page.mouse.up();
   const sliders=page.locator('input[type=range]');
   await sliders.nth(5).fill('1.5');
 
@@ -80,6 +87,7 @@ test('tenant Events: create, upload/crop, preview and publish one canonical publ
   expect(payload.event_public_visible).toBe(true);
   expect(payload.event_member_visible).toBe(true);
   expect(payload.event_card_zoom).toBe(1.5);
+  expect(payload.event_card_position_y).not.toBe(50);
   expect(payload.event_slug).toBe('test-rallyhub-open');
   expect(payload.event_levels).toContain('Intermediate');
   expect(payload.event_age_groups).toContain('18+');
