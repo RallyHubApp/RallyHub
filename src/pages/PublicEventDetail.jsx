@@ -42,6 +42,10 @@ export default function PublicEventDetail(){
   const originalPoster=event.event_image_original_url||event.event_image_url;
   const updated=event.updated_date?new Date(event.updated_date):null;
   const canonical=`https://rallyhub.ie/events/${event.event_slug}`;
+  const isFull=state.key==='full';
+  const invitationOnly=(event.event_tags||[]).some(tag=>String(tag||'').trim().toLowerCase()==='invitation only');
+  const phoneUnlockDate=event.event_contact_phone_hidden_until?new Date(event.event_contact_phone_hidden_until):null;
+  const phoneUnlockLabel=phoneUnlockDate&&!Number.isNaN(phoneUnlockDate.getTime())?phoneUnlockDate.toLocaleDateString('en-IE',{day:'numeric',month:'long',year:'numeric'}):'';
 
   return <>
     <Seo title={`${event.name} | RallyHub Events`} description={event.event_public_summary||event.description||`Event information for ${event.name}.`} path={`/events/${event.event_slug}`} robots="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"/>
@@ -50,7 +54,7 @@ export default function PublicEventDetail(){
 
       <section className="mt-2 grid gap-5 lg:grid-cols-[38%_62%]">
         <div className="overflow-hidden rounded-2xl border border-[#dbe6e8] bg-white shadow-[0_8px_24px_rgba(8,24,77,.06)]">
-          {fullPoster?<div className="flex min-h-[260px] max-h-[760px] items-center justify-center overflow-hidden bg-[#eef4f5]"><img src={fullPoster} alt={`${event.name} poster`} className="block max-h-[760px] w-full object-contain" style={{objectPosition:`${Number(event.event_image_position_x??50)}% ${Number(event.event_image_position_y??50)}%`,transform:`scale(${Number(event.event_image_zoom??1)})`,transformOrigin:`${Number(event.event_image_position_x??50)}% ${Number(event.event_image_position_y??50)}%`}}/></div>:<div className="flex min-h-[420px] items-center justify-center bg-[linear-gradient(135deg,#073b57,#078e48)] p-8 text-center text-white"><div><CalendarDays className="mx-auto h-12 w-12"/><p className="mt-4 text-3xl font-black">{event.name}</p></div></div>}
+          {fullPoster?<div className="relative flex min-h-[260px] max-h-[760px] items-center justify-center overflow-hidden bg-[#eef4f5]"><img src={fullPoster} alt={`${event.name} poster`} className="block max-h-[760px] w-full object-contain" style={{objectPosition:`${Number(event.event_image_position_x??50)}% ${Number(event.event_image_position_y??50)}%`,transform:`scale(${Number(event.event_image_zoom??1)})`,transformOrigin:`${Number(event.event_image_position_x??50)}% ${Number(event.event_image_position_y??50)}%`}}/>{isFull&&<div className="pointer-events-none absolute inset-x-[-12%] top-[44%] -rotate-6 bg-[#b42318]/95 py-3 text-center text-2xl font-black tracking-[.16em] text-white shadow-xl sm:text-3xl">EVENT FULL</div>}</div>:<div className="relative flex min-h-[420px] items-center justify-center bg-[linear-gradient(135deg,#073b57,#078e48)] p-8 text-center text-white"><div><CalendarDays className="mx-auto h-12 w-12"/><p className="mt-4 text-3xl font-black">{event.name}</p></div>{isFull&&<div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 bg-[#b42318]/95 py-3 text-center text-2xl font-black tracking-[.16em] text-white">EVENT FULL</div>}</div>}
           {originalPoster&&<a href={originalPoster} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center justify-center gap-2 border-t border-[#dbe6e8] text-sm font-bold text-[#17325f] hover:bg-[#f8fbfc]"><ExternalLink className="h-4 w-4"/>View original poster</a>}
         </div>
 
@@ -66,7 +70,8 @@ export default function PublicEventDetail(){
           </div>
 
           {event.event_public_summary&&<p className="mt-5 text-sm leading-6 text-[#405270]">{event.event_public_summary}</p>}
-          {state.detail&&<div className={`mt-5 flex items-start gap-2 rounded-xl border px-4 py-3 text-sm font-bold ${state.key==='closed'?'border-[#d5dae2] bg-[#f3f5f7] text-[#69758a]':state.key==='closing_soon'?'border-[#f0cd63] bg-[#fff8df] text-[#8b5a00]':'border-[#bfe3cf] bg-[#eff9f3] text-[#067b3f]'}`}><Clock3 className="mt-0.5 h-4 w-4 shrink-0"/><span>{state.detail}</span></div>}
+          {isFull&&invitationOnly&&<div className="mt-5 rounded-xl border border-[#efb4ae] bg-[#fff2f0] px-4 py-4"><p className="text-sm font-black text-[#8f1b13]">This event is full.</p><p className="mt-1 text-sm leading-6 text-[#6d2c28]">All {event.host?.name||'organiser'} events are invitation only. If you would like to be considered for a future event, use <strong>Request a future invitation</strong> below. Your enquiry will be sent through RallyHub.</p>{!event.event_contact_phone&&phoneUnlockLabel&&<p className="mt-2 text-xs text-[#7b5a57]">The organiser’s mobile number is being kept private until {phoneUnlockLabel}.</p>}</div>}
+          {state.detail&&<div className={`mt-5 flex items-start gap-2 rounded-xl border px-4 py-3 text-sm font-bold ${['closed'].includes(state.key)?'border-[#d5dae2] bg-[#f3f5f7] text-[#69758a]':['full','cancelled'].includes(state.key)?'border-[#efb4ae] bg-[#fff2f0] text-[#8f1b13]':state.key==='closing_soon'?'border-[#f0cd63] bg-[#fff8df] text-[#8b5a00]':'border-[#bfe3cf] bg-[#eff9f3] text-[#067b3f]'}`}><Clock3 className="mt-0.5 h-4 w-4 shrink-0"/><span>{state.detail}</span></div>}
           {!!tags.length&&<div className="mt-5 flex flex-wrap gap-2">{tags.map(tag=><span key={tag} className="rounded-full bg-[#f1f6f7] px-2.5 py-1 text-[10px] font-semibold text-[#38506f]">{tag}</span>)}</div>}
           <div className="mt-6"><EventActionBar event={event} initiallySaved={savedRows.length>0}/></div>
         </div>
@@ -86,7 +91,7 @@ export default function PublicEventDetail(){
           <InfoRow title="Eligibility & levels" summary={infoPreview(event.event_eligibility)}>{event.event_eligibility}</InfoRow>
           <InfoRow title="Player information" summary={infoPreview(event.event_player_info||event.description)}>{event.event_player_info||event.description}</InfoRow>
           <InfoRow title="Fees & cancellation" summary={infoPreview(event.event_fees_cancellation)}>{event.event_fees_cancellation}</InfoRow>
-          <InfoRow title="Contact organiser" summary={event.event_contact?`Contact: ${event.event_contact}`:(event.host?.name||'Event organiser')}>{event.event_contact}</InfoRow>
+          <InfoRow title="Contact organiser" summary={isFull&&invitationOnly?'Future invitation enquiries are sent through RallyHub.':([event.event_contact,event.event_contact_phone].filter(Boolean).join(' · ')||(event.host?.name||'Event organiser'))}>{isFull&&invitationOnly?<div><p>This event is full. Use <strong>Request a future invitation</strong> above so RallyHub can pass your email to the organiser and record that the enquiry came through RallyHub.</p>{event.event_contact_phone&&<p className="mt-2"><a href={`tel:${event.event_contact_phone}`} className="font-bold text-[#078e48]">Call {event.event_contact_phone}</a></p>}</div>:<div>{event.event_contact&&<p>{event.event_contact}</p>}{event.event_contact_phone&&<p className="mt-2"><a href={`tel:${event.event_contact_phone}`} className="font-bold text-[#078e48]">Call {event.event_contact_phone}</a></p>}</div>}</InfoRow>
         </div>
 
         <div className="space-y-5">
