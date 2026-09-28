@@ -37,6 +37,7 @@ function responseLabel(status) {
   if (value === 'declined') return 'Declined';
   if (value === 'unanswered') return 'Response needed';
   if (value === 'entered') return 'You’re entered';
+  if (value === 'shared_by_club') return 'Shared by your club';
   return value ? value.replaceAll('_', ' ') : null;
 }
 
@@ -73,7 +74,7 @@ function calendarContent(items, name = 'RallyHub Calendar') {
     if (!start) return '';
     const fallbackEnd = new Date(new Date(item.start).getTime() + 90 * 60 * 1000).toISOString();
     const end = icsDate(item.end || fallbackEnd);
-    return ['BEGIN:VEVENT', `UID:${escapeIcs(item.id)}@rallyhub.ie`, `DTSTAMP:${now}`, `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${escapeIcs(item.title)}`, `LOCATION:${escapeIcs([item.venue, item.address].filter(Boolean).join(', '))}`, `DESCRIPTION:${escapeIcs(item.source === 'spond' ? 'Session shown through your club Spond connection.' : 'RallyHub competition or event.')}`, 'END:VEVENT'].join('\r\n');
+    return ['BEGIN:VEVENT', `UID:${escapeIcs(item.id)}@rallyhub.ie`, `DTSTAMP:${now}`, `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${escapeIcs(item.title)}`, `LOCATION:${escapeIcs([item.venue, item.address].filter(Boolean).join(', '))}`, `DESCRIPTION:${escapeIcs(item.source === 'spond' ? 'Session shown through your club Spond connection.' : item.source === 'shared_event' ? 'Public RallyHub event shared with your club.' : 'RallyHub competition or event.')}`, 'END:VEVENT'].join('\r\n');
   }).filter(Boolean).join('\r\n');
   return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'PRODID:-//RallyHub//Member Calendar//EN', `X-WR-CALNAME:${escapeIcs(name)}`, events, 'END:VCALENDAR'].join('\r\n');
 }
@@ -129,7 +130,7 @@ function MonthView({ items }) {
           const dayItems = day ? byDay.get(day) || [] : [];
           return (
             <div key={`${day || 'blank'}-${index}`} className="min-h-20 sm:min-h-24 border-r border-b border-border last:border-r-0 p-1.5 sm:p-2">
-              {day && <><p className="text-xs font-semibold">{day}</p><div className="mt-1 space-y-1">{dayItems.slice(0, 2).map(item => <div key={item.id} title={item.title} className={`rounded-md px-1.5 py-1 text-[9px] sm:text-[10px] font-semibold truncate ${item.source==='club_event'?'bg-primary text-primary-foreground ring-1 ring-primary/30':'bg-primary/10 text-primary'}`} >{formatTime(item.start)} {item.title}</div>)}{dayItems.length > 2 && <p className="text-[9px] text-muted-foreground">+{dayItems.length - 2} more</p>}</div></>}
+              {day && <><p className="text-xs font-semibold">{day}</p><div className="mt-1 space-y-1">{dayItems.slice(0, 2).map(item => <div key={item.id} title={item.title} className={`rounded-md px-1.5 py-1 text-[9px] sm:text-[10px] font-semibold truncate ${['club_event','shared_event'].includes(item.source)?'bg-primary text-primary-foreground ring-1 ring-primary/30':'bg-primary/10 text-primary'}`} >{formatTime(item.start)} {item.title}</div>)}{dayItems.length > 2 && <p className="text-[9px] text-muted-foreground">+{dayItems.length - 2} more</p>}</div></>}
             </div>
           );
         })}
@@ -206,13 +207,14 @@ export default function MemberPlay({ previewData = null }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0"><h2 className="font-bold truncate">{item.title}</h2><p className="text-xs text-muted-foreground mt-1">{formatDate(item.start, { weekday: 'short', day: 'numeric', month: 'short' })} · {formatTime(item.start)}{item.end ? `–${formatTime(item.end)}` : ''}</p></div>
-                    <Badge variant={item.source==='club_event'?'default':'outline'} className="text-[9px] shrink-0">{item.source==='club_event'?'Club event':item.source === 'spond' ? 'Spond' : 'RallyHub'}</Badge>
+                    <Badge variant={['club_event','shared_event'].includes(item.source)?'default':'outline'} className="text-[9px] shrink-0">{item.source==='club_event'?'Club event':item.source==='shared_event'?'Shared event':item.source === 'spond' ? 'Spond' : 'RallyHub'}</Badge>
                   </div>
                   {(item.venue || item.address) && <p className="text-xs text-muted-foreground mt-2 flex items-start gap-1.5"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />{item.venue || item.address}</p>}
                   <div className="flex flex-wrap items-center gap-2 mt-3">
                     {responseLabel(item.response_status) && <Badge className="bg-primary/15 text-primary text-[10px]">{responseLabel(item.response_status)}</Badge>}
                     <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={() => addToCalendar(item)}><Download className="w-3.5 h-3.5" /> Add to calendar</Button>
                     {item.venueMapUrl && <a href={item.venueMapUrl} target="_blank" rel="noreferrer"><Button variant="ghost" size="sm" className="h-8 text-xs">Directions</Button></a>}
+                    {item.public_event_url && <a href={item.public_event_url} target="_blank" rel="noreferrer"><Button variant="ghost" size="sm" className="h-8 text-xs">View public event</Button></a>}
                   </div>
                 </div>
               </div>
