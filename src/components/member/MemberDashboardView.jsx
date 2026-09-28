@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   CalendarDays, ChevronRight, CircleUserRound, MapPin, MessageCircle,
   ShoppingBag, Trophy, UserRound, Shield, Sparkles, Medal,
-  Clock3, CheckCircle2
+  Clock3, CheckCircle2, Megaphone, ExternalLink, Pin
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import GlassCard from '@/components/shared/GlassCard';
@@ -50,7 +50,7 @@ function Avatar({ snapshot, size = 'lg' }) {
   return <div className={`${classes} rounded-full bg-primary/15 text-primary border border-primary/30 flex items-center justify-center font-black`}>{initials}</div>;
 }
 
-export default function MemberDashboardView({ snapshot, play = null, playLoading = false, performance = null, performanceLoading = false, preview = false, onOpenShop = null, onOpenMessages = null }) {
+export default function MemberDashboardView({ snapshot, play = null, playLoading = false, performance = null, performanceLoading = false, announcements = [], preview = false, onOpenShop = null, onOpenMessages = null }) {
   if (!snapshot) return <div className="glass rounded-xl p-6 text-sm text-muted-foreground">No member data available.</div>;
 
   const { user, player, person, member, club, myCompetitions = [], clubLeaderboard = [] } = snapshot;
@@ -105,6 +105,32 @@ export default function MemberDashboardView({ snapshot, play = null, playLoading
           </Link>
         )}
       </section>
+
+      {announcements.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-2">
+            <div><h2 className="text-sm font-bold flex items-center gap-2"><Megaphone className="w-4 h-4 text-primary" /> Club updates</h2><p className="text-xs text-muted-foreground mt-0.5">Latest messages from {club?.name || 'your club'}.</p></div>
+          </div>
+          <div className="space-y-2">
+            {announcements.slice(0, 3).map(item => (
+              <div key={item.id} className="glass rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><Megaphone className="w-4 h-4 text-primary" /></div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-black">{item.title}</p>
+                      {item.isPinned && <span className="text-[10px] text-primary inline-flex items-center gap-1"><Pin className="w-3 h-3" />Pinned</span>}
+                    </div>
+                    {item.publishedAt && <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(item.publishedAt).toLocaleDateString('en-IE', { day:'numeric', month:'short' })}</p>}
+                    <p className="text-sm text-muted-foreground whitespace-pre-line mt-2">{item.body}</p>
+                    {item.linkUrl && <a href={item.linkUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary font-semibold mt-3">Open link <ExternalLink className="w-3 h-3" /></a>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <MemberPerformanceSummary performance={performance} loading={performanceLoading} />
 
