@@ -129,7 +129,7 @@ function MonthView({ items }) {
           const dayItems = day ? byDay.get(day) || [] : [];
           return (
             <div key={`${day || 'blank'}-${index}`} className="min-h-20 sm:min-h-24 border-r border-b border-border last:border-r-0 p-1.5 sm:p-2">
-              {day && <><p className="text-xs font-semibold">{day}</p><div className="mt-1 space-y-1">{dayItems.slice(0, 2).map(item => <div key={item.id} title={item.title} className="rounded-md bg-primary/10 px-1.5 py-1 text-[9px] sm:text-[10px] text-primary font-semibold truncate">{formatTime(item.start)} {item.title}</div>)}{dayItems.length > 2 && <p className="text-[9px] text-muted-foreground">+{dayItems.length - 2} more</p>}</div></>}
+              {day && <><p className="text-xs font-semibold">{day}</p><div className="mt-1 space-y-1">{dayItems.slice(0, 2).map(item => <div key={item.id} title={item.title} className={`rounded-md px-1.5 py-1 text-[9px] sm:text-[10px] font-semibold truncate ${item.source==='club_event'?'bg-primary text-primary-foreground ring-1 ring-primary/30':'bg-primary/10 text-primary'}`} >{formatTime(item.start)} {item.title}</div>)}{dayItems.length > 2 && <p className="text-[9px] text-muted-foreground">+{dayItems.length - 2} more</p>}</div></>}
             </div>
           );
         })}
@@ -197,7 +197,7 @@ export default function MemberPlay({ previewData = null }) {
         <div className="space-y-3">
           {items.length === 0 && <GlassCard className="text-center py-10"><CalendarDays className="w-8 h-8 mx-auto text-muted-foreground mb-2" /><p className="font-semibold">Nothing upcoming yet</p><p className="text-xs text-muted-foreground mt-1">Your invited sessions and entered competitions will appear here.</p></GlassCard>}
           {items.map(item => (
-            <GlassCard key={item.id} className="p-4 sm:p-5">
+            <GlassCard key={item.id} className={`p-4 sm:p-5 ${item.source==='club_event'?'border-primary/30 ring-1 ring-primary/10':''}`}>
               <div className="flex items-start gap-3 sm:gap-4">
                 <div className="w-12 h-14 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0">
                   <span className="text-[9px] uppercase text-muted-foreground">{formatDate(item.start, { month: 'short' })}</span>
