@@ -88,6 +88,11 @@ export default function Tournaments() {
   const handleDelete = async (e, id) => {
     e.preventDefault();
     e.stopPropagation();
+    const linkedInterclub = await base44.entities.ClubChallengeEvent.filter({ tournament_id:id }, '-updated_date', 1).catch(() => []);
+    if (linkedInterclub.length) {
+      window.alert('This tournament contains a RallyHub Interclub event with its own teams, registrations and event data. It cannot be hard-deleted from this list. Open the Interclub control centre and archive it instead.');
+      return;
+    }
     if (!window.confirm('Delete this tournament?')) return;
     await base44.entities.Tournament.delete(id);
     queryClient.invalidateQueries({ queryKey: ['tournaments'] });
