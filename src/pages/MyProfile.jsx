@@ -283,6 +283,7 @@ export default function MyProfile() {
                 queryClient.invalidateQueries({ queryKey: ['my-player'] }),
                 queryClient.invalidateQueries({ queryKey: ['member-profile-self'] }),
                 queryClient.invalidateQueries({ queryKey: ['member-portal-self'] }),
+                queryClient.invalidateQueries({ queryKey: ['header-profile'] }),
               ]);
               toast.success('Profile photo updated');
             }}
@@ -293,6 +294,7 @@ export default function MyProfile() {
               await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['member-profile-self'] }),
                 queryClient.invalidateQueries({ queryKey: ['member-portal-self'] }),
+                queryClient.invalidateQueries({ queryKey: ['header-profile'] }),
               ]);
               toast.success('Photo position saved');
             }}
