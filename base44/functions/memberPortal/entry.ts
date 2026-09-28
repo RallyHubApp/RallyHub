@@ -749,6 +749,47 @@ Deno.serve(async (req) => {
       return Response.json({ success:true, learn:{ resources, club:snapshot.club } });
     }
 
+    if (action === 'photo_update') {
+      await requireRallyHubClubAccess(base44, user);
+      const snapshot = await buildSnapshot(base44, user);
+      const url = clean(body.url || snapshot.person?.profile_photo_url || snapshot.player?.avatar_url, 1200);
+      if (!url) return Response.json({ error: 'Profile photo URL required.' }, { status: 400 });
+      const clamp = (value:any, min:number, max:number, fallback:number) => {
+        const n = Number(value);
+        return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+      };
+      const positionX = clamp(body.positionX, 0, 100, 50);
+      const positionY = clamp(body.positionY, 0, 100, 50);
+      const zoom = clamp(body.zoom, 1, 2.5, 1);
+
+      if (snapshot.person?.id) {
+        await base44.asServiceRole.entities.Person.update(snapshot.person.id, { profile_photo_url: url });
+      }
+      if (snapshot.player?.id) {
+        await base44.asServiceRole.entities.Player.update(snapshot.player.id, { avatar_url: url });
+      }
+      const existing = await firstBy(base44, 'ProfilePhotoSetting', [
+        { user_id: user.id, tenant_id: snapshot.user?.active_tenant_id, club_id: snapshot.user?.active_club_id },
+        { user_id: user.id },
+        { person_id: snapshot.person?.id },
+        { player_id: snapshot.player?.id },
+      ]);
+      const settingData = {
+        tenant_id: snapshot.user?.active_tenant_id || snapshot.person?.tenant_id || snapshot.player?.tenant_id || undefined,
+        club_id: snapshot.user?.active_club_id || snapshot.player?.club_id || undefined,
+        user_id: user.id,
+        person_id: snapshot.person?.id || undefined,
+        player_id: snapshot.player?.id || undefined,
+        position_x: positionX,
+        position_y: positionY,
+        zoom,
+        updated_at: new Date().toISOString(),
+      };
+      if (existing) await base44.asServiceRole.entities.ProfilePhotoSetting.update(existing.id, settingData);
+      else await base44.asServiceRole.entities.ProfilePhotoSetting.create(settingData);
+      return Response.json({ success:true, snapshot: await buildSnapshot(base44, user) });
+    }
+
     if (action === 'self_update') {
       await requireRallyHubClubAccess(base44, user);
 
