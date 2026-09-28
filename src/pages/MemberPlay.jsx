@@ -206,7 +206,7 @@ export default function MemberPlay({ previewData = null }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0"><h2 className="font-bold truncate">{item.title}</h2><p className="text-xs text-muted-foreground mt-1">{formatDate(item.start, { weekday: 'short', day: 'numeric', month: 'short' })} · {formatTime(item.start)}{item.end ? `–${formatTime(item.end)}` : ''}</p></div>
-                    <Badge variant="outline" className="text-[9px] shrink-0">{item.source === 'spond' ? 'Spond' : 'RallyHub'}</Badge>
+                    <Badge variant={item.source==='club_event'?'default':'outline'} className="text-[9px] shrink-0">{item.source==='club_event'?'Club event':item.source === 'spond' ? 'Spond' : 'RallyHub'}</Badge>
                   </div>
                   {(item.venue || item.address) && <p className="text-xs text-muted-foreground mt-2 flex items-start gap-1.5"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />{item.venue || item.address}</p>}
                   <div className="flex flex-wrap items-center gap-2 mt-3">
