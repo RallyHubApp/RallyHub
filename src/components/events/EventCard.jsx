@@ -23,6 +23,7 @@ export default function EventCard({ event, onRegister }) {
             <div><CalendarDays className="mx-auto h-8 w-8"/><p className="mt-3 text-xl font-black leading-tight">{event.name}</p></div>
           </div>
         )}
+        {state.key==='full'&&<div className="pointer-events-none absolute inset-x-[-10%] top-[45%] -rotate-5 bg-[#b42318]/95 py-2 text-center text-sm font-black tracking-[.16em] text-white shadow-lg">EVENT FULL</div>}
         <span className={`absolute left-3 top-3 rounded-full border px-2.5 py-1 text-[10px] font-black shadow-sm ${eventStatusClass(state)}`}>{state.label}</span>
         {event.event_featured_public && <span className="absolute right-3 top-3 rounded-full bg-[#07184c] px-2.5 py-1 text-[10px] font-black text-white">Featured</span>}
       </Link>
@@ -32,7 +33,7 @@ export default function EventCard({ event, onRegister }) {
         <div className="mt-3 space-y-1.5 text-[12px] text-[#52627d]">
           <p className="flex items-start gap-2"><CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#078e48]"/><span>{prettyEventDateRange(event)}{event.event_start_time ? ` · ${event.event_start_time}` : ''}</span></p>
           {event.location && <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#078e48]"/><span className="line-clamp-2">{event.location}{event.event_county ? `, ${event.event_county}` : ''}</span></p>}
-          {state.detail && <p className={`flex items-start gap-2 font-bold ${state.key==='closed'?'text-[#69758a]':state.key==='closing_soon'?'text-[#9a6400]':'text-[#078e48]'}`}><Clock3 className="mt-0.5 h-4 w-4 shrink-0"/><span>{state.detail}</span></p>}
+          {state.detail && <p className={`flex items-start gap-2 font-bold ${state.key==='closed'?'text-[#69758a]':['full','cancelled'].includes(state.key)?'text-[#a1281f]':state.key==='closing_soon'?'text-[#9a6400]':'text-[#078e48]'}`}><Clock3 className="mt-0.5 h-4 w-4 shrink-0"/><span>{state.detail}</span></p>}
         </div>
 
         {event.host && <div className="mt-3 flex items-center gap-2 border-t border-[#edf1f2] pt-3 text-[11px] text-[#52627d]"><span>Hosted by</span>{event.host.logo_url && <img src={event.host.logo_url} alt="" className="h-6 w-6 rounded-full object-contain"/>}<span className="font-bold text-[#07184c]">{event.host.name}</span>{event.event_verified_organiser && <span className="rounded-full bg-[#e9f7ef] px-1.5 py-0.5 text-[9px] font-black text-[#078e48]">VERIFIED</span>}</div>}
