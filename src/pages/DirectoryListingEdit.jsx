@@ -52,7 +52,7 @@ const venueNamesLikelyMatch = (a, b) => {
   if (!left.length || !right.length) return false;
   const l = new Set(left), r = new Set(right);
   const overlap = [...l].filter(token => r.has(token)).length;
-  return overlap >= Math.min(l.size, r.size) && overlap >= 1;
+  return (overlap >= Math.min(l.size, r.size) && overlap >= 1) || overlap >= 2;
 };
 const defaultPublicJoinUrl = (slug, sessionId) => `https://rallyhub.ie/guest/${encodeURIComponent(slug)}?session=${encodeURIComponent(sessionId)}`;
 
