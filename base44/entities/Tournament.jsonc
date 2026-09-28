@@ -1,217 +1,8 @@
 {
-  "name": "Tournament",
   "type": "object",
   "properties": {
-    "name": {
-      "type": "string",
-      "description": "Tournament name"
-    },
-    "format": {
-      "type": "string",
-      "enum": [
-        "Round Robin",
-        "Single Elimination",
-        "Double Elimination",
-        "Compass Draw",
-        "Consolation (FRLC)",
-        "Ladder League",
-        "King of the Court",
-        "Tournival",
-        "Mixed Doubles",
-        "Club Challenge"
-      ]
-    },
-    "partnership_type": {
-      "type": "string",
-      "enum": [
-        "Singles",
-        "Fixed Partners",
-        "Random Partners"
-      ],
-      "default": "Singles"
-    },
-    "inter_club": {
-      "type": "boolean",
-      "default": false
-    },
-    "counts_toward_leaderboard": {
-      "type": "boolean",
-      "default": false,
-      "description": "When true, completed results from this competition contribute to the host club leaderboard"
-    },
-    "clubs_involved": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Legacy display field; not authoritative for ownership"
-    },
-    "partner_pairs": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "player1_id": {
-            "type": "string"
-          },
-          "player2_id": {
-            "type": "string"
-          },
-          "pair_name": {
-            "type": "string"
-          },
-          "club": {
-            "type": "string"
-          },
-          "seed": {
-            "type": "number"
-          }
-        }
-      }
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "Draft",
-        "Registration Open",
-        "In Progress",
-        "Completed",
-        "Cancelled"
-      ],
-      "default": "Draft"
-    },
-    "start_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "end_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "location": {
-      "type": "string"
-    },
-    "max_players": {
-      "type": "number"
-    },
-    "player_ids": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "description": {
-      "type": "string"
-    },
-    "prize_info": {
-      "type": "string"
-    },
-    "skill_range_min": {
-      "type": "number"
-    },
-    "skill_range_max": {
-      "type": "number"
-    },
-    "kotc_num_courts": {
-      "type": "number",
-      "default": 4
-    },
-    "kotc_num_rounds": {
-      "type": "number",
-      "default": 9
-    },
-    "kotc_score_format": {
-      "type": "string"
-    },
-    "kotc_state": {
-      "type": "string"
-    },
-    "kotc_current_round": {
-      "type": "number"
-    },
-    "kotc_player_order": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "kotc_guest_roster": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "guest_id": {
-            "type": "string"
-          },
-          "display_name": {
-            "type": "string"
-          },
-          "added_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "guest_id",
-          "display_name"
-        ]
-      }
-    },
-    "kotc_spond_group_id": {
-      "type": "string"
-    },
-    "kotc_spond_event_id": {
-      "type": "string"
-    },
-    "kotc_session_venue": {
-      "type": "string",
-      "enum": [
-        "ennis",
-        "corofin"
-      ]
-    },
-    "kotc_last_import_message": {
-      "type": "string"
-    },
-    "kotc_last_imported_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "tenant_id": {
-      "type": "string"
-    },
-    "host_club_id": {
-      "type": "string"
-    },
-    "venue_id": {
-      "type": "string"
-    },
-    "roster_status": {
-      "type": "string",
-      "enum": [
-        "open",
-        "submitted",
-        "locked"
-      ],
-      "default": "open"
-    },
-    "roster_locked_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "finalised_at": {
-      "type": "string",
-      "format": "date-time"
-    },
     "event_category": {
-      "type": "string",
-      "enum": [
-        "tournament",
-        "coaching",
-        "holiday",
-        "other"
-      ],
-      "default": "other"
+      "type": "string"
     },
     "event_start_time": {
       "type": "string"
@@ -243,8 +34,7 @@
       "type": "string",
       "enum": [
         "draft",
-        "published",
-        "cancelled"
+        "published"
       ],
       "default": "draft"
     },
@@ -253,10 +43,6 @@
       "format": "date-time"
     }
   },
-  "required": [
-    "name",
-    "format"
-  ],
   "rls": {
     "create": {
       "user_condition": {
@@ -299,5 +85,7 @@
         "role": "admin"
       }
     }
-  }
+  },
+  "required": [],
+  "name": "Tournament"
 }
