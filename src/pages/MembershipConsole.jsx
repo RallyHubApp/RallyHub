@@ -302,6 +302,12 @@ export default function MembershipConsole() {
     if (membershipSourceData.connection?.external_club_id) setMembershipSourceClubId(String(membershipSourceData.connection.external_club_id));
   }, [membershipSourceData.connection?.credential_reference, membershipSourceData.connection?.external_club_id, membershipSourceData.defaultCredentialReference]);
 
+  useEffect(() => {
+    if (broadcastForm.whatsappGroupKey || !(broadcastData.groups || []).length) return;
+    const preferred = (broadcastData.groups || []).find(group => group.isDefault) || broadcastData.groups[0];
+    if (preferred?.key) setBroadcastForm(previous => ({ ...previous, whatsappGroupKey: preferred.key }));
+  }, [broadcastData.groups, broadcastForm.whatsappGroupKey]);
+
   const currency = meta.gateways?.find(g => g.is_default)?.currency || meta.gateways?.[0]?.currency || 'EUR';
   const gateway = meta.gateways?.find(g => g.is_default) || meta.gateways?.[0] || null;
   const primarySport = meta.sports?.find(s => s.is_primary) || meta.sports?.[0] || null;
