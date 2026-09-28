@@ -566,6 +566,91 @@ async function buildSnapshot(base44:any, targetUser:any, forcedContext:any = {})
   };
 }
 
+async function buildPreviewSnapshot(base44:any, targetUser:any, forcedContext:any = {}) {
+  const email = lower(targetUser?.email);
+  const tenantHint = clean(forcedContext?.tenant_id || targetUser?.active_tenant_id, 180);
+  const clubHint = clean(forcedContext?.club_id || targetUser?.active_club_id, 180);
+  const tryFirst = async (entity:string, filters:Array<Record<string,any>>) => {
+    try { return await firstBy(base44, entity, filters); }
+    catch (error) { console.warn(`preview ${entity} lookup unavailable`, error?.message || error); return null; }
+  };
+
+  let player = await tryFirst('Player', [
+    { user_id: targetUser?.id, tenant_id: tenantHint, club_id: clubHint },
+    { linked_user_email: email, tenant_id: tenantHint, club_id: clubHint },
+    { email, tenant_id: tenantHint, club_id: clubHint },
+    { user_id: targetUser?.id },
+    { linked_user_email: email },
+    { email },
+  ]);
+  let person = await tryFirst('Person', [
+    { linked_user_id: targetUser?.id },
+    { id: player?.person_id },
+    { primary_email: email },
+  ]);
+  let member = await tryFirst('ClubMembership', [
+    { person_id: person?.id, tenant_id: tenantHint, club_id: clubHint },
+    { person_id: person?.id, club_id: clubHint },
+    { person_id: person?.id },
+  ]);
+  if (!member) member = await tryFirst('Member', [
+    { player_id: player?.id, tenant_id: tenantHint, club_id: clubHint },
+    { primary_email: email, tenant_id: tenantHint, club_id: clubHint },
+    { player_id: player?.id },
+    { primary_email: email },
+  ]);
+  if (!player && member?.player_id) player = await tryFirst('Player', [{ id: member.player_id }]);
+
+  const tenantId = clean(tenantHint || player?.tenant_id || person?.tenant_id || member?.tenant_id, 180);
+  const clubId = clean(clubHint || player?.club_id || member?.club_id, 180);
+  const club = clubId ? await tryFirst('Club', [{ id: clubId }]) : null;
+  const photo = await tryFirst('ProfilePhotoSetting', [
+    { user_id: targetUser?.id, tenant_id: tenantId, club_id: clubId },
+    { user_id: targetUser?.id },
+    { person_id: person?.id },
+    { player_id: player?.id },
+  ]);
+  const profileFields = [
+    person?.full_name || player?.full_name || targetUser?.full_name,
+    person?.mobile || player?.phone,
+    person?.date_of_birth || member?.date_of_birth,
+    person?.address_line1 || person?.full_postal_address,
+    person?.town_city,
+    person?.county_region,
+    person?.emergency_contact_name || member?.emergency_contact,
+    player?.dupr_id,
+  ];
+
+  return {
+    user: {
+      id: targetUser?.id,
+      full_name: targetUser?.full_name || targetUser?.display_name || null,
+      email: targetUser?.email || null,
+      approval_status: targetUser?.approval_status || null,
+      active_tenant_id: targetUser?.active_tenant_id || tenantId || null,
+      active_club_id: targetUser?.active_club_id || clubId || null,
+      active_club_role: targetUser?.active_club_role || null,
+    },
+    club: club ? {
+      id: club.id, name: club.name, slug: club.slug || null, logo_url: club.logo_url || null,
+      primary_colour: club.primary_colour || null, secondary_colour: club.secondary_colour || null,
+      timezone: club.timezone || 'Europe/Dublin',
+    } : null,
+    person: safePerson(person),
+    member: safeMember(member),
+    player: safePlayer(player),
+    profileCompletion: Math.round((profileFields.filter(Boolean).length / profileFields.length) * 100),
+    photoSettings: {
+      positionX: Number(photo?.position_x ?? 50),
+      positionY: Number(photo?.position_y ?? 50),
+      zoom: Number(photo?.zoom ?? 1),
+    },
+    playerDirectory: [],
+    myCompetitions: [],
+    clubCalendar: [],
+  };
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
