@@ -15,6 +15,7 @@ import Dashboard from '@/pages/Dashboard';
 import Players from '@/pages/Players';
 import PlayerProfile from '@/pages/PlayerProfile';
 import Tournaments from '@/pages/Tournaments';
+import TenantEvents from '@/pages/TenantEvents';
 import TournamentDetail from '@/pages/TournamentDetail';
 import MatchCenter from '@/pages/MatchCenter';
 import Leaderboard from '@/pages/Leaderboard';
@@ -151,6 +152,7 @@ const AuthenticatedRoutes = () => (
       <Route index element={<Dashboard />} />
       <Route path="players" element={<Players />} />
       <Route path="players/:id" element={<PlayerProfile />} />
+      <Route path="events" element={<TenantEvents />} />
       <Route path="tournaments" element={<Tournaments />} />
       <Route path="tournaments/:id" element={<TournamentDetail />} />
       <Route path="matches" element={<MatchCenter />} />
