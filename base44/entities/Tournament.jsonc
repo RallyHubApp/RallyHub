@@ -48,16 +48,25 @@
       }
     },
     "max_players": {
-      "type": "number"
+      "type": [
+        "number",
+        "null"
+      ]
     },
     "partnership_type": {
       "type": "string"
     },
     "skill_range_min": {
-      "type": "number"
+      "type": [
+        "number",
+        "null"
+      ]
     },
     "skill_range_max": {
-      "type": "number"
+      "type": [
+        "number",
+        "null"
+      ]
     },
     "counts_toward_leaderboard": {
       "type": "boolean"
