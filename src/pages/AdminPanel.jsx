@@ -937,6 +937,55 @@ Brian`;
     }
   };
 
+  const createEventHostPlaceholder = async () => {
+    const name = eventHostPlaceholder.name.trim();
+    const email = eventHostPlaceholder.email.trim();
+    const notes = eventHostPlaceholder.notes.trim();
+    if (!name) return toast.error('Enter the organisation or event host name');
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error('Enter a valid contact email or leave it blank');
+
+    const slugBase = name.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 70) || `event-host-${Date.now()}`;
+    setEventHostPlaceholderBusy(true);
+    setEventHostPlaceholderResult(null);
+    try {
+      const existingClubs = await base44.entities.Club.filter({ slug: slugBase });
+      if (existingClubs?.length) throw new Error(`${existingClubs[0].name || name} already exists as a RallyHub club / event host.`);
+
+      let tenant = (await base44.entities.Tenant.filter({ slug: slugBase }))?.[0] || null;
+      if (!tenant) {
+        tenant = await base44.entities.Tenant.create({
+          name,
+          slug: slugBase,
+          status: 'active',
+          timezone: 'Europe/Dublin',
+          notes: `External organisation / event host placeholder created by Super Admin.${notes ? ` ${notes}` : ''}`,
+        });
+      }
+      const tenantId = tenant?.id || tenant?.data?.id;
+      if (!tenantId) throw new Error('RallyHub created the organisation workspace but did not return its ID.');
+
+      const club = await base44.entities.Club.create({
+        tenant_id: tenantId,
+        name,
+        slug: slugBase,
+        status: 'active',
+        timezone: 'Europe/Dublin',
+        public_contact_email: email || undefined,
+        notes: `Internal event-host placeholder. Not a public Directory listing.${notes ? ` ${notes}` : ''}`,
+      });
+      const clubId = club?.id || club?.data?.id;
+      if (!clubId) throw new Error('RallyHub created the placeholder but did not return its club ID.');
+
+      setEventHostPlaceholderResult({ name, tenantId, clubId, slug: slugBase });
+      setEventHostPlaceholder({ name: '', email: '', notes: '' });
+      toast.success(`${name} created as an internal event host`);
+    } catch (error) {
+      toast.error(error?.message || 'Could not create the event host placeholder');
+    } finally {
+      setEventHostPlaceholderBusy(false);
+    }
+  };
+
   const createOwnerWhatsAppInvite = async () => {
     if (!ownerInvite.listingSlug || !selectedOwnerInviteListing) return toast.error('Choose a club first');
     const activeAccess = activeDirectoryAccesses.find(a => a.listing_slug === ownerInvite.listingSlug && a.status === 'active' && a.role === 'owner') || activeDirectoryAccesses.find(a => a.listing_slug === ownerInvite.listingSlug && a.status === 'active');
