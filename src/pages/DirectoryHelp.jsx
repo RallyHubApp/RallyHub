@@ -107,7 +107,7 @@ export default function DirectoryHelp() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4 mt-7">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-7">
               <Link to="/directory/story" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
                 <Heart className="w-6 h-6 text-primary" />
                 <h2 className="font-black text-lg mt-3">1. Why the Directory exists</h2>
@@ -120,10 +120,16 @@ export default function DirectoryHelp() {
                 <p className="text-sm text-muted-foreground mt-1">A phone-friendly two-page guide covering WhatsApp invitations, account creation, verification and managing your listing.</p>
                 <span className="inline-flex mt-4 text-sm font-semibold text-primary">Open Quick Start Guide →</span>
               </Link>
+              <Link to="/events/quick-start" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
+                <CalendarDays className="w-6 h-6 text-primary" />
+                <h2 className="font-black text-lg mt-3">3. Events Quick Start</h2>
+                <p className="text-sm text-muted-foreground mt-1">The same seven-step event editor used in the Directory and RallyHub Club, including posters, registration dates, previews and publishing.</p>
+                <span className="inline-flex mt-4 text-sm font-semibold text-primary">Open Events Guide →</span>
+              </Link>
               <a href="#faqs" className="rounded-2xl border border-primary/20 bg-primary/5 p-5 hover:border-primary/40 transition-colors">
                 <BookOpen className="w-6 h-6 text-primary" />
-                <h2 className="font-black text-lg mt-3">3. Frequently asked questions</h2>
-                <p className="text-sm text-muted-foreground mt-1">Security, ownership, Spond, cost, Directory-only access, sessions and common sign-in questions.</p>
+                <h2 className="font-black text-lg mt-3">4. Frequently asked questions</h2>
+                <p className="text-sm text-muted-foreground mt-1">Security, ownership, events, Spond, cost, Directory-only access, sessions and common sign-in questions.</p>
                 <span className="inline-flex mt-4 text-sm font-semibold text-primary">Browse the FAQs ↓</span>
               </a>
             </div>
