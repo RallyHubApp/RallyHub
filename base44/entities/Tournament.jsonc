@@ -69,10 +69,16 @@
       "type": "string"
     },
     "roster_locked_at": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "finalised_at": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "partner_pairs": {
       "type": "array",
@@ -81,10 +87,16 @@
       }
     },
     "kotc_last_import_message": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "kotc_session_venue": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "kotc_player_order": {
       "type": "array",
@@ -99,28 +111,52 @@
       }
     },
     "kotc_state": {
-      "type": "object"
+      "type": [
+        "object",
+        "null"
+      ]
     },
     "kotc_num_courts": {
-      "type": "number"
+      "type": [
+        "number",
+        "null"
+      ]
     },
     "kotc_num_rounds": {
-      "type": "number"
+      "type": [
+        "number",
+        "null"
+      ]
     },
     "kotc_current_round": {
-      "type": "number"
+      "type": [
+        "number",
+        "null"
+      ]
     },
     "kotc_score_format": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "kotc_spond_event_id": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "kotc_spond_group_id": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "kotc_last_imported_at": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "event_category": {
       "type": "string"
@@ -160,7 +196,10 @@
       "default": "draft"
     },
     "event_published_at": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "date-time"
     }
   },
