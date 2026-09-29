@@ -188,7 +188,7 @@ function parseJson(value:any) {
 }
 
 async function latestApprovedClaim(base44:any, listingSlug:string) {
-  const rows = await base44.asServiceRole.entities.DirectoryClaim.filter({ listing_slug:listingSlug }, '-reviewed_at', 20).catch(() => []);
+  const rows = await base44.asServiceRole.entities.DirectoryClaim.filter({ listing_slug:listingSlug }, '-reviewed_at', 20);
   return (rows || []).find((row:any) => ['approved','auto_verified'].includes(String(row?.status || ''))) || null;
 }
 
@@ -224,9 +224,9 @@ function derivedEndpoint(listingSlug:string, listingName:string, contact:any, cl
   };
 }
 
-async function endpointFor(base44:any, listingSlug:string) {
+async function resolveEndpoint(base44:any, listingSlug:string) {
   const [rows, claim] = await Promise.all([
-    base44.asServiceRole.entities.DirectoryContactEndpoint.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5).catch(() => []),
+    base44.asServiceRole.entities.DirectoryContactEndpoint.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5),
     latestApprovedClaim(base44, listingSlug),
   ]);
   if (rows?.[0]) {
@@ -241,13 +241,13 @@ async function endpointFor(base44:any, listingSlug:string) {
     return derived;
   }
 
-  const profileRows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5).catch(() => []);
+  const profileRows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5);
   if (profileRows?.[0]) {
     const profile = parseJson(profileRows[0].public_json) || {};
     return derivedEndpoint(listingSlug, profile?.name || claim?.listing_name_snapshot || listingSlug, profile?.contact || {}, claim);
   }
 
-  const recordRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5).catch(() => []);
+  const recordRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
   if (recordRows?.[0]) {
     const base = parseJson(recordRows[0].base_json) || {};
     return derivedEndpoint(listingSlug, base?.name || claim?.listing_name_snapshot || listingSlug, base?.contact || {}, claim);
@@ -262,6 +262,20 @@ async function endpointFor(base44:any, listingSlug:string) {
     whatsapp:imported.whatsapp_url,
   };
   return derivedEndpoint(listingSlug, imported.listing_name_snapshot || listingSlug, importedContact, claim);
+}
+
+async function endpointFor(base44:any, listingSlug:string) {
+  const now = Date.now();
+  const cached = endpointCache.get(listingSlug);
+  if (cached && now - cached.savedAt < ENDPOINT_CACHE_TTL_MS) return cached.value;
+  try {
+    const value = await resolveEndpoint(base44, listingSlug);
+    endpointCache.set(listingSlug, { savedAt:Date.now(), value });
+    return value;
+  } catch (error) {
+    if (cached && now - cached.savedAt < ENDPOINT_CACHE_STALE_MS) return cached.value;
+    throw error;
+  }
 }
 
 async function legacyProfileHasContact(base44:any, listingSlug:string) {
