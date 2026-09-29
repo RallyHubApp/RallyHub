@@ -191,7 +191,7 @@ includes(publicResultsUi,"navigator.share",'results sharing should use the local
 includes(publicResultsUi,"action:'email_players'",'player email must happen only on an explicit host action');
 includes(publicResultsUi,"!finished&&<section className=\"glass rounded-xl overflow-hidden\"",'public KOTC standings must remain available during live play');
 assert(!publicResultsUi.includes("finished?'Final Standings':'Live Standings'"),'completed public KOTC must not publish the full finishing order');
-includes(publicResultsUi,'The final screen celebrates the podium. Saved round scores remain available below for players to check.','completed public KOTC must explain podium-only final presentation while retaining round results');
+includes(publicResultsUi,'Final podium and completed round results. Full individual rankings are not published here.','completed public KOTC must explain podium-only final presentation while retaining round results');
 assert(!hostUi.includes('standings.map((s,i)'),'completed KOTC host screen must not put the full finishing order underneath the podium');
 
 console.log(`KOTC access/architecture gate: PASS\n${checks} role, privacy, scoring-lock, membership and correction checks, 0 failures.`);
