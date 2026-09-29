@@ -12,7 +12,7 @@ Deno.serve(async(req)=>{try{
  const body=await req.json().catch(()=>({}));const sessionId=String(body.sessionId||''),roundId=String(body.roundId||''),commandId=String(body.commandId||'');
  if(!sessionId||!roundId||!commandId)return Response.json({error:'sessionId, roundId and commandId are required',runtimeVersion:RUNTIME_VERSION},{status:400});
  let session=(await retry('session read',()=>base44.asServiceRole.entities.KotcSession.filter({id:sessionId})))?.[0];if(!session)return Response.json({error:'KOTC session not found',runtimeVersion:RUNTIME_VERSION},{status:404});
- let allowed=user.role==='admin';if(!allowed){const grants=await retry('access read',()=>base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'}));allowed=(grants||[]).some((a:any)=>validAccess(a,session.tenant_id,session.id));}if(!allowed)return Response.json({error:'Primary session host access required',runtimeVersion:RUNTIME_VERSION},{status:403});
+ let allowed=user.role==='admin';let hostAccess:any=null;if(!allowed){const grants=await retry('access read',()=>base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'}));hostAccess=(grants||[]).find((a:any)=>validAccess(a,session.tenant_id,session.id))||null;allowed=!!hostAccess;}if(!allowed)return Response.json({error:'Primary session host access required',runtimeVersion:RUNTIME_VERSION},{status:403});
  let round=(await retry('round read',()=>base44.asServiceRole.entities.KotcRound.filter({id:roundId,session_id:session.id})))?.[0];if(!round)return Response.json({error:'Round not found',runtimeVersion:RUNTIME_VERSION},{status:404});
  // Lost-response/retry repair: once the round is started, make the session pointer/status agree
  // and return success. The host must never be stranded by a partial final acknowledgement.
@@ -51,12 +51,16 @@ Deno.serve(async(req)=>{try{
  }else{
    committedMatches=await retry('current matches read',()=>base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id}));
  }
- const now=nowIso();
+ const now=nowIso();const firstSessionStart=!session.actual_first_round_start;
  // Critical sporting commit is sequential to avoid Base44 request bursts. Tournament status was
  // already set when the KOTC session was created, so no redundant tournament write is needed here.
  round=await retry('round start save',()=>base44.asServiceRole.entities.KotcRound.update(round.id,{status:'started',confirmed_at:now,confirmed_by_user_id:user.id,started_at:now}));
  const sessionUpdate:any={status:'in_progress',revision:Number(session.revision||0)+1,last_command_id:commandId,current_round_number:round.round_number,current_round_id:round.id};if(!session.actual_first_round_start)sessionUpdate.actual_first_round_start=now;
  session=await retry('session start save',()=>base44.asServiceRole.entities.KotcSession.update(session.id,sessionUpdate));
+ // A time-limited trial receives live-event grace only after the first round has
+ // successfully started while the original host grant is still valid. Setup alone
+ // never extends access past trial expiry.
+ if(firstSessionStart&&hostAccess?.ends_at){try{const originalEnd=Date.parse(hostAccess.ends_at);if(Number.isFinite(originalEnd)&&originalEnd>=Date.now()){const graceEnd=new Date(originalEnd+6*60*60*1000).toISOString();await retry('live-event host grace',()=>base44.asServiceRole.entities.KotcSessionAccess.update(hostAccess.id,{ends_at:graceEnd}));const scorerTokens=await retry('live scorer links read',()=>base44.asServiceRole.entities.KotcScorerToken.filter({session_id:session.id,status:'active'}));for(const token of scorerTokens||[]){if(!token.expires_at||Date.parse(token.expires_at)<Date.parse(graceEnd))await retry('live scorer grace',()=>base44.asServiceRole.entities.KotcScorerToken.update(token.id,{expires_at:graceEnd}));}}}catch(error){console.warn('KOTC live-event grace extension skipped',{sessionId:session.id,error:String((error as any)?.message||error)});}}
  try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_round_started',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,after_state:JSON.stringify({round_number:round.round_number,started_at:now,manual_courts:[...changedCourts]})});}catch(error){console.warn('KOTC start audit skipped',{sessionId:session.id,error:String((error as any)?.message||error)});}
  return Response.json({success:true,session,round,slots:committedSlots,matches:committedMatches,runtimeVersion:RUNTIME_VERSION});
 }catch(error){return Response.json({error:(error as any)?.message||'Unexpected KOTC start error',runtimeVersion:RUNTIME_VERSION},{status:isRateLimit(error)?503:500});}});
