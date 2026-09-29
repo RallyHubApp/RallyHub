@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-29T22:04:00.484Z",
-  "count": 84,
+  "generatedAt": "2026-09-29T22:06:40.565Z",
+  "count": 96,
   "listings": [
     {
       "slug": "abc-pickleball-club",
@@ -74,6 +74,17 @@
         "call": true,
         "whatsapp": false,
         "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "ballinamore-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
       },
       "hideContactName": false,
       "legacyHold": false,
@@ -225,13 +236,13 @@
     {
       "slug": "clare-pickleball",
       "expected": {
-        "call": true,
-        "whatsapp": true,
-        "email": true
+        "call": false,
+        "whatsapp": false,
+        "email": false
       },
       "hideContactName": false,
       "legacyHold": false,
-      "baselineProtected": true
+      "baselineProtected": false
     },
     {
       "slug": "clonakilty-pickleball-club",
@@ -254,6 +265,17 @@
       "hideContactName": false,
       "legacyHold": false,
       "baselineProtected": true
+    },
+    {
+      "slug": "coillte-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
     },
     {
       "slug": "connemara-pickleball-club",
@@ -283,6 +305,17 @@
         "call": false,
         "whatsapp": false,
         "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "dalkey-pickkeball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
       },
       "hideContactName": false,
       "legacyHold": false,
@@ -385,6 +418,17 @@
       },
       "hideContactName": false,
       "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "eyva-s-invitational-series",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": true,
       "baselineProtected": false
     },
     {
@@ -652,10 +696,43 @@
       "baselineProtected": false
     },
     {
+      "slug": "newbridge-community-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "newbridge-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
       "slug": "newport-pickleball",
       "expected": {
         "call": true,
         "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "north-kildare-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
         "email": true
       },
       "hideContactName": false,
@@ -668,6 +745,17 @@
         "call": false,
         "whatsapp": false,
         "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "oriel-pickleball-dundalk",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
       },
       "hideContactName": false,
       "legacyHold": false,
@@ -690,6 +778,17 @@
         "call": false,
         "whatsapp": false,
         "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "pickleball-ireland",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
       },
       "hideContactName": false,
       "legacyHold": false,
@@ -740,6 +839,17 @@
       "baselineProtected": false
     },
     {
+      "slug": "portmarnock-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
       "slug": "rathdrum-pickleball",
       "expected": {
         "call": true,
@@ -776,6 +886,17 @@
       "slug": "sandyford-pickleball-club",
       "expected": {
         "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "shankill-tennis-club",
+      "expected": {
+        "call": true,
         "whatsapp": false,
         "email": true
       },
@@ -866,6 +987,17 @@
         "call": true,
         "whatsapp": false,
         "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "vamos-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
       },
       "hideContactName": false,
       "legacyHold": false,
