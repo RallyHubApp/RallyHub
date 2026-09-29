@@ -8,6 +8,7 @@ import Seo, { SITE_URL, absoluteUrl } from '@/components/public/Seo';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import PublicDirectoryLogo, { normaliseDirectoryAssetUrl } from '@/components/directory/PublicDirectoryLogo';
+import ProtectedContactCard from '@/components/directory/ProtectedContactCard';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
@@ -582,16 +583,20 @@ export default function PublicClubProfile() {
                 </Link>
               </section>
             )}
-            <section className="glass rounded-2xl p-5">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">Club contact</p>
-              <h2 className="text-xl font-bold mt-1">{club.contact?.name ? `Contact ${club.contact.name}` : 'Contact details'}</h2>
-              <div className="mt-4 space-y-2">
-                {club.contact.phoneHref && club.contact.phone && <a href={club.contact.phoneHref} onClick={() => trackSiteEvent('club_whatsapp_click',{clubSlug:club.slug,clubName:club.name,county:club.county,metadata:{channel:'phone'}})} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Phone className="w-4 h-4 text-primary" /><span className="text-sm font-medium">{club.contact.phone}</span></a>}
-                {club.contact.whatsapp && <a href={club.contact.whatsapp} onClick={() => trackSiteEvent('club_whatsapp_click',{clubSlug:club.slug,clubName:club.name,county:club.county,metadata:{channel:'whatsapp'}})} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><MessageCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium">WhatsApp {club.contact.name}</span></a>}
-                {club.contact.email && <a href={`mailto:${club.contact.email}`} onClick={() => trackSiteEvent('club_email_click',{clubSlug:club.slug,clubName:club.name,county:club.county})} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Mail className="w-4 h-4 text-primary" /><span className="text-sm font-medium break-all">{club.contact.email}</span></a>}
-                {!club.contact?.phoneHref && !club.contact?.email && <><p className="text-sm text-muted-foreground">No direct contact details have been supplied yet.</p>{hasDirectoryAccess && <Link to={`/directory/${club.slug}/edit#contact`} className="inline-flex mt-2 text-sm font-semibold text-primary hover:underline">Add public contact details</Link>}</>}
-              </div>
-            </section>
+            {protectedContact ? (
+              <ProtectedContactCard listingSlug={club.slug} clubName={club.name} county={club.county} />
+            ) : (
+              <section className="glass rounded-2xl p-5">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Club contact</p>
+                <h2 className="text-xl font-bold mt-1">{club.contact?.name ? `Contact ${club.contact.name}` : 'Contact details'}</h2>
+                <div className="mt-4 space-y-2">
+                  {club.contact.phoneHref && club.contact.phone && <a href={club.contact.phoneHref} onClick={() => trackSiteEvent('club_call_click',{clubSlug:club.slug,clubName:club.name,county:club.county,metadata:{channel:'phone',surface:'legacy_contact'}})} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Phone className="w-4 h-4 text-primary" /><span className="text-sm font-medium">{club.contact.phone}</span></a>}
+                  {club.contact.whatsapp && <a href={club.contact.whatsapp} onClick={() => trackSiteEvent('club_whatsapp_click',{clubSlug:club.slug,clubName:club.name,county:club.county,metadata:{channel:'whatsapp',surface:'legacy_contact'}})} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><MessageCircle className="w-4 h-4 text-primary" /><span className="text-sm font-medium">WhatsApp {club.contact.name}</span></a>}
+                  {club.contact.email && <a href={`mailto:${club.contact.email}`} onClick={() => trackSiteEvent('club_email_click',{clubSlug:club.slug,clubName:club.name,county:club.county,metadata:{surface:'legacy_contact'}})} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/40"><Mail className="w-4 h-4 text-primary" /><span className="text-sm font-medium break-all">{club.contact.email}</span></a>}
+                  {!club.contact?.phoneHref && !club.contact?.email && <><p className="text-sm text-muted-foreground">No direct contact details have been supplied yet.</p>{hasDirectoryAccess && <Link to={`/directory/${club.slug}/edit#contact`} className="inline-flex mt-2 text-sm font-semibold text-primary hover:underline">Add public contact details</Link>}</>}
+                </div>
+              </section>
+            )}
 
             <section className="glass rounded-2xl p-5">
               <h2 className="font-bold">Club details</h2>
