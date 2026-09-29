@@ -171,10 +171,11 @@ const AppAccessGate = () => {
 
 const TrialRoutes = ({ initialState }) => {
   const expired = !!initialState?.journey?.expired || initialState?.journey?.status === 'expired';
+  const liveEventGraceActive = initialState?.journey?.liveEventGraceActive === true;
   return (
     <Routes>
       <Route index element={<TrialPortal initialState={initialState} />} />
-      {!expired && <Route path="tournaments/:id" element={<TournamentDetail />} />}
+      {(!expired || liveEventGraceActive) && <Route path="tournaments/:id" element={<TournamentDetail />} />}
       <Route path="*" element={<Navigate to="/app" replace />} />
     </Routes>
   );
