@@ -154,7 +154,9 @@ export default function ProtectedContactActionPreview() {
                   <StatusRow ok={checks.rawEmailAbsent}>Raw email address absent from the contact-card payload</StatusRow>
                   <StatusRow ok={checks.directDestinationAbsent}>No tel:, mailto: or WhatsApp destination in the contact-card payload</StatusRow>
                   <StatusRow ok={preview.liveDirectoryWired === false}>Live Directory is not wired to the new layer</StatusRow>
-                  <StatusRow ok={preview.featureFlagEnabled === false}>Feature flag is OFF</StatusRow>
+                  <StatusRow ok={preview.featureFlagEnabled === false}>Global feature flag is OFF</StatusRow>
+                  <StatusRow ok={preview.rolloutMode === 'legacy'}>Clare pilot rollout mode is LEGACY until activation</StatusRow>
+                  <StatusRow ok={preview.fallbackEnabled === true}>Immediate per-listing fallback is armed</StatusRow>
                   <StatusRow ok={preview.legacyPublicContactStillPresent === true}>Existing public contact remains untouched for this preview stage</StatusRow>
                 </div>
               </section>
@@ -175,6 +177,11 @@ export default function ProtectedContactActionPreview() {
               <section className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-6">
                 <h2 className="font-black">Rollout state</h2>
                 <p className="mt-2 text-sm leading-6">Protected endpoint created for Clare Pickleball. Email enquiries are designed to be sent by RallyHub and stored separately from general analytics. No live visitor currently uses this path.</p>
+                <div className="mt-4 rounded-2xl border border-border bg-background/70 p-3 text-sm">
+                  <div className="flex justify-between gap-3"><span className="text-muted-foreground">Pilot mode</span><strong>{String(preview.rolloutMode || 'legacy').replace('_',' ').toUpperCase()}</strong></div>
+                  <div className="mt-2 flex justify-between gap-3"><span className="text-muted-foreground">Fallback</span><strong>{preview.fallbackEnabled ? 'ARMED' : 'OFF'}</strong></div>
+                </div>
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">If the Clare pilot misbehaves, RallyHub can return this listing to legacy mode without changing any other club. The global feature flag remains a second kill switch.</p>
               </section>
             </aside>
           </div>
