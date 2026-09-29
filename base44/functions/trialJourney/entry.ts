@@ -111,12 +111,12 @@ Deno.serve(async(req)=>{try{
     const activatedAt=nowIso(),trialDays=Math.max(1,Math.min(90,Number(row.trial_days||30))),expiresAt=new Date(Date.now()+trialDays*dayMs).toISOString();
     const acceptance=await base44.asServiceRole.entities.RallyHubAgreementAcceptance.create({tenant_id:row.tenant_id,club_id:row.club_id,user_id:user.id,trial_application_id:row.id,agreement_id:agreement.id,agreement_key:agreement.agreement_key,agreement_version:agreement.version,wording_hash:agreement.wording_hash,authority_confirmed:true,restricted_sharing_confirmed:true,ip_acknowledged:true,accepted:true,accepted_at:activatedAt,user_agent:clean(body.userAgent||'',500),acceptance_evidence_json:JSON.stringify({authorityConfirmed:true,termsAccepted:true,restrictedSharingConfirmed:true,ipAcknowledged:true,agreementId:agreement.id,agreementVersion:agreement.version,wordingHash:agreement.wording_hash})});
     await base44.asServiceRole.entities.TenantUserAccess.create({tenant_id:row.tenant_id,user_id:user.id,role:'owner',status:'active',approved_by_user_id:row.approved_by_user_id,approved_at:row.approved_at||activatedAt,starts_at:activatedAt,ends_at:expiresAt});
-    await base44.asServiceRole.entities.ClubUserAccess.create({tenant_id:row.tenant_id,club_id:row.club_id,user_id:user.id,permission_bundle:'club_admin',relationship_type:'member',status:'active',approved_by_user_id:row.approved_by_user_id,approved_at:row.approved_at||activatedAt,starts_at:activatedAt,ends_at:expiresAt});
+    await base44.asServiceRole.entities.ClubUserAccess.create({tenant_id:row.tenant_id,club_id:row.club_id,user_id:user.id,permission_bundle:'member',relationship_type:'member',status:'active',approved_by_user_id:row.approved_by_user_id,approved_at:row.approved_at||activatedAt,starts_at:activatedAt,ends_at:expiresAt});
     const selected=safeKeys(row.selected_capability_keys);for(const key of selected){await base44.asServiceRole.entities.TenantEntitlement.create({tenant_id:row.tenant_id,club_id:row.club_id,capability_key:key,entitlement_type:'trial',status:'active',starts_at:activatedAt,ends_at:expiresAt,granted_by_user_id:row.approved_by_user_id,grant_reason:`Controlled trial ${row.id}`,created_at:activatedAt,updated_at:activatedAt});}
     const mailConfigs=await base44.asServiceRole.entities.EmailTransportConfig.filter({scope_type:'tenant',purpose:'club_comms',tenant_id:row.tenant_id,club_id:row.club_id}).catch(()=>[]);
     if(!mailConfigs?.length){await base44.asServiceRole.entities.EmailTransportConfig.create({scope_type:'tenant',purpose:'club_comms',tenant_id:row.tenant_id,club_id:row.club_id,provider:'base44_core',status:'configured',sender_email:'rallyhubapp@gmail.com',sender_name:`${row.club_name} · RallyHub`,reply_to:'rallyhubapp@gmail.com',notes:`Controlled trial ${row.id}. Platform transport only; no access to another tenant's mail gateway.`});}
     const journey=await base44.asServiceRole.entities.RallyHubTrialJourney.create({trial_application_id:row.id,tenant_id:row.tenant_id,club_id:row.club_id,user_id:user.id,status:'active',activated_at:activatedAt,expires_at:expiresAt,agreement_acceptance_id:acceptance.id,last_activity_at:activatedAt});
-    await base44.asServiceRole.entities.User.update(user.id,{account_scope:'club',approval_status:'approved',active_tenant_id:row.tenant_id,active_club_id:row.club_id,active_tenant_role:'owner',active_club_role:'club_admin',security_context_updated_at:activatedAt});
+    await base44.asServiceRole.entities.User.update(user.id,{account_scope:'club',approval_status:'approved',active_tenant_id:row.tenant_id,active_club_id:row.club_id,active_tenant_role:'owner',active_club_role:'member',security_context_updated_at:activatedAt});
     const updated=await base44.asServiceRole.entities.RallyHubTrialApplication.update(row.id,{status:'activated',applicant_user_id:user.id,activated_at:activatedAt,expires_at:expiresAt});
     await audit(base44,user,row.tenant_id,'trial_activated','RallyHubTrialApplication',row.id,updated,'Trial agreement accepted and time-limited access activated');
     return Response.json({success:true,journey,application:publicApplication(updated),redirect:'/app'});
@@ -143,6 +143,19 @@ Deno.serve(async(req)=>{try{
     await base44.asServiceRole.entities.RallyHubTrialJourney.update(journey.id,patch);
     await audit(base44,user,journey.tenant_id,isDemo?'trial_demo_created':'trial_live_kotc_created','Tournament',tournament.id,tournament,isDemo?'Synthetic guided KOTC demo':'Trial club created first live KOTC');
     return Response.json({success:true,tournament,reused:false});
+  }
+
+  if(action==='update_kotc_tournament'){
+    let journey=await ownJourney(base44,user);journey=await refreshJourney(base44,journey);if(!journey||journey.expired||journey.status!=='active')return Response.json({error:'Your RallyHub trial is not active.'},{status:403});
+    const tournamentId=clean(body.tournamentId,180);if(!tournamentId)return Response.json({error:'tournamentId required'},{status:400});
+    const tournament=(await base44.asServiceRole.entities.Tournament.filter({id:tournamentId}))?.[0];if(!tournament||String(tournament.tenant_id)!==String(journey.tenant_id)||String(tournament.host_club_id)!==String(journey.club_id)||tournament.format!=='King of the Court')return Response.json({error:'This KOTC event is not part of your trial club.'},{status:403});
+    const access=await tenantCapabilityDecision(base44,user,'tournament.king_of_the_court',{tenantId:journey.tenant_id,clubId:journey.club_id,eventId:tournamentId});if(!access.allowed)return Response.json({error:'King of the Court is not enabled for this trial.'},{status:403});
+    const patch:any={};
+    if(body.playerIds!==undefined){const ids=safeKeys(body.playerIds);if(ids.length>200)return Response.json({error:'Roster is too large.'},{status:400});patch.player_ids=ids;}
+    if(body.playerOrder!==undefined){const ids=safeKeys(body.playerOrder);if(ids.length>200)return Response.json({error:'Player order is too large.'},{status:400});patch.kotc_player_order=ids;}
+    if(body.guestRoster!==undefined){if(!Array.isArray(body.guestRoster)||body.guestRoster.length>200)return Response.json({error:'Guest roster is invalid.'},{status:400});patch.kotc_guest_roster=body.guestRoster.map((g:any)=>({guest_id:clean(g?.guest_id,180),display_name:clean(g?.display_name,160),added_at:g?.added_at||nowIso()})).filter((g:any)=>g.guest_id&&g.display_name);}
+    if(!Object.keys(patch).length)return Response.json({error:'No supported KOTC changes supplied.'},{status:400});
+    const saved=await base44.asServiceRole.entities.Tournament.update(tournament.id,patch);await base44.asServiceRole.entities.RallyHubTrialJourney.update(journey.id,{last_activity_at:nowIso()});return Response.json({success:true,tournament:saved});
   }
 
   if(action==='mark_progress'){
