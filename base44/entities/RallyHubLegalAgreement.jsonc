@@ -1,0 +1,102 @@
+{
+  "name": "RallyHubLegalAgreement",
+  "type": "object",
+  "properties": {
+    "agreement_key": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "superseded",
+        "retired"
+      ],
+      "default": "draft"
+    },
+    "body_text": {
+      "type": "string"
+    },
+    "wording_hash": {
+      "type": "string"
+    },
+    "effective_from": {
+      "type": "string",
+      "format": "date"
+    },
+    "jurisdiction": {
+      "type": "string",
+      "default": "Ireland"
+    },
+    "agreement_type": {
+      "type": "string",
+      "enum": [
+        "trial_evaluation",
+        "subscription_terms",
+        "privacy_notice",
+        "data_processing",
+        "acceptable_use",
+        "other"
+      ]
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "approved_by_user_id": {
+      "type": "string"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "agreement_key",
+    "title",
+    "version",
+    "status",
+    "body_text",
+    "agreement_type"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

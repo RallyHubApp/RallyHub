@@ -1,0 +1,94 @@
+{
+  "name": "RallyHubAgreementAcceptance",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "trial_application_id": {
+      "type": "string"
+    },
+    "agreement_id": {
+      "type": "string"
+    },
+    "agreement_key": {
+      "type": "string"
+    },
+    "agreement_version": {
+      "type": "string"
+    },
+    "wording_hash": {
+      "type": "string"
+    },
+    "authority_confirmed": {
+      "type": "boolean",
+      "default": false
+    },
+    "restricted_sharing_confirmed": {
+      "type": "boolean",
+      "default": false
+    },
+    "ip_acknowledged": {
+      "type": "boolean",
+      "default": false
+    },
+    "accepted": {
+      "type": "boolean",
+      "default": false
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_ip_hash": {
+      "type": "string",
+      "description": "Optional privacy-preserving hash/derived value; do not store raw IP unless legally justified."
+    },
+    "user_agent": {
+      "type": "string"
+    },
+    "acceptance_evidence_json": {
+      "type": "string",
+      "description": "Snapshot of explicit checkbox confirmations and agreement identifiers."
+    }
+  },
+  "required": [
+    "tenant_id",
+    "user_id",
+    "agreement_id",
+    "agreement_version",
+    "accepted",
+    "accepted_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": false,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

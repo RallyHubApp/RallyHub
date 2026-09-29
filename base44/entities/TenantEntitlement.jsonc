@@ -1,0 +1,127 @@
+{
+  "name": "TenantEntitlement",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string",
+      "description": "Optional club scope. Blank means tenant-wide."
+    },
+    "capability_key": {
+      "type": "string"
+    },
+    "entitlement_type": {
+      "type": "string",
+      "enum": [
+        "trial",
+        "paid",
+        "beta",
+        "pilot",
+        "one_event",
+        "manual",
+        "subscription"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "active",
+        "grace",
+        "suspended",
+        "expired",
+        "revoked"
+      ],
+      "default": "scheduled"
+    },
+    "starts_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ends_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "grace_ends_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "one_event_id": {
+      "type": "string",
+      "description": "Optional event/session scope for one_event entitlements."
+    },
+    "limits_json": {
+      "type": "string",
+      "description": "Optional JSON quotas such as max_events, max_participants, max_emails."
+    },
+    "source_plan_key": {
+      "type": "string"
+    },
+    "source_subscription_id": {
+      "type": "string"
+    },
+    "granted_by_user_id": {
+      "type": "string"
+    },
+    "grant_reason": {
+      "type": "string"
+    },
+    "suspended_reason": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "capability_key",
+    "entitlement_type",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

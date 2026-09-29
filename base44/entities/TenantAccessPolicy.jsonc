@@ -1,0 +1,79 @@
+{
+  "name": "TenantAccessPolicy",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "enforcement_mode": {
+      "type": "string",
+      "enum": [
+        "legacy_full_access",
+        "entitlements_required"
+      ],
+      "default": "legacy_full_access",
+      "description": "Existing tenants remain legacy_full_access until explicitly migrated."
+    },
+    "trial_mode": {
+      "type": "boolean",
+      "default": false
+    },
+    "allow_live_event_grace": {
+      "type": "boolean",
+      "default": true
+    },
+    "historical_public_results_after_expiry": {
+      "type": "boolean",
+      "default": true
+    },
+    "support_preview_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "enforcement_mode"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

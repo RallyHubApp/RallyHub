@@ -1,0 +1,128 @@
+{
+  "name": "RallyHubTrialApplication",
+  "type": "object",
+  "properties": {
+    "club_name": {
+      "type": "string"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_role": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "contact_mobile": {
+      "type": "string"
+    },
+    "approx_membership": {
+      "type": "number"
+    },
+    "uses_spond": {
+      "type": "boolean",
+      "default": false
+    },
+    "intended_use": {
+      "type": "string"
+    },
+    "requested_start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "requested_capability_keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "authority_confirmed": {
+      "type": "boolean",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "reviewing",
+        "approved",
+        "declined",
+        "accepted",
+        "activated",
+        "expired",
+        "converted"
+      ],
+      "default": "submitted"
+    },
+    "approved_by_user_id": {
+      "type": "string"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "trial_days": {
+      "type": "number",
+      "default": 30
+    },
+    "activation_deadline": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "activated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "converted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "club_name",
+    "contact_name",
+    "contact_email",
+    "authority_confirmed",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
