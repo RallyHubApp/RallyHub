@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { tenantCapabilityDecision } from './tenantCapability.ts';
 
 const SPOND_API_BASE = 'https://api.spond.com/core/v1';
 
@@ -340,14 +341,18 @@ Deno.serve(async (req) => {
   }
 
   const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
-  const hasInterclubManagerAccess = interclubEventId ? await interclubManagerAllowed(base44, user, interclubEventId) : false;
-  const hasDirectoryEditorAccess = action === 'login' && listingSlug ? await directoryAccessAllowed(base44, user, clean(listingSlug, 180)) : false;
-  const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole) || hasInterclubManagerAccess || hasDirectoryEditorAccess;
-  if (!isSpondManager) {
-    return Response.json({ error: 'Forbidden: Spond host/admin access required' }, { status: 403 });
-  }
   const activeTenantId = user.active_tenant_id || null;
   const activeClubId = user.active_club_id || null;
+  const spondEntitlement = activeTenantId && activeClubId && user.active_club_role === 'club_admin'
+    ? await tenantCapabilityDecision(base44,user,'integration.spond',{tenantId:activeTenantId,clubId:activeClubId})
+    : {allowed:false,reason:'no_club_admin_context'};
+  const hasTrialSpondManagerAccess = spondEntitlement.allowed && spondEntitlement.reason === 'active_entitlement';
+  const hasInterclubManagerAccess = interclubEventId ? await interclubManagerAllowed(base44, user, interclubEventId) : false;
+  const hasDirectoryEditorAccess = action === 'login' && listingSlug ? await directoryAccessAllowed(base44, user, clean(listingSlug, 180)) : false;
+  const isSpondManager = user.role === 'admin' || ['super_admin', 'admin', 'host'].includes(kotcRole) || hasTrialSpondManagerAccess || hasInterclubManagerAccess || hasDirectoryEditorAccess;
+  if (!isSpondManager) {
+    return Response.json({ error: 'Forbidden: Spond host/admin access or an active Spond trial entitlement is required' }, { status: 403 });
+  }
   if (user.role !== 'admin' && !hasDirectoryEditorAccess && (!activeTenantId || !activeClubId)) {
     return Response.json({ error: 'Forbidden: active tenant/club context required' }, { status: 403 });
   }
