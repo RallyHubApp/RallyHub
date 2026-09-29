@@ -4,6 +4,12 @@ import { importedContactEndpointFor } from './importedContactEndpoints.ts';
 
 const FEATURE_KEY = 'protected-contact-actions-v1';
 const DEFAULT_DIRECTORY_KEY = 'protected-contact-default-directory';
+const CONFIG_CACHE_TTL_MS = 60 * 1000;
+const CONFIG_CACHE_STALE_MS = 15 * 60 * 1000;
+const ENDPOINT_CACHE_TTL_MS = 60 * 1000;
+const ENDPOINT_CACHE_STALE_MS = 15 * 60 * 1000;
+let protectionConfigCache:any = null;
+const endpointCache = new Map<string,{savedAt:number,value:any}>();
 const resolveBuckets = new Map<string, { count:number; resetAt:number }>();
 const emailBuckets = new Map<string, { count:number; resetAt:number }>();
 const idempotencyCache = new Map<string, { expiresAt:number; payload:any; status:number }>();
@@ -140,31 +146,39 @@ async function setDurableActionStatus(base44:any, row:any, status:'processing'|'
   return { ...row, status };
 }
 
-async function featureEnabled(base44:any) {
-  const rows = await base44.asServiceRole.entities.DirectorySettings.filter({ key:FEATURE_KEY }, '-updated_date', 5).catch(() => []);
-  return !!rows?.find((row:any) => row.active === true);
-}
-
-async function defaultDirectoryEnabled(base44:any) {
-  const rows = await base44.asServiceRole.entities.DirectorySettings.filter({ key:DEFAULT_DIRECTORY_KEY }, '-updated_date', 5).catch(() => []);
-  return !!rows?.find((row:any) => row.active === true);
-}
-
-async function rolloutFor(base44:any, listingSlug:string) {
-  const rows = await base44.asServiceRole.entities.DirectoryContactRollout.filter({ listing_slug:listingSlug }, '-updated_at', 5).catch(() => []);
-  const row = rows?.[0] || null;
-  return row || { listing_slug:listingSlug, mode:'legacy', fallback_enabled:true, fallback_reason:'No protected-contact rollout configured.' };
+async function protectionConfig(base44:any) {
+  const now = Date.now();
+  if (protectionConfigCache && now - protectionConfigCache.savedAt < CONFIG_CACHE_TTL_MS) return protectionConfigCache.value;
+  try {
+    const [settings, rollouts] = await Promise.all([
+      base44.asServiceRole.entities.DirectorySettings.filter({}, '-updated_date', 100),
+      base44.asServiceRole.entities.DirectoryContactRollout.filter({}, '-updated_at', 500),
+    ]);
+    const rolloutMap = new Map<string,any>();
+    for (const row of rollouts || []) if (row?.listing_slug && !rolloutMap.has(String(row.listing_slug))) rolloutMap.set(String(row.listing_slug), row);
+    const value = {
+      globalEnabled:!!settings?.find((row:any) => row.key === FEATURE_KEY && row.active === true),
+      defaultEnabled:!!settings?.find((row:any) => row.key === DEFAULT_DIRECTORY_KEY && row.active === true),
+      rolloutMap,
+    };
+    protectionConfigCache = { savedAt:now, value };
+    return value;
+  } catch (error) {
+    if (protectionConfigCache && now - protectionConfigCache.savedAt < CONFIG_CACHE_STALE_MS) return protectionConfigCache.value;
+    return { globalEnabled:false, defaultEnabled:false, rolloutMap:new Map<string,any>(), degraded:true };
+  }
 }
 
 async function protectedState(base44:any, listingSlug:string) {
-  const [globalEnabled, defaultEnabled, rollout] = await Promise.all([featureEnabled(base44), defaultDirectoryEnabled(base44), rolloutFor(base44, listingSlug)]);
+  const config = await protectionConfig(base44);
+  const rollout = config.rolloutMap.get(listingSlug) || { listing_slug:listingSlug, mode:'legacy', fallback_enabled:true, fallback_reason:'No protected-contact rollout configured.' };
   const explicitMode = String(rollout?.mode || 'legacy');
   const explicitLegacyHold = !!rollout?.id && explicitMode === 'legacy';
   return {
-    globalEnabled,
-    defaultEnabled,
+    globalEnabled:config.globalEnabled,
+    defaultEnabled:config.defaultEnabled,
     rollout,
-    enabled:globalEnabled && (['protected_pilot','protected'].includes(explicitMode) || (defaultEnabled && !explicitLegacyHold)),
+    enabled:config.globalEnabled && (['protected_pilot','protected'].includes(explicitMode) || (config.defaultEnabled && !explicitLegacyHold)),
   };
 }
 
