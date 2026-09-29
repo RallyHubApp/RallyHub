@@ -196,6 +196,9 @@ Verify:
 - Admin / Super Admin / Event Manager / Event Host / Scorer / Display / delegated-host permissions;
 - start/end validity of grants;
 - expired/future grants;
+- entitlement scope inheritance: tenant, club and one-event restrictions must survive capability dependencies rather than becoming broader access;
+- missing/wrong club context rejection and missing/wrong event-id rejection for scoped entitlements;
+- suspended/revoked grants must never regain access through dependency expansion or live-event grace;
 - entity RLS;
 - backend authorisation;
 - optimistic revisions;
