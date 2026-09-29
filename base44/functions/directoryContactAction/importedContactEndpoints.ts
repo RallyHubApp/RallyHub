@@ -1,4 +1,4 @@
-// Server-only fallback for unclaimed imported Directory listings.
+// Server-only fallback for imported Directory listings.
 // Generated from the last public pre-protection import; never imported by frontend code.
 const IMPORTED_CONTACT_ENDPOINTS:any = {
   "abc-pickleball-club": {
@@ -91,6 +91,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "allow_whatsapp": false,
     "allow_email": false
   },
+  "belfast-pickleball-club": {
+    "listing_name_snapshot": "Belfast Pickleball Club",
+    "contact_name": "",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
+  },
   "belmayne-pickleball": {
     "listing_name_snapshot": "Belmayne Pickleball",
     "contact_name": "Dain Cassidy",
@@ -131,6 +141,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "allow_whatsapp": false,
     "allow_email": true
   },
+  "bluestack-pickleball-club": {
+    "listing_name_snapshot": "Bluestack Pickleball Club",
+    "contact_name": "Michael McDaid",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
+  },
   "breffni-pickleball-club": {
     "listing_name_snapshot": "Breffni Pickleball Club",
     "contact_name": "Noel McHugh",
@@ -161,6 +181,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "allow_whatsapp": false,
     "allow_email": true
   },
+  "carrickmacross-pickleball-club": {
+    "listing_name_snapshot": "Carrickmacross Pickleball Club",
+    "contact_name": "Amanda-Jane Gainford",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
+  },
   "castlerahan-pickleball-club": {
     "listing_name_snapshot": "Castlerahan Pickleball Club",
     "contact_name": "Paul Farrelly",
@@ -180,6 +210,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "allow_call": true,
     "allow_whatsapp": false,
     "allow_email": true
+  },
+  "cobh-pickleball": {
+    "listing_name_snapshot": "Cobh Pickleball",
+    "contact_name": "",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
   },
   "connemara-pickleball-club": {
     "listing_name_snapshot": "Connemara Pickleball Club",
@@ -261,6 +301,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "allow_whatsapp": false,
     "allow_email": true
   },
+  "east-cavan-pickleball": {
+    "listing_name_snapshot": "East Cavan Pickleball",
+    "contact_name": "",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
+  },
   "east-cork-pickleball": {
     "listing_name_snapshot": "East Cork Pickleball",
     "contact_name": "Michael O' Keeffe",
@@ -301,6 +351,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "allow_whatsapp": false,
     "allow_email": false
   },
+  "fenside-pickleball": {
+    "listing_name_snapshot": "Fenside Pickleball",
+    "contact_name": "",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
+  },
   "hook-pickleball": {
     "listing_name_snapshot": "Hook Pickleball",
     "contact_name": "Jack Butler",
@@ -321,6 +381,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "allow_whatsapp": false,
     "allow_email": false
   },
+  "kilcullen-pickleball-panthers": {
+    "listing_name_snapshot": "Kilcullen Pickleball Panthers",
+    "contact_name": "",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
+  },
   "kildare-pickleball-assoc": {
     "listing_name_snapshot": "Kildare Pickleball Assoc.",
     "contact_name": "Nuala Maloney",
@@ -328,6 +398,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "email": "",
     "whatsapp_url": "",
     "allow_call": true,
+    "allow_whatsapp": false,
+    "allow_email": false
+  },
+  "killarney-pickleball-club": {
+    "listing_name_snapshot": "Killarney Pickleball Club",
+    "contact_name": "Michael Lyne",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
     "allow_whatsapp": false,
     "allow_email": false
   },
@@ -391,6 +471,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "allow_whatsapp": false,
     "allow_email": false
   },
+  "lisburn-pickleball-club": {
+    "listing_name_snapshot": "Lisburn Pickleball Club",
+    "contact_name": "",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
+  },
   "midleton-pickleball": {
     "listing_name_snapshot": "Midleton Pickleball",
     "contact_name": "Wayne Fitzpatrick",
@@ -411,6 +501,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "allow_whatsapp": false,
     "allow_email": true
   },
+  "moate-pickleball-club": {
+    "listing_name_snapshot": "Moate Pickleball Club",
+    "contact_name": "",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
+  },
   "mostrim-pickleball": {
     "listing_name_snapshot": "Mostrim Pickleball",
     "contact_name": "St.Mary Community Centre",
@@ -430,6 +530,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "allow_call": true,
     "allow_whatsapp": false,
     "allow_email": true
+  },
+  "multyfarnham-pickleball-club": {
+    "listing_name_snapshot": "Multyfarnham Pickleball Club",
+    "contact_name": "",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
   },
   "naas-pickleball": {
     "listing_name_snapshot": "Naas Pickleball",
@@ -468,6 +578,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "email": "",
     "whatsapp_url": "",
     "allow_call": true,
+    "allow_whatsapp": false,
+    "allow_email": false
+  },
+  "pickleball-iorrais": {
+    "listing_name_snapshot": "Pickleball Iorrais",
+    "contact_name": "",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
     "allow_whatsapp": false,
     "allow_email": false
   },
@@ -580,6 +700,26 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "allow_call": true,
     "allow_whatsapp": false,
     "allow_email": true
+  },
+  "southside-pickleball-club": {
+    "listing_name_snapshot": "Southside Pickleball Club",
+    "contact_name": "",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
+  },
+  "sports-lab-pickleball": {
+    "listing_name_snapshot": "Sports Lab Pickleball",
+    "contact_name": "",
+    "phone": "",
+    "email": "",
+    "whatsapp_url": "",
+    "allow_call": false,
+    "allow_whatsapp": false,
+    "allow_email": false
   },
   "stepaside-pickleball": {
     "listing_name_snapshot": "Stepaside Pickleball",
