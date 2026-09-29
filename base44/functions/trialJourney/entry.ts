@@ -125,21 +125,25 @@ Deno.serve(async(req)=>{try{
   if(action==='my_state'){
     let journey=await ownJourney(base44,user);if(!journey)return Response.json({success:true,hasTrial:false});journey=await refreshJourney(base44,journey);
     const app=(await base44.asServiceRole.entities.RallyHubTrialApplication.filter({id:journey.trial_application_id}))?.[0]||null;
-    const entitlements=await base44.asServiceRole.entities.TenantEntitlement.filter({tenant_id:journey.tenant_id});
+    const [entitlements,tournamentRows]=await Promise.all([
+      base44.asServiceRole.entities.TenantEntitlement.filter({tenant_id:journey.tenant_id}),
+      base44.asServiceRole.entities.Tournament.filter({tenant_id:journey.tenant_id}),
+    ]);
+    const trialTournaments=(tournamentRows||[]).filter((t:any)=>String(t.host_club_id||'')===String(journey.club_id)&&t.format==='King of the Court').map((t:any)=>({id:t.id,name:t.name,status:t.status,start_date:t.start_date,created_date:t.created_date,is_demo:String(t.description||'').includes('RALLYHUB_KOTC_SANDBOX_V1')})).sort((a:any,b:any)=>Date.parse(b.created_date||0)-Date.parse(a.created_date||0));
     const daysRemaining=journey.expires_at?Math.max(0,Math.ceil((Date.parse(journey.expires_at)-Date.now())/dayMs)):null;
-    return Response.json({success:true,hasTrial:true,journey,application:publicApplication(app),entitlements:(entitlements||[]).filter((e:any)=>!e.club_id||e.club_id===journey.club_id).map((e:any)=>({capability_key:e.capability_key,status:e.status,starts_at:e.starts_at,ends_at:e.ends_at,entitlement_type:e.entitlement_type})),daysRemaining});
+    return Response.json({success:true,hasTrial:true,journey,application:publicApplication(app),entitlements:(entitlements||[]).filter((e:any)=>!e.club_id||e.club_id===journey.club_id).map((e:any)=>({capability_key:e.capability_key,status:e.status,starts_at:e.starts_at,ends_at:e.ends_at,entitlement_type:e.entitlement_type})),trialTournaments,daysRemaining});
   }
 
   if(action==='create_demo_tournament'||action==='create_live_tournament'){
     let journey=await ownJourney(base44,user);journey=await refreshJourney(base44,journey);if(!journey||journey.expired||journey.status!=='active')return Response.json({error:'Your RallyHub trial is not active.'},{status:403});
     const access=await tenantCapabilityDecision(base44,user,'tournament.king_of_the_court',{tenantId:journey.tenant_id,clubId:journey.club_id});if(!access.allowed)return Response.json({error:'King of the Court is not enabled for this trial.'},{status:403});
     if(action==='create_demo_tournament'&&journey.demo_tournament_id){const existing=(await base44.asServiceRole.entities.Tournament.filter({id:journey.demo_tournament_id}))?.[0];if(existing)return Response.json({success:true,tournament:existing,reused:true});}
-    if(action==='create_live_tournament'&&journey.first_live_tournament_id){const existing=(await base44.asServiceRole.entities.Tournament.filter({id:journey.first_live_tournament_id}))?.[0];if(existing&&!['Completed','Cancelled'].includes(existing.status))return Response.json({success:true,tournament:existing,reused:true});}
+    if(action==='create_live_tournament'&&body.forceNew!==true){const clubTournaments=await base44.asServiceRole.entities.Tournament.filter({tenant_id:journey.tenant_id});const existing=(clubTournaments||[]).filter((t:any)=>String(t.host_club_id||'')===String(journey.club_id)&&t.format==='King of the Court'&&!String(t.description||'').includes('RALLYHUB_KOTC_SANDBOX_V1')&&!['Completed','Cancelled'].includes(t.status)).sort((a:any,b:any)=>Date.parse(b.created_date||0)-Date.parse(a.created_date||0))[0];if(existing)return Response.json({success:true,tournament:existing,reused:true});}
     const isDemo=action==='create_demo_tournament';
     const guestRoster=isDemo?Array.from({length:16},(_,i)=>({guest_id:`trial-demo-${journey.id}-${String(i+1).padStart(2,'0')}`,display_name:`Demo Player ${String(i+1).padStart(2,'0')}`})):[];
     const guestIds=guestRoster.map((g:any)=>g.guest_id);
     const tournament=await base44.asServiceRole.entities.Tournament.create({name:isDemo?'Guided KOTC Demo':clean(body.name,140)||'My First King of the Court',format:'King of the Court',status:'Draft',start_date:body.startDate||new Date().toISOString().slice(0,10),tenant_id:journey.tenant_id,host_club_id:journey.club_id,player_ids:[],kotc_guest_roster:guestRoster,kotc_player_order:guestIds,kotc_num_courts:isDemo?4:4,kotc_num_rounds:isDemo?4:9,kotc_score_format:'timed_8',counts_toward_leaderboard:false,description:isDemo?'RALLYHUB_KOTC_SANDBOX_V1\nControlled guided trial demo. Synthetic players only; excluded from real aggregates.':clean(body.description,1500)});
-    const patch=isDemo?{demo_tournament_id:tournament.id,demo_started_at:nowIso(),last_activity_at:nowIso()}:{first_live_tournament_id:tournament.id,first_live_event_created_at:nowIso(),last_activity_at:nowIso()};
+    const patch=isDemo?{demo_tournament_id:tournament.id,demo_started_at:nowIso(),last_activity_at:nowIso()}:{...(journey.first_live_tournament_id?{}:{first_live_tournament_id:tournament.id,first_live_event_created_at:nowIso()}),last_activity_at:nowIso()};
     await base44.asServiceRole.entities.RallyHubTrialJourney.update(journey.id,patch);
     await audit(base44,user,journey.tenant_id,isDemo?'trial_demo_created':'trial_live_kotc_created','Tournament',tournament.id,tournament,isDemo?'Synthetic guided KOTC demo':'Trial club created first live KOTC');
     return Response.json({success:true,tournament,reused:false});
