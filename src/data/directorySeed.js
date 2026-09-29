@@ -25,10 +25,7 @@ const curatedDirectoryClubs = [
     guestPolicy: 'Experienced pickleball players from other clubs or visiting from abroad are most welcome. No beginner walk-in sessions.',
     contact: {
       name: 'Brian Moore',
-      phone: '087 810 0333',
-      phoneHref: 'tel:+353878100333',
-      whatsapp: 'https://wa.me/353878100333',
-      email: 'info@clarepickleball.ie'
+      protected: true
     },
     venues: [
       {
