@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import KotcV2SessionView from '@/components/kotc/KotcV2SessionView';
+import { AuthProvider } from '@/lib/AuthContext';
+import { AppearanceProvider } from '@/lib/AppearanceContext';
 import '@/index.css';
 
 const players = Array.from({ length: 18 }, (_, index) => ({
@@ -29,10 +31,14 @@ window.__RALLYHUB_KOTC_E2E__ = { tournament, players };
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <main className="min-h-screen bg-background p-3 sm:p-4 max-w-5xl mx-auto">
-        <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} />
-      </main>
-    </QueryClientProvider>
+    <AppearanceProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <main className="min-h-screen bg-background p-3 sm:p-4 max-w-5xl mx-auto">
+            <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} />
+          </main>
+        </QueryClientProvider>
+      </AuthProvider>
+    </AppearanceProvider>
   </React.StrictMode>
 );
