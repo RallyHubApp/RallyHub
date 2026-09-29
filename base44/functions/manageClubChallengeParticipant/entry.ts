@@ -348,8 +348,10 @@ Deno.serve(async (req) => {
       await applyGroup(poolIds, 'pool');
       await applyGroup(aIds, 'club_a');
       await applyGroup(bIds, 'club_b');
+      const savedAt = new Date().toISOString();
       const updatedEvent = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
         club_a_name:cleanAName, club_b_name:cleanBName, fairness_json:'',
+        club_a_roster_saved_at:savedAt, club_b_roster_saved_at:savedAt,
         status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true,
       });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({
@@ -374,7 +376,8 @@ Deno.serve(async (req) => {
         const rank = i + 1;
         if (Number(p?.event_rank || 0) !== rank) { await base44.asServiceRole.entities.ClubChallengeParticipant.update(p.id, { event_rank:rank }); changed++; }
       }
-      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      const savedAt = new Date().toISOString();
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true, [side === 'club_a' ? 'club_a_roster_saved_at' : 'club_b_roster_saved_at']:savedAt });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_ranking_changed', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({side,ordered_participant_ids:requested,changed}) });
       return Response.json({ success:true, side, changed });
     }
