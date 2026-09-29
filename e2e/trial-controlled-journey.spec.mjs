@@ -120,7 +120,7 @@ test('active trial gets a narrow onboarding portal and cannot browse normal admi
   await install(page,{user:trialUser});
   await page.goto('/app');
   await expect(page.getByRole('heading',{name:'Welcome to your King of the Court trial'})).toBeVisible();
-  await expect(page.getByText('30 days')).toBeVisible();
+  await expect(page.getByText('30 days',{exact:true})).toBeVisible();
   await expect(page.getByText('Complete the guided KOTC demo')).toBeVisible();
   await page.goto('/app/admin');
   await expect(page).toHaveURL(/\/app$/);
@@ -135,7 +135,7 @@ test('trial portal creates isolated demo first, then a real KOTC, and shows Spon
   await expect(page).toHaveURL(/\/app\/tournaments\/demo-1$/);
   expect(model.calls.some(c=>c.name==='trialJourney'&&c.body.action==='create_demo_tournament')).toBe(true);
   await page.goto('/app');
-  await page.getByDisplayValue('My First King of the Court').fill('Ashbourne Friday KOTC');
+  await page.getByLabel('KOTC event name').fill('Ashbourne Friday KOTC');
   await page.getByRole('button',{name:'Create event'}).click();
   await expect(page).toHaveURL(/\/app\/tournaments\/live-1$/);
   expect(model.calls.some(c=>c.name==='trialJourney'&&c.body.action==='create_live_tournament')).toBe(true);
