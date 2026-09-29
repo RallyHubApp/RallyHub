@@ -1,0 +1,190 @@
+{
+  "name": "ClubLearnSettings",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "intro_text": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "feedback_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "contact_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "in_app_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "contact_name": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "contact_title": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "contact_email": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "whatsapp_number": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            },
+            {
+              "user_condition": {
+                "data.active_club_role": "club_admin"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            },
+            {
+              "user_condition": {
+                "data.active_club_role": "club_admin"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            },
+            {
+              "user_condition": {
+                "data.active_club_role": "club_admin"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.approval_status": "approved"
+              }
+            },
+            {
+              "user_condition": {
+                "data.active_club_role": "club_admin"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

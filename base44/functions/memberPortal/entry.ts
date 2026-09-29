@@ -820,12 +820,17 @@ Deno.serve(async (req) => {
       const snapshot = await buildSnapshot(base44, user);
       const tenantId = snapshot.user?.active_tenant_id;
       const clubId = snapshot.user?.active_club_id;
-      if (!tenantId || !clubId) return Response.json({ success:true, learn:{ resources:[], club:snapshot.club } });
-      const rows = await base44.asServiceRole.entities.ClubResource.filter({ tenant_id:tenantId, club_id:clubId, status:'published' }, 'sort_order', 500);
+      if (!tenantId || !clubId) return Response.json({ success:true, learn:{ resources:[], categories:[], settings:null, club:snapshot.club } });
+      const [rows, categoryRows, settingRows] = await Promise.all([
+        base44.asServiceRole.entities.ClubResource.filter({ tenant_id:tenantId, club_id:clubId, status:'published' }, 'sort_order', 500),
+        base44.asServiceRole.entities.ClubResourceCategory.filter({ tenant_id:tenantId, club_id:clubId, status:'active' }, 'sort_order', 100),
+        base44.asServiceRole.entities.ClubLearnSettings.filter({ tenant_id:tenantId, club_id:clubId }, '-updated_date', 1),
+      ]);
       const resources = (rows || []).map((row:any) => ({
         id:row.id,
         title:row.title,
         description:row.description || '',
+        category_id:row.category_id || null,
         category:row.category || 'Resources',
         resource_type:row.resource_type || 'link',
         url:row.url || null,
@@ -833,7 +838,19 @@ Deno.serve(async (req) => {
         sport_key:row.sport_key || null,
         sort_order:Number(row.sort_order || 0),
       }));
-      return Response.json({ success:true, learn:{ resources, club:snapshot.club } });
+      const categories = (categoryRows || []).map((row:any) => ({ id:row.id, name:row.name, description:row.description || '', icon_key:row.icon_key || '', sort_order:Number(row.sort_order || 0) }));
+      const rawSettings:any = settingRows?.[0] || null;
+      const settings = rawSettings ? {
+        intro_text:rawSettings.intro_text || '',
+        feedback_enabled:rawSettings.feedback_enabled !== false,
+        contact_enabled:rawSettings.contact_enabled !== false,
+        in_app_enabled:rawSettings.in_app_enabled !== false,
+        contact_name:rawSettings.contact_name || '',
+        contact_title:rawSettings.contact_title || '',
+        contact_email:rawSettings.contact_email || '',
+        whatsapp_number:rawSettings.whatsapp_number || '',
+      } : null;
+      return Response.json({ success:true, learn:{ resources, categories, settings, club:snapshot.club } });
     }
 
     if (action === 'photo_update') {
