@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     });
 
     return Response.json({ success:true, token:row.token, side, teamName });
-  } catch (error) {
+  } catch (error:any) {
     console.error('manageInterclubTeamManagerLink failed', error?.message || error);
     return Response.json({ error:error?.message || 'Could not prepare the team manager link.' }, { status:500 });
   }
