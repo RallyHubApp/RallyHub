@@ -57,66 +57,69 @@ const phoneHref = (value:any) => {
 
 const CONTACT_FEATURE_KEY = 'protected-contact-actions-v1';
 const CONTACT_DEFAULT_DIRECTORY_KEY = 'protected-contact-default-directory';
-const CONTACT_CONFIG_TTL_MS = 5 * 1000;
+const CONTACT_CONFIG_TTL_MS = 60 * 1000;
+const CONTACT_CONFIG_STALE_MS = 15 * 60 * 1000;
 let contactConfigCache:any = null;
 
 async function contactProtectionConfig(base44:any) {
   const now = Date.now();
   if (contactConfigCache && now - contactConfigCache.savedAt < CONTACT_CONFIG_TTL_MS) return contactConfigCache.value;
-  const [settings, defaultSettings] = await Promise.all([
-    base44.asServiceRole.entities.DirectorySettings.filter({ key:CONTACT_FEATURE_KEY }, '-updated_date', 5).catch(() => []),
-    base44.asServiceRole.entities.DirectorySettings.filter({ key:CONTACT_DEFAULT_DIRECTORY_KEY }, '-updated_date', 5).catch(() => []),
-  ]);
-  const globalEnabled = !!settings?.find((row:any) => row.active === true);
-  const defaultDirectoryEnabled = !!defaultSettings?.find((row:any) => row.active === true);
-  if (!globalEnabled) {
-    const value = { globalEnabled:false, defaultDirectoryEnabled:false, protectedSlugs:new Set<string>(), legacyHoldSlugs:new Set<string>(), hideNameSlugs:new Set<string>() };
+  try {
+    const [settings, rollouts, claims] = await Promise.all([
+      base44.asServiceRole.entities.DirectorySettings.filter({}, '-updated_date', 100),
+      base44.asServiceRole.entities.DirectoryContactRollout.filter({}, '-updated_at', 500),
+      base44.asServiceRole.entities.DirectoryClaim.filter({}, '-reviewed_at', 500),
+    ]);
+    const globalEnabled = !!settings?.find((row:any) => row.key === CONTACT_FEATURE_KEY && row.active === true);
+    const defaultDirectoryEnabled = !!settings?.find((row:any) => row.key === CONTACT_DEFAULT_DIRECTORY_KEY && row.active === true);
+    if (!globalEnabled) {
+      const value = { globalEnabled:false, defaultDirectoryEnabled:false, protectedSlugs:new Set<string>(), legacyHoldSlugs:new Set<string>(), hideNameSlugs:new Set<string>(), failClosed:false };
+      contactConfigCache = { savedAt:now, value };
+      return value;
+    }
+    const protectedSlugs = new Set<string>();
+    const legacyHoldSlugs = new Set<string>();
+    for (const row of rollouts || []) {
+      if (!row?.listing_slug) continue;
+      const mode = String(row?.mode || 'legacy');
+      if (['protected_pilot','protected'].includes(mode)) protectedSlugs.add(String(row.listing_slug));
+      if (mode === 'legacy') legacyHoldSlugs.add(String(row.listing_slug));
+    }
+    const hideNameSlugs = new Set<string>();
+    const seenClaimSlugs = new Set<string>();
+    for (const claim of claims || []) {
+      const slug = String(claim?.listing_slug || '');
+      if (!slug || seenClaimSlugs.has(slug)) continue;
+      if (!['approved','auto_verified'].includes(String(claim?.status || ''))) continue;
+      seenClaimSlugs.add(slug);
+      if (claim?.public_name_opt_out === true) hideNameSlugs.add(slug);
+    }
+    const value = { globalEnabled:true, defaultDirectoryEnabled, protectedSlugs, legacyHoldSlugs, hideNameSlugs, failClosed:false };
     contactConfigCache = { savedAt:now, value };
     return value;
+  } catch (error) {
+    if (contactConfigCache && now - contactConfigCache.savedAt < CONTACT_CONFIG_STALE_MS) return contactConfigCache.value;
+    return { globalEnabled:true, defaultDirectoryEnabled:true, protectedSlugs:new Set<string>(), legacyHoldSlugs:new Set<string>(), hideNameSlugs:new Set<string>(), failClosed:true };
   }
-  const [rollouts, claims] = await Promise.all([
-    base44.asServiceRole.entities.DirectoryContactRollout.filter({}, '-updated_at', 500).catch(() => []),
-    base44.asServiceRole.entities.DirectoryClaim.filter({}, '-reviewed_at', 500).catch(() => []),
-  ]);
-  const protectedSlugs = new Set<string>();
-  const legacyHoldSlugs = new Set<string>();
-  for (const row of rollouts || []) {
-    if (!row?.listing_slug) continue;
-    const mode = String(row?.mode || 'legacy');
-    if (['protected_pilot','protected'].includes(mode)) protectedSlugs.add(String(row.listing_slug));
-    if (mode === 'legacy') legacyHoldSlugs.add(String(row.listing_slug));
-  }
-  const hideNameSlugs = new Set<string>();
-  const seenClaimSlugs = new Set<string>();
-  for (const claim of claims || []) {
-    const slug = String(claim?.listing_slug || '');
-    if (!slug || seenClaimSlugs.has(slug)) continue;
-    if (!['approved','auto_verified'].includes(String(claim?.status || ''))) continue;
-    seenClaimSlugs.add(slug);
-    if (claim?.public_name_opt_out === true) hideNameSlugs.add(slug);
-  }
-  const value = { globalEnabled:true, defaultDirectoryEnabled, protectedSlugs, legacyHoldSlugs, hideNameSlugs };
-  contactConfigCache = { savedAt:now, value };
-  return value;
 }
 
 async function protectedStateWithPrivacy(base44:any, listingSlug:string, state:any) {
   const config = await contactProtectionConfig(base44);
-  return protectedDirectoryState(state, { hideContactName:config.hideNameSlugs.has(listingSlug) });
+  return protectedDirectoryState(state, { hideContactName:config.failClosed || config.hideNameSlugs.has(listingSlug) });
 }
 
 async function publicStateForRollout(base44:any, listingSlug:string, state:any) {
   const config = await contactProtectionConfig(base44);
-  const protectedForListing = config.protectedSlugs.has(listingSlug) || (config.defaultDirectoryEnabled && !config.legacyHoldSlugs.has(listingSlug));
+  const protectedForListing = config.failClosed || config.protectedSlugs.has(listingSlug) || (config.defaultDirectoryEnabled && !config.legacyHoldSlugs.has(listingSlug));
   return protectedForListing
-    ? protectedDirectoryState(state, { hideContactName:config.hideNameSlugs.has(listingSlug) })
+    ? protectedDirectoryState(state, { hideContactName:config.failClosed || config.hideNameSlugs.has(listingSlug) })
     : state;
 }
 
 async function protectedListWithPrivacy(base44:any, listings:any) {
   const config = await contactProtectionConfig(base44);
   const optionsBySlug:any = {};
-  for (const slug of config.hideNameSlugs) optionsBySlug[slug] = { hideContactName:true };
+  for (const slug of Object.keys(listings || {})) if (config.failClosed || config.hideNameSlugs.has(slug)) optionsBySlug[slug] = { hideContactName:true };
   return protectedDirectoryList(listings, optionsBySlug);
 }
 
@@ -125,10 +128,10 @@ async function publicListForRollout(base44:any, listings:any) {
   if (!config.globalEnabled) return listings;
   if (!config.defaultDirectoryEnabled && !config.protectedSlugs.size) return listings;
   const out:any = { ...(listings || {}) };
-  if (config.defaultDirectoryEnabled) {
+  if (config.failClosed || config.defaultDirectoryEnabled) {
     for (const slug of Object.keys(out)) {
-      if (config.legacyHoldSlugs.has(slug)) continue;
-      out[slug] = protectedDirectoryState(out[slug], { hideContactName:config.hideNameSlugs.has(slug) });
+      if (!config.failClosed && config.legacyHoldSlugs.has(slug)) continue;
+      out[slug] = protectedDirectoryState(out[slug], { hideContactName:config.failClosed || config.hideNameSlugs.has(slug) });
     }
     return out;
   }
