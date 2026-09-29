@@ -172,8 +172,8 @@ function cardFor(endpoint:any) {
     listingSlug: clean(endpoint?.listing_slug, 180),
     listingName: clean(endpoint?.listing_name_snapshot, 240),
     contact: {
-      displayName: clean(endpoint?.contact_name, 160) || 'Club contact',
-      role: clean(endpoint?.contact_role, 120) || 'Club contact',
+      displayName: clean(endpoint?.contact_name, 160),
+      role: clean(endpoint?.contact_role, 120),
     },
     actions: {
       call: endpoint?.allow_call === true && !!telTarget(endpoint?.phone),
