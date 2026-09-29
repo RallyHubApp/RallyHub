@@ -1,5 +1,5 @@
-// Server-only fallback for imported Directory listings.
-// Generated from the last public pre-protection import; never imported by frontend code.
+// Server-only fallback for imported and curated Directory listings.
+// Generated from the last public pre-protection sources; never imported by frontend code.
 const IMPORTED_CONTACT_ENDPOINTS:any = {
   "abc-pickleball-club": {
     "listing_name_snapshot": "ABC Pickleball Club",
@@ -799,6 +799,16 @@ const IMPORTED_CONTACT_ENDPOINTS:any = {
     "whatsapp_url": "",
     "allow_call": true,
     "allow_whatsapp": false,
+    "allow_email": true
+  },
+  "galway-county-pickleball": {
+    "listing_name_snapshot": "Galway County Pickleball Club",
+    "contact_name": "Caitrina Lawless",
+    "phone": "086 234 0632",
+    "email": "galwaycountypickleball@gmail.com",
+    "whatsapp_url": "https://wa.me/353862340632",
+    "allow_call": true,
+    "allow_whatsapp": true,
     "allow_email": true
   }
 };
