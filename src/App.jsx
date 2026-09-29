@@ -71,6 +71,7 @@ import WaitingList from '@/pages/WaitingList';
 import MemberPlay from '@/pages/MemberPlay';
 import MemberVenues from '@/pages/MemberVenues';
 import MemberLearn from '@/pages/MemberLearn';
+import ManageLearn from '@/pages/ManageLearn';
 import MemberShop from '@/pages/MemberShop';
 import MemberMessages from '@/pages/MemberMessages';
 import MemberForecast from '@/pages/MemberForecast';
@@ -198,6 +199,7 @@ const AuthenticatedRoutes = () => (
       <Route path="venues" element={<MemberVenues />} />
       <Route path="clubhouse" element={<MemberVenues />} />
       <Route path="learn" element={<MemberLearn />} />
+      <Route path="learn/manage" element={<ManageLearn />} />
       <Route path="shop" element={<MemberShop />} />
       <Route path="messages" element={<MemberMessages />} />
       <Route path="forecast" element={<MemberForecast />} />
