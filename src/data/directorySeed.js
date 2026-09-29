@@ -106,10 +106,7 @@ const curatedDirectoryClubs = [
     ],
     contact: {
       name: 'Teo Cuiche',
-      phone: '085 162 8988',
-      phoneHref: 'tel:+353851628988',
-      whatsapp: 'https://wa.me/353851628988',
-      email: 'galwaypickleball@gmail.com'
+      protected: true
     },
     venues: [
       { id: 'arus', name: 'Árus Bóthar na Trá', shortName: 'Árus', address: 'Salthill Knocknacarra GAA Club, Dr Mannix Road, Salthill, Galway', eircode: 'H91 T0F6', indoor: true, courts: null, latitude: 53.2586, longitude: -9.0855, mapUrl: 'https://maps.google.com/?q=H91+T0F6' },
@@ -179,10 +176,7 @@ const curatedDirectoryClubs = [
     scheduleUpdatedAt: '6 September 2026',
     contact: {
       name: 'Caitrina Lawless',
-      phone: '086 234 0632',
-      phoneHref: 'tel:+353862340632',
-      whatsapp: 'https://wa.me/353862340632',
-      email: 'galwaycountypickleball@gmail.com'
+      protected: true
     },
     venues: [
       { id: 'eyrecourt', name: 'Eyrecourt Hall & Event Centre', shortName: 'Eyrecourt', alternativeNames: ['Eyrecourt Community Centre', 'Eyrecourt Parish Hall'], address: 'The Mall, Eyrecourt, Co. Galway', eircode: 'H53 DY84', indoor: true, courts: null, latitude: 53.1974, longitude: -8.1327, mapUrl: 'https://maps.google.com/?q=H53+DY84', websiteUrl: 'https://www.eyrecourt.com/about-4' },
@@ -227,10 +221,7 @@ const curatedDirectoryClubs = [
     scheduleUpdatedAt: '16 September 2026',
     contact: {
       name: 'Mick Kelliher',
-      phone: '087 240 0424',
-      phoneHref: 'tel:+353872400424',
-      whatsapp: 'https://wa.me/353872400424',
-      email: null
+      protected: true
     },
     venues: [
       {
