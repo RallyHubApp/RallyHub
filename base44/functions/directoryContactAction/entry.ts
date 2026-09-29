@@ -67,8 +67,12 @@ function consumeBucket(store:Map<string,{count:number;resetAt:number}>, key:stri
   return true;
 }
 
+function requestIdFrom(body:any) {
+  return clean(body?.requestId, 120).replace(/[^a-zA-Z0-9_.:-]/g, '');
+}
+
 function idempotencyKey(body:any, listingSlug:string, channel:string) {
-  const requestId = clean(body?.requestId, 120).replace(/[^a-zA-Z0-9_.:-]/g, '');
+  const requestId = requestIdFrom(body);
   return requestId ? `${listingSlug}:${channel}:${requestId}` : '';
 }
 
@@ -208,6 +212,8 @@ Deno.serve(async (req) => {
     if (action === 'resolve') {
       const channel = clean(body.channel, 40).toLowerCase();
       if (!['call','whatsapp'].includes(channel)) return responseJson({ error:'Unsupported contact action.' }, 400);
+      const requestId = requestIdFrom(body);
+      if (!requestId) return responseJson({ error:'requestId required for protected contact actions.' }, 400);
       const idemKey = idempotencyKey(body, listingSlug, channel);
       const prior = getIdempotent(idemKey);
       if (prior) return responseJson({ ...prior.payload, duplicate:true }, prior.status);
@@ -223,6 +229,8 @@ Deno.serve(async (req) => {
 
     if (action === 'send_email') {
       if (clean(body.website, 200)) return responseJson({ success:true });
+      const requestId = requestIdFrom(body);
+      if (!requestId) return responseJson({ error:'requestId required for protected contact actions.' }, 400);
       const idemKey = idempotencyKey(body, listingSlug, 'email');
       const prior = getIdempotent(idemKey);
       if (prior) return responseJson({ ...prior.payload, duplicate:true }, prior.status);
