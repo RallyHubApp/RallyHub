@@ -1,11 +1,11 @@
 import React,{useEffect,useState} from 'react';
-import {useNavigate,useSearchParams} from 'react-router-dom';
+import {useSearchParams} from 'react-router-dom';
 import {base44} from '@/api/base44Client';
 import {useAuth} from '@/lib/AuthContext';
 import {ShieldCheck,Clock3,CheckCircle2} from 'lucide-react';
 
 export default function TrialActivate(){
- const {user}=useAuth(),navigate=useNavigate();const [params]=useSearchParams();const token=params.get('token')||'';
+ const {user}=useAuth();const [params]=useSearchParams();const token=params.get('token')||'';
  const [state,setState]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[checks,setChecks]=useState({authority:false,terms:false,sharing:false,ip:false});
  useEffect(()=>{if(!token){setError('This activation link is missing its trial token.');return;}base44.functions.invoke('trialJourney',{action:'activation_state',token}).then(r=>{if(r.data?.error)throw new Error(r.data.error);if(r.data?.alreadyActivated){window.location.href='/app';return;}setState(r.data)}).catch(e=>setError(e?.message||'Could not open this trial activation.'));},[token]);
  const activate=async()=>{setBusy(true);setError('');try{const a=state.agreement;const r=await base44.functions.invoke('trialJourney',{action:'accept_activate',token,authorityConfirmed:checks.authority,termsAccepted:checks.terms,restrictedSharingConfirmed:checks.sharing,ipAcknowledged:checks.ip,agreementId:a.id,agreementVersion:a.version,userAgent:navigator.userAgent});if(r.data?.error)throw new Error(r.data.error);window.location.href='/app';}catch(e){setError(e?.message||'Could not activate the trial.');setBusy(false)}};
