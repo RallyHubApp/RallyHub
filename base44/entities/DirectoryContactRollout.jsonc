@@ -1,0 +1,60 @@
+{
+  "name": "DirectoryContactRollout",
+  "type": "object",
+  "properties": {
+    "listing_slug": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "legacy",
+        "protected_pilot",
+        "protected"
+      ],
+      "default": "legacy"
+    },
+    "fallback_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "fallback_reason": {
+      "type": "string"
+    },
+    "updated_by_user_id": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "listing_slug",
+    "mode",
+    "fallback_enabled",
+    "updated_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

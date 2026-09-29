@@ -104,6 +104,21 @@ async function featureEnabled(base44:any) {
   return !!rows?.find((row:any) => row.active === true);
 }
 
+async function rolloutFor(base44:any, listingSlug:string) {
+  const rows = await base44.asServiceRole.entities.DirectoryContactRollout.filter({ listing_slug:listingSlug }, '-updated_at', 5).catch(() => []);
+  const row = rows?.[0] || null;
+  return row || { listing_slug:listingSlug, mode:'legacy', fallback_enabled:true, fallback_reason:'No protected-contact rollout configured.' };
+}
+
+async function protectedState(base44:any, listingSlug:string) {
+  const [globalEnabled, rollout] = await Promise.all([featureEnabled(base44), rolloutFor(base44, listingSlug)]);
+  return {
+    globalEnabled,
+    rollout,
+    enabled:globalEnabled && ['protected_pilot','protected'].includes(String(rollout?.mode || 'legacy')),
+  };
+}
+
 async function endpointFor(base44:any, listingSlug:string) {
   const rows = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5);
   return rows?.[0] || null;
@@ -158,20 +173,44 @@ Deno.serve(async (req) => {
     const action = clean(body.action || 'public_card', 80);
     const listingSlug = clean(body.listingSlug, 180);
 
-    if (action === 'admin_preview' || action === 'admin_test_resolve') {
+    if (action === 'admin_preview' || action === 'admin_test_resolve' || action === 'admin_set_rollout') {
       const user = await base44.auth.me();
       if (!user || user.role !== 'admin') return responseJson({ error:'Admin access required' }, 403);
       if (!listingSlug) return responseJson({ error:'listingSlug required' }, 400);
+
+      if (action === 'admin_set_rollout') {
+        const mode = clean(body.mode, 40);
+        if (!['legacy','protected_pilot','protected'].includes(mode)) return responseJson({ error:'Invalid rollout mode.' }, 400);
+        const fallbackEnabled = body.fallbackEnabled !== false;
+        const now = new Date().toISOString();
+        const rows = await base44.asServiceRole.entities.DirectoryContactRollout.filter({ listing_slug:listingSlug }, '-updated_at', 5).catch(() => []);
+        const payload = {
+          listing_slug:listingSlug,
+          mode,
+          fallback_enabled:fallbackEnabled,
+          fallback_reason:clean(body.reason, 500) || (mode === 'legacy' ? 'Returned to legacy contact path.' : 'Protected contact pilot enabled.'),
+          updated_by_user_id:user.id,
+          updated_at:now,
+        };
+        if (rows?.[0]) await base44.asServiceRole.entities.DirectoryContactRollout.update(rows[0].id, payload);
+        else await base44.asServiceRole.entities.DirectoryContactRollout.create(payload);
+        return responseJson({ success:true, listingSlug, mode, fallbackEnabled, updatedAt:now });
+      }
+
       const endpoint = await endpointFor(base44, listingSlug);
       if (!endpoint) return responseJson({ error:'Protected contact endpoint not configured for this listing.' }, 404);
       const card = cardFor(endpoint);
-      const enabled = await featureEnabled(base44);
+      const state = await protectedState(base44, listingSlug);
       if (action === 'admin_preview') {
         return responseJson({
           success:true,
           preview:true,
           featureFlagKey:FEATURE_KEY,
-          featureFlagEnabled:enabled,
+          featureFlagEnabled:state.globalEnabled,
+          rolloutMode:state.rollout?.mode || 'legacy',
+          fallbackEnabled:state.rollout?.fallback_enabled !== false,
+          fallbackReason:state.rollout?.fallback_reason || '',
+          protectedLiveEnabled:state.enabled,
           liveDirectoryWired:false,
           legacyPublicContactStillPresent:await legacyProfileHasContact(base44, listingSlug),
           card,
@@ -199,9 +238,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const enabled = await featureEnabled(base44);
-    if (!enabled) return responseJson({ error:'Protected contact actions are not enabled.', featureDisabled:true }, 404);
     if (!listingSlug) return responseJson({ error:'listingSlug required' }, 400);
+    const state = await protectedState(base44, listingSlug);
+    if (!state.enabled) return responseJson({ error:'Protected contact actions are not enabled for this listing.', featureDisabled:true, rolloutMode:state.rollout?.mode || 'legacy' }, 404);
     const endpoint = await endpointFor(base44, listingSlug);
     if (!endpoint) return responseJson({ error:'Club contact is not configured.' }, 404);
 
