@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, players, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, rosterRole, playingCategory, reserveParticipantId, coverParticipantId, playerId } = body;
-    if (!eventId || !['replace','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','bulk_add_manual','reorder','organise_teams','replacement_candidates','set_roster_role','set_playing_category','club_player_candidates','add_club_player','add_guest','remove_pre_draw'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
+    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, players, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, teamName, rosterRole, playingCategory, reserveParticipantId, coverParticipantId, playerId } = body;
+    if (!eventId || !['replace','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','bulk_add_manual','reorder','save_team','organise_teams','replacement_candidates','set_roster_role','set_playing_category','club_player_candidates','add_club_player','add_guest','remove_pre_draw'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
