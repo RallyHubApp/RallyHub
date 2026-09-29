@@ -343,9 +343,9 @@ Deno.serve(async (req) => {
   const kotcRole = user.kotc_role || (user.role === 'admin' ? 'super_admin' : 'player');
   const activeTenantId = user.active_tenant_id || null;
   const activeClubId = user.active_club_id || null;
-  const spondEntitlement = activeTenantId && activeClubId && user.active_club_role === 'club_admin'
+  const spondEntitlement = activeTenantId && activeClubId
     ? await tenantCapabilityDecision(base44,user,'integration.spond',{tenantId:activeTenantId,clubId:activeClubId})
-    : {allowed:false,reason:'no_club_admin_context'};
+    : {allowed:false,reason:'no_active_club_context'};
   const hasTrialSpondManagerAccess = spondEntitlement.allowed && spondEntitlement.reason === 'active_entitlement';
   const hasInterclubManagerAccess = interclubEventId ? await interclubManagerAllowed(base44, user, interclubEventId) : false;
   const hasDirectoryEditorAccess = action === 'login' && listingSlug ? await directoryAccessAllowed(base44, user, clean(listingSlug, 180)) : false;
