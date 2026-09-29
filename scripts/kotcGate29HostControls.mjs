@@ -7,7 +7,7 @@ const startCommand=fs.readFileSync('base44/functions/startKotcRound/entry.ts','u
 let checks=0; const ok=(v,m)=>{checks++;assert.ok(v,m)};
 
 ok(v2.includes('Host Round Editor'),'proposed round host editor present');
-ok(v2.includes('Tap one player then another to swap'),'single tap-to-swap interaction is the current host editor');
+ok(v2.includes('Tap two players to swap them'),'single tap-to-swap interaction is the current host editor');
 ok(v2.includes('clickCourt'),'court-player tap selection is wired');
 ok(v2.includes('clickBench'),'bench-to-court swap path is wired');
 ok(!v2.includes('Save Host Adjustments'),'redundant separate save step removed');
