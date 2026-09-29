@@ -37,6 +37,13 @@
         "type": "string"
       }
     },
+    "selected_capability_keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Capabilities approved by RallyHub for this controlled trial."
+    },
     "authority_confirmed": {
       "type": "boolean",
       "default": false
@@ -68,11 +75,21 @@
     "club_id": {
       "type": "string"
     },
+    "applicant_user_id": {
+      "type": "string"
+    },
     "trial_days": {
       "type": "number",
       "default": 30
     },
     "activation_deadline": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "activation_token_hash": {
+      "type": "string"
+    },
+    "activation_link_issued_at": {
       "type": "string",
       "format": "date-time"
     },
@@ -83,6 +100,13 @@
     "expires_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "expired_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decline_reason": {
+      "type": "string"
     },
     "converted_at": {
       "type": "string",
