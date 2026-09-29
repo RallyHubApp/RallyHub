@@ -39,10 +39,21 @@ for(const token of ['agreement_version','wording_hash','authority_confirmed','re
 }
 
 const service=read('base44/functions/tenantEntitlements/entry.ts');
+const policyHelpers=read('base44/functions/tenantEntitlements/policy.js');
 assert(service.includes("mode==='legacy_full_access'"),'resolver must preserve existing tenants by default');
-assert(service.includes('expandDependencies'),'resolver must expand capability dependencies');
+assert(service.includes('expandDependencies'),'resolver must expand capability dependencies for navigation');
+assert(service.includes('activeGrantSources'),'authoritative checks must use scope-preserving grant sources');
+assert(service.includes('expiredGraceSources'),'live-event grace must use scope-preserving expired grant sources');
+assert(service.includes("error:'Club context mismatch'"),'non-admin checks must reject another club context');
+assert(service.includes("error:'Tenant context mismatch'"),'non-admin checks must reject another tenant context');
+assert(service.includes('eventId'),'authoritative checks must accept event scope');
+assert(service.includes('scope_note'),'resolve output must state that navigation expansion is not the security decision');
 assert(service.includes('liveEventAlreadyStarted'),'resolver must support live-event expiry grace checks');
 assert(service.includes("user.role!=='admin'"),'admin actions must remain protected');
+assert(policyHelpers.includes("row.entitlement_type==='one_event'"),'policy helper must explicitly scope one-event entitlements');
+assert(policyHelpers.includes("String(row.one_event_id||'')!==String(eventId)"),'one-event entitlements must require the matching event id');
+assert(policyHelpers.includes('capabilityIncludes(row.capability_key,targetKey,caps)'),'dependency grants must retain source entitlement scope');
+assert(policyHelpers.includes("['active','expired','grace'].includes"),'live-event expiry grace must exclude scheduled, suspended and revoked grants');
 
 const interclubBranding=read('src/lib/interclubBranding.js');
 assert(interclubBranding.includes("INTERCLUB_INTERNAL_FORMAT = 'Club Challenge'"),'Interclub internal format key must remain unchanged');
