@@ -54,7 +54,7 @@ test('Tournament Control Centre → completed KOTC opens host review/editor, not
   await expect(page.getByTestId('kotc-email-body')).not.toContainText('base44.app');
   await expect(page.getByTestId('kotc-email-body')).toContainText('simple infographic showing how to use the player link');
   await expect(page.getByTestId('kotc-email-body')).toContainText('Clare Pickleball Player Link Infographic');
-  await expect(page.getByTestId('kotc-email-preview')).toContainText('https://rallyhub.ie/guides/clare-pickleball/player-link');
+  await expect(page.getByTestId('kotc-email-preview').locator('a[href="https://rallyhub.ie/guides/clare-pickleball/player-link"]')).toBeVisible();
   await expect(page.getByTestId('kotc-email-body')).toContainText('Brian Moore');
   await expect(page.getByTestId('kotc-email-body')).toContainText('Clare Pickleball');
   await expect(page.getByTestId('kotc-email-body')).toContainText('Powered by RallyHub');
