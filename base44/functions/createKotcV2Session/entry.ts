@@ -19,7 +19,8 @@ Deno.serve(async(req)=>{try{
  const tournamentClubId=String(tournament.host_club_id||user.active_club_id||'');
  const capabilityDecision=await tenantCapabilityDecision(base44,user,'tournament.king_of_the_court',{tenantId:String(tournament.tenant_id||''),clubId:tournamentClubId,eventId:tournamentId});
  if(!capabilityDecision.allowed)return Response.json({error:'King of the Court is not enabled for this club or the trial has expired.'},{status:403});
- if(user.role!=='admin'&&(user.approval_status!=='approved'||user.active_club_role!=='club_admin'))return Response.json({error:'Club administrator access is required to create a KOTC session.'},{status:403});
+ const entitledTrialHost=user.role!=='admin'&&capabilityDecision.reason==='active_entitlement';
+ if(user.role!=='admin'&&!entitledTrialHost&&(user.approval_status!=='approved'||user.active_club_role!=='club_admin'))return Response.json({error:'Club administrator or active KOTC trial access is required to create a KOTC session.'},{status:403});
  const existing=(await retry('existing session read',()=>base44.asServiceRole.entities.KotcSession.filter({tournament_id:tournamentId}))).filter((s:any)=>!['cancelled','abandoned'].includes(s.status)); if(existing.length)return Response.json({error:'A KOTC V2 session already exists for this tournament.',session:existing[0]},{status:409});
  const guestRoster=Array.isArray(tournament.kotc_guest_roster)?tournament.kotc_guest_roster:[]; const guestById=Object.fromEntries(guestRoster.map((g:any)=>[String(g.guest_id),g]));
  const sandboxTournament=String(tournament.description||'').includes('RALLYHUB_KOTC_SANDBOX_V1');
