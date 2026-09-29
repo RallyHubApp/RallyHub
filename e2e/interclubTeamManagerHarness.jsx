@@ -5,11 +5,13 @@ import { Toaster } from 'sonner';
 import PublicInterclubTeamManager from '@/pages/PublicInterclubTeamManager';
 import '@/index.css';
 
+window.history.replaceState({}, '', '/club-challenge/team-manager/cctm_0123456789abcdef0123456789abcdef');
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="*" element={<PublicInterclubTeamManager />} />
+        <Route path="/club-challenge/team-manager/:token" element={<PublicInterclubTeamManager />} />
       </Routes>
     </BrowserRouter>
     <Toaster richColors position="top-center" />
