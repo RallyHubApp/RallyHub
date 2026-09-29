@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import {
   ArrowDown, ArrowLeft, ArrowUp, BookOpen, CheckCircle2, ExternalLink,
   FileText, Filter, LayoutList, Link2, MessageCircle, Pencil, Plus, Save,
-  Search, Settings2, SlidersHorizontal, Upload, Video, X
+  Search, SlidersHorizontal, Upload, Video, X
 } from 'lucide-react';
 import { LEARN_RESOURCE_TYPES, LEARN_STARTER_CATEGORIES, resourceTypeLabel } from '@/lib/learnConfig';
 
