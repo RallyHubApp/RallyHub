@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
     const event = events?.[0];
     if (!event) return Response.json({ error:'Interclub Challenge event not found' }, { status:404 });
     if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'A full draw can only be generated before approval.' }, { status:409 });
+    if (!event.club_a_roster_saved_at || !event.club_b_roster_saved_at) return Response.json({ error:'Both teams must be saved in their current form before the draw can be generated.' }, { status:409 });
 
     let allowed = user.role === 'admin';
     if (!allowed) {
