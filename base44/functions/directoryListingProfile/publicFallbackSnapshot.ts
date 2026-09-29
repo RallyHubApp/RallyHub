@@ -1,5 +1,6 @@
 // Generated pre-launch fallback snapshot. Public-only data; no private contacts or tokens.
 // Used only when Base44 is temporarily busy so public browsing remains available.
+// Contact destinations are intentionally excluded; protected contact endpoints hold them privately.
 export const publicDirectoryFallbackSnapshot = {
   "vamos-pickleball": {
     "base": {
@@ -23,11 +24,7 @@ export const publicDirectoryFallbackSnapshot = {
       "description": "VAMOS Pickleball is listed in the RallyHub Club Directory for County Galway. This listing has not yet been claimed and can be updated by an authorised club representative.",
       "guestPolicy": "Contact the club before attending a session.",
       "contact": {
-        "name": "JP O Connell",
-        "phone": "0877717277",
-        "phoneHref": "tel:0877717277",
-        "whatsapp": "https://wa.me/353877717277",
-        "email": "johnpaulsport@gmail.com"
+        "protected": true
       },
       "venues": [],
       "sessions": [],
@@ -46,11 +43,7 @@ export const publicDirectoryFallbackSnapshot = {
       "joiningCtaLabel": "Contact club",
       "logoUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/488c4c398_vamos-pickleball-logo.webp",
       "contact": {
-        "name": "JP O Connell",
-        "phone": "0877717277",
-        "phoneHref": "tel:+353877717277",
-        "email": "johnpaulsport@gmail.com",
-        "whatsapp": "https://wa.me/353877717277"
+        "protected": true
       },
       "venues": [
         {
@@ -198,11 +191,7 @@ export const publicDirectoryFallbackSnapshot = {
       "joiningCtaLabel": "Contact club",
       "logoUrl": null,
       "contact": {
-        "name": "Oliver Jennings",
-        "phone": "+353 87 972 6860",
-        "phoneHref": "tel:+353879726860",
-        "email": "terenure.pickleball@gmail.com",
-        "whatsapp": null
+        "protected": true
       },
       "venues": [
         {
@@ -256,11 +245,7 @@ export const publicDirectoryFallbackSnapshot = {
       "joiningCtaLabel": "Contact club",
       "logoUrl": "https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/212f5ecc1_limerick-city-pickleball-logo.webp",
       "contact": {
-        "name": "Mick Kelliher",
-        "phone": "087 240 0424",
-        "phoneHref": "tel:+353872400424",
-        "email": "mick.m.kelliher@gmail.com",
-        "whatsapp": "https://wa.me/353872400424"
+        "protected": true
       },
       "venues": [
         {
@@ -345,11 +330,7 @@ export const publicDirectoryFallbackSnapshot = {
       "joiningCtaLabel": "Contact club",
       "logoUrl": "https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/5e87182dc_ashbourne-pickleball-logo.webp",
       "contact": {
-        "name": "David Molloy",
-        "phone": null,
-        "phoneHref": null,
-        "email": "ashbournepickleball@gmail.com",
-        "whatsapp": null
+        "protected": true
       },
       "venues": [
         {
@@ -496,7 +477,6 @@ export const publicDirectoryFallbackSnapshot = {
       "joiningCtaLabel": "Join waiting list",
       "logoUrl": "https://clarepickleball.ie/wp-content/uploads/2025/06/491439977_17843980809473841_8409446969161026129_n-removebg-preview.png",
       "contact": {
-        "name": "Brian Moore",
         "protected": true
       },
       "venues": [
