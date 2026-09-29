@@ -47,7 +47,8 @@ export default function Sidebar({ isOpen, onToggle }) {
     ...(canManageMembership ? [
       { path: '/app/membership', label: 'Membership', icon: ContactRound },
       { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList },
-      { path: '/app/events', label: 'Events', icon: CalendarDays }
+      { path: '/app/events', label: 'Events', icon: CalendarDays },
+      { path: '/app/learn/manage', label: 'Learn Resources', icon: BookOpen }
     ] : []),
     ...navItems.slice(1)
   ];
