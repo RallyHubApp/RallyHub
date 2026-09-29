@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: directory-search-map.spec.mjs >> directory has an interactive all-Ireland map view linked to club profiles
-- Location: e2e/directory-search-map.spec.mjs:11:1
+- Name: public-events.spec.mjs >> public Events: transient 500s give a clear retry and recover without losing the journey
+- Location: e2e/public-events.spec.mjs:113:1
 
 # Error details
 

@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: directory-search-map.spec.mjs >> directory search tolerates missing spaces and ranks Dublin 15
-- Location: e2e/directory-search-map.spec.mjs:3:1
+- Name: public-events.spec.mjs >> full invitation-only event replaces registration with a tracked future-invitation email flow
+- Location: e2e/public-events.spec.mjs:98:1
 
 # Error details
 

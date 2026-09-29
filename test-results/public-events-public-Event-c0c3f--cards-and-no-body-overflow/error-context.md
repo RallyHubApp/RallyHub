@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: directory-auth-header.spec.mjs >> logged-out directory header uses one RallyHub login
-- Location: e2e/directory-auth-header.spec.mjs:3:1
+- Name: public-events.spec.mjs >> public Events mobile >> mobile layout has working menu, filter drawer, cards and no body overflow
+- Location: e2e/public-events.spec.mjs:126:3
 
 # Error details
 
