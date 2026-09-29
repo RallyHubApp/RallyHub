@@ -169,7 +169,10 @@ includes(kotcView,'searchedAvailablePlayers = playerSearch.trim()','KOTC player 
 includes(setupPanel,'canUseTestMode&&<label','KOTC Test Mode setup control must be visible only to a Super Admin');
 includes(setupPanel,'data-testid="kotc-test-mode"','KOTC setup must require an explicit test-mode choice');
 includes(state,"isAdmin:user.role==='admin'",'KOTC state must return server-verified Super Admin status even before a session exists');
-includes(create,"if(user.role!=='admin')return Response.json({error:'Platform admin access required to create a KOTC V2 session.'}",'KOTC V2 session creation must be Super Admin-only');
+includes(create,"tenantCapabilityDecision(base44,user,'tournament.king_of_the_court'",'KOTC creation must enforce the tenant KOTC entitlement before non-admin creation');
+includes(create,"const entitledTrialHost=user.role!=='admin'&&capabilityDecision.reason==='active_entitlement'",'an external trial host may create KOTC only from an explicit active entitlement');
+includes(create,"active_club_role!=='club_admin'",'ordinary non-trial creation must retain the existing approved club-admin boundary');
+includes(create,"ends_at:entitlementEnd",'time-limited KOTC host access must inherit the entitlement expiry');
 includes(create,"const testMode=sandboxTournament||(user.role==='admin'&&Boolean(body.testMode));",'backend must bind explicit Test Mode to Super Admin and force it for the isolated sandbox');
 includes(create,'demo_mode:testMode,exclude_from_aggregates:testMode','test mode must be excluded from historical aggregates at session creation');
 includes(hostUi,'const testMode=isSuperAdmin&&!!(session?.exclude_from_aggregates||session?.demo_mode)','Fill Test Scores must require both stored test state and Super Admin status');
