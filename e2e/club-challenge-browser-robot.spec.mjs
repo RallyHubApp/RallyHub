@@ -240,6 +240,50 @@ async function expectNoHorizontalOverflow(page){const overflow=await page.evalua
 
 test.use({ viewport:{width:390,height:844} });
 
+test('Interclub uneven rosters: host can save one side ranking before opponent roster is complete',async({page})=>{
+  const model=createClubChallengeModel();
+  await installHallDeviceMocks(page);
+  await installClubChallengeBackend(page,model);
+  page.on('dialog',d=>d.accept());
+  await page.goto('/e2e/clubChallengeHarness.html');
+  await expect(page.getByTestId('cc-root')).toBeVisible();
+
+  await page.getByTestId('cc-save-setup').click();
+  await expect(page.getByTestId('cc-load-practice')).toBeVisible({timeout:1800});
+  await page.getByTestId('cc-load-practice').click();
+  await expect(page.getByText('Club A Test 01')).toBeVisible({timeout:1800});
+
+  model.participants = model.participants.filter(p => p.side !== 'club_b' || Number(p.event_rank) <= 9);
+  model.participants.push(
+    { id:'cc-a-17', tenant_id:model.event.tenant_id, challenge_event_id:model.event.id, tournament_id:model.event.tournament_id, side:'club_a', display_name:'Clare Extra 17', event_rank:17, gender:'Female', status:'active', available_from_round:1, roster_role:'rotation', unique_identity_key:'uneven-a-17' },
+    { id:'cc-a-18', tenant_id:model.event.tenant_id, challenge_event_id:model.event.id, tournament_id:model.event.tournament_id, side:'club_a', display_name:'Caroline McDonnell', event_rank:18, gender:'Female', status:'active', available_from_round:1, roster_role:'rotation', unique_identity_key:'uneven-a-18' },
+  );
+
+  await page.reload();
+  await expect(page.getByTestId('cc-root')).toBeVisible();
+  await page.getByTestId('cc-tab-teams').click();
+  await expect(page.getByText('Caroline McDonnell')).toBeVisible({timeout:1800});
+  await expect(page.getByText('A: 18 rotation · 0 reserve')).toBeVisible();
+  await expect(page.getByText('B: 9 rotation · 0 reserve')).toBeVisible();
+
+  const drag=page.getByTestId('cc-team-drag-cc-a-18');
+  await drag.focus();
+  await drag.press('Space');
+  await drag.press('ArrowUp');
+  await drag.press('Space');
+  await expect(page.getByTestId('cc-save-team-builder')).toBeEnabled();
+
+  const organiseBefore=model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='organise_teams').length;
+  await page.getByTestId('cc-save-team-builder').click();
+  await expect(page.getByTestId('cc-team-builder-status')).toContainText('Teams saved',{timeout:1800});
+  const saveCall=model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='organise_teams').at(-1);
+  expect(model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='organise_teams').length-organiseBefore).toBe(1);
+  expect(saveCall.body.clubAParticipantIds).toHaveLength(18);
+  expect(saveCall.body.clubBParticipantIds).toHaveLength(9);
+  expect(model.participants.find(p=>p.id==='cc-a-18')?.event_rank).toBe(17);
+  await expect(page.getByTestId('cc-generate-draw')).toBeDisabled();
+});
+
 test('Club Challenge mobile host robot: setup → practice → draw → live → full result',async({page},testInfo)=>{
   const model=createClubChallengeModel();const report={};await installHallDeviceMocks(page);await installClubChallengeBackend(page,model);page.on('dialog',d=>d.accept());
   await page.goto('/e2e/clubChallengeHarness.html');
