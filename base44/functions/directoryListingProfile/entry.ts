@@ -55,6 +55,45 @@ const phoneHref = (value:any) => {
   return `tel:+${digits}`;
 };
 
+const CONTACT_FEATURE_KEY = 'protected-contact-actions-v1';
+const CONTACT_CONFIG_TTL_MS = 5 * 1000;
+let contactConfigCache:any = null;
+
+async function contactProtectionConfig(base44:any) {
+  const now = Date.now();
+  if (contactConfigCache && now - contactConfigCache.savedAt < CONTACT_CONFIG_TTL_MS) return contactConfigCache.value;
+  const settings = await base44.asServiceRole.entities.DirectorySettings.filter({ key:CONTACT_FEATURE_KEY }, '-updated_date', 5).catch(() => []);
+  const globalEnabled = !!settings?.find((row:any) => row.active === true);
+  if (!globalEnabled) {
+    const value = { globalEnabled:false, protectedSlugs:new Set<string>() };
+    contactConfigCache = { savedAt:now, value };
+    return value;
+  }
+  const rollouts = await base44.asServiceRole.entities.DirectoryContactRollout.filter({}, '-updated_at', 500).catch(() => []);
+  const protectedSlugs = new Set<string>();
+  for (const row of rollouts || []) {
+    if (['protected_pilot','protected'].includes(String(row?.mode || '')) && row?.listing_slug) protectedSlugs.add(String(row.listing_slug));
+  }
+  const value = { globalEnabled:true, protectedSlugs };
+  contactConfigCache = { savedAt:now, value };
+  return value;
+}
+
+async function publicStateForRollout(base44:any, listingSlug:string, state:any) {
+  const config = await contactProtectionConfig(base44);
+  return config.protectedSlugs.has(listingSlug) ? protectedDirectoryState(state) : state;
+}
+
+async function publicListForRollout(base44:any, listings:any) {
+  const config = await contactProtectionConfig(base44);
+  if (!config.globalEnabled || !config.protectedSlugs.size) return listings;
+  const out:any = { ...(listings || {}) };
+  for (const slug of config.protectedSlugs) {
+    if (out[slug]) out[slug] = protectedDirectoryState(out[slug]);
+  }
+  return out;
+}
+
 // Public Directory reads are identical for every visitor. Keep one warm snapshot per
 // function isolate and collapse simultaneous cold requests onto the same rebuild.
 // This prevents a launch-day burst from multiplying into three Base44 entity reads
@@ -279,19 +318,21 @@ Deno.serve(async (req) => {
       const data = await getPublicClub(base44, listingSlug);
       const payload = action === 'protected_public_get'
         ? { ...protectedDirectoryState(data), contractVersion:'protected-v1' }
-        : data;
+        : await publicStateForRollout(base44, listingSlug, data);
       return Response.json(
         payload,
-        { headers: { 'Cache-Control': 'public, max-age=30, stale-while-revalidate=300' } }
+        { headers: { 'Cache-Control': 'public, max-age=5, stale-while-revalidate=30' } }
       );
     }
 
     if (action === 'public_list' || action === 'protected_public_list') {
       const result = await getPublicDirectoryList(base44);
-      const listings = action === 'protected_public_list' ? protectedDirectoryList(result) : result;
+      const listings = action === 'protected_public_list'
+        ? protectedDirectoryList(result)
+        : await publicListForRollout(base44, result);
       return Response.json(
         { success: true, listings, ...(action === 'protected_public_list' ? { contractVersion:'protected-v1' } : {}) },
-        { headers: { 'Cache-Control': 'public, max-age=30, stale-while-revalidate=300' } }
+        { headers: { 'Cache-Control': 'public, max-age=5, stale-while-revalidate=30' } }
       );
     }
 
