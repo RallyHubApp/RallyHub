@@ -276,6 +276,48 @@ Deno.serve(async (req) => {
       return Response.json({ success:true, participantId:p.id, participantName:p.display_name, playingCategory:category });
     }
 
+    if (action === 'save_team') {
+      if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Teams can only be saved before the draw is approved.' }, { status:409 });
+      if (!['club_a','club_b'].includes(side) || !Array.isArray(orderedParticipantIds)) return Response.json({ error:'Team side and ranked player list are required.' }, { status:400 });
+      const sidePlayers = participants.filter((p:any) => p.side === side && !['replaced','withdrawn','injured'].includes(p.status));
+      const currentIds = sidePlayers.map((p:any) => String(p.id)).sort();
+      const requested = orderedParticipantIds.map(String);
+      if (requested.length !== currentIds.length || new Set(requested).size !== requested.length || [...requested].sort().join('|') !== currentIds.join('|')) {
+        return Response.json({ error:'This team changed while you were editing. Refresh and save again.' }, { status:409 });
+      }
+      const byId = new Map(sidePlayers.map((p:any) => [String(p.id), p]));
+      let changed = 0;
+      for (let i=0;i<requested.length;i++) {
+        const p:any = byId.get(requested[i]);
+        const rank = i + 1;
+        if (Number(p?.event_rank || 0) !== rank) {
+          await base44.asServiceRole.entities.ClubChallengeParticipant.update(p.id, { event_rank:rank });
+          changed++;
+        }
+      }
+      const cleanTeamName = String(teamName || (side === 'club_a' ? event.club_a_name : event.club_b_name) || '').trim().replace(/\s+/g,' ').slice(0,120);
+      if (!cleanTeamName) return Response.json({ error:'Team name is required.' }, { status:400 });
+      const savedAt = new Date().toISOString();
+      const eventUpdate:any = {
+        [side === 'club_a' ? 'club_a_name' : 'club_b_name']:cleanTeamName,
+        [side === 'club_a' ? 'club_a_roster_saved_at' : 'club_b_roster_saved_at']:savedAt,
+        fairness_json:'',
+        status:event.status === 'draw_generated' ? 'draft' : event.status,
+        event_pack_stale:true,
+      };
+      const updatedEvent = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, eventUpdate);
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({
+        tenant_id:event.tenant_id,
+        challenge_event_id:event.id,
+        action:'team_roster_saved',
+        user_id:user.id,
+        occurred_at:savedAt,
+        new_value_json:JSON.stringify({side,team_name:cleanTeamName,ordered_participant_ids:requested,changed}),
+        note:`${cleanTeamName} roster and ranking saved.`,
+      });
+      return Response.json({ success:true, side, teamName:cleanTeamName, changed, savedAt, event:updatedEvent });
+    }
+
     if (action === 'organise_teams') {
       if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Teams can only be organised before the draw is approved.' }, { status:409 });
       const poolIds = Array.isArray(poolParticipantIds) ? poolParticipantIds.map(String) : [];
