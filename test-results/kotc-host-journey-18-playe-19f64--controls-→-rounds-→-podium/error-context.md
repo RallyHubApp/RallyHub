@@ -12,22 +12,158 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Error: undo_ack_ms should be <= 250ms but was 497ms
 
-Locator: getByTestId('kotc-setup')
-Expected: visible
-Timeout: 3000ms
-Error: element(s) not found
+expect(received).toBeLessThanOrEqual(expected)
 
-Call log:
-  - Expect "toBeVisible" getByTestId('kotc-setup') with timeout 3000ms
-  - waiting for getByTestId('kotc-setup')
+Expected: <= 250
+Received:    497
+```
 
+# Page snapshot
+
+```yaml
+- main [ref=f1e3]:
+  - generic [ref=f1e4]:
+    - generic [ref=f1e5]:
+      - generic [ref=f1e6]:
+        - paragraph [ref=f1e7]: Round 1 — ROUND READY
+        - paragraph [ref=f1e8]: 4 courts · 2 bench
+      - generic [ref=f1e9]:
+        - button "Roster" [ref=f1e10] [cursor=pointer]
+        - button "Links" [ref=f1e11] [cursor=pointer]
+        - button "Menu" [ref=f1e12] [cursor=pointer]
+    - generic [ref=f1e13]:
+      - paragraph [ref=f1e14]: What happens next
+      - paragraph [ref=f1e15]: Round 1 ready
+      - paragraph [ref=f1e16]: "Next: check the 4 court assignments and bench, then Start Round 1."
+    - generic [ref=f1e17]:
+      - generic [ref=f1e18]:
+        - paragraph [ref=f1e19]: Bench This Round
+        - generic [ref=f1e20]:
+          - button "Player 01" [ref=f1e21] [cursor=pointer]
+          - button "Player 18" [ref=f1e22] [cursor=pointer]
+        - paragraph [ref=f1e23]: Tap a court player, then a bench player, to swap them.
+      - generic [ref=f1e24]:
+        - generic [ref=f1e25]:
+          - heading "Host Round Editor" [level=4] [ref=f1e26]
+          - paragraph [ref=f1e27]: Tap two players to swap them, or drag a whole court by its handle to move that four-player group to another court rank.
+        - generic [ref=f1e28]:
+          - generic [ref=f1e29]:
+            - generic [ref=f1e30]:
+              - generic [ref=f1e31]: Court 1
+              - button "Move whole Court 1" [ref=f1e35] [cursor=pointer]: Move court
+            - generic [ref=f1e43]:
+              - generic [ref=f1e44]:
+                - paragraph [ref=f1e45]: Team A
+                - button "Locked ✓ · Unlock" [ref=f1e46] [cursor=pointer]
+              - generic [ref=f1e47]:
+                - button "Player 17" [ref=f1e48] [cursor=pointer]
+                - button "Player 08" [ref=f1e57] [cursor=pointer]
+            - generic [ref=f1e66]:
+              - generic [ref=f1e67]:
+                - paragraph [ref=f1e68]: Team B
+                - button "Lock pair" [ref=f1e69] [cursor=pointer]
+              - generic [ref=f1e70]:
+                - button "Player 09" [ref=f1e71] [cursor=pointer]
+                - button "Player 16" [ref=f1e80] [cursor=pointer]
+          - generic [ref=f1e89]:
+            - generic [ref=f1e90]:
+              - generic [ref=f1e91]: Court 2
+              - button "Move whole Court 2" [ref=f1e93] [cursor=pointer]: Move court
+            - generic [ref=f1e101]:
+              - generic [ref=f1e102]:
+                - paragraph [ref=f1e103]: Team A
+                - button "Lock pair" [ref=f1e104] [cursor=pointer]
+              - generic [ref=f1e105]:
+                - button "Player 04" [ref=f1e106] [cursor=pointer]
+                - button "Player 05" [ref=f1e115] [cursor=pointer]
+            - generic [ref=f1e124]:
+              - generic [ref=f1e125]:
+                - paragraph [ref=f1e126]: Team B
+                - button "Lock pair" [ref=f1e127] [cursor=pointer]
+              - generic [ref=f1e128]:
+                - button "Player 12" [ref=f1e129] [cursor=pointer]
+                - button "Player 13" [ref=f1e138] [cursor=pointer]
+          - generic [ref=f1e147]:
+            - generic [ref=f1e148]:
+              - generic [ref=f1e149]: Court 3
+              - button "Move whole Court 3" [ref=f1e151] [cursor=pointer]: Move court
+            - generic [ref=f1e159]:
+              - generic [ref=f1e160]:
+                - paragraph [ref=f1e161]: Team A
+                - button "Lock pair" [ref=f1e162] [cursor=pointer]
+              - generic [ref=f1e163]:
+                - button "Player 02" [ref=f1e164] [cursor=pointer]
+                - button "Player 07" [ref=f1e173] [cursor=pointer]
+            - generic [ref=f1e182]:
+              - generic [ref=f1e183]:
+                - paragraph [ref=f1e184]: Team B
+                - button "Lock pair" [ref=f1e185] [cursor=pointer]
+              - generic [ref=f1e186]:
+                - button "Player 10" [ref=f1e187] [cursor=pointer]
+                - button "Player 15" [ref=f1e196] [cursor=pointer]
+          - generic [ref=f1e205]:
+            - generic [ref=f1e206]:
+              - generic [ref=f1e207]: Court 4
+              - button "Move whole Court 4" [ref=f1e209] [cursor=pointer]: Move court
+            - generic [ref=f1e217]:
+              - generic [ref=f1e218]:
+                - paragraph [ref=f1e219]: Team A
+                - button "Lock pair" [ref=f1e220] [cursor=pointer]
+              - generic [ref=f1e221]:
+                - button "Player 03" [ref=f1e222] [cursor=pointer]
+                - button "Player 06" [ref=f1e231] [cursor=pointer]
+            - generic [ref=f1e240]:
+              - generic [ref=f1e241]:
+                - paragraph [ref=f1e242]: Team B
+                - button "Lock pair" [ref=f1e243] [cursor=pointer]
+              - generic [ref=f1e244]:
+                - button "Player 11" [ref=f1e245] [cursor=pointer]
+                - button "Player 14" [ref=f1e254] [cursor=pointer]
+        - generic [ref=f1e263]:
+          - generic [ref=f1e264]:
+            - paragraph [ref=f1e265]: Round setup is saved
+            - paragraph [ref=f1e266]: You can leave this screen and return without losing the court layout.
+          - button "Saved ✓" [disabled]
+      - generic [ref=f1e267]:
+        - generic [ref=f1e268]:
+          - paragraph [ref=f1e269]: Pre-Round Check
+          - paragraph [ref=f1e270]: Confirm the round time and hall sound before players begin.
+        - generic [ref=f1e271]:
+          - generic [ref=f1e272]:
+            - generic [ref=f1e277]:
+              - paragraph [ref=f1e278]: Round timer
+              - paragraph [ref=f1e279]: Adjust now if tonight needs a shorter or longer round.
+            - generic [ref=f1e280]: 08:00
+          - generic [ref=f1e281]:
+            - button "− 1 min" [ref=f1e282] [cursor=pointer]
+            - button "+ 1 min" [ref=f1e283] [cursor=pointer]
+        - generic [ref=f1e285]:
+          - generic [ref=f1e286]:
+            - paragraph [ref=f1e287]: Hall sound check
+            - paragraph [ref=f1e288]: Test the real cue and spoken voice before play. This uses your device/speaker only — no Base44 call.
+          - button "Test Sound" [ref=f1e289] [cursor=pointer]
+        - button "START ROUND 1" [ref=f1e290] [cursor=pointer]
+      - button "Back to Setup" [ref=f1e291] [cursor=pointer]
+      - button "Restore Original Draw" [ref=f1e292] [cursor=pointer]
 ```
 
 # Test source
 
 ```ts
+  263 |         match.revision += 1;
+  264 |         return { success: true, match, correction };
+  265 |       }
+  266 | 
+  267 |       if (name === 'prepareKotcNextRound' || body.commandType === 'generate_next_round') {
+  268 |         await sleep(500);
+  269 |         const prior = currentRound();
+  270 |         prior.status = 'completed';
+  271 |         prior.completed_at = new Date().toISOString();
+  272 |         const priorActive = new Set(currentSlots().map(slot => slot.participant_id));
+  273 |         const priorBench = model.participants.filter(p => ['present', 'registered', 'confirmed', 'leaving_early'].includes(p.status) && !priorActive.has(p.id)).map(p => p.id);
+  274 |         const next = makeRound(Number(prior.round_number) + 1, priorBench.slice().reverse());
   275 |         model.session.revision += 1;
   276 |         return { success: true, session: model.session, round: next, slots:model.slots.filter(s=>s.round_id===next.id), matches:model.matches.filter(m=>m.round_id===next.id), participants:model.participants, runtimeVersion:'kotc-2026-09-10-r6' };
   277 |       }
@@ -116,7 +252,8 @@ Call log:
   360 | 
   361 | function metric(report, name, value, max) {
   362 |   report[name] = value;
-  363 |   expect(value, `${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);
+> 363 |   expect(value, `${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);
+      |                                                                     ^ Error: undo_ack_ms should be <= 250ms but was 497ms
   364 | }
   365 | 
   366 | test.use({ viewport: { width: 390, height: 844 } });
@@ -128,8 +265,7 @@ Call log:
   372 |   page.on('dialog', dialog => dialog.accept());
   373 | 
   374 |   await page.goto('/e2e/kotcHarness.html');
-> 375 |   await expect(page.getByTestId('kotc-setup')).toBeVisible();
-      |                                                ^ Error: expect(locator).toBeVisible() failed
+  375 |   await expect(page.getByTestId('kotc-setup')).toBeVisible();
   376 |   await expect(page.getByTestId('kotc-setup')).toContainText('18 players');
   377 |   await expect(page.getByTestId('kotc-setup')).toContainText('4 courts');
   378 |   await expect(page.getByTestId('kotc-setup')).toContainText('2 bench');
@@ -218,16 +354,4 @@ Call log:
   461 |   const undo = page.getByTestId('kotc-undo-start');
   462 |   await undo.scrollIntoViewIfNeeded();
   463 |   started = Date.now();
-  464 |   await undo.evaluate(element => element.click());
-  465 |   await expect(undo).toContainText('Returning to Round Setup…');
-  466 |   await expect(undo).toHaveAttribute('aria-busy', 'true');
-  467 |   metric(report, 'undo_ack_ms', Date.now() - started, 250);
-  468 |   await sleep(350);
-  469 |   await expect(undo).toContainText('Returning to Round Setup…');
-  470 |   await expect(undo).toBeDisabled();
-  471 |   await expect(page.getByTestId('kotc-round-editor')).toBeVisible({ timeout: 1600 });
-  472 |   metric(report, 'undo_to_editor_ms', Date.now() - started, 1500);
-  473 |   expect(model.timer?.running).toBe(false);
-  474 |   expect(model.timer?.remainingSeconds).toBe(480);
-  475 | 
 ```
