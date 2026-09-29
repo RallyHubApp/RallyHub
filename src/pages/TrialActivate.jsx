@@ -2,7 +2,7 @@ import React,{useEffect,useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {base44} from '@/api/base44Client';
 import {useAuth} from '@/lib/AuthContext';
-import {ShieldCheck,Clock3,CheckCircle2} from 'lucide-react';
+import {ShieldCheck,Clock3} from 'lucide-react';
 
 export default function TrialActivate(){
  const {user}=useAuth();const [params]=useSearchParams();const token=params.get('token')||'';
