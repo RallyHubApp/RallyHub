@@ -1,0 +1,108 @@
+{
+  "name": "PlatformPaymentGatewayAccount",
+  "type": "object",
+  "properties": {
+    "provider": {
+      "type": "string",
+      "description": "RallyHub platform payment provider, e.g. sumup, stripe, square"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "connection_mode": {
+      "type": "string",
+      "enum": [
+        "api_key",
+        "oauth",
+        "manual"
+      ],
+      "default": "api_key"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "connected",
+        "pending",
+        "disconnected",
+        "error"
+      ],
+      "default": "pending"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false
+    },
+    "merchant_account_id": {
+      "type": "string",
+      "description": "Provider merchant/account identifier for RallyHub platform receipts only."
+    },
+    "credential_reference": {
+      "type": "string",
+      "description": "Logical reference to a secure RallyHub platform credential. Never store the secret value here. Platform credentials must never reuse a tenant credential reference."
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR"
+    },
+    "supports_payments": {
+      "type": "boolean",
+      "default": true
+    },
+    "supports_refunds": {
+      "type": "boolean",
+      "default": false
+    },
+    "allowed_purposes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "trial",
+          "subscription",
+          "sponsorship",
+          "platform_event",
+          "event_services",
+          "onboarding",
+          "other"
+        ]
+      }
+    },
+    "connected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "provider",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

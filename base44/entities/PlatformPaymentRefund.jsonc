@@ -1,0 +1,102 @@
+{
+  "name": "PlatformPaymentRefund",
+  "type": "object",
+  "properties": {
+    "platform_payment_record_id": {
+      "type": "string"
+    },
+    "gateway_account_id": {
+      "type": "string",
+      "description": "RallyHub PlatformPaymentGatewayAccount id only."
+    },
+    "purpose_type": {
+      "type": "string"
+    },
+    "purpose_id": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "provider_account_id": {
+      "type": "string"
+    },
+    "provider_transaction_id": {
+      "type": "string"
+    },
+    "provider_refund_id": {
+      "type": "string"
+    },
+    "provider_status": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "processing",
+        "succeeded",
+        "failed"
+      ],
+      "default": "requested"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "requested_by_user_id": {
+      "type": "string"
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "failure_message": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "platform_payment_record_id",
+    "gateway_account_id",
+    "provider",
+    "amount",
+    "currency",
+    "status",
+    "requested_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

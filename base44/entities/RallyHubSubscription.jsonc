@@ -54,7 +54,8 @@
       "type": "string"
     },
     "payment_gateway_account_id": {
-      "type": "string"
+      "type": "string",
+      "description": "RallyHub PlatformPaymentGatewayAccount id for RallyHub commercial billing. Must never reference a tenant/club PaymentGatewayAccount."
     },
     "converted_from_trial_application_id": {
       "type": "string"

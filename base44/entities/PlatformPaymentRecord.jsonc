@@ -1,0 +1,131 @@
+{
+  "name": "PlatformPaymentRecord",
+  "type": "object",
+  "properties": {
+    "gateway_account_id": {
+      "type": "string",
+      "description": "RallyHub PlatformPaymentGatewayAccount id. Never points to a tenant PaymentGatewayAccount."
+    },
+    "purpose_type": {
+      "type": "string",
+      "enum": [
+        "trial",
+        "subscription",
+        "sponsorship",
+        "platform_event",
+        "event_services",
+        "onboarding",
+        "other"
+      ]
+    },
+    "purpose_id": {
+      "type": "string",
+      "description": "Optional linked RallyHub commercial/trial/subscription/event record."
+    },
+    "customer_tenant_id": {
+      "type": "string",
+      "description": "Optional tenant receiving the RallyHub service; this does not make the payment a tenant receipt."
+    },
+    "customer_club_id": {
+      "type": "string",
+      "description": "Optional club receiving the RallyHub service; this does not make the payment a club receipt."
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "customer_email": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "paid",
+        "pending",
+        "failed",
+        "partially_refunded",
+        "refunded",
+        "refund_pending",
+        "refund_failed",
+        "unknown"
+      ]
+    },
+    "provider": {
+      "type": "string"
+    },
+    "provider_account_id": {
+      "type": "string"
+    },
+    "provider_checkout_id": {
+      "type": "string"
+    },
+    "provider_checkout_url": {
+      "type": "string"
+    },
+    "provider_transaction_id": {
+      "type": "string"
+    },
+    "provider_payment_reference": {
+      "type": "string"
+    },
+    "provider_status": {
+      "type": "string"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "amount_refunded": {
+      "type": "number",
+      "default": 0
+    },
+    "last_refund_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reconciliation_status": {
+      "type": "string"
+    },
+    "source_system": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "gateway_account_id",
+    "purpose_type",
+    "amount",
+    "currency",
+    "payment_status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
