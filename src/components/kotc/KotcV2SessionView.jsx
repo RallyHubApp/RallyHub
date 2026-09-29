@@ -211,7 +211,7 @@ export default function KotcV2SessionView({ tournament, players, queryClient, se
     setRankingSaveState('saving');
     rankingSaveTimer.current=setTimeout(async()=>{try{if(isTrialHost){const res=await base44.functions.invoke('trialJourney',{action:'update_kotc_tournament',tournamentId:tournament.id,playerOrder:[...playerOrder]});if(res.data?.error)throw new Error(res.data.error);}else{await base44.entities.Tournament.update(tournament.id,{kotc_player_order:[...playerOrder]});}lastSavedRankingRef.current=signature;setRankingSaveState('saved');queryClient?.invalidateQueries({queryKey:['tournament',tournament.id]});}catch(e){setRankingSaveState('error');toast.error(`Could not save player order: ${errMsg(e)}`);}},350);
     return()=>{if(rankingSaveTimer.current)clearTimeout(rankingSaveTimer.current);};
-  },[playerOrder.join('|'),session?.id,sessionId,tournament?.id]);
+  },[playerOrder.join('|'),session?.id,sessionId,tournament?.id,isTrialHost]);
   useEffect(()=>{if(state?.scorerLinkActive)setScorerSyncEnabled(true);},[state?.scorerLinkActive,session?.id]);const isSuperAdmin=state?.isAdmin===true;const testMode=isSuperAdmin&&!!(session?.exclude_from_aggregates||session?.demo_mode);const participantNames=useMemo(()=>Object.fromEntries(participants.map(p=>[p.id,p.display_name||p.id])),[participants]);
   useEffect(()=>{if(session)setLivePlayMinutes(String(session.play_minutes||8));},[session?.id,session?.play_minutes]);
   const courts=activeCourtCount(players.length,Math.max(1,Number(venueCourts)||1));const requiredBench=Math.max(0,players.length-courts*4);useEffect(()=>setBenchIds(prev=>prev.filter(id=>players.some(p=>p.id===id)).slice(0,requiredBench)),[requiredBench,players.length]);
