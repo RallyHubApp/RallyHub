@@ -31,7 +31,12 @@ const manifest = [];
 for (let i = 0; i < slugs.length; i++) {
   const slug = slugs[i];
   await page.goto(`https://rallyhub.ie/directory/${slug}?contactBaseline=${Date.now()}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await page.waitForTimeout(650);
+  await page.waitForTimeout(500);
+  const hasProtectedLoader = await page.locator('body').innerText().then(t => /Loading contact options/i.test(t)).catch(() => false);
+  if (hasProtectedLoader) {
+    await page.waitForFunction(() => !/Loading contact options/i.test(document.body?.innerText || ''), null, { timeout: 8000 }).catch(() => {});
+  }
+  await page.waitForTimeout(350);
   const result = await page.evaluate(() => {
     const text = (document.body?.innerText || '').toLowerCase();
     const hrefs = [...document.querySelectorAll('a[href]')].map(a => String(a.getAttribute('href') || '').toLowerCase());
