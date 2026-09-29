@@ -186,8 +186,10 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
   const [clubSearch, setClubSearch] = useState({ club_a:'', club_b:'' });
   const [guestDraft, setGuestDraft] = useState({ club_a:{name:'',gender:''}, club_b:{name:'',gender:''} });
   const [rosterAction, setRosterAction] = useState('');
+  const saveInFlightRef = React.useRef(false);
 
   React.useEffect(() => {
+    if (saveInFlightRef.current) return;
     const draft = readDraft();
     if (draft) {
       setLanes(draft.lanes);
