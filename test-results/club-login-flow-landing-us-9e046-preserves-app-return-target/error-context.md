@@ -12,23 +12,59 @@
 # Error details
 
 ```
-Error: browserType.launch: Target page, context or browser has been closed
-Browser logs:
+Error: expect(page).toHaveURL(expected) failed
 
-<launching> /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-5w5wws --remote-debugging-pipe --no-startup-window
-<launched> pid=1215
-[pid=1215][err] /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libglib-2.0.so.0: cannot open shared object file: No such file or directory
+Expected pattern: /\/login\?returnTo=%2Fapp$/
+Received string:  "http://127.0.0.1:5173/login?returnTo=%2F"
+Timeout: 3000ms
+
 Call log:
-  - <launching> /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-5w5wws --remote-debugging-pipe --no-startup-window
-  - <launched> pid=1215
-  - [pid=1215][err] /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libglib-2.0.so.0: cannot open shared object file: No such file or directory
-  - [pid=1215] <gracefully close start>
-  - [pid=1215] <kill>
-  - [pid=1215] <will force kill>
-  - [pid=1215] exception while trying to kill process: Error: kill ESRCH
-  - [pid=1215] <process did exit: exitCode=127, signal=null>
-  - [pid=1215] starting temporary directories cleanup
-  - [pid=1215] finished temporary directories cleanup
-  - [pid=1215] <gracefully close end>
+  - Expect "toHaveURL" with timeout 3000ms
+    8 × locator resolved to <html lang="en" data-theme="light" data-appearance="auto">…</html>
+      - unexpected value "http://127.0.0.1:5173/login?returnTo=%2F"
 
+```
+
+```yaml
+- heading "Sign in to RallyHub" [level=1]
+- paragraph: One account for RallyHub
+- button "Continue with Google"
+- text: or Email
+- textbox "Email":
+  - /placeholder: you@example.com
+- text: Password
+- link "Forgot password?":
+  - /url: /forgot-password
+- textbox "Password":
+  - /placeholder: ••••••••
+- button "Show password"
+- button "Log in"
+- paragraph:
+  - text: New to RallyHub?
+  - link "Create an account":
+    - /url: /register
+- paragraph: © 2026 RallyHub All rights reserved.
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@playwright/test';
+  2  | 
+  3  | test('landing uses the single RallyHub login and preserves /app return target', async ({ page }) => {
+  4  |   await page.goto('/');
+  5  |   const login = page.getByRole('button', { name: 'Log in', exact: true }).first();
+  6  |   await expect(login).toBeVisible();
+  7  |   await login.click();
+> 8  |   await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
+     |                      ^ Error: expect(page).toHaveURL(expected) failed
+  9  |   await expect(page.getByRole('heading', { name: 'Sign in to RallyHub' })).toBeVisible();
+  10 | });
+  11 | 
+  12 | test('opening a protected app URL while signed out preserves the destination through login', async ({ page }) => {
+  13 |   await page.goto('/app/admin?tab=directory');
+  14 |   await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp%2Fadmin%3Ftab%3Ddirectory$/);
+  15 |   await expect(page.getByRole('heading', { name: 'Sign in to RallyHub' })).toBeVisible();
+  16 | });
+  17 | 
 ```
