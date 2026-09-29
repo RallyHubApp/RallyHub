@@ -1,0 +1,2842 @@
+{
+  "count": 96,
+  "failures": 75,
+  "channelCounts": {
+    "call": 14,
+    "whatsapp": 2,
+    "email": 15,
+    "noDirect": 1
+  },
+  "hold": {
+    "slug": "eyva-s-invitational-series",
+    "status": 404,
+    "featureDisabled": true,
+    "hasCard": false,
+    "call": false,
+    "whatsapp": false,
+    "email": false,
+    "rawDestinationLeak": false,
+    "nameHidden": null,
+    "expectedMismatch": false,
+    "error": "Protected contact actions are not enabled for this listing.",
+    "expectedHold": true
+  },
+  "failureRows": [
+    {
+      "slug": "castlerahan-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "clare-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "clonakilty-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "cobh-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "coillte-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "connemara-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "cork-pickleballers",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "cumann-pickleball-a-chorrain",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "dalkey-pickkeball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "deise-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "drogheda-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "dublin-15-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "dublin-7-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "duhallow-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "east-cavan-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "east-cork-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "east-meath-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "edenderry-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "ezpickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "fenside-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "galway-county-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
+      }
+    },
+    {
+      "slug": "galway-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "hook-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "iveragh-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "kilcullen-pickleball-panthers",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "kildare-pickleball-assoc",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "killarney-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "killeshandra-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "kingdom-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "kinsale-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "kinvara-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "lecanvey-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "leeside-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "limerick-city-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "lisburn-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "midleton-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "milltown-emper-moyvore-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "moate-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "mostrim-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "mullahoran-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "multyfarnham-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "naas-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "newbridge-community-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "newbridge-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "newport-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "north-kildare-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "north-star-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "oriel-pickleball-dundalk",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "pickleball-arklow",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "pickleball-iorrais",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "pickleball-ireland",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "pickleball-south-dublin",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "pickleball-wexford",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "picklepub-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "portarlington-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "portmarnock-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "rathdrum-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "rebel-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "roundwood-pickleball-group",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "sandyford-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "shankill-tennis-club",
+      "status": 404,
+      "featureDisabled": false,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Club contact is not configured."
+    },
+    {
+      "slug": "sligo-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "sligo-tennis-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "south-kildare-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "southside-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "sports-lab-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "stepaside-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "terenure-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "tourmakeady-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "vamos-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "wallace-park-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "west-connemara-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "west-cork-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "westport-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "wicklow-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    }
+  ],
+  "results": [
+    {
+      "slug": "abc-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": true,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
+      }
+    },
+    {
+      "slug": "achill-pickleball",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "annascaul-picklers",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": false,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "ards-blair-mayne-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "ashbourne-pickleball",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": false,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": ""
+    },
+    {
+      "slug": "athboy-pickleball",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "balbriggan-pickleball",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "ballinamore-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": ""
+    },
+    {
+      "slug": "ballyfermot-pickleballers",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "bayside-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "belfast-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "belmayne-pickleball",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "better-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": false,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "blackrock-pickleball",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "blessington-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "bluestack-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": true,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": ""
+    },
+    {
+      "slug": "breffni-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "carlingford-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": false,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "carlow-tullow-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": true,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "carrickmacross-pickleball-club",
+      "status": 200,
+      "featureDisabled": false,
+      "hasCard": true,
+      "call": false,
+      "whatsapp": false,
+      "email": true,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": ""
+    },
+    {
+      "slug": "castlerahan-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "clare-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "clonakilty-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "cobh-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "coillte-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "connemara-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "cork-pickleballers",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "cumann-pickleball-a-chorrain",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "dalkey-pickkeball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "deise-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "drogheda-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "dublin-15-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "dublin-7-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "duhallow-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "east-cavan-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "east-cork-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "east-meath-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "edenderry-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "eyva-s-invitational-series",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expectedHold": true
+    },
+    {
+      "slug": "ezpickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "fenside-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "galway-county-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
+      }
+    },
+    {
+      "slug": "galway-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "hook-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "iveragh-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "kilcullen-pickleball-panthers",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "kildare-pickleball-assoc",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "killarney-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "killeshandra-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "kingdom-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "kinsale-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "kinvara-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "lecanvey-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "leeside-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "limerick-city-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "lisburn-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "midleton-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "milltown-emper-moyvore-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "moate-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "mostrim-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "mullahoran-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "multyfarnham-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "naas-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "newbridge-community-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "newbridge-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "newport-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "north-kildare-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "north-star-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "oriel-pickleball-dundalk",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "pickleball-arklow",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "pickleball-iorrais",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "pickleball-ireland",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "pickleball-south-dublin",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "pickleball-wexford",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "picklepub-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "portarlington-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "portmarnock-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "rathdrum-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "rebel-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "roundwood-pickleball-group",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "sandyford-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "shankill-tennis-club",
+      "status": 404,
+      "featureDisabled": false,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Club contact is not configured."
+    },
+    {
+      "slug": "sligo-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "sligo-tennis-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "south-kildare-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "southside-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "sports-lab-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "stepaside-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "terenure-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "tourmakeady-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      }
+    },
+    {
+      "slug": "vamos-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "wallace-park-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "west-connemara-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "west-cork-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": true,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing."
+    },
+    {
+      "slug": "westport-pickleball-club",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    },
+    {
+      "slug": "wicklow-pickleball",
+      "status": 404,
+      "featureDisabled": true,
+      "hasCard": false,
+      "call": false,
+      "whatsapp": false,
+      "email": false,
+      "rawDestinationLeak": false,
+      "nameHidden": null,
+      "expectedMismatch": false,
+      "error": "Protected contact actions are not enabled for this listing.",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      }
+    }
+  ]
+}
