@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { CheckCircle2, ExternalLink, Mail, MessageCircle, Phone, RefreshCw, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Loader2, Mail, MessageCircle, Phone, RefreshCw, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,9 @@ export default function ProtectedContactActionPreview() {
   const [error, setError] = useState('');
   const [resolverResult, setResolverResult] = useState(null);
   const [resolverBusy, setResolverBusy] = useState('');
+  const [actionState, setActionState] = useState({ call:'idle', whatsapp:'idle' });
   const [emailOpen, setEmailOpen] = useState(false);
+  const [emailPreviewState, setEmailPreviewState] = useState('idle');
 
   const loadPreview = async () => {
     setLoading(true);
@@ -46,17 +48,37 @@ export default function ProtectedContactActionPreview() {
   if (user?.role !== 'admin') return <Navigate to="/app" replace />;
 
   const testResolve = async channel => {
+    if (resolverBusy || actionState[channel] === 'success') return;
     setResolverBusy(channel);
+    setActionState(current => ({ ...current, [channel]:'working' }));
     setResolverResult(null);
     try {
       const res = await base44.functions.invoke('directoryContactAction', { action:'admin_test_resolve', listingSlug:LISTING_SLUG, channel });
       if (res.data?.error) throw new Error(res.data.error);
       setResolverResult(res.data || null);
+      setActionState(current => ({ ...current, [channel]:'success' }));
+      window.setTimeout(() => setActionState(current => ({ ...current, [channel]:'idle' })), 5000);
     } catch (err) {
       setResolverResult({ error:err?.message || 'Resolver test failed.' });
+      setActionState(current => ({ ...current, [channel]:'error' }));
+      window.setTimeout(() => setActionState(current => ({ ...current, [channel]:'idle' })), 5000);
     } finally {
       setResolverBusy('');
     }
+  };
+
+  const previewEmailResponse = () => {
+    if (emailPreviewState === 'sending' || emailPreviewState === 'sent') return;
+    setEmailPreviewState('sending');
+    window.setTimeout(() => setEmailPreviewState('sent'), 700);
+  };
+
+  const actionLabel = channel => {
+    const state = actionState[channel];
+    if (state === 'working') return channel === 'call' ? 'Starting call…' : 'Opening WhatsApp…';
+    if (state === 'success') return channel === 'call' ? 'Call opened ✓' : 'WhatsApp opened ✓';
+    if (state === 'error') return 'Please try again';
+    return channel === 'call' ? 'Call club' : 'WhatsApp club';
   };
 
   const card = preview?.card;
