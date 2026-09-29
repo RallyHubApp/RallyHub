@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bell, CalendarPlus, Check, Copy, ExternalLink, Mail, QrCode, Share2, Users, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Bell, CalendarPlus, Check, Copy, ExternalLink, Mail, MessageCircle, QrCode, Share2, Users, Bookmark, BookmarkCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { downloadEventCalendar, eventPath, googleCalendarUrl, outlookCalendarUrl, registrationState } from '@/lib/event-utils';
+import { downloadEventCalendar, eventPath, googleCalendarUrl, isWhatsAppRegistration, outlookCalendarUrl, registrationState } from '@/lib/event-utils';
 
 export default function EventActionBar({ event, compact = false, initiallySaved = false, onSavedChange }) {
   const { user, isAuthenticated } = useAuth();
@@ -23,6 +23,7 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   const [busy,setBusy]=useState('');
   const [clubShared,setClubShared]=useState(false);
   const state=registrationState(event);
+  const whatsAppRegistration=isWhatsAppRegistration(event);
   const invitationOnly=state.key==='invite_only';
   const futureInvitation=state.key==='full'&&state.futureInvitation===true;
   const path=eventPath(event);
@@ -66,13 +67,16 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
     if(state.key==='opening_soon')return saveEvent(true);
     if(!state.actionable)return;
     if(event.event_registration_mode==='contact'&&event.event_contact){const subject=state.key==='invite_only'?`Invitation request: ${event.name}`:`Event enquiry: ${event.name}`;const body=state.key==='invite_only'?`Hi,\n\nI would like to be considered for an invitation to ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`:`Hi,\n\nI have a question about ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`;window.location.href=`mailto:${event.event_contact}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;return}
-    if(event.event_registration_url)window.open(event.event_registration_url,'_blank','noopener,noreferrer');
+    if(event.event_registration_url){
+      if(whatsAppRegistration)toast.success('Opening WhatsApp — send the message to complete your registration');
+      window.open(event.event_registration_url,'_blank','noopener,noreferrer');
+    }
   };
 
   return <>
     <div className={`flex flex-wrap gap-2 ${compact?'':'w-full'}`}>
       {futureInvitation&&<Button onClick={()=>setInterestOpen(true)} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]"><Mail className="mr-2 h-4 w-4"/>Request a future invitation</Button>}
-      {(state.actionable||state.key==='opening_soon')&&<Button onClick={openRegistration} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]" disabled={busy==='remind'}>{state.key==='opening_soon'?<><Bell className="mr-2 h-4 w-4"/>{busy==='remind'?'Saving…':'Remind me'}</>:invitationOnly?<><Mail className="mr-2 h-4 w-4"/>Request invitation</>:<><ExternalLink className="mr-2 h-4 w-4"/>Register / Book</>}</Button>}
+      {(state.actionable||state.key==='opening_soon')&&<Button onClick={openRegistration} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]" disabled={busy==='remind'}>{state.key==='opening_soon'?<><Bell className="mr-2 h-4 w-4"/>{busy==='remind'?'Saving…':'Remind me'}</>:invitationOnly?<><Mail className="mr-2 h-4 w-4"/>Request invitation</>:whatsAppRegistration?<><MessageCircle className="mr-2 h-4 w-4"/>WhatsApp to register</>:<><ExternalLink className="mr-2 h-4 w-4"/>Register / Book</>}</Button>}
       <Button variant="outline" className="min-h-11" onClick={saved?unsave:()=>saveEvent(false)} disabled={busy==='save'}>{saved?<BookmarkCheck className="mr-2 h-4 w-4 text-[#078e48]"/>:<Bookmark className="mr-2 h-4 w-4"/>}{busy==='save'?'Saving…':saved?'Saved':'Save event'}</Button>
       <Button variant="outline" className="min-h-11" onClick={()=>setCalendarOpen(true)}><CalendarPlus className="mr-2 h-4 w-4"/>Add to calendar</Button>
       <Button variant="outline" className="min-h-11" onClick={()=>setShareOpen(true)}><Share2 className="mr-2 h-4 w-4"/>Share</Button>
