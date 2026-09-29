@@ -151,6 +151,7 @@ export default function Sidebar({ isOpen, onToggle }) {
               { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield }
             ] : []),
             ...(canAccessAdmin ? [{ path: '/app/guest-bookings', label: 'Session Bookings', icon: CalendarCheck }] : []),
+            ...(canAccessAdmin ? [{ path: '/app/trials', label: 'Club Trials', icon: ClipboardList }] : []),
             { path: '/app/my-profile', label: 'My Profile', icon: UserCircle },
             ...(canAccessAdmin ? [{ path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
           ].map(item => {
