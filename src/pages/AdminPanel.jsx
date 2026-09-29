@@ -689,7 +689,7 @@ export default function AdminPanel() {
       });
     }
     for (const record of directoryVerification.listingRecords || []) {
-      if (!record?.slug || record.status !== 'active') continue;
+      if (!record?.slug || record.status !== 'active' || record.visibility === 'preview_only') continue;
       let contacts = [];
       try {
         const parsed = record.trusted_contacts_json ? JSON.parse(record.trusted_contacts_json) : [];
@@ -1405,7 +1405,7 @@ Brian`;
   const pendingDirectoryInvitations = directoryInvitations;
   const directoryInvitationsReadyForApproval = directoryInvitations.filter(invite => !!invite.used_by_user_id).length;
   const directoryInvitationsAwaitingRecipient = Math.max(0, directoryInvitations.length - directoryInvitationsReadyForApproval);
-  const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active');
+  const activeDynamicDirectoryListings = directoryVerification.listingRecords.filter(record => record.status === 'active' && record.visibility !== 'preview_only');
   const claimedDirectorySlugs = new Set(activeDirectoryAccesses.map(access => String(access.listing_slug || '')).filter(Boolean));
   const claimedDirectoryListingCount = directoryAdminListings.filter(listing => claimedDirectorySlugs.has(String(listing.slug))).length;
   const unclaimedDirectoryListingCount = Math.max(0, directoryAdminListings.length - claimedDirectoryListingCount);
