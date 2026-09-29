@@ -1,0 +1,930 @@
+{
+  "generatedAt": "2026-09-29T22:04:00.484Z",
+  "count": 84,
+  "listings": [
+    {
+      "slug": "abc-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "achill-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "annascaul-picklers",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "ards-blair-mayne-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "ashbourne-pickleball",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "athboy-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "balbriggan-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "ballyfermot-pickleballers",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "bayside-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "belfast-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "belmayne-pickleball",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "better-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "blackrock-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "blessington-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "bluestack-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": true
+    },
+    {
+      "slug": "breffni-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "carlingford-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "carlow-tullow-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "carrickmacross-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "castlerahan-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "clare-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": true
+    },
+    {
+      "slug": "clonakilty-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "cobh-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": true
+    },
+    {
+      "slug": "connemara-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "cork-pickleballers",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "cumann-pickleball-a-chorrain",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "deise-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "drogheda-pickleball",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "dublin-15-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "dublin-7-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "duhallow-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "east-cavan-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": true
+    },
+    {
+      "slug": "east-cork-pickleball",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "east-meath-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "edenderry-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "ezpickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "fenside-pickleball",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "galway-county-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
+      },
+      "hideContactName": true,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "galway-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "hook-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "iveragh-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "kilcullen-pickleball-panthers",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "kildare-pickleball-assoc",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "killarney-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "killeshandra-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "kingdom-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "kinsale-pickleball",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "kinvara-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": true,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "lecanvey-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "leeside-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "limerick-city-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": true,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "lisburn-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "midleton-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "milltown-emper-moyvore-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "moate-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "mostrim-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "mullahoran-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "multyfarnham-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": true,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "naas-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "newport-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "north-star-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "pickleball-arklow",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "pickleball-iorrais",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "pickleball-south-dublin",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "pickleball-wexford",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "picklepub-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "portarlington-pickleball",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "rathdrum-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "rebel-pickleball",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "roundwood-pickleball-group",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "sandyford-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "sligo-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "sligo-tennis-pickleball-club",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "south-kildare-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "southside-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": true,
+      "legacyHold": false,
+      "baselineProtected": true
+    },
+    {
+      "slug": "sports-lab-pickleball",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "stepaside-pickleball",
+      "expected": {
+        "call": false,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": true,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "terenure-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "tourmakeady-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": false
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "wallace-park-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "west-connemara-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "west-cork-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": true,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "westport-pickleball-club",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    },
+    {
+      "slug": "wicklow-pickleball",
+      "expected": {
+        "call": true,
+        "whatsapp": false,
+        "email": true
+      },
+      "hideContactName": false,
+      "legacyHold": false,
+      "baselineProtected": false
+    }
+  ]
+}
