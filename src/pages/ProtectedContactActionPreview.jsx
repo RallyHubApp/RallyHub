@@ -118,16 +118,21 @@ export default function ProtectedContactActionPreview() {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <button type="button" disabled={!card.actions.call || !!resolverBusy} onClick={() => testResolve('call')} className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-4 text-primary-foreground transition-opacity disabled:opacity-40">
-                    <Phone className="h-6 w-6" /><span className="font-bold">Call club</span>
+                  <button type="button" disabled={!card.actions.call || !!resolverBusy || actionState.call === 'success'} onClick={() => testResolve('call')} aria-live="polite" className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-4 text-primary-foreground transition-opacity disabled:opacity-70">
+                    {actionState.call === 'working' ? <Loader2 className="h-6 w-6 animate-spin" /> : actionState.call === 'success' ? <CheckCircle2 className="h-6 w-6" /> : <Phone className="h-6 w-6" />}
+                    <span className="font-bold">{actionLabel('call')}</span>
+                    {actionState.call === 'working' && <span className="text-xs opacity-80">Please don’t tap again</span>}
                   </button>
-                  <button type="button" disabled={!card.actions.whatsapp || !!resolverBusy} onClick={() => testResolve('whatsapp')} className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-background px-4 py-4 transition-colors hover:border-primary/50 hover:bg-primary/5 disabled:opacity-40">
-                    <MessageCircle className="h-6 w-6 text-primary" /><span className="font-bold">WhatsApp club</span>
+                  <button type="button" disabled={!card.actions.whatsapp || !!resolverBusy || actionState.whatsapp === 'success'} onClick={() => testResolve('whatsapp')} aria-live="polite" className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-background px-4 py-4 transition-colors hover:border-primary/50 hover:bg-primary/5 disabled:opacity-70">
+                    {actionState.whatsapp === 'working' ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : actionState.whatsapp === 'success' ? <CheckCircle2 className="h-6 w-6 text-emerald-500" /> : <MessageCircle className="h-6 w-6 text-primary" />}
+                    <span className="font-bold">{actionLabel('whatsapp')}</span>
+                    {actionState.whatsapp === 'working' && <span className="text-xs text-muted-foreground">Please don’t tap again</span>}
                   </button>
-                  <button type="button" disabled={!card.actions.email} onClick={() => setEmailOpen(true)} className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-background px-4 py-4 transition-colors hover:border-primary/50 hover:bg-primary/5 disabled:opacity-40">
+                  <button type="button" disabled={!card.actions.email} onClick={() => { setEmailPreviewState('idle'); setEmailOpen(true); }} className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-background px-4 py-4 transition-colors hover:border-primary/50 hover:bg-primary/5 disabled:opacity-40">
                     <Mail className="h-6 w-6 text-primary" /><span className="font-bold">Email club</span>
                   </button>
                 </div>
+                <p className="mt-3 text-xs text-muted-foreground">Live behaviour: a tap changes state immediately, locks the action while it is being processed, then confirms that the phone/WhatsApp hand-off has opened. Email confirms only after RallyHub has successfully sent it.</p>
 
                 <div className="mt-5 rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
                   <ShieldCheck className="mr-2 inline h-4 w-4 text-primary" />{card.privacyCopy}
