@@ -1043,8 +1043,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     return res.data;
   };
 
+  const rostersSaved = !!event?.club_a_roster_saved_at && !!event?.club_b_roster_saved_at;
   const calculateFormat = () => {
-    if (poolPlayers.length || !aRotationPlayers.length || !bRotationPlayers.length || aRotationPlayers.length !== bRotationPlayers.length) return null;
+    if (!rostersSaved || poolPlayers.length || !aRotationPlayers.length || !bRotationPlayers.length || aRotationPlayers.length !== bRotationPlayers.length) return null;
     try {
       return calculateClubChallengeFormat({ clubAPlayerCount: aRotationPlayers.length, clubBPlayerCount: bRotationPlayers.length, courts: number(setup.courts), availableMinutes: number(setup.availableMinutes), playMinutes: number(setup.playMinutes), changeoverMinutes: number(setup.changeoverMinutes), includeBreak: setup.includeBreak, breakMinutes: number(setup.breakMinutes), breakAfterRound: number(setup.breakAfterRound) });
     } catch { return null; }
@@ -1068,6 +1069,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const generateDraw = async () => {
     if (!event || !canManageEvent || sportingActionRef.current) return;
+    if (!rostersSaved) { toast.error('Save both teams in their current form before generating the draw. You can keep editing and resaving until the rosters are final.'); return; }
     if (aRotationPlayers.length !== bRotationPlayers.length || aRotationPlayers.length < 4) { toast.error('For this draw, both clubs must have equal Rotation squads of at least 4. Reserve numbers may differ.'); return; }
     sportingActionRef.current = true;
     flushSync(() => { setSaving(true); setHostAction('Generating draw and fairness report… one command sent'); });
