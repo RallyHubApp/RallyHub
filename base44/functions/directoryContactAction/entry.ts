@@ -4,6 +4,7 @@ import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 const FEATURE_KEY = 'protected-contact-actions-v1';
 const resolveBuckets = new Map<string, { count:number; resetAt:number }>();
 const emailBuckets = new Map<string, { count:number; resetAt:number }>();
+const idempotencyCache = new Map<string, { expiresAt:number; payload:any; status:number }>();
 
 const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
 const validEmail = (value:string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -64,6 +65,34 @@ function consumeBucket(store:Map<string,{count:number;resetAt:number}>, key:stri
   if (current.count >= limit) return false;
   current.count += 1;
   return true;
+}
+
+function idempotencyKey(body:any, listingSlug:string, channel:string) {
+  const requestId = clean(body?.requestId, 120).replace(/[^a-zA-Z0-9_.:-]/g, '');
+  return requestId ? `${listingSlug}:${channel}:${requestId}` : '';
+}
+
+function getIdempotent(key:string) {
+  if (!key) return null;
+  const row = idempotencyCache.get(key);
+  if (!row) return null;
+  if (Date.now() >= row.expiresAt) {
+    idempotencyCache.delete(key);
+    return null;
+  }
+  return row;
+}
+
+function setIdempotent(key:string, payload:any, status=200, ttlMs=2*60*1000) {
+  if (!key) return;
+  idempotencyCache.set(key, { expiresAt:Date.now()+ttlMs, payload, status });
+  if (idempotencyCache.size > 1000) {
+    const now = Date.now();
+    for (const [cacheKey,row] of idempotencyCache) {
+      if (now >= row.expiresAt) idempotencyCache.delete(cacheKey);
+      if (idempotencyCache.size <= 800) break;
+    }
+  }
 }
 
 async function featureEnabled(base44:any) {
@@ -179,16 +208,24 @@ Deno.serve(async (req) => {
     if (action === 'resolve') {
       const channel = clean(body.channel, 40).toLowerCase();
       if (!['call','whatsapp'].includes(channel)) return responseJson({ error:'Unsupported contact action.' }, 400);
+      const idemKey = idempotencyKey(body, listingSlug, channel);
+      const prior = getIdempotent(idemKey);
+      if (prior) return responseJson({ ...prior.payload, duplicate:true }, prior.status);
       const allowed = channel === 'call' ? endpoint.allow_call === true : endpoint.allow_whatsapp === true;
       const target = channel === 'call' ? telTarget(endpoint.phone) : whatsappTarget(endpoint);
       if (!allowed || !target) return responseJson({ error:'That contact action is not available.' }, 404);
-      const key = `${clientKey(req, body)}:${listingSlug}:${channel}`;
-      if (!consumeBucket(resolveBuckets, key, 12, 5 * 60 * 1000)) return responseJson({ error:'Too many contact requests. Please try again shortly.' }, 429);
-      return responseJson({ success:true, channel, actionUrl:target, singleAction:true });
+      const rateKey = `${clientKey(req, body)}:${listingSlug}:${channel}`;
+      if (!consumeBucket(resolveBuckets, rateKey, 6, 5 * 60 * 1000)) return responseJson({ error:'Too many contact requests. Please try again shortly.' }, 429);
+      const payload = { success:true, channel, actionUrl:target, singleAction:true, acknowledged:true };
+      setIdempotent(idemKey, payload, 200, 60*1000);
+      return responseJson(payload);
     }
 
     if (action === 'send_email') {
       if (clean(body.website, 200)) return responseJson({ success:true });
+      const idemKey = idempotencyKey(body, listingSlug, 'email');
+      const prior = getIdempotent(idemKey);
+      if (prior) return responseJson({ ...prior.payload, duplicate:true }, prior.status);
       if (endpoint.allow_email !== true || !validEmail(clean(endpoint.email, 240).toLowerCase())) return responseJson({ error:'Email contact is not available for this club.' }, 404);
       const senderName = clean(body.name, 160);
       const senderEmail = clean(body.email, 240).toLowerCase();
@@ -237,7 +274,9 @@ Deno.serve(async (req) => {
           delivery_provider:delivery?.provider || '',
           sent_at:now,
         });
-        return responseJson({ success:true, verifiedEnquiry:true });
+        const payload = { success:true, verifiedEnquiry:true, acknowledged:true, message:'Email sent through RallyHub.' };
+        setIdempotent(idemKey, payload, 200, 10*60*1000);
+        return responseJson(payload);
       } catch (error) {
         await base44.asServiceRole.entities.DirectoryContactEnquiry.create({
           listing_slug:listingSlug,
@@ -252,7 +291,9 @@ Deno.serve(async (req) => {
           sent_at:now,
         }).catch(() => {});
         console.error('directory contact email failed', error);
-        return responseJson({ error:'Could not send the enquiry right now.' }, 500);
+        const payload = { error:'Could not send the enquiry right now.' };
+        setIdempotent(idemKey, payload, 500, 15*1000);
+        return responseJson(payload, 500);
       }
     }
 
