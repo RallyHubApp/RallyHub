@@ -99,6 +99,40 @@ function setIdempotent(key:string, payload:any, status=200, ttlMs=2*60*1000) {
   }
 }
 
+async function durableActionFor(base44:any, requestKey:string) {
+  if (!requestKey) return null;
+  const rows = await base44.asServiceRole.entities.DirectoryContactAction.filter({ request_key:requestKey }, '-created_at', 5).catch(() => []);
+  const row = rows?.[0] || null;
+  if (!row) return null;
+  const expiresAt = row.expires_at ? Date.parse(row.expires_at) : 0;
+  return expiresAt && Date.now() >= expiresAt ? null : row;
+}
+
+async function createDurableAction(base44:any, args:{
+  requestKey:string; requestId:string; listingSlug:string; listingName:string; channel:string; actionType:'initiated'|'submitted'; status:'processing'|'acknowledged'|'sent'|'failed'; ttlMinutes:number;
+}) {
+  const now = new Date().toISOString();
+  return await base44.asServiceRole.entities.DirectoryContactAction.create({
+    request_key:args.requestKey,
+    request_id:args.requestId,
+    listing_slug:args.listingSlug,
+    listing_name:args.listingName,
+    channel:args.channel,
+    action_type:args.actionType,
+    status:args.status,
+    source_surface:'protected_contact',
+    created_at:now,
+    updated_at:now,
+    expires_at:new Date(Date.now() + args.ttlMinutes * 60 * 1000).toISOString(),
+  });
+}
+
+async function setDurableActionStatus(base44:any, row:any, status:'processing'|'acknowledged'|'sent'|'failed') {
+  if (!row?.id) return row;
+  await base44.asServiceRole.entities.DirectoryContactAction.update(row.id, { status, updated_at:new Date().toISOString() });
+  return { ...row, status };
+}
+
 async function featureEnabled(base44:any) {
   const rows = await base44.asServiceRole.entities.DirectorySettings.filter({ key:FEATURE_KEY }, '-updated_date', 5).catch(() => []);
   return !!rows?.find((row:any) => row.active === true);
@@ -254,14 +288,29 @@ Deno.serve(async (req) => {
       const requestId = requestIdFrom(body);
       if (!requestId) return responseJson({ error:'requestId required for protected contact actions.' }, 400);
       const idemKey = idempotencyKey(body, listingSlug, channel);
-      const prior = getIdempotent(idemKey);
-      if (prior) return responseJson({ ...prior.payload, duplicate:true }, prior.status);
       const allowed = channel === 'call' ? endpoint.allow_call === true : endpoint.allow_whatsapp === true;
       const target = channel === 'call' ? telTarget(endpoint.phone) : whatsappTarget(endpoint);
       if (!allowed || !target) return responseJson({ error:'That contact action is not available.' }, 404);
+      const payload = { success:true, channel, actionUrl:target, singleAction:true, acknowledged:true };
+      const prior = getIdempotent(idemKey);
+      if (prior) return responseJson({ ...prior.payload, duplicate:true }, prior.status);
+      const durablePrior = await durableActionFor(base44, idemKey);
+      if (durablePrior) {
+        setIdempotent(idemKey, payload, 200, 60*1000);
+        return responseJson({ ...payload, duplicate:true }, 200);
+      }
       const rateKey = `${clientKey(req, body)}:${listingSlug}:${channel}`;
       if (!consumeBucket(resolveBuckets, rateKey, 6, 5 * 60 * 1000)) return responseJson({ error:'Too many contact requests. Please try again shortly.' }, 429);
-      const payload = { success:true, channel, actionUrl:target, singleAction:true, acknowledged:true };
+      await createDurableAction(base44, {
+        requestKey:idemKey,
+        requestId,
+        listingSlug,
+        listingName:clean(endpoint.listing_name_snapshot, 240) || 'Club',
+        channel,
+        actionType:'initiated',
+        status:'acknowledged',
+        ttlMinutes:10,
+      });
       setIdempotent(idemKey, payload, 200, 60*1000);
       return responseJson(payload);
     }
@@ -280,10 +329,28 @@ Deno.serve(async (req) => {
       const sourcePath = clean(body.sourcePath || `/directory/${listingSlug}`, 500);
       if (!validEmail(senderEmail)) return responseJson({ error:'Enter a valid email address.' }, 400);
       if (message.length < 5) return responseJson({ error:'Please enter a short message.' }, 400);
-      const key = `${clientKey(req, body)}:${listingSlug}:email`;
-      if (!consumeBucket(emailBuckets, key, 3, 30 * 60 * 1000)) return responseJson({ error:'Too many email enquiries. Please try again later.' }, 429);
 
       const listingName = clean(endpoint.listing_name_snapshot, 240) || 'Club';
+      let actionRow = await durableActionFor(base44, idemKey);
+      if (actionRow?.status === 'sent' || actionRow?.status === 'acknowledged') {
+        const payload = { success:true, verifiedEnquiry:true, acknowledged:true, message:'Email sent through RallyHub.', duplicate:true };
+        setIdempotent(idemKey, payload, 200, 10*60*1000);
+        return responseJson(payload);
+      }
+      if (actionRow?.status === 'processing') return responseJson({ error:'This enquiry is already being processed. Please wait.' }, 409);
+      const key = `${clientKey(req, body)}:${listingSlug}:email`;
+      if (!consumeBucket(emailBuckets, key, 3, 30 * 60 * 1000)) return responseJson({ error:'Too many email enquiries. Please try again later.' }, 429);
+      if (actionRow?.status === 'failed') actionRow = await setDurableActionStatus(base44, actionRow, 'processing');
+      else actionRow = await createDurableAction(base44, {
+        requestKey:idemKey,
+        requestId,
+        listingSlug,
+        listingName,
+        channel:'email',
+        actionType:'submitted',
+        status:'processing',
+        ttlMinutes:30,
+      });
       const displayName = senderName || 'A RallyHub visitor';
       const subject = `RallyHub enquiry – ${listingName}`;
       const textBody = [
@@ -321,6 +388,7 @@ Deno.serve(async (req) => {
           delivery_provider:delivery?.provider || '',
           sent_at:now,
         });
+        await setDurableActionStatus(base44, actionRow, 'sent');
         const payload = { success:true, verifiedEnquiry:true, acknowledged:true, message:'Email sent through RallyHub.' };
         setIdempotent(idemKey, payload, 200, 10*60*1000);
         return responseJson(payload);
@@ -337,6 +405,7 @@ Deno.serve(async (req) => {
           delivery_provider:'',
           sent_at:now,
         }).catch(() => {});
+        await setDurableActionStatus(base44, actionRow, 'failed').catch(() => {});
         console.error('directory contact email failed', error);
         const payload = { error:'Could not send the enquiry right now.' };
         setIdempotent(idemKey, payload, 500, 15*1000);

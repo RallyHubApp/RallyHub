@@ -1,0 +1,96 @@
+{
+  "name": "DirectoryContactAction",
+  "type": "object",
+  "properties": {
+    "request_key": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "request_id": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "listing_slug": {
+      "type": "string",
+      "maxLength": 180
+    },
+    "listing_name": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "call",
+        "whatsapp",
+        "email"
+      ]
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "initiated",
+        "submitted"
+      ],
+      "default": "initiated"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "processing",
+        "acknowledged",
+        "sent",
+        "failed"
+      ],
+      "default": "acknowledged"
+    },
+    "source_surface": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "request_key",
+    "request_id",
+    "listing_slug",
+    "channel",
+    "action_type",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
