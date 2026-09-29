@@ -14,7 +14,7 @@ export default function useKotcRole() {
   const { user } = useAuth();
   const isOrdinaryUser = !!user?.id && user?.role !== 'admin';
   const { data: trialState = null } = useQuery({
-    queryKey: ['kotc-role-trial-state', user?.id],
+    queryKey: ['my-rallyhub-trial-state', user?.id],
     queryFn: async () => {
       const res = await base44.functions.invoke('trialJourney', { action: 'my_state' });
       return res.data?.error ? null : (res.data || null);
