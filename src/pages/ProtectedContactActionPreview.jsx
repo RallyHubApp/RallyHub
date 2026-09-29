@@ -188,11 +188,24 @@ export default function ProtectedContactActionPreview() {
             <DialogDescription>The live version will send this through RallyHub without revealing the organiser email address.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <label className="block text-sm font-semibold">Your name<input className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 font-normal" placeholder="Your name" /></label>
-            <label className="block text-sm font-semibold">Your email<input type="email" className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 font-normal" placeholder="you@example.com" /></label>
-            <label className="block text-sm font-semibold">Message<textarea rows={5} className="mt-1 w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 font-normal" placeholder="How can the club help?" /></label>
-            <Button className="w-full" disabled>Send through RallyHub · disabled in preview</Button>
-            <p className="text-center text-xs text-muted-foreground">No email will be sent from this preview screen.</p>
+            {emailPreviewState !== 'sent' ? (
+              <>
+                <label className="block text-sm font-semibold">Your name<input className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 font-normal" placeholder="Your name" /></label>
+                <label className="block text-sm font-semibold">Your email<input type="email" className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 font-normal" placeholder="you@example.com" /></label>
+                <label className="block text-sm font-semibold">Message<textarea rows={5} className="mt-1 w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 font-normal" placeholder="How can the club help?" /></label>
+                <Button className="w-full" onClick={previewEmailResponse} disabled={emailPreviewState === 'sending'}>
+                  {emailPreviewState === 'sending' ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending…</> : 'Preview send response'}
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">Preview only: no email is actually sent. In the live version the button stays locked until RallyHub confirms successful delivery.</p>
+              </>
+            ) : (
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-center" aria-live="polite">
+                <CheckCircle2 className="mx-auto h-9 w-9 text-emerald-500" />
+                <p className="mt-3 text-lg font-black">Email sent ✓</p>
+                <p className="mt-1 text-sm text-muted-foreground">Your enquiry has been sent through RallyHub. You do not need to press anything again.</p>
+                <Button variant="outline" className="mt-4" onClick={() => setEmailOpen(false)}>Done</Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
