@@ -504,6 +504,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [publicLinks, setPublicLinks] = useState(null);
   const [registrationLinks, setRegistrationLinks] = useState({ club_a:'', club_b:'' });
   const [registrationLinkBusy, setRegistrationLinkBusy] = useState('');
+  const [teamManagerLinks, setTeamManagerLinks] = useState({ club_a:'', club_b:'' });
+  const [teamManagerLinkBusy, setTeamManagerLinkBusy] = useState('');
   const [spondImportSide, setSpondImportSide] = useState('');
   const [teamsDirty, setTeamsDirty] = useState(false);
   const [printPackOpen, setPrintPackOpen] = useState(false);
