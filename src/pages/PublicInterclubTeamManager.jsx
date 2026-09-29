@@ -165,7 +165,7 @@ export default function PublicInterclubTeamManager() {
               {players.map((p, index) => <Draggable key={p.id} draggableId={String(p.id)} index={index}>
                 {(dragProvided, dragSnapshot) => <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={`glass rounded-xl p-3 sm:p-4 ${dragSnapshot.isDragging ? 'shadow-xl ring-2 ring-primary/30' : ''}`}>
                   <div className="grid grid-cols-[auto_auto_1fr] sm:grid-cols-[auto_auto_minmax(0,1fr)_140px_130px] items-center gap-2 sm:gap-3">
-                    <button type="button" {...dragProvided.dragHandleProps} aria-label={`Move ${p.displayName}`} className="h-10 w-9 rounded-lg inline-flex items-center justify-center text-muted-foreground hover:bg-secondary touch-none"><GripVertical className="h-5 w-5"/></button>
+                    <div data-testid={`team-manager-drag-${p.id}`} {...dragProvided.dragHandleProps} aria-label={`Move ${p.displayName}`} className="h-10 w-9 rounded-lg inline-flex items-center justify-center text-muted-foreground hover:bg-secondary touch-none"><GripVertical className="h-5 w-5"/></div>
                     <div className="h-9 w-9 rounded-full bg-primary text-primary-foreground inline-flex items-center justify-center font-black text-sm">{index + 1}</div>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold">{p.displayName}</p>
