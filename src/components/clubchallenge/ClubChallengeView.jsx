@@ -155,7 +155,7 @@ function HallPoweredByRallyHub() {
   return <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground/70"><span>Powered by</span><img src={RALLYHUB_LOGO_URL} alt="RallyHub" className="h-4 w-auto object-contain opacity-80" /></div>;
 }
 
-function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy, clubPlayerCandidatesBySide = { club_a:[], club_b:[] }, clubPlayerCandidatesLoading = false, onImportSpond, onImportCsv, onAddClubPlayer, onAddGuest, onRemovePlayer, onSave, onSetRosterRole, onSetPlayingCategory, onDirtyChange }) {
+function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy, needsRosterSave=false, clubPlayerCandidatesBySide = { club_a:[], club_b:[] }, clubPlayerCandidatesLoading = false, onImportSpond, onImportCsv, onAddClubPlayer, onAddGuest, onRemovePlayer, onSave, onSetRosterRole, onSetPlayingCategory, onDirtyChange }) {
   const active = participants.filter(p => !['replaced','withdrawn','injured'].includes(p.status));
   const signature = active.map(p => `${p.id}:${p.side}:${p.event_rank}:${p.roster_role || 'rotation'}:${p.playing_category || ''}`).sort().join('|');
   const makeLanes = () => ({
@@ -386,7 +386,7 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
         {lanes.pool.length ? `${lanes.pool.length} player${lanes.pool.length===1?'':'s'} still need a team. You can still save this working configuration.` : balanced ? `Current squads are balanced: ${rotationA} rotation players per club${reserveA || reserveB ? ` · reserves ${reserveA}–${reserveB}` : ''}.` : `Current squads are ${rotationA}–${rotationB}. You can save now; only the draw remains locked until the Rotation squads are equal.`}
         {dirty && <span className="ml-1 font-semibold text-amber-600">Unsaved changes.</span>}
       </div>
-      <Button data-testid="cc-save-team-builder" onClick={save} disabled={locked || busy || !dirty || !nameA.trim() || !nameB.trim()} className="w-full sm:w-auto">{busy ? 'Saving…' : 'Save Current Rosters & Rankings'}</Button>
+      <Button data-testid="cc-save-team-builder" onClick={save} disabled={locked || busy || (!dirty && !needsRosterSave) || !nameA.trim() || !nameB.trim()} className="w-full sm:w-auto">{busy ? 'Saving…' : 'Save Current Rosters & Rankings'}</Button>
     </div>
     {status && <div data-testid="cc-team-builder-status" className={cn('rounded-lg border p-3 text-xs font-semibold', status.state==='success'?'border-primary/30 bg-primary/10 text-primary':status.state==='error'?'border-destructive/30 bg-destructive/10 text-destructive':'border-amber-400/30 bg-amber-500/10 text-amber-700')}>{status.text}</div>}
   </div>;
@@ -2687,6 +2687,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               clubBName={setup.clubBName}
               locked={locked}
               busy={saving || !!hostAction}
+              needsRosterSave={!event.club_a_roster_saved_at || !event.club_b_roster_saved_at}
               clubPlayerCandidatesBySide={clubPlayerCandidatesBySide}
               clubPlayerCandidatesLoading={clubPlayerCandidatesLoading}
               onImportSpond={setSpondImportSide}
