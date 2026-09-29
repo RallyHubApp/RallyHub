@@ -64,7 +64,7 @@ export function activeGrantSources(rows,targetKey,caps,{clubId=null,eventId=null
 
 export function expiredGraceSources(rows,targetKey,caps,{clubId=null,eventId=null,now=Date.now()}={}){
   return (rows||[]).filter(row=>
-    !['suspended','revoked'].includes(String(row.status||''))&&
+    ['active','expired','grace'].includes(String(row.status||''))&&
     isExpiredByTime(row,now)&&
     entitlementMatchesContext(row,{clubId,eventId})&&
     capabilityIncludes(row.capability_key,targetKey,caps)
