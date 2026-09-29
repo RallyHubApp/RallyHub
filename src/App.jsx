@@ -73,6 +73,10 @@ import MemberLearn from '@/pages/MemberLearn';
 import MemberShop from '@/pages/MemberShop';
 import MemberMessages from '@/pages/MemberMessages';
 import MemberForecast from '@/pages/MemberForecast';
+import TrialApply from '@/pages/TrialApply';
+import TrialActivate from '@/pages/TrialActivate';
+import TrialPortal from '@/pages/TrialPortal';
+import TrialAdmin from '@/pages/TrialAdmin';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -106,9 +110,19 @@ const AppAccessGate = () => {
     enabled: isNonAdmin,
     staleTime: 15000,
   });
+  const { data: trialState = null, isLoading: isLoadingTrialState } = useQuery({
+    queryKey: ['my-rallyhub-trial-state', user?.id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('trialJourney', { action: 'my_state' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data || null;
+    },
+    enabled: isNonAdmin,
+    staleTime: 15000,
+  });
   if (
     isLoadingPublicSettings ||
-    (isNonAdmin && (isLoadingHostGrants || isLoadingClubAccess || isLoadingDirectoryAccess))
+    (isNonAdmin && (isLoadingHostGrants || isLoadingClubAccess || isLoadingDirectoryAccess || isLoadingTrialState))
   ) {
     return <LoadingScreen />;
   }
@@ -123,10 +137,15 @@ const AppAccessGate = () => {
       (!grant.starts_at || Date.parse(grant.starts_at) <= now) &&
       (!grant.ends_at || Date.parse(grant.ends_at) >= now)
     );
-    if (activeHost?.session_id) return <Navigate to={`/kotc-host/${activeHost.session_id}`} replace />;
+    if (activeHost?.session_id && (clubAccesses || []).length === 0) return <Navigate to={`/kotc-host/${activeHost.session_id}`} replace />;
   }
 
   if (user?.role === 'admin') return <AuthenticatedRoutes />;
+
+  // Entitlement-controlled trial tenants get a deliberately narrow RallyHub shell.
+  // This is evaluated before the normal Club app so an expired trial gets a clear
+  // read-only expiry screen instead of falling through to a generic approval page.
+  if (trialState?.hasTrial) return <TrialRoutes initialState={trialState} />;
 
   const now = Date.now();
   const activeClubAccess = (clubAccesses || []).find(access =>
@@ -149,6 +168,17 @@ const AppAccessGate = () => {
   return <PendingApprovalScreen status={user?.approval_status || 'pending'} />;
 };
 
+
+const TrialRoutes = ({ initialState }) => {
+  const expired = !!initialState?.journey?.expired || initialState?.journey?.status === 'expired';
+  return (
+    <Routes>
+      <Route index element={<TrialPortal initialState={initialState} />} />
+      {!expired && <Route path="tournaments/:id" element={<TournamentDetail />} />}
+      <Route path="*" element={<Navigate to="/app" replace />} />
+    </Routes>
+  );
+};
 
 const AuthenticatedRoutes = () => (
   <Routes>
@@ -174,6 +204,7 @@ const AuthenticatedRoutes = () => (
       <Route path="guest-bookings" element={<GuestBookings />} />
       <Route path="membership" element={<MembershipConsole />} />
       <Route path="waiting-list" element={<WaitingList />} />
+      <Route path="trials" element={<TrialAdmin />} />
     </Route>
     <Route path="*" element={<Navigate to="/app" replace />} />
   </Routes>
@@ -213,6 +244,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/trial/apply" element={<TrialApply />} />
 
             {/* Public landing — no auth check, always accessible */}
             <Route path="/" element={<Landing />} />
@@ -259,6 +291,7 @@ function App() {
 
             {/* Protected app routes */}
             <Route element={<ProtectedRoute fallback={<LoadingScreen />} />}>
+              <Route path="/trial/activate" element={<TrialActivate />} />
               <Route path="/kotc-host/:sessionId" element={<KotcHostSession />} />
               <Route path="/test-club-entry" element={<TestClubEntry />} />
               <Route path="/app/*" element={<AppAccessGate />} />
