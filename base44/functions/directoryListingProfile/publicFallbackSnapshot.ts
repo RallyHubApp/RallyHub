@@ -497,10 +497,7 @@ export const publicDirectoryFallbackSnapshot = {
       "logoUrl": "https://clarepickleball.ie/wp-content/uploads/2025/06/491439977_17843980809473841_8409446969161026129_n-removebg-preview.png",
       "contact": {
         "name": "Brian Moore",
-        "phone": "087 810 0333",
-        "phoneHref": "tel:+353878100333",
-        "email": "info@clarepickleball.ie",
-        "whatsapp": "https://wa.me/353878100333"
+        "protected": true
       },
       "venues": [
         {
