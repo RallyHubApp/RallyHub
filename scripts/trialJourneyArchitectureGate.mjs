@@ -88,7 +88,10 @@ assert(!portal.includes('Subscribe now')&&!admin.includes('Convert to paid'),'co
 includes(app,'if (trialState?.hasTrial) return <TrialRoutes initialState={trialState} />;','trial users must enter the narrow trial shell before ordinary Club routes');
 includes(app,'<Route index element={<TrialPortal initialState={initialState} />} />','trial shell must land on onboarding');
 includes(app,'<Route path="*" element={<Navigate to="/app" replace />} />','trial shell must reject unrelated /app routes');
-includes(app,"!expired && <Route path=\"tournaments/:id\"",'expired trial must lose authenticated tournament management route');
+includes(app,"(!expired || liveEventGraceActive) && <Route path=\"tournaments/:id\"",'trial route must close at expiry except for a genuinely live event grace window');
+includes(service,'liveEventGraceActive','trial state must expose whether a live KOTC grace grant is genuinely active');
+includes(service,"app&&app.status==='activated'",'natural expiry must reconcile the application status as well as journey state');
+includes(portal,'Finish live KOTC event','expiry UI must allow only an already-live KOTC to finish during grace');
 includes(app,'<Route path="/trial/apply" element={<TrialApply />} />','public application route must exist');
 includes(app,'<Route path="/trial/activate" element={<TrialActivate />} />','agreement activation route must require the authenticated route tree');
 includes(app,'<Route path="trials" element={<TrialAdmin />} />','Super Admin must have controlled trial administration');
