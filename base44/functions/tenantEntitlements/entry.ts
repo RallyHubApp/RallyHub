@@ -52,7 +52,7 @@ async function resolveForTenant(base44:any,user:any,tenantId:string,clubId:strin
     return {tenant_id:tenantId,club_id:clubId,enforcement_mode:mode,all_allowed:true,allowed_capability_keys:all,entitlements:[],policy};
   }
   const rows=await base44.asServiceRole.entities.TenantEntitlement.filter({tenant_id:tenantId});
-  const applicable=(rows||[]).filter((r:any)=>!r.club_id||!clubId||r.club_id===clubId);
+  const applicable=(rows||[]).filter((r:any)=>!r.club_id||r.club_id===clubId);
   const active=applicable.filter((r:any)=>isWindowActive(r));
   const explicit=active.map((r:any)=>r.capability_key);
   const expanded=expandDependencies(explicit,caps);
@@ -74,14 +74,22 @@ Deno.serve(async(req)=>{try{
   if(action==='resolve'||action==='check'){
     if(!tenantId)return Response.json({error:'No active tenant context'},{status:400});
     if(user.role!=='admin'&&tenantId!==user.active_tenant_id)return Response.json({error:'Tenant context mismatch'},{status:403});
+    if(user.role!=='admin'&&clubId&&clubId!==user.active_club_id)return Response.json({error:'Club context mismatch'},{status:403});
     const resolved=await resolveForTenant(base44,user,tenantId,clubId);
     if(action==='resolve')return Response.json({success:true,...resolved});
     const capabilityKey=clean(body.capabilityKey,180);
     if(!capabilityKey)return Response.json({error:'capabilityKey required'},{status:400});
     let allowed=resolved.all_allowed||resolved.allowed_capability_keys.includes(capabilityKey);
+    const eventId=clean(body.eventId,180)||null;
+    if(allowed&&!resolved.all_allowed){
+      const directRows=(resolved.entitlements||[]).filter((r:any)=>r.capability_key===capabilityKey&&isWindowActive(r));
+      if(directRows.length>0){
+        allowed=directRows.some((r:any)=>r.entitlement_type!=='one_event'||(eventId&&String(r.one_event_id||'')===eventId));
+      }
+    }
     let live_event_grace=false;
     if(!allowed&&body.liveEventAlreadyStarted===true&&resolved.policy?.allow_live_event_grace!==false){
-      const candidate=(resolved.entitlements||[]).find((r:any)=>r.capability_key===capabilityKey&&isExpiredByTime(r)&&!['suspended','revoked'].includes(r.status));
+      const candidate=(resolved.entitlements||[]).find((r:any)=>r.capability_key===capabilityKey&&isExpiredByTime(r)&&!['suspended','revoked'].includes(r.status)&&(r.entitlement_type!=='one_event'||(eventId&&String(r.one_event_id||'')===eventId)));
       if(candidate){allowed=true;live_event_grace=true;}
     }
     return Response.json({success:true,allowed,live_event_grace,capability_key:capabilityKey,enforcement_mode:resolved.enforcement_mode});
