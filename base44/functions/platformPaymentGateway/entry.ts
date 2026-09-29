@@ -38,28 +38,29 @@ function safeGateway(row:any){
   };
 }
 
-function credentials(row:any){
+function credentials(row:any,requireMerchantCode=true){
   if(!row)throw Object.assign(new Error('No RallyHub platform payment gateway is configured.'),{status:409});
   const secretName=clean(row.credential_reference,120);
   const merchantCode=clean(row.merchant_account_id,120);
   if(!secretName)throw Object.assign(new Error('RallyHub platform gateway has no credential reference.'),{status:409});
   const apiKey=Deno.env.get(secretName)||'';
   if(!apiKey)throw Object.assign(new Error(`Base44 secret ${secretName} is not configured.`),{status:409});
-  if(!merchantCode)throw Object.assign(new Error('RallyHub SumUp merchant code is not configured.'),{status:409});
+  if(requireMerchantCode&&!merchantCode)throw Object.assign(new Error('RallyHub SumUp merchant code is not configured.'),{status:409});
   return {apiKey,merchantCode,secretName};
 }
 
 async function verifySumUp(row:any){
-  const {apiKey,merchantCode}=credentials(row);
+  const {apiKey,merchantCode}=credentials(row,false);
   const response=await fetch('https://api.sumup.com/v0.1/me',{headers:{Authorization:`Bearer ${apiKey}`}});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw Object.assign(new Error(data?.message||`SumUp verification failed (${response.status}).`),{status:502});
   const profileCode=clean(data?.merchant_profile?.merchant_code||data?.merchant_code,120);
   const merchantName=clean(data?.merchant_profile?.business_name||data?.merchant_profile?.doing_business_as?.business_name||data?.business_name,240);
-  if(profileCode && profileCode!==merchantCode){
+  if(!profileCode)throw Object.assign(new Error('SumUp verified the API key but did not return a merchant code.'),{status:502});
+  if(merchantCode && profileCode!==merchantCode){
     throw Object.assign(new Error(`The RallyHub API key belongs to merchant ${profileCode}, but the configured RallyHub merchant code is ${merchantCode}. No payment was attempted.`),{status:409});
   }
-  return {merchantCode:profileCode||merchantCode,merchantName};
+  return {merchantCode:profileCode,merchantName};
 }
 
 async function createHostedCheckout(row:any,input:any){
