@@ -23,7 +23,7 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
   const [xlsxOpen, setXlsxOpen] = useState(false);
   const [selfRegisterOpen, setSelfRegisterOpen] = useState(false);
   const [rosterOpen, setRosterOpen] = useState(false);
-  const { canManagePlayers } = useKotcRole();
+  const { canManagePlayers, isTrialHost } = useKotcRole();
   const { data: kotcState } = useQuery({
     queryKey: ['kotc-shell-state', tournament.id],
     queryFn: async () => (await base44.functions.invoke('getKotcV2State', { tournamentId: tournament.id })).data,
@@ -45,9 +45,24 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
     ? availablePlayers.filter(p => String(p.full_name || '').toLowerCase().includes(playerSearch.trim().toLowerCase()))
     : availablePlayers;
 
+  const updateTournamentRoster = async (patch) => {
+    if (isTrialHost) {
+      const res = await base44.functions.invoke('trialJourney', {
+        action: 'update_kotc_tournament',
+        tournamentId: tournament.id,
+        ...(patch.player_ids !== undefined ? { playerIds: patch.player_ids } : {}),
+        ...(patch.kotc_guest_roster !== undefined ? { guestRoster: patch.kotc_guest_roster } : {}),
+        ...(patch.kotc_player_order !== undefined ? { playerOrder: patch.kotc_player_order } : {}),
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.tournament;
+    }
+    return base44.entities.Tournament.update(tournament.id, patch);
+  };
+
   const addPlayers = async () => {
     const newIds = [...(tournament.player_ids || []), ...selectedPlayerIds];
-    await base44.entities.Tournament.update(tournament.id, { player_ids: newIds });
+    await updateTournamentRoster({ player_ids: newIds });
     toast.success(`${selectedPlayerIds.length} players added`);
     setSelectedPlayerIds([]);
     setPlayerSearch('');
@@ -106,9 +121,9 @@ export default function KotcView({ tournament, players, allPlayers, queryClient 
 
           {rosterOpen && canManagePlayers && !isSandbox && <div className="mt-4 pt-4 border-t border-border space-y-3">
             <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={() => setXlsxOpen(true)}><FileSpreadsheet className="w-3 h-3 mr-1" />Import Spond XLSX</Button>
+              {!isTrialHost && <Button variant="outline" size="sm" onClick={() => setXlsxOpen(true)}><FileSpreadsheet className="w-3 h-3 mr-1" />Import Spond XLSX</Button>}
               <Button variant="outline" size="sm" onClick={() => setAddPlayersOpen(true)}><UserPlus className="w-3 h-3 mr-1" />Add Player</Button>
-              <KotcPlayerManagement tournament={tournament} players={sessionPlayers} allPlayers={operationalPlayers} queryClient={queryClient} />
+              <KotcPlayerManagement tournament={tournament} players={sessionPlayers} allPlayers={operationalPlayers} queryClient={queryClient} isTrialHost={isTrialHost} />
             </div>
             {sessionPlayers.length === 0 ? <div className="text-center py-4"><Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2"/><p className="text-xs text-muted-foreground">No players on this session roster yet.</p></div> : <div className="grid sm:grid-cols-2 gap-1 max-h-64 overflow-auto">
               {sessionPlayers.map((p, i) => <div key={p.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 bg-secondary/30"><span className="text-[10px] font-bold text-muted-foreground w-5">{i + 1}</span><span className="text-xs font-medium flex-1 truncate">{p.full_name}</span>{p.is_guest && <span className="text-[9px] uppercase rounded border px-1.5 py-0.5 text-amber-500 border-amber-400/30">Guest</span>}{p.dupr_rating != null && <span className="text-[10px] font-mono text-primary">DUPR {Number(p.dupr_rating).toFixed(2)}</span>}</div>)}
