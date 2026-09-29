@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
-import { tenantCapabilityDecision } from '../_shared/tenantCapability.ts';
+import { tenantCapabilityDecision } from './tenantCapability.ts';
 
 const APP_URL='https://rallyhub.ie';
 const clean=(v:any,max=500)=>String(v??'').trim().slice(0,max);
