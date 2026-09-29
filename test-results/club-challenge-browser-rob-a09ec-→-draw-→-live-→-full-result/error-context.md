@@ -12,290 +12,40 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Error: expect(locator).toContainText(expected) failed
 
-Locator: getByText('Round at a Glance')
-Expected: visible
-Timeout: 2000ms
-Error: element(s) not found
+Locator: getByTestId('cc-team-builder-status')
+Expected substring: "Teams saved"
+Received string:    "Saving teams and rankings…"
+Timeout: 1800ms
 
 Call log:
-  - Expect "toBeVisible" getByText('Round at a Glance') with timeout 2000ms
-  - waiting for getByText('Round at a Glance')
+  - Expect "toContainText" getByTestId('cc-team-builder-status') with timeout 1800ms
+  - waiting for getByTestId('cc-team-builder-status')
+    3 × locator resolved to <div data-dynamic-content="true" data-collection-item-field="text" data-testid="cc-team-builder-status" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:391:15" class="rounded-lg border p-3 text-xs font-semibold border-amber-400/30 bg-amber-500/10 text-amber-700">Saving teams and rankings…</div>
+      - unexpected value "Saving teams and rankings…"
 
 ```
 
 ```yaml
-- main:
-  - paragraph: Starting Interclub Challenge… command sent
-  - paragraph: RallyHub has accepted your tap. Keep this screen open; the control stays locked until the action resolves.
-  - img
-  - paragraph: RallyHub Interclub
-  - paragraph: "Interclub Challenge · Status: in progress"
-  - text: CL Clare Blue vs CL Clare Gold
-  - button "Live Event View"
-  - button "Player Link / QR"
-  - button "Print Sheets · Pack v1"
-  - button "Setup":
-    - img
-    - text: Setup
-  - button "Teams":
-    - img
-    - text: Teams
-  - button "Draw":
-    - img
-    - text: Draw
-  - button "4 Live Event"
-  - button "5 Simulator"
-  - button "6 Results"
-  - paragraph: Fairness Report
-  - paragraph: Schedule fairness checks
-  - text: Fairness checks passed
-  - paragraph: "48"
-  - paragraph: Matches
-  - paragraph: "6"
-  - paragraph: Games min
-  - paragraph: "6"
-  - paragraph: Games max
-  - paragraph: "0"
-  - paragraph: Partner repeats
-  - paragraph: "2"
-  - paragraph: Max opponent repeat
-  - paragraph: "0"
-  - paragraph: Consecutive rests
-  - paragraph: "2.33"
-  - paragraph: Avg strength gap
-  - paragraph: "8"
-  - paragraph: Max gap
-  - paragraph: Round 1
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 02 & Club A Test 01
-  - paragraph: vs
-  - paragraph: Club B Test 01 & Club B Test 02
-  - paragraph: Court 2
-  - paragraph: Club A Test 03 & Club A Test 04
-  - paragraph: vs
-  - paragraph: Club B Test 03 & Club B Test 04
-  - paragraph: Court 3
-  - paragraph: Club A Test 05 & Club A Test 06
-  - paragraph: vs
-  - paragraph: Club B Test 05 & Club B Test 06
-  - paragraph: Court 4
-  - paragraph: Club A Test 07 & Club A Test 08
-  - paragraph: vs
-  - paragraph: Club B Test 07 & Club B Test 08
-  - paragraph: Round 2
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 09 & Club A Test 10
-  - paragraph: vs
-  - paragraph: Club B Test 09 & Club B Test 10
-  - paragraph: Court 2
-  - paragraph: Club A Test 11 & Club A Test 12
-  - paragraph: vs
-  - paragraph: Club B Test 11 & Club B Test 12
-  - paragraph: Court 3
-  - paragraph: Club A Test 13 & Club A Test 14
-  - paragraph: vs
-  - paragraph: Club B Test 13 & Club B Test 14
-  - paragraph: Court 4
-  - paragraph: Club A Test 15 & Club A Test 16
-  - paragraph: vs
-  - paragraph: Club B Test 15 & Club B Test 16
-  - paragraph: Round 3
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 02 & Club A Test 03
-  - paragraph: vs
-  - paragraph: Club B Test 05 & Club B Test 07
-  - paragraph: Court 2
-  - paragraph: Club A Test 01 & Club A Test 04
-  - paragraph: vs
-  - paragraph: Club B Test 06 & Club B Test 08
-  - paragraph: Court 3
-  - paragraph: Club A Test 05 & Club A Test 07
-  - paragraph: vs
-  - paragraph: Club B Test 01 & Club B Test 03
-  - paragraph: Court 4
-  - paragraph: Club A Test 06 & Club A Test 08
-  - paragraph: vs
-  - paragraph: Club B Test 02 & Club B Test 04
-  - paragraph: Round 4
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 09 & Club A Test 11
-  - paragraph: vs
-  - paragraph: Club B Test 13 & Club B Test 15
-  - paragraph: Court 2
-  - paragraph: Club A Test 10 & Club A Test 12
-  - paragraph: vs
-  - paragraph: Club B Test 14 & Club B Test 16
-  - paragraph: Court 3
-  - paragraph: Club A Test 13 & Club A Test 15
-  - paragraph: vs
-  - paragraph: Club B Test 09 & Club B Test 11
-  - paragraph: Court 4
-  - paragraph: Club A Test 14 & Club A Test 16
-  - paragraph: vs
-  - paragraph: Club B Test 10 & Club B Test 12
-  - paragraph: Round 5
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 05 & Club A Test 08
-  - paragraph: vs
-  - paragraph: Club B Test 05 & Club B Test 08
-  - paragraph: Court 2
-  - paragraph: Club A Test 06 & Club A Test 07
-  - paragraph: vs
-  - paragraph: Club B Test 06 & Club B Test 07
-  - paragraph: Court 3
-  - paragraph: Club A Test 02 & Club A Test 04
-  - paragraph: vs
-  - paragraph: Club B Test 01 & Club B Test 04
-  - paragraph: Court 4
-  - paragraph: Club A Test 01 & Club A Test 03
-  - paragraph: vs
-  - paragraph: Club B Test 02 & Club B Test 03
-  - paragraph: Round 6
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 13 & Club A Test 16
-  - paragraph: vs
-  - paragraph: Club B Test 13 & Club B Test 16
-  - paragraph: Court 2
-  - paragraph: Club A Test 14 & Club A Test 15
-  - paragraph: vs
-  - paragraph: Club B Test 14 & Club B Test 15
-  - paragraph: Court 3
-  - paragraph: Club A Test 09 & Club A Test 12
-  - paragraph: vs
-  - paragraph: Club B Test 09 & Club B Test 12
-  - paragraph: Court 4
-  - paragraph: Club A Test 10 & Club A Test 11
-  - paragraph: vs
-  - paragraph: Club B Test 10 & Club B Test 11
-  - paragraph: Round 7
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 03 & Club A Test 07
-  - paragraph: vs
-  - paragraph: Club B Test 04 & Club B Test 08
-  - paragraph: Court 2
-  - paragraph: Club A Test 02 & Club A Test 05
-  - paragraph: vs
-  - paragraph: Club B Test 02 & Club B Test 06
-  - paragraph: Court 3
-  - paragraph: Club A Test 04 & Club A Test 08
-  - paragraph: vs
-  - paragraph: Club B Test 03 & Club B Test 07
-  - paragraph: Court 4
-  - paragraph: Club A Test 01 & Club A Test 06
-  - paragraph: vs
-  - paragraph: Club B Test 01 & Club B Test 05
-  - paragraph: Round 8
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 11 & Club A Test 15
-  - paragraph: vs
-  - paragraph: Club B Test 12 & Club B Test 16
-  - paragraph: Court 2
-  - paragraph: Club A Test 09 & Club A Test 13
-  - paragraph: vs
-  - paragraph: Club B Test 10 & Club B Test 14
-  - paragraph: Court 3
-  - paragraph: Club A Test 12 & Club A Test 16
-  - paragraph: vs
-  - paragraph: Club B Test 11 & Club B Test 15
-  - paragraph: Court 4
-  - paragraph: Club A Test 10 & Club A Test 14
-  - paragraph: vs
-  - paragraph: Club B Test 09 & Club B Test 13
-  - paragraph: Round 9
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 02 & Club A Test 06
-  - paragraph: vs
-  - paragraph: Club B Test 03 & Club B Test 08
-  - paragraph: Court 2
-  - paragraph: Club A Test 01 & Club A Test 05
-  - paragraph: vs
-  - paragraph: Club B Test 04 & Club B Test 07
-  - paragraph: Court 3
-  - paragraph: Club A Test 03 & Club A Test 08
-  - paragraph: vs
-  - paragraph: Club B Test 01 & Club B Test 06
-  - paragraph: Court 4
-  - paragraph: Club A Test 04 & Club A Test 07
-  - paragraph: vs
-  - paragraph: Club B Test 02 & Club B Test 05
-  - paragraph: Round 10
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 09 & Club A Test 14
-  - paragraph: vs
-  - paragraph: Club B Test 11 & Club B Test 16
-  - paragraph: Court 2
-  - paragraph: Club A Test 10 & Club A Test 13
-  - paragraph: vs
-  - paragraph: Club B Test 12 & Club B Test 15
-  - paragraph: Court 3
-  - paragraph: Club A Test 11 & Club A Test 16
-  - paragraph: vs
-  - paragraph: Club B Test 09 & Club B Test 14
-  - paragraph: Court 4
-  - paragraph: Club A Test 12 & Club A Test 15
-  - paragraph: vs
-  - paragraph: Club B Test 10 & Club B Test 13
-  - paragraph: Round 11
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 01 & Club A Test 08
-  - paragraph: vs
-  - paragraph: Club B Test 04 & Club B Test 06
-  - paragraph: Court 2
-  - paragraph: Club A Test 02 & Club A Test 07
-  - paragraph: vs
-  - paragraph: Club B Test 03 & Club B Test 05
-  - paragraph: Court 3
-  - paragraph: Club A Test 04 & Club A Test 06
-  - paragraph: vs
-  - paragraph: Club B Test 02 & Club B Test 08
-  - paragraph: Court 4
-  - paragraph: Club A Test 03 & Club A Test 05
-  - paragraph: vs
-  - paragraph: Club B Test 01 & Club B Test 07
-  - paragraph: Round 12
-  - text: 4 courts
-  - paragraph: Court 1
-  - paragraph: Club A Test 10 & Club A Test 16
-  - paragraph: vs
-  - paragraph: Club B Test 12 & Club B Test 14
-  - paragraph: Court 2
-  - paragraph: Club A Test 09 & Club A Test 15
-  - paragraph: vs
-  - paragraph: Club B Test 11 & Club B Test 13
-  - paragraph: Court 3
-  - paragraph: Club A Test 12 & Club A Test 14
-  - paragraph: vs
-  - paragraph: Club B Test 10 & Club B Test 16
-  - paragraph: Court 4
-  - paragraph: Club A Test 11 & Club A Test 13
-  - paragraph: vs
-  - paragraph: Club B Test 09 & Club B Test 15
-- region "Notifications alt+T":
-  - list:
-    - listitem:
-      - img
-      - text: Interclub Challenge started
-    - listitem:
-      - img
-      - text: Draw approved and locked
+- text: Saving teams and rankings…
 ```
 
 # Test source
 
 ```ts
+  206 |     if(path.includes('/analytics/'))return json(route,{});
+  207 |     if(path.endsWith('/entities/User/me'))return json(route,model.user);
+  208 |     const fnMarker=`/api/apps/${APP_ID}/functions/`;
+  209 |     const fnIndex=path.indexOf(fnMarker);
+  210 |     if(fnIndex>=0){const name=decodeURIComponent(path.slice(fnIndex+fnMarker.length).split('/')[0]);let body={};try{body=req.postDataJSON()||{};}catch{}const remaining=Number(model.rateLimitFailures?.[name]||0);if(remaining>0){model.rateLimitFailures[name]=remaining-1;model.calls.push({name,body,at:Date.now(),rateLimited:true});return json(route,{error:'Burst rate limit exceeded'},429);}return json(route,await model.handleFunction(name,body));}
+  211 |     const entityMarker=`/api/apps/${APP_ID}/entities/`;
+  212 |     const entityIndex=path.indexOf(entityMarker);
+  213 |     if(entityIndex>=0){const rest=path.slice(entityIndex+entityMarker.length);const [entity,recordId]=rest.split('/').map(decodeURIComponent);let body={};try{body=req.postDataJSON()||{};}catch{}
+  214 |       if(req.method()==='GET')return json(route,model.entityList(entity));
+  215 |       if(req.method()==='POST')return json(route,model.createEntity(entity,body));
+  216 |       if(['PUT','PATCH'].includes(req.method()))return json(route,model.updateEntity(entity,recordId,body));
+  217 |       if(req.method()==='DELETE')return json(route,{});
   218 |     }
   219 |     return json(route,{});
   220 |   });
@@ -384,7 +134,8 @@ Call log:
   303 |   const organiseBefore=model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='organise_teams').length;
   304 |   await page.getByTestId('cc-team-name-club_a').fill('Clare Blue');await page.getByTestId('cc-team-name-club_b').fill('Clare Gold');
   305 |   const drag=page.getByTestId('cc-team-drag-cc-a-2');await drag.focus();await drag.press('Space');await drag.press('ArrowUp');await drag.press('Space');
-  306 |   started=Date.now();await page.getByTestId('cc-save-team-builder').click();await expect(page.getByText('Saving teams and rankings… one command sent')).toBeVisible({timeout:300});metric(report,'team_builder_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-team-builder-status')).toContainText('Teams saved',{timeout:1800});
+> 306 |   started=Date.now();await page.getByTestId('cc-save-team-builder').click();await expect(page.getByText('Saving teams and rankings… one command sent')).toBeVisible({timeout:300});metric(report,'team_builder_ack_ms',Date.now()-started,350);await expect(page.getByTestId('cc-team-builder-status')).toContainText('Teams saved',{timeout:1800});
+      |                                                                                                                                                                                                                                                                                                         ^ Error: expect(locator).toContainText(expected) failed
   307 |   expect(model.calls.filter(c=>c.name==='manageClubChallengeParticipant'&&c.body.action==='organise_teams').length-organiseBefore).toBe(1);expect(model.participants.find(p=>p.id==='cc-a-2')?.event_rank).toBe(1);expect(model.event.club_a_name).toBe('Clare Blue');expect(model.event.club_b_name).toBe('Clare Gold');report.team_builder_browser_calls=1;report.drag_ranking_saved=true;
   308 | 
   309 |   const drawBefore=model.calls.filter(c=>c.name==='replaceClubChallengeDraw').length;
@@ -396,8 +147,7 @@ Call log:
   315 |   const fnBeforeSound=model.calls.length;await page.getByTestId('cc-prestart-sound-check').click();await expect(page.getByTestId('cc-prestart-sound-check')).toContainText('Test Sound Again ✓',{timeout:800});await expect.poll(async()=>await page.evaluate(()=>window.__ccDevice.speech.length)).toBeGreaterThan(0);expect(await page.evaluate(()=>window.__rallyhubAudioContext?.state)).toBe('running');const soundCalls=model.calls.slice(fnBeforeSound).map(c=>c.name);expect(soundCalls.filter(n=>n==='generateHallSpeech').length).toBeLessThanOrEqual(1);report.sound_check_base44_calls=soundCalls.filter(n=>n==='generateHallSpeech').length;report.local_audio_unlocked=true;
   316 | 
   317 |   const startBefore=model.calls.filter(c=>c.name==='manageClubChallengeEvent'&&c.body.action==='start').length;
-> 318 |   started=Date.now();await page.getByTestId('cc-start-event').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Starting Interclub Challenge… command sent')).toBeVisible({timeout:300});metric(report,'event_start_ack_ms',Date.now()-started,250);await expect(page.getByText('Round at a Glance')).toBeVisible({timeout:2000});metric(report,'event_start_to_live_ms',Date.now()-started,1800);expect(model.calls.filter(c=>c.name==='manageClubChallengeEvent'&&c.body.action==='start').length-startBefore).toBe(1);report.start_double_tap_calls=1;
-      |                                                                                                                                                                                                                                                                                                                         ^ Error: expect(locator).toBeVisible() failed
+  318 |   started=Date.now();await page.getByTestId('cc-start-event').evaluate(el=>{el.click();el.click();});await expect(page.getByText('Starting Interclub Challenge… command sent')).toBeVisible({timeout:300});metric(report,'event_start_ack_ms',Date.now()-started,250);await expect(page.getByText('Round at a Glance')).toBeVisible({timeout:2000});metric(report,'event_start_to_live_ms',Date.now()-started,1800);expect(model.calls.filter(c=>c.name==='manageClubChallengeEvent'&&c.body.action==='start').length-startBefore).toBe(1);report.start_double_tap_calls=1;
   319 |   await expect(page.getByText('Resting this round')).toBeVisible();await expect(page.getByText('Up next · Round 2')).toBeVisible();await expect(page.getByText('scores saved')).toBeVisible();await expect(page.getByText('ready',{exact:true})).toBeVisible();await expect(page.getByText('10:00').first()).toBeVisible();await expect(page.getByRole('button',{name:'Changeover',exact:true})).toBeDisabled();await expect(page.getByText('Finish-on-Time Guide')).toBeVisible();await expect(page.getByText('RECOVERY NEEDED')).toBeVisible();await expectNoHorizontalOverflow(page);report.initial_timer_ready=true;report.finish_on_time_recovery_visible=true;
   320 |   const hostBar=page.getByTestId('cc-sticky-host-bar');await expect(hostBar).toBeVisible();await page.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));await expect(hostBar).toHaveAttribute('data-pinned','true',{timeout:1000});const hostBarTop=await hostBar.evaluate(el=>Math.round(el.getBoundingClientRect().top));expect(hostBarTop).toBeGreaterThanOrEqual(60);expect(hostBarTop).toBeLessThanOrEqual(80);report.host_bar_pinned=true;await page.evaluate(()=>window.scrollTo(0,0));
   321 | 
@@ -486,16 +236,4 @@ Call log:
   404 |   await page.getByRole('button',{name:'Back to Summary'}).click();await expect(page.getByRole('heading',{name:'Interclub Summary'})).toBeVisible();await page.getByRole('button',{name:'Final',exact:true}).click();await expect(page.getByText('Final Result',{exact:true})).toBeVisible();await expectNoHorizontalOverflow(page);
   405 |   const report={final_landing:true,alphabetical_public_teams:true,event_info_suppressed_after_completion:true,round_summary:true,integrated_vote:true,return_to_summary:true,return_to_final:true};console.log(`COMPLETED PLAYER LINK ROBOT REPORT\n${JSON.stringify(report,null,2)}`);await testInfo.attach('completed-player-link-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
   406 | });
-  407 | 
-  408 | test('Live recovery robot: stale timer is silent, break controls work, and host returns to the next round',async({page},testInfo)=>{
-  409 |   const model=createClubChallengeModel();await installHallDeviceMocks(page);await installClubChallengeBackend(page,model);
-  410 |   const now=new Date(),start=new Date(Date.now()-90*60000);model.tournament.start_date=now.toISOString().slice(0,10);model.tournament.status='In Progress';
-  411 |   const hhmm=`${String(start.getHours()).padStart(2,'0')}:${String(start.getMinutes()).padStart(2,'0')}`;
-  412 |   model.event={id:'cc-live-recovery',tenant_id:model.tournament.tenant_id,tournament_id:model.tournament.id,club_a_name:'Clare Blue',club_b_name:'Clare Gold',status:'in_progress',current_round:6,planned_rounds:12,courts:4,available_minutes:180,scheduled_start_time:hhmm,actual_started_at:now.toISOString(),play_minutes:10,changeover_minutes:2,include_break:true,break_minutes:20,break_after_round:6,normal_match_type:'timed',timed_draws_allowed:true,showcase_enabled:true,pot_enabled:false,win_points:2,draw_points:1,loss_points:0,timer_revision:2,timer_state_json:JSON.stringify({phase:'play',running:false,remaining_seconds:0,started_at:null,round:6}),event_pack_stale:false};
-  413 |   model.participants=Array.from({length:32},(_,i)=>({id:`lrp-${i+1}`,challenge_event_id:model.event.id,tournament_id:model.tournament.id,side:i<16?'club_a':'club_b',display_name:`Live Player ${String(i+1).padStart(2,'0')}`,event_rank:(i%16)+1,roster_role:'rotation',status:'active',available_from_round:1}));
-  414 |   for(const round of [6,7,8])for(let court=1;court<=4;court++){const ai=(court-1)*2,bi=16+(court-1)*2;model.matches.push({id:`lr-r${round}-c${court}`,challenge_event_id:model.event.id,tournament_id:model.tournament.id,round_number:round,court_number:court,status:'scheduled',winner:'none',revision:0,is_showcase:false,club_a_participant_ids:[model.participants[ai].id,model.participants[ai+1].id],club_b_participant_ids:[model.participants[bi].id,model.participants[bi+1].id],club_a_names:[model.participants[ai].display_name,model.participants[ai+1].display_name],club_b_names:[model.participants[bi].display_name,model.participants[bi+1].display_name]});}
-  415 |   await page.goto('/e2e/clubChallengeHarness.html');await page.getByTestId('cc-tab-live').click();await expect(page.getByText('Round at a Glance')).toBeVisible();await expect(page.getByText('RECOVERY NEEDED')).toBeVisible();
-  416 |   await page.waitForTimeout(400);expect((await page.evaluate(()=>window.__ccDevice.speech)).length).toBe(0);
-  417 |   await page.getByTestId('cc-sticky-host-bar').getByRole('button',{name:/^Start 20-min Break/}).click();await expect(page.getByText('Break now',{exact:false}).first()).toBeVisible({timeout:1600});await expect(page.getByText('20:00').first()).toBeVisible();
-  418 |   const fiveButtons=page.getByRole('button',{name:'5 min'});await expect(fiveButtons).toHaveCount(4);await fiveButtons.nth(0).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(900);await fiveButtons.nth(1).click();await expect.poll(()=>JSON.parse(model.event.timer_state_json).remaining_seconds,{timeout:1200}).toBe(1200);
 ```
