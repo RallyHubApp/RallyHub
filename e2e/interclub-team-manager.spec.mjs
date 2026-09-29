@@ -45,6 +45,7 @@ test('visiting team manager can repeatedly rank, grade and save an evolving Galw
   await page.getByRole('button',{name:'Save Team'}).click();
   await expect(page.getByText(/Saved 9 players/)).toBeVisible();
   expect(model.saves).toHaveLength(1);
+  expect(model.saves[0].expectedSavedAt).toBeNull();
   expect(model.saves[0].orderedParticipantIds.slice(0,2)).toEqual(['galway-2','galway-1']);
   expect(model.saves[0].players.find(p=>p.id==='galway-1')?.playingCategory).toBe('improver');
 
