@@ -10,8 +10,6 @@ test.use({viewport:{width:390,height:844}});
 
 test('visiting team manager can repeatedly rank, grade and save an evolving Galway roster',async({page})=>{
   const model={players:Array.from({length:9},(_,i)=>player(i+1)),savedAt:null,saves:[]};
-  page.on('console',msg=>console.log('BROWSER',msg.type(),msg.text()));
-  page.on('request',req=>{if(req.url().includes('/api/'))console.log('REQUEST',req.method(),req.url());});
   await page.route('**/api/apps/**',async route=>{
     const req=route.request(),url=new URL(req.url());
     if(url.pathname.includes('/analytics/')) return json(route,{});
@@ -40,14 +38,14 @@ test('visiting team manager can repeatedly rank, grade and save an evolving Galw
   await expect(page.getByText('9 registered')).toBeVisible();
   await expect(page.getByText('Needs saving')).toBeVisible();
 
-  const move9=page.getByRole('button',{name:'Move Galway Player 09'});
-  await move9.focus();await move9.press('Space');await move9.press('ArrowUp');await move9.press('Space');
   const categorySelect=page.getByRole('combobox').first();
   await categorySelect.click();await page.getByRole('option',{name:'Improver'}).click();
+  const move2=page.getByRole('button',{name:'Move Galway Player 02'});
+  await move2.focus();await move2.press('Space');await move2.press('ArrowUp');await move2.press('Space');
   await page.getByRole('button',{name:'Save Team'}).click();
   await expect(page.getByText(/Saved 9 players/)).toBeVisible();
   expect(model.saves).toHaveLength(1);
-  expect(model.saves[0].orderedParticipantIds.at(-2)).toBe('galway-9');
+  expect(model.saves[0].orderedParticipantIds.slice(0,2)).toEqual(['galway-2','galway-1']);
   expect(model.saves[0].players.find(p=>p.id==='galway-1')?.playingCategory).toBe('improver');
 
   model.players.push(player(10));
