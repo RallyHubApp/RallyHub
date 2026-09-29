@@ -15,6 +15,17 @@ const NAME_OPT_OUT = new Set([
   'galway-county-pickleball',
 ]);
 const LEGACY_HOLD = new Set(['eyva-s-invitational-series']);
+const KNOWN_PROTECTED_EXPECTED = new Map(Object.entries({
+  'clare-pickleball': { call:true, whatsapp:true, email:true },
+  'oriel-pickleball-dundalk': { call:false, whatsapp:false, email:true },
+  'southside-pickleball-club': { call:true, whatsapp:false, email:false },
+  'carrickmacross-pickleball-club': { call:false, whatsapp:false, email:true },
+  'bluestack-pickleball-club': { call:true, whatsapp:true, email:true },
+  'killarney-pickleball-club': { call:false, whatsapp:false, email:true },
+  'east-cavan-pickleball': { call:true, whatsapp:true, email:true },
+  'cobh-pickleball': { call:true, whatsapp:false, email:true },
+  'multyfarnham-pickleball-club': { call:false, whatsapp:false, email:true },
+}));
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
@@ -52,12 +63,13 @@ for (let i = 0; i < slugs.length; i++) {
     result.call = false;
     result.whatsapp = false;
   }
+  const knownProtected = KNOWN_PROTECTED_EXPECTED.get(slug);
   manifest.push({
     slug,
-    expected: { call: !!result.call, whatsapp: !!result.whatsapp, email: !!result.email },
+    expected: knownProtected || { call: !!result.call, whatsapp: !!result.whatsapp, email: !!result.email },
     hideContactName: NAME_OPT_OUT.has(slug),
     legacyHold: LEGACY_HOLD.has(slug),
-    baselineProtected: !!result.protectedCard,
+    baselineProtected: !!knownProtected || !!result.protectedCard,
   });
   if ((i + 1) % 12 === 0) console.log(`captured ${i + 1}/${slugs.length}`);
 }
