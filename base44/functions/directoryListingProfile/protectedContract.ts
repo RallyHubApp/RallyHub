@@ -15,12 +15,12 @@ function cloneAndStrip(value:any):any {
   return out;
 }
 
-export function protectedDirectoryValue(value:any) {
+export function protectedDirectoryValue(value:any, options:any = {}) {
   if (!value || typeof value !== 'object') return value ?? null;
   const out = cloneAndStrip(value);
   if (out.contact && typeof out.contact === 'object') {
     out.contact = {
-      ...(out.contact.name ? { name:String(out.contact.name).slice(0,180) } : {}),
+      ...(!options.hideContactName && out.contact.name ? { name:String(out.contact.name).slice(0,180) } : {}),
       ...(out.contact.role ? { role:String(out.contact.role).slice(0,120) } : {}),
       protected:true,
     };
@@ -28,18 +28,18 @@ export function protectedDirectoryValue(value:any) {
   return out;
 }
 
-export function protectedDirectoryState(state:any) {
+export function protectedDirectoryState(state:any, options:any = {}) {
   if (!state || typeof state !== 'object') return state ?? null;
   return {
     ...state,
     contactProtection:'protected-v1',
-    base:protectedDirectoryValue(state.base),
-    profile:protectedDirectoryValue(state.profile),
+    base:protectedDirectoryValue(state.base, options),
+    profile:protectedDirectoryValue(state.profile, options),
   };
 }
 
-export function protectedDirectoryList(listings:any) {
+export function protectedDirectoryList(listings:any, optionsBySlug:any = {}) {
   const out:any = {};
-  for (const [slug,state] of Object.entries(listings || {})) out[slug] = protectedDirectoryState(state);
+  for (const [slug,state] of Object.entries(listings || {})) out[slug] = protectedDirectoryState(state, optionsBySlug?.[slug] || {});
   return out;
 }
