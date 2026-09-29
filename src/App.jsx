@@ -79,6 +79,7 @@ import TrialApply from '@/pages/TrialApply';
 import TrialActivate from '@/pages/TrialActivate';
 import TrialPortal from '@/pages/TrialPortal';
 import TrialAdmin from '@/pages/TrialAdmin';
+import ProtectedContactActionPreview from '@/pages/ProtectedContactActionPreview';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -205,6 +206,7 @@ const AuthenticatedRoutes = () => (
       <Route path="forecast" element={<MemberForecast />} />
       <Route path="my-profile" element={<MyProfile />} />
       <Route path="admin" element={<AdminPanel />} />
+      <Route path="admin/contact-action-preview" element={<ProtectedContactActionPreview />} />
       <Route path="guest-bookings" element={<GuestBookings />} />
       <Route path="membership" element={<MembershipConsole />} />
       <Route path="waiting-list" element={<WaitingList />} />
