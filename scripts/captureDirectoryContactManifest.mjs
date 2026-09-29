@@ -18,9 +18,15 @@ const LEGACY_HOLD = new Set(['eyva-s-invitational-series']);
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-await page.goto(`https://rallyhub.ie/directory?t=${Date.now()}`, { waitUntil: 'networkidle', timeout: 60000 });
-const hrefs = await page.locator('a[href^="/directory/"]').evaluateAll(nodes => nodes.map(n => n.getAttribute('href')));
-const slugs = [...new Set(hrefs.map(h => String(h || '').split('?')[0].replace(/^\/directory\//, '')).filter(s => s && !s.includes('/') && !['add','help'].includes(s)))].sort();
+let slugs = [];
+for (let attempt = 1; attempt <= 5; attempt++) {
+  await page.goto(`https://rallyhub.ie/directory?t=${Date.now()}&attempt=${attempt}`, { waitUntil: 'networkidle', timeout: 60000 });
+  await page.waitForTimeout(1500);
+  const hrefs = await page.locator('a[href^="/directory/"]').evaluateAll(nodes => nodes.map(n => n.getAttribute('href')));
+  slugs = [...new Set(hrefs.map(h => String(h || '').split('?')[0].replace(/^\/directory\//, '')).filter(s => s && !s.includes('/') && !['add','help'].includes(s)))].sort();
+  if (slugs.length >= 90) break;
+  console.log(`directory list attempt ${attempt} saw only ${slugs.length}; retrying`);
+}
 const manifest = [];
 for (let i = 0; i < slugs.length; i++) {
   const slug = slugs[i];
