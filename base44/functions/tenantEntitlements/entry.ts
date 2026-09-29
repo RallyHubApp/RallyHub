@@ -1,50 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { activeGrantSources, expandDependencies, expiredGraceSources, isWindowActive } from './policy.js';
 
 const clean=(v:any,max=300)=>String(v??'').trim().slice(0,max);
-const nowMs=()=>Date.now();
 const isoNow=()=>new Date().toISOString();
-
-function dateMs(value:any){
-  if(!value)return null;
-  const n=Date.parse(String(value));
-  return Number.isFinite(n)?n:null;
-}
-function isWindowActive(row:any,now=nowMs()){
-  if(!row)return false;
-  if(!['active','grace'].includes(String(row.status||'')))return false;
-  const start=dateMs(row.starts_at); const end=dateMs(row.ends_at); const graceEnd=dateMs(row.grace_ends_at);
-  if(start!==null&&start>now)return false;
-  if(row.status==='grace') return graceEnd===null || graceEnd>=now;
-  if(end!==null&&end<now)return false;
-  return true;
-}
-function isExpiredByTime(row:any,now=nowMs()){
-  const end=dateMs(row?.ends_at);
-  return end!==null&&end<now;
-}
 function uniq(xs:string[]){return [...new Set(xs.filter(Boolean))];}
 
 async function capabilityMap(base44:any){
   const rows=await base44.asServiceRole.entities.RallyHubCapability.list('sort_order',500);
   return new Map((rows||[]).map((r:any)=>[r.key,r]));
 }
-function expandDependencies(keys:string[],caps:Map<string,any>){
-  const out=new Set(keys);
-  const visit=(key:string)=>{
-    const cap=caps.get(key); if(!cap)return;
-    for(const dep of cap.depends_on_keys||[]){
-      if(!out.has(dep)){out.add(dep);visit(dep);}
-    }
-  };
-  [...out].forEach(visit);
-  return [...out];
-}
 async function getPolicy(base44:any,tenantId:string){
   const rows=await base44.asServiceRole.entities.TenantAccessPolicy.filter({tenant_id:tenantId});
   return (rows||[])[0]||null;
 }
-async function resolveForTenant(base44:any,user:any,tenantId:string,clubId:string|null=null){
-  const caps=await capabilityMap(base44);
+async function resolveForTenant(base44:any,user:any,tenantId:string,clubId:string|null=null,capsInput:Map<string,any>|null=null){
+  const caps=capsInput||await capabilityMap(base44);
   const policy=await getPolicy(base44,tenantId);
   const mode=policy?.enforcement_mode||'legacy_full_access';
   if(user.role==='admin'||mode==='legacy_full_access'){
@@ -75,24 +45,22 @@ Deno.serve(async(req)=>{try{
     if(!tenantId)return Response.json({error:'No active tenant context'},{status:400});
     if(user.role!=='admin'&&tenantId!==user.active_tenant_id)return Response.json({error:'Tenant context mismatch'},{status:403});
     if(user.role!=='admin'&&clubId&&clubId!==user.active_club_id)return Response.json({error:'Club context mismatch'},{status:403});
-    const resolved=await resolveForTenant(base44,user,tenantId,clubId);
-    if(action==='resolve')return Response.json({success:true,...resolved});
+    const caps=await capabilityMap(base44);
+    const resolved=await resolveForTenant(base44,user,tenantId,clubId,caps);
+    if(action==='resolve')return Response.json({success:true,...resolved,scope_note:'allowed_capability_keys is a navigation hint; check is authoritative for event-scoped access'});
     const capabilityKey=clean(body.capabilityKey,180);
     if(!capabilityKey)return Response.json({error:'capabilityKey required'},{status:400});
-    let allowed=resolved.all_allowed||resolved.allowed_capability_keys.includes(capabilityKey);
+    if(!caps.has(capabilityKey))return Response.json({error:'Unknown RallyHub capability'},{status:400});
     const eventId=clean(body.eventId,180)||null;
-    if(allowed&&!resolved.all_allowed){
-      const directRows=(resolved.entitlements||[]).filter((r:any)=>r.capability_key===capabilityKey&&isWindowActive(r));
-      if(directRows.length>0){
-        allowed=directRows.some((r:any)=>r.entitlement_type!=='one_event'||(eventId&&String(r.one_event_id||'')===eventId));
-      }
-    }
+    const activeSources=resolved.all_allowed?[]:activeGrantSources(resolved.entitlements,capabilityKey,caps,{clubId,eventId});
+    let allowed=resolved.all_allowed||activeSources.length>0;
     let live_event_grace=false;
+    let graceSources:any[]=[];
     if(!allowed&&body.liveEventAlreadyStarted===true&&resolved.policy?.allow_live_event_grace!==false){
-      const candidate=(resolved.entitlements||[]).find((r:any)=>r.capability_key===capabilityKey&&isExpiredByTime(r)&&!['suspended','revoked'].includes(r.status)&&(r.entitlement_type!=='one_event'||(eventId&&String(r.one_event_id||'')===eventId)));
-      if(candidate){allowed=true;live_event_grace=true;}
+      graceSources=expiredGraceSources(resolved.entitlements,capabilityKey,caps,{clubId,eventId});
+      if(graceSources.length>0){allowed=true;live_event_grace=true;}
     }
-    return Response.json({success:true,allowed,live_event_grace,capability_key:capabilityKey,enforcement_mode:resolved.enforcement_mode});
+    return Response.json({success:true,allowed,live_event_grace,capability_key:capabilityKey,enforcement_mode:resolved.enforcement_mode,matched_entitlement_ids:(live_event_grace?graceSources:activeSources).map((r:any)=>r.id)});
   }
 
   if(user.role!=='admin')return Response.json({error:'Super Admin access required'},{status:403});
