@@ -7,6 +7,11 @@ const DEFAULT_DIRECTORY_KEY = 'protected-contact-default-directory';
 const resolveBuckets = new Map<string, { count:number; resetAt:number }>();
 const emailBuckets = new Map<string, { count:number; resetAt:number }>();
 const idempotencyCache = new Map<string, { expiresAt:number; payload:any; status:number }>();
+const RALLYHUB_EMAIL_LOGO = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const RALLYHUB_NAVY = '#07184c';
+const RALLYHUB_GREEN = '#078e48';
+const RALLYHUB_SUPPORT_TEL = 'tel:+353878100333';
+const RALLYHUB_SUPPORT_WHATSAPP = 'https://wa.me/353878100333';
 
 const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
 const validEmail = (value:string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -452,7 +457,42 @@ Deno.serve(async (req) => {
         '',
         'This enquiry was generated through RallyHub. Replying to this email will reply to the visitor when the configured mail provider supports Reply-To.',
       ].join('\n');
-      const htmlBody = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#17325f"><div style="padding:22px;border-radius:16px;background:#f4fbfc;border:1px solid #dbe6e8"><div style="font-size:12px;font-weight:800;letter-spacing:.12em;color:#078e48">RALLYHUB DIRECTORY</div><h2 style="margin:8px 0 8px;color:#07184c">New club enquiry</h2><p style="line-height:1.6">A visitor has contacted <strong>${escapeHtml(listingName)}</strong> through RallyHub.</p><div style="margin:18px 0;padding:16px;border-radius:12px;background:white;border:1px solid #dbe6e8"><p><strong>Name:</strong> ${escapeHtml(displayName)}</p><p><strong>Email:</strong> ${escapeHtml(senderEmail)}</p><p><strong>Message:</strong><br>${escapeHtml(message).replace(/\n/g,'<br>')}</p></div><p style="font-size:13px;line-height:1.6;color:#52627d">This enquiry was generated through <strong>RallyHub</strong>.</p></div></div>`;
+      const htmlBody = `<!doctype html><html><body style="margin:0;padding:0;background:#eef3f2;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+        <div style="display:none;max-height:0;overflow:hidden;opacity:0;">New enquiry for ${escapeHtml(listingName)} through the RallyHub Directory.</div>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef3f2;padding:24px 10px;"><tr><td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:660px;background:#ffffff;border:1px solid #d8e3df;border-radius:20px;overflow:hidden;box-shadow:0 8px 28px rgba(7,24,76,.08);">
+            <tr><td style="height:7px;background:${RALLYHUB_GREEN};"></td></tr>
+            <tr><td style="padding:24px 24px 18px;background:#ffffff;">
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;"><tr>
+                <td style="padding-right:12px;vertical-align:middle;"><img src="${RALLYHUB_EMAIL_LOGO}" width="58" height="58" alt="RallyHub" style="display:block;width:58px;height:58px;object-fit:contain;border:0;"></td>
+                <td style="vertical-align:middle;text-align:left;">
+                  <div style="font-size:30px;line-height:1;font-weight:900;letter-spacing:-1.4px;color:${RALLYHUB_NAVY};">Rally<span style="color:${RALLYHUB_GREEN};">Hub</span></div>
+                  <div style="margin-top:7px;font-size:9px;line-height:1;font-weight:800;letter-spacing:2.3px;color:${RALLYHUB_NAVY};">PLAY <span style="color:${RALLYHUB_GREEN};">•</span> CONNECT <span style="color:${RALLYHUB_GREEN};">•</span> BELONG</div>
+                </td>
+              </tr></table>
+            </td></tr>
+            <tr><td style="padding:0 24px 28px;">
+              <div style="height:1px;background:#e7eeec;margin:0 0 24px;"></div>
+              <div style="font-size:12px;font-weight:800;letter-spacing:.12em;color:${RALLYHUB_GREEN};">RALLYHUB DIRECTORY</div>
+              <h1 style="margin:8px 0 12px;font-size:24px;line-height:1.25;color:${RALLYHUB_NAVY};font-weight:850;">New club enquiry</h1>
+              <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#334155;">A visitor has contacted <strong>${escapeHtml(listingName)}</strong> through your RallyHub Directory listing.</p>
+              <div style="margin:18px 0;padding:18px;border-radius:14px;background:#fbfdfd;border:1px solid #dbe6e8;">
+                <p style="margin:0 0 12px;font-size:14px;line-height:1.55;color:#334155;"><strong style="color:${RALLYHUB_NAVY};">Name</strong><br>${escapeHtml(displayName)}</p>
+                <p style="margin:0 0 12px;font-size:14px;line-height:1.55;color:#334155;"><strong style="color:${RALLYHUB_NAVY};">Email</strong><br><a href="mailto:${escapeHtml(senderEmail)}" style="color:${RALLYHUB_GREEN};font-weight:700;text-decoration:underline;">${escapeHtml(senderEmail)}</a></p>
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#334155;"><strong style="color:${RALLYHUB_NAVY};">Message</strong><br>${escapeHtml(message).replace(/\n/g,'<br>')}</p>
+              </div>
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:22px auto 20px;"><tr><td bgcolor="${RALLYHUB_GREEN}" style="border-radius:12px;">
+                <a href="mailto:${escapeHtml(senderEmail)}" style="display:inline-block;padding:13px 22px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;">Reply to ${escapeHtml(displayName)}</a>
+              </td></tr></table>
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#64748b;text-align:center;">This enquiry relates to your ${escapeHtml(listingName)} listing on the RallyHub Directory.</p>
+            </td></tr>
+            <tr><td style="padding:16px 24px;background:${RALLYHUB_NAVY};text-align:center;">
+              <div style="font-size:11px;line-height:1.7;color:#dfe8ff;">Need help? <a href="${RALLYHUB_SUPPORT_TEL}" style="color:#ffffff;font-weight:800;text-decoration:underline;">Call</a> or <a href="${RALLYHUB_SUPPORT_WHATSAPP}" style="color:#ffffff;font-weight:800;text-decoration:underline;">WhatsApp Brian</a></div>
+              <div style="margin-top:5px;font-size:10px;line-height:1.6;"><a href="https://rallyhub.ie" style="color:#83d1a0;font-weight:800;text-decoration:none;">Powered by RallyHub</a></div>
+            </td></tr>
+          </table>
+        </td></tr></table>
+      </body></html>`;
       const now = new Date().toISOString();
       try {
         const delivery = await sendWithConfiguredEmailTransport(base44, { scopeType:'platform', purpose:'directory' }, {
