@@ -304,6 +304,20 @@
     "planned_rounds": {
       "type": "number"
     },
+    "club_a_roster_saved_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "club_b_roster_saved_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
     "last_schedule_adjustment_key": {
       "type": "string"
     },
