@@ -12,10 +12,16 @@
 # Error details
 
 ```
-Error: expect(received).toBe(expected) // Object.is equality
+Error: expect(received).toEqual(expected) // deep equality
 
-Expected: "galway-9"
-Received: "galway-8"
+- Expected  - 1
++ Received  + 1
+
+  Array [
+-   "galway-2",
+    "galway-1",
++   "galway-2",
+  ]
 ```
 
 # Page snapshot
@@ -52,7 +58,7 @@ Received: "galway-8"
           - generic [ref=e32]: 9 registered
           - generic [ref=e33]: 9 rotation
           - generic [ref=e34]: 0 reserve
-          - generic [ref=e35]: Saved 29 Sept, 15:45
+          - generic [ref=e35]: Saved 29 Sept, 15:46
       - generic [ref=e36]: Saved 9 players. You can come back and edit this team again whenever the roster changes.
       - generic [ref=e37]:
         - generic [ref=e39]:
@@ -185,58 +191,56 @@ Received: "galway-8"
   10 | 
   11 | test('visiting team manager can repeatedly rank, grade and save an evolving Galway roster',async({page})=>{
   12 |   const model={players:Array.from({length:9},(_,i)=>player(i+1)),savedAt:null,saves:[]};
-  13 |   page.on('console',msg=>console.log('BROWSER',msg.type(),msg.text()));
-  14 |   page.on('request',req=>{if(req.url().includes('/api/'))console.log('REQUEST',req.method(),req.url());});
-  15 |   await page.route('**/api/apps/**',async route=>{
-  16 |     const req=route.request(),url=new URL(req.url());
-  17 |     if(url.pathname.includes('/analytics/')) return json(route,{});
-  18 |     const marker=`/api/apps/${APP_ID}/functions/interclubTeamManager`;
-  19 |     if(url.pathname.includes(marker)){
-  20 |       let body={};try{body=req.postDataJSON()||{};}catch{}
-  21 |       expect(body.token).toBe(TOKEN);
-  22 |       if((body.action||'get')==='save'){
-  23 |         model.saves.push(body);
-  24 |         const byId=new Map(model.players.map(p=>[p.id,p]));
-  25 |         model.players=body.orderedParticipantIds.map((id,index)=>{
-  26 |           const edit=(body.players||[]).find(x=>x.id===id)||{};
-  27 |           return {...byId.get(id),rank:index+1,playingCategory:edit.playingCategory||'',rosterRole:edit.rosterRole||'rotation'};
-  28 |         });
-  29 |         model.savedAt=new Date().toISOString();
-  30 |         return json(route,{success:true,savedAt:model.savedAt,changed:model.players.length,teamName:'Galway Pickleball'});
-  31 |       }
-  32 |       return json(route,{success:true,event:{id:'event-e2e',eventName:'Clare Pickleball v Galway Pickleball',teamName:'Galway Pickleball',side:'club_b',clubAName:'Clare Pickleball',clubBName:'Galway Pickleball',clubALogo:'',clubBLogo:'',clubAPrimary:'#2563eb',clubBPrimary:'#7f1d1d',date:'2026-10-04',venue:'St. Joseph’s Doora Barefield',savedAt:model.savedAt},players:model.players});
-  33 |     }
-  34 |     return json(route,{});
-  35 |   });
-  36 | 
-  37 |   await page.goto('/e2e/interclubTeamManagerHarness.html');
-  38 |   await expect(page.getByRole('heading',{name:'Galway Pickleball'})).toBeVisible();
-  39 |   await expect(page.getByText('9 on roster')).toBeVisible();
-  40 |   await expect(page.getByText('9 registered')).toBeVisible();
-  41 |   await expect(page.getByText('Needs saving')).toBeVisible();
-  42 | 
-  43 |   const move9=page.getByRole('button',{name:'Move Galway Player 09'});
-  44 |   await move9.focus();await move9.press('Space');await move9.press('ArrowUp');await move9.press('Space');
-  45 |   const categorySelect=page.getByRole('combobox').first();
-  46 |   await categorySelect.click();await page.getByRole('option',{name:'Improver'}).click();
-  47 |   await page.getByRole('button',{name:'Save Team'}).click();
-  48 |   await expect(page.getByText(/Saved 9 players/)).toBeVisible();
-  49 |   expect(model.saves).toHaveLength(1);
-> 50 |   expect(model.saves[0].orderedParticipantIds.at(-2)).toBe('galway-9');
-     |                                                       ^ Error: expect(received).toBe(expected) // Object.is equality
-  51 |   expect(model.saves[0].players.find(p=>p.id==='galway-1')?.playingCategory).toBe('improver');
-  52 | 
-  53 |   model.players.push(player(10));
-  54 |   model.savedAt=null;
-  55 |   await page.getByRole('button',{name:'Refresh roster'}).click();
-  56 |   await expect(page.getByText('10 on roster')).toBeVisible();
-  57 |   await expect(page.getByText('Needs saving')).toBeVisible();
-  58 |   await expect(page.getByText('Galway Player 10')).toBeVisible();
-  59 |   const save=page.getByRole('button',{name:'Save Team'});
-  60 |   await expect(save).toBeEnabled();
-  61 |   await save.click();
-  62 |   await expect(page.getByText(/Saved 10 players/)).toBeVisible();
-  63 |   expect(model.saves).toHaveLength(2);
-  64 |   expect(model.saves[1].orderedParticipantIds).toHaveLength(10);
-  65 | });
+  13 |   await page.route('**/api/apps/**',async route=>{
+  14 |     const req=route.request(),url=new URL(req.url());
+  15 |     if(url.pathname.includes('/analytics/')) return json(route,{});
+  16 |     const marker=`/api/apps/${APP_ID}/functions/interclubTeamManager`;
+  17 |     if(url.pathname.includes(marker)){
+  18 |       let body={};try{body=req.postDataJSON()||{};}catch{}
+  19 |       expect(body.token).toBe(TOKEN);
+  20 |       if((body.action||'get')==='save'){
+  21 |         model.saves.push(body);
+  22 |         const byId=new Map(model.players.map(p=>[p.id,p]));
+  23 |         model.players=body.orderedParticipantIds.map((id,index)=>{
+  24 |           const edit=(body.players||[]).find(x=>x.id===id)||{};
+  25 |           return {...byId.get(id),rank:index+1,playingCategory:edit.playingCategory||'',rosterRole:edit.rosterRole||'rotation'};
+  26 |         });
+  27 |         model.savedAt=new Date().toISOString();
+  28 |         return json(route,{success:true,savedAt:model.savedAt,changed:model.players.length,teamName:'Galway Pickleball'});
+  29 |       }
+  30 |       return json(route,{success:true,event:{id:'event-e2e',eventName:'Clare Pickleball v Galway Pickleball',teamName:'Galway Pickleball',side:'club_b',clubAName:'Clare Pickleball',clubBName:'Galway Pickleball',clubALogo:'',clubBLogo:'',clubAPrimary:'#2563eb',clubBPrimary:'#7f1d1d',date:'2026-10-04',venue:'St. Joseph’s Doora Barefield',savedAt:model.savedAt},players:model.players});
+  31 |     }
+  32 |     return json(route,{});
+  33 |   });
+  34 | 
+  35 |   await page.goto('/e2e/interclubTeamManagerHarness.html');
+  36 |   await expect(page.getByRole('heading',{name:'Galway Pickleball'})).toBeVisible();
+  37 |   await expect(page.getByText('9 on roster')).toBeVisible();
+  38 |   await expect(page.getByText('9 registered')).toBeVisible();
+  39 |   await expect(page.getByText('Needs saving')).toBeVisible();
+  40 | 
+  41 |   const categorySelect=page.getByRole('combobox').first();
+  42 |   await categorySelect.click();await page.getByRole('option',{name:'Improver'}).click();
+  43 |   const move2=page.getByRole('button',{name:'Move Galway Player 02'});
+  44 |   await move2.focus();await move2.press('Space');await move2.press('ArrowUp');await move2.press('Space');
+  45 |   await page.getByRole('button',{name:'Save Team'}).click();
+  46 |   await expect(page.getByText(/Saved 9 players/)).toBeVisible();
+  47 |   expect(model.saves).toHaveLength(1);
+> 48 |   expect(model.saves[0].orderedParticipantIds.slice(0,2)).toEqual(['galway-2','galway-1']);
+     |                                                           ^ Error: expect(received).toEqual(expected) // deep equality
+  49 |   expect(model.saves[0].players.find(p=>p.id==='galway-1')?.playingCategory).toBe('improver');
+  50 | 
+  51 |   model.players.push(player(10));
+  52 |   model.savedAt=null;
+  53 |   await page.getByRole('button',{name:'Refresh roster'}).click();
+  54 |   await expect(page.getByText('10 on roster')).toBeVisible();
+  55 |   await expect(page.getByText('Needs saving')).toBeVisible();
+  56 |   await expect(page.getByText('Galway Player 10')).toBeVisible();
+  57 |   const save=page.getByRole('button',{name:'Save Team'});
+  58 |   await expect(save).toBeEnabled();
+  59 |   await save.click();
+  60 |   await expect(page.getByText(/Saved 10 players/)).toBeVisible();
+  61 |   expect(model.saves).toHaveLength(2);
+  62 |   expect(model.saves[1].orderedParticipantIds).toHaveLength(10);
+  63 | });
 ```
