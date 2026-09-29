@@ -16,19 +16,21 @@ Error: expect(locator).toContainText(expected) failed
 
 Locator: getByTestId('cc-team-builder-status')
 Expected substring: "Teams saved"
-Received string:    "Saving teams and rankings…"
+Received string:    "Recovered your unsaved team allocation and ranking draft."
 Timeout: 1800ms
 
 Call log:
   - Expect "toContainText" getByTestId('cc-team-builder-status') with timeout 1800ms
   - waiting for getByTestId('cc-team-builder-status')
-    3 × locator resolved to <div data-dynamic-content="true" data-collection-item-field="text" data-testid="cc-team-builder-status" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:391:15" class="rounded-lg border p-3 text-xs font-semibold border-amber-400/30 bg-amber-500/10 text-amber-700">Saving teams and rankings…</div>
+    6 × locator resolved to <div data-dynamic-content="true" data-collection-item-field="text" data-testid="cc-team-builder-status" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:391:15" class="rounded-lg border p-3 text-xs font-semibold border-amber-400/30 bg-amber-500/10 text-amber-700">Saving teams and rankings…</div>
       - unexpected value "Saving teams and rankings…"
+    - locator resolved to <div data-dynamic-content="true" data-collection-item-field="text" data-testid="cc-team-builder-status" data-source-location="src/components/clubchallenge/ClubChallengeView.jsx:391:15" class="rounded-lg border p-3 text-xs font-semibold border-amber-400/30 bg-amber-500/10 text-amber-700">Recovered your unsaved team allocation and rankin…</div>
+    - unexpected value "Recovered your unsaved team allocation and ranking draft."
 
 ```
 
 ```yaml
-- text: Saving teams and rankings…
+- text: Recovered your unsaved team allocation and ranking draft.
 ```
 
 # Test source
