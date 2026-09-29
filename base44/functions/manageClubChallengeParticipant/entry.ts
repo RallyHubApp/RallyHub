@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
         available_from_round:1,
         unique_identity_key:`player-${player.id}`,
       });
-      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true, [side === 'club_a' ? 'club_a_roster_saved_at' : 'club_b_roster_saved_at']:null });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'club_player_added_pre_draw', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({participant_id:created.id,source_player_id:player.id,side,name:created.display_name}) });
       return Response.json({ success:true, participant:created });
     }
@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
         available_from_round:1,
         unique_identity_key:`guest-${side}-${crypto.randomUUID().slice(0,12)}`,
       });
-      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true, ...(side === 'club_a' ? {club_a_roster_saved_at:null} : side === 'club_b' ? {club_b_roster_saved_at:null} : {}) });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'guest_added_pre_draw', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({participant_id:created.id,side,name:created.display_name}) });
       return Response.json({ success:true, participant:created });
     }
@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
         .filter((x:any) => x.id !== p.id && x.side === p.side && !['replaced','withdrawn','injured'].includes(x.status))
         .sort((a:any,b:any) => Number(a.event_rank || 999) - Number(b.event_rank || 999));
       for (let i=0;i<remaining.length;i++) if (Number(remaining[i].event_rank || 0) !== i + 1) await base44.asServiceRole.entities.ClubChallengeParticipant.update(remaining[i].id, { event_rank:i + 1 });
-      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true, ...(p.side === 'club_a' ? {club_a_roster_saved_at:null} : p.side === 'club_b' ? {club_b_roster_saved_at:null} : {}) });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_removed_pre_draw', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify(oldValue) });
       return Response.json({ success:true, removedName:p.display_name, side:p.side });
     }
@@ -193,7 +193,7 @@ Deno.serve(async (req) => {
       if (participants.some((p:any) => ['active','late'].includes(p.status) && String(p.display_name||'').trim().toLowerCase().replace(/\s+/g,' ') === identity)) return Response.json({ error:'That player name is already active in this Interclub Challenge.' }, { status:409 });
       const sidePlayers = participants.filter((p:any) => p.side === side && !['replaced'].includes(p.status));
       const created = await base44.asServiceRole.entities.ClubChallengeParticipant.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id, side, display_name:cleanName, event_rank:sidePlayers.length + 1, roster_role:'rotation', status:'active', available_from_round:1, unique_identity_key:`manual-${side}-${crypto.randomUUID().slice(0,12)}` });
-      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true, ...(side === 'club_a' ? {club_a_roster_saved_at:null} : side === 'club_b' ? {club_b_roster_saved_at:null} : {}) });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_added_manual', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({participant_id:created.id,side,name:cleanName}) });
       return Response.json({ success:true, participant:created });
     }
