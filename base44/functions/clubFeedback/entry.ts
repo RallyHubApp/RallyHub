@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 const clean=(v:any,max=500)=>String(v??'').trim().slice(0,max);
 const TYPES=new Set(['issue','confusing','improvement','feature_request','other']);
-const AREAS=new Set(['directory','club_profile','sessions_venues','login_access','rallyhub_club','competitions','other']);
+const AREAS=new Set(['directory','club_profile','sessions_venues','login_access','rallyhub_club','competitions','learn','other']);
 const IMPORTANCE=new Set(['nice_to_have','important','blocking']);
 const STATUSES=new Set(['new','reviewing','wishlist','planned','in_progress','completed','closed']);
 
@@ -24,10 +24,17 @@ Deno.serve(async(req)=>{
       if(!listingSlug||!clubName||!message) return Response.json({error:'Club and feedback are required'},{status:400});
 
       if(user.role!=='admin'){
-        const access=await base44.asServiceRole.entities.DirectoryListingAccess.filter({
+        const directoryAccess=await base44.asServiceRole.entities.DirectoryListingAccess.filter({
           listing_slug:listingSlug,user_id:user.id,status:'active'
         },'-created_date',10);
-        if(!access?.length) return Response.json({error:'Verified Directory access required'},{status:403});
+        let clubAccess:any[]=[];
+        if(area==='learn'||area==='rallyhub_club'){
+          clubAccess=await base44.asServiceRole.entities.ClubUserAccess.filter({
+            user_id:user.id,status:'active'
+          },'-created_date',50);
+        }
+        const hasClubAccess=(clubAccess||[]).some((row:any)=>String(row.club_id||'')===String(user.active_club_id||'')&&String(row.tenant_id||'')===String(user.active_tenant_id||''));
+        if(!directoryAccess?.length&&!hasClubAccess) return Response.json({error:'Verified club or Directory access required'},{status:403});
       }
 
       const now=new Date().toISOString();
