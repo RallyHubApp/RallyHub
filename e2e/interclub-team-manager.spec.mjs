@@ -40,7 +40,7 @@ test('visiting team manager can repeatedly rank, grade and save an evolving Galw
 
   const categorySelect=page.getByRole('combobox').first();
   await categorySelect.click();await page.getByRole('option',{name:'Improver'}).click();
-  const move2=page.getByRole('button',{name:'Move Galway Player 02'});
+  const move2=page.getByTestId('team-manager-drag-galway-2');
   await move2.focus();await move2.press('Space');await move2.press('ArrowUp');await move2.press('Space');
   await page.getByRole('button',{name:'Save Team'}).click();
   await expect(page.getByText(/Saved 9 players/)).toBeVisible();
