@@ -10,6 +10,8 @@ test.use({viewport:{width:390,height:844}});
 
 test('visiting team manager can repeatedly rank, grade and save an evolving Galway roster',async({page})=>{
   const model={players:Array.from({length:9},(_,i)=>player(i+1)),savedAt:null,saves:[]};
+  page.on('console',msg=>console.log('BROWSER',msg.type(),msg.text()));
+  page.on('request',req=>{if(req.url().includes('/api/'))console.log('REQUEST',req.method(),req.url());});
   await page.route('**/api/apps/**',async route=>{
     const req=route.request(),url=new URL(req.url());
     if(url.pathname.includes('/analytics/')) return json(route,{});
