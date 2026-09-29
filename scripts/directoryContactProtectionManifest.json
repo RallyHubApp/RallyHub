@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-29T22:06:40.565Z",
+  "generatedAt": "2026-09-29T22:12:31.917Z",
   "count": 96,
   "listings": [
     {
@@ -216,11 +216,11 @@
       "expected": {
         "call": false,
         "whatsapp": false,
-        "email": false
+        "email": true
       },
       "hideContactName": false,
       "legacyHold": false,
-      "baselineProtected": false
+      "baselineProtected": true
     },
     {
       "slug": "castlerahan-pickleball-club",
@@ -236,13 +236,13 @@
     {
       "slug": "clare-pickleball",
       "expected": {
-        "call": false,
-        "whatsapp": false,
-        "email": false
+        "call": true,
+        "whatsapp": true,
+        "email": true
       },
       "hideContactName": false,
       "legacyHold": false,
-      "baselineProtected": false
+      "baselineProtected": true
     },
     {
       "slug": "clonakilty-pickleball-club",
@@ -379,13 +379,13 @@
     {
       "slug": "east-cavan-pickleball",
       "expected": {
-        "call": true,
-        "whatsapp": true,
-        "email": true
+        "call": false,
+        "whatsapp": false,
+        "email": false
       },
       "hideContactName": false,
       "legacyHold": false,
-      "baselineProtected": true
+      "baselineProtected": false
     },
     {
       "slug": "east-cork-pickleball",
@@ -678,11 +678,11 @@
       "expected": {
         "call": false,
         "whatsapp": false,
-        "email": false
+        "email": true
       },
       "hideContactName": true,
       "legacyHold": false,
-      "baselineProtected": false
+      "baselineProtected": true
     },
     {
       "slug": "naas-pickleball",
@@ -755,11 +755,11 @@
       "expected": {
         "call": false,
         "whatsapp": false,
-        "email": false
+        "email": true
       },
       "hideContactName": false,
       "legacyHold": false,
-      "baselineProtected": false
+      "baselineProtected": true
     },
     {
       "slug": "pickleball-arklow",
