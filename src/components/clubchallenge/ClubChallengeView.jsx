@@ -247,7 +247,7 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
       await onSave?.({ poolIds:lanes.pool, clubAIds:lanes.club_a, clubBIds:lanes.club_b, clubAName:nameA, clubBName:nameB });
       if (draftKey) { try { sessionStorage.removeItem(draftKey); } catch {} }
       setDirty(false);
-      setStatus({state:'success',text:`Teams saved · ${lanes.club_a.length} in ${nameA} · ${lanes.club_b.length} in ${nameB}${lanes.pool.length ? ` · ${lanes.pool.length} still in Player Pool` : ''}.`});
+      setStatus({state:'success',text:`Current rosters saved · ${lanes.club_a.length} in ${nameA} · ${lanes.club_b.length} in ${nameB}${lanes.pool.length ? ` · ${lanes.pool.length} still in Player Pool` : ''}. You can keep editing and save again as players change.`});
     } catch (e) {
       setStatus({state:'error',text:e?.message || 'Could not save teams and rankings.'});
     }
@@ -370,8 +370,8 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
   return <div className="space-y-3">
     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div><p className="text-sm font-semibold">Build the two teams</p><p className="text-xs text-muted-foreground">Registered guest players appear directly in their team. Set Social / Improver, drag within each team to rank 1–16, and mark players 17–18 as Reserves. Spond and CSV remain available as backup import routes. Rotation players are included in the draw; Reserves stay outside the scheduled rotation until activated.</p></div>
-        <div className="flex flex-wrap items-center gap-2 text-xs"><Badge variant="outline">{active.length} players</Badge><Badge variant="outline">A: {rotationA} rotation · {reserveA} reserve</Badge><Badge variant="outline">B: {rotationB} rotation · {reserveB} reserve</Badge><Badge className={balanced && lanes.pool.length===0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-700'}>{lanes.pool.length===0 && balanced ? 'Rotation squads balanced' : `${lanes.pool.length} unassigned`}</Badge><Button type="button" variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={()=>setPoolOpen(v=>!v)}>{poolOpen ? 'Hide Unassigned Pool' : `Unassigned Pool${lanes.pool.length ? ` (${lanes.pool.length})` : ''}`}</Button></div>
+        <div><p className="text-sm font-semibold">Build the two teams</p><p className="text-xs text-muted-foreground">Registered players appear directly in their team. Set Social / Improver, drag players into the current ranking and mark any Reserves. Save the current rosters whenever you need to — the teams do not have to be complete or equal to save. The equality check applies only when you later generate the draw.</p></div>
+        <div className="flex flex-wrap items-center gap-2 text-xs"><Badge variant="outline">{active.length} players</Badge><Badge variant="outline">A: {rotationA} rotation · {reserveA} reserve</Badge><Badge variant="outline">B: {rotationB} rotation · {reserveB} reserve</Badge><Badge className={balanced && lanes.pool.length===0 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-700'}>{lanes.pool.length ? `${lanes.pool.length} unassigned` : balanced ? 'Rotation squads balanced' : `Rotation squads ${rotationA}–${rotationB} · draw not ready`}</Badge><Button type="button" variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={()=>setPoolOpen(v=>!v)}>{poolOpen ? 'Hide Unassigned Pool' : `Unassigned Pool${lanes.pool.length ? ` (${lanes.pool.length})` : ''}`}</Button></div>
       </div>
     </div>
     <DragDropContext onDragEnd={handleDragEnd}>
@@ -383,10 +383,10 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
     </DragDropContext>
     <div className="rounded-xl border border-border bg-card p-3 flex flex-col sm:flex-row sm:items-center gap-3">
       <div className="flex-1 text-xs text-muted-foreground">
-        {lanes.pool.length ? `${lanes.pool.length} player${lanes.pool.length===1?'':'s'} still need a team.` : balanced ? `Ready: ${rotationA} rotation players per club${reserveA || reserveB ? ` · reserves ${reserveA}–${reserveB}` : ''}.` : 'The Rotation squads must contain the same number of players before the draw can be generated. Reserve numbers may differ.'}
+        {lanes.pool.length ? `${lanes.pool.length} player${lanes.pool.length===1?'':'s'} still need a team. You can still save this working configuration.` : balanced ? `Current squads are balanced: ${rotationA} rotation players per club${reserveA || reserveB ? ` · reserves ${reserveA}–${reserveB}` : ''}.` : `Current squads are ${rotationA}–${rotationB}. You can save now; only the draw remains locked until the Rotation squads are equal.`}
         {dirty && <span className="ml-1 font-semibold text-amber-600">Unsaved changes.</span>}
       </div>
-      <Button data-testid="cc-save-team-builder" onClick={save} disabled={locked || busy || !dirty || !nameA.trim() || !nameB.trim()} className="w-full sm:w-auto">{busy ? 'Saving…' : 'Save Teams & Rankings'}</Button>
+      <Button data-testid="cc-save-team-builder" onClick={save} disabled={locked || busy || !dirty || !nameA.trim() || !nameB.trim()} className="w-full sm:w-auto">{busy ? 'Saving…' : 'Save Current Rosters & Rankings'}</Button>
     </div>
     {status && <div data-testid="cc-team-builder-status" className={cn('rounded-lg border p-3 text-xs font-semibold', status.state==='success'?'border-primary/30 bg-primary/10 text-primary':status.state==='error'?'border-destructive/30 bg-destructive/10 text-destructive':'border-amber-400/30 bg-amber-500/10 text-amber-700')}>{status.text}</div>}
   </div>;
