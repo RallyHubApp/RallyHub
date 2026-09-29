@@ -15,8 +15,38 @@ async function requireDirectoryAccess(base44:any, user:any, listingSlug:string) 
 async function getListing(base44:any, listingSlug:string) {
   const rows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-updated_date', 5);
   const row = rows?.[0];
-  if (!row) throw new Response(JSON.stringify({ error:'Directory listing not found.' }), { status:404, headers:{'content-type':'application/json'} });
-  return row;
+  if (row) return row;
+
+  // Older/seeded Directory clubs may already have an editable profile and event host
+  // without yet having been migrated into DirectoryListingRecord. Do not 404 those
+  // listings: resolve them from the canonical profile/access/club data instead.
+  const [profiles, accesses, claims, clubs] = await Promise.all([
+    base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5),
+    base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug:listingSlug, status:'active' }, '-granted_at', 20),
+    base44.asServiceRole.entities.DirectoryClaim.filter({ listing_slug:listingSlug }, '-updated_date', 20),
+    base44.asServiceRole.entities.Club.filter({ slug:listingSlug, status:'active' }, '-updated_date', 20),
+  ]);
+  const profileRow = profiles?.[0] || null;
+  const profile = parseJson(profileRow?.public_json, {});
+  const name = clean(
+    clubs?.[0]?.name ||
+    accesses?.[0]?.listing_name_snapshot ||
+    claims?.[0]?.listing_name_snapshot ||
+    profile?.name ||
+    listingSlug.split('-').map((part:string)=>part ? part[0].toUpperCase()+part.slice(1) : '').join(' '),
+    240
+  );
+  if (!profileRow && !accesses?.length && !claims?.length && !clubs?.length) {
+    throw new Response(JSON.stringify({ error:'Directory listing not found.' }), { status:404, headers:{'content-type':'application/json'} });
+  }
+  return {
+    slug: listingSlug,
+    name,
+    county: clean(profile?.county || '', 120),
+    status: 'active',
+    visibility: 'public',
+    base_json: profileRow?.public_json || '{}',
+  };
 }
 
 async function ensureHostIdentity(base44:any, listing:any) {
