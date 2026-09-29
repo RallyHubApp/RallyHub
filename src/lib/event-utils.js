@@ -80,8 +80,14 @@ export function registrationState(event, now = new Date()) {
   return { key:'open', label:'Open for booking', detail:'Registration open', tone:'green', actionable:true, date:null };
 }
 
+export function isWhatsAppRegistration(event) {
+  const url = String(event?.event_registration_url || '').trim().toLowerCase();
+  return url.startsWith('https://wa.me/') || url.startsWith('https://api.whatsapp.com/') || url.startsWith('whatsapp://');
+}
+
 export function registrationActionLabel(event, state = registrationState(event)) {
   if (state.key === 'opening_soon') return 'Remind me';
+  if (isWhatsAppRegistration(event)) return 'WhatsApp to register';
   if (event?.event_registration_mode === 'contact') return state.key === 'invite_only' ? 'Request invitation' : 'Contact organiser';
   if (event?.event_registration_mode === 'none') return 'Event details';
   return 'Register / Book';
