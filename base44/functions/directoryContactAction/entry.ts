@@ -206,10 +206,22 @@ function derivedEndpoint(listingSlug:string, listingName:string, contact:any, cl
 }
 
 async function endpointFor(base44:any, listingSlug:string) {
-  const rows = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5).catch(() => []);
-  if (rows?.[0]) return rows[0];
+  const [rows, claim] = await Promise.all([
+    base44.asServiceRole.entities.DirectoryContactEndpoint.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5).catch(() => []),
+    latestApprovedClaim(base44, listingSlug),
+  ]);
+  if (rows?.[0]) {
+    const row = rows[0];
+    const derived = derivedEndpoint(listingSlug, row.listing_name_snapshot || listingSlug, {
+      name:row.contact_name,
+      phone:row.allow_call === true ? row.phone : '',
+      email:row.allow_email === true ? row.email : '',
+      whatsapp:row.allow_whatsapp === true ? row.whatsapp_url : '',
+    }, claim);
+    derived.contact_role = clean(row.contact_role || claim?.claimant_role, 120);
+    return derived;
+  }
 
-  const claim = await latestApprovedClaim(base44, listingSlug);
   const profileRows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5).catch(() => []);
   if (profileRows?.[0]) {
     const profile = parseJson(profileRows[0].public_json) || {};
