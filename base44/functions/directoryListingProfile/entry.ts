@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { geocodeDirectoryVenues } from './geocode.ts';
 import { publicDirectoryFallbackSnapshot } from './publicFallbackSnapshot.ts';
+import { protectedDirectoryList, protectedDirectoryState } from './protectedContract.ts';
 
 const clean = (value:any, max=500) => String(value ?? '').trim().slice(0, max);
 const isRateLimit = (error:any) => /rate limit|too many requests|\b429\b|temporar(?:y|ily) busy/i.test(String(error?.message || error || ''));
@@ -272,20 +273,24 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || 'public_get');
 
-    if (action === 'public_get') {
+    if (action === 'public_get' || action === 'protected_public_get') {
       const listingSlug = clean(body.listingSlug, 180);
       if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
       const data = await getPublicClub(base44, listingSlug);
+      const payload = action === 'protected_public_get'
+        ? { ...protectedDirectoryState(data), contractVersion:'protected-v1' }
+        : data;
       return Response.json(
-        data,
+        payload,
         { headers: { 'Cache-Control': 'public, max-age=30, stale-while-revalidate=300' } }
       );
     }
 
-    if (action === 'public_list') {
+    if (action === 'public_list' || action === 'protected_public_list') {
       const result = await getPublicDirectoryList(base44);
+      const listings = action === 'protected_public_list' ? protectedDirectoryList(result) : result;
       return Response.json(
-        { success: true, listings: result },
+        { success: true, listings, ...(action === 'protected_public_list' ? { contractVersion:'protected-v1' } : {}) },
         { headers: { 'Cache-Control': 'public, max-age=30, stale-while-revalidate=300' } }
       );
     }
