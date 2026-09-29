@@ -737,8 +737,8 @@ export const importedDirectoryClubs = [
     "verificationStatus": "unclaimed",
     "contact": {
       "name": "Michael McDaid",
-      "phone": "+353876776304",
-      "phoneHref": "tel:+353876776304",
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -2188,7 +2188,7 @@ export const importedDirectoryClubs = [
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "killarneypickleballclub@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
