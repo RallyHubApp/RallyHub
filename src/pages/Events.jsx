@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, CalendarDays, ChevronDown, Clock3, List, Map as MapIcon, MapPin, Search, SlidersHorizontal, Star, UserRound } from 'lucide-react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
+import { toast } from 'sonner';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { base44 } from '@/api/base44Client';
@@ -11,7 +12,7 @@ import Seo from '@/components/public/Seo';
 import PublicSiteHeader from '@/components/public/PublicSiteHeader';
 import PublicSiteFooter from '@/components/public/PublicSiteFooter';
 import EventCard from '@/components/events/EventCard';
-import { EVENT_TYPES, eventPath, eventStatusClass, eventTags, prettyEventDateRange, registrationActionLabel, registrationState } from '@/lib/event-utils';
+import { EVENT_TYPES, eventPath, eventStatusClass, eventTags, isWhatsAppRegistration, prettyEventDateRange, registrationActionLabel, registrationState } from '@/lib/event-utils';
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -120,7 +121,7 @@ export default function Events(){
   },[upcoming,query,status,type,month,county,country,host,level,age,discipline,environment,sort]);
   const featured=filtered.find(e=>e.event_featured_public)||null;
   const gridEvents=featured?filtered.filter(e=>e.id!==featured.id):filtered;
-  const openRegistration=event=>{if(event.event_registration_mode==='contact'&&event.event_contact){const state=registrationState(event);const url=`${window.location.origin}${eventPath(event)}`;const subject=state.key==='invite_only'?`Invitation request: ${event.name}`:`Event enquiry: ${event.name}`;const body=state.key==='invite_only'?`Hi,\n\nI would like to be considered for an invitation to ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`:`Hi,\n\nI have a question about ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`;window.location.href=`mailto:${event.event_contact}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;return}if(event.event_registration_url)window.open(event.event_registration_url,'_blank','noopener,noreferrer');else navigate(eventPath(event))};
+  const openRegistration=event=>{if(event.event_registration_mode==='contact'&&event.event_contact){const state=registrationState(event);const url=`${window.location.origin}${eventPath(event)}`;const subject=state.key==='invite_only'?`Invitation request: ${event.name}`:`Event enquiry: ${event.name}`;const body=state.key==='invite_only'?`Hi,\n\nI would like to be considered for an invitation to ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`:`Hi,\n\nI have a question about ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`;window.location.href=`mailto:${event.event_contact}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;return}if(event.event_registration_url){if(isWhatsAppRegistration(event))toast.success('Opening WhatsApp — send the message to complete your registration');window.open(event.event_registration_url,'_blank','noopener,noreferrer')}else navigate(eventPath(event))};
   const showResults=()=>document.getElementById('events-results')?.scrollIntoView({behavior:'smooth',block:'start'});
 
   const selectClass="h-11 w-full rounded-lg border border-[#cfdcdf] bg-white px-3 text-[12px] font-semibold text-[#17325f] outline-none focus:border-[#078e48]";
