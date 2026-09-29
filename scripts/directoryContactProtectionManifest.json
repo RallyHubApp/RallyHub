@@ -379,13 +379,13 @@
     {
       "slug": "east-cavan-pickleball",
       "expected": {
-        "call": false,
-        "whatsapp": false,
-        "email": false
+        "call": true,
+        "whatsapp": true,
+        "email": true
       },
       "hideContactName": false,
       "legacyHold": false,
-      "baselineProtected": false
+      "baselineProtected": true
     },
     {
       "slug": "east-cork-pickleball",
@@ -524,11 +524,11 @@
       "expected": {
         "call": false,
         "whatsapp": false,
-        "email": false
+        "email": true
       },
       "hideContactName": false,
       "legacyHold": false,
-      "baselineProtected": false
+      "baselineProtected": true
     },
     {
       "slug": "killeshandra-pickleball-club",
