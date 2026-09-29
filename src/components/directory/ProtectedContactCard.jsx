@@ -142,6 +142,9 @@ export default function ProtectedContactCard({ listingSlug, clubName, county }) 
           </div>
         ) : (
           <div className="mt-4 space-y-2">
+            {!card.actions?.call && !card.actions?.whatsapp && !card.actions?.email && (
+              <div className="rounded-xl border border-border p-3 text-sm text-muted-foreground">No direct contact details have been supplied yet.</div>
+            )}
             {card.actions?.call && (
               <button type="button" disabled={actionState.call === 'working' || actionState.call === 'success'} onClick={() => runAction('call')} className="flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left hover:border-primary/40 disabled:opacity-70" aria-live="polite">
                 {actionState.call === 'working' ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : actionState.call === 'success' ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <Phone className="h-4 w-4 text-primary" />}
