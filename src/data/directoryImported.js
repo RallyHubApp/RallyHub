@@ -1093,11 +1093,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Mary Cashman",
-      "phone": "+353868780052",
-      "phoneHref": "tel:+353868780052",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "cobhpickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -1637,20 +1637,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Nigel O'Dwyer",
-      "phone": "+353879567981",
-      "phoneHref": "tel:+353879567981",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "nigelod@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "David Skelly",
-        "phone": "+353872427399",
-        "phoneHref": "tel:+353872427399",
-        "email": null
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "rosehill",
@@ -2871,20 +2864,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Cassandra Mooney",
-      "phone": "+353892355960",
-      "phoneHref": "tel:+353892355960",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "cassiemooney@hotmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Danielle Dyer",
-        "phone": null,
-        "phoneHref": null,
-        "email": "multyfarnhampickleballclub@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "multyfarnham-community-centre",
