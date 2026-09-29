@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
 
 const EVENT_NAMES = new Set([
   'page_view','page_engagement','directory_view','directory_search','directory_zero_result','county_filter','day_filter',
-  'club_profile_view','venue_view','club_whatsapp_click','club_email_click','club_website_click','map_click',
+  'club_profile_view','venue_view','club_call_click','club_whatsapp_click','club_email_click','club_website_click','map_click',
   'share_club','share_player','player_updates_signup','add_missing_club','claim_club_start','claim_club_complete',
   'event_view','event_register_click'
 ]);
@@ -115,7 +115,7 @@ function summarizeFirstParty(events:any[]){
     const key=row.club_slug;
     if(!clubMap.has(key))clubMap.set(key,{slug:key,name:row.club_name||key,county:row.county||'',views:0,actions:0,visitors:new Set()});
     const item=clubMap.get(key); if(row.event_name==='club_profile_view'||(row.event_name==='page_view'&&String(row.path||'').startsWith('/directory/')))item.views++;
-    if(['club_whatsapp_click','club_email_click','club_website_click','map_click','share_club'].includes(row.event_name))item.actions++;
+    if(['club_call_click','club_whatsapp_click','club_email_click','club_website_click','map_click','share_club'].includes(row.event_name))item.actions++;
     if(row.visitor_id)item.visitors.add(row.visitor_id);
   }
   const venueMap=new Map<string,any>();
@@ -147,7 +147,7 @@ function summarizeFirstParty(events:any[]){
       playerSignups:events.filter(e=>e.event_name==='player_updates_signup').length,
       clubShares:events.filter(e=>e.event_name==='share_club').length,
       playerShares:events.filter(e=>e.event_name==='share_player').length,
-      contactActions:events.filter(e=>['club_whatsapp_click','club_email_click','club_website_click'].includes(e.event_name)).length,
+      contactActions:events.filter(e=>['club_call_click','club_whatsapp_click','club_email_click','club_website_click'].includes(e.event_name)).length,
       searches:events.filter(e=>e.event_name==='directory_search').length,
       zeroResults:events.filter(e=>e.event_name==='directory_zero_result').length,
     }
