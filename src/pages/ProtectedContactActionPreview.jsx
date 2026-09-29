@@ -27,6 +27,8 @@ export default function ProtectedContactActionPreview() {
   const [actionState, setActionState] = useState({ call:'idle', whatsapp:'idle' });
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailPreviewState, setEmailPreviewState] = useState('idle');
+  const [rollbackBusy, setRollbackBusy] = useState(false);
+  const [rollbackMessage, setRollbackMessage] = useState('');
 
   const loadPreview = async () => {
     setLoading(true);
@@ -79,6 +81,28 @@ export default function ProtectedContactActionPreview() {
     if (state === 'success') return channel === 'call' ? 'Call opened ✓' : 'WhatsApp opened ✓';
     if (state === 'error') return 'Please try again';
     return channel === 'call' ? 'Call club' : 'WhatsApp club';
+  };
+
+  const rollbackToLegacy = async () => {
+    if (rollbackBusy) return;
+    setRollbackBusy(true);
+    setRollbackMessage('');
+    try {
+      const res = await base44.functions.invoke('directoryContactAction', {
+        action:'admin_set_rollout',
+        listingSlug:LISTING_SLUG,
+        mode:'legacy',
+        fallbackEnabled:true,
+        reason:'Manual super-admin rollback from protected-contact pilot.',
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      setRollbackMessage('Clare Pickleball returned to legacy mode.');
+      await loadPreview();
+    } catch (err) {
+      setRollbackMessage(err?.message || 'Could not roll Clare back to legacy mode.');
+    } finally {
+      setRollbackBusy(false);
+    }
   };
 
   const card = preview?.card;
@@ -154,8 +178,8 @@ export default function ProtectedContactActionPreview() {
                   <StatusRow ok={checks.rawEmailAbsent}>Raw email address absent from the contact-card payload</StatusRow>
                   <StatusRow ok={checks.directDestinationAbsent}>No tel:, mailto: or WhatsApp destination in the contact-card payload</StatusRow>
                   <StatusRow ok={preview.liveDirectoryWired === false}>Live Directory is not wired to the new layer</StatusRow>
-                  <StatusRow ok={preview.featureFlagEnabled === false}>Global feature flag is OFF</StatusRow>
-                  <StatusRow ok={preview.rolloutMode === 'legacy'}>Clare pilot rollout mode is LEGACY until activation</StatusRow>
+                  <StatusRow ok={preview.featureFlagEnabled === false}>Global feature flag is {preview.featureFlagEnabled ? 'ON' : 'OFF'}</StatusRow>
+                  <StatusRow ok={['legacy','protected_pilot'].includes(preview.rolloutMode)}>Clare rollout mode is {String(preview.rolloutMode || 'legacy').replace('_',' ').toUpperCase()}</StatusRow>
                   <StatusRow ok={preview.fallbackEnabled === true}>Immediate per-listing fallback is armed</StatusRow>
                   <StatusRow ok={preview.legacyPublicContactStillPresent === true}>Existing public contact remains untouched for this preview stage</StatusRow>
                 </div>
@@ -182,6 +206,12 @@ export default function ProtectedContactActionPreview() {
                   <div className="mt-2 flex justify-between gap-3"><span className="text-muted-foreground">Fallback</span><strong>{preview.fallbackEnabled ? 'ARMED' : 'OFF'}</strong></div>
                 </div>
                 <p className="mt-3 text-xs leading-5 text-muted-foreground">If the Clare pilot misbehaves, RallyHub can return this listing to legacy mode without changing any other club. The global feature flag remains a second kill switch.</p>
+                {preview.rolloutMode !== 'legacy' && (
+                  <Button type="button" variant="outline" className="mt-4 w-full border-amber-500/50 text-amber-700 dark:text-amber-300" disabled={rollbackBusy} onClick={rollbackToLegacy}>
+                    {rollbackBusy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Rolling back…</> : 'Rollback Clare to legacy'}
+                  </Button>
+                )}
+                {rollbackMessage && <p className="mt-2 text-xs font-semibold" aria-live="polite">{rollbackMessage}</p>}
               </section>
             </aside>
           </div>
