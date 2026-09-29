@@ -940,19 +940,12 @@ export const importedDirectoryClubs = [
     "verificationStatus": "unclaimed",
     "contact": {
       "name": "Amanda-Jane Gainford",
-      "phone": "+353876254202",
-      "phoneHref": "tel:+353876254202",
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "carrickmacrosspickleballclub@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Deanna MacGuinness",
-        "phone": "+353872784664",
-        "phoneHref": "tel:+353872784664",
-        "email": null
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "carrickmacross",
@@ -3765,32 +3758,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Colm Egan",
-      "phone": "087 2414949",
-      "phoneHref": "tel:+353872414949",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "John Curtis",
-        "phone": "087 3458845",
-        "phoneHref": "tel:+353873458845",
-        "email": null
-      },
-      {
-        "name": "Colm Egan",
-        "phone": "+353872414949",
-        "phoneHref": "tel:+353872414949",
-        "email": "colm@camerakit.ie"
-      },
-      {
-        "name": "John Curtis",
-        "phone": "+353873458845",
-        "phoneHref": "tel:+353873458845",
-        "email": "jcberkeley1@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "blackthorn",
