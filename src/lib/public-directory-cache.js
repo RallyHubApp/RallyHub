@@ -1,6 +1,7 @@
 import { base44 } from '@/api/base44Client';
 
-const CACHE_KEY = 'rallyhub.publicDirectory.v2';
+const CACHE_KEY = 'rallyhub.publicDirectory.v3';
+const LEGACY_CONTACT_CACHE_KEY = 'rallyhub.publicDirectory.v2';
 const FRESH_MS = 5 * 60 * 1000;
 
 let memoryCache = null;
@@ -9,6 +10,9 @@ let inFlight = null;
 function readStored() {
   if (memoryCache) return memoryCache;
   try {
+    // Step 4 contact-protection pilot: discard the older cache because it may contain
+    // legacy public phone/email values for Clare Pickleball.
+    window.localStorage.removeItem(LEGACY_CONTACT_CACHE_KEY);
     const raw = window.localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
