@@ -1,0 +1,123 @@
+{
+  "name": "RallyHubTrialJourney",
+  "type": "object",
+  "properties": {
+    "trial_application_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "awaiting_activation",
+        "active",
+        "expired",
+        "suspended"
+      ],
+      "default": "awaiting_activation"
+    },
+    "activated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "agreement_acceptance_id": {
+      "type": "string"
+    },
+    "demo_tournament_id": {
+      "type": "string"
+    },
+    "demo_session_id": {
+      "type": "string"
+    },
+    "demo_started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "demo_completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "spond_connected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "first_live_tournament_id": {
+      "type": "string"
+    },
+    "first_live_session_id": {
+      "type": "string"
+    },
+    "first_live_event_created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "first_live_event_completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "results_published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "onboarding_dismissed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_activity_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "trial_application_id",
+    "tenant_id",
+    "club_id",
+    "user_id",
+    "status",
+    "expires_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
