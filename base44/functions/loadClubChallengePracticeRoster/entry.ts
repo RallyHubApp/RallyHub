@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       records.push({ tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id, side:'club_b', display_name:`Club B Test ${String(i).padStart(2,'0')}`, event_rank:i, gender:i%2?'Male':'Female', roster_role:'rotation', status:'active', available_from_round:1, unique_identity_key:`gate3-club-b-${i}` });
     }
     await base44.asServiceRole.entities.ClubChallengeParticipant.bulkCreate(records);
-    await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'draft', fairness_json:'', current_round:0, draw_approved_at:null, draw_approved_by:null, event_pack_stale:true });
+    await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { status:'draft', fairness_json:'', current_round:0, draw_approved_at:null, draw_approved_by:null, event_pack_stale:true, club_a_roster_saved_at:null, club_b_roster_saved_at:null });
     await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id, action:'practice_roster_loaded', actor_user_id:user.id, new_value_json:JSON.stringify({ player_count:32 }), occurred_at:new Date().toISOString() });
     return Response.json({ success:true, player_count:32 });
   } catch (error) {
