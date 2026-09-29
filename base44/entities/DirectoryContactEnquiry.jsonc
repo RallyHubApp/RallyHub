@@ -1,0 +1,81 @@
+{
+  "name": "DirectoryContactEnquiry",
+  "type": "object",
+  "properties": {
+    "listing_slug": {
+      "type": "string"
+    },
+    "listing_name": {
+      "type": "string"
+    },
+    "enquiry_type": {
+      "type": "string",
+      "enum": [
+        "email"
+      ],
+      "default": "email"
+    },
+    "sender_name": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "sender_email": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "message": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "source_path": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "delivery_status": {
+      "type": "string",
+      "enum": [
+        "sent",
+        "failed"
+      ],
+      "default": "sent"
+    },
+    "delivery_provider": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "listing_slug",
+    "listing_name",
+    "enquiry_type",
+    "sender_email",
+    "delivery_status",
+    "sent_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

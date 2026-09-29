@@ -1,0 +1,85 @@
+{
+  "name": "DirectoryContactEndpoint",
+  "type": "object",
+  "properties": {
+    "listing_slug": {
+      "type": "string"
+    },
+    "listing_name_snapshot": {
+      "type": "string"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_role": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "whatsapp_url": {
+      "type": "string"
+    },
+    "allow_call": {
+      "type": "boolean",
+      "default": true
+    },
+    "allow_whatsapp": {
+      "type": "boolean",
+      "default": true
+    },
+    "allow_email": {
+      "type": "boolean",
+      "default": true
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "disabled"
+      ],
+      "default": "active"
+    },
+    "updated_by_user_id": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "listing_slug",
+    "listing_name_snapshot",
+    "allow_call",
+    "allow_whatsapp",
+    "allow_email",
+    "status",
+    "updated_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
