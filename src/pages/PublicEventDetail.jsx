@@ -1,14 +1,14 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, MapPin, ShieldCheck, Ticket, UsersRound } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, MapPin, MessageCircle, ShieldCheck, Ticket, UsersRound } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import Seo from '@/components/public/Seo';
 import PublicSiteHeader from '@/components/public/PublicSiteHeader';
 import PublicSiteFooter from '@/components/public/PublicSiteFooter';
 import EventActionBar from '@/components/events/EventActionBar';
-import { EVENT_TYPES, eventStatusClass, eventTags, prettyEventDateRange, registrationState } from '@/lib/event-utils';
+import { EVENT_TYPES, eventStatusClass, eventTags, isWhatsAppRegistration, prettyEventDateRange, registrationState } from '@/lib/event-utils';
 
 const infoPreview=value=>{
   const text=String(value||'').replace(/\s+/g,' ').trim();
@@ -36,6 +36,7 @@ export default function PublicEventDetail(){
   if(error||!event)return <div className="min-h-screen bg-white"><PublicSiteHeader/><main className="mx-auto max-w-[1180px] px-5 py-20 text-center"><h1 className="text-2xl font-black text-[#07184c]">Event not found</h1><p className="mt-2 text-sm text-[#52627d]">{error?.message||'This event is not currently public.'}</p><Link to="/events" className="mt-5 inline-flex rounded-lg bg-[#078e48] px-4 py-2 text-sm font-bold text-white">Back to Events</Link></main><PublicSiteFooter/></div>;
 
   const state=registrationState(event);
+  const whatsAppRegistration=isWhatsAppRegistration(event);
   const typeLabel=EVENT_TYPES.find(([key])=>key===event.event_category)?.[1]||event.event_category||'Event';
   const tags=eventTags(event,8);
   const fullPoster=event.event_image_url;
@@ -91,12 +92,12 @@ export default function PublicEventDetail(){
           <InfoRow title="Eligibility & levels" summary={infoPreview(event.event_eligibility)}>{event.event_eligibility}</InfoRow>
           <InfoRow title="Player information" summary={infoPreview(event.event_player_info||event.description)}>{event.event_player_info||event.description}</InfoRow>
           <InfoRow title="Fees & cancellation" summary={infoPreview(event.event_fees_cancellation)}>{event.event_fees_cancellation}</InfoRow>
-          <InfoRow title="Contact organiser" summary={isFull&&invitationOnly?'Future invitation enquiries are sent through RallyHub.':([event.event_contact,event.event_contact_phone].filter(Boolean).join(' · ')||(event.host?.name||'Event organiser'))}>{isFull&&invitationOnly?<div><p>This event is full. Use <strong>Request a future invitation</strong> above so RallyHub can pass your email to the organiser and record that the enquiry came through RallyHub.</p>{event.event_contact_phone&&<p className="mt-2"><a href={`tel:${event.event_contact_phone}`} className="font-bold text-[#078e48]">Call {event.event_contact_phone}</a></p>}</div>:<div>{event.event_contact&&<p>{event.event_contact}</p>}{event.event_contact_phone&&<p className="mt-2"><a href={`tel:${event.event_contact_phone}`} className="font-bold text-[#078e48]">Call {event.event_contact_phone}</a></p>}</div>}</InfoRow>
+          <InfoRow title="Contact organiser" summary={isFull&&invitationOnly?'Future invitation enquiries are sent through RallyHub.':([event.event_contact,event.event_contact_phone].filter(Boolean).join(' · ')||(event.host?.name||'Event organiser'))}>{isFull&&invitationOnly?<div><p>This event is full. Use <strong>Request a future invitation</strong> above so RallyHub can pass your email to the organiser and record that the enquiry came through RallyHub.</p>{event.event_contact_phone&&<p className="mt-2"><a href={`tel:${event.event_contact_phone}`} className="font-bold text-[#078e48]">Call {event.event_contact_phone}</a></p>}</div>:<div>{event.event_contact&&<p>{event.event_contact}</p>}{whatsAppRegistration&&event.event_registration_url?<p className="mt-3"><a href={event.event_registration_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#078e48] px-4 font-bold text-white"><MessageCircle className="h-4 w-4"/>WhatsApp {event.event_contact_phone||'the organiser'} to register</a></p>:event.event_contact_phone&&<p className="mt-2"><a href={`tel:${event.event_contact_phone}`} className="font-bold text-[#078e48]">Call {event.event_contact_phone}</a></p>}</div>}</InfoRow>
         </div>
 
         <div className="space-y-5">
           <section className="overflow-hidden rounded-2xl border border-[#dbe6e8] bg-white"><div className="p-5"><h2 className="text-lg font-black">Venue</h2><p className="mt-2 font-bold">{event.location||'Venue TBC'}</p><p className="mt-1 text-sm text-[#52627d]">{[event.event_county,event.event_country].filter(Boolean).join(', ')}</p>{event.event_map_url&&<a href={event.event_map_url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#cad7dd] px-3 text-sm font-bold"><MapPin className="h-4 w-4"/>Get directions</a>}</div><div className="border-t border-[#edf1f2] bg-[#f7fafb] p-5"><div className="rounded-2xl border border-[#dbe6e8] bg-white p-5 text-sm leading-6 text-[#405270]"><p className="font-bold text-[#07184c]">Directions open in Google Maps.</p><p className="mt-1">This avoids showing a broken or misleading embedded map if map tiles fail to load.</p></div></div></section>
-          {event.host&&<section className="rounded-2xl border border-[#dbe6e8] bg-white p-5"><div className="flex items-center gap-3">{event.host.logo_url&&<img src={event.host.logo_url} alt="" className="h-12 w-12 rounded-full object-contain"/>}<div><p className="text-[10px] uppercase tracking-wider text-[#7b8799]">Organiser</p><h2 className="font-black">{event.host.name}</h2></div></div>{event.event_source_url&&<a href={event.event_source_url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#078e48]"><ExternalLink className="h-4 w-4"/>Official event information</a>}</section>}
+          {event.host&&<section className="rounded-2xl border border-[#dbe6e8] bg-white p-5"><div className="flex items-center gap-3">{event.host.logo_url&&<img src={event.host.logo_url} alt="" className="h-12 w-12 rounded-full object-contain"/>}<div><p className="text-[10px] uppercase tracking-wider text-[#7b8799]">Organiser</p><h2 className="font-black">{event.host.name}</h2></div></div>{event.event_source_url&&<a href={event.event_source_url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#078e48]"><ExternalLink className="h-4 w-4"/>{String(event.event_source_url).includes('/directory/')?'View club listing':'Official event information'}</a>}</section>}
         </div>
       </section>
 
