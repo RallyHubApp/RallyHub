@@ -6,7 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { RefreshCw, UserMinus, UserRoundPlus } from 'lucide-react';
 
-export default function KotcPlayerManagement({ tournament, players, allPlayers, queryClient }) {
+export default function KotcPlayerManagement({ tournament, players, allPlayers, queryClient, isTrialHost = false }) {
   const [mode, setMode] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [replaceFrom, setReplaceFrom] = useState('');
@@ -28,9 +28,22 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
   };
 
   const close = () => { setMode(null); setSelectedIds([]); setReplaceFrom(''); setReplaceTo(''); setReplaceSearch(''); setNewName(''); };
+  const updateTournament = async (patch) => {
+    if (isTrialHost) {
+      const res = await base44.functions.invoke('trialJourney', {
+        action:'update_kotc_tournament', tournamentId:tournament.id,
+        ...(patch.player_ids !== undefined ? { playerIds:patch.player_ids } : {}),
+        ...(patch.kotc_guest_roster !== undefined ? { guestRoster:patch.kotc_guest_roster } : {}),
+        ...(patch.kotc_player_order !== undefined ? { playerOrder:patch.kotc_player_order } : {}),
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data?.tournament;
+    }
+    return base44.entities.Tournament.update(tournament.id, patch);
+  };
 
   const removePlayers = async () => {
-    await base44.entities.Tournament.update(tournament.id, {
+    await updateTournament({ 
       player_ids: (tournament.player_ids || []).filter(id => !selectedIds.includes(id)),
       kotc_guest_roster: guestRoster.filter(g => !selectedIds.includes(g.guest_id)),
       kotc_player_order: (tournament.kotc_player_order || []).filter(id => !selectedIds.includes(id)),
@@ -48,7 +61,7 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
     if (existingMember) return toast.error(`${existingMember.full_name} already exists in the member/player directory. Add that player instead.`);
     if (existingGuest) return toast.error(`${existingGuest.display_name} is already on this guest roster.`);
     const guest = { guest_id: `guest_${crypto.randomUUID().replaceAll('-', '')}`, display_name: name, added_at: new Date().toISOString() };
-    await base44.entities.Tournament.update(tournament.id, { kotc_guest_roster: [...guestRoster, guest], kotc_player_order: [] });
+    await updateTournament({ kotc_guest_roster: [...guestRoster, guest], kotc_player_order: [] });
     toast.success(`${name} added as a one-off guest`);
     close(); refresh();
   };
@@ -67,7 +80,7 @@ export default function KotcPlayerManagement({ tournament, players, allPlayers, 
       if (guests.some(g => String(g.display_name || '').trim().toLowerCase().replace(/\s+/g, ' ') === norm)) return toast.error(`${name} is already on this guest roster.`);
       guests.push({ guest_id: `guest_${crypto.randomUUID().replaceAll('-', '')}`, display_name: name, added_at: new Date().toISOString() });
     }
-    await base44.entities.Tournament.update(tournament.id, { player_ids: memberIds, kotc_guest_roster: guests, kotc_player_order: [] });
+    await updateTournament({ player_ids: memberIds, kotc_guest_roster: guests, kotc_player_order: [] });
     toast.success('Player replaced');
     close(); refresh();
   };
