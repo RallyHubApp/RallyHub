@@ -66,6 +66,12 @@ Deno.serve(async (req) => {
     }
     if (action !== 'save') return Response.json({ error:'Invalid team manager action.' }, { status:400 });
 
+    const currentSavedAt = savedAt || null;
+    const expectedSavedAt = body.expectedSavedAt || null;
+    if (String(currentSavedAt || '') !== String(expectedSavedAt || '')) {
+      return Response.json({ error:'This team was updated on another device. Refresh the roster before saving so you do not overwrite newer changes.', conflict:true }, { status:409 });
+    }
+
     const ordered = Array.isArray(body.orderedParticipantIds) ? body.orderedParticipantIds.map(String) : [];
     const edits = Array.isArray(body.players) ? body.players : [];
     const currentIds = teamPlayers.map((p:any) => String(p.id)).sort();
