@@ -41,6 +41,7 @@ import PublicInterclubParticipantResult from '@/pages/PublicInterclubParticipant
 import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
 import PublicClubChallengeShowcaseScorer from '@/pages/PublicClubChallengeShowcaseScorer';
 import PublicInterclubRegistration from '@/pages/PublicInterclubRegistration';
+import PublicInterclubTeamManager from '@/pages/PublicInterclubTeamManager';
 import PublicGuestSessionBooking from '@/pages/PublicGuestSessionBooking';
 import PublicGuestRequest from '@/pages/PublicGuestRequest';
 import KotcHostSession from '@/pages/KotcHostSession';
@@ -276,6 +277,7 @@ function App() {
             <Route path="/:slug/:id" element={<PublicTournament />} />
             <Route path="/t/:id" element={<PublicTournament />} />
             <Route path="/club-challenge/register/:token" element={<PublicInterclubRegistration />} />
+            <Route path="/club-challenge/team-manager/:token" element={<PublicInterclubTeamManager />} />
             <Route path="/guest-session/:token" element={<PublicGuestSessionBooking />} />
             <Route path="/guest/:clubSlug" element={<PublicGuestRequest />} />
             <Route path="/membership/:clubSlug" element={<PublicMembershipApplication />} />
