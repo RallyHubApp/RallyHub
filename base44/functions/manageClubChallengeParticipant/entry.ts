@@ -231,7 +231,7 @@ Deno.serve(async (req) => {
         existing.add(identity);
       }
       if (created.length) {
-        await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+        await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true, [side === 'club_a' ? 'club_a_roster_saved_at' : 'club_b_roster_saved_at']:null });
         await base44.asServiceRole.entities.ClubChallengeAudit.create({
           tenant_id:event.tenant_id,
           challenge_event_id:event.id,
@@ -251,7 +251,7 @@ Deno.serve(async (req) => {
       const role = rosterRole === 'reserve' ? 'reserve' : rosterRole === 'rotation' ? 'rotation' : '';
       if (!role) return Response.json({ error:'Roster role must be Rotation or Reserve.' }, { status:400 });
       await base44.asServiceRole.entities.ClubChallengeParticipant.update(p.id, { roster_role:role, reserve_activated:false });
-      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true, [p.side === 'club_a' ? 'club_a_roster_saved_at' : 'club_b_roster_saved_at']:null });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_roster_role_changed', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({participant_id:p.id,roster_role:p.roster_role || 'rotation'}), new_value_json:JSON.stringify({participant_id:p.id,roster_role:role}) });
       return Response.json({ success:true, participantId:p.id, participantName:p.display_name, rosterRole:role });
     }
@@ -263,7 +263,7 @@ Deno.serve(async (req) => {
       const category = String(playingCategory || '').trim().toLowerCase();
       if (!['social','improver'].includes(category)) return Response.json({ error:'Playing category must be Social or Improver.' }, { status:400 });
       await base44.asServiceRole.entities.ClubChallengeParticipant.update(p.id, { playing_category:category });
-      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true, [p.side === 'club_a' ? 'club_a_roster_saved_at' : 'club_b_roster_saved_at']:null });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({
         tenant_id:event.tenant_id,
         challenge_event_id:event.id,
