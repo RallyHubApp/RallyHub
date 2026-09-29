@@ -5,17 +5,16 @@
     "key": {
       "type": "string"
     },
-    "review_email": {
-      "type": "string"
-    },
     "active": {
       "type": "boolean",
-      "default": true
+      "default": false
+    },
+    "review_email": {
+      "type": "string"
     }
   },
   "required": [
     "key",
-    "review_email",
     "active"
   ],
   "rls": {
