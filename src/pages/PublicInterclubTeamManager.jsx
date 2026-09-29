@@ -90,6 +90,7 @@ export default function PublicInterclubTeamManager() {
       const res = await base44.functions.invoke('interclubTeamManager', {
         token,
         action:'save',
+        expectedSavedAt:data?.event?.savedAt || null,
         orderedParticipantIds:players.map(p => p.id),
         players:players.map(p => ({ id:p.id, playingCategory:p.playingCategory || '', rosterRole:p.rosterRole || 'rotation' })),
       });
