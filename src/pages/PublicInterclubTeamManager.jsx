@@ -82,7 +82,7 @@ export default function PublicInterclubTeamManager() {
   };
 
   const save = async () => {
-    if (!dirty || saving) return;
+    if (saving || (!dirty && data?.event?.savedAt)) return;
     setSaving(true);
     setError('');
     setStatus('Saving current team…');
@@ -197,7 +197,7 @@ export default function PublicInterclubTeamManager() {
 
         <div className="sticky bottom-3 z-20 rounded-2xl border border-border bg-background/95 backdrop-blur p-3 shadow-xl flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex-1 text-xs text-muted-foreground">{dirty ? <span className="font-bold text-amber-700">Unsaved changes</span> : event.savedAt ? <span className="inline-flex items-center gap-1 font-semibold text-primary"><CheckCircle2 className="h-3.5 w-3.5"/>Current team saved</span> : 'Review the team and save the current configuration.'}</div>
-          <Button type="button" onClick={save} disabled={!dirty || saving || !players.length} className="min-h-11 sm:min-w-44"><Save className="mr-2 h-4 w-4"/>{saving ? 'Saving…' : 'Save Team'}</Button>
+          <Button type="button" onClick={save} disabled={saving || !players.length || (!dirty && !!event.savedAt)} className="min-h-11 sm:min-w-44"><Save className="mr-2 h-4 w-4"/>{saving ? 'Saving…' : 'Save Team'}</Button>
         </div>
 
         <p className="pb-8 text-center text-[11px] text-muted-foreground">This link only manages this team for this Interclub event. It does not give access to the host club or other RallyHub areas.</p>
