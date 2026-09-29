@@ -69,3 +69,15 @@ export async function loadPublicDirectoryState({ force = false } = {}) {
 
   return inFlight;
 }
+
+// Protected profile reads deliberately bypass the persistent localStorage Directory cache.
+// This keeps the future protected-contact pilot from re-persisting legacy contact details
+// in the browser while leaving the current live Directory cache untouched until rollout.
+export async function loadProtectedPublicClub(listingSlug) {
+  const res = await base44.functions.invoke('directoryListingProfile', {
+    action:'protected_public_get',
+    listingSlug,
+  });
+  if (res.data?.error) throw new Error(res.data.error);
+  return res.data || null;
+}
