@@ -45,6 +45,7 @@ export default function PublicClubProfile() {
   const { user, isAuthenticated } = useAuth();
   const [dynamicBase, setDynamicBase] = useState(null);
   const [publicProfile, setPublicProfile] = useState(null);
+  const [contactProtection, setContactProtection] = useState('legacy');
   const [verificationStatus, setVerificationStatus] = useState(seedClub?.verificationStatus || 'unclaimed');
   const [hasDirectoryAccess, setHasDirectoryAccess] = useState(false);
   const [loadingListing, setLoadingListing] = useState(true);
@@ -92,6 +93,7 @@ export default function PublicClubProfile() {
         if (!active) return;
         setDynamicBase(state?.base || null);
         setPublicProfile(state?.profile || null);
+        setContactProtection(state?.contactProtection || (state?.contractVersion === 'protected-v1' ? 'protected-v1' : 'legacy'));
         setVerificationStatus(state?.verificationStatus || seedClub?.verificationStatus || 'unclaimed');
         try { sessionStorage.removeItem(`rallyhub-directory-profile-${slug}`); } catch {}
       })
@@ -153,14 +155,23 @@ export default function PublicClubProfile() {
     return <div className="min-h-screen bg-background text-foreground"><PublicDirectoryHeader /><main className="container mx-auto px-4 py-10"><div className="glass rounded-2xl p-6">Loading club listing…</div></main></div>;
   }
   if (!baseClub) return <Navigate to="/directory" replace />;
+  const protectedContact = contactProtection === 'protected-v1';
   const club = publicProfile ? {
     ...baseClub,
     ...publicProfile,
     verificationStatus,
-    contact: { ...(baseClub.contact || {}), ...(publicProfile.contact || {}) },
+    contact: protectedContact
+      ? { ...(publicProfile.contact || {}), protected:true }
+      : { ...(baseClub.contact || {}), ...(publicProfile.contact || {}) },
     venues: Array.isArray(publicProfile.venues) ? publicProfile.venues : (baseClub.venues || []),
     sessions: Array.isArray(publicProfile.sessions) ? publicProfile.sessions : (baseClub.sessions || []),
-  } : { ...baseClub, verificationStatus, venues: baseClub.venues || [], sessions: baseClub.sessions || [], contact: baseClub.contact || {} };
+  } : {
+    ...baseClub,
+    verificationStatus,
+    venues: baseClub.venues || [],
+    sessions: baseClub.sessions || [],
+    contact: protectedContact ? { ...(dynamicBase?.contact || {}), protected:true } : (baseClub.contact || {})
+  };
 
   const schedule = groupByDay(club.sessions);
   const displayDescription = publicDescription(club);
