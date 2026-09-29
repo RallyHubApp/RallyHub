@@ -65,23 +65,49 @@ async function contactProtectionConfig(base44:any) {
   const settings = await base44.asServiceRole.entities.DirectorySettings.filter({ key:CONTACT_FEATURE_KEY }, '-updated_date', 5).catch(() => []);
   const globalEnabled = !!settings?.find((row:any) => row.active === true);
   if (!globalEnabled) {
-    const value = { globalEnabled:false, protectedSlugs:new Set<string>() };
+    const value = { globalEnabled:false, protectedSlugs:new Set<string>(), hideNameSlugs:new Set<string>() };
     contactConfigCache = { savedAt:now, value };
     return value;
   }
-  const rollouts = await base44.asServiceRole.entities.DirectoryContactRollout.filter({}, '-updated_at', 500).catch(() => []);
+  const [rollouts, claims] = await Promise.all([
+    base44.asServiceRole.entities.DirectoryContactRollout.filter({}, '-updated_at', 500).catch(() => []),
+    base44.asServiceRole.entities.DirectoryClaim.filter({}, '-reviewed_at', 500).catch(() => []),
+  ]);
   const protectedSlugs = new Set<string>();
   for (const row of rollouts || []) {
     if (['protected_pilot','protected'].includes(String(row?.mode || '')) && row?.listing_slug) protectedSlugs.add(String(row.listing_slug));
   }
-  const value = { globalEnabled:true, protectedSlugs };
+  const hideNameSlugs = new Set<string>();
+  const seenClaimSlugs = new Set<string>();
+  for (const claim of claims || []) {
+    const slug = String(claim?.listing_slug || '');
+    if (!slug || seenClaimSlugs.has(slug)) continue;
+    if (!['approved','auto_verified'].includes(String(claim?.status || ''))) continue;
+    seenClaimSlugs.add(slug);
+    if (claim?.public_name_opt_out === true) hideNameSlugs.add(slug);
+  }
+  const value = { globalEnabled:true, protectedSlugs, hideNameSlugs };
   contactConfigCache = { savedAt:now, value };
   return value;
 }
 
+async function protectedStateWithPrivacy(base44:any, listingSlug:string, state:any) {
+  const config = await contactProtectionConfig(base44);
+  return protectedDirectoryState(state, { hideContactName:config.hideNameSlugs.has(listingSlug) });
+}
+
 async function publicStateForRollout(base44:any, listingSlug:string, state:any) {
   const config = await contactProtectionConfig(base44);
-  return config.protectedSlugs.has(listingSlug) ? protectedDirectoryState(state) : state;
+  return config.protectedSlugs.has(listingSlug)
+    ? protectedDirectoryState(state, { hideContactName:config.hideNameSlugs.has(listingSlug) })
+    : state;
+}
+
+async function protectedListWithPrivacy(base44:any, listings:any) {
+  const config = await contactProtectionConfig(base44);
+  const optionsBySlug:any = {};
+  for (const slug of config.hideNameSlugs) optionsBySlug[slug] = { hideContactName:true };
+  return protectedDirectoryList(listings, optionsBySlug);
 }
 
 async function publicListForRollout(base44:any, listings:any) {
@@ -89,7 +115,7 @@ async function publicListForRollout(base44:any, listings:any) {
   if (!config.globalEnabled || !config.protectedSlugs.size) return listings;
   const out:any = { ...(listings || {}) };
   for (const slug of config.protectedSlugs) {
-    if (out[slug]) out[slug] = protectedDirectoryState(out[slug]);
+    if (out[slug]) out[slug] = protectedDirectoryState(out[slug], { hideContactName:config.hideNameSlugs.has(slug) });
   }
   return out;
 }
@@ -317,7 +343,7 @@ Deno.serve(async (req) => {
       if (!listingSlug) return Response.json({ error: 'listingSlug required' }, { status: 400 });
       const data = await getPublicClub(base44, listingSlug);
       const payload = action === 'protected_public_get'
-        ? { ...protectedDirectoryState(data), contractVersion:'protected-v1' }
+        ? { ...(await protectedStateWithPrivacy(base44, listingSlug, data)), contractVersion:'protected-v1' }
         : await publicStateForRollout(base44, listingSlug, data);
       return Response.json(
         payload,
@@ -328,7 +354,7 @@ Deno.serve(async (req) => {
     if (action === 'public_list' || action === 'protected_public_list') {
       const result = await getPublicDirectoryList(base44);
       const listings = action === 'protected_public_list'
-        ? protectedDirectoryList(result)
+        ? await protectedListWithPrivacy(base44, result)
         : await publicListForRollout(base44, result);
       return Response.json(
         { success: true, listings, ...(action === 'protected_public_list' ? { contractVersion:'protected-v1' } : {}) },
