@@ -1576,6 +1576,23 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       setRegistrationLinkBusy('');
     }
   };
+  const prepareTeamManagerLink = async side => {
+    if (!event || !hasManagePermission || !['club_a','club_b'].includes(side)) return;
+    setTeamManagerLinkBusy(side);
+    try {
+      const res = await base44.functions.invoke('manageInterclubTeamManagerLink', { eventId:event.id, side });
+      if (res.data?.error) throw new Error(res.data.error);
+      const url = interclubPublicUrl(`/club-challenge/team-manager/${res.data.token}`);
+      setTeamManagerLinks(current => ({ ...current, [side]:url }));
+      toast.success(`${res.data.teamName || (side === 'club_a' ? event.club_a_name : event.club_b_name)} team manager link is ready.`);
+      return url;
+    } catch (e) {
+      toast.error(e?.response?.data?.error || e?.message || 'Could not prepare team manager link');
+      return '';
+    } finally {
+      setTeamManagerLinkBusy('');
+    }
+  };
   const sharePublicLink = async (url, label) => {
     if (!url) return;
     const text = `${label} · ${event?.club_a_name || 'Team A'} vs ${event?.club_b_name || 'Team B'}`;
