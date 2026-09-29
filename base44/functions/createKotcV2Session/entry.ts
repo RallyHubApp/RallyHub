@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+import { tenantCapabilityDecision } from './tenantCapability.ts';
 
 const ENGINE_VERSION='2.0.0-rc.1';
 const RULES_VERSION='1.2.0';
@@ -13,9 +14,12 @@ function validatePairInputs(playerIds:string[],pairs:any[],phaseOrder:number,com
 
 Deno.serve(async(req)=>{try{
  const base44=createClientFromRequest(req); const user=await base44.auth.me(); if(!user)return Response.json({error:'Unauthorized'},{status:401});
- if(user.role!=='admin')return Response.json({error:'Platform admin access required to create a KOTC V2 session.'},{status:403});
  const body=await req.json().catch(()=>({})); const tournamentId=String(body.tournamentId||''); if(!tournamentId)return Response.json({error:'tournamentId required'},{status:400});
  const tournament=(await retry('tournament read',()=>base44.asServiceRole.entities.Tournament.filter({id:tournamentId})))?.[0]; if(!tournament)return Response.json({error:'Tournament not found'},{status:404});
+ const tournamentClubId=String(tournament.host_club_id||user.active_club_id||'');
+ const capabilityDecision=await tenantCapabilityDecision(base44,user,'tournament.king_of_the_court',{tenantId:String(tournament.tenant_id||''),clubId:tournamentClubId,eventId:tournamentId});
+ if(!capabilityDecision.allowed)return Response.json({error:'King of the Court is not enabled for this club or the trial has expired.'},{status:403});
+ if(user.role!=='admin'&&(user.approval_status!=='approved'||user.active_club_role!=='club_admin'))return Response.json({error:'Club administrator access is required to create a KOTC session.'},{status:403});
  const existing=(await retry('existing session read',()=>base44.asServiceRole.entities.KotcSession.filter({tournament_id:tournamentId}))).filter((s:any)=>!['cancelled','abandoned'].includes(s.status)); if(existing.length)return Response.json({error:'A KOTC V2 session already exists for this tournament.',session:existing[0]},{status:409});
  const guestRoster=Array.isArray(tournament.kotc_guest_roster)?tournament.kotc_guest_roster:[]; const guestById=Object.fromEntries(guestRoster.map((g:any)=>[String(g.guest_id),g]));
  const sandboxTournament=String(tournament.description||'').includes('RALLYHUB_KOTC_SANDBOX_V1');
@@ -63,7 +67,9 @@ Deno.serve(async(req)=>{try{
  const slotPayload:any[]=[];const matchPayload:any[]=[];for(const rc of roundCourts){for(const [side,ids] of [['A',rc.teamA],['B',rc.teamB]] as any){for(let s=0;s<2;s++)slotPayload.push({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_id:round.id,round_number:1,ladder_court_rank:rc.courtRank,team_side:side,slot_number:s+1,participant_id:ids[s],assignment_type:'initial_seed',assignment_revision:1,is_locked:firstPhase?.mode==='fixed'});}matchPayload.push({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_id:round.id,round_number:1,ladder_court_rank:rc.courtRank,team_a_participant_ids:rc.teamA,team_b_participant_ids:rc.teamB,status:'scheduled',revision:0,correction_count:0});}
  const createdSlots:any[]=slotPayload.length?await retry('round1 slots bulk create',()=>base44.asServiceRole.entities.KotcRoundSlot.bulkCreate(slotPayload)):[];const createdMatches:any[]=matchPayload.length?await retry('round1 matches bulk create',()=>base44.asServiceRole.entities.KotcMatch.bulkCreate(matchPayload)):[];
  const benchEventPayload=requestedBench.map((playerId:string)=>{const participant=participantByPlayer[playerId];return{tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:participant.id,round_id:round.id,round_number:1,event_type:'fairness_bench',effective_from_round:1,effective_to_round:1,fairness_credit:true,reason:firstPhase?.mode==='fixed'?'fixed_pair_fairness_bench':benchPriority,recorded_by_user_id:user.id,occurred_at:now};});if(benchEventPayload.length)await retry('round1 bench events',()=>base44.asServiceRole.entities.KotcParticipationEvent.bulkCreate(benchEventPayload));
- await retry('host access create',()=>base44.asServiceRole.entities.KotcSessionAccess.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,user_id:user.id,role:'session_host',status:'active',starts_at:now,granted_by_user_id:user.id}));
+ const entitlementEnd=capabilityDecision?.matchedEntitlement?.ends_at?Date.parse(capabilityDecision.matchedEntitlement.ends_at):null;
+ const hostGraceEnd=Number.isFinite(entitlementEnd)?new Date(entitlementEnd+6*60*60*1000).toISOString():undefined;
+ await retry('host access create',()=>base44.asServiceRole.entities.KotcSessionAccess.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,user_id:user.id,role:'session_host',status:'active',starts_at:now,ends_at:hostGraceEnd,granted_by_user_id:user.id}));
  const lease=await retry('host lease create',()=>base44.asServiceRole.entities.KotcHostLease.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,holder_user_id:user.id,lease_revision:1,status:'active',acquired_at:now,last_heartbeat_at:now}));
  const updatedSession=await retry('session round pointer update',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{current_round_id:round.id})); await retry('tournament session update',()=>base44.asServiceRole.entities.Tournament.update(tournament.id,{status:'In Progress',venue_id:venueId||tournament.venue_id,location:customLocation||tournament.location,name:sessionName,counts_toward_leaderboard:countsTowardLeaderboard}));
  return Response.json({success:true,session:updatedSession,round,participants,slots:createdSlots,matches:createdMatches,lease,partnershipPhases:phaseRecords,fixedPairs:fixedPairRecords});
