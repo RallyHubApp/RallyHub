@@ -244,6 +244,7 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
     setStatus(null);
   };
   const save = async () => {
+    saveInFlightRef.current = true;
     setStatus({state:'working',text:'Saving teams and rankings…'});
     try {
       await onSave?.({ poolIds:lanes.pool, clubAIds:lanes.club_a, clubBIds:lanes.club_b, clubAName:nameA, clubBName:nameB });
@@ -252,6 +253,8 @@ function TeamBuilder({ eventId, participants, clubAName, clubBName, locked, busy
       setStatus({state:'success',text:`Teams saved · current rosters ${lanes.club_a.length} in ${nameA} · ${lanes.club_b.length} in ${nameB}${lanes.pool.length ? ` · ${lanes.pool.length} still in Player Pool` : ''}. You can keep editing and save again as players change.`});
     } catch (e) {
       setStatus({state:'error',text:e?.message || 'Could not save teams and rankings.'});
+    } finally {
+      saveInFlightRef.current = false;
     }
   };
   const addPool = async () => {
