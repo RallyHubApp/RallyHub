@@ -2619,6 +2619,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                   ['club_b', setup.clubBName || event.club_b_name || 'Team B'],
                 ].map(([side, teamName]) => {
                   const url = registrationLinks[side];
+                  const managerUrl = teamManagerLinks[side];
+                  const savedAt = side === 'club_a' ? event.club_a_roster_saved_at : event.club_b_roster_saved_at;
                   return <div key={side} className="rounded-xl border border-border bg-secondary/30 p-4">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0"><p className="text-sm font-bold truncate">{teamName}</p><p className="text-[10px] text-muted-foreground">Guest registration link</p></div>
@@ -2635,6 +2637,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
                         </div>
                       </div>
                     </div>}
+                    <div className="mt-4 border-t border-border pt-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="text-xs font-bold">Team Manager Link</p>{savedAt ? <Badge className="bg-primary/10 text-primary">Team saved</Badge> : <Badge className="bg-amber-500/10 text-amber-700">Needs saving</Badge>}</div><p className="mt-1 text-[10px] text-muted-foreground">Give this to the team captain/manager. They see only this team and can repeatedly edit rank, Social/Improver and Rotation/Reserve as registrations change.</p></div>
+                        {!managerUrl && <Button data-testid={`cc-team-manager-link-${side}`} type="button" size="sm" variant="outline" disabled={teamManagerLinkBusy === side || locked || !canManageEvent} onClick={() => prepareTeamManagerLink(side)}>{teamManagerLinkBusy === side ? 'Preparing…' : 'Prepare Manager Link'}</Button>}
+                      </div>
+                      {managerUrl && <div className="mt-3 rounded-lg border border-primary/20 bg-background/70 p-3"><a href={managerUrl} target="_blank" rel="noreferrer" className="block break-all text-[10px] text-primary underline underline-offset-2">{managerUrl}</a><div className="mt-2 flex flex-wrap gap-2"><Button type="button" size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(managerUrl)}>Copy</Button><Button type="button" size="sm" variant="outline" onClick={() => shareOnWhatsApp(managerUrl, `${teamName} Team Manager`)}>WhatsApp</Button><Button type="button" size="sm" variant="ghost" onClick={() => window.open(managerUrl,'_blank','noopener,noreferrer')}>Open Manager View</Button></div></div>}
+                    </div>
                   </div>;
                 })}
               </div>
