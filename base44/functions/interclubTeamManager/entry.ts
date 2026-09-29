@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
     });
 
     return Response.json({ success:true, savedAt:now, changed, teamName });
-  } catch (error) {
+  } catch (error:any) {
     console.error('interclubTeamManager failed', error?.message || error);
     return Response.json({ error:'Unable to load or save this team right now. Please refresh and try again.' }, { status:500 });
   }
