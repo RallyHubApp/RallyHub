@@ -1,6 +1,7 @@
 // Auto-generated 16 September 2026 from the public PickleBook club/group list.
 // Ambiguous rename/shared-venue clusters are intentionally held back for manual review.
 // These are UNCLAIMED directory records; curated RallyHub club records remain separate.
+// Public fallback copy intentionally excludes personal contact details. Protected contact endpoints hold them privately.
 
 export const importedDirectoryClubs = [
   {
@@ -29,11 +30,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Dympna Quinn",
-      "phone": "+44 7706 031809",
-      "phoneHref": "tel:+447706031809",
-      "whatsapp": "447706031809",
-      "email": "dympna@gmail.com"
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
+      "whatsapp": null,
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -78,11 +79,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Patrick Stack O'Neill",
-      "phone": "087 2318647",
-      "phoneHref": "tel:+353872318647",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "patoneillceo@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -127,11 +128,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Mike Mander",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "mikemander99@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -176,20 +177,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Bridget Nodder",
-      "phone": "+447850102561",
-      "phoneHref": "tel:+447850102561",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "bridgethnodder@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Hannah McAdam",
-        "phone": "+447870155006",
-        "phoneHref": "tel:+447870155006",
-        "email": "hannah.mcadam@btinternet.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "ards-blair-mayne-wellbeing-and-leisure-complex",
@@ -232,11 +226,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "David Molloy",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "ashbournepickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -281,11 +275,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Niall Brogan .",
-      "phone": "087 2127776",
-      "phoneHref": "tel:+353872127776",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "Niallbrogan@hotmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -330,9 +324,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Flemington Community Centre",
-      "phone": "+353 1 841 5070",
-      "phoneHref": "tel:+35318415070",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -379,20 +373,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Dain Casio",
-      "phone": "+353853224532",
-      "phoneHref": "tel:+353853224532",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Daino Cassidy",
-        "phone": null,
-        "phoneHref": null,
-        "email": null
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "ballyfermot-main-street",
@@ -435,9 +422,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Celia Loftus",
-      "phone": "+353868184446",
-      "phoneHref": "tel:+353868184446",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -533,8 +520,8 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Dain Cassidy",
-      "phone": "18296333",
+      "name": null,
+      "phone": null,
       "phoneHref": null,
       "whatsapp": null,
       "email": null
@@ -582,11 +569,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Corey Wilson",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "corey.wilson@gll.org"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -631,20 +618,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Susana",
-      "phone": "087 8180544",
-      "phoneHref": "tel:+353878180544",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "blackrockpickleball18@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Susana",
-        "phone": null,
-        "phoneHref": null,
-        "email": "blackrockpickleball18@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "cabinteely-community-school",
@@ -687,11 +667,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Lee Douglas",
-      "phone": "+353876764183",
-      "phoneHref": "tel:+353876764183",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "leef94@yahoo.ie"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -736,7 +716,7 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Michael McDaid",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
@@ -785,20 +765,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Noel McHugh",
-      "phone": "+353876387819",
-      "phoneHref": "tel:+353876387819",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "mchughn56@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Kieran Murphy",
-        "phone": "+353 (87) 855 5107",
-        "phoneHref": "tel:+353878555107",
-        "email": "kfamurph@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "cavan-sports-complex",
@@ -841,11 +814,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Stephanie Sauter",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "carlingfordpickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -890,11 +863,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Anthony Abbey",
-      "phone": "+353857639533",
-      "phoneHref": "tel:+353857639533",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "tullowcarlow15pickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -939,7 +912,7 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Amanda-Jane Gainford",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
@@ -988,11 +961,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Paul Farrelly",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "paul.farrelly7@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -1037,20 +1010,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Karen O'Sullivan",
-      "phone": "+353872995328",
-      "phoneHref": "tel:+353872995328",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "koscork@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Karen O'Sullivan",
-        "phone": "+353872995328",
-        "phoneHref": "tel:+353872995328",
-        "email": null
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "clonakilty",
@@ -1142,9 +1108,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Cliff jennings",
-      "phone": "+353852799739",
-      "phoneHref": "tel:+353852799739",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -1203,11 +1169,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Tony Hughes",
-      "phone": "086 170 8020",
-      "phoneHref": "tel:+353861708020",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "tony1hughes@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -1264,11 +1230,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Bríd Gallagher",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "briddgallagher@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -1313,11 +1279,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Deirdre",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "positivelife1@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -1362,11 +1328,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Robert Cooke",
-      "phone": "353894076674",
-      "phoneHref": "tel:+353894076674",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "dublin15pickleball@outlook.ie"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -1483,11 +1449,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Willie Treacy",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "dublin7pickleballclub@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -1532,9 +1498,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Duhallow PickleBall",
-      "phone": "+353852828654",
-      "phoneHref": "tel:+353852828654",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -1581,20 +1547,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Ian Gourlay",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "igourlay@yahoo.ie"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Patrick Cumiskey",
-        "phone": null,
-        "phoneHref": null,
-        "email": "pcumiskey@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "kilmacthomas",
@@ -1698,11 +1657,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Michael O' Keeffe",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "eastcorkpickleball23@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -1747,11 +1706,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Thomas (Tom) Brady",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "eastmeathpickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -1808,20 +1767,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "PHIL HAYES",
-      "phone": "+353872400570",
-      "phoneHref": "tel:+353872400570",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "edenderrypickleballclub@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "CATHERINE BYRNE",
-        "phone": "+353874183111",
-        "phoneHref": "tel:+353874183111",
-        "email": "edenderrypickleballclub@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "school-ln",
@@ -1864,9 +1816,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Ken Edgeworth",
-      "phone": "353868965588",
-      "phoneHref": "tel:+353868965588",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -1962,11 +1914,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Jack Butler",
-      "phone": "087 1358254",
-      "phoneHref": "tel:+353871358254",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "1jackbutler@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -2023,20 +1975,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Carmel Walsh",
-      "phone": "+353860572401",
-      "phoneHref": "tel:+353860572401",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Carmel Walsh",
-        "phone": null,
-        "phoneHref": null,
-        "email": "carmelawalsh@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "foilmore",
@@ -2128,9 +2073,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Nuala Maloney",
-      "phone": "+353874128281",
-      "phoneHref": "tel:+353874128281",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -2177,7 +2122,7 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Michael Lyne",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
@@ -2226,11 +2171,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Sheila Maguire",
-      "phone": "+353872335887",
-      "phoneHref": "tel:+353872335887",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "maguiresheila@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -2275,11 +2220,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Debbie Quirke",
-      "phone": "353872989537",
-      "phoneHref": "tel:+353872989537",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "kingdompickleballclub@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -2360,11 +2305,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Eric Power",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "kinsalepickleballclub@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -2409,9 +2354,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Caitriona Lawless",
-      "phone": "086 2340632",
-      "phoneHref": "tel:+353862340632",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -2458,11 +2403,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Mairéad Staunton",
-      "phone": "+353872328460",
-      "phoneHref": "tel:+353872328460",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "maireadstaunton@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -2507,9 +2452,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Wayne Fitzpatrick",
-      "phone": "+353899551254",
-      "phoneHref": "tel:+353899551254",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -2605,11 +2550,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Wayne Fitzpatrick",
-      "phone": "+353899551254",
-      "phoneHref": "tel:+353899551254",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "midletonpickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -2654,11 +2599,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Liz Maguire",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "elizdevinemaguire6@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -2752,20 +2697,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "St.Mary Community Centre",
-      "phone": "+353873626493",
-      "phoneHref": "tel:+353873626493",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "stmarys.etown@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Sports Hub Edgeworthstown",
-        "phone": null,
-        "phoneHref": null,
-        "email": null
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "st-mary-s-community-centre",
@@ -2808,20 +2746,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "EILISH BEGLAN",
-      "phone": "+353861026874",
-      "phoneHref": "tel:+353861026874",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "ebeglan@yahoo.ie"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "NOELEEN MAGUIRE",
-        "phone": null,
-        "phoneHref": null,
-        "email": "noeleen.lisney.maguire@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "mullahoran-gfc",
@@ -2913,11 +2844,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Cormac Nugent",
-      "phone": "+353867963564",
-      "phoneHref": "tel:+353867963564",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "naaspickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -2962,20 +2893,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Sue Steer",
-      "phone": "+353863862568",
-      "phoneHref": "tel:+353863862568",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "susanandrichardsteer@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Phil McHale",
-        "phone": "+353872142762",
-        "phoneHref": "tel:+353872142762",
-        "email": "newportpickleball@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "burrishoole-community-centre",
@@ -3018,11 +2942,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "North Star Committee www.northstarpickleball.com",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "hello@northstarpickleball.com."
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -3067,9 +2991,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Sinéad Nolan",
-      "phone": "+353866096515",
-      "phoneHref": "tel:+353866096515",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -3165,9 +3089,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Alan Dalton",
-      "phone": "+353872031170",
-      "phoneHref": "tel:+353872031170",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -3214,20 +3138,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Claire Callan",
-      "phone": "+353863557387",
-      "phoneHref": "tel:+353863557387",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "pickleballwexford@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Claire Callan",
-        "phone": null,
-        "phoneHref": null,
-        "email": "pickleballwexford@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "wexford-town",
@@ -3270,20 +3187,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Rebecca Chiongbian",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "r.chiongbian@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Mares Gurapo",
-        "phone": null,
-        "phoneHref": null,
-        "email": "marz.xclusiv@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "dublin",
@@ -3326,20 +3236,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Francie Fitzpatrick",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "francie@cascadiacontent.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Bobby Fitzpatrick",
-        "phone": null,
-        "phoneHref": null,
-        "email": "fitzpatrick.bobby@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "cooltederry",
@@ -3382,11 +3285,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Dwayne",
-      "phone": "0871791193",
-      "phoneHref": "tel:+353871791193",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "dwaynesmobile@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -3431,11 +3334,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Terry O'Sullivan",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "RebelPickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -3480,32 +3383,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Kerry Field",
-      "phone": "+353862845994",
-      "phoneHref": "tel:+353862845994",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "kerry.field1000@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Clare Killmartin",
-        "phone": null,
-        "phoneHref": null,
-        "email": "roundwoodpickleballgroup@gmail.com"
-      },
-      {
-        "name": "Kerry Field",
-        "phone": "+353862845994",
-        "phoneHref": "tel:+353862845994",
-        "email": null
-      },
-      {
-        "name": "Cindy Hayes",
-        "phone": "+353868305672",
-        "phoneHref": "tel:+353868305672",
-        "email": null
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "an-tochar-g-a-a-club-aras-an-tochar-togher-more-roundwood-co-wicklow",
@@ -3548,11 +3432,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Sandyford Pickleball Club",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "sandyfordpickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -3597,11 +3481,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Ryan Doe",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "sligopickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -3646,11 +3530,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Tomas Kelly",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "pickleballsligo@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -3695,11 +3579,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Alex Young",
-      "phone": "+353868566695",
-      "phoneHref": "tel:+353868566695",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "southkildarepickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -3866,11 +3750,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Stephanie Murphy",
+      "name": null,
       "phone": null,
       "phoneHref": null,
       "whatsapp": null,
-      "email": "Stepasidepickleball@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -3915,9 +3799,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Oliver Jennings",
-      "phone": "+353 87 972 6860",
-      "phoneHref": "tel:+353879726860",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -3964,9 +3848,9 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Anne O Toole",
-      "phone": "+353874100990",
-      "phoneHref": "tel:+353874100990",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
@@ -4013,11 +3897,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Brian Cushnie",
-      "phone": "+442892660653",
-      "phoneHref": "tel:+442892660653",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "brian@pickleballni.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -4062,11 +3946,11 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Tim Warbout",
-      "phone": "+353872370156",
-      "phoneHref": "tel:+353872370156",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "connemarathiar@gmail.com"
+      "email": null
     },
     "secondaryContacts": [],
     "venues": [
@@ -4111,26 +3995,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Carol Cummins",
-      "phone": "+353894461269",
-      "phoneHref": "tel:+353894461269",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
       "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Carmel Dullea",
-        "phone": "+353863256772",
-        "phoneHref": "tel:+353863256772",
-        "email": null
-      },
-      {
-        "name": "Carol Cummins",
-        "phone": "+353894461269",
-        "phoneHref": "tel:+353894461269",
-        "email": "caroljbcummins@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "ballinacarriga-community-hall",
@@ -4173,20 +4044,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Orna McAulliffe",
-      "phone": "+353872850284",
-      "phoneHref": "tel:+353872850284",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "ornamac@yahoo.co.uk"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Mary Drumm",
-        "phone": "+353879435256",
-        "phoneHref": "tel:+353879435256",
-        "email": "drummmary@gmail.com"
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "rice-college-gym",
@@ -4229,20 +4093,13 @@ export const importedDirectoryClubs = [
     "sourceCheckedAt": "16 September 2026",
     "verificationStatus": "unclaimed",
     "contact": {
-      "name": "Sinéad Nolan",
-      "phone": "086 6096515",
-      "phoneHref": "tel:+353866096515",
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
       "whatsapp": null,
-      "email": "wicklowpickleball@gmail.com"
+      "email": null
     },
-    "secondaryContacts": [
-      {
-        "name": "Stephanie Murphy",
-        "phone": "087 6687508",
-        "phoneHref": "tel:+353876687508",
-        "email": null
-      }
-    ],
+    "secondaryContacts": [],
     "venues": [
       {
         "id": "lugduff",
