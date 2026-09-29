@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, Clock3, MapPin } from 'lucide-react';
-import { eventPath, eventStatusClass, eventTags, prettyEventDateRange, registrationState } from '@/lib/event-utils';
+import { eventPath, eventStatusClass, eventTags, prettyEventDateRange, registrationActionLabel, registrationState } from '@/lib/event-utils';
 
 export default function EventCard({ event, onRegister }) {
   const state = registrationState(event);
@@ -11,7 +11,7 @@ export default function EventCard({ event, onRegister }) {
   const y = Number(event.event_card_position_y ?? event.event_image_position_y ?? 50);
   const zoom = Number(event.event_card_zoom ?? event.event_image_zoom ?? 1);
   const canRegister = state.actionable && event.event_registration_mode !== 'none' && (event.event_registration_url || event.event_registration_mode === 'contact' || event.event_registration_mode === 'rallyhub');
-  const actionLabel = state.key === 'invite_only' ? 'Request invitation' : 'Register';
+  const actionLabel = registrationActionLabel(event,state);
 
   return (
     <article className="overflow-hidden rounded-[16px] border border-[#dbe6e8] bg-white shadow-[0_8px_24px_rgba(8,24,77,.06)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(8,24,77,.10)]">
