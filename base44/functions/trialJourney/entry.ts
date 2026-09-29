@@ -34,7 +34,7 @@ async function refreshJourney(base44:any,journey:any){
   if(!journey)return null;
   const expired=journey.expires_at&&Date.parse(journey.expires_at)<Date.now();
   let patch:any={};
-  let demoSession:any=null,liveSession:any=null,resultsToken:string|null=null;
+  let demoSession:any=null,liveSession:any=null,resultsToken:string|null=null,liveEventGraceActive=false;
   if(journey.demo_tournament_id){
     const s=await base44.asServiceRole.entities.KotcSession.filter({tournament_id:journey.demo_tournament_id});demoSession=s?.[0]||null;
     if(demoSession&&['completed','finalised'].includes(demoSession.status)&&!journey.demo_completed_at)patch.demo_completed_at=demoSession.actual_session_end||demoSession.finalised_at||nowIso();
@@ -52,9 +52,17 @@ async function refreshJourney(base44:any,journey:any){
   ]);
   const spondEvidence=spondConnections?.[0]||spondDrafts?.[0]||null;
   if(spondEvidence&&!journey.spond_connected_at)patch.spond_connected_at=spondEvidence.last_verified_at||spondEvidence.saved_at||spondEvidence.updated_date||nowIso();
+  if(expired&&liveSession?.id&&['in_progress','paused'].includes(String(liveSession.status||''))){
+    const grants=await base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:liveSession.id,user_id:journey.user_id,status:'active'}).catch(()=>[]);
+    liveEventGraceActive=(grants||[]).some((g:any)=>(!g.starts_at||Date.parse(g.starts_at)<=Date.now())&&(!g.ends_at||Date.parse(g.ends_at)>=Date.now()));
+  }
   if(expired&&journey.status==='active')patch.status='expired';
   if(Object.keys(patch).length)journey=await base44.asServiceRole.entities.RallyHubTrialJourney.update(journey.id,{...patch,last_activity_at:nowIso()});
-  return {...journey,expired,demoSession,liveSession,spondConnected:!!spondEvidence,resultsToken};
+  if(expired&&journey.trial_application_id){
+    const apps=await base44.asServiceRole.entities.RallyHubTrialApplication.filter({id:journey.trial_application_id}).catch(()=>[]);const app=apps?.[0];
+    if(app&&app.status==='activated')await base44.asServiceRole.entities.RallyHubTrialApplication.update(app.id,{status:'expired',expired_at:app.expired_at||nowIso(),expires_at:journey.expires_at}).catch(()=>{});
+  }
+  return {...journey,expired,demoSession,liveSession,spondConnected:!!spondEvidence,resultsToken,liveEventGraceActive};
 }
 function publicApplication(row:any){return row?{id:row.id,club_name:row.club_name,contact_name:row.contact_name,contact_role:row.contact_role,status:row.status,trial_days:row.trial_days,selected_capability_keys:row.selected_capability_keys||[],activation_deadline:row.activation_deadline,activated_at:row.activated_at,expires_at:row.expires_at,tenant_id:row.tenant_id,club_id:row.club_id}:null;}
 
