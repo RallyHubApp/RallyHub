@@ -1445,8 +1445,9 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.DirectoryListingProfile.list('-updated_at', 500),
         base44.asServiceRole.entities.DirectoryClaimInvitation.list('-created_date', 300),
       ]);
-      const directoryUserIds = [...new Set((accesses || []).filter((a:any) => a.status === 'active' && a.user_id).map((a:any) => String(a.user_id)))];
-      await Promise.all(directoryUserIds.map((id:string) => hardenDirectoryOnlyAccount(base44, id)));
+      // Admin listing is a read-only reporting action. Do not mutate/harden user
+      // accounts while loading Directory Admin; one bad legacy account must never
+      // make all Directory counts collapse to the static seed fallback.
       return Response.json({ success: true, claims, accesses, listingRequests, listingRecords, listingProfiles, invitations });
     }
 
