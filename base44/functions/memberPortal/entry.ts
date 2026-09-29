@@ -1067,17 +1067,21 @@ Deno.serve(async (req) => {
       };
 
       let clubhouse = { posts:[], playerDirectory:snapshot.playerDirectory || [], club:snapshot.club };
-      let learn = { resources:[], club:snapshot.club };
+      let learn = { resources:[], categories:[], settings:null, club:snapshot.club };
       if (tenantId && clubId) {
         // Bulletin/resources are optional preview enhancements. If either auxiliary
         // query has a transient backend failure, keep the member preview available
         // instead of turning the entire preview into a 500 error.
-        const [postResult, resourceResult] = await Promise.allSettled([
+        const [postResult, resourceResult, categoryResult, settingsResult] = await Promise.allSettled([
           base44.asServiceRole.entities.ClubBulletinPost.filter({ tenant_id:tenantId, club_id:clubId, status:'published' }, '-published_at', 200),
           base44.asServiceRole.entities.ClubResource.filter({ tenant_id:tenantId, club_id:clubId, status:'published' }, 'sort_order', 500),
+          base44.asServiceRole.entities.ClubResourceCategory.filter({ tenant_id:tenantId, club_id:clubId, status:'active' }, 'sort_order', 100),
+          base44.asServiceRole.entities.ClubLearnSettings.filter({ tenant_id:tenantId, club_id:clubId }, '-updated_date', 1),
         ]);
         const postRows:any[] = postResult.status === 'fulfilled' ? (postResult.value || []) : [];
         const resourceRows:any[] = resourceResult.status === 'fulfilled' ? (resourceResult.value || []) : [];
+        const categoryRows:any[] = categoryResult.status === 'fulfilled' ? (categoryResult.value || []) : [];
+        const settingsRows:any[] = settingsResult.status === 'fulfilled' ? (settingsResult.value || []) : [];
         if (postResult.status === 'rejected') console.warn('memberPortal preview bulletin unavailable', postResult.reason?.message || postResult.reason);
         if (resourceResult.status === 'rejected') console.warn('memberPortal preview resources unavailable', resourceResult.reason?.message || resourceResult.reason);
         const now = Date.now();
@@ -1091,9 +1095,12 @@ Deno.serve(async (req) => {
             .map((post:any) => ({ id:post.id, post_type:post.post_type, title:post.title, body:post.body || '', image_url:post.image_url || null, link_url:post.link_url || null, comments_enabled:post.comments_enabled !== false, is_pinned:post.is_pinned === true, published_at:post.published_at || post.created_date || null }))
             .sort((a:any,b:any) => Number(b.is_pinned) - Number(a.is_pinned) || String(b.published_at || '').localeCompare(String(a.published_at || ''))),
         };
+        const previewSettings:any = settingsRows?.[0] || null;
         learn = {
           club:snapshot.club,
-          resources:(resourceRows || []).map((row:any) => ({ id:row.id, title:row.title, description:row.description || '', category:row.category || 'Resources', resource_type:row.resource_type || 'link', url:row.url || null, image_url:row.image_url || null, sport_key:row.sport_key || null, sort_order:Number(row.sort_order || 0) })),
+          resources:(resourceRows || []).map((row:any) => ({ id:row.id, title:row.title, description:row.description || '', category_id:row.category_id || null, category:row.category || 'Resources', resource_type:row.resource_type || 'link', url:row.url || null, image_url:row.image_url || null, sport_key:row.sport_key || null, sort_order:Number(row.sort_order || 0) })),
+          categories:(categoryRows || []).map((row:any) => ({ id:row.id, name:row.name, description:row.description || '', icon_key:row.icon_key || '', sort_order:Number(row.sort_order || 0) })),
+          settings:previewSettings ? { intro_text:previewSettings.intro_text || '', feedback_enabled:previewSettings.feedback_enabled !== false, contact_enabled:previewSettings.contact_enabled !== false, in_app_enabled:previewSettings.in_app_enabled !== false, contact_name:previewSettings.contact_name || '', contact_title:previewSettings.contact_title || '', contact_email:previewSettings.contact_email || '', whatsapp_number:previewSettings.whatsapp_number || '' } : null,
         };
       }
 
