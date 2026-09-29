@@ -32,6 +32,7 @@ export function protectedDirectoryState(state:any) {
   if (!state || typeof state !== 'object') return state ?? null;
   return {
     ...state,
+    contactProtection:'protected-v1',
     base:protectedDirectoryValue(state.base),
     profile:protectedDirectoryValue(state.profile),
   };
