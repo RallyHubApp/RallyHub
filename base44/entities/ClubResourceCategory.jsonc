@@ -1,5 +1,5 @@
 {
-  "name": "ClubResource",
+  "name": "ClubResourceCategory",
   "type": "object",
   "properties": {
     "tenant_id": {
@@ -8,55 +8,17 @@
     "club_id": {
       "type": "string"
     },
-    "title": {
+    "name": {
       "type": "string",
-      "maxLength": 220
+      "maxLength": 120
     },
     "description": {
       "type": "string",
-      "maxLength": 3000
+      "maxLength": 500
     },
-    "category_id": {
-      "type": "string"
-    },
-    "category": {
+    "icon_key": {
       "type": "string",
-      "maxLength": 120
-    },
-    "resource_type": {
-      "type": "string",
-      "enum": [
-        "video",
-        "guide",
-        "document",
-        "link",
-        "policy",
-        "coaching",
-        "other"
-      ],
-      "default": "link"
-    },
-    "url": {
-      "type": "string"
-    },
-    "image_url": {
-      "type": "string"
-    },
-    "source_kind": {
-      "type": "string",
-      "enum": [
-        "external_link",
-        "uploaded_file"
-      ],
-      "default": "external_link"
-    },
-    "file_name": {
-      "type": "string",
-      "maxLength": 260
-    },
-    "sport_key": {
-      "type": "string",
-      "maxLength": 120
+      "maxLength": 60
     },
     "sort_order": {
       "type": "number",
@@ -65,19 +27,18 @@
     "status": {
       "type": "string",
       "enum": [
-        "draft",
-        "published",
+        "active",
+        "hidden",
         "archived"
       ],
-      "default": "draft"
+      "default": "active"
     }
   },
   "required": [
     "tenant_id",
     "club_id",
-    "title",
-    "category",
-    "resource_type",
+    "name",
+    "sort_order",
     "status"
   ],
   "rls": {
