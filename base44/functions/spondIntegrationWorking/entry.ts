@@ -444,6 +444,7 @@ Deno.serve(async (req) => {
       fairness_json:'',
       status:challenge.status === 'draw_generated' ? 'draft' : challenge.status,
       event_pack_stale:true,
+      ...(side === 'club_a' ? {club_a_roster_saved_at:null} : side === 'club_b' ? {club_b_roster_saved_at:null} : {}),
     });
     await base44.asServiceRole.entities.ClubChallengeAudit.create({
       tenant_id:challenge.tenant_id,
