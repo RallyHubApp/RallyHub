@@ -12,141 +12,145 @@
 # Error details
 
 ```
-Error: undo_ack_ms should be <= 250ms but was 497ms
+Error: create_ack_ms should be <= 250ms but was 566ms
 
 expect(received).toBeLessThanOrEqual(expected)
 
 Expected: <= 250
-Received:    497
+Received:    566
 ```
 
 # Page snapshot
 
 ```yaml
-- main [ref=f1e3]:
-  - generic [ref=f1e4]:
-    - generic [ref=f1e5]:
-      - generic [ref=f1e6]:
-        - paragraph [ref=f1e7]: Round 1 — ROUND READY
-        - paragraph [ref=f1e8]: 4 courts · 2 bench
-      - generic [ref=f1e9]:
-        - button "Roster" [ref=f1e10] [cursor=pointer]
-        - button "Links" [ref=f1e11] [cursor=pointer]
-        - button "Menu" [ref=f1e12] [cursor=pointer]
-    - generic [ref=f1e13]:
-      - paragraph [ref=f1e14]: What happens next
-      - paragraph [ref=f1e15]: Round 1 ready
-      - paragraph [ref=f1e16]: "Next: check the 4 court assignments and bench, then Start Round 1."
-    - generic [ref=f1e17]:
-      - generic [ref=f1e18]:
-        - paragraph [ref=f1e19]: Bench This Round
-        - generic [ref=f1e20]:
-          - button "Player 01" [ref=f1e21] [cursor=pointer]
-          - button "Player 18" [ref=f1e22] [cursor=pointer]
-        - paragraph [ref=f1e23]: Tap a court player, then a bench player, to swap them.
-      - generic [ref=f1e24]:
-        - generic [ref=f1e25]:
-          - heading "Host Round Editor" [level=4] [ref=f1e26]
-          - paragraph [ref=f1e27]: Tap two players to swap them, or drag a whole court by its handle to move that four-player group to another court rank.
-        - generic [ref=f1e28]:
-          - generic [ref=f1e29]:
-            - generic [ref=f1e30]:
-              - generic [ref=f1e31]: Court 1
-              - button "Move whole Court 1" [ref=f1e35] [cursor=pointer]: Move court
-            - generic [ref=f1e43]:
-              - generic [ref=f1e44]:
-                - paragraph [ref=f1e45]: Team A
-                - button "Locked ✓ · Unlock" [ref=f1e46] [cursor=pointer]
-              - generic [ref=f1e47]:
-                - button "Player 17" [ref=f1e48] [cursor=pointer]
-                - button "Player 08" [ref=f1e57] [cursor=pointer]
-            - generic [ref=f1e66]:
-              - generic [ref=f1e67]:
-                - paragraph [ref=f1e68]: Team B
-                - button "Lock pair" [ref=f1e69] [cursor=pointer]
-              - generic [ref=f1e70]:
-                - button "Player 09" [ref=f1e71] [cursor=pointer]
-                - button "Player 16" [ref=f1e80] [cursor=pointer]
-          - generic [ref=f1e89]:
-            - generic [ref=f1e90]:
-              - generic [ref=f1e91]: Court 2
-              - button "Move whole Court 2" [ref=f1e93] [cursor=pointer]: Move court
-            - generic [ref=f1e101]:
-              - generic [ref=f1e102]:
-                - paragraph [ref=f1e103]: Team A
-                - button "Lock pair" [ref=f1e104] [cursor=pointer]
-              - generic [ref=f1e105]:
-                - button "Player 04" [ref=f1e106] [cursor=pointer]
-                - button "Player 05" [ref=f1e115] [cursor=pointer]
-            - generic [ref=f1e124]:
-              - generic [ref=f1e125]:
-                - paragraph [ref=f1e126]: Team B
-                - button "Lock pair" [ref=f1e127] [cursor=pointer]
-              - generic [ref=f1e128]:
-                - button "Player 12" [ref=f1e129] [cursor=pointer]
-                - button "Player 13" [ref=f1e138] [cursor=pointer]
-          - generic [ref=f1e147]:
-            - generic [ref=f1e148]:
-              - generic [ref=f1e149]: Court 3
-              - button "Move whole Court 3" [ref=f1e151] [cursor=pointer]: Move court
-            - generic [ref=f1e159]:
-              - generic [ref=f1e160]:
-                - paragraph [ref=f1e161]: Team A
-                - button "Lock pair" [ref=f1e162] [cursor=pointer]
-              - generic [ref=f1e163]:
-                - button "Player 02" [ref=f1e164] [cursor=pointer]
-                - button "Player 07" [ref=f1e173] [cursor=pointer]
-            - generic [ref=f1e182]:
-              - generic [ref=f1e183]:
-                - paragraph [ref=f1e184]: Team B
-                - button "Lock pair" [ref=f1e185] [cursor=pointer]
-              - generic [ref=f1e186]:
-                - button "Player 10" [ref=f1e187] [cursor=pointer]
-                - button "Player 15" [ref=f1e196] [cursor=pointer]
-          - generic [ref=f1e205]:
-            - generic [ref=f1e206]:
-              - generic [ref=f1e207]: Court 4
-              - button "Move whole Court 4" [ref=f1e209] [cursor=pointer]: Move court
-            - generic [ref=f1e217]:
-              - generic [ref=f1e218]:
-                - paragraph [ref=f1e219]: Team A
-                - button "Lock pair" [ref=f1e220] [cursor=pointer]
-              - generic [ref=f1e221]:
-                - button "Player 03" [ref=f1e222] [cursor=pointer]
-                - button "Player 06" [ref=f1e231] [cursor=pointer]
-            - generic [ref=f1e240]:
-              - generic [ref=f1e241]:
-                - paragraph [ref=f1e242]: Team B
-                - button "Lock pair" [ref=f1e243] [cursor=pointer]
-              - generic [ref=f1e244]:
-                - button "Player 11" [ref=f1e245] [cursor=pointer]
-                - button "Player 14" [ref=f1e254] [cursor=pointer]
-        - generic [ref=f1e263]:
-          - generic [ref=f1e264]:
-            - paragraph [ref=f1e265]: Round setup is saved
-            - paragraph [ref=f1e266]: You can leave this screen and return without losing the court layout.
-          - button "Saved ✓" [disabled]
-      - generic [ref=f1e267]:
-        - generic [ref=f1e268]:
-          - paragraph [ref=f1e269]: Pre-Round Check
-          - paragraph [ref=f1e270]: Confirm the round time and hall sound before players begin.
-        - generic [ref=f1e271]:
-          - generic [ref=f1e272]:
-            - generic [ref=f1e277]:
-              - paragraph [ref=f1e278]: Round timer
-              - paragraph [ref=f1e279]: Adjust now if tonight needs a shorter or longer round.
-            - generic [ref=f1e280]: 08:00
-          - generic [ref=f1e281]:
-            - button "− 1 min" [ref=f1e282] [cursor=pointer]
-            - button "+ 1 min" [ref=f1e283] [cursor=pointer]
-        - generic [ref=f1e285]:
-          - generic [ref=f1e286]:
-            - paragraph [ref=f1e287]: Hall sound check
-            - paragraph [ref=f1e288]: Test the real cue and spoken voice before play. This uses your device/speaker only — no Base44 call.
-          - button "Test Sound" [ref=f1e289] [cursor=pointer]
-        - button "START ROUND 1" [ref=f1e290] [cursor=pointer]
-      - button "Back to Setup" [ref=f1e291] [cursor=pointer]
-      - button "Restore Original Draw" [ref=f1e292] [cursor=pointer]
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e11]:
+        - paragraph [ref=e12]: King of the Court
+        - heading "Set up tonight’s session" [level=2] [ref=e13]
+        - paragraph [ref=e14]: Confirm the hall settings, decide the Round 1 draw and choose the bench. You can review the actual courts before anything starts.
+      - generic [ref=e15]:
+        - generic [ref=e16]: 18 players
+        - generic [ref=e17]: 4 courts
+        - generic [ref=e18]: 2 bench
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e27]:
+            - paragraph [ref=e28]: 1 · Session settings
+            - paragraph [ref=e29]: The essentials for this hall and tonight’s scoring.
+          - generic [ref=e30]:
+            - generic [ref=e31]:
+              - text: Venue courts
+              - spinbutton [ref=e32]: "4"
+            - generic [ref=e33]:
+              - text: Hall / session duration
+              - generic [ref=e34]:
+                - spinbutton [ref=e35]: "90"
+                - generic [ref=e36]: min
+            - generic [ref=e37]:
+              - text: Scoring
+              - combobox [ref=e38] [cursor=pointer]:
+                - generic: Timed rounds
+            - generic [ref=e41]:
+              - text: Round duration
+              - generic [ref=e42]:
+                - spinbutton [ref=e43]: "8"
+                - generic [ref=e44]: min
+          - generic [ref=e45] [cursor=pointer]:
+            - checkbox "Super Admin Test mode Diagnostic only. Excludes this session from KOTC history and enables local Fill Test Scores controls. Session hosts never see this option." [ref=e46]
+            - generic [ref=e47]:
+              - text: Super Admin Test mode
+              - generic [ref=e48]: Diagnostic only. Excludes this session from KOTC history and enables local Fill Test Scores controls. Session hosts never see this option.
+          - generic [ref=e49] [cursor=pointer]:
+            - checkbox "Counts toward club leaderboard Turn this on only for an official club competition. Test mode is always excluded." [checked] [ref=e50]
+            - generic [ref=e51]:
+              - text: Counts toward club leaderboard
+              - generic [ref=e52]: Turn this on only for an official club competition. Test mode is always excluded.
+        - generic [ref=e53]:
+          - generic [ref=e59]:
+            - paragraph [ref=e60]: 2 · Round 1 setup
+            - paragraph [ref=e61]: Choose how the starting order is built and how that order is distributed across courts.
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - text: Starting order
+              - combobox [ref=e64] [cursor=pointer]:
+                - generic: Roster order
+              - paragraph [ref=e67]: This sets the starting order only. RallyHub does not invent ratings.
+            - generic [ref=e68]:
+              - text: Round 1 draw
+              - combobox [ref=e69] [cursor=pointer]:
+                - generic: Balanced Ranking
+              - paragraph [ref=e72]: Balanced Ranking uses your 1-to-N order to spread strength across the courts and, where possible, pairs the strongest player with the weakest in that court. Strict Ranking keeps the strongest four together, then the next four, and so on.
+          - button "Review player order (18) Show" [ref=e73] [cursor=pointer]:
+            - generic [ref=e74]:
+              - text: Review player order
+              - generic [ref=e75]: (18)
+            - generic [ref=e76]: Show
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - generic [ref=e86]:
+              - paragraph [ref=e87]: 3 · Choose Round 1 bench
+              - paragraph [ref=e88]: Choose exactly 2. You can still swap the proposed Round 1 courts before starting.
+            - generic [ref=e89]: 2/2
+          - generic [ref=e90]:
+            - button "Player 01" [ref=e91] [cursor=pointer]
+            - button "Player 02" [ref=e94] [cursor=pointer]
+            - button "Player 03" [ref=e97] [cursor=pointer]
+            - button "Player 04" [ref=e100] [cursor=pointer]
+            - button "Player 05" [ref=e103] [cursor=pointer]
+            - button "Player 06" [ref=e106] [cursor=pointer]
+            - button "Player 07" [ref=e109] [cursor=pointer]
+            - button "Player 08" [ref=e112] [cursor=pointer]
+            - button "Player 09" [ref=e115] [cursor=pointer]
+            - button "Player 10" [ref=e118] [cursor=pointer]
+            - button "Player 11" [ref=e121] [cursor=pointer]
+            - button "Player 12" [ref=e124] [cursor=pointer]
+            - button "Player 13" [ref=e127] [cursor=pointer]
+            - button "Player 14" [ref=e130] [cursor=pointer]
+            - button "Player 15" [ref=e133] [cursor=pointer]
+            - button "Player 16" [ref=e136] [cursor=pointer]
+            - button "Player 17 ✓" [pressed] [ref=e139] [cursor=pointer]:
+              - generic [ref=e140]:
+                - generic [ref=e141]: Player 17
+                - generic [ref=e142]: ✓
+            - button "Player 18 ✓" [pressed] [ref=e143] [cursor=pointer]:
+              - generic [ref=e144]:
+                - generic [ref=e145]: Player 18
+                - generic [ref=e146]: ✓
+      - complementary [ref=e147]:
+        - generic [ref=e148]:
+          - generic [ref=e149]:
+            - paragraph [ref=e150]: Ready check
+            - heading "Create Round 1" [level=3] [ref=e151]
+            - paragraph [ref=e152]: RallyHub will generate the proposed courts next. You will review them before the timer starts.
+          - generic [ref=e153]:
+            - generic [ref=e154]:
+              - generic [ref=e155]: Players
+              - strong [ref=e156]: "18"
+            - generic [ref=e157]:
+              - generic [ref=e158]: Active courts
+              - strong [ref=e159]: "4"
+            - generic [ref=e160]:
+              - generic [ref=e161]: Bench
+              - strong [ref=e162]: "2"
+            - generic [ref=e163]:
+              - generic [ref=e164]: Scoring
+              - strong [ref=e165]: 8 min timed rounds
+            - generic [ref=e166]:
+              - generic [ref=e167]: Starting order
+              - strong [ref=e168]: Roster order
+            - generic [ref=e169]:
+              - generic [ref=e170]: Draw
+              - strong [ref=e171]: Balanced Ranking
+            - generic [ref=e172]:
+              - generic [ref=e173]: Mode
+              - strong [ref=e174]: Live
+          - generic [ref=e179]:
+            - paragraph [ref=e180]: Ready to create the draw
+            - paragraph [ref=e181]: Nothing starts until you review Round 1 and press Start Round 1.
+          - button "Creating Round 1…" [disabled]
 ```
 
 # Test source
@@ -253,7 +257,7 @@ Received:    497
   361 | function metric(report, name, value, max) {
   362 |   report[name] = value;
 > 363 |   expect(value, `${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);
-      |                                                                     ^ Error: undo_ack_ms should be <= 250ms but was 497ms
+      |                                                                     ^ Error: create_ack_ms should be <= 250ms but was 566ms
   364 | }
   365 | 
   366 | test.use({ viewport: { width: 390, height: 844 } });
