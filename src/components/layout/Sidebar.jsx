@@ -112,7 +112,7 @@ export default function Sidebar({ isOpen, onToggle }) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed top-0 left-0 h-full z-50 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300",
+        "fixed top-0 left-0 h-[100dvh] z-50 w-[min(88vw,18rem)] lg:w-64 bg-sidebar border-r border-sidebar-border flex flex-col overflow-hidden transition-transform duration-300",
         "lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
@@ -124,7 +124,10 @@ export default function Sidebar({ isOpen, onToggle }) {
               alt="RallyHub" 
               className="h-9 w-9 rounded-none"
             />
-            <span className="font-black text-base text-foreground tracking-tight">RallyHub</span>
+            <div className="leading-tight">
+              <span className="block font-black text-base text-foreground tracking-tight">RallyHub</span>
+              {isSuperAdmin && <span className="block mt-0.5 text-[9px] font-black tracking-[0.14em] text-primary">SUPER ADMIN</span>}
+            </div>
           </Link>
           <button onClick={onToggle} className="lg:hidden text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
@@ -191,7 +194,7 @@ export default function Sidebar({ isOpen, onToggle }) {
 
         {/* Bottom links */}
         <div className="px-3 pb-2 space-y-1">
-          {!isMemberExperience && [
+          {!isMemberExperience && !isSuperAdmin && [
             ...(isSuperAdmin ? [
               { path: '/directory', label: 'Switch to Directory', icon: MapPin },
               { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield }
@@ -253,7 +256,7 @@ export default function Sidebar({ isOpen, onToggle }) {
           })}
         </div>
 
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="shrink-0 p-3 sm:p-4 border-t border-sidebar-border bg-sidebar">
           <div className="glass rounded-lg p-3">
             <p className="text-xs text-muted-foreground truncate">{user?.full_name || user?.email || 'RallyHub'}</p>
             <p className="text-xs text-primary font-medium mt-0.5">{role === 'super_admin' ? 'Super Admin' : role === 'admin' ? 'Admin' : role === 'host' ? 'Host' : 'Player'}</p>
