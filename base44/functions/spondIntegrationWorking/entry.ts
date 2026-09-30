@@ -90,6 +90,9 @@ function irelandDate(value) {
   } catch { return ''; }
 }
 function normaliseName(v=''){return String(v).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();}
+function spondPatternKey({heading='',day='',start='',end='',venueName='',venueAddress=''}){
+  return [normaliseName(heading),String(day||''),String(start||'').slice(0,5),String(end||'').slice(0,5),normaliseName(venueName),normaliseName(venueAddress)].join('|');
+}
 function isTrustedMemberSource(groupName='',clubName=''){const club=normaliseName(clubName);return !!club&&normaliseName(groupName)===`${club} members`;}
 function normaliseEmail(v=''){return String(v).trim().toLowerCase();}
 function normalisePhone(v=''){return String(v).replace(/\D/g,'').replace(/^3530?/,'353');}
