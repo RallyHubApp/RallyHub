@@ -7,7 +7,7 @@ const page=await context.newPage();
 await page.addInitScript(()=>localStorage.setItem('base44_access_token','mobile-shell-e2e-token'));
 await page.route('**/*',async route=>{
  const req=route.request(); const u=new URL(req.url()); const p=u.pathname;
- if(!p.includes('/api/')) return route.continue();
+ if(!p.startsWith('/api/')) return route.continue();
  const fulfill=body=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
  if(p.includes('/public-settings/')) return fulfill({id:APP_ID,public_settings:{}});
  if(p.endsWith('/entities/User/me')||p.endsWith('/users/me')||p.endsWith('/auth/me')) return fulfill(user);
