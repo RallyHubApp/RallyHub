@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -17,6 +17,16 @@ const money = value => new Intl.NumberFormat('en-IE', { style:'currency', curren
 const todayIso = () => new Intl.DateTimeFormat('en-CA', { timeZone:'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date());
 const round2 = value => Math.round(Number(value || 0) * 100) / 100;
 const weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const monthsOfYear = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function financeYearStart(settings) {
+  const today = todayIso();
+  const [year,month,day] = today.split('-').map(Number);
+  const startMonth = Number(settings?.financial_year_start_month || 1);
+  const startDay = Number(settings?.financial_year_start_day || 1);
+  const startYear = month > startMonth || (month === startMonth && day >= startDay) ? year : year - 1;
+  return `${startYear}-${String(startMonth).padStart(2,'0')}-${String(startDay).padStart(2,'0')}`;
+}
 
 function netFor(row) {
   const venueCost = row.actual_cost_amount == null ? Number(row.expected_cost_amount || 0) : Number(row.actual_cost_amount || 0);
@@ -35,7 +45,7 @@ export default function FinanceSummary() {
   const tenantId = user?.active_tenant_id || '';
   const clubId = user?.active_club_id || '';
   const canManage = user?.role === 'admin' || user?.active_club_role === 'club_admin';
-  const [fromDate, setFromDate] = useState('2026-09-01');
+  const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState(todayIso());
   const [venueFilter, setVenueFilter] = useState('all');
   const [monthFilter, setMonthFilter] = useState('all');
@@ -44,7 +54,8 @@ export default function FinanceSummary() {
   const [editingVenueId, setEditingVenueId] = useState('');
   const [venueDraft, setVenueDraft] = useState({ address:'', hourlyRate:'' });
   const [ruleDraft, setRuleDraft] = useState({ venueId:'', weekday:'Monday', startTime:'19:00', durationMinutes:'90', feePerPerson:'', incomeSource:'spond', sessionLabel:'', spondGroupId:'', spondEventId:'' });
-  const [manualDraft, setManualDraft] = useState({ date:todayIso(), venueId:'', label:'', paidPlaces:'', feePerPerson:'', venueCost:'', otherCost:'0', notes:'' });
+  const [manualDraft, setManualDraft] = useState({ date:todayIso(), venueId:'', label:'', durationMinutes:'180', paidPlaces:'', feePerPerson:'', otherCost:'0', notes:'' });
+  const [settingsDraft, setSettingsDraft] = useState({ startMonth:'1', startDay:'1', trackingStart:'' });
 
   const { data: settingsRows = [] } = useQuery({
     queryKey:['finance-settings',tenantId,clubId],
@@ -52,6 +63,14 @@ export default function FinanceSummary() {
     enabled:canManage && !!tenantId && !!clubId,
   });
   const settings = settingsRows[0] || null;
+
+  useEffect(()=>{
+    if (!settings) return;
+    const fyStart = financeYearStart(settings);
+    const tracking = settings.tracking_start_date || fyStart;
+    setFromDate(current => current || (tracking > fyStart ? tracking : fyStart));
+    setSettingsDraft({ startMonth:String(settings.financial_year_start_month || 1), startDay:String(settings.financial_year_start_day || 1), trackingStart:tracking });
+  },[settings?.id]);
 
   const { data: venues = [] } = useQuery({
     queryKey:['finance-venues',tenantId,clubId],
@@ -76,7 +95,8 @@ export default function FinanceSummary() {
   const listingSlug = spondBindings[0]?.listing_slug || '';
 
   const filtered = useMemo(()=>entries.filter(row=>{
-    if (row.activity_date < fromDate || row.activity_date > toDate) return false;
+    if (fromDate && row.activity_date < fromDate) return false;
+    if (row.activity_date > toDate) return false;
     if (venueFilter !== 'all' && row.venue_id !== venueFilter) return false;
     if (monthFilter !== 'all' && !String(row.activity_date || '').startsWith(monthFilter)) return false;
     return true;
@@ -100,6 +120,18 @@ export default function FinanceSummary() {
     }
     return [...map.values()].sort((a,b)=>a.venue.localeCompare(b.venue));
   },[filtered]);
+
+  const saveSettings = async () => {
+    const month=Number(settingsDraft.startMonth), day=Number(settingsDraft.startDay);
+    if (!Number.isInteger(month) || month<1 || month>12 || !Number.isInteger(day) || day<1 || day>31 || !settingsDraft.trackingStart) return toast.error('Check the financial year settings.');
+    try {
+      const payload={tenant_id:tenantId,club_id:clubId,currency:'EUR',financial_year_start_month:month,financial_year_start_day:day,tracking_start_date:settingsDraft.trackingStart};
+      if (settings?.id) await base44.entities.ClubFinanceSettings.update(settings.id,payload); else await base44.entities.ClubFinanceSettings.create(payload);
+      await queryClient.invalidateQueries({queryKey:['finance-settings',tenantId,clubId]});
+      setFromDate('');
+      toast.success('Finance year settings saved');
+    } catch(e){ toast.error(e?.message || 'Could not save finance settings'); }
+  };
 
   const saveVenue = async venue => {
     const hourly = Number(venueDraft.hourlyRate);
@@ -144,8 +176,10 @@ export default function FinanceSummary() {
   const addManualEntry = async () => {
     const venue = venues.find(v=>v.id===manualDraft.venueId);
     if (!venue) return toast.error('Choose a venue.');
-    const paidPlaces=Number(manualDraft.paidPlaces||0), fee=Number(manualDraft.feePerPerson||0), cost=Number(manualDraft.venueCost||0), other=Number(manualDraft.otherCost||0);
-    if (![paidPlaces,fee,cost,other].every(Number.isFinite)) return toast.error('Check the amounts entered.');
+    const paidPlaces=Number(manualDraft.paidPlaces||0), fee=Number(manualDraft.feePerPerson||0), duration=Number(manualDraft.durationMinutes||0), other=Number(manualDraft.otherCost||0);
+    const hourly=Number(venue.hourly_hire_rate);
+    if (![paidPlaces,fee,duration,other,hourly].every(Number.isFinite) || duration<=0) return toast.error('Check the duration and amounts entered.');
+    const cost=round2(hourly*(duration/60));
     const income=round2(paidPlaces*fee);
     try {
       await base44.entities.ClubFinanceEntry.create({
@@ -154,7 +188,7 @@ export default function FinanceSummary() {
         expected_cost_amount:cost,other_cost_amount:other,cost_status:'expected',financial_year_label:settings?.tracking_start_date?.slice(0,4)?`${settings.tracking_start_date.slice(0,4)}/${String(Number(settings.tracking_start_date.slice(0,4))+1).slice(-2)}`:'',notes:manualDraft.notes.trim(),last_synced_at:new Date().toISOString()
       });
       await queryClient.invalidateQueries({queryKey:['finance-entries',tenantId,clubId]});
-      setManualDraft({date:todayIso(),venueId:'',label:'',paidPlaces:'',feePerPerson:'',venueCost:'',otherCost:'0',notes:''});
+      setManualDraft({date:todayIso(),venueId:'',label:'',durationMinutes:'180',paidPlaces:'',feePerPerson:'',otherCost:'0',notes:''});
       toast.success(`Recorded ${money(income-cost-other)} net result`);
     } catch (e) { toast.error(e?.message || 'Could not record finance entry'); }
   };
@@ -194,7 +228,7 @@ export default function FinanceSummary() {
         <div className="min-w-44"><Label className="text-xs">Month</Label><Select value={monthFilter} onValueChange={setMonthFilter}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All months</SelectItem>{months.map(m=><SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select></div>
         {user?.role==='admin' && listingSlug && <Button onClick={syncSpond} disabled={syncing}><RefreshCw className={`mr-2 h-4 w-4 ${syncing?'animate-spin':''}`} />{syncing?'Syncing…':'Sync Spond'}</Button>}
       </div>
-      <p className="text-xs text-muted-foreground">Default financial year starts in September. This club began Finance Lite tracking on {settings?.tracking_start_date || 'the configured start date'}. {syncMessage && <span className="font-medium text-foreground">{syncMessage}</span>}</p>
+      <p className="text-xs text-muted-foreground">Financial year starts {monthsOfYear[Number(settings?.financial_year_start_month || 1)-1]} {Number(settings?.financial_year_start_day || 1)}. Tracking begins {settings?.tracking_start_date || 'when configured'}. {syncMessage && <span className="font-medium text-foreground">{syncMessage}</span>}</p>
     </GlassCard>
 
     {venueRollup.length>0 && <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{venueRollup.map(v=><GlassCard key={v.venue} className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{v.venue}</p><p className="text-xs text-muted-foreground">{v.count} sessions/events · Income {money(v.income)} · Cost {money(v.cost+v.other)}</p></div><ResultBadge value={round2(v.net)} /></div></GlassCard>)}</div>}
@@ -204,6 +238,16 @@ export default function FinanceSummary() {
       <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Venue</TableHead><TableHead>Session/event</TableHead><TableHead className="text-right">Paid places</TableHead><TableHead className="text-right">Income</TableHead><TableHead className="text-right">Cost</TableHead><TableHead>Result</TableHead></TableRow></TableHeader><TableBody>
         {isLoading ? <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">Loading finance summary…</TableCell></TableRow> : filtered.length===0 ? <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">No finance rows yet for this range.</TableCell></TableRow> : filtered.map(row=>{ const net=netFor(row); const cost=(row.actual_cost_amount==null?Number(row.expected_cost_amount||0):Number(row.actual_cost_amount||0))+Number(row.other_cost_amount||0); return <TableRow key={row.id}><TableCell className="whitespace-nowrap">{row.activity_date}{row.activity_start_time?` · ${row.activity_start_time}`:''}</TableCell><TableCell>{row.venue_name}</TableCell><TableCell><p className="font-medium">{row.session_label}</p><p className="text-[11px] text-muted-foreground">{row.source_type==='spond_session'?'Spond':row.source_type==='rallyhub_event'?'RallyHub':'Manual'}{row.declined_paid_count>0?` · ${row.declined_paid_count} paid then declined`:''}</p></TableCell><TableCell className="text-right">{Number(row.paid_places||0)}</TableCell><TableCell className="text-right font-medium">{money(row.income_amount)}</TableCell><TableCell className="text-right">{money(cost)}</TableCell><TableCell><ResultBadge value={net} /></TableCell></TableRow>; })}
       </TableBody></Table></div>
+    </GlassCard>
+
+    <GlassCard className="p-4 space-y-3">
+      <div><h2 className="font-bold">Club finance settings</h2><p className="text-xs text-muted-foreground">Tenant-specific reporting period. Each club can choose its own financial year and tracking start date.</p></div>
+      <div className="grid gap-3 sm:grid-cols-[180px_120px_190px_auto] sm:items-end">
+        <div><Label className="text-xs">Financial year starts</Label><Select value={settingsDraft.startMonth} onValueChange={v=>setSettingsDraft(d=>({...d,startMonth:v}))}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{monthsOfYear.map((m,i)=><SelectItem key={m} value={String(i+1)}>{m}</SelectItem>)}</SelectContent></Select></div>
+        <div><Label className="text-xs">Day</Label><Input className="mt-1" type="number" min="1" max="31" value={settingsDraft.startDay} onChange={e=>setSettingsDraft(d=>({...d,startDay:e.target.value}))} /></div>
+        <div><Label className="text-xs">Track from</Label><Input className="mt-1" type="date" value={settingsDraft.trackingStart} onChange={e=>setSettingsDraft(d=>({...d,trackingStart:e.target.value}))} /></div>
+        <Button onClick={saveSettings}><Save className="mr-2 h-4 w-4" />Save settings</Button>
+      </div>
     </GlassCard>
 
     <div className="grid gap-4 xl:grid-cols-2">
@@ -235,13 +279,14 @@ export default function FinanceSummary() {
       <div className="flex items-center gap-2"><Euro className="h-4 w-4 text-primary" /><div><h2 className="font-bold">Record one-off event or adjustment</h2><p className="text-xs text-muted-foreground">For interclub days, special events, invoices or anything not covered by a recurring session.</p></div></div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div><Label className="text-xs">Date</Label><Input className="mt-1" type="date" value={manualDraft.date} onChange={e=>setManualDraft(d=>({...d,date:e.target.value}))} /></div>
-        <div><Label className="text-xs">Venue</Label><Select value={manualDraft.venueId} onValueChange={v=>{const venue=venues.find(x=>x.id===v);setManualDraft(d=>({...d,venueId:v,venueCost:d.venueCost||String(venue?.hourly_hire_rate||'')}));}}><SelectTrigger className="mt-1"><SelectValue placeholder="Choose venue" /></SelectTrigger><SelectContent>{venues.map(v=><SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent></Select></div>
+        <div><Label className="text-xs">Venue</Label><Select value={manualDraft.venueId} onValueChange={v=>setManualDraft(d=>({...d,venueId:v}))}><SelectTrigger className="mt-1"><SelectValue placeholder="Choose venue" /></SelectTrigger><SelectContent>{venues.map(v=><SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent></Select></div>
         <div className="lg:col-span-2"><Label className="text-xs">Event/session label</Label><Input className="mt-1" value={manualDraft.label} onChange={e=>setManualDraft(d=>({...d,label:e.target.value}))} placeholder="e.g. Clare v Galway" /></div>
+        <div><Label className="text-xs">Duration (minutes)</Label><Input className="mt-1" type="number" min="15" step="15" value={manualDraft.durationMinutes} onChange={e=>setManualDraft(d=>({...d,durationMinutes:e.target.value}))} /></div>
         <div><Label className="text-xs">Paid places</Label><Input className="mt-1" type="number" min="0" value={manualDraft.paidPlaces} onChange={e=>setManualDraft(d=>({...d,paidPlaces:e.target.value}))} /></div>
         <div><Label className="text-xs">Fee / person (€)</Label><Input className="mt-1" type="number" min="0" step="0.01" value={manualDraft.feePerPerson} onChange={e=>setManualDraft(d=>({...d,feePerPerson:e.target.value}))} /></div>
-        <div><Label className="text-xs">Venue cost (€)</Label><Input className="mt-1" type="number" min="0" step="0.01" value={manualDraft.venueCost} onChange={e=>setManualDraft(d=>({...d,venueCost:e.target.value}))} /></div>
         <div><Label className="text-xs">Other costs (€)</Label><Input className="mt-1" type="number" min="0" step="0.01" value={manualDraft.otherCost} onChange={e=>setManualDraft(d=>({...d,otherCost:e.target.value}))} /></div>
       </div>
+      {manualDraft.venueId && <p className="text-xs text-muted-foreground">Expected venue cost: <strong className="text-foreground">{money(Number(venues.find(v=>v.id===manualDraft.venueId)?.hourly_hire_rate||0)*(Number(manualDraft.durationMinutes||0)/60))}</strong> from hourly rate × duration.</p>}
       <Button onClick={addManualEntry}><Plus className="mr-2 h-4 w-4" />Record event/session</Button>
     </GlassCard>
   </div>;
