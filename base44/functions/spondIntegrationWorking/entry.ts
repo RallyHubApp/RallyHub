@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import { tenantCapabilityDecision } from './tenantCapability.ts';
-import { findFinanceRuleForEvent, financeRuleIsSelected } from './financeMatch.mjs';
+import { findFinanceRuleForEvent, financeOccurrenceStartInWindow, financeRuleIsSelected, financeSpondPatternKey } from './financeMatch.mjs';
 
 const SPOND_API_BASE = 'https://api.spond.com/core/v1';
 
@@ -69,19 +69,7 @@ async function spondLogin(username, password) {
 }
 
 function eventStart(event){return event?._resolvedStartTimestamp||event?.meetupTimestamp||event?.startTimestamp||event?.start_time||'';}
-function occurrenceStartInWindow(event,minMs,maxMs){
-  // Spond can expose several timestamps on the same event. meetupTimestamp is the
-  // actual session/meetup time and must remain authoritative (the same precedence
-  // used by eventStart and the Directory importer). Do not sort timestamps by
-  // earliest value: a secondary timestamp can refer to another event lifecycle
-  // moment and can shift the finance rule onto the wrong weekday/session.
-  const candidates=[event?.meetupTimestamp,event?.startTimestamp,event?.start_time].filter(Boolean);
-  for(const value of candidates){
-    const t=new Date(value).getTime();
-    if(Number.isFinite(t)&&t>=minMs&&t<=maxMs) return value;
-  }
-  return '';
-}
+function occurrenceStartInWindow(event,minMs,maxMs){return financeOccurrenceStartInWindow(event,minMs,maxMs);}
 function irelandDate(value) {
   try {
     const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Dublin', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date(value));
@@ -90,9 +78,6 @@ function irelandDate(value) {
   } catch { return ''; }
 }
 function normaliseName(v=''){return String(v).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();}
-function spondPatternKey({heading='',day='',start='',end='',venueName='',venueAddress=''}){
-  return [normaliseName(heading),String(day||''),String(start||'').slice(0,5),String(end||'').slice(0,5),normaliseName(venueName),normaliseName(venueAddress)].join('|');
-}
 function isTrustedMemberSource(groupName='',clubName=''){const club=normaliseName(clubName);return !!club&&normaliseName(groupName)===`${club} members`;}
 function normaliseEmail(v=''){return String(v).trim().toLowerCase();}
 function normalisePhone(v=''){return String(v).replace(/\D/g,'').replace(/^3530?/,'353');}
@@ -247,7 +232,7 @@ function directoryEventPreview(events) {
     }
     const venue = venues.get(venueKey);
     const heading = clean(event?.heading || 'Club Session', 180);
-    const patternKey = spondPatternKey({ heading, day:start.day, start:start.time, end:end?.time||'', venueName:locationName, venueAddress:address });
+    const patternKey = financeSpondPatternKey({ heading, day:start.day, start:start.time, end:end?.time||'', venueName:locationName, venueAddress:address });
     const key = patternKey;
     if (!patterns.has(key)) {
       patterns.set(key, {
@@ -460,7 +445,7 @@ Deno.serve(async (req) => {
         const endLocal = dublinParts(event?.endTimestamp || '');
         const sourceVenueName = clean(event?.location?.feature || event?.location?.name || event?.location?.address || '', 220);
         const sourceVenueAddress = clean(event?.location?.address || '', 320);
-        const eventPatternKey = spondPatternKey({ heading:clean(event?.heading || 'Club Session',180), day:local.day, start:local.time, end:endLocal?.time||'', venueName:sourceVenueName, venueAddress:sourceVenueAddress });
+        const eventPatternKey = financeSpondPatternKey({ heading:clean(event?.heading || 'Club Session',180), day:local.day, start:local.time, end:endLocal?.time||'', venueName:sourceVenueName, venueAddress:sourceVenueAddress });
         const patternRule = rulesByPattern.get(eventPatternKey) || null;
         const match = patternRule ? { rule:patternRule, matchMode:'directory_pattern', score:1 } : findFinanceRuleForEvent({ event, activityDate, local, rulesByEvent, spondRules, venuesById });
         const rule = match.rule;
