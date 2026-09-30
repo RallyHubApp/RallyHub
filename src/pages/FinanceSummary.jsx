@@ -122,10 +122,6 @@ export default function FinanceSummary() {
   const selectedSpondGroupId = String(spondSelection?.group?.id || spondConnection?.spond_group_id || '');
 
   useEffect(()=>{
-    if (spondConnection?.spond_group_id && !selectedSpondGroupId) setSelectedSpondGroupId(String(spondConnection.spond_group_id));
-  },[spondConnection?.spond_group_id, selectedSpondGroupId]);
-
-  useEffect(()=>{
     if (!venues.length || selectedVenueIds.length) return;
     setSelectedVenueIds(venues.map(v=>v.id));
   },[venues]);
