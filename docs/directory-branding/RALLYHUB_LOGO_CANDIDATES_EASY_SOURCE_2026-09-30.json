@@ -662,10 +662,19 @@
     "website": "",
     "facebook": "https://www.facebook.com/share/18umEkvjGr/?mibextid=wwXIfr",
     "instagram": "",
-    "status": "NO_CANDIDATE",
-    "confidence": "NONE",
-    "decision": "HOLD",
-    "reviewNote": "No reliable logo candidate sourced yet."
+    "status": "CANDIDATE",
+    "confidence": "HIGH",
+    "decision": "APPROVE",
+    "reviewNote": "Exact Southside Pickleball Club Dublin logo found on the club website and independently matched by web image search.",
+    "filename": "36-southside-pickleball-club.png",
+    "bytes": 36022,
+    "contentType": "image/png",
+    "finalImageUrl": "https://primary.jwwb.nl/public/x/o/h/temp-nhmmdaiuktrfbbouyhmw/logoss-high-3phmzf.png",
+    "method": "official-club-website-discovery",
+    "sourcePage": "https://www.deryckpayne.eu/",
+    "sourceImage": "https://primary.jwwb.nl/public/x/o/h/temp-nhmmdaiuktrfbbouyhmw/logoss-high-3phmzf.png",
+    "score": 95,
+    "candidateKind": "club-logo-image"
   },
   {
     "number": 37,
