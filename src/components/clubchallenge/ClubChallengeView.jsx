@@ -927,11 +927,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const res = await base44.functions.invoke('loadClubChallengePracticeRoster', { eventId:event.id });
       if (res.data?.error) throw new Error(res.data.error);
       toast.success('32 practice players loaded. You can now rehearse the full setup and draw journey.');
-      // The roster command has just replaced participants and fixtures. Refresh those
-      // authoritative collections first; the event refresh is independent and must not
-      // hold the new roster behind a slower/stale event read on mobile connections.
-      await Promise.all([refetchParticipants(), refetchMatches()]);
-      await refetchEvent();
+      // The command returns only a count, so the new roster still has to be read back.
+      // Refetch participants first and render it immediately; fixture/event refreshes
+      // are background reconciliation and must not block the roster appearing.
+      await refetchParticipants();
+      Promise.all([refetchMatches(), refetchEvent()]);
       queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not load practice players'); }
     setSaving(false);
@@ -1169,7 +1169,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         // the authority and will reconcile any difference.
         const current = timerState || {};
         const seconds = phase === 'break' ? Number(event.break_minutes || 20) * 60 : phase === 'changeover' ? Number(event.changeover_minutes || 2) * 60 : (Number(current.remaining_seconds || 0) > 0 && ['ready','play'].includes(current.phase) && !current.running ? Number(current.remaining_seconds) : Number(event.play_minutes || 10) * 60);
-        const optimistic = action === 'start' ? { phase:phase || 'play', running:true, remaining_seconds:seconds, started_at:new Date().toISOString(), round:Number(event.current_round || 1) } : current;
+        // Keep the exact full duration visible for the first render. The one-second
+        // ticker will begin decrementing on the next tick, rather than making a newly
+        // started 20-minute break appear immediately as 19:59/19:58 on slower phones.
+        const optimistic = action === 'start' ? { phase:phase || 'play', running:false, remaining_seconds:seconds, started_at:null, round:Number(event.current_round || 1) } : current;
         queryClient.setQueryData(['club-challenge-event', tournament.id], old => old ? ({ ...old, timer_state_json:JSON.stringify(optimistic), timer_revision:Number(old.timer_revision || event.timer_revision || 0) + 1 }) : old);
         refetchEvent();
       }
