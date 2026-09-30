@@ -3,8 +3,8 @@
 > **Development mirror only.** The canonical master is `RallyHub_Master_Testing_Blueprint.docx` kept in the RallyHub project files beside `RallyHub_Master_Backlog_and_Decisions.docx`. Keep this repo copy aligned when major reusable testing rules change, but do not treat it as the user-facing master.
 
 **Status:** Development mirror of LIVE MASTER  
-**Version:** 1.0  
-**Date:** 11 September 2026  
+**Version:** 1.2  
+**Date:** 30 September 2026  
 **Applies to:** RallyHub Core, King of the Court (KOTC), Club Challenge, Tournival, shared tournament formats, memberships, public displays, and future RallyHub modules.
 
 ## 1. Purpose
@@ -35,6 +35,9 @@ RallyHub is never called “ready” merely because code was written, a build pa
 10. **UX is part of correctness.** If something works technically but is slow, misleading, scroll-heavy or awkward in a hall, testing should flag it.
 11. **Testing must be proportional to risk.** A spelling change does not require a full deep dive; a scoring/concurrency or architecture change does.
 12. **Preserve previously proven functionality.** Improving one area must not undo good work elsewhere.
+13. **Test infrastructure is evidence infrastructure.** A broken browser install, stale Vite server, bad mock, missing Linux library or sandbox timeout is a test-environment failure, not evidence that RallyHub failed. Prove the application actually rendered before classifying a UI defect.
+14. **A sandbox pass is not a persisted release.** Before calling a change release-ready, prove the exact tested edits exist in the persisted source/commit and release checkpoint.
+15. **A republish is not assumed live.** After deployment, fingerprint the production assets or equivalent live markers and prove the intended release is what the public domain is actually serving.
 
 ---
 
@@ -241,6 +244,8 @@ Use:
 
 Run desktop first for diagnosis, then mobile. Mobile is a separate risk surface, not simply a smaller desktop.
 
+Before recording a browser failure, first prove the application shell actually rendered. A navigation timeout, intercepted source module, missing browser binary, stale dev server or test-login mock failure is **BLOCKED / test-infrastructure evidence**, not an application FAIL.
+
 ### Layer 4 — Real-world hall/device test
 
 Only after Layers 1–3 are green.
@@ -369,6 +374,26 @@ Deep tests should report call counts by function, including:
 - idle/background calls.
 
 Unexpected call-count growth is a regression even if the workflow still works.
+
+### 6.5 Ephemeral Base44 test-environment discipline
+
+Treat the Base44 command/browser sandbox as ephemeral infrastructure. A fresh sandbox may:
+- start in a different working directory;
+- lack the previously installed Playwright/Chromium binary;
+- lack Linux runtime libraries;
+- contain a stale Vite process or no useful local server;
+- reject a fresh port;
+- time out while transforming a large development bundle;
+- lose temporary test scripts created only under `/tmp`.
+
+Permanent rules:
+- keep reusable test harnesses and smoke scripts in the RallyHub repository, not only in temporary sandbox files;
+- bootstrap by checking what is already installed before downloading Chromium or packages again;
+- prefer one Chromium process with isolated browser contexts over repeatedly launching browsers;
+- split long suites into small batches that save/report progress so a timeout does not erase completed evidence;
+- when Vite/dev-server transform cost is the bottleneck, prefer testing the already-built production bundle;
+- distinguish **test environment BLOCKED** from **product FAIL** and report the distinction explicitly;
+- do not spend repeated cycles rebuilding test infrastructure when a faster deterministic gate can answer the immediate question.
 
 ---
 
@@ -674,9 +699,11 @@ For meaningful changes:
 8. inspect Base44 request counts/polling;
 9. create the release-candidate checkpoint;
 10. report exact evidence and remaining limitations;
-11. request **one** deployment;
-12. run planned live-device/hall acceptance;
-13. convert any live defect into automation before calling it permanently fixed.
+11. verify the tested changes exist in persisted source / the current commit, then create the release checkpoint;
+12. request **one** deployment;
+13. after publish, perform a production fingerprint check (asset hash, release marker, or equivalent) to prove the intended candidate is actually live;
+14. run planned live-device/hall acceptance;
+15. convert any live defect into automation before calling it permanently fixed.
 
 The user should not be used as the primary integration tester for defects the robot could have found first.
 
@@ -724,13 +751,79 @@ Use the following prompt whenever ChatGPT is asked to test, validate, stress-tes
 >
 > **10. Never say “ready to deploy” because build/lint/typecheck alone passed.** For meaningful work, require the blueprint’s relevant sporting, architecture/security and browser gates.
 >
+> **10A. Prove persistence before publish.** The exact tested changes must be present in persisted source / the current commit and captured in the release checkpoint. A test that passed only against an ephemeral sandbox state is not release evidence.
+>
+> **10B. Prove the publish.** After republish, fingerprint production (asset hashes, release marker or equivalent). Do not assume the custom domain is on the intended release merely because a publish action completed.
+>
 > **11. Challenge the UX from the viewpoint of a rushed organiser in a noisy hall.** If the workflow is technically correct but unnecessarily slow, scroll-heavy, misleading or likely to cause duplicate actions, record it as a defect/product-improvement finding.
 >
 > **12. At the end, report the exact evidence and state:** coded, build-passed, simulator-tested, robot-tested, release-candidate, deployed, live-device tested, or production-proven. If not ready, identify and fix/test the blocker rather than making the user the integration tester.
 
 ---
 
-## 18. Test-report template
+## 18. Fast QA ladder and reusable test-harness rules
+
+Use the lightest reliable gate first, then escalate only when risk or evidence requires it.
+
+### Tier A — Structural / no-browser gate
+Run in seconds where possible:
+- production build;
+- targeted source/static assertions;
+- shared-layout width/overflow/breakpoint checks;
+- route/config presence checks;
+- backend/function bundle or syntax checks;
+- privacy/public-contract scans where applicable.
+
+This is the default first line for shared CSS/layout, simple wiring and release-persistence checks. It is not a substitute for interaction testing when user behaviour changed.
+
+### Tier B — Targeted browser smoke
+Use one browser process, fresh context per route/journey, and a small representative set of high-value routes. For shared authenticated-shell/mobile changes, include at minimum:
+- Super Admin;
+- Membership / Member Admin;
+- Events;
+- Tournament / KOTC;
+- Interclub / Club Challenge;
+- Players / Waiting List / Guest Bookings / Learn where the shared shell applies.
+
+Rules:
+- use phone width and desktop where relevant;
+- verify the app shell/header loaded before measuring layout;
+- test mobile-menu open/close and critical navigation presence;
+- assert no horizontal page overflow;
+- avoid cross-route contamination by using fresh browser contexts;
+- prefer the built production bundle when the dev server is the bottleneck.
+
+### Tier C — Full Deep / Release-Candidate suite
+Run the full domain/security/browser/concurrency/resilience suite only when the selected risk level requires it. Do not launch the longest suite by reflex for every CSS or wording repair.
+
+### Harness hygiene
+- Network mocks must be narrow enough not to intercept RallyHub source-module requests such as `/src/...` or unrelated API calls.
+- Authentication mocks must reflect the current auth request shape.
+- A test that never reaches the app shell is a harness failure, not proof of a responsive regression.
+- Reusable scripts belong in the repository and should expose a single stable command where practical (for example `qa:mobile` / `qa:smoke`).
+- Long bulk audits should persist progress after each item/batch and continue through the population, recording failures rather than losing the full audit because one item failed.
+- For large public populations, use the authoritative lightweight endpoint/contract sequentially and throttle requests; render representative pages separately instead of opening every full page when maps/images make the browser audit disproportionately slow.
+
+## 19. Persistence and production-publish verification
+
+A release candidate must cross three separate boundaries:
+
+1. **TESTED** — the named gates passed against a known code state.
+2. **PERSISTED** — the exact tested edits are present in the repository/current commit and captured by the checkpoint.
+3. **DEPLOYED** — production is proven to be serving that persisted candidate.
+
+Permanent release rules:
+- after testing, inspect the relevant persisted files or commit diff; do not assume sandbox edits were auto-committed;
+- record the checkpoint ID and commit hash where available;
+- after republish, fetch the live application with cache-busting/no-cache semantics and record the active JS/CSS asset fingerprint or equivalent release marker;
+- if production still serves old assets, distinguish CDN propagation from a publish of an older source state before changing code again;
+- if the persisted source itself lacks the tested edit, reapply it to persisted source, rerun the short release gate and create a new checkpoint;
+- only use **DEPLOYED** after the production fingerprint matches the intended release.
+
+### Shared responsive changes are site-wide changes
+A change to `AppLayout`, `Sidebar`, global CSS, viewport/meta configuration or another common shell primitive triggers site-wide responsive smoke coverage, even when the defect was first observed on only one page. Do not patch Interclub, KOTC, Membership or Super Admin individually if the cause is shared.
+
+## 20. Test-report template
 
 For Standard, Deep and RC work record:
 - change/module;
@@ -755,7 +848,7 @@ For Standard, Deep and RC work record:
 
 ---
 
-## 19. Result states
+## 21. Result states
 
 - **PASS** — fully verified at the stated test layer.
 - **PASS-WITH-LIMITATION** — automated/local evidence is green but a named live/device/provider behaviour remains unproven.
@@ -766,12 +859,14 @@ A limitation must be specific; “needs more testing” is not sufficient.
 
 ---
 
-## 20. Living-document and versioning rule
+## 22. Living-document and versioning rule
 
 This blueprint is continuously improved.
 
 - **v1.0** captures the Testing approach summary plus KOTC, Club Challenge, Base44, code-health and September 2026 collaborative-scoring lessons.
-- New reusable lessons become v1.1, v1.2, etc.
+- **v1.1** added the 24 September Interclub pre-draw roster scope lock and deferred planned-handover gate.
+- **v1.2 (30 September 2026)** adds the fast QA ladder, ephemeral Base44 test-environment rules, harness hygiene, persisted-source release gate, production asset fingerprinting after republish, site-wide responsive blast-radius testing, and progress-preserving bulk-audit rules learned during the Directory/contact and mobile-shell work.
+- New reusable lessons become v1.3, v1.4, etc.
 - Major testing-architecture changes may become v2.0.
 - Historical test plans remain evidence, but this file is the canonical standard.
 - When a new failure mode is discovered, update both the automated regression and this blueprint if the lesson is reusable.
