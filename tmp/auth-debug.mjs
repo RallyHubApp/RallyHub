@@ -9,7 +9,7 @@ page.on('console',m=>console.log('CON',m.type(),m.text()));
 page.on('pageerror',e=>console.log('ERR',e.message));
 await page.route('**/*',async route=>{
  const u=new URL(route.request().url()); const p=u.pathname;
- if(!p.includes('/api/')) return route.continue();
+ if(!p.startsWith('/api/')) return route.continue();
  const ok=body=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
  if(p.includes('/public-settings/')) return ok({id:'6a01dc00702b7dd2a2978c28',public_settings:{}});
  if(/\/(entities\/User\/me|users\/me|auth\/me)$/.test(p)) return ok({id:'mobile-shell-admin',email:'admin@example.test',full_name:'RallyHub Admin',role:'admin',approval_status:'approved',active_club_role:'club_admin',active_tenant_id:'tenant-clare',active_club_id:'club-clare',active_club_name:'Clare Pickleball',kotc_role:'super_admin'});
