@@ -120,7 +120,7 @@ test('Finance admin journey: month popover, session discovery, selection and syn
   await expect(page.getByTestId('finance-sync-selected')).toContainText('Sync selected (7)');
   await page.getByTestId('finance-sync-selected').click();
   await expect(page.getByTestId('finance-sync-message')).toContainText('Synced 7 selected Spond sessions to Finance');
-  await expect(page.getByText('2026-09-30 · 19:00')).toBeVisible();
+  await expect(page.getByRole('cell',{name:'2026-09-30 · 19:00'})).toBeVisible();
   await expect(page.getByText('1 paid then declined')).toBeVisible();
 
   await expect(page.getByTestId('finance-recurring-section')).toContainText('You do not need to enter them again before each sync');
