@@ -42,6 +42,15 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
   const allowedPatternSet = useMemo(() => new Set((allowedPatternKeys || []).map(String).filter(Boolean)), [allowedPatternKeys]);
 
   useEffect(() => {
+    if (mode !== 'finance') return;
+    setPreview(null);
+    setSelectedSessions(new Set());
+    setLastImportedCount(0);
+    setImportedSelectionSignature('');
+    setMessage('');
+  }, [mode, scanFromDate, scanToDate, [...allowedPatternSet].sort().join('|')]);
+
+  useEffect(() => {
     let active = true;
     (async()=>{
       try {
@@ -273,17 +282,17 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
             </div>
             <Button type="button" variant="outline" onClick={scanEvents} disabled={!selectedGroupId || loadingEvents} className="gap-2">
               {loadingEvents ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              {loadingEvents ? 'Scanning events…' : 'Scan upcoming events'}
+              {loadingEvents ? 'Scanning events…' : mode === 'finance' ? 'Scan selected period' : 'Scan upcoming events'}
             </Button>
           </div>
 
           {preview && (
             <div className="space-y-3">
               <div className="rounded-lg border border-primary/25 bg-primary/5 p-3 text-xs text-muted-foreground">
-                RallyHub groups matching Spond occurrences by weekday, start/end time, venue and event name. Repeating patterns are selected automatically; one-off events can be selected manually if they are also regular club sessions.
+                {mode === 'finance' ? `RallyHub is grouping Spond occurrences for ${scanFromDate || 'the selected start date'} to ${scanToDate || 'the selected end date'} by weekday, time, venue and event name. Repeating patterns are selected automatically.` : 'RallyHub groups matching Spond occurrences by weekday, start/end time, venue and event name. Repeating patterns are selected automatically; one-off events can be selected manually if they are also regular club sessions.'}
               </div>
               {existingSessionCount > 0 && <div className="rounded-lg border border-amber-400/35 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200"><strong>This listing already has {existingSessionCount} weekly session{existingSessionCount === 1 ? '' : 's'}.</strong> Safe merge preserves them and skips matching duplicates. {existingSpondSessionCount > 0 ? `${existingSpondSessionCount} came from an earlier Spond import; use “Replace previous Spond import” only if you deliberately want to rebuild those.` : 'Nothing already entered will be overwritten.'}</div>}
-              {(preview.sessions || []).length === 0 ? <p className="text-sm text-muted-foreground py-3">No usable upcoming Spond sessions were found.</p> : (
+              {(preview.sessions || []).length === 0 ? <p className="text-sm text-muted-foreground py-3">{mode === 'finance' ? 'No Spond session patterns matched the selected Finance period and venue.' : 'No usable upcoming Spond sessions were found.'}</p> : (
                 <div className="space-y-2">
                   {(preview.sessions || []).map(row => {
                     const venue = (preview.venues || []).find(v => v.id === row.venueId);
@@ -294,7 +303,7 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold">{row.level}</p>
                           <p className="text-xs text-muted-foreground mt-0.5">{row.day} · {row.start}{row.end ? `–${row.end}` : ''} · {venue?.name || 'Venue'}{venue?.address ? ` · ${venue.address}` : ''}</p>
-                          <p className="text-[11px] text-muted-foreground mt-1">{row.occurrences} upcoming occurrence{row.occurrences === 1 ? '' : 's'} detected{row.nextDate ? ` · next ${row.nextDate}` : ''}</p>
+                          <p className="text-[11px] text-muted-foreground mt-1">{row.occurrences} occurrence{row.occurrences === 1 ? '' : 's'} detected{row.nextDate ? ` · ${mode === 'finance' ? 'first' : 'next'} ${row.nextDate}` : ''}</p>
                         </div>
                         {row.occurrences >= 2 && <span className="text-[10px] rounded-full bg-primary/10 text-primary px-2 py-1">Recurring</span>}
                       </label>
