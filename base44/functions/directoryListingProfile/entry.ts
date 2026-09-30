@@ -431,6 +431,36 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Keep the protected-contact override aligned with owner/editor changes.
+      // Claim privacy preferences remain authoritative over raw contact fields.
+      try {
+        const claims = await base44.asServiceRole.entities.DirectoryClaim.filter({ listing_slug:listingSlug }, '-reviewed_at', 20);
+        const claim = (claims || []).find((row:any) => ['approved','auto_verified'].includes(String(row?.status || ''))) || null;
+        const phoneOptOut = claim?.public_phone_opt_out === true;
+        const nameOptOut = claim?.public_name_opt_out === true;
+        const contact = publicProfile?.contact || {};
+        const endpointPatch = {
+          listing_slug:listingSlug,
+          listing_name_snapshot:clean(publicProfile?.name || listingSlug, 240),
+          contact_name:nameOptOut ? '' : clean(contact?.name, 160),
+          contact_role:clean(claim?.claimant_role, 120),
+          phone:phoneOptOut ? '' : clean(contact?.phone, 100),
+          email:safeEmail(contact?.email) || '',
+          whatsapp_url:phoneOptOut ? '' : (safeUrl(contact?.whatsapp) || ''),
+          allow_call:!phoneOptOut && !!clean(contact?.phone, 100),
+          allow_whatsapp:!phoneOptOut && !!safeUrl(contact?.whatsapp),
+          allow_email:!!safeEmail(contact?.email),
+          status:'active',
+          updated_by_user_id:user.id,
+          updated_at:now,
+        };
+        const endpoints = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5);
+        if (endpoints?.[0]) await base44.asServiceRole.entities.DirectoryContactEndpoint.update(endpoints[0].id, endpointPatch);
+        else await base44.asServiceRole.entities.DirectoryContactEndpoint.create(endpointPatch);
+      } catch (contactEndpointSyncError) {
+        console.warn('Protected contact endpoint sync failed', contactEndpointSyncError?.message || contactEndpointSyncError);
+      }
+
       // Keep the editable display name aligned with database-backed listings while
       // deliberately preserving the stable listing slug / URL.
       if (publicProfile?.name) {
