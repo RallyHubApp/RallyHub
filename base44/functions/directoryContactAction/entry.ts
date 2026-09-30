@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { importedContactEndpointFor } from './importedContactEndpoints.ts';
+import { NAME_OPTOUT_SLUGS, PHONE_OPTOUT_SLUGS, STATIC_LEGACY_HOLD_SLUGS, staticContactOverrideFor } from './staticContactOverrides.ts';
 
 const FEATURE_KEY = 'protected-contact-actions-v1';
 const DEFAULT_DIRECTORY_KEY = 'protected-contact-default-directory';
@@ -165,7 +166,7 @@ async function protectionConfig(base44:any) {
     return value;
   } catch (error) {
     if (protectionConfigCache && now - protectionConfigCache.savedAt < CONFIG_CACHE_STALE_MS) return protectionConfigCache.value;
-    return { globalEnabled:false, defaultEnabled:false, rolloutMap:new Map<string,any>(), degraded:true };
+    return { globalEnabled:true, defaultEnabled:true, rolloutMap:new Map<string,any>(), degraded:true, failClosed:true };
   }
 }
 
@@ -173,7 +174,7 @@ async function protectedState(base44:any, listingSlug:string) {
   const config = await protectionConfig(base44);
   const rollout = config.rolloutMap.get(listingSlug) || { listing_slug:listingSlug, mode:'legacy', fallback_enabled:true, fallback_reason:'No protected-contact rollout configured.' };
   const explicitMode = String(rollout?.mode || 'legacy');
-  const explicitLegacyHold = !!rollout?.id && explicitMode === 'legacy';
+  const explicitLegacyHold = STATIC_LEGACY_HOLD_SLUGS.has(listingSlug) || (!!rollout?.id && explicitMode === 'legacy');
   return {
     globalEnabled:config.globalEnabled,
     defaultEnabled:config.defaultEnabled,
@@ -185,11 +186,6 @@ async function protectedState(base44:any, listingSlug:string) {
 function parseJson(value:any) {
   if (!value) return null;
   try { return JSON.parse(value); } catch { return null; }
-}
-
-async function latestApprovedClaim(base44:any, listingSlug:string) {
-  const rows = await base44.asServiceRole.entities.DirectoryClaim.filter({ listing_slug:listingSlug }, '-reviewed_at', 20);
-  return (rows || []).find((row:any) => ['approved','auto_verified'].includes(String(row?.status || ''))) || null;
 }
 
 function normaliseWhatsapp(raw:any, phone:any) {
@@ -224,44 +220,40 @@ function derivedEndpoint(listingSlug:string, listingName:string, contact:any, cl
   };
 }
 
-async function resolveEndpoint(base44:any, listingSlug:string) {
-  const [rows, claim] = await Promise.all([
-    base44.asServiceRole.entities.DirectoryContactEndpoint.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5),
-    latestApprovedClaim(base44, listingSlug),
-  ]);
-  if (rows?.[0]) {
-    const row = rows[0];
-    const derived = derivedEndpoint(listingSlug, row.listing_name_snapshot || listingSlug, {
-      name:row.contact_name,
-      phone:row.allow_call === true ? row.phone : '',
-      email:row.allow_email === true ? row.email : '',
-      whatsapp:row.allow_whatsapp === true ? row.whatsapp_url : '',
-    }, claim);
-    derived.contact_role = clean(row.contact_role || claim?.claimant_role, 120);
-    return derived;
-  }
-
-  const profileRows = await base44.asServiceRole.entities.DirectoryListingProfile.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5);
-  if (profileRows?.[0]) {
-    const profile = parseJson(profileRows[0].public_json) || {};
-    return derivedEndpoint(listingSlug, profile?.name || claim?.listing_name_snapshot || listingSlug, profile?.contact || {}, claim);
-  }
-
-  const recordRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ slug:listingSlug, status:'active' }, '-published_at', 5);
-  if (recordRows?.[0]) {
-    const base = parseJson(recordRows[0].base_json) || {};
-    return derivedEndpoint(listingSlug, base?.name || claim?.listing_name_snapshot || listingSlug, base?.contact || {}, claim);
-  }
-
-  const imported = importedContactEndpointFor(listingSlug);
-  if (!imported) return null;
-  const importedContact = {
-    name:imported.contact_name,
-    phone:imported.phone,
-    email:imported.email,
-    whatsapp:imported.whatsapp_url,
+function staticPrivacyClaim(listingSlug:string) {
+  return {
+    public_phone_opt_out:PHONE_OPTOUT_SLUGS.has(listingSlug),
+    public_name_opt_out:NAME_OPTOUT_SLUGS.has(listingSlug),
   };
-  return derivedEndpoint(listingSlug, imported.listing_name_snapshot || listingSlug, importedContact, claim);
+}
+
+function staticEndpointFor(listingSlug:string) {
+  const row = staticContactOverrideFor(listingSlug) || importedContactEndpointFor(listingSlug);
+  if (!row) return null;
+  return derivedEndpoint(listingSlug, row.listing_name_snapshot || listingSlug, {
+    name:row.contact_name,
+    phone:row.allow_call === true ? row.phone : '',
+    email:row.allow_email === true ? row.email : '',
+    whatsapp:row.allow_whatsapp === true ? row.whatsapp_url : '',
+  }, staticPrivacyClaim(listingSlug));
+}
+
+async function resolveEndpoint(base44:any, listingSlug:string) {
+  try {
+    const rows = await base44.asServiceRole.entities.DirectoryContactEndpoint.filter({ listing_slug:listingSlug, status:'active' }, '-updated_at', 5);
+    if (rows?.[0]) {
+      const row = rows[0];
+      const derived = derivedEndpoint(listingSlug, row.listing_name_snapshot || listingSlug, {
+        name:row.contact_name,
+        phone:row.allow_call === true ? row.phone : '',
+        email:row.allow_email === true ? row.email : '',
+        whatsapp:row.allow_whatsapp === true ? row.whatsapp_url : '',
+      }, staticPrivacyClaim(listingSlug));
+      derived.contact_role = clean(row.contact_role, 120);
+      return derived;
+    }
+  } catch {}
+  return staticEndpointFor(listingSlug);
 }
 
 async function endpointFor(base44:any, listingSlug:string) {
@@ -274,7 +266,7 @@ async function endpointFor(base44:any, listingSlug:string) {
     return value;
   } catch (error) {
     if (cached && now - cached.savedAt < ENDPOINT_CACHE_STALE_MS) return cached.value;
-    throw error;
+    return staticEndpointFor(listingSlug);
   }
 }
 
