@@ -33,6 +33,18 @@ export function financeRuleIsSelected(rule, selectedVenueIds=[]) {
   return values.map(value=>String(value)).includes(String(rule?.venue_id || ''));
 }
 
+export function financeOccurrenceStartInWindow(event,minMs,maxMs) {
+  // Spond may expose multiple lifecycle timestamps. meetupTimestamp is the actual
+  // session time and must retain precedence; never choose a secondary timestamp
+  // simply because it is earlier.
+  const candidates=[event?.meetupTimestamp,event?.startTimestamp,event?.start_time].filter(Boolean);
+  for(const value of candidates){
+    const t=new Date(value).getTime();
+    if(Number.isFinite(t)&&t>=minMs&&t<=maxMs) return value;
+  }
+  return '';
+}
+
 export function findFinanceRuleForEvent({event, activityDate, local, rulesByEvent, spondRules, venuesById}) {
   let rule=rulesByEvent.get(String(event?.id || ''));
   if(rule) return {rule,matchMode:'exact_event_id',score:1};
