@@ -166,6 +166,9 @@ export default function FinanceSummary() {
     return [...map.values()].sort((a,b)=>b.date.localeCompare(a.date)||a.venue.localeCompare(b.venue));
   },[filtered]);
 
+  const previewCandidates = Array.isArray(spondPreview?.candidates) ? spondPreview.candidates : [];
+  const readyPreviewCandidates = previewCandidates.filter(row=>row.ready);
+
   const saveSettings = async () => {
     const month=Number(settingsDraft.startMonth), day=Number(settingsDraft.startDay);
     if (!Number.isInteger(month) || month<1 || month>12 || !Number.isInteger(day) || day<1 || day>31 || !settingsDraft.trackingStart) return toast.error('Check the financial year settings.');
