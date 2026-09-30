@@ -247,11 +247,15 @@ function directoryEventPreview(events) {
     }
     const venue = venues.get(venueKey);
     const heading = clean(event?.heading || 'Club Session', 180);
-    const key = [heading,start.day,start.time,end?.time||'',venue.id].join('|');
+    const patternKey = spondPatternKey({ heading, day:start.day, start:start.time, end:end?.time||'', venueName:locationName, venueAddress:address });
+    const key = patternKey;
     if (!patterns.has(key)) {
       patterns.set(key, {
         id:`spond-session-${patterns.size+1}`,
+        patternKey,
         venueId:venue.id,
+        spondVenueName:locationName,
+        spondVenueAddress:address || null,
         day:start.day,
         meetTime:'',
         start:start.time,
