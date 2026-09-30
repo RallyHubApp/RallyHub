@@ -132,32 +132,59 @@ export default function Sidebar({ isOpen, onToggle }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 py-4 px-3 space-y-1">
-          {mainNavItems.map(item => {
+        <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-3 px-3 space-y-1 [scrollbar-width:thin]">
+          {mainNavItems.map((item, index) => {
+            const currentAdminTab = new URLSearchParams(location.search).get('tab');
+            const directoryAdmin = item.directoryAdmin || item.path === '/app/admin?tab=directory';
+            const adminPanel = item.admin || item.path === '/app/admin';
             const isActive = item.path === '/app'
               ? location.pathname === '/app' || location.pathname === '/app/'
-              : location.pathname.startsWith(item.path);
+              : directoryAdmin
+                ? location.pathname === '/app/admin' && currentAdminTab === 'directory'
+                : adminPanel
+                  ? location.pathname === '/app/admin' && currentAdminTab !== 'directory'
+                  : location.pathname.startsWith(item.path);
+            const showSection = isSuperAdmin && item.section && (index === 0 || mainNavItems[index - 1]?.section !== item.section);
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => window.innerWidth < 1024 && onToggle()}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
-                  isActive
-                    ? "bg-primary/10 text-primary glow-green-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              <React.Fragment key={item.path}>
+                {showSection && (
+                  <div className={cn("px-3 pb-1 text-[10px] font-black tracking-[0.16em] text-muted-foreground/70", index > 0 && "pt-4")}>
+                    {item.section}
+                  </div>
                 )}
-              >
-                <item.icon className={cn("w-4.5 h-4.5", isActive && "text-primary")} />
-                {item.label}
-                {item.messages && memberMessageUnread > 0 && (
-                  <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center">{memberMessageUnread > 99 ? '99+' : memberMessageUnread}</span>
-                )}
-                {isActive && !item.messages && (
-                  <ChevronRight className="w-3.5 h-3.5 ml-auto text-primary/60" />
-                )}
-              </Link>
+                <Link
+                  to={item.path}
+                  onClick={(event) => {
+                    if (directoryAdmin) {
+                      event.preventDefault();
+                      navigate('/app/admin?tab=directory');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                    if (window.innerWidth < 1024) onToggle();
+                  }}
+                  className={cn(
+                    "flex min-h-10 items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group",
+                    isActive
+                      ? adminPanel ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary glow-green-sm"
+                      : adminPanel ? "text-muted-foreground hover:text-destructive hover:bg-destructive/5" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  )}
+                >
+                  <item.icon className={cn("w-4.5 h-4.5 shrink-0", isActive && !adminPanel && "text-primary")} />
+                  <span className="truncate">{item.label}</span>
+                  {item.messages && memberMessageUnread > 0 && (
+                    <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center">{memberMessageUnread > 99 ? '99+' : memberMessageUnread}</span>
+                  )}
+                  {directoryAdmin && pendingDirectoryAdminCount > 0 && (
+                    <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-black text-[11px] font-black flex items-center justify-center">{pendingDirectoryAdminCount}</span>
+                  )}
+                  {adminPanel && pendingApprovalCount > 0 && (
+                    <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-black text-[11px] font-black flex items-center justify-center">{pendingApprovalCount}</span>
+                  )}
+                  {isActive && !item.messages && !directoryAdmin && !adminPanel && (
+                    <ChevronRight className="w-3.5 h-3.5 ml-auto text-primary/60 shrink-0" />
+                  )}
+                </Link>
+              </React.Fragment>
             );
           })}
         </nav>
