@@ -61,6 +61,18 @@
     "directory_session_key": {
       "type": "string"
     },
+    "spond_pattern_key": {
+      "type": "string"
+    },
+    "spond_heading": {
+      "type": "string"
+    },
+    "spond_venue_name": {
+      "type": "string"
+    },
+    "spond_venue_address": {
+      "type": "string"
+    },
     "active": {
       "type": "boolean",
       "default": true
