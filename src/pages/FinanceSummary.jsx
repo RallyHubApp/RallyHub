@@ -246,44 +246,23 @@ export default function FinanceSummary() {
     } catch (e) { toast.error(e?.message || 'Could not record finance entry'); }
   };
 
-  const loadSpondGroups = async () => {
-    if (!listingSlug) return toast.error('No Spond connection is configured for this club.');
-    setLoadingSpondGroups(true);
-    try {
-      const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_get_groups', listingSlug });
-      if (res.data?.error) throw new Error(res.data.error);
-      const groups = Array.isArray(res.data?.groups) ? res.data.groups : [];
-      setSpondGroups(groups);
-      if (!selectedSpondGroupId && spondConnection?.spond_group_id) setSelectedSpondGroupId(String(spondConnection.spond_group_id));
-      toast.success(groups.length ? `Loaded ${groups.length} Spond groups` : 'Spond connected but no groups were returned');
-    } catch(e){ toast.error(e?.message || 'Could not load Spond groups'); }
-    finally { setLoadingSpondGroups(false); }
-  };
-
-  const scanSpondPatterns = async () => {
-    if (!listingSlug) return toast.error('No Spond connection is configured for this club.');
-    if (!selectedSpondGroupId) return toast.error('Choose the Spond group first.');
-    setScanningSpondPatterns(true); setSpondPatternPreview(null);
-    try {
-      const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_get_events', listingSlug, groupId:selectedSpondGroupId });
-      if (res.data?.error) throw new Error(res.data.error);
-      const preview = res.data?.preview || {venues:[],sessions:[]};
-      setSpondPatternPreview(preview);
-      const assignments={};
-      for (const row of preview.sessions || []) {
-        const mapped=rules.find(rule=>String(rule.spond_pattern_key||'')===String(row.patternKey||''));
-        if (mapped) { assignments[row.patternKey]=mapped.id; continue; }
-        const timeMatches=rules.filter(rule=>rule.active!==false && rule.income_source==='spond' && String(rule.weekday||'')===String(row.day||'') && String(rule.start_time||'').slice(0,5)===String(row.start||'').slice(0,5));
-        if (timeMatches.length===1) assignments[row.patternKey]=timeMatches[0].id;
-      }
-      setPatternAssignments(assignments);
-      toast.success(`Found ${preview.sessions?.length||0} recurring Spond session patterns`);
-    } catch(e){ toast.error(e?.message || 'Could not scan Spond sessions'); }
-    finally { setScanningSpondPatterns(false); }
+  const handleFinanceSpondSelection = selection => {
+    const sessions=Array.isArray(selection?.sessions)?selection.sessions:[];
+    setSpondSelection(selection || null);
+    const assignments={};
+    for (const row of sessions) {
+      const mapped=rules.find(rule=>String(rule.spond_pattern_key||'')===String(row.patternKey||''));
+      if (mapped) { assignments[row.patternKey]=mapped.id; continue; }
+      const timeMatches=rules.filter(rule=>rule.active!==false && rule.income_source==='spond' && String(rule.weekday||'')===String(row.day||'') && String(rule.start_time||'').slice(0,5)===String(row.start||'').slice(0,5));
+      if (timeMatches.length===1) assignments[row.patternKey]=timeMatches[0].id;
+    }
+    setPatternAssignments(assignments);
+    setSpondPreview(null);
+    setSelectedOccurrenceKeys([]);
   };
 
   const saveSpondPatternAssignments = async () => {
-    const sessions=Array.isArray(spondPatternPreview?.sessions)?spondPatternPreview.sessions:[];
+    const sessions=Array.isArray(spondSelection?.sessions)?spondSelection.sessions:[];
     const chosen=sessions.filter(row=>patternAssignments[row.patternKey]);
     if (!chosen.length) return toast.error('Assign at least one Spond session to a Finance session.');
     const ruleIds=chosen.map(row=>patternAssignments[row.patternKey]);
