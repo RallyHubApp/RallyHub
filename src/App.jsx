@@ -72,6 +72,7 @@ import MemberPlay from '@/pages/MemberPlay';
 import MemberVenues from '@/pages/MemberVenues';
 import MemberLearn from '@/pages/MemberLearn';
 import ManageLearn from '@/pages/ManageLearn';
+import FinanceSummary from '@/pages/FinanceSummary';
 import MemberShop from '@/pages/MemberShop';
 import MemberMessages from '@/pages/MemberMessages';
 import MemberForecast from '@/pages/MemberForecast';
@@ -209,6 +210,7 @@ const AuthenticatedRoutes = () => (
       <Route path="admin/contact-action-preview" element={<ProtectedContactActionPreview />} />
       <Route path="guest-bookings" element={<GuestBookings />} />
       <Route path="membership" element={<MembershipConsole />} />
+      <Route path="finance" element={<FinanceSummary />} />
       <Route path="waiting-list" element={<WaitingList />} />
       <Route path="trials" element={<TrialAdmin />} />
     </Route>
