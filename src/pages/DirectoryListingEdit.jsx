@@ -303,7 +303,7 @@ export default function DirectoryListingEdit() {
       venues: prev.venues.map((v, i) => {
         if (i !== index) return v;
         const updated = { ...v, [key]: value };
-        if (['name', 'address', 'eircode'].includes(key)) {
+        if (['name', 'address', 'eircode', 'mapUrl'].includes(key)) {
           updated.latitude = null;
           updated.longitude = null;
         }
