@@ -29,6 +29,16 @@ const syncedEntries=dates.flatMap((date,index)=>[
   {id:`e19-${index}`,tenant_id:tenantId,club_id:clubId,activity_date:date,activity_start_time:'19:00',venue_id:'enn',venue_name:'Ennistymon',session_label:'7:00–8:00 pm',source_type:'spond_session',paid_places:10+index,going_count:10+index,declined_paid_count:index===2?1:0,fee_per_person:5.5,income_amount:(10+index)*5.5,expected_cost_amount:45,other_cost_amount:0},
   {id:`e20-${index}`,tenant_id:tenantId,club_id:clubId,activity_date:date,activity_start_time:'20:00',venue_id:'enn',venue_name:'Ennistymon',session_label:'8:00–9:00 pm',source_type:'spond_session',paid_places:8+index,going_count:8+index,declined_paid_count:0,fee_per_person:5.5,income_amount:(8+index)*5.5,expected_cost_amount:45,other_cost_amount:0},
 ]);
+const previewCandidates=syncedEntries.map((row,index)=>({
+  occurrenceKey:`occ-${index}`,
+  activityDate:row.activity_date,
+  startTime:row.activity_start_time,
+  heading:row.activity_start_time==='19:00'?'7pm Ennistymon Pickleball Session':'8pm Ennistymon Pickleball Session',
+  spondVenueName:'Ennistymon Community Centre',
+  venueId:'enn',venueName:'Ennistymon',sessionLabel:row.session_label,
+  goingCount:row.going_count,declinedPaidCount:row.declined_paid_count,paidPlaces:row.paid_places,
+  feePerPerson:5.5,incomeAmount:row.income_amount,expectedCostAmount:45,netAmount:row.income_amount-45,ready:true,reason:'',matchMode:index>=6?'exact_event_id':'venue_day_time'
+}));
 
 async function installFinanceBackend(page,{zeroMatch=false}={}){
   let synced=false;
