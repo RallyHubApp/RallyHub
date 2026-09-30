@@ -1,0 +1,99 @@
+{
+  "run_id": "RH-YYYYMMDD-001",
+  "completed_at": "YYYY-MM-DDTHH:MM:SSZ",
+  "protocol_versions": {
+    "master_testing_blueprint": "1.3",
+    "testing_control_pack": "1.0"
+  },
+  "tester": {
+    "name_or_agent": "",
+    "organisation_or_tool": ""
+  },
+  "target_build": {
+    "environment": "sandbox|preview|staging|production",
+    "commit_hash": "",
+    "checkpoint_id": "",
+    "release_marker_or_asset_hash": ""
+  },
+  "selected_depth": "S",
+  "risk_gate_result": {
+    "minimum_required_depth": "",
+    "actual_depth": "",
+    "passed": false,
+    "deviations": []
+  },
+  "environment_proof": {
+    "application_rendered_for_required_browser_tests": false,
+    "browser_or_runtime": "",
+    "test_data_or_sandbox": "",
+    "environment_failures": []
+  },
+  "blast_radius": {
+    "modules_tested": [],
+    "shared_services_tested": [],
+    "routes_or_surfaces_tested": []
+  },
+  "test_cases": [
+    {
+      "test_id": "RH-T001",
+      "layer": "",
+      "scenario": "",
+      "expected_result": "",
+      "actual_result": "",
+      "status": "PASS|PASS-WITH-LIMITATION|FAIL|BLOCKED",
+      "evidence": [],
+      "defect_id": "",
+      "notes": ""
+    }
+  ],
+  "defects": [
+    {
+      "defect_id": "RH-D001",
+      "severity": "P0|P1|P2|P3",
+      "summary": "",
+      "reproduction": "",
+      "fix_status": "open|fixed|deferred",
+      "regression_added": false,
+      "retest_status": "not_run|PASS|FAIL|BLOCKED"
+    }
+  ],
+  "blocked_tests": [
+    {
+      "test_id": "",
+      "blocker": "",
+      "why_this_is_environment_or_dependency_related": "",
+      "confidence_impact": ""
+    }
+  ],
+  "request_and_resilience_observations": {
+    "base44_rate_or_429_findings": [],
+    "polling_or_request_fanout_findings": [],
+    "slow_response_or_retry_findings": []
+  },
+  "persistence_proof": {
+    "tested_edits_present_in_persisted_source": false,
+    "commit_hash_verified": "",
+    "checkpoint_id_verified": "",
+    "proof_notes": ""
+  },
+  "release_gate": {
+    "unresolved_P0": 0,
+    "unresolved_P1": 0,
+    "unresolved_security_or_tenant_isolation_failure": false,
+    "required_layers_complete": false,
+    "persistence_proven": false,
+    "ready_to_publish": false,
+    "blocking_reasons": []
+  },
+  "deployment_proof": {
+    "publish_claimed": false,
+    "production_fingerprint_checked": false,
+    "production_matches_release_candidate": false,
+    "live_asset_or_release_marker": "",
+    "notes": ""
+  },
+  "final_verdict": "PASS|PASS-WITH-LIMITATION|FAIL|BLOCKED",
+  "final_release_state": "CODED|BUILD-PASSED|TESTED|PERSISTED|RELEASE-CANDIDATE|DEPLOYED|LIVE-DEVICE-TESTED|PRODUCTION-PROVEN",
+  "limitations": [],
+  "next_actions": []
+}
