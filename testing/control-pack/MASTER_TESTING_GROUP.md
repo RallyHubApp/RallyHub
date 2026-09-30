@@ -1,7 +1,7 @@
 # RallyHub Master Testing Group
 
 **Control Pack version:** 1.0  
-**Master Testing Blueprint:** v1.3  
+**Master Testing Blueprint:** v1.4  
 **Effective:** 30 September 2026
 
 ## Purpose
@@ -36,6 +36,8 @@ It is a set of mandatory roles and gates, not necessarily a committee of differe
 ### 5. Browser / UX Robot
 - Tests human journeys on desktop and mobile.
 - Behaves like a rushed organiser/player rather than a scripted demonstrator.
+- Runs the full handover journey for meaningful user-facing workflows: discovery, instructions, setup, primary action, result interpretation, zero/error state, and mobile where relevant.
+- Treats a workflow as not handover-ready if the user would be the first person to discover that it is unclear, incomplete or broken.
 - Confirms the app actually rendered before recording a UI FAIL.
 - Uses fresh browser contexts where cross-route contamination is possible.
 
@@ -65,7 +67,7 @@ Every external or independent test run follows this order:
 4. Run the Risk Gate and record the minimum required depth.
 5. Identify exact target commit/checkpoint/build and environment.
 6. Protect production data and prepare approved test data/sandbox.
-7. Execute the required layers and cases.
+7. Execute the required layers and cases, including the end-to-end handover journey for meaningful user-facing workflows.
 8. Record results in the Evidence Report as PASS, PASS-WITH-LIMITATION, FAIL or BLOCKED.
 9. Continue independent tests after individual failures where safe; do not stop a population audit merely because one item failed.
 10. Fix meaningful defects and add permanent regressions where practical.
