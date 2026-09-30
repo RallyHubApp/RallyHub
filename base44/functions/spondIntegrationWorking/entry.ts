@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import { tenantCapabilityDecision } from './tenantCapability.ts';
+import { findFinanceRuleForEvent } from './financeMatch.mjs';
 
 const SPOND_API_BASE = 'https://api.spond.com/core/v1';
 
@@ -81,28 +82,6 @@ function irelandDate(value) {
   } catch { return ''; }
 }
 function normaliseName(v=''){return String(v).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();}
-const financeVenueStopWords = new Set(['gaa','club','community','centre','center','sports','sport','hall','co','county','ireland','road','rd','street','the']);
-function financeVenueTokens(value='') {
-  return new Set(normaliseName(value).split(' ').filter(token=>token.length>1 && !financeVenueStopWords.has(token)));
-}
-function financeVenueSimilarity(rule, venue, event) {
-  const sourceValues=[event?.location?.feature,event?.location?.name,event?.location?.address].filter(Boolean);
-  const targetValues=[rule?.venue_name,venue?.name,venue?.address].filter(Boolean);
-  let best=0;
-  for(const sourceValue of sourceValues){
-    const source=financeVenueTokens(sourceValue);
-    if(!source.size)continue;
-    for(const targetValue of targetValues){
-      const target=financeVenueTokens(targetValue);
-      if(!target.size)continue;
-      let intersection=0;
-      for(const token of source) if(target.has(token)) intersection++;
-      const score=intersection/Math.min(source.size,target.size);
-      if(score>best)best=score;
-    }
-  }
-  return best;
-}
 function isTrustedMemberSource(groupName='',clubName=''){const club=normaliseName(clubName);return !!club&&normaliseName(groupName)===`${club} members`;}
 function normaliseEmail(v=''){return String(v).trim().toLowerCase();}
 function normalisePhone(v=''){return String(v).replace(/\D/g,'').replace(/^3530?/,'353');}
@@ -454,22 +433,9 @@ Deno.serve(async (req) => {
         const activityDate = irelandDate(start);
         const local = dublinParts(start);
         if (!activityDate || !local) { skipped++; unmatchedRule++; continue; }
-        let rule = rulesByEvent.get(String(event.id));
-        let matchMode = rule ? 'exact_event_id' : '';
-        if (!rule) {
-          const candidates = spondRules
-            .filter(candidate => String(candidate.weekday || '') === String(local.day || ''))
-            .filter(candidate => String(candidate.start_time || '').slice(0,5) === String(local.time || '').slice(0,5))
-            .filter(candidate => !(candidate.effective_from && activityDate < candidate.effective_from))
-            .filter(candidate => !(candidate.effective_to && activityDate > candidate.effective_to))
-            .map(candidate => ({ candidate, score:financeVenueSimilarity(candidate, venuesById.get(String(candidate.venue_id || '')), event) }))
-            .filter(row => row.score >= 0.5)
-            .sort((a,b)=>b.score-a.score);
-          if (candidates.length && (candidates.length === 1 || candidates[0].score > candidates[1].score)) {
-            rule = candidates[0].candidate;
-            matchMode = 'venue_day_time';
-          }
-        }
+        const match = findFinanceRuleForEvent({ event, activityDate, local, rulesByEvent, spondRules, venuesById });
+        const rule = match.rule;
+        const matchMode = match.matchMode;
         if (!rule) { skipped++; unmatchedRule++; continue; }
         if ((rule.effective_from && activityDate < rule.effective_from) || (rule.effective_to && activityDate > rule.effective_to)) { skipped++; outsideEffectiveRange++; continue; }
         if (rule.default_fee_per_person == null || rule.default_fee_per_person === '') { skipped++; missingFee++; continue; }
