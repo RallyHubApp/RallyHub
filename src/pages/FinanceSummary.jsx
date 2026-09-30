@@ -234,9 +234,10 @@ export default function FinanceSummary() {
       const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_finance_sync', listingSlug, fromDate, toDate, selectedVenueIds });
       if (res.data?.error) throw new Error(res.data.error);
       setSyncResult(res.data);
-      const fetched=Number(res.data.fetchedCount||0), matched=Number(res.data.matchedCount ?? res.data.synced?.length ?? 0), skipped=Number(res.data.skipped||0);
-      if (matched > 0) setSyncMessage(`Spond connected. Found ${fetched} events · matched ${matched} · added ${res.data.created||0} · refreshed ${res.data.updated||0}${skipped?` · skipped ${skipped}`:''}.`);
-      else if (fetched > 0) setSyncMessage(`Spond connected and returned ${fetched} events, but none could be turned into finance rows. See the explanation below.`);
+      const fetched=Number(res.data.fetchedCount||0), totalInRange=Number(res.data.totalSpondEventsInRange ?? fetched), matched=Number(res.data.matchedCount ?? res.data.synced?.length ?? 0), skipped=Number(res.data.skipped||0), ignored=Number(res.data.diagnostics?.ignoredNotSelected||0);
+      if (matched > 0) setSyncMessage(`Spond connected. Found ${fetched} events in the selected venues · matched ${matched} · added ${res.data.created||0} · refreshed ${res.data.updated||0}${skipped?` · skipped ${skipped}`:''}${ignored?` · ignored ${ignored} outside your venue selection`:''}.`);
+      else if (fetched > 0) setSyncMessage(`Spond connected and found ${fetched} events in the selected venues, but none could be turned into finance rows. See the explanation below.`);
+      else if (totalInRange > 0 && ignored > 0) setSyncMessage(`Spond connected and found ${totalInRange} events in the date range, but none belonged to the venues you selected.`);
       else setSyncMessage('Spond connected successfully, but no events were returned for this date range.');
       await queryClient.invalidateQueries({queryKey:['finance-entries',tenantId,clubId]});
       toast.success('Spond finance summary refreshed');
