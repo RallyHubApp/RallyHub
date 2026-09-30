@@ -81,6 +81,28 @@ function irelandDate(value) {
   } catch { return ''; }
 }
 function normaliseName(v=''){return String(v).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();}
+const financeVenueStopWords = new Set(['gaa','club','community','centre','center','sports','sport','hall','co','county','ireland','road','rd','street','the']);
+function financeVenueTokens(value='') {
+  return new Set(normaliseName(value).split(' ').filter(token=>token.length>1 && !financeVenueStopWords.has(token)));
+}
+function financeVenueSimilarity(rule, venue, event) {
+  const sourceValues=[event?.location?.feature,event?.location?.name,event?.location?.address].filter(Boolean);
+  const targetValues=[rule?.venue_name,venue?.name,venue?.address].filter(Boolean);
+  let best=0;
+  for(const sourceValue of sourceValues){
+    const source=financeVenueTokens(sourceValue);
+    if(!source.size)continue;
+    for(const targetValue of targetValues){
+      const target=financeVenueTokens(targetValue);
+      if(!target.size)continue;
+      let intersection=0;
+      for(const token of source) if(target.has(token)) intersection++;
+      const score=intersection/Math.min(source.size,target.size);
+      if(score>best)best=score;
+    }
+  }
+  return best;
+}
 function isTrustedMemberSource(groupName='',clubName=''){const club=normaliseName(clubName);return !!club&&normaliseName(groupName)===`${club} members`;}
 function normaliseEmail(v=''){return String(v).trim().toLowerCase();}
 function normalisePhone(v=''){return String(v).replace(/\D/g,'').replace(/^3530?/,'353');}
@@ -416,6 +438,7 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.Venue.filter({ tenant_id:tenantId, club_id:clubId }, 'name', 500),
       ]);
       const rulesByEvent = new Map((rules || []).filter(r=>r.spond_event_id).map(r=>[String(r.spond_event_id),r]));
+      const spondRules = (rules || []).filter(r=>r.income_source === 'spond');
       const venuesById = new Map((venues || []).map(v=>[String(v.id),v]));
       const settings = (await base44.asServiceRole.entities.ClubFinanceSettings.filter({ tenant_id:tenantId, club_id:clubId }, '-updated_date', 5))?.[0] || null;
       const fyMonth = Number(settings?.financial_year_start_month || 9);
@@ -423,15 +446,34 @@ Deno.serve(async (req) => {
       const allEntries = await base44.asServiceRole.entities.ClubFinanceEntry.filter({ tenant_id:tenantId, club_id:clubId }, '-activity_date', 1000);
       const existingBySource = new Map((allEntries || []).filter(row=>row.source_type==='spond_session' && row.source_id).map(row=>[String(row.source_id),row]));
       let created=0, updated=0, skipped=0, reviewCount=0;
+      let exactMatches=0, scheduleMatches=0, unmatchedRule=0, missingFee=0, outsideEffectiveRange=0;
       const synced=[];
       const syncedAt=new Date().toISOString();
       for (const event of bounded) {
-        const rule = rulesByEvent.get(String(event.id));
-        if (!rule) { skipped++; continue; }
         const start = eventStart(event);
         const activityDate = irelandDate(start);
-        if (!activityDate || (rule.effective_from && activityDate < rule.effective_from) || (rule.effective_to && activityDate > rule.effective_to)) { skipped++; continue; }
         const local = dublinParts(start);
+        if (!activityDate || !local) { skipped++; unmatchedRule++; continue; }
+        let rule = rulesByEvent.get(String(event.id));
+        let matchMode = rule ? 'exact_event_id' : '';
+        if (!rule) {
+          const candidates = spondRules
+            .filter(candidate => String(candidate.weekday || '') === String(local.day || ''))
+            .filter(candidate => String(candidate.start_time || '').slice(0,5) === String(local.time || '').slice(0,5))
+            .filter(candidate => !(candidate.effective_from && activityDate < candidate.effective_from))
+            .filter(candidate => !(candidate.effective_to && activityDate > candidate.effective_to))
+            .map(candidate => ({ candidate, score:financeVenueSimilarity(candidate, venuesById.get(String(candidate.venue_id || '')), event) }))
+            .filter(row => row.score >= 0.5)
+            .sort((a,b)=>b.score-a.score);
+          if (candidates.length && (candidates.length === 1 || candidates[0].score > candidates[1].score)) {
+            rule = candidates[0].candidate;
+            matchMode = 'venue_day_time';
+          }
+        }
+        if (!rule) { skipped++; unmatchedRule++; continue; }
+        if ((rule.effective_from && activityDate < rule.effective_from) || (rule.effective_to && activityDate > rule.effective_to)) { skipped++; outsideEffectiveRange++; continue; }
+        if (rule.default_fee_per_person == null || rule.default_fee_per_person === '') { skipped++; missingFee++; continue; }
+        if (matchMode === 'exact_event_id') exactMatches++; else scheduleMatches++;
         const response = financeResponseMeta(event);
         const paidPlaces = response.goingCount + response.declinedPaidCount;
         const fee = Number(rule.default_fee_per_person || 0);
@@ -450,6 +492,7 @@ Deno.serve(async (req) => {
           declinedResponses:response.declinedNotes,
           ruleId:rule.id,
           venueHourlyRate:Number.isFinite(liveHourlyRate) ? liveHourlyRate : null,
+          matchMode,
         };
         reviewCount += response.declinedNotes.filter(row=>!row.countedAsPaid && !!row.note).length;
         const payload = {
@@ -484,7 +527,21 @@ Deno.serve(async (req) => {
         }
         synced.push({ id:saved.id, activityDate, startTime:payload.activity_start_time, venueName:payload.venue_name, sessionLabel:payload.session_label, goingCount:response.goingCount, declinedPaidCount:response.declinedPaidCount, paidPlaces, incomeAmount:income, expectedCostAmount:expectedCost, netAmount:Math.round((income-expectedCost)*100)/100 });
       }
-      return Response.json({ success:true, fromDate, toDate, created, updated, skipped, reviewCount, synced, fetchedCount:bounded.length, syncedAt });
+      return Response.json({
+        success:true,
+        fromDate,
+        toDate,
+        created,
+        updated,
+        skipped,
+        reviewCount,
+        synced,
+        fetchedCount:bounded.length,
+        matchedCount:synced.length,
+        diagnostics:{ exactMatches, scheduleMatches, unmatchedRule, missingFee, outsideEffectiveRange },
+        connection:{ groupId:financeGroupId, groupName:connectionRows?.[0]?.spond_group_name || '' },
+        syncedAt,
+      });
     }
 
     if (action === 'directory_save_connection') {
