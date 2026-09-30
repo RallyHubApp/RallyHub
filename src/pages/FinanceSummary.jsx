@@ -58,7 +58,7 @@ export default function FinanceSummary() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState(todayIso());
   const [selectedVenueIds, setSelectedVenueIds] = useState([]);
-  const [monthFilter, setMonthFilter] = useState('all');
+  const [selectedMonths, setSelectedMonths] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
   const [syncResult, setSyncResult] = useState(null);
@@ -121,11 +121,10 @@ export default function FinanceSummary() {
     if (fromDate && row.activity_date < fromDate) return false;
     if (row.activity_date > toDate) return false;
     if (!selectedVenueIds.includes(row.venue_id)) return false;
-    if (monthFilter !== 'all' && !String(row.activity_date || '').startsWith(monthFilter)) return false;
+    const rowMonth = Number(String(row.activity_date || '').slice(5,7));
+    if (selectedMonths.length && !selectedMonths.includes(rowMonth)) return false;
     return true;
-  }),[entries,fromDate,toDate,selectedVenueIds,monthFilter]);
-
-  const months = useMemo(()=>[...new Set(entries.map(row=>String(row.activity_date || '').slice(0,7)).filter(Boolean))].sort().reverse(),[entries]);
+  }),[entries,fromDate,toDate,selectedVenueIds,selectedMonths]);
   const totals = useMemo(()=>filtered.reduce((acc,row)=>{
     acc.income += Number(row.income_amount || 0);
     acc.cost += row.actual_cost_amount == null ? Number(row.expected_cost_amount || 0) : Number(row.actual_cost_amount || 0);
@@ -232,7 +231,7 @@ export default function FinanceSummary() {
     if (!listingSlug) return toast.error('No Spond-linked session is configured for this club.');
     setSyncing(true); setSyncMessage(''); setSyncResult(null);
     try {
-      const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_finance_sync', listingSlug, fromDate, toDate });
+      const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_finance_sync', listingSlug, fromDate, toDate, selectedVenueIds });
       if (res.data?.error) throw new Error(res.data.error);
       setSyncResult(res.data);
       const fetched=Number(res.data.fetchedCount||0), matched=Number(res.data.matchedCount ?? res.data.synced?.length ?? 0), skipped=Number(res.data.skipped||0);
@@ -279,7 +278,7 @@ export default function FinanceSummary() {
       <div className="flex flex-wrap items-end gap-3">
         <div><Label className="text-xs">From</Label><Input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)} className="mt-1 w-40" /></div>
         <div><Label className="text-xs">To</Label><Input type="date" value={toDate} onChange={e=>setToDate(e.target.value)} className="mt-1 w-40" /></div>
-        <div className="min-w-44"><Label className="text-xs">Month</Label><Select value={monthFilter} onValueChange={setMonthFilter}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All months</SelectItem>{months.map(m=><SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select></div>
+        <div className="min-w-52"><Label className="text-xs">Months</Label><details className="relative mt-1" data-testid="finance-month-filter"><summary className="flex h-10 cursor-pointer list-none items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"><span>{selectedMonths.length===0?'All months':selectedMonths.length===1?monthsOfYear[selectedMonths[0]-1]:`${selectedMonths.length} months selected`}</span><span className="text-muted-foreground">⌄</span></summary><div className="absolute z-50 mt-1 max-h-80 w-56 overflow-auto rounded-md border border-border bg-popover p-2 shadow-md"><label className="flex cursor-pointer items-center gap-2 rounded px-2 py-2 text-xs hover:bg-accent"><Checkbox checked={selectedMonths.length===0} onCheckedChange={checked=>{if(checked)setSelectedMonths([]);}} /><span className="font-semibold">All months</span></label>{monthsOfYear.map((month,index)=>{const monthNumber=index+1;return <label key={month} data-testid={`finance-month-${monthNumber}`} className="flex cursor-pointer items-center gap-2 rounded px-2 py-2 text-xs hover:bg-accent"><Checkbox checked={selectedMonths.includes(monthNumber)} onCheckedChange={checked=>setSelectedMonths(current=>checked?[...new Set([...current,monthNumber])].sort((a,b)=>a-b):current.filter(value=>value!==monthNumber))} /><span>{month}</span></label>;})}</div></details></div>
         {user?.role==='admin' && listingSlug && <Button onClick={syncSpond} disabled={syncing}><RefreshCw className={`mr-2 h-4 w-4 ${syncing?'animate-spin':''}`} />{syncing?'Syncing…':'Sync Spond'}</Button>}
       </div>
       <div>
@@ -293,8 +292,8 @@ export default function FinanceSummary() {
         <p className="text-xs font-medium">{spondConnection ? `Spond connection: ${spondConnection.spond_group_name} ✓` : 'Spond connection: not confirmed'}</p>
         <p className="mt-1 text-xs text-muted-foreground">Financial year starts {monthsOfYear[Number(settings?.financial_year_start_month || 1)-1]} {Number(settings?.financial_year_start_day || 1)}. Tracking begins {settings?.tracking_start_date || 'when configured'}.</p>
         {syncMessage && <p data-testid="finance-sync-message" className={`mt-2 text-xs font-semibold ${syncResult?.error?'text-red-600':'text-foreground'}`}>{syncMessage}</p>}
-        {syncResult && !syncResult.error && <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Spond events found</p><p className="font-bold">{syncResult.fetchedCount||0}</p></div><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Matched to finance</p><p className="font-bold">{syncResult.matchedCount ?? syncResult.synced?.length ?? 0}</p></div><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Added / refreshed</p><p className="font-bold">{syncResult.created||0} / {syncResult.updated||0}</p></div><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Skipped</p><p className="font-bold">{syncResult.skipped||0}</p></div></div>}
-        {syncResult?.diagnostics && Number(syncResult.skipped||0)>0 && <p className="mt-2 text-[11px] text-muted-foreground">Skipped explanation: {syncResult.diagnostics.unmatchedRule||0} had no matching configured session; {syncResult.diagnostics.missingFee||0} matched a session but has no player fee set; {syncResult.diagnostics.outsideEffectiveRange||0} fell outside the session’s active dates.</p>}
+        {syncResult && !syncResult.error && <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5"><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Spond events in range</p><p className="font-bold">{syncResult.totalSpondEventsInRange ?? syncResult.fetchedCount ?? 0}</p></div><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">In selected venues</p><p className="font-bold">{syncResult.fetchedCount||0}</p></div><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Matched to finance</p><p className="font-bold">{syncResult.matchedCount ?? syncResult.synced?.length ?? 0}</p></div><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Added / refreshed</p><p className="font-bold">{syncResult.created||0} / {syncResult.updated||0}</p></div><div className="rounded-md bg-background p-2"><p className="text-[11px] text-muted-foreground">Skipped</p><p className="font-bold">{syncResult.skipped||0}</p></div></div>}
+        {syncResult?.diagnostics && (Number(syncResult.skipped||0)>0 || Number(syncResult.diagnostics.ignoredNotSelected||0)>0) && <p className="mt-2 text-[11px] text-muted-foreground">Sync explanation: {syncResult.diagnostics.ignoredNotSelected||0} belonged to venues you did not select; {syncResult.diagnostics.unmatchedRule||0} had no matching configured session; {syncResult.diagnostics.missingFee||0} matched a selected session but has no player fee set; {syncResult.diagnostics.outsideEffectiveRange||0} fell outside the session’s active dates.</p>}
       </div>
     </GlassCard>
 
