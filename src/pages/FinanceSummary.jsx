@@ -261,7 +261,7 @@ export default function FinanceSummary() {
         <div className="rounded-lg border border-border p-3"><p className="text-xs font-bold text-primary">4 · Read the result</p><p className="mt-1 text-xs text-muted-foreground">Green = surplus. Red = club subsidy. The tables break it down by venue, month, day and session.</p></div>
       </div>
       <div className="flex flex-wrap gap-2 text-xs">
-        {spondConnection ? <Badge data-testid="finance-spond-status" className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-700"><CheckCircle2 className="mr-1 h-3 w-3" />Spond connected · {spondConnection.spond_group_name}</Badge> : <Badge data-testid="finance-spond-status" variant="outline">Spond connection not confirmed</Badge>
+        {spondConnection ? <Badge data-testid="finance-spond-status" className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-700"><CheckCircle2 className="mr-1 h-3 w-3" />Spond connected · {spondConnection.spond_group_name}</Badge> : <Badge data-testid="finance-spond-status" variant="outline">Spond connection not confirmed</Badge>}
         <Badge variant="outline">{rules.filter(r=>r.active!==false).length} recurring finance sessions configured</Badge>
         <Badge variant="outline">{venues.filter(v=>v.finance_tracking_enabled).length} venues with finance tracking enabled</Badge>
       </div>
