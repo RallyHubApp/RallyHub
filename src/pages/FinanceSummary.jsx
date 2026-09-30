@@ -120,6 +120,11 @@ export default function FinanceSummary() {
   });
   const spondConnection = spondConnections[0] || null;
   const selectedSpondGroupId = String(spondSelection?.group?.id || spondConnection?.spond_group_id || '');
+  const financeScanPatternKeys = useMemo(()=>{
+    if (selectedVenueIds.length !== 1) return [];
+    const venueId = String(selectedVenueIds[0]);
+    return rules.filter(rule=>rule.active!==false && rule.income_source==='spond' && String(rule.venue_id||'')===venueId && rule.spond_pattern_key).map(rule=>String(rule.spond_pattern_key));
+  },[rules,selectedVenueIds]);
 
   useEffect(()=>{
     if (!venues.length || selectedVenueIds.length) return;
@@ -354,7 +359,10 @@ export default function FinanceSummary() {
         clubName={user?.active_club_name || 'Clare Pickleball'}
         mode="finance"
         title="Spond session setup"
-        description="This is the same Spond connection and recurring-session scanner used by the Directory. Choose the Spond group, scan the repeating sessions, then select the ones Finance should use."
+        description={`This uses the same Spond scanner as the Directory, but Finance searches your selected report period. Current scan: ${fromDate || 'start date not set'} to ${toDate || 'end date not set'}${selectedVenueIds.length===1 ? ` · ${venues.find(v=>v.id===selectedVenueIds[0])?.name || 'selected venue'}` : ''}.`}
+        scanFromDate={fromDate}
+        scanToDate={toDate}
+        allowedPatternKeys={financeScanPatternKeys}
         onSelectSessions={handleFinanceSpondSelection}
       />
       {spondSelection && <GlassCard className="p-4 space-y-4" data-testid="finance-spond-assignment">
