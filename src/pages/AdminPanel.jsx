@@ -717,6 +717,7 @@ export default function AdminPanel() {
     // The editable Directory profile is the authoritative current public contact.
     // Overlay it last so a club contact edited after import (for example Dublin 15)
     // is used for new email/WhatsApp invitations instead of the original seed contact.
+    const profileContactSlugs = new Set();
     for (const profileRow of directoryVerification.listingProfiles || []) {
       if (!profileRow?.listing_slug || profileRow.status !== 'active') continue;
       let publicProfile = null;
@@ -729,6 +730,7 @@ export default function AdminPanel() {
         email: String(currentContact.email || '').trim(),
       };
       if (!latestContact.name && !latestContact.phone && !latestContact.email) continue;
+      profileContactSlugs.add(String(profileRow.listing_slug));
       const existing = bySlug.get(profileRow.listing_slug) || { slug: profileRow.listing_slug, name: profileRow.listing_slug, county: '', contacts: [] };
       bySlug.set(profileRow.listing_slug, {
         ...existing,
@@ -755,10 +757,17 @@ export default function AdminPanel() {
         email: String(invite.contact_email || '').trim(),
       };
       if (!inviteContact.name && !inviteContact.phone && !inviteContact.email) continue;
-      const mergedContact = {
+      const hasSavedProfileContact = profileContactSlugs.has(slug);
+      const mergedContact = hasSavedProfileContact ? {
         name: existing.contactName || inviteContact.name,
         phone: existing.contactPhone || inviteContact.phone,
         email: existing.contactEmail || inviteContact.email,
+      } : {
+        // When there is no saved editable profile contact, the last person Brian
+        // actually invited is the best admin default and should replace stale seed data.
+        name: inviteContact.name || existing.contactName || '',
+        phone: inviteContact.phone || existing.contactPhone || '',
+        email: inviteContact.email || existing.contactEmail || '',
       };
       bySlug.set(slug, {
         ...existing,
