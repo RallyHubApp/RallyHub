@@ -372,6 +372,113 @@ Deno.serve(async (req) => {
       return Response.json({ success:true, created, updated, stale, active:seen.size, syncedAt });
     }
 
+    if (action === 'directory_finance_sync') {
+      const bindings = await base44.asServiceRole.entities.SpondSessionBinding.filter({ listing_slug:slug, active:true }, 'directory_session_key', 200);
+      const firstBinding = bindings?.[0];
+      if (!firstBinding?.tenant_id || !firstBinding?.club_id) return Response.json({ error:'No club-owned Spond session bindings are configured for this Directory listing.' }, { status:409 });
+      const tenantId = String(firstBinding.tenant_id);
+      const clubId = String(firstBinding.club_id);
+      if (user.role !== 'admin' && (user.active_tenant_id !== tenantId || user.active_club_id !== clubId || user.active_club_role !== 'club_admin')) {
+        return Response.json({ error:'Forbidden: club finance access required' }, { status:403 });
+      }
+      const connectionRows = await base44.asServiceRole.entities.DirectorySpondConnection.filter({ listing_slug:slug, status:'active' }, '-last_synced_at', 5);
+      const financeGroupId = String(body.groupId || connectionRows?.[0]?.spond_group_id || firstBinding.spond_group_id || '');
+      if (!financeGroupId) return Response.json({ error:'No active Spond group is connected.' }, { status:409 });
+      const today = irelandDate(new Date().toISOString());
+      const fromDate = clean(body.fromDate || `${new Date().getUTCFullYear()}-09-01`, 10);
+      const toDate = clean(body.toDate || today, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fromDate) || !/^\d{4}-\d{2}-\d{2}$/.test(toDate) || fromDate > toDate) {
+        return Response.json({ error:'Valid fromDate/toDate required (YYYY-MM-DD).' }, { status:400 });
+      }
+      const minStart = new Date(`${fromDate}T00:00:00.000Z`);
+      minStart.setUTCDate(minStart.getUTCDate() - 1);
+      const maxStart = new Date(`${toDate}T23:59:59.999Z`);
+      maxStart.setUTCDate(maxStart.getUTCDate() + 1);
+      const params = new URLSearchParams({
+        groupId:financeGroupId,
+        minStartTimestamp:minStart.toISOString(),
+        maxStartTimestamp:maxStart.toISOString(),
+        max:'500',
+        scheduled:'true',
+        includeComments:'true',
+        includeHidden:'false',
+        addProfileInfo:'false',
+      });
+      const raw = await spondRequest(`/sponds?${params.toString()}`, token);
+      const minMs=minStart.getTime(), maxMs=maxStart.getTime();
+      const bounded=(Array.isArray(raw)?raw:[])
+        .map(e=>({...e,_resolvedStartTimestamp:occurrenceStartInWindow(e,minMs,maxMs)}))
+        .filter(e=>e._resolvedStartTimestamp)
+        .filter(e=>{ const d=irelandDate(e._resolvedStartTimestamp); return d>=fromDate && d<=toDate; });
+
+      const rules = await base44.asServiceRole.entities.ClubFinanceVenueRule.filter({ tenant_id:tenantId, club_id:clubId, active:true }, 'weekday', 500);
+      const rulesByEvent = new Map((rules || []).filter(r=>r.spond_event_id).map(r=>[String(r.spond_event_id),r]));
+      const settings = (await base44.asServiceRole.entities.ClubFinanceSettings.filter({ tenant_id:tenantId, club_id:clubId }, '-updated_date', 5))?.[0] || null;
+      const fyMonth = Number(settings?.financial_year_start_month || 9);
+      const fyDay = Number(settings?.financial_year_start_day || 1);
+      const allEntries = await base44.asServiceRole.entities.ClubFinanceEntry.filter({ tenant_id:tenantId, club_id:clubId }, '-activity_date', 1000);
+      const existingBySource = new Map((allEntries || []).filter(row=>row.source_type==='spond_session' && row.source_id).map(row=>[String(row.source_id),row]));
+      let created=0, updated=0, skipped=0, reviewCount=0;
+      const synced=[];
+      const syncedAt=new Date().toISOString();
+      for (const event of bounded) {
+        const rule = rulesByEvent.get(String(event.id));
+        if (!rule) { skipped++; continue; }
+        const start = eventStart(event);
+        const activityDate = irelandDate(start);
+        if (!activityDate || (rule.effective_from && activityDate < rule.effective_from) || (rule.effective_to && activityDate > rule.effective_to)) { skipped++; continue; }
+        const local = dublinParts(start);
+        const response = financeResponseMeta(event);
+        const paidPlaces = response.goingCount + response.declinedPaidCount;
+        const fee = Number(rule.default_fee_per_person || 0);
+        const income = Math.round(paidPlaces * fee * 100) / 100;
+        const durationHours = Number(rule.duration_minutes || 0) / 60;
+        const expectedCost = Math.round((rule.cost_type === 'per_hour' ? Number(rule.cost_amount || 0) * durationHours : Number(rule.cost_amount || 0)) * 100) / 100;
+        const sourceId = `${String(event.id)}::${String(start)}`;
+        const details = {
+          spondGroupId:financeGroupId,
+          spondEventId:String(event.id),
+          heading:String(event.heading || ''),
+          declinedCount:response.declinedCount,
+          declinedResponses:response.declinedNotes,
+          ruleId:rule.id,
+        };
+        reviewCount += response.declinedNotes.filter(row=>!row.countedAsPaid && !!row.note).length;
+        const payload = {
+          tenant_id:tenantId,
+          club_id:clubId,
+          activity_date:activityDate,
+          activity_start_time:local?.time || rule.start_time || '',
+          venue_id:rule.venue_id || '',
+          venue_name:rule.venue_name,
+          session_label:rule.session_label || String(event.heading || 'Spond session'),
+          source_type:'spond_session',
+          source_id:sourceId,
+          venue_rule_id:rule.id,
+          going_count:response.goingCount,
+          declined_paid_count:response.declinedPaidCount,
+          paid_places:paidPlaces,
+          fee_per_person:fee,
+          income_amount:income,
+          expected_cost_amount:expectedCost,
+          financial_year_label:financialYearLabelFor(activityDate,fyMonth,fyDay),
+          source_details_json:JSON.stringify(details),
+          last_synced_at:syncedAt,
+        };
+        const existing = existingBySource.get(sourceId);
+        let saved;
+        if (existing) {
+          saved = await base44.asServiceRole.entities.ClubFinanceEntry.update(existing.id, payload);
+          updated++;
+        } else {
+          saved = await base44.asServiceRole.entities.ClubFinanceEntry.create({ ...payload, cost_status:'expected', other_cost_amount:0 });
+          created++;
+        }
+        synced.push({ id:saved.id, activityDate, startTime:payload.activity_start_time, venueName:payload.venue_name, sessionLabel:payload.session_label, goingCount:response.goingCount, declinedPaidCount:response.declinedPaidCount, paidPlaces, incomeAmount:income, expectedCostAmount:expectedCost, netAmount:Math.round((income-expectedCost)*100)/100 });
+      }
+      return Response.json({ success:true, fromDate, toDate, created, updated, skipped, reviewCount, synced, fetchedCount:bounded.length, syncedAt });
+    }
+
     if (action === 'directory_save_connection') {
       if (!groupId) return Response.json({ error:'groupId required' }, { status:400 });
       const groups = await spondRequest('/groups', token);
