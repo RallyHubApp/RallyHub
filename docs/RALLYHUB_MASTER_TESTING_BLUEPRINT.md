@@ -3,7 +3,7 @@
 > **Development mirror only.** The canonical master is `RallyHub_Master_Testing_Blueprint.docx` kept in the RallyHub project files beside `RallyHub_Master_Backlog_and_Decisions.docx`. Keep this repo copy aligned when major reusable testing rules change, but do not treat it as the user-facing master.
 
 **Status:** Development mirror of LIVE MASTER  
-**Version:** 1.3  
+**Version:** 1.4  
 **Date:** 30 September 2026  
 **Applies to:** RallyHub Core, King of the Court (KOTC), Club Challenge, Tournival, shared tournament formats, memberships, public displays, and future RallyHub modules.
 
@@ -38,6 +38,7 @@ RallyHub is never called “ready” merely because code was written, a build pa
 13. **Test infrastructure is evidence infrastructure.** A broken browser install, stale Vite server, bad mock, missing Linux library or sandbox timeout is a test-environment failure, not evidence that RallyHub failed. Prove the application actually rendered before classifying a UI defect.
 14. **A sandbox pass is not a persisted release.** Before calling a change release-ready, prove the exact tested edits exist in the persisted source/commit and release checkpoint.
 15. **A republish is not assumed live.** After deployment, fingerprint the production assets or equivalent live markers and prove the intended release is what the public domain is actually serving.
+16. **The user is never the first integration tester.** Before handing back any meaningful workflow, run the complete journey as the intended user would: find the feature, understand what to do, complete setup, perform the primary action, interpret success/failure, and repeat on mobile where relevant. A technically correct feature that is undiscoverable, unclear, misleading, or only proven by build/static checks is not ready for handover.
 
 ---
 
@@ -757,6 +758,8 @@ Use the following prompt whenever ChatGPT is asked to test, validate, stress-tes
 >
 > **11. Challenge the UX from the viewpoint of a rushed organiser in a noisy hall.** If the workflow is technically correct but unnecessarily slow, scroll-heavy, misleading or likely to cause duplicate actions, record it as a defect/product-improvement finding.
 >
+> **11A. Run the handover journey before giving the feature back to the user.** For every meaningful workflow, prove that an intended user can find it, understand the first step without prior developer knowledge, complete any required setup, perform the primary action, see a clear success/failure state, understand what the result means, and recover from the common zero/error state. Test desktop and mobile when the feature is used on both. The user must not become the first person to discover that the workflow is unclear, incomplete or broken.
+>
 > **12. At the end, report the exact evidence and state:** coded, build-passed, simulator-tested, robot-tested, release-candidate, deployed, live-device tested, or production-proven. If not ready, identify and fix/test the blocker rather than making the user the integration tester.
 >
 > **13. Use the RallyHub Testing Control Pack for independent/third-party testing.** Before any external tester, AI agent, browser service, security tool or separately tasked testing process begins, require the current protocol declaration, Test Run Brief and Risk Gate. Accept the result as RallyHub release evidence only when it is returned in the standard Evidence Report and passes the applicable persistence/release checks.
@@ -797,6 +800,19 @@ Rules:
 
 ### Tier C — Full Deep / Release-Candidate suite
 Run the full domain/security/browser/concurrency/resilience suite only when the selected risk level requires it. Do not launch the longest suite by reflex for every CSS or wording repair.
+
+### Handover journey gate
+For any meaningful user-facing workflow, browser testing must cover the whole handover journey rather than only the final button or API response:
+- locate the feature from the normal navigation or entry point;
+- confirm the page explains what it is for and what the user should do first;
+- verify required setup/state is visible and understandable;
+- complete the primary action with realistic test data;
+- verify success, zero-result and common failure states are explicit rather than silent;
+- verify the resulting records/totals/state, not merely that a request returned 200;
+- repeat at phone width where the workflow is expected to be used on mobile;
+- only then hand the feature back to the user for live/provider acceptance where that external dependency cannot be reproduced safely in sandbox.
+
+A build pass, isolated component render, mocked API success or backend unit test does not satisfy this gate by itself.
 
 ### Harness hygiene
 - Network mocks must be narrow enough not to intercept RallyHub source-module requests such as `/src/...` or unrelated API calls.
@@ -910,7 +926,8 @@ This blueprint is continuously improved.
 - **v1.1** added the 24 September Interclub pre-draw roster scope lock and deferred planned-handover gate.
 - **v1.2 (30 September 2026)** adds the fast QA ladder, ephemeral Base44 test-environment rules, harness hygiene, persisted-source release gate, production asset fingerprinting after republish, site-wide responsive blast-radius testing, and progress-preserving bulk-audit rules learned during the Directory/contact and mobile-shell work.
 - **v1.3 (30 September 2026)** introduces the RallyHub Master Testing Group and machine-readable Testing Control Pack: Testing Manifest, Test Run Brief, Evidence Report, Risk Gate, third-party acceptance rule and automated protocol/evidence validation commands.
-- New reusable lessons become v1.4, v1.5, etc.
+- **v1.4 (30 September 2026)** adds the mandatory end-to-end handover journey gate learned from Finance Lite: the user is never the first integration tester; meaningful workflows must be tested from discovery/instructions through setup, primary action, result interpretation, zero/error state and mobile where relevant before handover.
+- New reusable lessons become v1.5, v1.6, etc.
 - Major testing-architecture changes may become v2.0.
 - Historical test plans remain evidence, but this file is the canonical standard.
 - When a new failure mode is discovered, update both the automated regression and this blueprint if the lesson is reusable.
