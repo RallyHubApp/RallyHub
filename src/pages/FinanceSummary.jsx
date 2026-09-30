@@ -119,6 +119,7 @@ export default function FinanceSummary() {
     enabled:user?.role === 'admin' && !!listingSlug,
   });
   const spondConnection = spondConnections[0] || null;
+  const selectedSpondGroupId = String(spondSelection?.group?.id || spondConnection?.spond_group_id || '');
 
   useEffect(()=>{
     if (spondConnection?.spond_group_id && !selectedSpondGroupId) setSelectedSpondGroupId(String(spondConnection.spond_group_id));
