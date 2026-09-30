@@ -36,12 +36,12 @@ export default function AppLayout() {
     .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background">
+    <div className="min-h-screen bg-background">
       <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-      <div className="w-full min-w-0 max-w-full lg:pl-64">
+      <div className="lg:pl-64">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 h-14 w-full max-w-full sm:h-16 glass-strong flex items-center justify-between px-3 sm:px-4 lg:px-6">
+        <header className="sticky top-0 z-30 h-14 sm:h-16 glass-strong flex items-center justify-between px-3 sm:px-4 lg:px-6">
           {!isMemberExperience && (
             <button
               onClick={() => setSidebarOpen(true)}
@@ -94,7 +94,7 @@ export default function AppLayout() {
           </div>
         </header>
 
-        <main className={`w-full min-w-0 max-w-full p-3 sm:p-4 lg:p-6 overflow-x-hidden ${isMemberExperience ? 'pb-24 lg:pb-6' : ''}`}>
+        <main className={`p-3 sm:p-4 lg:p-6 min-w-0 overflow-x-clip ${isMemberExperience ? 'pb-24 lg:pb-6' : ''}`}>
           <Outlet />
         </main>
       </div>
