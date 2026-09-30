@@ -1,0 +1,27 @@
+import { chromium } from '@playwright/test';
+const browser=await chromium.launch({headless:true});
+const context=await browser.newContext({viewport:{width:390,height:844}});
+const page=await context.newPage();
+await page.addInitScript(()=>localStorage.setItem('base44_access_token','mobile-shell-e2e-token'));
+page.on('request',r=>{if(r.url().includes('/api/')) console.log('REQ',r.method(),r.url())});
+page.on('response',r=>{if(r.url().includes('/api/')) console.log('RES',r.status(),r.url())});
+page.on('console',m=>console.log('CON',m.type(),m.text()));
+page.on('pageerror',e=>console.log('ERR',e.message));
+await page.route('**/*',async route=>{
+ const u=new URL(route.request().url()); const p=u.pathname;
+ if(!p.includes('/api/')) return route.continue();
+ const ok=body=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+ if(p.includes('/public-settings/')) return ok({id:'6a01dc00702b7dd2a2978c28',public_settings:{}});
+ if(/\/(entities\/User\/me|users\/me|auth\/me)$/.test(p)) return ok({id:'mobile-shell-admin',email:'admin@example.test',full_name:'RallyHub Admin',role:'admin',approval_status:'approved',active_club_role:'club_admin',active_tenant_id:'tenant-clare',active_club_id:'club-clare',active_club_name:'Clare Pickleball',kotc_role:'super_admin'});
+ if(p.includes('/functions/securityContext')) return ok({success:true,context:null});
+ if(p.includes('/functions/memberPortal')) return ok({success:true,snapshot:{}});
+ if(p.includes('/functions/')) return ok({success:true,items:[],records:[],rows:[],events:[],data:[]});
+ if(p.includes('/entities/')) return ok([]);
+ return ok({});
+});
+await page.goto('http://127.0.0.1:5173/app/admin',{waitUntil:'domcontentloaded',timeout:12000}).catch(e=>console.log('GOTO',e.message));
+await page.waitForTimeout(5000);
+console.log('URL',page.url());
+console.log('BODY',JSON.stringify((await page.locator('body').innerText().catch(()=>'' )).slice(0,1200)));
+console.log('HTML',JSON.stringify((await page.locator('html').innerHTML().catch(()=>'' )).slice(0,1500)));
+await browser.close();
