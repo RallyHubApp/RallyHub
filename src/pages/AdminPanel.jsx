@@ -2311,6 +2311,28 @@ Brian`;
               </div>
             </div>
 
+            <div className="glass rounded-xl p-4 sm:p-5 space-y-4 border border-green-500/25">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-green-500">Club outreach list</p>
+                  <h3 className="text-lg font-bold text-foreground mt-1">Email first · WhatsApp fallback</h3>
+                  <p className="text-sm text-muted-foreground mt-1">One current contact route per public Directory club. Use email where a usable address is saved; clubs without email fall into the WhatsApp fallback list instead of being lost.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={copyDirectoryOutreachEmails} disabled={!directoryOutreachUniqueEmails.length} className="gap-2"><Copy className="w-4 h-4" /> Copy email list</Button>
+                  <Button type="button" variant="outline" onClick={copyDirectoryOutreachWhatsAppFallback} disabled={!directoryOutreachWhatsAppFallbackRows.length} className="gap-2"><MessageCircle className="w-4 h-4" /> Copy WhatsApp fallback</Button>
+                  <Button type="button" variant="outline" onClick={downloadDirectoryOutreachCsv} disabled={!directoryOutreachRows.length}>Export outreach CSV</Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="rounded-lg border border-border bg-background/30 p-3"><p className="text-2xl font-black">{directoryVerificationFetched ? directoryOutreachRows.length : '—'}</p><p className="text-xs text-muted-foreground mt-1">Public clubs</p></div>
+                <div className="rounded-lg border border-border bg-background/30 p-3"><p className="text-2xl font-black text-primary">{directoryVerificationFetched ? directoryOutreachEmailRows.length : '—'}</p><p className="text-xs text-muted-foreground mt-1">Clubs email-ready · {directoryOutreachUniqueEmails.length} unique addresses</p></div>
+                <div className="rounded-lg border border-border bg-background/30 p-3"><p className="text-2xl font-black text-green-500">{directoryVerificationFetched ? directoryOutreachWhatsAppFallbackRows.length : '—'}</p><p className="text-xs text-muted-foreground mt-1">WhatsApp fallback</p></div>
+                <div className="rounded-lg border border-border bg-background/30 p-3"><p className="text-2xl font-black text-amber-500">{directoryVerificationFetched ? directoryOutreachMissingRows.length : '—'}</p><p className="text-xs text-muted-foreground mt-1">No usable contact yet</p></div>
+              </div>
+              <p className="text-xs text-muted-foreground">The full club list is suitable for Directory/service communication. Broader recurring RallyHub feature or promotional updates should continue to use the explicit network-updates opt-in below.</p>
+            </div>
+
             <div className="grid sm:grid-cols-3 gap-3">
               <div className="glass rounded-xl p-4"><p className="text-2xl font-black">{directoryContactRows.length}</p><p className="text-xs text-muted-foreground mt-1">Verified people</p></div>
               <div className="glass rounded-xl p-4"><p className="text-2xl font-black">{directoryContactsWithEmail}</p><p className="text-xs text-muted-foreground mt-1">With email</p></div>
