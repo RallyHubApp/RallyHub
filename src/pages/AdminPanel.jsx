@@ -2141,19 +2141,21 @@ Brian`;
               ) : directoryInvitations.map(invite => {
                 const inviter = allUsers.find(u => u.id === invite.created_by_user_id);
                 const recipient = invite.contact_name || invite.contact_email || invite.contact_phone || 'Unnamed recipient';
-                const statusClass = invite.status === 'pending' ? 'border-amber-400/40 text-amber-300' : invite.status === 'used' ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground';
+                const expiryTime = Date.parse(String(invite.expires_at || ''));
+                const linkExpired = invite.status === 'expired' || (Number.isFinite(expiryTime) && expiryTime <= Date.now());
+                const statusClass = linkExpired ? 'border-destructive/40 text-destructive' : invite.status === 'pending' ? 'border-amber-400/40 text-amber-300' : invite.status === 'used' ? 'border-green-400/40 text-green-300' : 'border-border text-muted-foreground';
                 return (
                   <div key={invite.id} className="glass rounded-lg p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-medium text-foreground">{invite.listing_name_snapshot || invite.listing_slug}</p>
-                        <Badge variant="outline" className={statusClass}>{invite.used_by_user_id ? 'Ready for approval' : 'Awaiting recipient'}</Badge>
+                        <Badge variant="outline" className={statusClass}>{invite.used_by_user_id ? 'Ready for approval' : linkExpired ? 'Link expired' : 'Awaiting recipient'}</Badge>
                         <Badge variant="outline">{invite.access_role === 'owner' ? 'Primary Owner' : 'Directory Editor'}</Badge>
                         <Badge variant="outline">{invite.channel === 'whatsapp' ? 'WhatsApp' : 'Email'}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">To: {recipient}{invite.contact_email && recipient !== invite.contact_email ? ` · ${invite.contact_email}` : ''}{invite.contact_phone && recipient !== invite.contact_phone ? ` · ${invite.contact_phone}` : ''}</p>
                       <p className="text-xs text-muted-foreground">Created by: {inviter?.full_name || inviter?.display_name || inviter?.email || invite.created_by_user_id}</p>
-                      {invite.expires_at && <p className="text-xs text-muted-foreground">Expires: {new Date(invite.expires_at).toLocaleString('en-IE')}</p>}
+                      {invite.expires_at && <p className={`text-xs ${linkExpired ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{linkExpired ? 'Expired' : 'Expires'}: {new Date(invite.expires_at).toLocaleString('en-IE')}</p>}
                       {invite.used_at && <p className="text-xs text-green-400">Accepted: {new Date(invite.used_at).toLocaleString('en-IE')}</p>}
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0">
@@ -2161,7 +2163,7 @@ Brian`;
                         <CheckCircle className="w-3.5 h-3.5" /> {approvingDirectoryInvitation === invite.id ? 'Approving…' : `Approve Directory ${invite.access_role === 'owner' ? 'Owner' : 'Editor'}`}
                       </Button>}
                       <Button size="sm" variant="outline" disabled={resendInviteBusy === invite.id} onClick={() => prepareInvitationResend(invite)}>
-                        {resendInviteBusy === invite.id ? 'Preparing…' : 'Review & Resend'}
+                        {resendInviteBusy === invite.id ? 'Creating…' : 'Create fresh link'}
                       </Button>
                     </div>
                   </div>
@@ -2172,11 +2174,13 @@ Brian`;
 
             {resendPreview && (
               <div className="glass rounded-xl p-4 border border-primary/30 space-y-3">
-                <div><p className="font-semibold">Review & Resend · {resendPreview.clubName}</p><p className="text-xs text-muted-foreground">{resendPreview.accessRole === 'editor' ? 'Directory Editor' : 'Primary Owner'} · {resendPreview.channel === 'whatsapp' ? 'WhatsApp' : 'Email'} · fresh 72-hour secure link created</p></div>
-                {resendPreview.channel === 'email' && <Input value={resendPreview.subject} onChange={e => setResendPreview(v => ({ ...v, subject: e.target.value }))} aria-label="Resend email subject" />}
-                <textarea value={resendPreview.message} onChange={e => setResendPreview(v => ({ ...v, message: e.target.value }))} rows={18} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-6 font-sans" />
+                <div><p className="font-semibold">Fresh claim link · {resendPreview.clubName}</p><p className="text-xs text-muted-foreground">New secure link created for 72 hours. The original long invitation does not need to be sent again.</p></div>
+                <Input value={resendPreview.claimUrl || ''} readOnly aria-label="Fresh claim link" className="font-mono text-xs" />
+                <textarea value={resendPreview.message} onChange={e => setResendPreview(v => ({ ...v, message: e.target.value }))} rows={7} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-6 font-sans" />
                 <div className="flex flex-wrap gap-2">
-                  {resendPreview.channel === 'email' ? <Button type="button" onClick={() => sendPreparedEmail(resendPreview, 'resend')} disabled={resendInviteBusy === resendPreview.invitationId} className="gap-2"><Mail className="w-4 h-4" /> {resendInviteBusy === resendPreview.invitationId ? 'Sending…' : 'Send reviewed email'}</Button> : <Button type="button" onClick={openResendWhatsApp} className="gap-2"><MessageCircle className="w-4 h-4" /> Open reviewed WhatsApp</Button>}
+                  <Button type="button" onClick={copyResendLink} className="gap-2"><Copy className="w-4 h-4" /> Copy fresh link</Button>
+                  {resendPreview.phone && <Button type="button" variant="outline" onClick={openResendWhatsApp} className="gap-2"><MessageCircle className="w-4 h-4" /> Send link by WhatsApp</Button>}
+                  {resendPreview.email && <Button type="button" variant="outline" onClick={() => sendPreparedEmail(resendPreview, 'resend')} disabled={resendInviteBusy === resendPreview.invitationId} className="gap-2"><Mail className="w-4 h-4" /> {resendInviteBusy === resendPreview.invitationId ? 'Sending…' : 'Email link only'}</Button>}
                   <Button type="button" variant="outline" onClick={() => setResendPreview(null)}>Close</Button>
                 </div>
               </div>
