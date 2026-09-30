@@ -6,7 +6,7 @@ const json=(route,body,status=200)=>route.fulfill({status,contentType:'applicati
 
 async function installBackend(page){
   await page.addInitScript(()=>localStorage.setItem('base44_access_token','mobile-shell-e2e-token'));
-  await page.route('**/api/**',async route=>{
+  await page.route('**/api/apps/**',async route=>{
     const req=route.request(); const url=new URL(req.url()); const path=url.pathname;
     if(path.includes('/analytics/')) return json(route,{});
     if(path.includes('/public-settings/')) return json(route,{id:APP_ID,public_settings:{}});
