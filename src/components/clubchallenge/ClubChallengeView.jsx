@@ -923,7 +923,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const res = await base44.functions.invoke('loadClubChallengePracticeRoster', { eventId:event.id });
       if (res.data?.error) throw new Error(res.data.error);
       toast.success('32 practice players loaded. You can now rehearse the full setup and draw journey.');
-      await sync();
+      // The roster command has just replaced participants and fixtures. Refresh those
+      // authoritative collections first; the event refresh is independent and must not
+      // hold the new roster behind a slower/stale event read on mobile connections.
+      await Promise.all([refetchParticipants(), refetchMatches()]);
+      await refetchEvent();
+      queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not load practice players'); }
     setSaving(false);
   };
@@ -1151,7 +1156,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const res = await invokeBase44Safely('updateClubChallengeTimer', { eventId: event.id, action, phase, expectedRevision: Number(event.timer_revision || 0), ...extra });
       if (res.data?.conflict) { toast.error('Timer changed on another device. RallyHub has refreshed the authoritative timer.'); await refetchEvent(); return false; }
       if (res.data?.error) { toast.error(res.data.error); return false; }
-      await refetchEvent();
+      const authoritativeEvent = res.data?.event || null;
+      if (authoritativeEvent) queryClient.setQueryData(['club-challenge-event', tournament.id], authoritativeEvent);
+      else await refetchEvent();
       return true;
     } catch (e) {
       await refetchEvent();
