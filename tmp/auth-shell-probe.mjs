@@ -28,7 +28,7 @@ const out=[];
 for(const path of routes){
  const errors=[]; const cb=e=>errors.push(e.message); page.on('pageerror',cb);
  try{
-  await page.goto('http://127.0.0.1:5173'+path,{waitUntil:'commit',timeout:5000}).catch(()=>{});
+  await page.goto('http://127.0.0.1:4173'+path,{waitUntil:'domcontentloaded',timeout:8000}).catch(()=>{});
   await page.locator('header').waitFor({state:'visible',timeout:10000});
   const m=await page.evaluate(()=>{const q=s=>document.querySelector(s)?.getBoundingClientRect(); const a=q('aside'),h=q('header'),mn=q('main'); return {innerWidth,doc:document.documentElement.scrollWidth,body:document.body.scrollWidth,aside:a&&{left:a.left,right:a.right,width:a.width},header:h&&{left:h.left,right:h.right,width:h.width},main:mn&&{left:mn.left,right:mn.right,width:mn.width}}});
   let menuOk=true;
