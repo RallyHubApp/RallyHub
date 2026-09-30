@@ -51,7 +51,7 @@ async function assertMobileShell(page,path){
 
 test.describe('shared authenticated app shell mobile regression',()=>{
   test.use({viewport:{width:390,height:844}});
-  for(const path of ['/app','/app/admin','/app/membership','/app/events','/app/tournaments','/app/players','/app/waiting-list','/app/guest-bookings','/app/learn/manage']){
+  for(const path of ['/app','/app/admin','/app/membership','/app/events','/app/tournaments','/app/tournaments/mobile-regression','/app/players','/app/waiting-list','/app/guest-bookings','/app/learn/manage','/app/play','/app/venues','/app/learn','/app/shop','/app/messages','/app/my-profile']){
     test(`${path} stays phone-width with desktop sidebar closed`,async({page})=>{await installBackend(page);await assertMobileShell(page,path);});
   }
 });
