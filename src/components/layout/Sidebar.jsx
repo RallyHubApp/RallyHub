@@ -41,7 +41,25 @@ export default function Sidebar({ isOpen, onToggle }) {
     { path: '/app/learn', label: 'Learn', icon: BookOpen },
     { path: '/app/my-profile', label: 'Me', icon: UserCircle },
   ]; 
-  const mainNavItems = isMemberExperience ? memberNavItems : [
+  const superAdminNavItems = [
+    { path: '/app', label: 'Dashboard', icon: LayoutDashboard, section: 'SUPER ADMIN' },
+    { path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true, section: 'SUPER ADMIN' },
+    { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield, directoryAdmin: true, section: 'SUPER ADMIN' },
+    { path: '/directory', label: 'Public Directory', icon: MapPin, section: 'SUPER ADMIN' },
+    { path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true, section: 'CLUB OPERATIONS' },
+    { path: '/app/membership', label: 'Membership', icon: ContactRound, section: 'CLUB OPERATIONS' },
+    { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList, section: 'CLUB OPERATIONS' },
+    { path: '/app/players', label: 'Players', icon: Users, section: 'CLUB OPERATIONS' },
+    { path: '/app/guest-bookings', label: 'Session Bookings', icon: CalendarCheck, section: 'CLUB OPERATIONS' },
+    { path: '/app/events', label: 'Events', icon: CalendarDays, section: 'CLUB OPERATIONS' },
+    { path: '/app/tournaments', label: 'Tournaments', icon: Trophy, section: 'CLUB OPERATIONS' },
+    { path: '/app/trials', label: 'Club Trials', icon: ClipboardList, section: 'CLUB OPERATIONS' },
+    { path: '/app/leaderboard', label: 'Club Leaderboard', icon: Crown, section: 'CLUB OPERATIONS' },
+    { path: '/app/learn/manage', label: 'Learn', icon: BookOpen, section: 'CLUB OPERATIONS' },
+    { path: '/app/analytics', label: 'Analytics', icon: BarChart3, section: 'CLUB OPERATIONS' },
+    { path: '/app/my-profile', label: 'My Profile', icon: UserCircle, section: 'ACCOUNT' }
+  ];
+  const mainNavItems = isMemberExperience ? memberNavItems : isSuperAdmin ? superAdminNavItems : [
     navItems[0],
     ...(canAccessAdmin ? [{ path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true }] : []),
     ...(canManageMembership ? [
