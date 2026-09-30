@@ -125,7 +125,6 @@ test('Finance admin journey: guidance, multi-venue selection, Spond sync diagnos
 test('Finance sync zero-match state explains that Spond worked instead of silently showing zero',async({page})=>{
   await installFinanceBackend(page,{zeroMatch:true});
   await openFinance(page);
-  await page.getByRole('button',{name:'Sync Spond'}).click();
   await page.getByTestId('finance-venue-all').click();
   await page.getByTestId('finance-venue-enn').click();
   await page.getByRole('button',{name:'Sync Spond'}).click();
@@ -142,6 +141,8 @@ test.describe('Finance mobile journey',()=>{
     const before=await page.evaluate(()=>({innerWidth,scrollWidth:document.documentElement.scrollWidth,bodyWidth:document.body.scrollWidth}));
     expect(before.scrollWidth).toBeLessThanOrEqual(before.innerWidth+2);
     expect(before.bodyWidth).toBeLessThanOrEqual(before.innerWidth+2);
+    await page.getByTestId('finance-venue-all').click();
+    await page.getByTestId('finance-venue-enn').click();
     await page.getByRole('button',{name:'Sync Spond'}).scrollIntoViewIfNeeded();
     await page.getByRole('button',{name:'Sync Spond'}).click();
     await expect(page.getByTestId('finance-sync-message')).toContainText('matched 8');
