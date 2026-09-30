@@ -1,0 +1,100 @@
+{
+  "name": "RallyHub Pre-Test Risk Gate",
+  "version": "1.0",
+  "master_blueprint_version": "1.3",
+  "depth_rank": {
+    "Q": 1,
+    "S": 2,
+    "D": 3,
+    "RC": 4,
+    "LIVE": 5
+  },
+  "default_depth": "S",
+  "quick_only_when_all": [
+    "display_or_wording_only",
+    "no_backend_write_change",
+    "no_shared_component_change",
+    "no_permission_or_security_change",
+    "no_sporting_logic_change",
+    "no_public_contract_change"
+  ],
+  "standard_triggers": [
+    "contained_module_function",
+    "form_validation",
+    "isolated_workflow",
+    "module_specific_backend_without_concurrency_or_shared_data_impact"
+  ],
+  "deep_triggers": [
+    "scoring",
+    "sporting_logic",
+    "round_generation_or_progression",
+    "timer",
+    "replacement_or_withdrawal",
+    "locks_or_concurrency",
+    "multi_device",
+    "permissions",
+    "tenant_isolation",
+    "public_token_or_magic_link",
+    "membership_integration",
+    "payment",
+    "bulk_write",
+    "base44_request_pattern",
+    "offline_or_reconnect",
+    "persistence_or_reopen",
+    "privacy_or_personal_data_boundary",
+    "email_or_message_delivery",
+    "historically_failed_live_hall_behaviour"
+  ],
+  "release_candidate_triggers": [
+    "shared_architecture",
+    "shared_authenticated_shell",
+    "global_css_or_viewport",
+    "shared_permission_helper",
+    "shared_public_api_contract",
+    "shared_contact_or_identity_service",
+    "cross_tenant_data_path",
+    "major_migration",
+    "end_of_phase",
+    "pre_production_release",
+    "change_with_blast_radius_across_multiple_modules"
+  ],
+  "required_escalations": {
+    "shared_authenticated_shell": [
+      "desktop_mobile_browser_robot",
+      "site_wide_shared_route_smoke"
+    ],
+    "global_css_or_viewport": [
+      "desktop_mobile_browser_robot",
+      "site_wide_shared_route_smoke"
+    ],
+    "scoring": [
+      "sporting_engine",
+      "concurrency_stale_state_multi_device",
+      "desktop_mobile_browser_robot"
+    ],
+    "permissions": [
+      "architecture_security_tenant_role_data_integrity"
+    ],
+    "tenant_isolation": [
+      "architecture_security_tenant_role_data_integrity"
+    ],
+    "privacy_or_personal_data_boundary": [
+      "architecture_security_tenant_role_data_integrity",
+      "public_contract_leak_scan"
+    ],
+    "base44_request_pattern": [
+      "base44_resilience_request_economy"
+    ],
+    "major_migration": [
+      "progress_preserving_population_audit",
+      "rollback_proof"
+    ]
+  },
+  "gate_rules": [
+    "The highest triggered depth wins.",
+    "The tester may choose a deeper level but never a shallower one without an explicit accepted deviation.",
+    "A shared primitive change inherits the blast radius of every dependent RallyHub module.",
+    "If risk is uncertain, escalate one level rather than downgrade.",
+    "Third-party convenience is never a reason to reduce required depth."
+  ]
+}
