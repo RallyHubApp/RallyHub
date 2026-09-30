@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const sessionKey = s => [s.day, s.start, s.end || '', s.level || '', s.venueId || ''].join('|');
 const normaliseClubName = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport, onSave, saveBusy = false, hasUnsavedChanges = false, saved = false, existingSessions = [] }) {
+export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport, onSave, saveBusy = false, hasUnsavedChanges = false, saved = false, existingSessions = [], mode = 'directory', onSelectSessions, title = 'Spond connection', description = '' }) {
   const { user } = useAuth();
   const [connection, setConnection] = useState(null);
   const [groups, setGroups] = useState([]);
@@ -138,12 +138,22 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
     } finally { setLoadingEvents(false); }
   };
 
-  const importSelected = async (mode = 'merge') => {
+  const importSelected = async (importMode = 'merge') => {
     if (!preview) return;
     const sessions = (preview.sessions || []).filter(s => selectedSessions.has(sessionKey(s)));
     if (!sessions.length) { setError('Select at least one Spond session to import.'); return; }
 
-    if (mode === 'replace_spond' && existingSpondSessionCount > 0) {
+    if (mode === 'finance') {
+      const usedVenueIds = new Set(sessions.map(s => s.venueId));
+      const venues = (preview.venues || []).filter(v => usedVenueIds.has(v.id));
+      onSelectSessions?.({ venues, sessions, group:selectedGroup });
+      setLastImportedCount(sessions.length);
+      setImportedSelectionSignature(currentSelectionSignature);
+      setMessage(`Selected ${sessions.length} Spond session pattern${sessions.length === 1 ? '' : 's'} for Finance. Assign each one to its Finance session below.`);
+      return;
+    }
+
+    if (importMode === 'replace_spond' && existingSpondSessionCount > 0) {
       const ok = window.confirm(`Replace the ${existingSpondSessionCount} session${existingSpondSessionCount === 1 ? '' : 's'} previously imported from Spond?\n\nManually entered sessions will be kept. The selected Spond patterns will be rebuilt from the latest scan.`);
       if (!ok) return;
     } else if (existingSessionCount > 0) {
@@ -158,13 +168,13 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
       const eventSync = await invokeDirectory('directory_sync_events', { groupId:selectedGroupId });
       const data = await invokeDirectory('directory_save_connection', {
         groupId:selectedGroupId,
-        summary:`${mode === 'replace_spond' ? 'Replaced' : 'Merged'} ${sessions.length} directory session pattern${sessions.length === 1 ? '' : 's'} from Spond; ${eventSync.active || 0} upcoming event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} retained for RallyHub calendar use.`
+        summary:`${importMode === 'replace_spond' ? 'Replaced' : 'Merged'} ${sessions.length} directory session pattern${sessions.length === 1 ? '' : 's'} from Spond; ${eventSync.active || 0} upcoming event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} retained for RallyHub calendar use.`
       });
-      onImport?.({ venues, sessions, group:selectedGroup, mode });
+      onImport?.({ venues, sessions, group:selectedGroup, mode:importMode });
       setConnection(data.connection || connection);
       setLastImportedCount(sessions.length);
       setImportedSelectionSignature(currentSelectionSignature);
-      setMessage(`${mode === 'replace_spond' ? 'Rebuilt' : 'Safely merged'} ${sessions.length} Spond session pattern${sessions.length === 1 ? '' : 's'} and synced ${eventSync.active || 0} upcoming Spond event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} for the RallyHub calendar. Press Save changes to publish the Directory sessions.`);
+      setMessage(`${importMode === 'replace_spond' ? 'Rebuilt' : 'Safely merged'} ${sessions.length} Spond session pattern${sessions.length === 1 ? '' : 's'} and synced ${eventSync.active || 0} upcoming Spond event occurrence${Number(eventSync.active || 0) === 1 ? '' : 's'} for the RallyHub calendar. Press Save changes to publish the Directory sessions.`);
     } catch (err) {
       setError(err.message || 'Could not import the Spond sessions.');
     } finally { setSavingConnection(false); }
@@ -196,8 +206,8 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
     <section className="glass rounded-2xl p-6 space-y-4" id="spond">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2"><Link2 className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Spond connection</h2></div>
-          <p className="text-sm text-muted-foreground mt-1">Connect the club’s Spond group and pull regular venues and session times into this Directory listing. RallyHub never stores the Spond password.</p>
+          <div className="flex items-center gap-2"><Link2 className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{title}</h2></div>
+          <p className="text-sm text-muted-foreground mt-1">{description || (mode === 'finance' ? 'Use the same proven Spond connection and recurring-session scanner as the Directory. Choose the club group, scan the repeating sessions, then pass the selected patterns into Finance. RallyHub never stores the Spond password.' : 'Connect the club’s Spond group and pull regular venues and session times into this Directory listing. RallyHub never stores the Spond password.')}</p>
         </div>
         {connection ? (
           <div className="flex items-center gap-2">
@@ -281,10 +291,10 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
                   className={`gap-2 ${importComplete ? 'cursor-default border-border bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground' : ''}`}
                 >
                   {savingConnection ? <Loader2 className="w-4 h-4 animate-spin" /> : importComplete ? <CheckCircle2 className="w-4 h-4" /> : <CalendarDays className="w-4 h-4" />}
-                  {savingConnection ? 'Importing…' : importComplete ? `Imported ${lastImportedCount}` : `Safe merge ${selectedSessions.size} selected session${selectedSessions.size === 1 ? '' : 's'}`}
+                  {savingConnection ? 'Importing…' : importComplete ? (mode === 'finance' ? `Selected ${lastImportedCount}` : `Imported ${lastImportedCount}`) : (mode === 'finance' ? `Use ${selectedSessions.size} selected in Finance` : `Safe merge ${selectedSessions.size} selected session${selectedSessions.size === 1 ? '' : 's'}`)}
                 </Button>
-                {existingSpondSessionCount > 0 && !importComplete && <Button type="button" variant="outline" onClick={() => importSelected('replace_spond')} disabled={savingConnection || selectedSessions.size === 0} className="gap-2"><RefreshCw className="w-4 h-4" /> Replace previous Spond import</Button>}
-                {importComplete && onSave && (
+                {mode !== 'finance' && existingSpondSessionCount > 0 && !importComplete && <Button type="button" variant="outline" onClick={() => importSelected('replace_spond')} disabled={savingConnection || selectedSessions.size === 0} className="gap-2"><RefreshCw className="w-4 h-4" /> Replace previous Spond import</Button>}
+                {mode !== 'finance' && importComplete && onSave && (
                   <Button type="button" onClick={onSave} disabled={saveBusy || !hasUnsavedChanges} className="gap-2">
                     {saveBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : !hasUnsavedChanges && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                     {saveBusy ? 'Saving…' : hasUnsavedChanges ? 'Save changes' : saved ? 'Saved ✓' : 'All saved'}
