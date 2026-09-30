@@ -15,6 +15,9 @@
     "test:kotc-host-journey": "playwright test e2e/kotc-host-journey.spec.mjs",
     "test:member-guest-booking": "node scripts/memberGuestBookingGate.mjs && node scripts/spondExactEventFixture.mjs && playwright test e2e/member-guest-booking.spec.mjs",
     "test:public-read-load": "node scripts/publicReadLoadGate.mjs",
+    "qa:protocol": "node testing/control-pack/validateControlPack.mjs",
+    "qa:risk": "node testing/control-pack/evaluateRiskGate.mjs",
+    "qa:evidence": "node testing/control-pack/validateEvidence.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
