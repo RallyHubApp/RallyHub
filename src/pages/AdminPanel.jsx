@@ -1365,6 +1365,39 @@ Brian`;
   });
   const directoryContactsWithEmail = directoryContactRows.filter(row => row.email).length;
   const optedInDirectoryContacts = directoryContactRows.filter(row => row.email && row.networkUpdatesOptIn).length;
+
+  const directoryOutreachRows = directoryAdminListings.map(listing => {
+    const activeAccess = activeDirectoryAccesses.find(access => access.listing_slug === listing.slug && access.role === 'owner')
+      || activeDirectoryAccesses.find(access => access.listing_slug === listing.slug)
+      || null;
+    const accessUser = activeAccess ? allUsers.find(u => String(u.id) === String(activeAccess.user_id)) : null;
+    const latestClaim = activeAccess ? (directoryVerification.claims || [])
+      .filter(claim => String(claim.listing_slug || '') === String(listing.slug) && String(claim.claimant_user_id || '') === String(activeAccess.user_id || ''))
+      .sort((a, b) => Date.parse(String(b.created_date || '')) - Date.parse(String(a.created_date || '')))[0] || null : null;
+    const email = String(latestClaim?.claimant_email || accessUser?.email || listing.contactEmail || '').trim();
+    const mobile = String(latestClaim?.claimant_phone || accessUser?.directory_mobile || listing.contactPhone || '').trim();
+    const contactName = String(latestClaim?.claimant_name || accessUser?.full_name || accessUser?.display_name || listing.contactName || '').trim();
+    const emailReady = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const mobileDigits = mobile.replace(/\D/g, '');
+    const whatsappReady = mobileDigits.length >= 8 && mobileDigits.length <= 15;
+    return {
+      listingSlug: listing.slug,
+      clubName: listing.name,
+      county: listing.county || '',
+      contactName,
+      email,
+      mobile,
+      emailReady,
+      whatsappReady,
+      route: emailReady ? 'Email' : whatsappReady ? 'WhatsApp fallback' : 'Contact missing',
+      claimed: !!activeAccess,
+      networkUpdatesOptIn: latestClaim?.network_updates_opt_in === true,
+    };
+  });
+  const directoryOutreachEmailRows = directoryOutreachRows.filter(row => row.emailReady);
+  const directoryOutreachUniqueEmails = [...new Set(directoryOutreachEmailRows.map(row => row.email.toLowerCase()))];
+  const directoryOutreachWhatsAppFallbackRows = directoryOutreachRows.filter(row => !row.emailReady && row.whatsappReady);
+  const directoryOutreachMissingRows = directoryOutreachRows.filter(row => !row.emailReady && !row.whatsappReady);
   const directoryPlayerRows = directoryPlayerNetwork.subscribers || [];
   const filteredDirectoryPlayerRows = directoryPlayerRows.filter(row => {
     const q = directoryPlayerSearch.trim().toLowerCase();
