@@ -101,10 +101,21 @@ async function openFinance(page){
   await expect(page.getByText('2 venues with finance tracking enabled')).toBeVisible();
 }
 
-test('Finance admin journey: month popover, session discovery, selection and sync',async({page})=>{
+test('Finance admin journey: Directory-style Spond group scan, assignment, detail preview and sync',async({page})=>{
   await installFinanceBackend(page);
   const errors=[]; page.on('pageerror',e=>errors.push(e.message));
   await openFinance(page);
+
+  await page.getByRole('button',{name:'Load / refresh Spond groups'}).click();
+  await expect(page.getByTestId('finance-spond-setup')).toContainText('Clare Pickleball Members');
+  await page.getByRole('button',{name:'Scan recurring sessions'}).click();
+  await expect(page.getByText('7pm Ennistymon Pickeball Session')).toBeVisible();
+  await expect(page.getByText('8pm Ennistymon Pickleball Session')).toBeVisible();
+  await expect(page.getByTestId('finance-spond-pattern-spond-session-1')).toContainText('Wednesday · 19:00–20:00');
+  await expect(page.getByTestId('finance-spond-pattern-spond-session-2')).toContainText('Wednesday · 20:00–21:00');
+  await expect(page.getByTestId('finance-spond-pattern-spond-session-1').getByRole('combobox')).toContainText('Ennistymon · Wednesday 19:00');
+  await expect(page.getByTestId('finance-spond-pattern-spond-session-2').getByRole('combobox')).toContainText('Ennistymon · Wednesday 20:00');
+  await page.getByRole('button',{name:'Save Spond session assignments'}).click();
 
   await page.getByTestId('finance-venue-all').click();
   await page.getByTestId('finance-venue-enn').click();
@@ -118,7 +129,7 @@ test('Finance admin journey: month popover, session discovery, selection and syn
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('finance-month-filter')).toContainText('2 months selected');
 
-  await page.getByRole('button',{name:'Find Spond sessions'}).click();
+  await page.getByRole('button',{name:'Read Spond finance details'}).click();
   await expect(page.getByTestId('finance-sync-message')).toContainText('Found 8 matching sessions');
   await expect(page.getByTestId('finance-spond-preview')).toContainText('8 found');
   await expect(page.getByText('2026-09-30 · 19:00 · 7pm Ennistymon Pickleball Session')).toBeVisible();
@@ -138,12 +149,12 @@ test('Finance admin journey: month popover, session discovery, selection and syn
   expect(errors).toEqual([]);
 });
 
-test('Finance discovery explains a zero-match result before any write',async({page})=>{
+test('Finance detail preview explains a zero-match result before any write',async({page})=>{
   await installFinanceBackend(page,{zeroMatch:true});
   await openFinance(page);
   await page.getByTestId('finance-venue-all').click();
   await page.getByTestId('finance-venue-enn').click();
-  await page.getByRole('button',{name:'Find Spond sessions'}).click();
+  await page.getByRole('button',{name:'Read Spond finance details'}).click();
   await expect(page.getByTestId('finance-sync-message')).toContainText('returned 11 events in the date/month range, but none matched');
   await expect(page.getByTestId('finance-spond-preview')).toContainText('0 found');
   await expect(page.getByTestId('finance-sync-selected')).toHaveCount(0);
@@ -156,7 +167,7 @@ test.describe('Finance mobile journey',()=>{
     await openFinance(page);
     await page.getByTestId('finance-venue-all').click();
     await page.getByTestId('finance-venue-enn').click();
-    await page.getByRole('button',{name:'Find Spond sessions'}).click();
+    await page.getByRole('button',{name:'Read Spond finance details'}).click();
     await expect(page.getByText('2026-09-30 · 19:00 · 7pm Ennistymon Pickleball Session')).toBeVisible();
     let widths=await page.evaluate(()=>({innerWidth,scrollWidth:document.documentElement.scrollWidth,bodyWidth:document.body.scrollWidth}));
     expect(widths.scrollWidth).toBeLessThanOrEqual(widths.innerWidth+2);
