@@ -12,340 +12,71 @@
 # Error details
 
 ```
-Test timeout of 45000ms exceeded.
+Error: expect(received).toBeGreaterThanOrEqual(expected)
+
+Matcher error: received value must be a number or bigint
+
+Received has value: undefined
 ```
 
-# Page snapshot
+# Test source
 
-```yaml
-- generic [ref=e2]:
-  - generic [ref=e3]:
-    - complementary [ref=e4]:
-      - generic [ref=e5]:
-        - link "RallyHub RallyHub SUPER ADMIN" [ref=e6] [cursor=pointer]:
-          - /url: /app
-          - img "RallyHub" [ref=e7]
-          - generic [ref=e8]:
-            - generic [ref=e9]: RallyHub
-            - generic [ref=e10]: SUPER ADMIN
-        - button [ref=e11] [cursor=pointer]
-      - navigation [ref=e15]:
-        - generic [ref=e16]: SUPER ADMIN
-        - link "Dashboard" [ref=e17] [cursor=pointer]:
-          - /url: /app
-        - link "Admin Panel" [ref=e24] [cursor=pointer]:
-          - /url: /app/admin
-        - link "Directory Admin" [ref=e28] [cursor=pointer]:
-          - /url: /app/admin?tab=directory
-        - link "Public Directory" [ref=e32] [cursor=pointer]:
-          - /url: /directory
-        - generic [ref=e37]: CLUB OPERATIONS
-        - link "Member Messages" [ref=e38] [cursor=pointer]:
-          - /url: /app/messages
-        - link "Membership" [ref=e42] [cursor=pointer]:
-          - /url: /app/membership
-        - link "Waiting List" [ref=e48] [cursor=pointer]:
-          - /url: /app/waiting-list
-        - link "Players" [ref=e53] [cursor=pointer]:
-          - /url: /app/players
-        - link "Session Bookings" [ref=e60] [cursor=pointer]:
-          - /url: /app/guest-bookings
-        - link "Events" [ref=e65] [cursor=pointer]:
-          - /url: /app/events
-        - link "Tournaments" [ref=e71] [cursor=pointer]:
-          - /url: /app/tournaments
-        - link "Club Trials" [ref=e79] [cursor=pointer]:
-          - /url: /app/trials
-        - link "Club Leaderboard" [ref=e84] [cursor=pointer]:
-          - /url: /app/leaderboard
-        - link "Learn" [ref=e88] [cursor=pointer]:
-          - /url: /app/learn/manage
-        - link "Analytics" [ref=e92] [cursor=pointer]:
-          - /url: /app/analytics
-        - generic [ref=e96]: ACCOUNT
-        - link "My Profile" [ref=e97] [cursor=pointer]:
-          - /url: /app/my-profile
-      - generic [ref=e105]:
-        - paragraph [ref=e106]: RallyHub Admin
-        - paragraph [ref=e107]: Super Admin
-    - generic [ref=e108]:
-      - banner [ref=e109]:
-        - button [ref=e110] [cursor=pointer]
-        - generic [ref=e112]:
-          - button "Current appearance Auto. Change appearance." [ref=e113] [cursor=pointer]
-          - button "RA" [ref=e114] [cursor=pointer]
-      - main [ref=e116]:
-        - generic [ref=e117]:
-          - generic [ref=e119]:
-            - heading "Events" [level=1] [ref=e120]
-            - paragraph [ref=e121]: Create once. Use the same event for members, RallyHub public Events and club sharing.
-          - generic [ref=e122]:
-            - generic [ref=e123]:
-              - paragraph [ref=e124]: The same seven-step event editor everywhere
-              - paragraph [ref=e125]: Basics → Artwork → Registration → Who is it for? → Event information → Audience → Preview & publish.
-            - link "Events Quick Start Guide" [ref=e126] [cursor=pointer]:
-              - /url: /events/quick-start
-          - generic [ref=e127]:
-            - generic [ref=e128]:
-              - heading "Create event" [level=2] [ref=e133]
-              - generic [ref=e135]:
-                - text: Host / organisation
-                - combobox "Host / organisation Use a RallyHub club or internal organisation placeholder. Nothing here creates a public Directory listing by itself." [ref=e136]:
-                  - option "Choose host / organisation" [selected]
-                - generic [ref=e137]: Use a RallyHub club or internal organisation placeholder. Nothing here creates a public Directory listing by itself.
-              - generic [ref=e138]:
-                - generic [ref=e139]:
-                  - paragraph [ref=e140]: 1 · Basics
-                  - paragraph [ref=e141]: The information players need to identify the event quickly.
-                - generic [ref=e142]:
-                  - generic [ref=e143]:
-                    - text: Event name
-                    - textbox "Event name" [ref=e144]
-                  - generic [ref=e145]:
-                    - text: Event type
-                    - combobox "Event type" [ref=e146]:
-                      - option "Tournament"
-                      - option "Interclub"
-                      - option "League"
-                      - option "Social"
-                      - option "Coaching / Clinic"
-                      - option "Camp"
-                      - option "Open Day"
-                      - option "Exhibition"
-                      - option "Other" [selected]
-                  - generic [ref=e147]:
-                    - text: Indoor / outdoor
-                    - combobox "Indoor / outdoor" [ref=e148]:
-                      - option "Not specified" [selected]
-                      - option "Indoor"
-                      - option "Outdoor"
-                      - option "Indoor / Outdoor"
-                  - generic [ref=e149]:
-                    - text: Starts
-                    - textbox "Starts" [ref=e150]
-                  - generic [ref=e151]:
-                    - text: Ends
-                    - textbox "Ends" [ref=e152]
-                  - generic [ref=e153]:
-                    - text: Start time
-                    - textbox "Start time" [ref=e154]
-                  - generic [ref=e155]:
-                    - text: End time
-                    - textbox "End time" [ref=e156]
-                  - generic [ref=e157]:
-                    - text: Club venue
-                    - combobox "Club venue" [ref=e158]:
-                      - option "Manual / external venue" [selected]
-                  - generic [ref=e159]:
-                    - text: Venue / location
-                    - textbox "Venue / location" [ref=e160]:
-                      - /placeholder: e.g. Lagan Valley LeisurePlex, Lisburn
-                  - generic [ref=e161]:
-                    - text: County / region
-                    - textbox "County / region" [ref=e162]
-                  - generic [ref=e163]:
-                    - text: Country
-                    - textbox "Country" [ref=e164]: Ireland
-                  - generic [ref=e165]:
-                    - text: Short public summary
-                    - textbox "Short public summary" [ref=e166]:
-                      - /placeholder: Two or three sentences for the public listing and event page.
-              - generic [ref=e167]:
-                - generic [ref=e168]:
-                  - paragraph [ref=e169]: 2 · Artwork
-                  - paragraph [ref=e170]: Reuse the same poster for the full event page and a separately positioned card crop.
-                - generic [ref=e171]:
-                  - generic [ref=e172]:
-                    - paragraph [ref=e173]: Event poster / artwork
-                    - paragraph [ref=e174]: Upload once. RallyHub keeps the full poster and lets you make a separate wide crop for public event cards. JPG, PNG, WEBP or PDF · up to 20 MB.
-                  - generic [ref=e175]:
-                    - generic [ref=e176]:
-                      - generic [ref=e177]:
-                        - paragraph [ref=e178]: Full artwork
-                        - generic [ref=e179]: Event detail page
-                      - generic [ref=e180]: Poster / artwork preview
-                      - paragraph [ref=e188]: The full artwork keeps its natural portrait or landscape shape. The wide card crop is controlled separately.
-                    - generic [ref=e189]:
-                      - generic [ref=e190]:
-                        - paragraph [ref=e191]: Event-card crop
-                        - generic [ref=e192]: Public Events / member cards
-                      - generic [ref=e193]: Wide card preview
-                  - button "Upload poster" [ref=e202] [cursor=pointer]
-              - generic [ref=e206]:
-                - generic [ref=e207]:
-                  - paragraph [ref=e208]: 3 · Registration
-                  - paragraph [ref=e209]: RallyHub calculates normal registration status from the dates. Use a manual status only when something changes, such as an event filling up.
-                - generic [ref=e210]:
-                  - generic [ref=e211]:
-                    - text: Event status
-                    - combobox "Event status “Event full” removes the normal registration action and clearly marks the public listing." [ref=e212]:
-                      - option "Automatic from registration dates" [selected]
-                      - option "Event full"
-                      - option "Postponed"
-                      - option "Cancelled"
-                    - generic [ref=e213]: “Event full” removes the normal registration action and clearly marks the public listing.
-                  - generic [ref=e214]:
-                    - text: Registration method
-                    - combobox "Registration method" [ref=e215]:
-                      - option "External booking link" [selected]
-                      - option "RallyHub booking"
-                      - option "Contact organiser"
-                      - option "No registration required"
-                  - generic [ref=e216]:
-                    - text: Registration URL
-                    - textbox "Registration URL" [ref=e217]:
-                      - /placeholder: https://…
-                  - generic [ref=e218]:
-                    - text: Registration opens
-                    - textbox "Registration opens" [ref=e219]
-                  - generic [ref=e220]:
-                    - text: Registration closes
-                    - textbox "Registration closes" [ref=e221]
-                  - generic [ref=e222]:
-                    - text: Entry fee / fee text
-                    - textbox "Entry fee / fee text" [ref=e223]:
-                      - /placeholder: e.g. €45 per event
-                  - generic [ref=e224]:
-                    - text: Capacity
-                    - spinbutton "Capacity" [ref=e225]
-                  - generic [ref=e226]:
-                    - checkbox "Waitlist available when full" [ref=e227]
-                    - text: Waitlist available when full
-              - generic [ref=e228]:
-                - generic [ref=e229]:
-                  - paragraph [ref=e230]: 4 · Who is it for?
-                  - paragraph [ref=e231]: Structured information powers the public filters rather than forcing players to read a long page.
-                - generic [ref=e232]:
-                  - paragraph [ref=e233]: Playing levels
-                  - generic [ref=e234]:
-                    - button "Beginner" [ref=e235] [cursor=pointer]
-                    - button "Recreational" [ref=e236] [cursor=pointer]
-                    - button "Social" [ref=e237] [cursor=pointer]
-                    - button "Improver" [ref=e238] [cursor=pointer]
-                    - button "Intermediate" [ref=e239] [cursor=pointer]
-                    - button "Advanced" [ref=e240] [cursor=pointer]
-                    - button "Competition" [ref=e241] [cursor=pointer]
-                    - button "Open" [ref=e242] [cursor=pointer]
-                    - button "3.0-" [ref=e243] [cursor=pointer]
-                    - button "3.5-" [ref=e244] [cursor=pointer]
-                    - button "4.0+" [ref=e245] [cursor=pointer]
-                - generic [ref=e246]:
-                  - paragraph [ref=e247]: Age groups
-                  - generic [ref=e248]:
-                    - button "All ages" [ref=e249] [cursor=pointer]
-                    - button "18+" [ref=e250] [cursor=pointer]
-                    - button "35+" [ref=e251] [cursor=pointer]
-                    - button "40+" [ref=e252] [cursor=pointer]
-                    - button "50+" [ref=e253] [cursor=pointer]
-                    - button "60+" [ref=e254] [cursor=pointer]
-                    - button "65+" [ref=e255] [cursor=pointer]
-                    - button "70+" [ref=e256] [cursor=pointer]
-                    - button "Junior" [ref=e257] [cursor=pointer]
-                - generic [ref=e258]:
-                  - paragraph [ref=e259]: Disciplines
-                  - generic [ref=e260]:
-                    - button "Singles" [ref=e261] [cursor=pointer]
-                    - button "Gender Doubles" [ref=e262] [cursor=pointer]
-                    - button "Mixed Doubles" [ref=e263] [cursor=pointer]
-                    - button "Open Doubles" [ref=e264] [cursor=pointer]
-                    - button "Team" [ref=e265] [cursor=pointer]
-              - generic [ref=e266]:
-                - generic [ref=e267]:
-                  - paragraph [ref=e268]: 5 · Event information
-                  - paragraph [ref=e269]: Optional detail stays collapsed on the public page until a player needs it.
-                - generic [ref=e270]:
-                  - text: General event description
-                  - textbox "General event description" [ref=e271]
-                - generic [ref=e272]:
-                  - text: Eligibility & levels
-                  - textbox "Eligibility & levels" [ref=e273]
-                - generic [ref=e274]:
-                  - text: Player information
-                  - textbox "Player information" [ref=e275]
-                - generic [ref=e276]:
-                  - text: Fees & cancellation
-                  - textbox "Fees & cancellation" [ref=e277]
-                - generic [ref=e278]:
-                  - generic [ref=e279]:
-                    - text: Organiser email
-                    - textbox "Organiser email" [ref=e280]:
-                      - /placeholder: organiser@example.com
-                  - generic [ref=e281]:
-                    - text: Organiser mobile
-                    - textbox "Organiser mobile" [ref=e282]:
-                      - /placeholder: e.g. 087 123 4567
-                  - generic [ref=e283]:
-                    - text: Hide mobile publicly until
-                    - textbox "Hide mobile publicly until The mobile automatically appears after this time unless “keep private” is switched on." [ref=e284]
-                    - generic [ref=e285]: The mobile automatically appears after this time unless “keep private” is switched on.
-                  - generic [ref=e286]:
-                    - checkbox "Keep mobile private after that date" [ref=e287]
-                    - text: Keep mobile private after that date
-                - generic [ref=e288]:
-                  - text: Member-only information
-                  - textbox "Member-only information" [ref=e289]:
-                    - /placeholder: Information that must not appear publicly.
-                - generic [ref=e291]:
-                  - generic [ref=e292]:
-                    - paragraph [ref=e293]: Day-by-day schedule
-                    - paragraph [ref=e294]: Optional. Keep each day short and scannable.
-                  - button "Add day" [ref=e295] [cursor=pointer]
-                - generic [ref=e296]:
-                  - generic [ref=e297]:
-                    - text: Official/source URL
-                    - textbox "Official/source URL" [ref=e298]
-                  - generic [ref=e299]:
-                    - text: Map/directions URL
-                    - textbox "Map/directions URL" [ref=e300]
-                  - generic [ref=e301]:
-                    - text: Latitude
-                    - spinbutton "Latitude" [ref=e302]
-                  - generic [ref=e303]:
-                    - text: Longitude
-                    - spinbutton "Longitude" [ref=e304]
-              - generic [ref=e305]:
-                - generic [ref=e306]:
-                  - paragraph [ref=e307]: 6 · Audience & publishing
-                  - paragraph [ref=e308]: One canonical event can appear to members, publicly, or both.
-                - generic [ref=e309]:
-                  - checkbox "Show to club members and in their Play calendar" [checked] [ref=e310]
-                  - text: Show to club members and in their Play calendar
-                - generic [ref=e311]:
-                  - checkbox "Publish on RallyHub public Events" [ref=e312]
-                  - text: Publish on RallyHub public Events
-                - generic [ref=e313]:
-                  - checkbox "Feature on member home for an important club fixture/event" [ref=e314]
-                  - text: Feature on member home
-                  - generic [ref=e315]: for an important club fixture/event
-                - generic [ref=e316]:
-                  - checkbox "Feature on RallyHub public Events" [ref=e317]
-                  - text: Feature on RallyHub public Events
-                - generic [ref=e318]:
-                  - checkbox "Verified organiser badge" [ref=e319]
-                  - text: Verified organiser badge
-              - generic [ref=e320]:
-                - generic [ref=e321]:
-                  - paragraph [ref=e322]: 7 · Preview & publish
-                  - paragraph [ref=e323]: Preview the same poster/crop and information before publishing.
-                - generic [ref=e324]:
-                  - button "Public card" [ref=e325] [cursor=pointer]
-                  - button "Public detail" [ref=e326] [cursor=pointer]
-                  - button "Member view" [ref=e327] [cursor=pointer]
-                - generic [ref=e328]:
-                  - button "Save draft" [ref=e329] [cursor=pointer]
-                  - button "Publish selected audiences" [ref=e330] [cursor=pointer]
-                - paragraph [ref=e331]: Publishing to members updates the event in their RallyHub member calendar. It does not send a separate broadcast message unless you choose to message members separately.
-            - complementary [ref=e332]:
-              - generic [ref=e333]:
-                - generic [ref=e334]:
-                  - heading "Draft events" [level=2] [ref=e335]
-                  - generic [ref=e336]: "0"
-                - paragraph [ref=e338]: No draft events.
-              - generic [ref=e339]:
-                - generic [ref=e340]:
-                  - heading "Published events" [level=2] [ref=e341]
-                  - generic [ref=e342]: "0"
-                - paragraph [ref=e344]: No published events yet.
-  - contentinfo "RallyHub copyright" [ref=e345]:
-    - generic [ref=e346]: © 2026 RallyHub All rights reserved.
+```ts
+  1  | import { test, expect } from '@playwright/test';
+  2  | 
+  3  | const APP_ID='6a01dc00702b7dd2a2978c28';
+  4  | const user={id:'mobile-shell-admin',email:'admin@example.test',full_name:'RallyHub Admin',role:'admin',approval_status:'approved',active_club_role:'club_admin',active_tenant_id:'tenant-clare',active_club_id:'club-clare',active_club_name:'Clare Pickleball',kotc_role:'super_admin'};
+  5  | const json=(route,body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
+  6  | 
+  7  | async function installBackend(page){
+  8  |   await page.addInitScript(()=>localStorage.setItem('base44_access_token','mobile-shell-e2e-token'));
+  9  |   await page.route('**/api/apps/**',async route=>{
+  10 |     const req=route.request(); const url=new URL(req.url()); const path=url.pathname;
+  11 |     if(path.includes('/analytics/')) return json(route,{});
+  12 |     if(path.includes('/public-settings/')) return json(route,{id:APP_ID,public_settings:{}});
+  13 |     if(path.endsWith('/entities/User/me')) return json(route,user);
+  14 |     const fnMarker=`/api/apps/${APP_ID}/functions/`; const fi=path.indexOf(fnMarker);
+  15 |     if(fi>=0){
+  16 |       const name=decodeURIComponent(path.slice(fi+fnMarker.length).split('/')[0]);
+  17 |       if(name==='securityContext') return json(route,{success:true,context:null});
+  18 |       if(name==='memberPortal') return json(route,{success:true,snapshot:{}});
+  19 |       if(name==='adminUserTools') return json(route,{success:true,pendingCount:0,users:[]});
+  20 |       if(name==='directoryClaim') return json(route,{success:true,pendingCount:0,claims:[]});
+  21 |       if(name==='membershipRecord') return json(route,{success:true,records:[],items:[]});
+  22 |       if(name==='waitingList') return json(route,{success:true,items:[],config:null});
+  23 |       return json(route,{success:true,items:[],records:[],events:[],data:[]});
+  24 |     }
+  25 |     const entityMarker=`/api/apps/${APP_ID}/entities/`; const ei=path.indexOf(entityMarker);
+  26 |     if(ei>=0) return json(route,[]);
+  27 |     return json(route,{});
+  28 |   });
+  29 | }
+  30 | 
+  31 | async function assertMobileShell(page,path){
+  32 |   await page.goto(path,{waitUntil:'domcontentloaded',timeout:8000}).catch(()=>{});
+  33 |   await page.waitForTimeout(600);
+  34 |   const metrics=await page.evaluate(()=>{
+  35 |     const aside=document.querySelector('aside');
+  36 |     const main=document.querySelector('main');
+  37 |     const header=document.querySelector('header');
+  38 |     const ar=aside?.getBoundingClientRect(); const mr=main?.getBoundingClientRect(); const hr=header?.getBoundingClientRect();
+  39 |     const offenders=[...document.querySelectorAll('body *')].map(el=>{const r=el.getBoundingClientRect();return {tag:el.tagName,cls:String(el.className||'').slice(0,160),left:r.left,right:r.right,width:r.width}}).filter(x=>x.right>innerWidth+2||x.left<-2).slice(0,10);
+  40 |     return {innerWidth,scrollWidth:document.documentElement.scrollWidth,bodyScrollWidth:document.body.scrollWidth,aside:ar&&{left:ar.left,right:ar.right,width:ar.width},main:mr&&{left:mr.left,right:mr.right,width:mr.width},header:hr&&{left:hr.left,right:hr.right,width:hr.width},offenders};
+  41 |   });
+  42 |   expect(metrics.scrollWidth,`${path} horizontal overflow ${JSON.stringify(metrics.offenders)}`).toBeLessThanOrEqual(metrics.innerWidth+2);
+  43 |   expect(metrics.bodyScrollWidth,`${path} body overflow`).toBeLessThanOrEqual(metrics.innerWidth+2);
+> 44 |   expect(metrics.main?.left,`${path} main shifted by desktop sidebar`).toBeGreaterThanOrEqual(-1);
+     |                                                                        ^ Error: expect(received).toBeGreaterThanOrEqual(expected)
+  45 |   expect(metrics.main?.right,`${path} main wider than viewport`).toBeLessThanOrEqual(metrics.innerWidth+2);
+  46 |   expect(metrics.header?.right,`${path} header wider than viewport`).toBeLessThanOrEqual(metrics.innerWidth+2);
+  47 |   expect(metrics.aside?.right,`${path} closed sidebar should be off-canvas`).toBeLessThanOrEqual(1);
+  48 | }
+  49 | 
+  50 | test.describe('shared authenticated app shell mobile regression',()=>{
+  51 |   test.use({viewport:{width:390,height:844}});
+  52 |   for(const path of ['/app','/app/admin','/app/membership','/app/events','/app/tournaments','/app/players','/app/waiting-list','/app/guest-bookings','/app/learn/manage']){
+  53 |     test(`${path} stays phone-width with desktop sidebar closed`,async({page})=>{await installBackend(page);await assertMobileShell(page,path);});
+  54 |   }
+  55 | });
+  56 | 
 ```

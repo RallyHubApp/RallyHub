@@ -12,10 +12,6 @@
 # Error details
 
 ```
-Test timeout of 45000ms exceeded.
-```
-
-```
 Error: expect(received).toBeGreaterThanOrEqual(expected)
 
 Matcher error: received value must be a number or bigint
@@ -57,8 +53,8 @@ Received has value: undefined
   29 | }
   30 | 
   31 | async function assertMobileShell(page,path){
-  32 |   await page.goto(path);
-  33 |   await page.waitForTimeout(250);
+  32 |   await page.goto(path,{waitUntil:'domcontentloaded',timeout:8000}).catch(()=>{});
+  33 |   await page.waitForTimeout(600);
   34 |   const metrics=await page.evaluate(()=>{
   35 |     const aside=document.querySelector('aside');
   36 |     const main=document.querySelector('main');

@@ -12,110 +12,71 @@
 # Error details
 
 ```
-Test timeout of 45000ms exceeded.
+Error: expect(received).toBeGreaterThanOrEqual(expected)
+
+Matcher error: received value must be a number or bigint
+
+Received has value: undefined
 ```
 
-# Page snapshot
+# Test source
 
-```yaml
-- generic [ref=e2]:
-  - generic [ref=e3]:
-    - complementary [ref=e4]:
-      - generic [ref=e5]:
-        - link "RallyHub RallyHub SUPER ADMIN" [ref=e6] [cursor=pointer]:
-          - /url: /app
-          - img "RallyHub" [ref=e7]
-          - generic [ref=e8]:
-            - generic [ref=e9]: RallyHub
-            - generic [ref=e10]: SUPER ADMIN
-        - button [ref=e11] [cursor=pointer]
-      - navigation [ref=e15]:
-        - generic [ref=e16]: SUPER ADMIN
-        - link "Dashboard" [ref=e17] [cursor=pointer]:
-          - /url: /app
-        - link "Admin Panel" [ref=e24] [cursor=pointer]:
-          - /url: /app/admin
-        - link "Directory Admin" [ref=e28] [cursor=pointer]:
-          - /url: /app/admin?tab=directory
-        - link "Public Directory" [ref=e32] [cursor=pointer]:
-          - /url: /directory
-        - generic [ref=e37]: CLUB OPERATIONS
-        - link "Member Messages" [ref=e38] [cursor=pointer]:
-          - /url: /app/messages
-        - link "Membership" [ref=e42] [cursor=pointer]:
-          - /url: /app/membership
-        - link "Waiting List" [ref=e48] [cursor=pointer]:
-          - /url: /app/waiting-list
-        - link "Players" [ref=e53] [cursor=pointer]:
-          - /url: /app/players
-        - link "Session Bookings" [ref=e60] [cursor=pointer]:
-          - /url: /app/guest-bookings
-        - link "Events" [ref=e65] [cursor=pointer]:
-          - /url: /app/events
-        - link "Tournaments" [ref=e69] [cursor=pointer]:
-          - /url: /app/tournaments
-        - link "Club Trials" [ref=e77] [cursor=pointer]:
-          - /url: /app/trials
-        - link "Club Leaderboard" [ref=e82] [cursor=pointer]:
-          - /url: /app/leaderboard
-        - link "Learn" [ref=e86] [cursor=pointer]:
-          - /url: /app/learn/manage
-        - link "Analytics" [ref=e90] [cursor=pointer]:
-          - /url: /app/analytics
-        - generic [ref=e94]: ACCOUNT
-        - link "My Profile" [ref=e95] [cursor=pointer]:
-          - /url: /app/my-profile
-      - generic [ref=e103]:
-        - paragraph [ref=e104]: RallyHub Admin
-        - paragraph [ref=e105]: Super Admin
-    - generic [ref=e106]:
-      - banner [ref=e107]:
-        - button [ref=e108] [cursor=pointer]
-        - generic [ref=e110]:
-          - button "Current appearance Auto. Change appearance." [ref=e111] [cursor=pointer]
-          - button "RA" [ref=e112] [cursor=pointer]
-      - main [ref=e114]:
-        - generic [ref=e115]:
-          - generic [ref=e116]:
-            - generic [ref=e117]:
-              - heading "Admin Panel" [level=1] [ref=e118]
-              - paragraph [ref=e119]: Site owner control panel
-            - generic [ref=e120]: Admin Only
-          - generic [ref=e124]:
-            - button [ref=e125] [cursor=pointer]:
-              - paragraph [ref=e126]: "0"
-              - paragraph [ref=e127]: Current Club Members
-              - paragraph [ref=e128]: 0 paid · 0 complimentary · 0 pending
-            - button [ref=e129] [cursor=pointer]:
-              - paragraph [ref=e130]: "0"
-              - paragraph [ref=e131]: Linked RallyHub Accounts
-              - paragraph [ref=e132]: Tap to manage account links
-            - button [ref=e133] [cursor=pointer]:
-              - paragraph [ref=e134]: "0"
-              - paragraph [ref=e135]: Members Not Yet Linked
-              - paragraph [ref=e136]: Tap to review linking
-          - generic [ref=e137]:
-            - tablist [ref=e138]:
-              - tab "Club Access Approvals" [selected] [ref=e139] [cursor=pointer]
-              - tab "Member Preview" [ref=e143] [cursor=pointer]
-              - tab "Announcements" [ref=e147] [cursor=pointer]
-              - tab "Directory Claims" [ref=e151] [cursor=pointer]
-              - tab "Directory Contacts" [ref=e156] [cursor=pointer]
-              - tab "Player Network" [ref=e162] [cursor=pointer]
-              - tab "Directory Analytics" [ref=e168] [cursor=pointer]
-              - tab "Feedback" [ref=e172] [cursor=pointer]
-              - tab "Asset Uploader" [ref=e175] [cursor=pointer]
-              - tab "Users & Roles" [ref=e179] [cursor=pointer]
-              - tab "Players" [ref=e182] [cursor=pointer]
-              - tab "Matches" [ref=e188] [cursor=pointer]
-              - tab "Account Links" [ref=e198] [cursor=pointer]
-              - tab "Invite Users" [ref=e202] [cursor=pointer]
-            - tabpanel "Club Access Approvals" [ref=e206]:
-              - generic [ref=e207]:
-                - paragraph [ref=e212]:
-                  - strong [ref=e213]: RallyHub Club access only.
-                  - text: This tab does not approve Directory users. A user can enter the RallyHub Club application only when they have a separate active ClubUserAccess grant. Directory owners/editors are handled only under Directory Claims and cannot access tournaments, players, matches, leaderboards or other Club tools.
-                - paragraph [ref=e214]: No RallyHub Club users to review. Directory-only accounts are managed under Directory Claims.
-  - contentinfo "RallyHub copyright" [ref=e215]:
-    - generic [ref=e216]: © 2026 RallyHub All rights reserved.
+```ts
+  1  | import { test, expect } from '@playwright/test';
+  2  | 
+  3  | const APP_ID='6a01dc00702b7dd2a2978c28';
+  4  | const user={id:'mobile-shell-admin',email:'admin@example.test',full_name:'RallyHub Admin',role:'admin',approval_status:'approved',active_club_role:'club_admin',active_tenant_id:'tenant-clare',active_club_id:'club-clare',active_club_name:'Clare Pickleball',kotc_role:'super_admin'};
+  5  | const json=(route,body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
+  6  | 
+  7  | async function installBackend(page){
+  8  |   await page.addInitScript(()=>localStorage.setItem('base44_access_token','mobile-shell-e2e-token'));
+  9  |   await page.route('**/api/apps/**',async route=>{
+  10 |     const req=route.request(); const url=new URL(req.url()); const path=url.pathname;
+  11 |     if(path.includes('/analytics/')) return json(route,{});
+  12 |     if(path.includes('/public-settings/')) return json(route,{id:APP_ID,public_settings:{}});
+  13 |     if(path.endsWith('/entities/User/me')) return json(route,user);
+  14 |     const fnMarker=`/api/apps/${APP_ID}/functions/`; const fi=path.indexOf(fnMarker);
+  15 |     if(fi>=0){
+  16 |       const name=decodeURIComponent(path.slice(fi+fnMarker.length).split('/')[0]);
+  17 |       if(name==='securityContext') return json(route,{success:true,context:null});
+  18 |       if(name==='memberPortal') return json(route,{success:true,snapshot:{}});
+  19 |       if(name==='adminUserTools') return json(route,{success:true,pendingCount:0,users:[]});
+  20 |       if(name==='directoryClaim') return json(route,{success:true,pendingCount:0,claims:[]});
+  21 |       if(name==='membershipRecord') return json(route,{success:true,records:[],items:[]});
+  22 |       if(name==='waitingList') return json(route,{success:true,items:[],config:null});
+  23 |       return json(route,{success:true,items:[],records:[],events:[],data:[]});
+  24 |     }
+  25 |     const entityMarker=`/api/apps/${APP_ID}/entities/`; const ei=path.indexOf(entityMarker);
+  26 |     if(ei>=0) return json(route,[]);
+  27 |     return json(route,{});
+  28 |   });
+  29 | }
+  30 | 
+  31 | async function assertMobileShell(page,path){
+  32 |   await page.goto(path,{waitUntil:'domcontentloaded',timeout:8000}).catch(()=>{});
+  33 |   await page.waitForTimeout(600);
+  34 |   const metrics=await page.evaluate(()=>{
+  35 |     const aside=document.querySelector('aside');
+  36 |     const main=document.querySelector('main');
+  37 |     const header=document.querySelector('header');
+  38 |     const ar=aside?.getBoundingClientRect(); const mr=main?.getBoundingClientRect(); const hr=header?.getBoundingClientRect();
+  39 |     const offenders=[...document.querySelectorAll('body *')].map(el=>{const r=el.getBoundingClientRect();return {tag:el.tagName,cls:String(el.className||'').slice(0,160),left:r.left,right:r.right,width:r.width}}).filter(x=>x.right>innerWidth+2||x.left<-2).slice(0,10);
+  40 |     return {innerWidth,scrollWidth:document.documentElement.scrollWidth,bodyScrollWidth:document.body.scrollWidth,aside:ar&&{left:ar.left,right:ar.right,width:ar.width},main:mr&&{left:mr.left,right:mr.right,width:mr.width},header:hr&&{left:hr.left,right:hr.right,width:hr.width},offenders};
+  41 |   });
+  42 |   expect(metrics.scrollWidth,`${path} horizontal overflow ${JSON.stringify(metrics.offenders)}`).toBeLessThanOrEqual(metrics.innerWidth+2);
+  43 |   expect(metrics.bodyScrollWidth,`${path} body overflow`).toBeLessThanOrEqual(metrics.innerWidth+2);
+> 44 |   expect(metrics.main?.left,`${path} main shifted by desktop sidebar`).toBeGreaterThanOrEqual(-1);
+     |                                                                        ^ Error: expect(received).toBeGreaterThanOrEqual(expected)
+  45 |   expect(metrics.main?.right,`${path} main wider than viewport`).toBeLessThanOrEqual(metrics.innerWidth+2);
+  46 |   expect(metrics.header?.right,`${path} header wider than viewport`).toBeLessThanOrEqual(metrics.innerWidth+2);
+  47 |   expect(metrics.aside?.right,`${path} closed sidebar should be off-canvas`).toBeLessThanOrEqual(1);
+  48 | }
+  49 | 
+  50 | test.describe('shared authenticated app shell mobile regression',()=>{
+  51 |   test.use({viewport:{width:390,height:844}});
+  52 |   for(const path of ['/app','/app/admin','/app/membership','/app/events','/app/tournaments','/app/players','/app/waiting-list','/app/guest-bookings','/app/learn/manage']){
+  53 |     test(`${path} stays phone-width with desktop sidebar closed`,async({page})=>{await installBackend(page);await assertMobileShell(page,path);});
+  54 |   }
+  55 | });
+  56 | 
 ```

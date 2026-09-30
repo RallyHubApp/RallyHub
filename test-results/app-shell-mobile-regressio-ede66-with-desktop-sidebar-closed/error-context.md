@@ -6,7 +6,7 @@
 
 # Test info
 
-- Name: app-shell-mobile-regression.spec.mjs >> shared authenticated app shell mobile regression >> /app/waiting-list stays phone-width with desktop sidebar closed
+- Name: app-shell-mobile-regression.spec.mjs >> shared authenticated app shell mobile regression >> /app/learn/manage stays phone-width with desktop sidebar closed
 - Location: e2e/app-shell-mobile-regression.spec.mjs:53:5
 
 # Error details
