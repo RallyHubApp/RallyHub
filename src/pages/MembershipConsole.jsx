@@ -24,7 +24,7 @@ import {
   Megaphone, Share2, Send, Smartphone
 } from 'lucide-react';
 
-const EMPTY_FILTERS = { membershipStatus: 'all', paymentStatus: 'all', account: 'all', quality: 'all', sport: 'all', renewal: 'all', ageBand: 'all' };
+const EMPTY_FILTERS = { membershipStatus: 'all', paymentStatus: 'all', account: 'all', quality: 'all', sport: 'all', renewal: 'all', ageBand: 'all', field: 'all', fieldValue: '', dateFrom: '', dateTo: '' };
 
 const label = value => String(value || '')
   .replaceAll('_', ' ')
@@ -422,6 +422,22 @@ export default function MembershipConsole() {
         if (filters.ageBand === '50_plus' && !(age >= 50 && age < 65)) return false;
         if (filters.ageBand === '65_plus' && age < 65) return false;
       }
+      if (filters.field !== 'all') {
+        const field = (meta.fieldCatalog || []).find(item => item.key === filters.field);
+        const rawValue = row?.[filters.field];
+        if (field?.filterType === 'date') {
+          const value = String(rawValue || '').slice(0, 10);
+          if (!value) return false;
+          if (filters.dateFrom && value < filters.dateFrom) return false;
+          if (filters.dateTo && value > filters.dateTo) return false;
+        } else if (field?.filterType === 'number') {
+          const needleNumber = filters.fieldValue === '' ? null : Number(filters.fieldValue);
+          if (needleNumber !== null && Number.isFinite(needleNumber) && Number(rawValue) !== needleNumber) return false;
+        } else if (filters.fieldValue.trim()) {
+          const value = Array.isArray(rawValue) ? rawValue.join(' ') : rawValue;
+          if (!String(value ?? '').toLowerCase().includes(filters.fieldValue.trim().toLowerCase())) return false;
+        }
+      }
       return true;
     });
     result.sort((a, b) => {
@@ -433,7 +449,7 @@ export default function MembershipConsole() {
       return sortDirection === 'desc' ? -comparison : comparison;
     });
     return result;
-  }, [listData.rows, search, filters, sortField, sortDirection]);
+  }, [listData.rows, search, filters, sortField, sortDirection, meta.fieldCatalog]);
 
   const exportRows = useMemo(() => selected.size ? rows.filter(row => selected.has(row.person_id)) : rows, [rows, selected]);
 
@@ -1223,6 +1239,23 @@ export default function MembershipConsole() {
                     <SelectItem value="65_plus">65+ · ages 65+</SelectItem>
                   </SelectContent>
                 </Select>
+                <Popover>
+                  <PopoverTrigger asChild><Button variant="outline"><Filter className="w-4 h-4 mr-1.5" />Filter field</Button></PopoverTrigger>
+                  <PopoverContent align="end" className="w-80 space-y-3">
+                    <div>
+                      <Label>Field</Label>
+                      <Select value={filters.field} onValueChange={value => setFilters(f => ({ ...f, field: value, fieldValue: '', dateFrom: '', dateTo: '' }))}>
+                        <SelectTrigger className="mt-1"><SelectValue placeholder="Choose a field" /></SelectTrigger>
+                        <SelectContent><SelectItem value="all">Any field</SelectItem>{(meta.fieldCatalog || []).map(field => <SelectItem key={field.key} value={field.key}>{field.label}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    {filters.field !== 'all' && (() => {
+                      const field = (meta.fieldCatalog || []).find(item => item.key === filters.field);
+                      if (field?.filterType === 'date') return <div className="grid grid-cols-2 gap-2"><div><Label>From</Label><Input type="date" className="mt-1" value={filters.dateFrom} onChange={e => setFilters(f => ({ ...f, dateFrom: e.target.value }))} /></div><div><Label>To</Label><Input type="date" className="mt-1" value={filters.dateTo} onChange={e => setFilters(f => ({ ...f, dateTo: e.target.value }))} /></div></div>;
+                      return <div><Label>{field?.filterType === 'number' ? 'Exact value' : 'Contains'}</Label><Input type={field?.filterType === 'number' ? 'number' : 'text'} className="mt-1" value={filters.fieldValue} onChange={e => setFilters(f => ({ ...f, fieldValue: e.target.value }))} placeholder={`Filter by ${field?.label || 'field'}…`} /></div>;
+                    })()}
+                  </PopoverContent>
+                </Popover>
                 <Popover>
                   <PopoverTrigger asChild><Button variant="outline"><Filter className="w-4 h-4 mr-1.5" />More</Button></PopoverTrigger>
                   <PopoverContent align="end" className="w-72 space-y-3">
