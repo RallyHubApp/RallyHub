@@ -771,7 +771,7 @@ export default function AdminPanel() {
       };
       bySlug.set(slug, {
         ...existing,
-        contacts: existing.contacts?.length ? existing.contacts : [mergedContact],
+        contacts: [mergedContact, ...(existing.contacts || [])],
         contactName: mergedContact.name,
         contactPhone: mergedContact.phone,
         contactEmail: mergedContact.email,
