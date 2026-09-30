@@ -3,7 +3,7 @@
 > **Development mirror only.** The canonical master is `RallyHub_Master_Testing_Blueprint.docx` kept in the RallyHub project files beside `RallyHub_Master_Backlog_and_Decisions.docx`. Keep this repo copy aligned when major reusable testing rules change, but do not treat it as the user-facing master.
 
 **Status:** Development mirror of LIVE MASTER  
-**Version:** 1.2  
+**Version:** 1.3  
 **Date:** 30 September 2026  
 **Applies to:** RallyHub Core, King of the Court (KOTC), Club Challenge, Tournival, shared tournament formats, memberships, public displays, and future RallyHub modules.
 
@@ -758,6 +758,8 @@ Use the following prompt whenever ChatGPT is asked to test, validate, stress-tes
 > **11. Challenge the UX from the viewpoint of a rushed organiser in a noisy hall.** If the workflow is technically correct but unnecessarily slow, scroll-heavy, misleading or likely to cause duplicate actions, record it as a defect/product-improvement finding.
 >
 > **12. At the end, report the exact evidence and state:** coded, build-passed, simulator-tested, robot-tested, release-candidate, deployed, live-device tested, or production-proven. If not ready, identify and fix/test the blocker rather than making the user the integration tester.
+>
+> **13. Use the RallyHub Testing Control Pack for independent/third-party testing.** Before any external tester, AI agent, browser service, security tool or separately tasked testing process begins, require the current protocol declaration, Test Run Brief and Risk Gate. Accept the result as RallyHub release evidence only when it is returned in the standard Evidence Report and passes the applicable persistence/release checks.
 
 ---
 
@@ -859,14 +861,56 @@ A limitation must be specific; “needs more testing” is not sufficient.
 
 ---
 
-## 22. Living-document and versioning rule
+## 22. RallyHub Testing Control Pack and Master Testing Group
+
+The Master Testing Blueprint is the human policy master. The repository also contains a machine-readable **RallyHub Testing Control Pack** under `testing/control-pack/`. Its purpose is to ensure ChatGPT, third-party testers, browser agents, security tools and human testers follow the same process rather than interpreting this document differently on every run.
+
+The Control Pack contains five mandatory components:
+
+1. **Master Testing Group** — the governance roles: Protocol Guardian, Risk Gatekeeper, Domain/Sporting Tester, Architecture/Security Tester, Browser/UX Robot, Base44/Resilience Tester, Evidence Recorder and Release Gatekeeper. One person or agent may perform several roles, but release status must come from evidence rather than self-confidence.
+2. **Testing Manifest** — machine-readable protocol versions, permanent layers, result/release states, third-party rules, evidence fields and hard release blocks.
+3. **Test Run Brief** — the required pre-test record of the exact build, change, blast radius, test data, risk flags, selected depth, planned cases and publish-verification plan.
+4. **Evidence Report** — the required post-test record of expected/actual results, evidence, defects, blocked tests, persistence proof, release verdict and production fingerprint where deployment is claimed.
+5. **Risk Gate** — machine-readable rules that determine the minimum test depth and mandatory escalations. The tester may go deeper; the tester may not silently go shallower.
+
+Repository commands:
+- `npm run qa:protocol` validates the Control Pack itself;
+- `npm run qa:risk -- <test-run-brief.json>` evaluates the brief and minimum permitted depth;
+- `npm run qa:evidence -- <test-run-brief.json> <evidence-report.json>` validates evidence and the release gate.
+
+### Third-party acceptance rule
+
+No third-party test result is accepted as RallyHub release evidence unless it:
+- declares the current Master Testing Blueprint and Control Pack versions;
+- uses the RallyHub Test Run Brief;
+- passes the Risk Gate at the stated test depth;
+- records required tests in the RallyHub Evidence Report using PASS, PASS-WITH-LIMITATION, FAIL or BLOCKED;
+- identifies the exact target build/commit/checkpoint;
+- distinguishes environment/harness failures from RallyHub application failures;
+- proves persisted source before claiming release readiness;
+- fingerprints production before claiming deployment or production proof.
+
+A third party may add extra tools and tests. Extra evidence may increase confidence, but it does not silently replace mandatory RallyHub evidence. Any deviation must be recorded with its reason and confidence impact.
+
+### Test-run lifecycle
+
+The standard sequence is:
+
+**Protocol loaded → Test Run Brief → Risk Gate → isolated test environment/data → required layers → Evidence Report → defect/regression loop → persistence proof → Release Gate → publish → production fingerprint → final release state.**
+
+This sequence also applies to ChatGPT itself. The protocol is designed specifically so future testing does not depend on an agent remembering the right process from earlier conversation history.
+
+---
+
+## 23. Living-document and versioning rule
 
 This blueprint is continuously improved.
 
 - **v1.0** captures the Testing approach summary plus KOTC, Club Challenge, Base44, code-health and September 2026 collaborative-scoring lessons.
 - **v1.1** added the 24 September Interclub pre-draw roster scope lock and deferred planned-handover gate.
 - **v1.2 (30 September 2026)** adds the fast QA ladder, ephemeral Base44 test-environment rules, harness hygiene, persisted-source release gate, production asset fingerprinting after republish, site-wide responsive blast-radius testing, and progress-preserving bulk-audit rules learned during the Directory/contact and mobile-shell work.
-- New reusable lessons become v1.3, v1.4, etc.
+- **v1.3 (30 September 2026)** introduces the RallyHub Master Testing Group and machine-readable Testing Control Pack: Testing Manifest, Test Run Brief, Evidence Report, Risk Gate, third-party acceptance rule and automated protocol/evidence validation commands.
+- New reusable lessons become v1.4, v1.5, etc.
 - Major testing-architecture changes may become v2.0.
 - Historical test plans remain evidence, but this file is the canonical standard.
 - When a new failure mode is discovered, update both the automated regression and this blueprint if the lesson is reusable.
