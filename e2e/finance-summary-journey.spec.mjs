@@ -41,7 +41,7 @@ const previewCandidates=syncedEntries.map((row,index)=>({
 }));
 
 async function installFinanceBackend(page,{zeroMatch=false}={}){
-  let synced=false;
+  let syncedRows=[];
   await page.addInitScript(()=>localStorage.setItem('base44_access_token','finance-e2e-token'));
   await page.route('**/api/apps/**',async route=>{
     const req=route.request(); const url=new URL(req.url()); const path=url.pathname;
@@ -53,11 +53,15 @@ async function installFinanceBackend(page,{zeroMatch=false}={}){
       const name=decodeURIComponent(path.slice(fi+fnMarker.length).split('/')[0]);
       let body={};try{body=req.postDataJSON()||{};}catch{}
       if(name==='securityContext') return json(route,{success:true,context:null});
+      if(name==='spondIntegrationWorking'&&body.action==='directory_finance_preview'){
+        if(!Array.isArray(body.selectedVenueIds) || body.selectedVenueIds.length!==1 || body.selectedVenueIds[0]!=='enn') return json(route,{error:'Finance journey test expected Ennistymon-only preview'},400);
+        if(zeroMatch) return json(route,{success:true,preview:true,fromDate:body.fromDate,toDate:body.toDate,candidates:[],fetchedCount:0,totalSpondEventsInRange:11,readyCount:0,diagnostics:{exactMatches:0,scheduleMatches:0,unmatchedRule:8,missingFee:0,outsideEffectiveRange:0,ignoredNotSelected:3},connection:{groupId:connections[0].spond_group_id,groupName:connections[0].spond_group_name}});
+        return json(route,{success:true,preview:true,fromDate:body.fromDate,toDate:body.toDate,candidates:previewCandidates,fetchedCount:8,totalSpondEventsInRange:11,readyCount:8,diagnostics:{exactMatches:2,scheduleMatches:6,unmatchedRule:0,missingFee:0,outsideEffectiveRange:0,ignoredNotSelected:3},connection:{groupId:connections[0].spond_group_id,groupName:connections[0].spond_group_name}});
+      }
       if(name==='spondIntegrationWorking'&&body.action==='directory_finance_sync'){
-        synced=true;
-        if(!Array.isArray(body.selectedVenueIds) || body.selectedVenueIds.length!==1 || body.selectedVenueIds[0]!=='enn') return json(route,{error:'Finance journey test expected Ennistymon-only sync'},400);
-        if(zeroMatch) return json(route,{success:true,fromDate:body.fromDate,toDate:body.toDate,created:0,updated:0,skipped:8,fetchedCount:8,totalSpondEventsInRange:11,matchedCount:0,diagnostics:{exactMatches:0,scheduleMatches:0,unmatchedRule:8,missingFee:0,outsideEffectiveRange:0,ignoredNotSelected:3},connection:{groupId:connections[0].spond_group_id,groupName:connections[0].spond_group_name},synced:[]});
-        return json(route,{success:true,fromDate:body.fromDate,toDate:body.toDate,created:8,updated:0,skipped:0,fetchedCount:8,totalSpondEventsInRange:11,matchedCount:8,diagnostics:{exactMatches:2,scheduleMatches:6,unmatchedRule:0,missingFee:0,outsideEffectiveRange:0,ignoredNotSelected:3},connection:{groupId:connections[0].spond_group_id,groupName:connections[0].spond_group_name},synced:syncedEntries});
+        if(!Array.isArray(body.selectedOccurrenceKeys)||!body.selectedOccurrenceKeys.length) return json(route,{error:'Finance journey test expected selected Spond occurrences'},400);
+        syncedRows=body.selectedOccurrenceKeys.map(key=>syncedEntries[previewCandidates.findIndex(row=>row.occurrenceKey===key)]).filter(Boolean);
+        return json(route,{success:true,fromDate:body.fromDate,toDate:body.toDate,created:syncedRows.length,updated:0,skipped:0,fetchedCount:8,totalSpondEventsInRange:11,matchedCount:syncedRows.length,diagnostics:{exactMatches:2,scheduleMatches:6,unmatchedRule:0,missingFee:0,outsideEffectiveRange:0,ignoredNotSelected:3,ignoredNotChosen:8-syncedRows.length},connection:{groupId:connections[0].spond_group_id,groupName:connections[0].spond_group_name},synced:syncedRows});
       }
       return json(route,{success:true,items:[],records:[],events:[],data:[]});
     }
@@ -67,7 +71,7 @@ async function installFinanceBackend(page,{zeroMatch=false}={}){
       if(entity==='ClubFinanceSettings') return json(route,settings);
       if(entity==='Venue') return json(route,venues);
       if(entity==='ClubFinanceVenueRule') return json(route,rules);
-      if(entity==='ClubFinanceEntry') return json(route,synced && !zeroMatch ? syncedEntries : []);
+      if(entity==='ClubFinanceEntry') return json(route,syncedRows);
       if(entity==='SpondSessionBinding') return json(route,bindings);
       if(entity==='DirectorySpondConnection') return json(route,connections);
       return json(route,[]);
