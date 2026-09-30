@@ -457,7 +457,12 @@ Deno.serve(async (req) => {
         const activityDate = irelandDate(start);
         const local = dublinParts(start);
         if (!activityDate || !local) { skipped++; unmatchedRule++; continue; }
-        const match = findFinanceRuleForEvent({ event, activityDate, local, rulesByEvent, spondRules, venuesById });
+        const endLocal = dublinParts(event?.endTimestamp || '');
+        const sourceVenueName = clean(event?.location?.feature || event?.location?.name || event?.location?.address || '', 220);
+        const sourceVenueAddress = clean(event?.location?.address || '', 320);
+        const eventPatternKey = spondPatternKey({ heading:clean(event?.heading || 'Club Session',180), day:local.day, start:local.time, end:endLocal?.time||'', venueName:sourceVenueName, venueAddress:sourceVenueAddress });
+        const patternRule = rulesByPattern.get(eventPatternKey) || null;
+        const match = patternRule ? { rule:patternRule, matchMode:'directory_pattern', score:1 } : findFinanceRuleForEvent({ event, activityDate, local, rulesByEvent, spondRules, venuesById });
         const rule = match.rule;
         const matchMode = match.matchMode;
         if (!rule) { skipped++; unmatchedRule++; continue; }
