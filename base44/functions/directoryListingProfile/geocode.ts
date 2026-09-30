@@ -21,6 +21,29 @@ function plausibleResult(row:any, venue:any, context:any) {
   return true;
 }
 
+function coordinatesFromMapUrl(value:any) {
+  const raw = clean(value, 1000);
+  if (!raw) return null;
+  let decoded = raw;
+  try { decoded = decodeURIComponent(raw); } catch {}
+  const patterns = [
+    /[?&](?:q|query|ll)=(-?\d{1,2}(?:\.\d+)?)[,%20+\s]+(-?\d{1,3}(?:\.\d+)?)/i,
+    /@(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)/,
+    /!3d(-?\d{1,2}(?:\.\d+)?)!4d(-?\d{1,3}(?:\.\d+)?)/,
+    /(-?\d{1,2}(?:\.\d+)?)[,\s]+(-?\d{1,3}(?:\.\d+)?)/,
+  ];
+  for (const pattern of patterns) {
+    const match = decoded.match(pattern);
+    if (!match) continue;
+    const latitude = Number(match[1]);
+    const longitude = Number(match[2]);
+    if (Number.isFinite(latitude) && Number.isFinite(longitude) && latitude >= 51.2 && latitude <= 55.6 && longitude >= -11 && longitude <= -5) {
+      return { latitude, longitude };
+    }
+  }
+  return null;
+}
+
 async function lookup(query:string) {
   const params = new URLSearchParams({
     q: query,
@@ -56,14 +79,24 @@ export async function geocodeDirectoryVenue(venue:any, context:any = {}) {
     return { latitude: existingLat, longitude: existingLng, geocoded: false };
   }
 
+  // A full Google Maps URL with coordinates is the most precise source the editor can supply.
+  // Prefer it over postcode/address geocoding. Short maps.app.goo.gl links do not expose
+  // coordinates without following a redirect, so they fall through to normal geocoding.
+  const mapCoordinates = coordinatesFromMapUrl(venue?.mapUrl);
+  if (mapCoordinates) return { ...mapCoordinates, geocoded: true };
+
   const name = clean(venue?.name, 220);
   const address = clean(venue?.address, 320);
   const postcode = clean(venue?.eircode, 40);
   const town = clean(context?.town, 120);
   const county = clean(context?.county, 120);
   const candidates = [
-    [name, address, postcode, town, county, 'Ireland'],
+    // Eircode/postcode first: adding the venue name can make Nominatim reject an otherwise
+    // valid postcode lookup, which left legitimate venues unmapped (seen on West Cork).
+    [postcode, county, 'Ireland'],
+    [postcode, 'Ireland'],
     [address, postcode, town, county, 'Ireland'],
+    [name, address, postcode, town, county, 'Ireland'],
     [name, address, town, county, 'Ireland'],
     [address, town, county, 'Ireland'],
     [name, town, county, 'Ireland'],
