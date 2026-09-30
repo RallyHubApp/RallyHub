@@ -1,0 +1,91 @@
+{
+  "control_pack": "RallyHub Testing Control Pack",
+  "control_pack_version": "1.0",
+  "master_blueprint_version": "1.3",
+  "effective_date": "2026-09-30",
+  "purpose": "Make RallyHub testing repeatable and enforceable for ChatGPT, third-party testers, browser agents, security tools and human testers.",
+  "canonical_blueprint_repo_mirror": "docs/RALLYHUB_MASTER_TESTING_BLUEPRINT.md",
+  "required_artifacts": {
+    "master_testing_group": "testing/control-pack/MASTER_TESTING_GROUP.md",
+    "testing_manifest": "testing/control-pack/testing-manifest.json",
+    "test_run_brief": "testing/control-pack/test-run-brief.template.json",
+    "evidence_report": "testing/control-pack/evidence-report.template.json",
+    "risk_gate": "testing/control-pack/risk-gate.json"
+  },
+  "mandatory_protocol_declaration": {
+    "required": true,
+    "text": "I am testing RallyHub under Master Testing Blueprint v1.3 and RallyHub Testing Control Pack v1.0. I will not substitute my own testing process for the required protocol without recording and justifying the deviation."
+  },
+  "result_states": [
+    "PASS",
+    "PASS-WITH-LIMITATION",
+    "FAIL",
+    "BLOCKED"
+  ],
+  "release_states": [
+    "CODED",
+    "BUILD-PASSED",
+    "TESTED",
+    "PERSISTED",
+    "RELEASE-CANDIDATE",
+    "DEPLOYED",
+    "LIVE-DEVICE-TESTED",
+    "PRODUCTION-PROVEN"
+  ],
+  "test_depths": [
+    "Q",
+    "S",
+    "D",
+    "RC",
+    "LIVE"
+  ],
+  "permanent_test_layers": [
+    "sporting_engine",
+    "architecture_security_tenant_role_data_integrity",
+    "desktop_mobile_browser_robot",
+    "base44_resilience_request_economy",
+    "concurrency_stale_state_multi_device",
+    "persistence_refresh_reopen_sleep_offline",
+    "code_health_typography_busy_hall_ux",
+    "live_hall_device_acceptance"
+  ],
+  "third_party_rules": [
+    "Load and declare the current Master Testing Blueprint and Control Pack versions before testing.",
+    "Use the supplied Test Run Brief; do not replace it with an undocumented private test plan.",
+    "Run the Risk Gate before executing tests and do not select a shallower depth than the gate requires.",
+    "Identify the exact target commit/checkpoint/build and environment before recording results.",
+    "Protect production data and use approved sandbox/dummy data for destructive or high-volume tests.",
+    "Record PASS, PASS-WITH-LIMITATION, FAIL or BLOCKED with evidence for every required test case.",
+    "A harness/environment failure is BLOCKED unless the RallyHub application itself rendered and violated an assertion.",
+    "Do not call a sandbox-only pass release-ready; prove the exact tested edits are persisted.",
+    "Do not call a republish deployed until the production release is fingerprinted against the intended candidate.",
+    "Record every deviation from the brief, why it was necessary, and whether it reduces confidence.",
+    "Do not suppress failed tests. Continue independent tests where safe and return a complete failure list.",
+    "Any meaningful defect fixed during the run must receive a regression test wherever practical."
+  ],
+  "minimum_evidence_fields": [
+    "run_id",
+    "tester",
+    "protocol_versions",
+    "target_build",
+    "environment",
+    "selected_depth",
+    "risk_gate_result",
+    "blast_radius",
+    "test_cases",
+    "defects",
+    "blocked_tests",
+    "persistence_proof",
+    "release_verdict"
+  ],
+  "hard_release_blocks": [
+    "unresolved_P0",
+    "unresolved_P1",
+    "unresolved_security_or_tenant_isolation_failure",
+    "required_test_layer_missing_without_accepted_limitation",
+    "target_build_not_identified",
+    "tested_code_not_proven_persisted",
+    "test_environment_never_rendered_application_for_required_browser_gate",
+    "evidence_report_missing_or_protocol_version_mismatch"
+  ]
+}
