@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import { tenantCapabilityDecision } from './tenantCapability.ts';
-import { findFinanceRuleForEvent } from './financeMatch.mjs';
+import { findFinanceRuleForEvent, financeRuleIsSelected } from './financeMatch.mjs';
 
 const SPOND_API_BASE = 'https://api.spond.com/core/v1';
 
@@ -439,7 +439,7 @@ Deno.serve(async (req) => {
         const rule = match.rule;
         const matchMode = match.matchMode;
         if (!rule) { skipped++; unmatchedRule++; continue; }
-        if (selectedVenueSet.size && !selectedVenueSet.has(String(rule.venue_id || ''))) { ignoredNotSelected++; continue; }
+        if (!financeRuleIsSelected(rule, selectedVenueSet)) { ignoredNotSelected++; continue; }
         selectedEventCount++;
         if ((rule.effective_from && activityDate < rule.effective_from) || (rule.effective_to && activityDate > rule.effective_to)) { skipped++; outsideEffectiveRange++; continue; }
         if (rule.default_fee_per_person == null || rule.default_fee_per_person === '') { skipped++; missingFee++; continue; }
