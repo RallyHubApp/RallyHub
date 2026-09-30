@@ -70,9 +70,17 @@ async function spondLogin(username, password) {
 
 function eventStart(event){return event?._resolvedStartTimestamp||event?.meetupTimestamp||event?.startTimestamp||event?.start_time||'';}
 function occurrenceStartInWindow(event,minMs,maxMs){
+  // Spond can expose several timestamps on the same event. meetupTimestamp is the
+  // actual session/meetup time and must remain authoritative (the same precedence
+  // used by eventStart and the Directory importer). Do not sort timestamps by
+  // earliest value: a secondary timestamp can refer to another event lifecycle
+  // moment and can shift the finance rule onto the wrong weekday/session.
   const candidates=[event?.meetupTimestamp,event?.startTimestamp,event?.start_time].filter(Boolean);
-  const valid=candidates.map(value=>({value,t:new Date(value).getTime()})).filter(x=>Number.isFinite(x.t)&&x.t>=minMs&&x.t<=maxMs).sort((a,b)=>a.t-b.t);
-  return valid[0]?.value||'';
+  for(const value of candidates){
+    const t=new Date(value).getTime();
+    if(Number.isFinite(t)&&t>=minMs&&t<=maxMs) return value;
+  }
+  return '';
 }
 function irelandDate(value) {
   try {
