@@ -27,6 +27,12 @@ export function financeVenueSimilarity(rule, venue, event) {
   return best;
 }
 
+export function financeRuleIsSelected(rule, selectedVenueIds=[]) {
+  const values = selectedVenueIds instanceof Set ? [...selectedVenueIds] : (Array.isArray(selectedVenueIds) ? selectedVenueIds : []);
+  if (!values.length) return true;
+  return values.map(value=>String(value)).includes(String(rule?.venue_id || ''));
+}
+
 export function findFinanceRuleForEvent({event, activityDate, local, rulesByEvent, spondRules, venuesById}) {
   let rule=rulesByEvent.get(String(event?.id || ''));
   if(rule) return {rule,matchMode:'exact_event_id',score:1};
