@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowDownRight, ArrowUpRight, CheckCircle2, Euro, Plus, RefreshCw, Save, Settings2, WalletCards } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ArrowDownRight, ArrowUpRight, CheckCircle2, ChevronDown, Euro, Plus, RefreshCw, Save, Search, Settings2, WalletCards } from 'lucide-react';
 import { toast } from 'sonner';
 
 const money = value => new Intl.NumberFormat('en-IE', { style:'currency', currency:'EUR' }).format(Number(value || 0));
@@ -59,9 +60,12 @@ export default function FinanceSummary() {
   const [toDate, setToDate] = useState(todayIso());
   const [selectedVenueIds, setSelectedVenueIds] = useState([]);
   const [selectedMonths, setSelectedMonths] = useState([]);
+  const [findingSpond, setFindingSpond] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
   const [syncResult, setSyncResult] = useState(null);
+  const [spondPreview, setSpondPreview] = useState(null);
+  const [selectedOccurrenceKeys, setSelectedOccurrenceKeys] = useState([]);
   const [showRecurringSetup, setShowRecurringSetup] = useState(false);
   const [editingVenueId, setEditingVenueId] = useState('');
   const [venueDraft, setVenueDraft] = useState({ address:'', hourlyRate:'' });
