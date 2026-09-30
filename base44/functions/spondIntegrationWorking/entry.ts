@@ -318,16 +318,28 @@ Deno.serve(async (req) => {
 
     if (action === 'directory_get_events') {
       if (!groupId) return Response.json({ error:'groupId required' }, { status:400 });
+      const requestedFrom = clean(body.fromDate || '', 10);
+      const requestedTo = clean(body.toDate || '', 10);
+      const hasRequestedWindow = /^\d{4}-\d{2}-\d{2}$/.test(requestedFrom) && /^\d{4}-\d{2}-\d{2}$/.test(requestedTo) && requestedFrom <= requestedTo;
       const now = new Date();
-      const minStart = new Date(now.getTime() - 7*24*60*60*1000).toISOString();
-      const maxStart = new Date(now.getTime() + 120*24*60*60*1000).toISOString();
-      const params = new URLSearchParams({ groupId:String(groupId), minStartTimestamp:minStart, maxStartTimestamp:maxStart, max:'300', scheduled:'true', includeComments:'false', includeHidden:'false', addProfileInfo:'false' });
+      const minStartDate = hasRequestedWindow ? new Date(`${requestedFrom}T00:00:00.000Z`) : new Date(now.getTime() - 7*24*60*60*1000);
+      const maxStartDate = hasRequestedWindow ? new Date(`${requestedTo}T23:59:59.999Z`) : new Date(now.getTime() + 120*24*60*60*1000);
+      // Pad explicit local-date windows by one day either side so Europe/Dublin
+      // timezone conversion cannot drop an occurrence at midnight/clock changes.
+      if (hasRequestedWindow) {
+        minStartDate.setUTCDate(minStartDate.getUTCDate() - 1);
+        maxStartDate.setUTCDate(maxStartDate.getUTCDate() + 1);
+      }
+      const minStart = minStartDate.toISOString();
+      const maxStart = maxStartDate.toISOString();
+      const params = new URLSearchParams({ groupId:String(groupId), minStartTimestamp:minStart, maxStartTimestamp:maxStart, max:'500', scheduled:'true', includeComments:'false', includeHidden:'false', addProfileInfo:'false' });
       const raw = await spondRequest(`/sponds?${params.toString()}`, token);
-      const minMs=new Date(minStart).getTime(),maxMs=new Date(maxStart).getTime();
-      const bounded=(Array.isArray(raw)?raw:[]).map(e=>({...e,_resolvedStartTimestamp:occurrenceStartInWindow(e,minMs,maxMs)})).filter(e=>e._resolvedStartTimestamp);
+      const minMs=minStartDate.getTime(),maxMs=maxStartDate.getTime();
+      let bounded=(Array.isArray(raw)?raw:[]).map(e=>({...e,_resolvedStartTimestamp:occurrenceStartInWindow(e,minMs,maxMs)})).filter(e=>e._resolvedStartTimestamp);
+      if (hasRequestedWindow) bounded = bounded.filter(e=>{ const d=irelandDate(eventStart(e)); return d>=requestedFrom && d<=requestedTo; });
       const preview = directoryEventPreview(bounded);
       const events = bounded.sort((a,b)=>new Date(eventStart(a)).getTime()-new Date(eventStart(b)).getTime()).map(e=>({ id:e.id, heading:e.heading||'Club Session', startTimestamp:eventStart(e), endTimestamp:e.endTimestamp||null, location:e.location?.feature||e.location?.address||'', address:e.location?.address||'' }));
-      return Response.json({ events, preview, rawCount:bounded.length, windowStart:minStart, windowEnd:maxStart });
+      return Response.json({ events, preview, rawCount:bounded.length, windowStart:minStart, windowEnd:maxStart, requestedFrom:hasRequestedWindow?requestedFrom:null, requestedTo:hasRequestedWindow?requestedTo:null });
     }
 
     if (action === 'directory_sync_events') {
