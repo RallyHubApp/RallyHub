@@ -972,6 +972,42 @@ Brian`;
     }
   };
 
+  const copyDirectoryOutreachEmails = async () => {
+    if (!directoryOutreachUniqueEmails.length) return toast.error('No Directory club email addresses are available');
+    try {
+      await navigator.clipboard.writeText(directoryOutreachUniqueEmails.join('\n'));
+      toast.success(`${directoryOutreachUniqueEmails.length} unique club email address${directoryOutreachUniqueEmails.length === 1 ? '' : 'es'} copied`);
+    } catch {
+      toast.error('Could not copy the Directory club email list');
+    }
+  };
+
+  const copyDirectoryOutreachWhatsAppFallback = async () => {
+    const numbers = [...new Set(directoryOutreachWhatsAppFallbackRows.map(row => row.mobile).filter(Boolean))];
+    if (!numbers.length) return toast.error('No WhatsApp fallback numbers are needed');
+    try {
+      await navigator.clipboard.writeText(numbers.join('\n'));
+      toast.success(`${numbers.length} WhatsApp fallback number${numbers.length === 1 ? '' : 's'} copied`);
+    } catch {
+      toast.error('Could not copy the WhatsApp fallback list');
+    }
+  };
+
+  const downloadDirectoryOutreachCsv = () => {
+    const headings = ['Club','County','Contact name','Email','Mobile / WhatsApp','Primary route','Claimed','Network updates opt-in'];
+    const rows = directoryOutreachRows.map(row => [
+      row.clubName || '', row.county || '', row.contactName || '', row.email || '', row.mobile || '', row.route,
+      row.claimed ? 'Yes' : 'No', row.networkUpdatesOptIn ? 'Yes' : 'No'
+    ]);
+    const csv = [headings, ...rows].map(cols => cols.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rallyhub-directory-outreach-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
+
   const sendDirectoryBroadcast = async (testOnly = false) => {
     const subject = directoryBroadcast.subject.trim();
     const message = directoryBroadcast.message.trim();
