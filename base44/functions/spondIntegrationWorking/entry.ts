@@ -419,13 +419,15 @@ Deno.serve(async (req) => {
       const rulesByEvent = new Map((rules || []).filter(r=>r.spond_event_id).map(r=>[String(r.spond_event_id),r]));
       const spondRules = (rules || []).filter(r=>r.income_source === 'spond');
       const venuesById = new Map((venues || []).map(v=>[String(v.id),v]));
+      const selectedVenueIds = Array.isArray(body.selectedVenueIds) ? body.selectedVenueIds.map(value=>String(value)).filter(Boolean) : [];
+      const selectedVenueSet = new Set(selectedVenueIds);
       const settings = (await base44.asServiceRole.entities.ClubFinanceSettings.filter({ tenant_id:tenantId, club_id:clubId }, '-updated_date', 5))?.[0] || null;
       const fyMonth = Number(settings?.financial_year_start_month || 9);
       const fyDay = Number(settings?.financial_year_start_day || 1);
       const allEntries = await base44.asServiceRole.entities.ClubFinanceEntry.filter({ tenant_id:tenantId, club_id:clubId }, '-activity_date', 1000);
       const existingBySource = new Map((allEntries || []).filter(row=>row.source_type==='spond_session' && row.source_id).map(row=>[String(row.source_id),row]));
       let created=0, updated=0, skipped=0, reviewCount=0;
-      let exactMatches=0, scheduleMatches=0, unmatchedRule=0, missingFee=0, outsideEffectiveRange=0;
+      let exactMatches=0, scheduleMatches=0, unmatchedRule=0, missingFee=0, outsideEffectiveRange=0, ignoredNotSelected=0, selectedEventCount=0;
       const synced=[];
       const syncedAt=new Date().toISOString();
       for (const event of bounded) {
@@ -437,6 +439,8 @@ Deno.serve(async (req) => {
         const rule = match.rule;
         const matchMode = match.matchMode;
         if (!rule) { skipped++; unmatchedRule++; continue; }
+        if (selectedVenueSet.size && !selectedVenueSet.has(String(rule.venue_id || ''))) { ignoredNotSelected++; continue; }
+        selectedEventCount++;
         if ((rule.effective_from && activityDate < rule.effective_from) || (rule.effective_to && activityDate > rule.effective_to)) { skipped++; outsideEffectiveRange++; continue; }
         if (rule.default_fee_per_person == null || rule.default_fee_per_person === '') { skipped++; missingFee++; continue; }
         if (matchMode === 'exact_event_id') exactMatches++; else scheduleMatches++;
@@ -502,9 +506,10 @@ Deno.serve(async (req) => {
         skipped,
         reviewCount,
         synced,
-        fetchedCount:bounded.length,
+        fetchedCount:selectedEventCount,
+        totalSpondEventsInRange:bounded.length,
         matchedCount:synced.length,
-        diagnostics:{ exactMatches, scheduleMatches, unmatchedRule, missingFee, outsideEffectiveRange },
+        diagnostics:{ exactMatches, scheduleMatches, unmatchedRule, missingFee, outsideEffectiveRange, ignoredNotSelected },
         connection:{ groupId:financeGroupId, groupName:connectionRows?.[0]?.spond_group_name || '' },
         syncedAt,
       });
