@@ -432,8 +432,9 @@ Deno.serve(async (req) => {
       const allEntries = await base44.asServiceRole.entities.ClubFinanceEntry.filter({ tenant_id:tenantId, club_id:clubId }, '-activity_date', 1000);
       const existingBySource = new Map((allEntries || []).filter(row=>row.source_type==='spond_session' && row.source_id).map(row=>[String(row.source_id),row]));
       let created=0, updated=0, skipped=0, reviewCount=0;
-      let exactMatches=0, scheduleMatches=0, unmatchedRule=0, missingFee=0, outsideEffectiveRange=0, ignoredNotSelected=0, selectedEventCount=0;
+      let exactMatches=0, scheduleMatches=0, unmatchedRule=0, missingFee=0, outsideEffectiveRange=0, ignoredNotSelected=0, ignoredNotChosen=0, selectedEventCount=0;
       const synced=[];
+      const candidates=[];
       const syncedAt=new Date().toISOString();
       for (const event of bounded) {
         const start = eventStart(event);
@@ -446,19 +447,49 @@ Deno.serve(async (req) => {
         if (!rule) { skipped++; unmatchedRule++; continue; }
         if (!financeRuleIsSelected(rule, selectedVenueSet)) { ignoredNotSelected++; continue; }
         selectedEventCount++;
-        if ((rule.effective_from && activityDate < rule.effective_from) || (rule.effective_to && activityDate > rule.effective_to)) { skipped++; outsideEffectiveRange++; continue; }
-        if (rule.default_fee_per_person == null || rule.default_fee_per_person === '') { skipped++; missingFee++; continue; }
         if (matchMode === 'exact_event_id') exactMatches++; else scheduleMatches++;
+
         const response = financeResponseMeta(event);
         const paidPlaces = response.goingCount + response.declinedPaidCount;
-        const fee = Number(rule.default_fee_per_person || 0);
-        const income = Math.round(paidPlaces * fee * 100) / 100;
+        const feeMissing = rule.default_fee_per_person == null || rule.default_fee_per_person === '';
+        const fee = feeMissing ? null : Number(rule.default_fee_per_person);
         const durationHours = Number(rule.duration_minutes || 0) / 60;
         const venue = venuesById.get(String(rule.venue_id || ''));
         const liveHourlyRate = Number(venue?.hourly_hire_rate);
         const hourlyRate = Number.isFinite(liveHourlyRate) && liveHourlyRate >= 0 ? liveHourlyRate : Number(rule.cost_amount || 0);
         const expectedCost = Math.round((rule.cost_type === 'per_hour' ? hourlyRate * durationHours : Number(rule.cost_amount || 0)) * 100) / 100;
+        const income = feeMissing ? null : Math.round(paidPlaces * Number(fee) * 100) / 100;
         const sourceId = `${String(event.id)}::${String(start)}`;
+        const outsideRange = !!((rule.effective_from && activityDate < rule.effective_from) || (rule.effective_to && activityDate > rule.effective_to));
+        if (outsideRange) outsideEffectiveRange++;
+        if (feeMissing) missingFee++;
+        const ready = !outsideRange && !feeMissing;
+        const spondVenueName = clean(event?.location?.feature || event?.location?.name || event?.location?.address || '', 220);
+        candidates.push({
+          occurrenceKey:sourceId,
+          activityDate,
+          startTime:local?.time || rule.start_time || '',
+          heading:String(event.heading || rule.session_label || 'Spond session'),
+          spondVenueName,
+          venueId:String(rule.venue_id || ''),
+          venueName:rule.venue_name,
+          sessionLabel:rule.session_label || String(event.heading || 'Spond session'),
+          goingCount:response.goingCount,
+          declinedPaidCount:response.declinedPaidCount,
+          paidPlaces,
+          feePerPerson:fee,
+          incomeAmount:income,
+          expectedCostAmount:expectedCost,
+          netAmount:income == null ? null : Math.round((income-expectedCost)*100)/100,
+          ready,
+          reason:outsideRange ? 'Outside the configured session dates' : feeMissing ? 'Player fee is not set' : '',
+          matchMode,
+        });
+        if (action === 'directory_finance_preview') continue;
+        if (selectedOccurrenceSet.size && !selectedOccurrenceSet.has(sourceId)) { ignoredNotChosen++; continue; }
+        if (outsideRange) { skipped++; continue; }
+        if (feeMissing) { skipped++; continue; }
+
         const details = {
           spondGroupId:financeGroupId,
           spondEventId:String(event.id),
@@ -484,8 +515,8 @@ Deno.serve(async (req) => {
           going_count:response.goingCount,
           declined_paid_count:response.declinedPaidCount,
           paid_places:paidPlaces,
-          fee_per_person:fee,
-          income_amount:income,
+          fee_per_person:Number(fee),
+          income_amount:Number(income),
           expected_cost_amount:expectedCost,
           financial_year_label:financialYearLabelFor(activityDate,fyMonth,fyDay),
           source_details_json:JSON.stringify(details),
@@ -500,7 +531,21 @@ Deno.serve(async (req) => {
           saved = await base44.asServiceRole.entities.ClubFinanceEntry.create({ ...payload, cost_status:'expected', other_cost_amount:0 });
           created++;
         }
-        synced.push({ id:saved.id, activityDate, startTime:payload.activity_start_time, venueName:payload.venue_name, sessionLabel:payload.session_label, goingCount:response.goingCount, declinedPaidCount:response.declinedPaidCount, paidPlaces, incomeAmount:income, expectedCostAmount:expectedCost, netAmount:Math.round((income-expectedCost)*100)/100 });
+        synced.push({ id:saved.id, activityDate, startTime:payload.activity_start_time, venueName:payload.venue_name, sessionLabel:payload.session_label, goingCount:response.goingCount, declinedPaidCount:response.declinedPaidCount, paidPlaces, incomeAmount:Number(income), expectedCostAmount:expectedCost, netAmount:Math.round((Number(income)-expectedCost)*100)/100 });
+      }
+      if (action === 'directory_finance_preview') {
+        return Response.json({
+          success:true,
+          preview:true,
+          fromDate,
+          toDate,
+          candidates,
+          fetchedCount:selectedEventCount,
+          totalSpondEventsInRange:bounded.length,
+          readyCount:candidates.filter(row=>row.ready).length,
+          diagnostics:{ exactMatches, scheduleMatches, unmatchedRule, missingFee, outsideEffectiveRange, ignoredNotSelected },
+          connection:{ groupId:financeGroupId, groupName:connectionRows?.[0]?.spond_group_name || '' },
+        });
       }
       return Response.json({
         success:true,
@@ -514,7 +559,7 @@ Deno.serve(async (req) => {
         fetchedCount:selectedEventCount,
         totalSpondEventsInRange:bounded.length,
         matchedCount:synced.length,
-        diagnostics:{ exactMatches, scheduleMatches, unmatchedRule, missingFee, outsideEffectiveRange, ignoredNotSelected },
+        diagnostics:{ exactMatches, scheduleMatches, unmatchedRule, missingFee, outsideEffectiveRange, ignoredNotSelected, ignoredNotChosen },
         connection:{ groupId:financeGroupId, groupName:connectionRows?.[0]?.spond_group_name || '' },
         syncedAt,
       });
