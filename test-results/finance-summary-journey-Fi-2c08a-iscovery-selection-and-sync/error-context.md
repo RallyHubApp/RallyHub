@@ -14,15 +14,15 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('2026-09-30 · 19:00')
+Locator: getByText('1 paid then declined')
 Expected: visible
-Error: strict mode violation: getByText('2026-09-30 · 19:00') resolved to 2 elements:
-    1) <p data-dynamic-content="true" class="text-sm font-semibold" data-collection-item-field="activityDate" data-source-location="src/pages/FinanceSummary.jsx:328:740">2026-09-30 · 19:00 · 7pm Ennistymon Pickleball Se…</p> aka getByText('2026-09-30 · 19:00 · 7pm')
-    2) <td data-dynamic-content="true" data-collection-item-id="e19-3" data-collection-item-field="activity_date" data-source-location="src/pages/FinanceSummary.jsx:352:749" class="p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] whitespace-nowrap">2026-09-30 · 19:00</td> aka getByRole('cell', { name: '-09-30 · 19:00' })
+Error: strict mode violation: getByText('1 paid then declined') resolved to 2 elements:
+    1) <p class="mt-2 text-xs" data-dynamic-content="true" data-source-location="src/pages/FinanceSummary.jsx:328:1165">…</p> aka getByText('Paid places 12 (1 paid then')
+    2) <p data-dynamic-content="true" class="text-[11px] text-muted-foreground" data-source-location="src/pages/FinanceSummary.jsx:352:981">Spond · 1 paid then declined</p> aka getByText('Spond · 1 paid then declined')
 
 Call log:
-  - Expect "toBeVisible" getByText('2026-09-30 · 19:00') with timeout 3000ms
-  - waiting for getByText('2026-09-30 · 19:00')
+  - Expect "toBeVisible" getByText('1 paid then declined') with timeout 3000ms
+  - waiting for getByText('1 paid then declined')
 
 ```
 
@@ -627,7 +627,6 @@ Call log:
 # Test source
 
 ```ts
-  23  | ];
   24  | const settings=[{id:'settings',tenant_id:tenantId,club_id:clubId,currency:'EUR',financial_year_start_month:9,financial_year_start_day:1,tracking_start_date:'2026-09-01'}];
   25  | const bindings=[{id:'binding1',tenant_id:tenantId,club_id:clubId,listing_slug:'clare-pickleball',directory_session_key:'ennistymon-1',spond_group_id:'245CFD5D9CF044B7B203A3182BD02721',spond_event_id:'4FA65CB24B154F4AADCDC1EE376BEBF2',active:true}];
   26  | const connections=[{id:'connection1',listing_slug:'clare-pickleball',spond_group_id:'245CFD5D9CF044B7B203A3182BD02721',spond_group_name:'Clare Pickleball Members',status:'active',last_synced_at:'2026-09-28T12:15:46.487Z'}];
@@ -727,9 +726,9 @@ Call log:
   120 |   await expect(page.getByTestId('finance-sync-selected')).toContainText('Sync selected (7)');
   121 |   await page.getByTestId('finance-sync-selected').click();
   122 |   await expect(page.getByTestId('finance-sync-message')).toContainText('Synced 7 selected Spond sessions to Finance');
-> 123 |   await expect(page.getByText('2026-09-30 · 19:00')).toBeVisible();
-      |                                                      ^ Error: expect(locator).toBeVisible() failed
-  124 |   await expect(page.getByText('1 paid then declined')).toBeVisible();
+  123 |   await expect(page.getByRole('cell',{name:'2026-09-30 · 19:00'})).toBeVisible();
+> 124 |   await expect(page.getByText('1 paid then declined')).toBeVisible();
+      |                                                        ^ Error: expect(locator).toBeVisible() failed
   125 | 
   126 |   await expect(page.getByTestId('finance-recurring-section')).toContainText('You do not need to enter them again before each sync');
   127 |   expect(errors).toEqual([]);
