@@ -1607,27 +1607,27 @@ Brian`;
             <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">All current club listings</p>
           </GlassCard>
           <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-clubs')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-clubs'); } }} delay={0.03} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-green-500/40 hover:bg-green-500/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <p className="text-2xl sm:text-3xl font-black text-green-500">{claimedDirectoryListingCount}</p>
+            <p className="text-2xl sm:text-3xl font-black text-green-500">{directoryVerificationFetched ? claimedDirectoryListingCount : '—'}</p>
             <p className="mt-1 text-xs sm:text-sm font-semibold">Claimed listings</p>
-            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{directoryClaimRate}% of Directory</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{directoryVerificationFetched ? `${directoryClaimRate}% of Directory` : 'Loading current Directory build…'}</p>
           </GlassCard>
           <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-clubs')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-clubs'); } }} delay={0.06} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-amber-500/40 hover:bg-amber-500/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <p className="text-2xl sm:text-3xl font-black text-amber-500">{unclaimedDirectoryListingCount}</p>
+            <p className="text-2xl sm:text-3xl font-black text-amber-500">{directoryVerificationFetched ? unclaimedDirectoryListingCount : '—'}</p>
             <p className="mt-1 text-xs sm:text-sm font-semibold">Still unclaimed</p>
             <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Clubs still to connect</p>
           </GlassCard>
           <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-verified-access')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-verified-access'); } }} delay={0.09} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <p className="text-2xl sm:text-3xl font-black text-primary">{directoryRegisteredPeopleCount}</p>
+            <p className="text-2xl sm:text-3xl font-black text-primary">{directoryVerificationFetched ? directoryRegisteredPeopleCount : '—'}</p>
             <p className="mt-1 text-xs sm:text-sm font-semibold">Registered people</p>
-            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{directoryContactRows.length} verified with access</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{directoryVerificationFetched ? `${directoryContactRows.length} verified with access` : 'Loading current Directory build…'}</p>
           </GlassCard>
           <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection(directoryAttentionTarget)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection(directoryAttentionTarget); } }} delay={0.12} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-destructive/40 hover:bg-destructive/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <p className="text-2xl sm:text-3xl font-black text-destructive">{directoryNeedsAttentionCount}</p>
+            <p className="text-2xl sm:text-3xl font-black text-destructive">{directoryVerificationFetched ? directoryNeedsAttentionCount : '—'}</p>
             <p className="mt-1 text-xs sm:text-sm font-semibold">Needs attention</p>
-            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{pendingDirectoryClaims.length} claims · {pendingNewDirectoryRequests.length} new clubs</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">{directoryVerificationFetched ? `${pendingDirectoryClaims.length} claims · ${pendingNewDirectoryRequests.length} new clubs` : 'Loading current Directory build…'}</p>
           </GlassCard>
           <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-outstanding-invitations')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-outstanding-invitations'); } }} delay={0.15} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-blue-500/40 hover:bg-blue-500/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <p className="text-2xl sm:text-3xl font-black text-blue-500">{pendingDirectoryInvitations.length}</p>
+            <p className="text-2xl sm:text-3xl font-black text-blue-500">{directoryVerificationFetched ? pendingDirectoryInvitations.length : '—'}</p>
             <p className="mt-1 text-xs sm:text-sm font-semibold">Invitations out</p>
             <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Awaiting recipient / approval</p>
           </GlassCard>
