@@ -9,7 +9,8 @@
     "instagram": "",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 2,
@@ -31,7 +32,8 @@
     "confidence": "MEDIUM",
     "score": 65,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "APPROVE",
+    "reviewNote": "Official club social profile image; staged for exception review."
   },
   {
     "number": 3,
@@ -41,7 +43,7 @@
     "website": "",
     "facebook": "https://www.facebook.com/profile.php?id=100095469880759",
     "instagram": "",
-    "status": "CANDIDATE",
+    "status": "INVALID_PLACEHOLDER",
     "filename": "03-athboy-pickleball.jpg",
     "bytes": 11783,
     "contentType": "image/jpeg",
@@ -50,10 +52,11 @@
     "sourcePage": "https://www.facebook.com/profile.php?id=100095469880759",
     "sourceImage": "https://graph.facebook.com/100095469880759/picture?type=large&width=800&height=800",
     "sourceTitle": "",
-    "confidence": "MEDIUM",
+    "confidence": "NONE",
     "score": 45,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "HOLD",
+    "reviewNote": "Facebook returned its generic default profile image, not a club logo. Do not import."
   },
   {
     "number": 4,
@@ -75,7 +78,8 @@
     "confidence": "MEDIUM",
     "score": 65,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "APPROVE",
+    "reviewNote": "Official club social profile image; staged for exception review."
   },
   {
     "number": 5,
@@ -85,7 +89,7 @@
     "website": "",
     "facebook": "https://m.facebook.com/profile.php/?id=61552750597726&name=xhp_nt__fb__action__open_user",
     "instagram": "",
-    "status": "CANDIDATE",
+    "status": "INVALID_PLACEHOLDER",
     "filename": "05-belfast-pickleball-club.jpg",
     "bytes": 11783,
     "contentType": "image/jpeg",
@@ -94,10 +98,11 @@
     "sourcePage": "https://m.facebook.com/profile.php/?id=61552750597726&name=xhp_nt__fb__action__open_user",
     "sourceImage": "https://graph.facebook.com/61552750597726/picture?type=large&width=800&height=800",
     "sourceTitle": "",
-    "confidence": "MEDIUM",
+    "confidence": "NONE",
     "score": 45,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "HOLD",
+    "reviewNote": "Facebook returned its generic default profile image, not a club logo. Do not import."
   },
   {
     "number": 6,
@@ -119,7 +124,8 @@
     "confidence": "MEDIUM",
     "score": 57,
     "candidateKind": "website-meta",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "Candidate is ambiguous, parent-organisation branding or needs visual confirmation."
   },
   {
     "number": 7,
@@ -131,7 +137,8 @@
     "instagram": "https://www.instagram.com/blackrockpickleball/profilecard/?igsh=MXRmcm9yamRuOXV6cA==",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 8,
@@ -143,7 +150,8 @@
     "instagram": "https://www.instagram.com/carlingfordpickleball?igsh=eWJhcm05YzhoOWw2&utm_source=qr",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 9,
@@ -153,7 +161,7 @@
     "website": "https://tullowcarlowpickleballclub.com",
     "facebook": "https://www.facebook.com/profile.php?id=61573774298438",
     "instagram": "https://www.instagram.com/tullowcarlow.pickleballclub",
-    "status": "CANDIDATE",
+    "status": "INVALID_PLACEHOLDER",
     "filename": "09-carlow-tullow-pickleball-club.jpg",
     "bytes": 11783,
     "contentType": "image/jpeg",
@@ -162,10 +170,11 @@
     "sourcePage": "https://www.facebook.com/profile.php?id=61573774298438",
     "sourceImage": "https://graph.facebook.com/61573774298438/picture?type=large&width=800&height=800",
     "sourceTitle": "",
-    "confidence": "MEDIUM",
+    "confidence": "NONE",
     "score": 45,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "HOLD",
+    "reviewNote": "Facebook returned its generic default profile image, not a club logo. Do not import."
   },
   {
     "number": 10,
@@ -187,7 +196,8 @@
     "confidence": "MEDIUM",
     "score": 54,
     "candidateKind": "website-img",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "Candidate is ambiguous, parent-organisation branding or needs visual confirmation."
   },
   {
     "number": 11,
@@ -197,7 +207,7 @@
     "website": "",
     "facebook": "https://www.facebook.com/profile.php?id=100095427763359",
     "instagram": "https://www.instagram.com/cobhpickleball/",
-    "status": "CANDIDATE",
+    "status": "INVALID_PLACEHOLDER",
     "filename": "11-cobh-pickleball.jpg",
     "bytes": 11783,
     "contentType": "image/jpeg",
@@ -206,10 +216,11 @@
     "sourcePage": "https://www.facebook.com/profile.php?id=100095427763359",
     "sourceImage": "https://graph.facebook.com/100095427763359/picture?type=large&width=800&height=800",
     "sourceTitle": "",
-    "confidence": "MEDIUM",
+    "confidence": "NONE",
     "score": 45,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "HOLD",
+    "reviewNote": "Facebook returned its generic default profile image, not a club logo. Do not import."
   },
   {
     "number": 12,
@@ -221,7 +232,8 @@
     "instagram": "",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 13,
@@ -233,7 +245,8 @@
     "instagram": "",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 14,
@@ -245,7 +258,8 @@
     "instagram": "https://www.instagram.com/stories/droghedapickleball/3333908974896735359?utm_source=ig_story_item_share&igsh=dm85NXVod3dzNXl3",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 15,
@@ -264,10 +278,11 @@
     "sourcePage": "https://www.duhallowpickleball.com/",
     "sourceImage": "http://www.duhallowpickleball.com/wp-content/uploads/2023/11/sports-logo-generator-for-pickleball-teams-5677-1024x1024.png",
     "sourceTitle": "Duhallow PickleBall &#8211; PICKLEBALL IS FUN, SOCIAL AND FRIENDLY.",
-    "confidence": "MEDIUM",
+    "confidence": "HIGH",
     "score": 54,
     "candidateKind": "website-img",
-    "decision": "HOLD"
+    "decision": "APPROVE",
+    "reviewNote": "Exact club-branded image from official Duhallow Pickleball website."
   },
   {
     "number": 16,
@@ -277,7 +292,7 @@
     "website": "",
     "facebook": "https://facebook.com/people/East-Meath-Pickleball-Club/100086729526633/",
     "instagram": "",
-    "status": "CANDIDATE",
+    "status": "INVALID_PLACEHOLDER",
     "filename": "16-east-meath-pickleball-club.jpg",
     "bytes": 11783,
     "contentType": "image/jpeg",
@@ -286,10 +301,11 @@
     "sourcePage": "https://facebook.com/people/East-Meath-Pickleball-Club/100086729526633/",
     "sourceImage": "https://graph.facebook.com/100086729526633/picture?type=large&width=800&height=800",
     "sourceTitle": "",
-    "confidence": "MEDIUM",
+    "confidence": "NONE",
     "score": 85,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "HOLD",
+    "reviewNote": "Facebook returned its generic default profile image, not a club logo. Do not import."
   },
   {
     "number": 17,
@@ -301,7 +317,8 @@
     "instagram": "https://www.instagram.com/eyva_invitationalseries?stkn=ZzduYTgwN2R4djc2",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 18,
@@ -313,17 +330,18 @@
     "instagram": "https://www.instagram.com/ezpickleball.ie/",
     "status": "CANDIDATE",
     "filename": "18-ezpickleball.png",
-    "bytes": 2335,
-    "contentType": "image/avif",
-    "finalImageUrl": "https://static.wixstatic.com/media/fb55d2_f1035bdbfdce4ca3af55ddd7a93a157d~mv2.png/v1/fill/w_96,h_107,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Screenshot%202024-11-17%20132858.png",
+    "bytes": 55772,
+    "contentType": "image/png",
+    "finalImageUrl": "https://static.wixstatic.com/media/fb55d2_f1035bdbfdce4ca3af55ddd7a93a157d~mv2.png",
     "method": "official-website",
     "sourcePage": "https://www.ezpickleball.ie/",
-    "sourceImage": "https://static.wixstatic.com/media/fb55d2_f1035bdbfdce4ca3af55ddd7a93a157d~mv2.png/v1/fill/w_96,h_107,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Screenshot%202024-11-17%20132858.png",
+    "sourceImage": "https://static.wixstatic.com/media/fb55d2_f1035bdbfdce4ca3af55ddd7a93a157d~mv2.png",
     "sourceTitle": "HOME | ezPICKLEBALL| Beginner Pickleball Course |  Play Pickleball Dublin Ireland",
-    "confidence": "LOW",
+    "confidence": "HIGH",
     "score": 40,
     "candidateKind": "website-img",
-    "decision": "HOLD"
+    "decision": "APPROVE",
+    "reviewNote": "Higher-resolution original pulled from official ezPICKLEBALL Wix media asset."
   },
   {
     "number": 19,
@@ -333,7 +351,7 @@
     "website": "",
     "facebook": "https://www.facebook.com/profile.php?id=61563942556806",
     "instagram": "",
-    "status": "CANDIDATE",
+    "status": "INVALID_PLACEHOLDER",
     "filename": "19-kildare-pickleball-assoc.jpg",
     "bytes": 11783,
     "contentType": "image/jpeg",
@@ -342,10 +360,11 @@
     "sourcePage": "https://www.facebook.com/profile.php?id=61563942556806",
     "sourceImage": "https://graph.facebook.com/61563942556806/picture?type=large&width=800&height=800",
     "sourceTitle": "",
-    "confidence": "MEDIUM",
+    "confidence": "NONE",
     "score": 45,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "HOLD",
+    "reviewNote": "Facebook returned its generic default profile image, not a club logo. Do not import."
   },
   {
     "number": 20,
@@ -355,7 +374,7 @@
     "website": "",
     "facebook": "https://www.facebook.com/profile.php?id=100086273783028",
     "instagram": "",
-    "status": "CANDIDATE",
+    "status": "INVALID_PLACEHOLDER",
     "filename": "20-lecanvey-pickleball-club.jpg",
     "bytes": 11783,
     "contentType": "image/jpeg",
@@ -364,10 +383,11 @@
     "sourcePage": "https://www.facebook.com/profile.php?id=100086273783028",
     "sourceImage": "https://graph.facebook.com/100086273783028/picture?type=large&width=800&height=800",
     "sourceTitle": "",
-    "confidence": "MEDIUM",
+    "confidence": "NONE",
     "score": 45,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "HOLD",
+    "reviewNote": "Facebook returned its generic default profile image, not a club logo. Do not import."
   },
   {
     "number": 21,
@@ -386,10 +406,11 @@
     "sourcePage": "https://lisburnpickleball.club/",
     "sourceImage": "https://lisburnpickleball.club/wp-content/uploads/2023/09/Lisburn-Pickleball-Club-wide.png",
     "sourceTitle": "Lisburn Pickleball Club &#8211; Pickleball Northern Ireland",
-    "confidence": "MEDIUM",
+    "confidence": "HIGH",
     "score": 54,
     "candidateKind": "website-img",
-    "decision": "HOLD"
+    "decision": "APPROVE",
+    "reviewNote": "Exact Lisburn Pickleball Club logo from official club website."
   },
   {
     "number": 22,
@@ -401,7 +422,8 @@
     "instagram": "https://www.instagram.com/midletonpickleball/",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 23,
@@ -423,7 +445,8 @@
     "confidence": "MEDIUM",
     "score": 57,
     "candidateKind": "website-meta",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "Candidate is ambiguous, parent-organisation branding or needs visual confirmation."
   },
   {
     "number": 24,
@@ -435,7 +458,8 @@
     "instagram": "https://www.instagram.com/sportshubedgeworthstown",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 25,
@@ -457,7 +481,8 @@
     "confidence": "MEDIUM",
     "score": 45,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "APPROVE",
+    "reviewNote": "Official club social profile image; staged for exception review."
   },
   {
     "number": 26,
@@ -469,7 +494,8 @@
     "instagram": "https://www.instagram.com/naaspickleball?igsh=NXljbXNjMjFlcjRl",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 27,
@@ -481,7 +507,8 @@
     "instagram": "",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 28,
@@ -491,7 +518,7 @@
     "website": "",
     "facebook": "https://www.facebook.com/profile.php?id=61553019122468",
     "instagram": "",
-    "status": "CANDIDATE",
+    "status": "INVALID_PLACEHOLDER",
     "filename": "28-pickleball-south-dublin.jpg",
     "bytes": 11783,
     "contentType": "image/jpeg",
@@ -500,10 +527,11 @@
     "sourcePage": "https://www.facebook.com/profile.php?id=61553019122468",
     "sourceImage": "https://graph.facebook.com/61553019122468/picture?type=large&width=800&height=800",
     "sourceTitle": "",
-    "confidence": "MEDIUM",
+    "confidence": "NONE",
     "score": 45,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "HOLD",
+    "reviewNote": "Facebook returned its generic default profile image, not a club logo. Do not import."
   },
   {
     "number": 29,
@@ -515,7 +543,8 @@
     "instagram": "",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 30,
@@ -527,7 +556,8 @@
     "instagram": "https://instagra.com/picklepub.ireland",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 31,
@@ -549,7 +579,8 @@
     "confidence": "MEDIUM",
     "score": 65,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "APPROVE",
+    "reviewNote": "Official club social profile image; staged for exception review."
   },
   {
     "number": 32,
@@ -561,7 +592,8 @@
     "instagram": "",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 33,
@@ -573,7 +605,8 @@
     "instagram": "",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 34,
@@ -595,7 +628,8 @@
     "confidence": "MEDIUM",
     "score": 65,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "APPROVE",
+    "reviewNote": "Official club social profile image; staged for exception review."
   },
   {
     "number": 35,
@@ -617,7 +651,8 @@
     "confidence": "MEDIUM",
     "score": 54,
     "candidateKind": "website-img",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "Candidate is ambiguous, parent-organisation branding or needs visual confirmation."
   },
   {
     "number": 36,
@@ -629,7 +664,8 @@
     "instagram": "",
     "status": "NO_CANDIDATE",
     "confidence": "NONE",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "No reliable logo candidate sourced yet."
   },
   {
     "number": 37,
@@ -651,7 +687,8 @@
     "confidence": "MEDIUM",
     "score": 54,
     "candidateKind": "website-img",
-    "decision": "HOLD"
+    "decision": "HOLD",
+    "reviewNote": "Candidate is ambiguous, parent-organisation branding or needs visual confirmation."
   },
   {
     "number": 38,
@@ -673,7 +710,8 @@
     "confidence": "MEDIUM",
     "score": 65,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "APPROVE",
+    "reviewNote": "Official club social profile image; staged for exception review."
   },
   {
     "number": 39,
@@ -695,6 +733,7 @@
     "confidence": "MEDIUM",
     "score": 45,
     "candidateKind": "facebook-profile-image",
-    "decision": "APPROVE"
+    "decision": "APPROVE",
+    "reviewNote": "Official club social profile image; staged for exception review."
   }
 ]
