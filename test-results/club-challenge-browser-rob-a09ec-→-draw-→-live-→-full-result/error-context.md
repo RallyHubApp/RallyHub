@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('Club A Test 01')
+Locator: getByTestId('cc-load-practice')
 Expected: visible
 Timeout: 1800ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('Club A Test 01') with timeout 1800ms
-  - waiting for getByText('Club A Test 01')
+  - Expect "toBeVisible" getByTestId('cc-load-practice') with timeout 1800ms
+  - waiting for getByTestId('cc-load-practice')
 
 ```
 
@@ -29,97 +29,85 @@ Call log:
 - main:
   - img
   - paragraph: RallyHub Interclub
-  - paragraph: "Interclub Challenge · Status: draft"
-  - text: CL Clare Pickleball Club vs OP Opponent Club
-  - button "Player Link / QR"
-  - button "Setup":
-    - img
-    - text: Setup
+  - paragraph: Configure an Interclub Challenge
+  - button "1 Setup"
   - button "2 Teams"
   - button "3 Draw"
   - button "4 Live Event"
   - button "5 Simulator"
   - button "6 Results"
-  - paragraph: Participants
-  - paragraph: Event ranks are independent of permanent RallyHub skill ratings.
-  - button "Practice with 32 Test Players" [disabled]:
-    - img
-    - text: Practice with 32 Test Players
-  - paragraph: Guest Player Registration
-  - paragraph: Send the appropriate team link to guest or visiting players. Each player enters their own contact and emergency details and accepts the event waiver, Code of Conduct and privacy notice. They are added directly to that team as event-only players, not club members. Social / Improver and ranking stay under organiser control.
-  - paragraph: Clare Pickleball Club
-  - paragraph: Guest registration link
-  - button "Prepare Link"
-  - paragraph: Team Manager Link
-  - text: Needs saving
-  - paragraph: Give this to the team captain/manager. They see only this team and can repeatedly edit rank, Social/Improver and Rotation/Reserve as registrations change.
-  - button "Prepare Manager Link"
+  - paragraph: Host Club
+  - text: Club name
+  - textbox: Clare Pickleball Club
+  - text: Club logo
+  - img
+  - button "Choose File"
+  - paragraph: Uses the saved host-club logo automatically when available. RallyHub trims padding and lets you size and position it for this event.
+  - text: Primary
+  - textbox: "#2563eb"
+  - text: Accent
+  - textbox: "#facc15"
   - paragraph: Opponent Club
-  - paragraph: Guest registration link
-  - button "Prepare Link"
-  - paragraph: Team Manager Link
-  - text: Needs saving
-  - paragraph: Give this to the team captain/manager. They see only this team and can repeatedly edit rank, Social/Improver and Rotation/Reserve as registrations change.
-  - button "Prepare Manager Link"
-  - paragraph: Registration results
-  - paragraph: These are stored against this Interclub event in the host club tenant. Visiting players remain event-only players, not Clare members.
-  - text: "Clare Pickleball Club: 0 Opponent Club: 0"
-  - button "Refresh" [disabled]:
-    - img
-    - text: Refresh
-  - paragraph: No completed registration forms have been received yet.
-  - paragraph: As players submit, RallyHub also adds them to the event roster. The form does not ask the player to grade themselves.
-  - paragraph: Build the two teams
-  - paragraph: Registered players appear directly in their team. Set Social / Improver, drag players into the current ranking and mark any Reserves. Save the current rosters whenever you need to — the teams do not have to be complete or equal to save. The equality check applies only when you later generate the draw.
-  - text: "32 players A: 0 rotation · 0 reserve B: 0 rotation · 0 reserve Rotation squads 0–0 · draw not ready"
-  - button "Unassigned Pool"
-  - text: Team name
-  - textbox [disabled]: Clare Pickleball Club
+  - text: Club name
+  - textbox: Opponent Club
+  - text: Club logo
   - img
-  - paragraph: Roster controls
-  - img
-  - textbox "Search RallyHub club players" [disabled]
-  - textbox "Guest name" [disabled]
-  - combobox [disabled]: Gender optional
-  - button "Add Guest" [disabled]
-  - paragraph: Club players keep their RallyHub identity. A typed guest is event-only and does not become a club member.
-  - button "Import Spond" [disabled]:
-    - img
-    - text: Import Spond
-  - img
-  - text: Import CSV 0 M 0 F 0 Drag players here Team name
-  - textbox [disabled]: Opponent Club
-  - img
-  - paragraph: Roster controls
-  - img
-  - textbox "Search RallyHub club players" [disabled]
-  - textbox "Guest name" [disabled]
-  - combobox [disabled]: Gender optional
-  - button "Add Guest" [disabled]
-  - paragraph: Club players keep their RallyHub identity. A typed guest is event-only and does not become a club member.
-  - button "Import Spond" [disabled]:
-    - img
-    - text: Import Spond
-  - img
-  - text: Import CSV 0 M 0 F 0 Drag players here Current squads are 0–0. You can save now; only the draw remains locked until the Rotation squads are equal.
+  - button "Choose File"
+  - paragraph: Upload the visiting club logo, then size and position it so both club crests have equal visual weight.
+  - text: Primary
+  - textbox: "#7f1d1d"
+  - text: Accent
+  - textbox: "#f8fafc"
+  - paragraph: Event Configuration
+  - text: Venue
+  - combobox "Choose or type a venue"
+  - paragraph: Choose a saved club venue, or type a new venue and RallyHub will save it for reuse.
+  - text: Hall booking start
+  - textbox: 20:53
+  - paragraph: Used with Available min to protect the booked finish time.
+  - text: Planned total players
+  - spinbutton: "32"
+  - paragraph: Used for the setup estimate until the real rosters are entered. Split equally between clubs.
+  - paragraph: Estimated event duration
+  - paragraph: 2h 44m
+  - paragraph: 12 rounds × 12 min block + 20 min break · 16 min contingency
+  - text: Courts
+  - spinbutton: "4"
+  - text: Available min
+  - spinbutton: "180"
+  - text: Play min
+  - spinbutton: "10"
+  - text: Changeover min
+  - spinbutton: "2"
+  - text: Break min
+  - spinbutton: "20"
+  - text: Break after round
+  - spinbutton: "6"
+  - text: Match format
+  - combobox: Timed
+  - text: Composition
+  - combobox: Open
+  - checkbox "Scheduled break" [checked]
+  - text: Scheduled break
+  - checkbox "Timed draws allowed" [checked]
+  - text: Timed draws allowed
+  - checkbox "Showcase Final · tiebreak or optional exhibition" [checked]
+  - text: Showcase Final · tiebreak or optional exhibition Tiebreak points
+  - spinbutton: "5"
+  - checkbox "Team player awards · choose Highest Scorer or Vote at the end" [checked]
+  - text: Team player awards · choose Highest Scorer or Vote at the end
+  - checkbox "Junior display privacy (first name + surname initial)"
+  - text: Junior display privacy (first name + surname initial)
   - button "Saving…" [disabled]
-  - text: Working rosters can be saved at any time. The draw unlocks only when there are no unassigned players, both current team configurations are saved, and the Rotation squads are equal. Reserve numbers may differ.
-  - button "Generate Draw & Fairness Report" [disabled]:
-    - img
-    - text: Generate Draw & Fairness Report
-- region "Notifications alt+T":
-  - list:
-    - listitem:
-      - img
-      - text: 32 practice players loaded. You can now rehearse the full setup and draw journey.
-    - listitem:
-      - img
-      - text: Interclub Challenge setup saved
+- region "Notifications alt+T"
 ```
 
 # Test source
 
 ```ts
+  196 | 
+  197 |     return { success:true };
+  198 |   };
   199 | 
   200 |   return model;
   201 | }
@@ -217,11 +205,11 @@ Call log:
   293 |   await expectNoHorizontalOverflow(page);
   294 |   const lateStartClock=new Date(Date.now()-90*60000);const lateStartHHMM=`${String(lateStartClock.getHours()).padStart(2,'0')}:${String(lateStartClock.getMinutes()).padStart(2,'0')}`;await page.getByTestId('cc-scheduled-start-time').fill(lateStartHHMM);
   295 | 
-  296 |   let started=Date.now();await page.getByTestId('cc-save-setup').click();await expect(page.getByTestId('cc-load-practice')).toBeVisible({timeout:1800});metric(report,'setup_to_teams_ms',Date.now()-started,1500);
+> 296 |   let started=Date.now();await page.getByTestId('cc-save-setup').click();await expect(page.getByTestId('cc-load-practice')).toBeVisible({timeout:1800});metric(report,'setup_to_teams_ms',Date.now()-started,1500);
+      |                                                                                                                             ^ Error: expect(locator).toBeVisible() failed
   297 |   expect(model.event?.status).toBe('draft');
   298 | 
-> 299 |   started=Date.now();await page.getByTestId('cc-load-practice').click();await expect(page.getByText('Club A Test 01')).toBeVisible({timeout:1800});metric(report,'practice_roster_ms',Date.now()-started,1500);expect(model.participants.length).toBe(32);
-      |                                                                                                                        ^ Error: expect(locator).toBeVisible() failed
+  299 |   started=Date.now();await page.getByTestId('cc-load-practice').click();await expect(page.getByText('Club A Test 01')).toBeVisible({timeout:1800});metric(report,'practice_roster_ms',Date.now()-started,1500);expect(model.participants.length).toBe(32);
   300 |   await expect(page.getByText('12').first()).toBeVisible();await expectNoHorizontalOverflow(page);
   301 | 
   302 |   await expect(page.getByText('Build the two teams')).toBeVisible();await expect(page.getByText('Unassigned Player Pool',{exact:true})).toBeHidden();await page.getByRole('button',{name:/^Unassigned Pool/}).click();await expect(page.getByText('Unassigned Player Pool',{exact:true})).toBeVisible();report.unassigned_pool_on_demand=true;
@@ -319,7 +307,4 @@ Call log:
   394 |   await expect(page.getByRole('button',{name:'Final',exact:true})).toBeVisible();
   395 | 
   396 |   await page.getByRole('button',{name:'Teams',exact:true}).click();await expect(page.getByRole('heading',{name:'Teams'})).toBeVisible();
-  397 |   const aTeam=page.getByRole('heading',{name:'Banner Strikers'}).locator('xpath=../..');const aText=await aTeam.innerText();expect(aText.indexOf('Aoife Player')).toBeLessThan(aText.indexOf('Brian Player'));expect(aText.indexOf('Brian Player')).toBeLessThan(aText.indexOf('Zara Player'));
-  398 | 
-  399 |   await expect(page.getByRole('button',{name:'Event Info',exact:true})).toHaveCount(0);
 ```
