@@ -777,6 +777,36 @@ export default function AdminPanel() {
         contactEmail: mergedContact.email,
       });
     }
+
+    // Once a recipient signs in or submits a claim we often know an account email
+    // that was not available when the original WhatsApp invitation was created.
+    // Retain that too, without overwriting a deliberately saved profile contact.
+    const seenClaimSlugs = new Set();
+    for (const claim of directoryVerification.claims || []) {
+      const slug = String(claim?.listing_slug || '');
+      if (!slug || seenClaimSlugs.has(slug)) continue;
+      seenClaimSlugs.add(slug);
+      const existing = bySlug.get(slug);
+      if (!existing) continue;
+      const claimContact = {
+        name: String(claim.claimant_name || '').trim(),
+        phone: String(claim.claimant_phone || '').trim(),
+        email: String(claim.claimant_email || '').trim(),
+      };
+      if (!claimContact.name && !claimContact.phone && !claimContact.email) continue;
+      const mergedContact = {
+        name: existing.contactName || claimContact.name,
+        phone: existing.contactPhone || claimContact.phone,
+        email: existing.contactEmail || claimContact.email,
+      };
+      bySlug.set(slug, {
+        ...existing,
+        contacts: [mergedContact, ...(existing.contacts || [])],
+        contactName: mergedContact.name,
+        contactPhone: mergedContact.phone,
+        contactEmail: mergedContact.email,
+      });
+    }
     return [...bySlug.values()].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
   })();
 
