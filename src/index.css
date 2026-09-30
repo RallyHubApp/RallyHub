@@ -174,25 +174,8 @@
 html {
   scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--card));
   scrollbar-width: auto;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-body,
-#root {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* Reserve a persistent scrollbar gutter only on desktop. On phones this can
-   alter the effective layout viewport and make the authenticated shell render
-   as though a wider desktop canvas exists. */
-@media (min-width: 1024px) {
-  html {
-    overflow-y: scroll;
-    scrollbar-gutter: stable;
-  }
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 
 ::-webkit-scrollbar {
