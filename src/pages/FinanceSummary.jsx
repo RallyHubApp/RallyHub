@@ -28,6 +28,15 @@ function financeYearStart(settings) {
   return `${startYear}-${String(startMonth).padStart(2,'0')}-${String(startDay).padStart(2,'0')}`;
 }
 
+function financeYearLabelFor(dateValue, settings) {
+  const parts=String(dateValue||'').split('-').map(Number);
+  if (parts.length<3 || !parts[0]) return '';
+  const [year,month,day]=parts;
+  const startMonth=Number(settings?.financial_year_start_month||1), startDay=Number(settings?.financial_year_start_day||1);
+  const startYear=month>startMonth || (month===startMonth && day>=startDay) ? year : year-1;
+  return `${startYear}/${String(startYear+1).slice(-2)}`;
+}
+
 function netFor(row) {
   const venueCost = row.actual_cost_amount == null ? Number(row.expected_cost_amount || 0) : Number(row.actual_cost_amount || 0);
   return round2(Number(row.income_amount || 0) - venueCost - Number(row.other_cost_amount || 0));
@@ -121,6 +130,18 @@ export default function FinanceSummary() {
     return [...map.values()].sort((a,b)=>a.venue.localeCompare(b.venue));
   },[filtered]);
 
+  const monthRollup = useMemo(()=>{
+    const map=new Map();
+    for(const row of filtered){const key=String(row.activity_date||'').slice(0,7);if(!key)continue;if(!map.has(key))map.set(key,{key,income:0,cost:0,net:0,count:0});const x=map.get(key);x.income+=Number(row.income_amount||0);x.cost+=(row.actual_cost_amount==null?Number(row.expected_cost_amount||0):Number(row.actual_cost_amount||0))+Number(row.other_cost_amount||0);x.net+=netFor(row);x.count++;}
+    return [...map.values()].sort((a,b)=>b.key.localeCompare(a.key));
+  },[filtered]);
+
+  const dayRollup = useMemo(()=>{
+    const map=new Map();
+    for(const row of filtered){const key=`${row.activity_date}||${row.venue_name||'Other'}`;if(!map.has(key))map.set(key,{key,date:row.activity_date,venue:row.venue_name||'Other',income:0,cost:0,net:0,count:0});const x=map.get(key);x.income+=Number(row.income_amount||0);x.cost+=(row.actual_cost_amount==null?Number(row.expected_cost_amount||0):Number(row.actual_cost_amount||0))+Number(row.other_cost_amount||0);x.net+=netFor(row);x.count++;}
+    return [...map.values()].sort((a,b)=>b.date.localeCompare(a.date)||a.venue.localeCompare(b.venue));
+  },[filtered]);
+
   const saveSettings = async () => {
     const month=Number(settingsDraft.startMonth), day=Number(settingsDraft.startDay);
     if (!Number.isInteger(month) || month<1 || month>12 || !Number.isInteger(day) || day<1 || day>31 || !settingsDraft.trackingStart) return toast.error('Check the financial year settings.');
@@ -185,7 +206,7 @@ export default function FinanceSummary() {
       await base44.entities.ClubFinanceEntry.create({
         tenant_id:tenantId,club_id:clubId,activity_date:manualDraft.date,venue_id:venue.id,venue_name:venue.name,session_label:manualDraft.label.trim()||'Manual event/session',
         source_type:'manual',source_id:`manual-${Date.now()}`,going_count:paidPlaces,declined_paid_count:0,paid_places:paidPlaces,fee_per_person:fee,income_amount:income,
-        expected_cost_amount:cost,other_cost_amount:other,cost_status:'expected',financial_year_label:settings?.tracking_start_date?.slice(0,4)?`${settings.tracking_start_date.slice(0,4)}/${String(Number(settings.tracking_start_date.slice(0,4))+1).slice(-2)}`:'',notes:manualDraft.notes.trim(),last_synced_at:new Date().toISOString()
+        expected_cost_amount:cost,other_cost_amount:other,cost_status:'expected',financial_year_label:financeYearLabelFor(manualDraft.date,settings),notes:manualDraft.notes.trim(),last_synced_at:new Date().toISOString()
       });
       await queryClient.invalidateQueries({queryKey:['finance-entries',tenantId,clubId]});
       setManualDraft({date:todayIso(),venueId:'',label:'',durationMinutes:'180',paidPlaces:'',feePerPerson:'',otherCost:'0',notes:''});
@@ -232,6 +253,11 @@ export default function FinanceSummary() {
     </GlassCard>
 
     {venueRollup.length>0 && <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{venueRollup.map(v=><GlassCard key={v.venue} className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{v.venue}</p><p className="text-xs text-muted-foreground">{v.count} sessions/events · Income {money(v.income)} · Cost {money(v.cost+v.other)}</p></div><ResultBadge value={round2(v.net)} /></div></GlassCard>)}</div>}
+
+    {(monthRollup.length>0 || dayRollup.length>0) && <div className="grid gap-4 xl:grid-cols-2">
+      <GlassCard className="overflow-hidden"><div className="p-4"><h2 className="font-bold">By month</h2><p className="text-xs text-muted-foreground">Monthly income, total cost and surplus/loss.</p></div><div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Month</TableHead><TableHead className="text-right">Income</TableHead><TableHead className="text-right">Cost</TableHead><TableHead>Result</TableHead></TableRow></TableHeader><TableBody>{monthRollup.map(row=><TableRow key={row.key}><TableCell className="font-medium">{row.key}</TableCell><TableCell className="text-right">{money(row.income)}</TableCell><TableCell className="text-right">{money(row.cost)}</TableCell><TableCell><ResultBadge value={round2(row.net)} /></TableCell></TableRow>)}</TableBody></Table></div></GlassCard>
+      <GlassCard className="overflow-hidden"><div className="p-4"><h2 className="font-bold">By day</h2><p className="text-xs text-muted-foreground">Combines multiple sessions at the same venue on the same date.</p></div><div className="max-h-80 overflow-auto"><Table><TableHeader><TableRow><TableHead>Date / venue</TableHead><TableHead className="text-right">Income</TableHead><TableHead className="text-right">Cost</TableHead><TableHead>Result</TableHead></TableRow></TableHeader><TableBody>{dayRollup.slice(0,40).map(row=><TableRow key={row.key}><TableCell><p className="font-medium">{row.date}</p><p className="text-[11px] text-muted-foreground">{row.venue} · {row.count} rows</p></TableCell><TableCell className="text-right">{money(row.income)}</TableCell><TableCell className="text-right">{money(row.cost)}</TableCell><TableCell><ResultBadge value={round2(row.net)} /></TableCell></TableRow>)}</TableBody></Table></div></GlassCard>
+    </div>}
 
     <GlassCard className="overflow-hidden">
       <div className="flex items-center justify-between p-4"><div><h2 className="font-bold">Session & event results</h2><p className="text-xs text-muted-foreground">Green means the activity covered its costs. Red means the club subsidised it.</p></div><Badge variant="outline">{filtered.length} rows</Badge></div>
