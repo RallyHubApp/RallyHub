@@ -45,8 +45,9 @@ async function installFinanceBackend(page,{zeroMatch=false}={}){
       if(name==='securityContext') return json(route,{success:true,context:null});
       if(name==='spondIntegrationWorking'&&body.action==='directory_finance_sync'){
         synced=true;
-        if(zeroMatch) return json(route,{success:true,fromDate:body.fromDate,toDate:body.toDate,created:0,updated:0,skipped:11,fetchedCount:11,matchedCount:0,diagnostics:{exactMatches:0,scheduleMatches:0,unmatchedRule:8,missingFee:3,outsideEffectiveRange:0},connection:{groupId:connections[0].spond_group_id,groupName:connections[0].spond_group_name},synced:[]});
-        return json(route,{success:true,fromDate:body.fromDate,toDate:body.toDate,created:8,updated:0,skipped:3,fetchedCount:11,matchedCount:8,diagnostics:{exactMatches:2,scheduleMatches:6,unmatchedRule:1,missingFee:2,outsideEffectiveRange:0},connection:{groupId:connections[0].spond_group_id,groupName:connections[0].spond_group_name},synced:syncedEntries});
+        if(!Array.isArray(body.selectedVenueIds) || body.selectedVenueIds.length!==1 || body.selectedVenueIds[0]!=='enn') return json(route,{error:'Finance journey test expected Ennistymon-only sync'},400);
+        if(zeroMatch) return json(route,{success:true,fromDate:body.fromDate,toDate:body.toDate,created:0,updated:0,skipped:8,fetchedCount:8,totalSpondEventsInRange:11,matchedCount:0,diagnostics:{exactMatches:0,scheduleMatches:0,unmatchedRule:8,missingFee:0,outsideEffectiveRange:0,ignoredNotSelected:3},connection:{groupId:connections[0].spond_group_id,groupName:connections[0].spond_group_name},synced:[]});
+        return json(route,{success:true,fromDate:body.fromDate,toDate:body.toDate,created:8,updated:0,skipped:0,fetchedCount:8,totalSpondEventsInRange:11,matchedCount:8,diagnostics:{exactMatches:2,scheduleMatches:6,unmatchedRule:0,missingFee:0,outsideEffectiveRange:0,ignoredNotSelected:3},connection:{groupId:connections[0].spond_group_id,groupName:connections[0].spond_group_name},synced:syncedEntries});
       }
       return json(route,{success:true,items:[],records:[],events:[],data:[]});
     }
@@ -84,20 +85,29 @@ test('Finance admin journey: guidance, multi-venue selection, Spond sync diagnos
   await page.getByTestId('finance-venue-all').click();
   await expect(page.getByTestId('finance-venue-all').locator('[role="checkbox"]')).toHaveAttribute('data-state','unchecked');
   await page.getByTestId('finance-venue-enn').click();
-  await page.getByTestId('finance-venue-doora').click();
   await expect(page.getByTestId('finance-venue-enn').locator('[role="checkbox"]')).toHaveAttribute('data-state','checked');
-  await expect(page.getByTestId('finance-venue-doora').locator('[role="checkbox"]')).toHaveAttribute('data-state','checked');
+  await expect(page.getByTestId('finance-venue-doora').locator('[role="checkbox"]')).toHaveAttribute('data-state','unchecked');
   await expect(page.getByText('No finance rows are showing for this selection yet.')).toBeVisible();
 
   await page.getByRole('button',{name:'Sync Spond'}).click();
-  await expect(page.getByTestId('finance-sync-message')).toContainText('Spond connected. Found 11 events · matched 8 · added 8');
-  await expect(page.getByText('Spond events found').locator('..')).toContainText('11');
+  await expect(page.getByTestId('finance-sync-message')).toContainText('Found 8 events in the selected venues · matched 8 · added 8');
+  await expect(page.getByText('Spond events in range').locator('..')).toContainText('11');
+  await expect(page.getByText('In selected venues').locator('..')).toContainText('8');
   await expect(page.getByText('Matched to finance').locator('..')).toContainText('8');
-  await expect(page.getByText('Skipped explanation:')).toContainText('2 matched a session but has no player fee set');
+  await expect(page.getByText('Sync explanation:')).toContainText('3 belonged to venues you did not select');
+  await expect(page.getByText('Sync explanation:')).toContainText('0 matched a selected session but has no player fee set');
   await expect(page.getByText('2026-09-30 · 19:00')).toBeVisible();
   await expect(page.getByText('7:00–8:00 pm').first()).toBeVisible();
   await expect(page.getByText('8 paid then declined')).toHaveCount(0);
   await expect(page.getByText('1 paid then declined')).toBeVisible();
+
+  await page.getByTestId('finance-month-filter').locator('summary').click();
+  await page.getByTestId('finance-month-9').click();
+  await page.getByTestId('finance-month-10').click();
+  await expect(page.getByTestId('finance-month-filter').locator('summary')).toContainText('2 months selected');
+  await expect(page.getByTestId('finance-month-9').locator('[role="checkbox"]')).toHaveAttribute('data-state','checked');
+  await expect(page.getByTestId('finance-month-10').locator('[role="checkbox"]')).toHaveAttribute('data-state','checked');
+  await page.getByTestId('finance-month-filter').locator('summary').click();
 
   await page.getByTestId('finance-venue-enn').click();
   await expect(page.getByText('No finance rows are showing for this selection yet.')).toBeVisible();
@@ -116,9 +126,12 @@ test('Finance sync zero-match state explains that Spond worked instead of silent
   await installFinanceBackend(page,{zeroMatch:true});
   await openFinance(page);
   await page.getByRole('button',{name:'Sync Spond'}).click();
-  await expect(page.getByTestId('finance-sync-message')).toContainText('Spond connected and returned 11 events, but none could be turned into finance rows');
-  await expect(page.getByText('Skipped explanation:')).toContainText('8 had no matching configured session');
-  await expect(page.getByText('Skipped explanation:')).toContainText('3 matched a session but has no player fee set');
+  await page.getByTestId('finance-venue-all').click();
+  await page.getByTestId('finance-venue-enn').click();
+  await page.getByRole('button',{name:'Sync Spond'}).click();
+  await expect(page.getByTestId('finance-sync-message')).toContainText('found 8 events in the selected venues, but none could be turned into finance rows');
+  await expect(page.getByText('Sync explanation:')).toContainText('8 had no matching configured session');
+  await expect(page.getByText('Sync explanation:')).toContainText('0 matched a selected session but has no player fee set');
 });
 
 test.describe('Finance mobile journey',()=>{
