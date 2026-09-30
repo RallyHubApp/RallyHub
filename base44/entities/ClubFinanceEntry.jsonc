@@ -1,0 +1,227 @@
+{
+  "name": "ClubFinanceEntry",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "activity_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "activity_start_time": {
+      "type": "string"
+    },
+    "venue_id": {
+      "type": "string"
+    },
+    "venue_name": {
+      "type": "string"
+    },
+    "session_label": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "spond_session",
+        "rallyhub_event",
+        "manual"
+      ],
+      "default": "manual"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "venue_rule_id": {
+      "type": "string"
+    },
+    "going_count": {
+      "type": "number",
+      "default": 0
+    },
+    "declined_paid_count": {
+      "type": "number",
+      "default": 0
+    },
+    "paid_places": {
+      "type": "number",
+      "default": 0
+    },
+    "fee_per_person": {
+      "type": "number",
+      "default": 0
+    },
+    "income_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "expected_cost_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "actual_cost_amount": {
+      "type": "number"
+    },
+    "other_cost_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "cost_status": {
+      "type": "string",
+      "enum": [
+        "expected",
+        "invoice_received",
+        "paid"
+      ],
+      "default": "expected"
+    },
+    "invoice_reference": {
+      "type": "string"
+    },
+    "financial_year_label": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "source_details_json": {
+      "type": "string"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "activity_date",
+    "venue_name",
+    "source_type",
+    "income_amount",
+    "expected_cost_amount",
+    "cost_status"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.active_club_role": "club_admin"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.active_club_role": "club_admin"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.active_club_role": "club_admin"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "user"
+              }
+            },
+            {
+              "data.tenant_id": "{{user.data.active_tenant_id}}"
+            },
+            {
+              "data.club_id": "{{user.data.active_club_id}}"
+            },
+            {
+              "user_condition": {
+                "data.active_club_role": "club_admin"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

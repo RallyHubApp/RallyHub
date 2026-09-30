@@ -100,6 +100,53 @@ function collectResponseIds(event) {
   });
   return {accepted,waiting};
 }
+
+function financeResponseMeta(event) {
+  const accepted = new Set((event?.responses?.acceptedIds || []).map(String));
+  const declined = new Set((event?.responses?.declinedIds || []).map(String));
+  const notes = new Map();
+  const responseRows = [
+    ...(Array.isArray(event?.responses?.members) ? event.responses.members : []),
+    ...(Array.isArray(event?.responses?.responses) ? event.responses.responses : []),
+    ...(Array.isArray(event?.responses?.declined) ? event.responses.declined : []),
+    ...(Array.isArray(event?.comments) ? event.comments : []),
+  ];
+  for (const row of responseRows) {
+    const id = String(row?.memberId || row?.uid || row?.id || row?.profileId || row?.userId || '');
+    if (!id) continue;
+    const status = String(row?.status || row?.response || row?.attendanceStatus || '').toLowerCase();
+    if (['accepted','attending','going'].includes(status)) accepted.add(id);
+    if (['declined','not_attending','not-attending','notgoing','not_going'].includes(status)) declined.add(id);
+    const note = clean(row?.comment || row?.note || row?.message || row?.responseComment || row?.commentText || row?.text || '', 500);
+    if (note) notes.set(id, note);
+  }
+  if (event?.responses?.comments && typeof event.responses.comments === 'object') {
+    for (const [id, value] of Object.entries(event.responses.comments)) {
+      const note = clean(typeof value === 'string' ? value : (value?.comment || value?.note || value?.message || value?.text || ''), 500);
+      if (note) notes.set(String(id), note);
+    }
+  }
+  const paidLanguage = /\b(already\s+paid|paid\s+(already|before|online|for)|payment\s+(made|sent|done)|have\s+paid|has\s+paid|i\s+paid|paid)\b/i;
+  const negativeLanguage = /\b(not\s+paid|not\s+yet\s+paid|didn['’]?t\s+pay|did\s+not\s+pay|refund(?:ed)?|money\s+back)\b/i;
+  const paidDeclinedIds = [];
+  const declinedNotes = [];
+  for (const id of declined) {
+    const note = notes.get(String(id)) || '';
+    const paid = !!note && paidLanguage.test(note) && !negativeLanguage.test(note);
+    if (paid) paidDeclinedIds.push(String(id));
+    declinedNotes.push({ memberId:String(id), note, countedAsPaid:paid });
+  }
+  return { goingCount:accepted.size, declinedCount:declined.size, declinedPaidCount:paidDeclinedIds.length, declinedNotes };
+}
+
+function financialYearLabelFor(dateValue, startMonth=9, startDay=1) {
+  const parts = String(dateValue || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!parts) return '';
+  const year = Number(parts[1]), month = Number(parts[2]), day = Number(parts[3]);
+  const startsThisYear = month > startMonth || (month === startMonth && day >= startDay);
+  const startYear = startsThisYear ? year : year - 1;
+  return `${startYear}/${String(startYear + 1).slice(-2)}`;
+}
 function buildMemberMap(group){const map={};(group.members||[]).forEach(m=>{map[m.id]=m;});(group.subGroups||[]).forEach(sg=>(sg.members||[]).forEach(m=>{if(!map[m.id])map[m.id]=m;}));return map;}
 function attendeeFromMember(memberId,member){const profile=member?.profile||{};const firstName=profile.firstName||member?.firstName||'';const lastName=profile.lastName||member?.lastName||'';const fullName=`${firstName} ${lastName}`.trim();if(!fullName)return null;return {spondId:memberId,firstName,lastName,fullName,email:profile.email||member.email||'',phoneNumber:profile.phoneNumber||member.phoneNumber||'',avatarUrl:profile.pictureUrl||null,gender:profile.gender||member?.gender||''};}
 function matchAttendee(attendee,players){
