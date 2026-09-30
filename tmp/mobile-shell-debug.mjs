@@ -1,0 +1,14 @@
+import { chromium } from 'playwright';
+const b=await chromium.launch({headless:true});
+const c=await b.newContext({viewport:{width:390,height:844}});
+const p=await c.newPage();
+await p.addInitScript(()=>localStorage.setItem('base44_access_token','mobile-shell-e2e-token'));
+p.on('request',r=>{if(r.url().includes('/api/')) console.log('REQ',r.method(),new URL(r.url()).pathname)});
+p.on('response',r=>{if(r.url().includes('/api/')) console.log('RES',r.status(),new URL(r.url()).pathname)});
+await p.route('**/api/**',async route=>{const path=new URL(route.request().url()).pathname;console.log('MOCK',path);let body={};if(/\/auth\/me$/.test(path)||/\/users\/me$/.test(path)||/\/entities\/User\/me$/.test(path))body={id:'mobile-shell-admin',email:'admin@example.test',full_name:'RallyHub Admin',role:'admin',approval_status:'approved',active_club_role:'club_admin',active_tenant_id:'tenant-clare',active_club_id:'club-clare',active_club_name:'Clare Pickleball',kotc_role:'super_admin'};else if(path.includes('/public-settings'))body={id:'6a01dc00702b7dd2a2978c28',public_settings:{}};else if(path.includes('/functions/securityContext'))body={success:true,context:null};else if(path.includes('/functions/memberPortal'))body={success:true,snapshot:{}};else body={success:true,items:[],records:[],events:[],data:[]};await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});});
+await p.goto('http://127.0.0.1:5173/app',{waitUntil:'domcontentloaded',timeout:15000}).catch(e=>console.log('GOTO',e.message));
+await p.waitForTimeout(3000);
+console.log('URL',p.url());
+console.log('BODY',await p.locator('body').innerText().catch(()=>''));
+console.log('HTML', (await p.content()).slice(0,1200));
+await b.close();
