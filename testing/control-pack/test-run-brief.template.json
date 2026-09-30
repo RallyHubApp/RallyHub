@@ -1,0 +1,73 @@
+{
+  "run_id": "RH-YYYYMMDD-001",
+  "created_at": "YYYY-MM-DDTHH:MM:SSZ",
+  "protocol_versions": {
+    "master_testing_blueprint": "1.3",
+    "testing_control_pack": "1.0"
+  },
+  "protocol_declaration_accepted": false,
+  "tester": {
+    "name_or_agent": "",
+    "organisation_or_tool": "",
+    "test_role": "third_party|chatgpt|human|browser_agent|security_tool|other"
+  },
+  "change": {
+    "title": "",
+    "summary": "",
+    "modules_changed": [],
+    "shared_components_changed": [],
+    "production_sensitive_workflows": []
+  },
+  "target_build": {
+    "app": "RallyHub",
+    "environment": "sandbox|preview|staging|production",
+    "commit_hash": "",
+    "checkpoint_id": "",
+    "release_marker_or_asset_hash": ""
+  },
+  "risk_gate": {
+    "risk_flags": [],
+    "requested_depth": "S",
+    "minimum_required_depth": "",
+    "required_escalations": [],
+    "gate_passed": false,
+    "accepted_deviations": []
+  },
+  "blast_radius": {
+    "modules": [],
+    "shared_services": [],
+    "public_surfaces": [],
+    "tenant_or_role_boundaries": [],
+    "explicitly_out_of_scope": []
+  },
+  "test_environment": {
+    "data_isolation": "",
+    "sandbox_or_fixture": "",
+    "browsers_devices": [],
+    "backend_or_connector_dependencies": [],
+    "known_environment_limitations": []
+  },
+  "required_layers": [],
+  "planned_test_cases": [
+    {
+      "test_id": "RH-T001",
+      "layer": "",
+      "scenario": "",
+      "expected_result": "",
+      "evidence_required": "",
+      "mandatory": true
+    }
+  ],
+  "stop_or_escalation_conditions": [
+    "Production data could be corrupted or mutated unexpectedly.",
+    "A P0/P1 security, tenant-isolation or data-integrity defect is discovered.",
+    "The tested build cannot be identified reliably.",
+    "The test harness cannot prove the RallyHub application rendered for a required browser test."
+  ],
+  "continue_after_failure_rule": "Continue independent tests where safe and record all failures; do not abandon a population audit because one item fails.",
+  "publish_verification_plan": {
+    "persistence_check": "Confirm exact tested edits exist in persisted source/current commit/checkpoint.",
+    "production_fingerprint": "After publish, verify live asset hash/release marker matches the intended release candidate."
+  },
+  "brief_approved": false
+}
