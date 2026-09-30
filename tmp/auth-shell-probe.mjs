@@ -23,15 +23,25 @@ await page.route('**/*',async route=>{
  if(p.includes('/entities/')) return fulfill([]);
  return fulfill({});
 });
-const routes=['/app/admin','/app/membership','/app/tournaments'];
+const routes=['/app','/app/admin','/app/membership','/app/events','/app/tournaments','/app/players','/app/waiting-list','/app/guest-bookings','/app/learn/manage'];
 const out=[];
 for(const path of routes){
  const errors=[]; const cb=e=>errors.push(e.message); page.on('pageerror',cb);
  try{
-  await page.goto('http://127.0.0.1:5173'+path,{waitUntil:'domcontentloaded',timeout:8000}).catch(()=>{});
-  await page.locator('header').waitFor({state:'visible',timeout:12000});
+  await page.goto('http://127.0.0.1:5173'+path,{waitUntil:'commit',timeout:5000}).catch(()=>{});
+  await page.locator('header').waitFor({state:'visible',timeout:10000});
   const m=await page.evaluate(()=>{const q=s=>document.querySelector(s)?.getBoundingClientRect(); const a=q('aside'),h=q('header'),mn=q('main'); return {innerWidth,doc:document.documentElement.scrollWidth,body:document.body.scrollWidth,aside:a&&{left:a.left,right:a.right,width:a.width},header:h&&{left:h.left,right:h.right,width:h.width},main:mn&&{left:mn.left,right:mn.right,width:mn.width}}});
-  out.push({path,ok:m.doc<=392&&m.body<=392&&m.header?.right<=392&&m.main?.right<=392&&m.aside?.right<=1&&errors.length===0,metrics:m,errors});
+  let menuOk=true;
+  if(path==='/app/admin'){
+    const menu=page.locator('header button').first();
+    await menu.click();
+    await page.waitForTimeout(150);
+    const openRight=await page.locator('aside').evaluate(el=>el.getBoundingClientRect().right);
+    const hasAdminPanel=await page.getByText('Admin Panel',{exact:true}).count();
+    menuOk=openRight>200&&hasAdminPanel>0;
+    await page.locator('aside button').first().click().catch(()=>{});
+  }
+  out.push({path,ok:m.doc<=392&&m.body<=392&&m.header?.right<=392&&m.main?.right<=392&&m.aside?.right<=1&&errors.length===0&&menuOk,menuOk,metrics:m,errors});
  }catch(e){out.push({path,ok:false,error:e.message,errors});}
  page.off('pageerror',cb);
 }
