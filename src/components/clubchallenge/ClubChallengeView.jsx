@@ -862,8 +862,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       };
       await base44.entities.Tournament.update(tournament.id, tournamentUpdate);
       toast.success(`${INTERCLUB_EVENT_LABEL} setup saved`);
-      await sync();
+      // Navigation should not wait for four serial refreshes. Move to Teams as soon
+      // as the authoritative writes succeed, then refresh the independent datasets
+      // concurrently so mobile users get immediate feedback even on venue Wi-Fi.
       setTab('teams');
+      await Promise.all([refetchEvent(), refetchParticipants(), refetchMatches()]);
+      queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
     } catch (e) { toast.error(e?.message || 'Could not save setup'); }
     setSaving(false);
   };
@@ -1158,7 +1162,17 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       if (res.data?.error) { toast.error(res.data.error); return false; }
       const authoritativeEvent = res.data?.event || null;
       if (authoritativeEvent) queryClient.setQueryData(['club-challenge-event', tournament.id], authoritativeEvent);
-      else await refetchEvent();
+      else {
+        // Timer commands are already revision-protected on the server. Reflect the
+        // accepted command locally immediately instead of making the visible clock
+        // depend on a second network round-trip; the normal polling/refetch remains
+        // the authority and will reconcile any difference.
+        const current = timerState || {};
+        const seconds = phase === 'break' ? Number(event.break_minutes || 20) * 60 : phase === 'changeover' ? Number(event.changeover_minutes || 2) * 60 : (Number(current.remaining_seconds || 0) > 0 && ['ready','play'].includes(current.phase) && !current.running ? Number(current.remaining_seconds) : Number(event.play_minutes || 10) * 60);
+        const optimistic = action === 'start' ? { phase:phase || 'play', running:true, remaining_seconds:seconds, started_at:new Date().toISOString(), round:Number(event.current_round || 1) } : current;
+        queryClient.setQueryData(['club-challenge-event', tournament.id], old => old ? ({ ...old, timer_state_json:JSON.stringify(optimistic), timer_revision:Number(old.timer_revision || event.timer_revision || 0) + 1 }) : old);
+        refetchEvent();
+      }
       return true;
     } catch (e) {
       await refetchEvent();
