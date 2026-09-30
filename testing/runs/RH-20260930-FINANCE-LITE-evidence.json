@@ -1,0 +1,175 @@
+{
+  "run_id": "RH-20260930-FINANCE-LITE",
+  "completed_at": "2026-09-30T15:00:00Z",
+  "protocol_versions": {
+    "master_testing_blueprint": "1.3",
+    "testing_control_pack": "1.0"
+  },
+  "tester": {
+    "name_or_agent": "ChatGPT",
+    "organisation_or_tool": "RallyHub Base44 sandbox + Playwright"
+  },
+  "protocol_declaration": "I am testing RallyHub under Master Testing Blueprint v1.3 and RallyHub Testing Control Pack v1.0. I will not substitute my own testing process for the required protocol without recording and justifying the deviation.",
+  "target_build": {
+    "environment": "sandbox",
+    "commit_hash": "d3443af83357863b7cc78d0b14239080be157430",
+    "checkpoint_id": "6abd2a55455ad5d811cc09e2",
+    "release_marker_or_asset_hash": ""
+  },
+  "selected_depth": "S",
+  "risk_gate_result": {
+    "minimum_required_depth": "S",
+    "actual_depth": "S",
+    "passed": true,
+    "deviations": [
+      "Repository-wide lint is blocked by two pre-existing unused imports in MemberMessages.jsx; Finance-specific ESLint passed.",
+      "Repository-wide typecheck is not a usable release signal because of pre-existing project-wide Leaflet/UI primitive typing errors."
+    ]
+  },
+  "environment_proof": {
+    "application_rendered_for_required_browser_tests": true,
+    "browser_or_runtime": "Playwright Chromium 153 / Vite sandbox",
+    "test_data_or_sandbox": "Authenticated Clare Pickleball admin fixture; Spond event-pattern fixtures based on Clare production DirectorySpondEvent identifiers and venue/session patterns.",
+    "environment_failures": [
+      "Initial Playwright runs were BLOCKED by missing Chromium/Linux dependencies; dependencies were installed and tests rerun.",
+      "Existing E2E route interception matched /src/api/base44Client.js and prevented the app mounting; harness was corrected from **/api/** to **/api/apps/** and tests rerun."
+    ]
+  },
+  "blast_radius": {
+    "modules_tested": ["Finance Lite", "Spond finance integration"],
+    "shared_services_tested": ["authenticated app shell mobile route", "Base44 Spond backend bundle"],
+    "routes_or_surfaces_tested": ["/app/finance desktop", "/app/finance mobile"]
+  },
+  "test_cases": [
+    {
+      "test_id": "RH-FIN-001",
+      "layer": "backend_logic",
+      "scenario": "Recurring Spond occurrence IDs change week-to-week.",
+      "expected_result": "Exact original IDs match first; later occurrences safely match by venue + weekday + local start time; unrelated Corofin/wrong-time events do not mis-match.",
+      "actual_result": "All matcher assertions passed.",
+      "status": "PASS",
+      "evidence": ["scripts/financeSpondMatchingGate.mjs", "npm run test:finance"],
+      "defect_id": "RH-FIN-D001",
+      "notes": "Regression fixture includes Ennistymon and Doora occurrence patterns."
+    },
+    {
+      "test_id": "RH-FIN-002",
+      "layer": "desktop_mobile_browser_robot",
+      "scenario": "Admin opens Finance Summary, sees instructions/Spond status, selects multiple venues, syncs Spond, reads diagnostics/results, and opens recurring-session setup only when needed.",
+      "expected_result": "Journey completes without page errors; multi-select works; synced rows and skipped reasons are visible.",
+      "actual_result": "Desktop browser journey passed.",
+      "status": "PASS",
+      "evidence": ["e2e/finance-summary-journey.spec.mjs test 1"],
+      "defect_id": "",
+      "notes": ""
+    },
+    {
+      "test_id": "RH-FIN-003",
+      "layer": "desktop_mobile_browser_robot",
+      "scenario": "Spond responds successfully but zero finance rows match.",
+      "expected_result": "UI explicitly says Spond connected/returned events and explains unmatched/missing-fee skips rather than silently showing zero.",
+      "actual_result": "Zero-match diagnostic journey passed.",
+      "status": "PASS",
+      "evidence": ["e2e/finance-summary-journey.spec.mjs test 2"],
+      "defect_id": "",
+      "notes": ""
+    },
+    {
+      "test_id": "RH-FIN-004",
+      "layer": "desktop_mobile_browser_robot",
+      "scenario": "Finance Summary on 390x844 mobile viewport before and after Spond sync.",
+      "expected_result": "No horizontal page overflow; sync feedback remains usable.",
+      "actual_result": "Mobile journey passed.",
+      "status": "PASS",
+      "evidence": ["e2e/finance-summary-journey.spec.mjs test 3"],
+      "defect_id": "",
+      "notes": ""
+    },
+    {
+      "test_id": "RH-FIN-005",
+      "layer": "shared_authenticated_shell",
+      "scenario": "/app/finance shared mobile app-shell regression.",
+      "expected_result": "Route stays phone-width with desktop sidebar closed.",
+      "actual_result": "Shared route regression passed.",
+      "status": "PASS",
+      "evidence": ["e2e/app-shell-mobile-regression.spec.mjs -g /app/finance"],
+      "defect_id": "",
+      "notes": ""
+    },
+    {
+      "test_id": "RH-FIN-006",
+      "layer": "code_health",
+      "scenario": "Production build, Finance-specific ESLint, and Spond backend bundling.",
+      "expected_result": "Build and module checks pass.",
+      "actual_result": "npm run build passed; Finance-specific ESLint passed; esbuild backend bundle passed.",
+      "status": "PASS-WITH-LIMITATION",
+      "evidence": ["npm run build", "npx eslint FinanceSummary/e2e/finance gate", "npx esbuild spondIntegrationWorking/entry.ts"],
+      "defect_id": "",
+      "notes": "Full repo lint/typecheck have unrelated pre-existing failures recorded in limitations."
+    }
+  ],
+  "defects": [
+    {
+      "defect_id": "RH-FIN-D001",
+      "severity": "P1",
+      "summary": "Finance sync matched only the originally stored Spond event ID, so later recurring occurrences could produce zero finance rows.",
+      "reproduction": "Sync a later recurring Ennistymon occurrence whose Spond occurrence ID differs from the stored first event ID.",
+      "fix_status": "fixed",
+      "regression_added": true,
+      "retest_status": "PASS"
+    },
+    {
+      "defect_id": "RH-FIN-D002",
+      "severity": "P1",
+      "summary": "FinanceSummary JSX edit contained a missing closing brace and would not build.",
+      "reproduction": "Run npm run build on the intermediate revision.",
+      "fix_status": "fixed",
+      "regression_added": false,
+      "retest_status": "PASS"
+    },
+    {
+      "defect_id": "RH-TEST-D001",
+      "severity": "P2",
+      "summary": "Shared Playwright API route matcher intercepted /src/api/base44Client.js, preventing authenticated app tests from mounting.",
+      "reproduction": "Use page.route('**/api/**') against Vite source path /src/api/base44Client.js.",
+      "fix_status": "fixed",
+      "regression_added": true,
+      "retest_status": "PASS"
+    }
+  ],
+  "blocked_tests": [],
+  "persistence_proof": {
+    "tested_edits_present_in_persisted_source": true,
+    "commit_hash_verified": "d3443af83357863b7cc78d0b14239080be157430",
+    "checkpoint_id_verified": "6abd2a55455ad5d811cc09e2",
+    "proof_notes": "Base44 checkpoint created after the green Finance/browser/build gates."
+  },
+  "release_gate": {
+    "unresolved_P0": 0,
+    "unresolved_P1": 0,
+    "unresolved_security_or_tenant_isolation_failure": false,
+    "required_layers_complete": true,
+    "persistence_proven": true,
+    "ready_to_publish": true,
+    "blocking_reasons": []
+  },
+  "deployment_proof": {
+    "publish_claimed": false,
+    "production_fingerprint_checked": false,
+    "production_matches_release_candidate": false,
+    "live_asset_or_release_marker": "",
+    "notes": "Production Spond secret-backed finance sync cannot be proven from sandbox; verify after republish without asking the user to diagnose the flow."
+  },
+  "final_verdict": "PASS-WITH-LIMITATION",
+  "final_release_state": "RELEASE-CANDIDATE",
+  "limitations": [
+    "Live Spond API/comment payload and persisted ClubFinanceEntry production rows require a post-publish production verification.",
+    "Repository-wide lint has unrelated MemberMessages.jsx unused-import failures.",
+    "Repository-wide typecheck has broad pre-existing Leaflet/UI typing failures and is not green."
+  ],
+  "next_actions": [
+    "Republish the tested checkpoint.",
+    "After publish, run the live Clare Spond Finance sync and inspect persisted ClubFinanceEntry rows and September totals.",
+    "Only then promote from RELEASE-CANDIDATE to PRODUCTION-PROVEN."
+  ]
+}
