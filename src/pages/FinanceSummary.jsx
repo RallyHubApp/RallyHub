@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowDownRight, ArrowUpRight, CheckCircle2, Euro, Plus, RefreshCw, Save, Settings2, WalletCards } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -56,10 +57,12 @@ export default function FinanceSummary() {
   const canManage = user?.role === 'admin' || user?.active_club_role === 'club_admin';
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState(todayIso());
-  const [venueFilter, setVenueFilter] = useState('all');
+  const [selectedVenueIds, setSelectedVenueIds] = useState([]);
   const [monthFilter, setMonthFilter] = useState('all');
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  const [syncResult, setSyncResult] = useState(null);
+  const [showRecurringSetup, setShowRecurringSetup] = useState(false);
   const [editingVenueId, setEditingVenueId] = useState('');
   const [venueDraft, setVenueDraft] = useState({ address:'', hourlyRate:'' });
   const [ruleDraft, setRuleDraft] = useState({ venueId:'', weekday:'Monday', startTime:'19:00', durationMinutes:'90', feePerPerson:'', incomeSource:'spond', sessionLabel:'', spondGroupId:'', spondEventId:'' });
@@ -102,14 +105,25 @@ export default function FinanceSummary() {
     enabled:user?.role === 'admin' && !!tenantId && !!clubId,
   });
   const listingSlug = spondBindings[0]?.listing_slug || '';
+  const { data: spondConnections = [] } = useQuery({
+    queryKey:['finance-spond-connection',listingSlug],
+    queryFn:()=>base44.entities.DirectorySpondConnection.filter({ listing_slug:listingSlug, status:'active' }, '-last_synced_at', 5),
+    enabled:user?.role === 'admin' && !!listingSlug,
+  });
+  const spondConnection = spondConnections[0] || null;
+
+  useEffect(()=>{
+    if (!venues.length || selectedVenueIds.length) return;
+    setSelectedVenueIds(venues.map(v=>v.id));
+  },[venues]);
 
   const filtered = useMemo(()=>entries.filter(row=>{
     if (fromDate && row.activity_date < fromDate) return false;
     if (row.activity_date > toDate) return false;
-    if (venueFilter !== 'all' && row.venue_id !== venueFilter) return false;
+    if (!selectedVenueIds.includes(row.venue_id)) return false;
     if (monthFilter !== 'all' && !String(row.activity_date || '').startsWith(monthFilter)) return false;
     return true;
-  }),[entries,fromDate,toDate,venueFilter,monthFilter]);
+  }),[entries,fromDate,toDate,selectedVenueIds,monthFilter]);
 
   const months = useMemo(()=>[...new Set(entries.map(row=>String(row.activity_date || '').slice(0,7)).filter(Boolean))].sort().reverse(),[entries]);
   const totals = useMemo(()=>filtered.reduce((acc,row)=>{
@@ -216,14 +230,18 @@ export default function FinanceSummary() {
 
   const syncSpond = async () => {
     if (!listingSlug) return toast.error('No Spond-linked session is configured for this club.');
-    setSyncing(true); setSyncMessage('');
+    setSyncing(true); setSyncMessage(''); setSyncResult(null);
     try {
       const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_finance_sync', listingSlug, fromDate, toDate });
       if (res.data?.error) throw new Error(res.data.error);
-      setSyncMessage(`${res.data.created||0} added · ${res.data.updated||0} refreshed · ${res.data.synced?.length||0} finance rows in range`);
+      setSyncResult(res.data);
+      const fetched=Number(res.data.fetchedCount||0), matched=Number(res.data.matchedCount ?? res.data.synced?.length ?? 0), skipped=Number(res.data.skipped||0);
+      if (matched > 0) setSyncMessage(`Spond connected. Found ${fetched} events · matched ${matched} · added ${res.data.created||0} · refreshed ${res.data.updated||0}${skipped?` · skipped ${skipped}`:''}.`);
+      else if (fetched > 0) setSyncMessage(`Spond connected and returned ${fetched} events, but none could be turned into finance rows. See the explanation below.`);
+      else setSyncMessage('Spond connected successfully, but no events were returned for this date range.');
       await queryClient.invalidateQueries({queryKey:['finance-entries',tenantId,clubId]});
       toast.success('Spond finance summary refreshed');
-    } catch (e) { setSyncMessage(e?.message || 'Spond sync failed'); toast.error(e?.message || 'Spond sync failed'); }
+    } catch (e) { setSyncResult({error:e?.message || 'Spond sync failed'}); setSyncMessage(e?.message || 'Spond sync failed'); toast.error(e?.message || 'Spond sync failed'); }
     finally { setSyncing(false); }
   };
 
