@@ -121,6 +121,13 @@ export default function FinanceSummary() {
     setSelectedVenueIds(venues.map(v=>v.id));
   },[venues]);
 
+  useEffect(()=>{
+    setSpondPreview(null);
+    setSelectedOccurrenceKeys([]);
+    setSyncResult(null);
+    setSyncMessage('');
+  },[fromDate,toDate,selectedVenueIds.join('|'),selectedMonths.join('|')]);
+
   const filtered = useMemo(()=>entries.filter(row=>{
     if (fromDate && row.activity_date < fromDate) return false;
     if (row.activity_date > toDate) return false;
@@ -231,20 +238,38 @@ export default function FinanceSummary() {
     } catch (e) { toast.error(e?.message || 'Could not record finance entry'); }
   };
 
+  const findSpondSessions = async () => {
+    if (!listingSlug) return toast.error('No Spond-linked session is configured for this club.');
+    if (!selectedVenueIds.length) return toast.error('Tick at least one venue first.');
+    setFindingSpond(true); setSyncMessage(''); setSyncResult(null); setSpondPreview(null); setSelectedOccurrenceKeys([]);
+    try {
+      const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_finance_preview', listingSlug, fromDate, toDate, selectedVenueIds, selectedMonths });
+      if (res.data?.error) throw new Error(res.data.error);
+      const candidates = Array.isArray(res.data?.candidates) ? res.data.candidates : [];
+      const readyKeys = candidates.filter(row=>row.ready).map(row=>row.occurrenceKey);
+      setSpondPreview(res.data);
+      setSelectedOccurrenceKeys(readyKeys);
+      const total=Number(res.data.totalSpondEventsInRange ?? 0), found=candidates.length, ready=readyKeys.length;
+      if (found) setSyncMessage(`Spond connected. Found ${found} matching session${found===1?'':'s'} in your selected venues (${ready} ready to sync). Review them below before writing anything to Finance.`);
+      else if (total) setSyncMessage(`Spond connected and returned ${total} events in the date/month range, but none matched the venues and recurring sessions you selected.`);
+      else setSyncMessage('Spond connected successfully, but no events were returned for this date/month selection.');
+    } catch (e) { setSpondPreview({error:e?.message || 'Could not read Spond sessions'}); setSyncMessage(e?.message || 'Could not read Spond sessions'); toast.error(e?.message || 'Could not read Spond sessions'); }
+    finally { setFindingSpond(false); }
+  };
+
   const syncSpond = async () => {
     if (!listingSlug) return toast.error('No Spond-linked session is configured for this club.');
-    setSyncing(true); setSyncMessage(''); setSyncResult(null);
+    if (!spondPreview || spondPreview.error) return toast.error('Find the Spond sessions first.');
+    if (!selectedOccurrenceKeys.length) return toast.error('Tick at least one Spond session to sync.');
+    setSyncing(true); setSyncResult(null);
     try {
-      const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_finance_sync', listingSlug, fromDate, toDate, selectedVenueIds });
+      const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_finance_sync', listingSlug, fromDate, toDate, selectedVenueIds, selectedMonths, selectedOccurrenceKeys });
       if (res.data?.error) throw new Error(res.data.error);
       setSyncResult(res.data);
-      const fetched=Number(res.data.fetchedCount||0), totalInRange=Number(res.data.totalSpondEventsInRange ?? fetched), matched=Number(res.data.matchedCount ?? res.data.synced?.length ?? 0), skipped=Number(res.data.skipped||0), ignored=Number(res.data.diagnostics?.ignoredNotSelected||0);
-      if (matched > 0) setSyncMessage(`Spond connected. Found ${fetched} events in the selected venues · matched ${matched} · added ${res.data.created||0} · refreshed ${res.data.updated||0}${skipped?` · skipped ${skipped}`:''}${ignored?` · ignored ${ignored} outside your venue selection`:''}.`);
-      else if (fetched > 0) setSyncMessage(`Spond connected and found ${fetched} events in the selected venues, but none could be turned into finance rows. See the explanation below.`);
-      else if (totalInRange > 0 && ignored > 0) setSyncMessage(`Spond connected and found ${totalInRange} events in the date range, but none belonged to the venues you selected.`);
-      else setSyncMessage('Spond connected successfully, but no events were returned for this date range.');
+      const matched=Number(res.data.matchedCount ?? res.data.synced?.length ?? 0), skipped=Number(res.data.skipped||0);
+      setSyncMessage(`Synced ${matched} selected Spond session${matched===1?'':'s'} to Finance · added ${res.data.created||0} · refreshed ${res.data.updated||0}${skipped?` · skipped ${skipped}`:''}.`);
       await queryClient.invalidateQueries({queryKey:['finance-entries',tenantId,clubId]});
-      toast.success('Spond finance summary refreshed');
+      toast.success('Selected Spond sessions synced to Finance');
     } catch (e) { setSyncResult({error:e?.message || 'Spond sync failed'}); setSyncMessage(e?.message || 'Spond sync failed'); toast.error(e?.message || 'Spond sync failed'); }
     finally { setSyncing(false); }
   };
