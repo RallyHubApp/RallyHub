@@ -24,6 +24,14 @@ const rules=[
 const settings=[{id:'settings',tenant_id:tenantId,club_id:clubId,currency:'EUR',financial_year_start_month:9,financial_year_start_day:1,tracking_start_date:'2026-09-01'}];
 const bindings=[{id:'binding1',tenant_id:tenantId,club_id:clubId,listing_slug:'clare-pickleball',directory_session_key:'ennistymon-1',spond_group_id:'245CFD5D9CF044B7B203A3182BD02721',spond_event_id:'4FA65CB24B154F4AADCDC1EE376BEBF2',active:true}];
 const connections=[{id:'connection1',listing_slug:'clare-pickleball',spond_group_id:'245CFD5D9CF044B7B203A3182BD02721',spond_group_name:'Clare Pickleball Members',status:'active',last_synced_at:'2026-09-28T12:15:46.487Z'}];
+const spondGroups=[{id:'OTHER',name:'Other Group',memberCount:12},{id:'245CFD5D9CF044B7B203A3182BD02721',name:'Clare Pickleball Members',memberCount:130}];
+const spondDirectoryPreview={
+  venues:[{id:'spond-ennistymon-community-centre-1',name:'Ennistymon Community Centre',address:'Parliament St, Ennistimon, Ennistymon'}],
+  sessions:[
+    {id:'spond-session-1',patternKey:'7pm ennistymon pickeball session|Wednesday|19:00|20:00|ennistymon community centre|parliament st ennistimon ennistymon',venueId:'spond-ennistymon-community-centre-1',spondVenueName:'Ennistymon Community Centre',spondVenueAddress:'Parliament St, Ennistimon, Ennistymon',day:'Wednesday',start:'19:00',end:'20:00',level:'7pm Ennistymon Pickeball Session',occurrences:12,nextDate:'2026-09-30',source:'Spond'},
+    {id:'spond-session-2',patternKey:'8pm ennistymon pickleball session|Wednesday|20:00|21:00|ennistymon community centre|parliament st ennistimon ennistymon',venueId:'spond-ennistymon-community-centre-1',spondVenueName:'Ennistymon Community Centre',spondVenueAddress:'Parliament St, Ennistimon, Ennistymon',day:'Wednesday',start:'20:00',end:'21:00',level:'8pm Ennistymon Pickleball Session',occurrences:12,nextDate:'2026-09-30',source:'Spond'},
+  ]
+};
 const dates=['2026-09-09','2026-09-16','2026-09-23','2026-09-30'];
 const syncedEntries=dates.flatMap((date,index)=>[
   {id:`e19-${index}`,tenant_id:tenantId,club_id:clubId,activity_date:date,activity_start_time:'19:00',venue_id:'enn',venue_name:'Ennistymon',session_label:'7:00–8:00 pm',source_type:'spond_session',paid_places:10+index,going_count:10+index,declined_paid_count:index===2?1:0,fee_per_person:5.5,income_amount:(10+index)*5.5,expected_cost_amount:45,other_cost_amount:0},
