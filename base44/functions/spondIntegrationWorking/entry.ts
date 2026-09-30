@@ -411,8 +411,12 @@ Deno.serve(async (req) => {
         .filter(e=>e._resolvedStartTimestamp)
         .filter(e=>{ const d=irelandDate(e._resolvedStartTimestamp); return d>=fromDate && d<=toDate; });
 
-      const rules = await base44.asServiceRole.entities.ClubFinanceVenueRule.filter({ tenant_id:tenantId, club_id:clubId, active:true }, 'weekday', 500);
+      const [rules, venues] = await Promise.all([
+        base44.asServiceRole.entities.ClubFinanceVenueRule.filter({ tenant_id:tenantId, club_id:clubId, active:true }, 'weekday', 500),
+        base44.asServiceRole.entities.Venue.filter({ tenant_id:tenantId, club_id:clubId }, 'name', 500),
+      ]);
       const rulesByEvent = new Map((rules || []).filter(r=>r.spond_event_id).map(r=>[String(r.spond_event_id),r]));
+      const venuesById = new Map((venues || []).map(v=>[String(v.id),v]));
       const settings = (await base44.asServiceRole.entities.ClubFinanceSettings.filter({ tenant_id:tenantId, club_id:clubId }, '-updated_date', 5))?.[0] || null;
       const fyMonth = Number(settings?.financial_year_start_month || 9);
       const fyDay = Number(settings?.financial_year_start_day || 1);
@@ -433,7 +437,10 @@ Deno.serve(async (req) => {
         const fee = Number(rule.default_fee_per_person || 0);
         const income = Math.round(paidPlaces * fee * 100) / 100;
         const durationHours = Number(rule.duration_minutes || 0) / 60;
-        const expectedCost = Math.round((rule.cost_type === 'per_hour' ? Number(rule.cost_amount || 0) * durationHours : Number(rule.cost_amount || 0)) * 100) / 100;
+        const venue = venuesById.get(String(rule.venue_id || ''));
+        const liveHourlyRate = Number(venue?.hourly_hire_rate);
+        const hourlyRate = Number.isFinite(liveHourlyRate) && liveHourlyRate >= 0 ? liveHourlyRate : Number(rule.cost_amount || 0);
+        const expectedCost = Math.round((rule.cost_type === 'per_hour' ? hourlyRate * durationHours : Number(rule.cost_amount || 0)) * 100) / 100;
         const sourceId = `${String(event.id)}::${String(start)}`;
         const details = {
           spondGroupId:financeGroupId,
@@ -442,6 +449,7 @@ Deno.serve(async (req) => {
           declinedCount:response.declinedCount,
           declinedResponses:response.declinedNotes,
           ruleId:rule.id,
+          venueHourlyRate:Number.isFinite(liveHourlyRate) ? liveHourlyRate : null,
         };
         reviewCount += response.declinedNotes.filter(row=>!row.countedAsPaid && !!row.note).length;
         const payload = {
