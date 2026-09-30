@@ -60,6 +60,13 @@ export default function FinanceSummary() {
   const [toDate, setToDate] = useState(todayIso());
   const [selectedVenueIds, setSelectedVenueIds] = useState([]);
   const [selectedMonths, setSelectedMonths] = useState([]);
+  const [spondGroups, setSpondGroups] = useState([]);
+  const [selectedSpondGroupId, setSelectedSpondGroupId] = useState('');
+  const [loadingSpondGroups, setLoadingSpondGroups] = useState(false);
+  const [scanningSpondPatterns, setScanningSpondPatterns] = useState(false);
+  const [spondPatternPreview, setSpondPatternPreview] = useState(null);
+  const [patternAssignments, setPatternAssignments] = useState({});
+  const [savingPatternAssignments, setSavingPatternAssignments] = useState(false);
   const [findingSpond, setFindingSpond] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
