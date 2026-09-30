@@ -67,7 +67,8 @@ async function installFinanceBackend(page,{zeroMatch=false}={}){
 
 async function openFinance(page){
   await page.goto('/app/finance',{waitUntil:'domcontentloaded'});
-  await expect(page.getByRole('heading',{name:'Finance Summary'})).toBeVisible();
+  await page.locator('main').waitFor({state:'attached',timeout:15000});
+  await expect(page.getByRole('heading',{name:'Finance Summary'})).toBeVisible({timeout:15000});
   await expect(page.getByText('How to use this page')).toBeVisible();
   await expect(page.getByTestId('finance-spond-status')).toContainText('Spond connected · Clare Pickleball Members');
   await expect(page.getByText('6 recurring finance sessions configured')).toBeVisible();
