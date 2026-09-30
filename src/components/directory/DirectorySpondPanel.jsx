@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const sessionKey = s => [s.day, s.start, s.end || '', s.level || '', s.venueId || ''].join('|');
 const normaliseClubName = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport, onSave, saveBusy = false, hasUnsavedChanges = false, saved = false, existingSessions = [], mode = 'directory', onSelectSessions, title = 'Spond connection', description = '' }) {
+export default function DirectorySpondPanel({ listingSlug, clubName = '', onImport, onSave, saveBusy = false, hasUnsavedChanges = false, saved = false, existingSessions = [], mode = 'directory', onSelectSessions, title = 'Spond connection', description = '', scanFromDate = '', scanToDate = '', allowedPatternKeys = [] }) {
   const { user } = useAuth();
   const [connection, setConnection] = useState(null);
   const [groups, setGroups] = useState([]);
@@ -39,6 +39,7 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
   const importComplete = lastImportedCount > 0 && importedSelectionSignature === currentSelectionSignature;
   const existingSessionCount = existingSessions.length;
   const existingSpondSessionCount = existingSessions.filter(session => session?.source === 'Spond').length;
+  const allowedPatternSet = useMemo(() => new Set((allowedPatternKeys || []).map(String).filter(Boolean)), [allowedPatternKeys]);
 
   useEffect(() => {
     let active = true;
@@ -137,14 +138,23 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
     if (!selectedGroupId) { setError('Choose the Spond group first.'); return; }
     setLoadingEvents(true); setError(''); setMessage(''); setLastImportedCount(0); setImportedSelectionSignature('');
     try {
-      const data = await invokeDirectory('directory_get_events', { groupId:selectedGroupId });
-      setPreview(data.preview || { venues:[], sessions:[] });
-      const defaults = new Set((data.preview?.sessions || []).filter(s => Number(s.occurrences || 0) >= 2).map(sessionKey));
-      if (defaults.size === 0) (data.preview?.sessions || []).forEach(s => defaults.add(sessionKey(s)));
+      const windowArgs = mode === 'finance' && scanFromDate && scanToDate ? { fromDate:scanFromDate, toDate:scanToDate } : {};
+      const data = await invokeDirectory('directory_get_events', { groupId:selectedGroupId, ...windowArgs });
+      const rawPreview = data.preview || { venues:[], sessions:[] };
+      const sessions = mode === 'finance' && allowedPatternSet.size
+        ? (rawPreview.sessions || []).filter(session => allowedPatternSet.has(String(session.patternKey || '')))
+        : (rawPreview.sessions || []);
+      const usedVenueIds = new Set(sessions.map(session => session.venueId));
+      const filteredPreview = { ...rawPreview, sessions, venues:(rawPreview.venues || []).filter(venue => usedVenueIds.has(venue.id)) };
+      setPreview(filteredPreview);
+      const defaults = new Set(sessions.filter(s => Number(s.occurrences || 0) >= 2).map(sessionKey));
+      if (defaults.size === 0) sessions.forEach(s => defaults.add(sessionKey(s)));
       setSelectedSessions(defaults);
-      setMessage(`Found ${data.rawCount || 0} upcoming Spond event occurrence${Number(data.rawCount || 0) === 1 ? '' : 's'} and ${data.preview?.sessions?.length || 0} session pattern${Number(data.preview?.sessions?.length || 0) === 1 ? '' : 's'}.`);
+      const windowText = mode === 'finance' && scanFromDate && scanToDate ? ` from ${scanFromDate} to ${scanToDate}` : ' in the upcoming scan window';
+      const filterText = mode === 'finance' && allowedPatternSet.size ? ' for the selected Finance venue' : '';
+      setMessage(`Found ${data.rawCount || 0} Spond event occurrence${Number(data.rawCount || 0) === 1 ? '' : 's'}${windowText}; showing ${sessions.length} session pattern${sessions.length === 1 ? '' : 's'}${filterText}.`);
     } catch (err) {
-      setError(err.message || 'Could not read upcoming Spond events.');
+      setError(err.message || (mode === 'finance' ? 'Could not read Spond events for the selected Finance period.' : 'Could not read upcoming Spond events.'));
     } finally { setLoadingEvents(false); }
   };
 
