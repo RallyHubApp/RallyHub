@@ -321,7 +321,7 @@ export default function FinanceSummary() {
     if (!selectedVenueIds.length) return toast.error('Tick at least one venue first.');
     setFindingSpond(true); setSyncMessage(''); setSyncResult(null); setSpondPreview(null); setSelectedOccurrenceKeys([]);
     try {
-      const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_finance_preview', listingSlug, fromDate, toDate, selectedVenueIds, selectedMonths });
+      const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_finance_preview', listingSlug, groupId:selectedSpondGroupId, fromDate, toDate, selectedVenueIds, selectedMonths });
       if (res.data?.error) throw new Error(res.data.error);
       const candidates = Array.isArray(res.data?.candidates) ? res.data.candidates : [];
       const readyKeys = candidates.filter(row=>row.ready).map(row=>row.occurrenceKey);
@@ -341,7 +341,7 @@ export default function FinanceSummary() {
     if (!selectedOccurrenceKeys.length) return toast.error('Tick at least one Spond session to sync.');
     setSyncing(true); setSyncResult(null);
     try {
-      const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_finance_sync', listingSlug, fromDate, toDate, selectedVenueIds, selectedMonths, selectedOccurrenceKeys });
+      const res = await base44.functions.invoke('spondIntegrationWorking',{ action:'directory_finance_sync', listingSlug, groupId:selectedSpondGroupId, fromDate, toDate, selectedVenueIds, selectedMonths, selectedOccurrenceKeys });
       if (res.data?.error) throw new Error(res.data.error);
       setSyncResult(res.data);
       const matched=Number(res.data.matchedCount ?? res.data.synced?.length ?? 0), skipped=Number(res.data.skipped||0);
