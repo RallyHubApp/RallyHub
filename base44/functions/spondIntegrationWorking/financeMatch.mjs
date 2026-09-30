@@ -45,6 +45,10 @@ export function financeOccurrenceStartInWindow(event,minMs,maxMs) {
   return '';
 }
 
+export function financeSpondPatternKey({heading='',day='',start='',end='',venueName='',venueAddress=''}) {
+  return [normalise(heading),String(day||''),String(start||'').slice(0,5),String(end||'').slice(0,5),normalise(venueName),normalise(venueAddress)].join('|');
+}
+
 export function findFinanceRuleForEvent({event, activityDate, local, rulesByEvent, spondRules, venuesById}) {
   let rule=rulesByEvent.get(String(event?.id || ''));
   if(rule) return {rule,matchMode:'exact_event_id',score:1};
