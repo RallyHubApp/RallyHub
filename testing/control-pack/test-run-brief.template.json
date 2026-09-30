@@ -2,7 +2,7 @@
   "run_id": "RH-YYYYMMDD-001",
   "created_at": "YYYY-MM-DDTHH:MM:SSZ",
   "protocol_versions": {
-    "master_testing_blueprint": "1.3",
+    "master_testing_blueprint": "1.4",
     "testing_control_pack": "1.0"
   },
   "protocol_declaration_accepted": false,
@@ -48,6 +48,7 @@
     "known_environment_limitations": []
   },
   "required_layers": [],
+  "handover_journey_required": true,
   "planned_test_cases": [
     {
       "test_id": "RH-T001",
