@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { findFinanceRuleForEvent, financeVenueSimilarity } from '../base44/functions/spondIntegrationWorking/financeMatch.mjs';
+import { findFinanceRuleForEvent, financeRuleIsSelected, financeVenueSimilarity } from '../base44/functions/spondIntegrationWorking/financeMatch.mjs';
 
 const venues=[
   {id:'enn',name:'Ennistymon',address:'Ennistymon Community Centre, Parliament Street, Ennistymon, Co. Clare, V95 X8XC'},
@@ -38,6 +38,11 @@ result=match({id:'6616D45E5D2945BE8D50A10D8ED25CD6',location:{feature:'St. Josep
 assert.equal(result.rule?.id,'doora-thu-19');
 assert.equal(result.matchMode,'venue_day_time');
 assert.ok(financeVenueSimilarity(result.rule,venuesById.get('doora'),{location:{feature:'St. Josephs Doora Barefield GAA Club'}})>=0.5);
+
+// Venue selection must apply to the sync itself, not only the display. Ennistymon-only sync must ignore Doora rules with no player fee.
+assert.equal(financeRuleIsSelected(rules.find(r=>r.id==='enn-19'),new Set(['enn'])),true);
+assert.equal(financeRuleIsSelected(rules.find(r=>r.id==='doora-thu-19'),new Set(['enn'])),false);
+assert.equal(Number(rules.find(r=>r.id==='enn-19')?.default_fee_per_person),5.5);
 
 // Corofin must not be misclassified as Ennistymon or Doora when no Corofin finance rule exists.
 result=match({id:'EB15B6E1B8B746209CBAFE7545D1DA8D',location:{feature:'Corofin GAA Club',address:'Newtown, Corofin'}},'2026-10-07','Wednesday','11:30');
