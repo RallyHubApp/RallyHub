@@ -1,7 +1,7 @@
 {
   "control_pack": "RallyHub Testing Control Pack",
   "control_pack_version": "1.0",
-  "master_blueprint_version": "1.3",
+  "master_blueprint_version": "1.4",
   "effective_date": "2026-09-30",
   "purpose": "Make RallyHub testing repeatable and enforceable for ChatGPT, third-party testers, browser agents, security tools and human testers.",
   "canonical_blueprint_repo_mirror": "docs/RALLYHUB_MASTER_TESTING_BLUEPRINT.md",
@@ -14,7 +14,7 @@
   },
   "mandatory_protocol_declaration": {
     "required": true,
-    "text": "I am testing RallyHub under Master Testing Blueprint v1.3 and RallyHub Testing Control Pack v1.0. I will not substitute my own testing process for the required protocol without recording and justifying the deviation."
+    "text": "I am testing RallyHub under Master Testing Blueprint v1.4 and RallyHub Testing Control Pack v1.0. I will not substitute my own testing process for the required protocol without recording and justifying the deviation."
   },
   "result_states": [
     "PASS",
@@ -61,6 +61,7 @@
     "Do not call a republish deployed until the production release is fingerprinted against the intended candidate.",
     "Record every deviation from the brief, why it was necessary, and whether it reduces confidence.",
     "Do not suppress failed tests. Continue independent tests where safe and return a complete failure list.",
+    "For meaningful user-facing workflows, complete the end-to-end handover journey before handback: discovery, instructions, setup, primary action, result interpretation, zero/error state, and mobile where relevant. The user must not be the first integration tester.",
     "Any meaningful defect fixed during the run must receive a regression test wherever practical."
   ],
   "minimum_evidence_fields": [
