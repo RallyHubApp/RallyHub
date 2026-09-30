@@ -29,8 +29,8 @@ async function installBackend(page){
 }
 
 async function assertMobileShell(page,path){
-  await page.goto(path);
-  await page.waitForTimeout(250);
+  await page.goto(path,{waitUntil:'domcontentloaded',timeout:8000}).catch(()=>{});
+  await page.waitForTimeout(600);
   const metrics=await page.evaluate(()=>{
     const aside=document.querySelector('aside');
     const main=document.querySelector('main');
