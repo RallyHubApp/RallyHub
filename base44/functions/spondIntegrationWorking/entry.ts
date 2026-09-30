@@ -435,6 +435,7 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.Venue.filter({ tenant_id:tenantId, club_id:clubId }, 'name', 500),
       ]);
       const rulesByEvent = new Map((rules || []).filter(r=>r.spond_event_id).map(r=>[String(r.spond_event_id),r]));
+      const rulesByPattern = new Map((rules || []).filter(r=>r.spond_pattern_key).map(r=>[String(r.spond_pattern_key),r]));
       const spondRules = (rules || []).filter(r=>r.income_source === 'spond');
       const venuesById = new Map((venues || []).map(v=>[String(v.id),v]));
       const selectedVenueIds = Array.isArray(body.selectedVenueIds) ? body.selectedVenueIds.map(value=>String(value)).filter(Boolean) : [];
