@@ -2,7 +2,7 @@ import fs from 'node:fs';
 const rows=JSON.parse(fs.readFileSync('docs/directory-branding/RALLYHUB_LOGO_CANDIDATES_EASY_SOURCE_2026-09-30.json','utf8'));
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const cards=rows.map(r=>{
- const image=r.filename?`<img src="./${esc(r.filename)}" alt="${esc(r.name)} candidate logo">`:`<div class="missing">No reliable candidate</div>`;
+ const image=r.status==='INVALID_PLACEHOLDER' ? `<div class="missing">Invalid social placeholder<br>— not for import —</div>` : r.filename?`<img src="./${esc(r.filename)}" alt="${esc(r.name)} candidate logo">`:`<div class="missing">No reliable candidate</div>`;
  const cls=r.decision==='APPROVE'?'approve':'hold';
  return `<article class="card ${cls}"><div class="num">${String(r.number).padStart(2,'0')}</div><div class="image">${image}</div><h2>${esc(r.name)}</h2><p class="county">${esc(r.county)}</p><div class="decision">${esc(r.decision)}</div><p class="meta">${esc(r.confidence)} · ${esc(r.method||r.status)}</p><p class="note">${esc(r.reviewNote||'')}</p>${r.sourcePage?`<a href="${esc(r.sourcePage)}" target="_blank" rel="noopener">Official source</a>`:''}</article>`;
 }).join('\n');
