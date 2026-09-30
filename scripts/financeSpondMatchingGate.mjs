@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { findFinanceRuleForEvent, financeRuleIsSelected, financeVenueSimilarity } from '../base44/functions/spondIntegrationWorking/financeMatch.mjs';
+import { findFinanceRuleForEvent, financeOccurrenceStartInWindow, financeRuleIsSelected, financeSpondPatternKey, financeVenueSimilarity } from '../base44/functions/spondIntegrationWorking/financeMatch.mjs';
 
 const venues=[
   {id:'enn',name:'Ennistymon',address:'Ennistymon Community Centre, Parliament Street, Ennistymon, Co. Clare, V95 X8XC'},
@@ -18,6 +18,15 @@ const spondRules=rules.filter(r=>r.income_source==='spond');
 function match(event,activityDate,day,time){
   return findFinanceRuleForEvent({event,activityDate,local:{day,time},rulesByEvent,spondRules,venuesById});
 }
+
+// Spond meetupTimestamp is the authoritative session time even when a secondary timestamp is earlier.
+const minMs=new Date('2026-09-01T00:00:00Z').getTime(), maxMs=new Date('2026-09-30T23:59:59Z').getTime();
+assert.equal(financeOccurrenceStartInWindow({meetupTimestamp:'2026-09-30T18:00:00Z',startTimestamp:'2026-09-29T18:00:00Z'},minMs,maxMs),'2026-09-30T18:00:00Z');
+
+// Directory scanner and Finance detail sync must produce the same stable recurring-session key.
+const enn19Pattern=financeSpondPatternKey({heading:'7pm Ennistymon Pickeball Session',day:'Wednesday',start:'19:00',end:'20:00',venueName:'Ennistymon Community Centre',venueAddress:'Parliament St, Ennistimon, Ennistymon'});
+assert.equal(enn19Pattern,'7pm ennistymon pickeball session|Wednesday|19:00|20:00|ennistymon community centre|parliament st ennistimon ennistymon');
+assert.equal(enn19Pattern,financeSpondPatternKey({heading:' 7PM Ennistymon Pickeball Session ',day:'Wednesday',start:'19:00:00',end:'20:00:00',venueName:'Ennistymon Community Centre',venueAddress:'Parliament St, Ennistimon, Ennistymon'}));
 
 // Original Ennistymon binding still takes exact priority.
 let result=match({id:'4FA65CB24B154F4AADCDC1EE376BEBF2',location:{feature:'Ennistymon Community Centre',address:'Parliament St, Ennistymon'}},'2026-09-30','Wednesday','19:00');
@@ -53,4 +62,4 @@ assert.equal(result.matchMode,'');
 result=match({id:'other',location:{feature:'Ennistymon Community Centre'}},'2026-10-08','Thursday','19:00');
 assert.equal(result.rule,null);
 
-console.log('PASS finance Spond recurring-session matcher: exact IDs, changed occurrence IDs, venue/day/time fallback, and non-match protection.');
+console.log('PASS finance Spond gate: Directory pattern keys, meetup-time precedence, exact IDs, recurrence fallback, venue selection and non-match protection.');
