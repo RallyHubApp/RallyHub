@@ -61,6 +61,7 @@ async function installFinanceBackend(page,{zeroMatch=false}={}){
       const name=decodeURIComponent(path.slice(fi+fnMarker.length).split('/')[0]);
       let body={};try{body=req.postDataJSON()||{};}catch{}
       if(name==='securityContext') return json(route,{success:true,context:null});
+      if(name==='spondIntegrationWorking'&&body.action==='directory_connection_status') return json(route,{connection:connections[0]});
       if(name==='spondIntegrationWorking'&&body.action==='directory_get_groups') return json(route,{groups:spondGroups,connectionMode:'platform_admin'});
       if(name==='spondIntegrationWorking'&&body.action==='directory_get_events') return json(route,{preview:spondDirectoryPreview,rawCount:24,events:[]});
       if(name==='spondIntegrationWorking'&&body.action==='directory_save_connection') return json(route,{success:true,connection:connections[0]});
@@ -106,13 +107,15 @@ test('Finance admin journey: Directory-style Spond group scan, assignment, detai
   const errors=[]; page.on('pageerror',e=>errors.push(e.message));
   await openFinance(page);
 
-  await page.getByRole('button',{name:'Load / refresh Spond groups'}).click();
-  await expect(page.getByTestId('finance-spond-setup')).toContainText('Clare Pickleball Members');
-  await page.getByRole('button',{name:'Scan recurring sessions'}).click();
+  await expect(page.getByRole('heading',{name:'Spond session setup'})).toBeVisible();
+  await expect(page.getByText('Clare Pickleball Members').first()).toBeVisible();
+  await page.getByRole('button',{name:'Scan upcoming events'}).click();
   await expect(page.getByText('7pm Ennistymon Pickeball Session')).toBeVisible();
   await expect(page.getByText('8pm Ennistymon Pickleball Session')).toBeVisible();
-  await expect(page.getByTestId('finance-spond-pattern-spond-session-1')).toContainText('Wednesday · 19:00–20:00');
-  await expect(page.getByTestId('finance-spond-pattern-spond-session-2')).toContainText('Wednesday · 20:00–21:00');
+  await expect(page.getByText('Wednesday · 19:00–20:00').first()).toBeVisible();
+  await expect(page.getByText('Wednesday · 20:00–21:00').first()).toBeVisible();
+  await page.getByRole('button',{name:'Use 2 selected in Finance'}).click();
+  await expect(page.getByTestId('finance-spond-assignment')).toBeVisible();
   await expect(page.getByTestId('finance-spond-pattern-spond-session-1').getByRole('combobox')).toContainText('Ennistymon · Wednesday 19:00');
   await expect(page.getByTestId('finance-spond-pattern-spond-session-2').getByRole('combobox')).toContainText('Ennistymon · Wednesday 20:00');
   await page.getByRole('button',{name:'Save Spond session assignments'}).click();
