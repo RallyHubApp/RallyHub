@@ -97,7 +97,7 @@ async function openFinance(page){
   await expect(page.getByRole('heading',{name:'Finance Summary'})).toBeVisible({timeout:15000});
   await expect(page.getByText('How to use this page')).toBeVisible();
   await expect(page.getByTestId('finance-spond-status')).toContainText('Spond connected · Clare Pickleball Members');
-  await expect(page.getByText('6 recurring finance sessions configured')).toBeVisible();
+  await expect(page.getByText('2 Spond patterns linked to Finance')).toBeVisible();
   await expect(page.getByText('2 venues with finance tracking enabled')).toBeVisible();
 }
 
