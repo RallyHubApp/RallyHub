@@ -302,7 +302,7 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
-  const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [], listingRecords: [], listingProfiles: [], invitations: [] } } = useQuery({
+  const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [], listingRecords: [], listingProfiles: [], invitations: [] }, isFetched: directoryVerificationFetched } = useQuery({
     queryKey: ['directory-verification'],
     queryFn: async () => {
       const res = await base44.functions.invoke('directoryClaim', { action: 'list_admin' });
@@ -738,6 +738,34 @@ export default function AdminPanel() {
         contactName: latestContact.name,
         contactPhone: latestContact.phone,
         contactEmail: latestContact.email,
+      });
+    }
+    // Keep the latest invitation contact as an admin-only fallback. Expiring the
+    // secure link must not make the saved name/mobile/email disappear from Admin.
+    const seenInvitationSlugs = new Set();
+    for (const invite of directoryVerification.invitations || []) {
+      const slug = String(invite?.listing_slug || '');
+      if (!slug || seenInvitationSlugs.has(slug)) continue;
+      seenInvitationSlugs.add(slug);
+      const existing = bySlug.get(slug);
+      if (!existing) continue;
+      const inviteContact = {
+        name: String(invite.contact_name || '').trim(),
+        phone: String(invite.contact_phone || '').trim(),
+        email: String(invite.contact_email || '').trim(),
+      };
+      if (!inviteContact.name && !inviteContact.phone && !inviteContact.email) continue;
+      const mergedContact = {
+        name: existing.contactName || inviteContact.name,
+        phone: existing.contactPhone || inviteContact.phone,
+        email: existing.contactEmail || inviteContact.email,
+      };
+      bySlug.set(slug, {
+        ...existing,
+        contacts: existing.contacts?.length ? existing.contacts : [mergedContact],
+        contactName: mergedContact.name,
+        contactPhone: mergedContact.phone,
+        contactEmail: mergedContact.email,
       });
     }
     return [...bySlug.values()].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
@@ -1377,9 +1405,9 @@ Brian`;
   );
   const pendingPlatformApprovalCount = platformApprovalUsers.filter(u => !u.approval_status || u.approval_status === 'pending').length;
   const directoryInvitationStillOutstanding = invite => {
-    if (invite?.status !== 'pending') return false;
-    const expiresAt = Date.parse(String(invite.expires_at || ''));
-    if (Number.isFinite(expiresAt) && expiresAt <= Date.now()) return false;
+    // Keep expired invitation records visible. The secure token expires after
+    // 72 hours; the outreach history and saved contact details do not.
+    if (!['pending', 'expired'].includes(invite?.status)) return false;
 
     const inviteName = String(invite.contact_name || '').trim().toLowerCase();
     const invitePhone = String(invite.contact_phone || '').replace(/\D/g, '');
@@ -1448,7 +1476,7 @@ Brian`;
       {activeAdminTab === 'directory' ? (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5 sm:gap-3">
           <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-clubs')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-clubs'); } }} delay={0} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <p className="text-2xl sm:text-3xl font-black text-foreground">{directoryAdminListings.length}</p>
+            <p className="text-2xl sm:text-3xl font-black text-foreground">{directoryVerificationFetched ? directoryAdminListings.length : '—'}</p>
             <p className="mt-1 text-xs sm:text-sm font-semibold">Directory listings</p>
             <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">All current club listings</p>
           </GlassCard>
@@ -1788,7 +1816,7 @@ Brian`;
                 })}
                 {filteredDirectoryAdminListings.length === 0 && <p className="p-4 text-sm text-muted-foreground">No Directory clubs match that search.</p>}
               </div>
-              <p className="text-xs text-muted-foreground">{directoryAdminListings.length} Directory clubs available · showing {filteredDirectoryAdminListings.length}</p>
+              <p className="text-xs text-muted-foreground">{directoryVerificationFetched ? `${directoryAdminListings.length} Directory clubs available · showing ${filteredDirectoryAdminListings.length}` : 'Loading current Directory build…'}</p>
             </div>}
 
             {directoryToolsOpen && <div id="directory-event-host-placeholder" className="order-80 glass rounded-xl p-4 sm:p-5 space-y-4 border border-blue-400/25 scroll-mt-24">
