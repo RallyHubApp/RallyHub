@@ -1122,12 +1122,30 @@ Brian`;
     try {
       const res = await base44.functions.invoke('directoryClaim', { action: 'prepare_resend_invitation', invitationId: invite.id });
       if (res.data?.error) throw new Error(res.data.error);
-      const message = directoryInviteMessage({ claimUrl: res.data.claimUrl, clubName: res.data.clubName, contactName: res.data.contactName, accessRole: res.data.accessRole });
-      setResendPreview({ ...res.data, email: res.data.contactEmail, phone: res.data.contactPhone, county: directoryAdminListings.find(x => x.slug === res.data.listingSlug)?.county || '', subject: res.data.accessRole === 'editor' ? `RallyHub Directory editor invitation – ${res.data.clubName}` : `Your free RallyHub Directory listing – ${res.data.clubName}`, message: res.data.channel === 'email' ? message.replace(/\*/g, '') : message });
+      const firstName = String(res.data.contactName || '').trim().split(/\s+/)[0] || 'there';
+      const message = `Hi ${firstName},\n\nThe previous RallyHub Directory link for ${res.data.clubName} has expired. Here is a fresh secure link:\n\n${res.data.claimUrl}\n\nThis new link is valid for 72 hours.\n\nBrian`;
+      setResendPreview({
+        ...res.data,
+        email: res.data.contactEmail,
+        phone: res.data.contactPhone,
+        county: directoryAdminListings.find(x => x.slug === res.data.listingSlug)?.county || '',
+        subject: `Fresh RallyHub Directory link – ${res.data.clubName}`,
+        message,
+      });
       queryClient.invalidateQueries({ queryKey: ['directory-verification'] });
-      toast.success('Fresh 72-hour invitation prepared — review it before sending');
-    } catch (error) { toast.error(error.message || 'Could not prepare the resend'); }
+      toast.success('Fresh 72-hour link created');
+    } catch (error) { toast.error(error.message || 'Could not create a fresh link'); }
     finally { setResendInviteBusy(''); }
+  };
+
+  const copyResendLink = async () => {
+    if (!resendPreview?.claimUrl) return;
+    try {
+      await navigator.clipboard.writeText(resendPreview.claimUrl);
+      toast.success('Fresh claim link copied');
+    } catch {
+      toast.error('Could not copy the fresh claim link');
+    }
   };
 
   const openResendWhatsApp = () => {
