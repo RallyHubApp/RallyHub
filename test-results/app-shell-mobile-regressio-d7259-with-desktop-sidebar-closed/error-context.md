@@ -29,11 +29,11 @@ Call log:
   6  | 
   7  | async function installBackend(page){
   8  |   await page.addInitScript(()=>localStorage.setItem('base44_access_token','mobile-shell-e2e-token'));
-  9  |   await page.route('**/api/apps/**',async route=>{
+  9  |   await page.route('**/api/**',async route=>{
   10 |     const req=route.request(); const url=new URL(req.url()); const path=url.pathname;
   11 |     if(path.includes('/analytics/')) return json(route,{});
   12 |     if(path.includes('/public-settings/')) return json(route,{id:APP_ID,public_settings:{}});
-  13 |     if(path.endsWith('/entities/User/me')) return json(route,user);
+  13 |     if(path.endsWith('/entities/User/me')||path.endsWith('/users/me')||path.endsWith('/auth/me')) return json(route,user);
   14 |     const fnMarker=`/api/apps/${APP_ID}/functions/`; const fi=path.indexOf(fnMarker);
   15 |     if(fi>=0){
   16 |       const name=decodeURIComponent(path.slice(fi+fnMarker.length).split('/')[0]);
