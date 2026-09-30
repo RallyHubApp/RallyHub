@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   LayoutDashboard, Users, Trophy, Crown,
   BarChart3, X, ChevronRight, UserCircle, Shield, MapPin, CalendarCheck, ContactRound, ClipboardList,
-  CalendarDays, BookOpen, Home, MessageCircle
+  CalendarDays, BookOpen, Home, MessageCircle, WalletCards
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -48,6 +48,7 @@ export default function Sidebar({ isOpen, onToggle }) {
     { path: '/directory', label: 'Public Directory', icon: MapPin, section: 'SUPER ADMIN' },
     { path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true, section: 'CLUB OPERATIONS' },
     { path: '/app/membership', label: 'Membership', icon: ContactRound, section: 'CLUB OPERATIONS' },
+    { path: '/app/finance', label: 'Finance Summary', icon: WalletCards, section: 'CLUB OPERATIONS' },
     { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList, section: 'CLUB OPERATIONS' },
     { path: '/app/players', label: 'Players', icon: Users, section: 'CLUB OPERATIONS' },
     { path: '/app/guest-bookings', label: 'Session Bookings', icon: CalendarCheck, section: 'CLUB OPERATIONS' },
@@ -64,6 +65,7 @@ export default function Sidebar({ isOpen, onToggle }) {
     ...(canAccessAdmin ? [{ path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true }] : []),
     ...(canManageMembership ? [
       { path: '/app/membership', label: 'Membership', icon: ContactRound },
+      { path: '/app/finance', label: 'Finance Summary', icon: WalletCards },
       { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList },
       { path: '/app/events', label: 'Events', icon: CalendarDays },
       { path: '/app/learn/manage', label: 'Learn Resources', icon: BookOpen }
