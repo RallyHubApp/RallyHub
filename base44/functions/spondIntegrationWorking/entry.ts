@@ -373,7 +373,7 @@ Deno.serve(async (req) => {
       return Response.json({ success:true, created, updated, stale, active:seen.size, syncedAt });
     }
 
-    if (action === 'directory_finance_sync') {
+    if (action === 'directory_finance_preview' || action === 'directory_finance_sync') {
       const bindings = await base44.asServiceRole.entities.SpondSessionBinding.filter({ listing_slug:slug, active:true }, 'directory_session_key', 200);
       const firstBinding = bindings?.[0];
       if (!firstBinding?.tenant_id || !firstBinding?.club_id) return Response.json({ error:'No club-owned Spond session bindings are configured for this Directory listing.' }, { status:409 });
@@ -407,10 +407,13 @@ Deno.serve(async (req) => {
       });
       const raw = await spondRequest(`/sponds?${params.toString()}`, token);
       const minMs=minStart.getTime(), maxMs=maxStart.getTime();
+      const selectedMonths = Array.isArray(body.selectedMonths) ? body.selectedMonths.map(Number).filter(value=>Number.isInteger(value)&&value>=1&&value<=12) : [];
+      const selectedMonthSet = new Set(selectedMonths);
       const bounded=(Array.isArray(raw)?raw:[])
         .map(e=>({...e,_resolvedStartTimestamp:occurrenceStartInWindow(e,minMs,maxMs)}))
         .filter(e=>e._resolvedStartTimestamp)
-        .filter(e=>{ const d=irelandDate(e._resolvedStartTimestamp); return d>=fromDate && d<=toDate; });
+        .filter(e=>{ const d=irelandDate(e._resolvedStartTimestamp); return d>=fromDate && d<=toDate; })
+        .filter(e=>{ if(!selectedMonthSet.size)return true; const local=dublinParts(e._resolvedStartTimestamp); const month=Number(String(local?.date||'').slice(5,7)); return selectedMonthSet.has(month); });
 
       const [rules, venues] = await Promise.all([
         base44.asServiceRole.entities.ClubFinanceVenueRule.filter({ tenant_id:tenantId, club_id:clubId, active:true }, 'weekday', 500),
@@ -421,6 +424,8 @@ Deno.serve(async (req) => {
       const venuesById = new Map((venues || []).map(v=>[String(v.id),v]));
       const selectedVenueIds = Array.isArray(body.selectedVenueIds) ? body.selectedVenueIds.map(value=>String(value)).filter(Boolean) : [];
       const selectedVenueSet = new Set(selectedVenueIds);
+      const selectedOccurrenceKeys = Array.isArray(body.selectedOccurrenceKeys) ? body.selectedOccurrenceKeys.map(value=>String(value)).filter(Boolean) : [];
+      const selectedOccurrenceSet = new Set(selectedOccurrenceKeys);
       const settings = (await base44.asServiceRole.entities.ClubFinanceSettings.filter({ tenant_id:tenantId, club_id:clubId }, '-updated_date', 5))?.[0] || null;
       const fyMonth = Number(settings?.financial_year_start_month || 9);
       const fyDay = Number(settings?.financial_year_start_day || 1);
