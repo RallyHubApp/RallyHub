@@ -23,6 +23,18 @@
       ],
       "default": "active"
     },
+    "hourly_hire_rate": {
+      "type": "number",
+      "description": "Default venue hire cost per hour for club finance calculations."
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR"
+    },
+    "finance_tracking_enabled": {
+      "type": "boolean",
+      "default": false
+    },
     "notes": {
       "type": "string"
     }
