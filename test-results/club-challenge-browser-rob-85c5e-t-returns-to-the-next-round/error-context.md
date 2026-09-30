@@ -46,7 +46,7 @@ Call log:
   - button "4 Live Event"
   - button "5 Simulator"
   - button "6 Results"
-  - text: BREAK 19:57
+  - text: BREAK 19:58
   - strong: 0/4
   - text: current scores saved
   - button "Audio ON":
@@ -68,7 +68,7 @@ Call log:
   - button "R8"
   - paragraph: Finish-on-Time Guide
   - text: RECOVERY NEEDED
-  - paragraph: Booked finish 11:36 PM · projected finish 11:38 PM · started 91 min late
+  - paragraph: Booked finish 11:49 PM · projected finish 11:51 PM · started 90 min late
   - paragraph: 3 min over
   - paragraph: Recalculates throughout the event
   - paragraph: Recommended recovery
@@ -78,7 +78,7 @@ Call log:
   - paragraph: Clare Blue 0 – 0 Clare Gold
   - text: 0W 0D 0W
   - paragraph: Break now
-  - paragraph: 19:57
+  - paragraph: 19:58
   - paragraph: Round 7 is waiting. The host can shorten, extend or end the break.
   - button "5 min":
     - img
@@ -165,7 +165,7 @@ Call log:
   - paragraph: Break Timer
   - paragraph: 20-minute scheduled break · Round 7 waits
   - text: break
-  - paragraph: 19:57
+  - paragraph: 19:58
   - paragraph: Host break controls
   - paragraph: Shorten, extend or end the break to keep the event on time.
   - button "5 min":

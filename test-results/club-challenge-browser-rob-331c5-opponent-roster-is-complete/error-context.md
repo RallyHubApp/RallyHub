@@ -108,6 +108,9 @@ Call log:
   - list:
     - listitem:
       - img
+      - text: 32 practice players loaded. You can now rehearse the full setup and draw journey.
+    - listitem:
+      - img
       - text: Interclub Challenge setup saved
 ```
 

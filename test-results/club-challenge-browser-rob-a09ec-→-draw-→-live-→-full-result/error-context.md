@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('Club A Test 01')
+Locator: getByTestId('cc-load-practice')
 Expected: visible
 Timeout: 1800ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('Club A Test 01') with timeout 1800ms
-  - waiting for getByText('Club A Test 01')
+  - Expect "toBeVisible" getByTestId('cc-load-practice') with timeout 1800ms
+  - waiting for getByTestId('cc-load-practice')
 
 ```
 
@@ -40,7 +40,7 @@ Call log:
   - button "6 Results"
   - paragraph: Participants
   - paragraph: Event ranks are independent of permanent RallyHub skill ratings.
-  - button "Practice with 32 Test Players" [disabled]:
+  - button "Practice with 32 Test Players":
     - img
     - text: Practice with 32 Test Players
   - paragraph: Guest Player Registration
@@ -72,43 +72,40 @@ Call log:
   - text: "0 players A: 0 rotation · 0 reserve B: 0 rotation · 0 reserve Rotation squads 0–0 · draw not ready"
   - button "Unassigned Pool"
   - text: Team name
-  - textbox [disabled]: Clare Pickleball Club
+  - textbox: Clare Pickleball Club
   - img
   - paragraph: Roster controls
   - img
-  - textbox "Search RallyHub club players" [disabled]
-  - textbox "Guest name" [disabled]
-  - combobox [disabled]: Gender optional
+  - textbox "Search RallyHub club players"
+  - textbox "Guest name"
+  - combobox: Gender optional
   - button "Add Guest" [disabled]
   - paragraph: Club players keep their RallyHub identity. A typed guest is event-only and does not become a club member.
-  - button "Import Spond" [disabled]:
+  - button "Import Spond":
     - img
     - text: Import Spond
   - img
   - text: Import CSV 0 M 0 F 0 Drag players here Team name
-  - textbox [disabled]: Opponent Club
+  - textbox: Opponent Club
   - img
   - paragraph: Roster controls
   - img
-  - textbox "Search RallyHub club players" [disabled]
-  - textbox "Guest name" [disabled]
-  - combobox [disabled]: Gender optional
+  - textbox "Search RallyHub club players"
+  - textbox "Guest name"
+  - combobox: Gender optional
   - button "Add Guest" [disabled]
   - paragraph: Club players keep their RallyHub identity. A typed guest is event-only and does not become a club member.
-  - button "Import Spond" [disabled]:
+  - button "Import Spond":
     - img
     - text: Import Spond
   - img
   - text: Import CSV 0 M 0 F 0 Drag players here Current squads are 0–0. You can save now; only the draw remains locked until the Rotation squads are equal.
-  - button "Saving…" [disabled]
+  - button "Save Current Rosters & Rankings"
   - button "Generate Draw & Fairness Report" [disabled]:
     - img
     - text: Generate Draw & Fairness Report
 - region "Notifications alt+T":
   - list:
-    - listitem:
-      - img
-      - text: 32 practice players loaded. You can now rehearse the full setup and draw journey.
     - listitem:
       - img
       - text: Interclub Challenge setup saved
@@ -117,6 +114,9 @@ Call log:
 # Test source
 
 ```ts
+  196 | 
+  197 |     return { success:true };
+  198 |   };
   199 | 
   200 |   return model;
   201 | }
@@ -214,11 +214,11 @@ Call log:
   293 |   await expectNoHorizontalOverflow(page);
   294 |   const lateStartClock=new Date(Date.now()-90*60000);const lateStartHHMM=`${String(lateStartClock.getHours()).padStart(2,'0')}:${String(lateStartClock.getMinutes()).padStart(2,'0')}`;await page.getByTestId('cc-scheduled-start-time').fill(lateStartHHMM);
   295 | 
-  296 |   let started=Date.now();await page.getByTestId('cc-save-setup').click();await expect(page.getByTestId('cc-load-practice')).toBeVisible({timeout:1800});metric(report,'setup_to_teams_ms',Date.now()-started,1500);
+> 296 |   let started=Date.now();await page.getByTestId('cc-save-setup').click();await expect(page.getByTestId('cc-load-practice')).toBeVisible({timeout:1800});metric(report,'setup_to_teams_ms',Date.now()-started,1500);
+      |                                                                                                                             ^ Error: expect(locator).toBeVisible() failed
   297 |   expect(model.event?.status).toBe('draft');
   298 | 
-> 299 |   started=Date.now();await page.getByTestId('cc-load-practice').click();await expect(page.getByText('Club A Test 01')).toBeVisible({timeout:1800});metric(report,'practice_roster_ms',Date.now()-started,1500);expect(model.participants.length).toBe(32);
-      |                                                                                                                        ^ Error: expect(locator).toBeVisible() failed
+  299 |   started=Date.now();await page.getByTestId('cc-load-practice').click();await expect(page.getByText('Club A Test 01')).toBeVisible({timeout:1800});metric(report,'practice_roster_ms',Date.now()-started,1500);expect(model.participants.length).toBe(32);
   300 |   await expect(page.getByText('12').first()).toBeVisible();await expectNoHorizontalOverflow(page);
   301 | 
   302 |   await expect(page.getByText('Build the two teams')).toBeVisible();await expect(page.getByText('Unassigned Player Pool',{exact:true})).toBeHidden();await page.getByRole('button',{name:/^Unassigned Pool/}).click();await expect(page.getByText('Unassigned Player Pool',{exact:true})).toBeVisible();report.unassigned_pool_on_demand=true;
@@ -316,7 +316,4 @@ Call log:
   394 |   await expect(page.getByRole('button',{name:'Final',exact:true})).toBeVisible();
   395 | 
   396 |   await page.getByRole('button',{name:'Teams',exact:true}).click();await expect(page.getByRole('heading',{name:'Teams'})).toBeVisible();
-  397 |   const aTeam=page.getByRole('heading',{name:'Banner Strikers'}).locator('xpath=../..');const aText=await aTeam.innerText();expect(aText.indexOf('Aoife Player')).toBeLessThan(aText.indexOf('Brian Player'));expect(aText.indexOf('Brian Player')).toBeLessThan(aText.indexOf('Zara Player'));
-  398 | 
-  399 |   await expect(page.getByRole('button',{name:'Event Info',exact:true})).toHaveCount(0);
 ```
