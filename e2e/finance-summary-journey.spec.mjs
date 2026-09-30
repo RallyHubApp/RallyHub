@@ -61,6 +61,9 @@ async function installFinanceBackend(page,{zeroMatch=false}={}){
       const name=decodeURIComponent(path.slice(fi+fnMarker.length).split('/')[0]);
       let body={};try{body=req.postDataJSON()||{};}catch{}
       if(name==='securityContext') return json(route,{success:true,context:null});
+      if(name==='spondIntegrationWorking'&&body.action==='directory_get_groups') return json(route,{groups:spondGroups,connectionMode:'platform_admin'});
+      if(name==='spondIntegrationWorking'&&body.action==='directory_get_events') return json(route,{preview:spondDirectoryPreview,rawCount:24,events:[]});
+      if(name==='spondIntegrationWorking'&&body.action==='directory_save_connection') return json(route,{success:true,connection:connections[0]});
       if(name==='spondIntegrationWorking'&&body.action==='directory_finance_preview'){
         if(!Array.isArray(body.selectedVenueIds) || body.selectedVenueIds.length!==1 || body.selectedVenueIds[0]!=='enn') return json(route,{error:'Finance journey test expected Ennistymon-only preview'},400);
         if(zeroMatch) return json(route,{success:true,preview:true,fromDate:body.fromDate,toDate:body.toDate,candidates:[],fetchedCount:0,totalSpondEventsInRange:11,readyCount:0,diagnostics:{exactMatches:0,scheduleMatches:0,unmatchedRule:8,missingFee:0,outsideEffectiveRange:0,ignoredNotSelected:3},connection:{groupId:connections[0].spond_group_id,groupName:connections[0].spond_group_name}});
