@@ -42,15 +42,25 @@ export default function DirectorySpondPanel({ listingSlug, clubName = '', onImpo
 
   useEffect(() => {
     let active = true;
-    base44.functions.invoke('spondIntegrationWorking', { action:'directory_connection_status', listingSlug })
-      .then(res => {
+    (async()=>{
+      try {
+        const res = await base44.functions.invoke('spondIntegrationWorking', { action:'directory_connection_status', listingSlug });
         if (!active || res.data?.error) return;
-        setConnection(res.data?.connection || null);
-        if (res.data?.connection?.spond_group_id) setSelectedGroupId(String(res.data.connection.spond_group_id));
-      })
-      .catch(() => {})
+        const linked = res.data?.connection || null;
+        setConnection(linked);
+        if (linked?.spond_group_id) setSelectedGroupId(String(linked.spond_group_id));
+        if (user?.role === 'admin') {
+          const groupsRes = await base44.functions.invoke('spondIntegrationWorking', { action:'directory_get_groups', listingSlug });
+          if (!active || groupsRes.data?.error) return;
+          const available = groupsRes.data?.groups || [];
+          setGroups(available);
+          setNeedsLogin(false);
+          if (linked?.spond_group_id && available.some(g=>String(g.id)===String(linked.spond_group_id))) setSelectedGroupId(String(linked.spond_group_id));
+        }
+      } catch {}
+    })();
     return () => { active = false; };
-  }, [listingSlug]);
+  }, [listingSlug, user?.role]);
 
   const invokeDirectory = async (action, extra = {}) => {
     const payload = { action, listingSlug, ...extra };
