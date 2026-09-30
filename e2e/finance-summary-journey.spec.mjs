@@ -26,10 +26,16 @@ const bindings=[{id:'binding1',tenant_id:tenantId,club_id:clubId,listing_slug:'c
 const connections=[{id:'connection1',listing_slug:'clare-pickleball',spond_group_id:'245CFD5D9CF044B7B203A3182BD02721',spond_group_name:'Clare Pickleball Members',status:'active',last_synced_at:'2026-09-28T12:15:46.487Z'}];
 const spondGroups=[{id:'OTHER',name:'Other Group',memberCount:12},{id:'245CFD5D9CF044B7B203A3182BD02721',name:'Clare Pickleball Members',memberCount:130}];
 const spondDirectoryPreview={
-  venues:[{id:'spond-ennistymon-community-centre-1',name:'Ennistymon Community Centre',address:'Parliament St, Ennistimon, Ennistymon'}],
+  venues:[
+    {id:'spond-ennistymon-community-centre-1',name:'Ennistymon Community Centre',address:'Parliament St, Ennistimon, Ennistymon'},
+    {id:'spond-doora-1',name:'St. Josephs Doora Barefield GAA Club',address:'Gurteen, Quin Road, Co. Clare'},
+  ],
   sessions:[
-    {id:'spond-session-1',patternKey:'7pm ennistymon pickeball session|Wednesday|19:00|20:00|ennistymon community centre|parliament st ennistimon ennistymon',venueId:'spond-ennistymon-community-centre-1',spondVenueName:'Ennistymon Community Centre',spondVenueAddress:'Parliament St, Ennistimon, Ennistymon',day:'Wednesday',start:'19:00',end:'20:00',level:'7pm Ennistymon Pickeball Session',occurrences:12,nextDate:'2026-09-30',source:'Spond'},
-    {id:'spond-session-2',patternKey:'8pm ennistymon pickleball session|Wednesday|20:00|21:00|ennistymon community centre|parliament st ennistimon ennistymon',venueId:'spond-ennistymon-community-centre-1',spondVenueName:'Ennistymon Community Centre',spondVenueAddress:'Parliament St, Ennistimon, Ennistymon',day:'Wednesday',start:'20:00',end:'21:00',level:'8pm Ennistymon Pickleball Session',occurrences:12,nextDate:'2026-09-30',source:'Spond'},
+    {id:'spond-session-banner',patternKey:'banner bash 7 10pm|Thursday|19:00|22:00|st josephs doora barefield club|gurteen quin road co clare',venueId:'spond-doora-1',spondVenueName:'St. Josephs Doora Barefield GAA Club',spondVenueAddress:'Gurteen, Quin Road, Co. Clare',day:'Thursday',start:'19:00',end:'22:00',level:'Banner Bash 7-10pm',occurrences:2,nextDate:'2026-09-24',source:'Spond'},
+    {id:'spond-session-doora-19',patternKey:'1900 thurs social fun matchplay|Thursday|19:00|20:30|st josephs doora barefield club|gurteen quin road co clare',venueId:'spond-doora-1',spondVenueName:'St. Josephs Doora Barefield GAA Club',spondVenueAddress:'Gurteen, Quin Road, Co. Clare',day:'Thursday',start:'19:00',end:'20:30',level:'1900 Thurs Social Fun Matchplay',occurrences:17,nextDate:'2026-10-01',source:'Spond'},
+    {id:'spond-session-doora-2030',patternKey:'2030 thurs social and improver matchplay|Thursday|20:30|22:00|st josephs doora barefield club|gurteen quin road co clare',venueId:'spond-doora-1',spondVenueName:'St. Josephs Doora Barefield GAA Club',spondVenueAddress:'Gurteen, Quin Road, Co. Clare',day:'Thursday',start:'20:30',end:'22:00',level:'2030 Thurs Social and Improver Matchplay',occurrences:17,nextDate:'2026-10-01',source:'Spond'},
+    {id:'spond-session-1',patternKey:'7pm ennistymon pickeball session|Wednesday|19:00|20:00|ennistymon community centre|parliament st ennistimon ennistymon',venueId:'spond-ennistymon-community-centre-1',spondVenueName:'Ennistymon Community Centre',spondVenueAddress:'Parliament St, Ennistimon, Ennistymon',day:'Wednesday',start:'19:00',end:'20:00',level:'7pm Ennistymon Pickeball Session',occurrences:4,nextDate:'2026-09-09',source:'Spond'},
+    {id:'spond-session-2',patternKey:'8pm ennistymon pickleball session|Wednesday|20:00|21:00|ennistymon community centre|parliament st ennistimon ennistymon',venueId:'spond-ennistymon-community-centre-1',spondVenueName:'Ennistymon Community Centre',spondVenueAddress:'Parliament St, Ennistimon, Ennistymon',day:'Wednesday',start:'20:00',end:'21:00',level:'8pm Ennistymon Pickleball Session',occurrences:4,nextDate:'2026-09-09',source:'Spond'},
   ]
 };
 const dates=['2026-09-09','2026-09-16','2026-09-23','2026-09-30'];
@@ -63,7 +69,10 @@ async function installFinanceBackend(page,{zeroMatch=false}={}){
       if(name==='securityContext') return json(route,{success:true,context:null});
       if(name==='spondIntegrationWorking'&&body.action==='directory_connection_status') return json(route,{connection:connections[0]});
       if(name==='spondIntegrationWorking'&&body.action==='directory_get_groups') return json(route,{groups:spondGroups,connectionMode:'platform_admin'});
-      if(name==='spondIntegrationWorking'&&body.action==='directory_get_events') return json(route,{preview:spondDirectoryPreview,rawCount:24,events:[]});
+      if(name==='spondIntegrationWorking'&&body.action==='directory_get_events'){
+        if(body.fromDate!=='2026-09-01'||body.toDate!=='2026-09-30') return json(route,{error:`Finance scan must use selected September window, got ${body.fromDate||'none'} to ${body.toDate||'none'}`},400);
+        return json(route,{preview:spondDirectoryPreview,rawCount:11,events:[],requestedFrom:body.fromDate,requestedTo:body.toDate});
+      }
       if(name==='spondIntegrationWorking'&&body.action==='directory_save_connection') return json(route,{success:true,connection:connections[0]});
       if(name==='spondIntegrationWorking'&&body.action==='directory_finance_preview'){
         if(!Array.isArray(body.selectedVenueIds) || body.selectedVenueIds.length!==1 || body.selectedVenueIds[0]!=='enn') return json(route,{error:'Finance journey test expected Ennistymon-only preview'},400);
@@ -109,8 +118,14 @@ test('Finance admin journey: Directory-style Spond group scan, assignment, detai
 
   await expect(page.getByRole('heading',{name:'Spond session setup'})).toBeVisible();
   await expect(page.getByText('Clare Pickleball Members').first()).toBeVisible();
-  await page.getByRole('button',{name:'Scan upcoming events'}).click();
+  await page.getByTestId('finance-venue-all').click();
+  await page.getByTestId('finance-venue-enn').click();
+  await expect(page.getByText(/Current scan: 2026-09-01 to 2026-09-30 · Ennistymon/)).toBeVisible();
+  await page.getByRole('button',{name:'Scan selected period'}).click();
   await expect(page.getByText('7pm Ennistymon Pickeball Session')).toBeVisible();
+  await expect(page.getByText('Banner Bash 7-10pm')).toHaveCount(0);
+  await expect(page.getByText('1900 Thurs Social Fun Matchplay')).toHaveCount(0);
+  await expect(page.getByText('2030 Thurs Social and Improver Matchplay')).toHaveCount(0);
   await expect(page.getByText('8pm Ennistymon Pickleball Session')).toBeVisible();
   await expect(page.getByText('Wednesday · 19:00–20:00').first()).toBeVisible();
   await expect(page.getByText('Wednesday · 20:00–21:00').first()).toBeVisible();
@@ -120,8 +135,6 @@ test('Finance admin journey: Directory-style Spond group scan, assignment, detai
   await expect(page.getByTestId('finance-spond-pattern-spond-session-2').getByRole('combobox')).toContainText('Ennistymon · Wednesday 20:00');
   await page.getByRole('button',{name:'Save Spond session assignments'}).click();
 
-  await page.getByTestId('finance-venue-all').click();
-  await page.getByTestId('finance-venue-enn').click();
   await expect(page.getByTestId('finance-venue-enn').locator('[role="checkbox"]')).toHaveAttribute('data-state','checked');
 
   await page.getByTestId('finance-month-filter').click();
