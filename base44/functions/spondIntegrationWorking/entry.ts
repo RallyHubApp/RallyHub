@@ -98,7 +98,7 @@ function collectResponseIds(event) {
   return {accepted,waiting};
 }
 
-function financeResponseMeta(event) {
+function financeResponseMeta(event, feePerPerson=null) {
   const accepted = new Set((event?.responses?.acceptedIds || []).map(String));
   const declined = new Set((event?.responses?.declinedIds || []).map(String));
   const notes = new Map();
@@ -124,12 +124,15 @@ function financeResponseMeta(event) {
     }
   }
   const paidLanguage = /\b(already\s+paid|paid\s+(already|before|online|for)|payment\s+(made|sent|done)|have\s+paid|has\s+paid|i\s+paid|paid)\b/i;
-  const negativeLanguage = /\b(not\s+paid|not\s+yet\s+paid|didn['’]?t\s+pay|did\s+not\s+pay|refund(?:ed)?|money\s+back)\b/i;
+  const negativeLanguage = /\b(not\s+paid|not\s+yet\s+paid|didn['’]?t\s+pay|did\s+not\s+pay|refund(?:ed)?|money\s+back|can['’]?t\s+pay|cannot\s+pay|unable\s+to\s+pay|will\s+pay\s+later|owe)\b/i;
+  const fee = Number(feePerPerson);
+  const feePatterns = Number.isFinite(fee) ? [fee.toFixed(2),String(fee).replace('.',','),`€${fee.toFixed(2)}`,`€${String(fee).replace('.',',')}`] : [];
   const paidDeclinedIds = [];
   const declinedNotes = [];
   for (const id of declined) {
     const note = notes.get(String(id)) || '';
-    const paid = !!note && paidLanguage.test(note) && !negativeLanguage.test(note);
+    const mentionsConfiguredFee = !!note && feePatterns.some(value=>note.toLowerCase().includes(String(value).toLowerCase()));
+    const paid = !!note && (paidLanguage.test(note) || mentionsConfiguredFee) && !negativeLanguage.test(note);
     if (paid) paidDeclinedIds.push(String(id));
     declinedNotes.push({ memberId:String(id), note, countedAsPaid:paid });
   }
@@ -420,8 +423,10 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.Venue.filter({ tenant_id:tenantId, club_id:clubId }, 'name', 500),
       ]);
       const rulesByEvent = new Map((rules || []).filter(r=>r.spond_event_id).map(r=>[String(r.spond_event_id),r]));
-      const rulesByPattern = new Map((rules || []).filter(r=>r.spond_pattern_key).map(r=>[String(r.spond_pattern_key),r]));
+      const mappedPatternRules = (rules || []).filter(r=>r.income_source==='spond' && r.spond_pattern_key && (!r.spond_group_id || String(r.spond_group_id)===financeGroupId));
+      const rulesByPattern = new Map(mappedPatternRules.map(r=>[String(r.spond_pattern_key),r]));
       const spondRules = (rules || []).filter(r=>r.income_source === 'spond');
+      const strictPatternMapping = mappedPatternRules.length > 0;
       const venuesById = new Map((venues || []).map(v=>[String(v.id),v]));
       const selectedVenueIds = Array.isArray(body.selectedVenueIds) ? body.selectedVenueIds.map(value=>String(value)).filter(Boolean) : [];
       const selectedVenueSet = new Set(selectedVenueIds);
@@ -447,7 +452,7 @@ Deno.serve(async (req) => {
         const sourceVenueAddress = clean(event?.location?.address || '', 320);
         const eventPatternKey = financeSpondPatternKey({ heading:clean(event?.heading || 'Club Session',180), day:local.day, start:local.time, end:endLocal?.time||'', venueName:sourceVenueName, venueAddress:sourceVenueAddress });
         const patternRule = rulesByPattern.get(eventPatternKey) || null;
-        const match = patternRule ? { rule:patternRule, matchMode:'directory_pattern', score:1 } : findFinanceRuleForEvent({ event, activityDate, local, rulesByEvent, spondRules, venuesById });
+        const match = patternRule ? { rule:patternRule, matchMode:'directory_pattern', score:1 } : strictPatternMapping ? { rule:null, matchMode:'', score:0 } : findFinanceRuleForEvent({ event, activityDate, local, rulesByEvent, spondRules, venuesById });
         const rule = match.rule;
         const matchMode = match.matchMode;
         if (!rule) { skipped++; unmatchedRule++; continue; }
@@ -455,10 +460,10 @@ Deno.serve(async (req) => {
         selectedEventCount++;
         if (matchMode === 'exact_event_id') exactMatches++; else scheduleMatches++;
 
-        const response = financeResponseMeta(event);
-        const paidPlaces = response.goingCount + response.declinedPaidCount;
         const feeMissing = rule.default_fee_per_person == null || rule.default_fee_per_person === '';
         const fee = feeMissing ? null : Number(rule.default_fee_per_person);
+        const response = financeResponseMeta(event, fee);
+        const paidPlaces = response.goingCount + response.declinedPaidCount;
         const durationHours = Number(rule.duration_minutes || 0) / 60;
         const venue = venuesById.get(String(rule.venue_id || ''));
         const liveHourlyRate = Number(venue?.hourly_hire_rate);
