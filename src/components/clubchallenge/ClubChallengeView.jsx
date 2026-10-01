@@ -862,11 +862,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       };
       await base44.entities.Tournament.update(tournament.id, tournamentUpdate);
       toast.success(`${INTERCLUB_EVENT_LABEL} setup saved`);
-      // Navigation should not wait for four serial refreshes. Move to Teams as soon
-      // as the authoritative writes succeed, then refresh the independent datasets
-      // concurrently so mobile users get immediate feedback even on venue Wi-Fi.
+      // Move immediately, then refresh authoritative datasets serially. Base44 burst
+      // limits are more dangerous on venue Wi-Fi than the small latency saving from
+      // parallel reads; this path is part of the Interclub event-readiness gate.
       setTab('teams');
-      await Promise.all([refetchEvent(), refetchParticipants(), refetchMatches()]);
+      await refetchEvent();
+      await refetchParticipants();
+      await refetchMatches();
       queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
     } catch (e) { toast.error(e?.message || 'Could not save setup'); }
     setSaving(false);
