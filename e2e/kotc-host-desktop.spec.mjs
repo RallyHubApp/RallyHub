@@ -646,7 +646,7 @@ test('KOTC hall-pressure simulator: 18 players, 12 rounds, slow provider, rapid 
       await prepare.click();
       await expect(prepare).toContainText('Preparing Round…',{timeout:250});
       report.prepare_ack_ms.push(Date.now()-prepAt);
-      await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Preparing Round ${round+1}`,{timeout:300});
+      await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Checking Round ${round} scores`,{timeout:300});
       await sleep(300);
       await page.evaluate(()=>{window.dispatchEvent(new Event('focus'));document.dispatchEvent(new Event('visibilitychange'));});
       await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Preparing Round ${round+1}`);
