@@ -127,7 +127,7 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
   card2=await fillCourt(b,2,9,6);await card2.getByRole('button',{name:'Save Result'}).click();
   await expect(card2).toContainText('Score saved: 9–6');
   await expect(b.getByText('All court scores saved')).toBeVisible({timeout:2500});
-  await expect(b.getByText(/waiting for the host/i)).toBeVisible();
+  await expect(b.getByText(/once the host finishes the King of the Court/i)).toBeVisible();
   expect(model.calls.some(c=>c.commandType==='generate_next_round'||c.action==='generate_next_round')).toBe(false);
 
   // Busy-hall phone checks: no sideways scrolling and primary score controls are
@@ -150,7 +150,7 @@ test('player scoring: per-court lock, parallel courts, saved confirmation and co
 test('finished KOTC: existing player scorer link becomes the final results link on Refresh Round',async({browser})=>{
   const model=createModel();
   const ctx=await browser.newContext({viewport:{width:390,height:844}});await install(ctx,model);const page=await openScorer(ctx);
-  await expect(page.getByTestId('kotc-final-round-results-help')).toContainText('This same player link will then open the final results');
+  await expect(page.getByTestId('kotc-final-round-results-help')).toContainText('This same player link will then open the final podium and saved round results');
   await expect(page.getByTestId('scorer-refresh')).toContainText('Refresh / View Results');
   model.setFinished(true);
   await page.getByTestId('scorer-refresh').click();
