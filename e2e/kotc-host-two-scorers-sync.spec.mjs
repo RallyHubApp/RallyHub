@@ -222,12 +222,14 @@ test('same-millisecond host/helper first digits leave exactly one court owner',a
     await host.getByTestId('kotc-score-card-1').getByRole('button',{name:'Cancel'}).click();
     await scorer.getByTestId('scorer-refresh').click();
     await scorerInput.fill('4');await expect(scorerInput).toHaveValue('4');
+    await expect(scorer.getByTestId('scorer-court-1')).toContainText('locked to you');
   }else{
     await expect(scorerInput).toHaveValue('9');
     await expect(hostInput).toHaveValue('');
     await scorer.getByTestId('scorer-court-1').getByRole('button',{name:'Cancel'}).click();
     await host.getByTestId('kotc-refresh-player-scores').click();
     await hostInput.fill('4');await expect(hostInput).toHaveValue('4');
+    await expect(host.getByTestId('kotc-score-card-1')).toContainText('HOST ENTERING');
   }
   expect(model.matches[0].scoring_lock_owner).toBeTruthy();
   await hostCtx.close();await scorerCtx.close();
