@@ -15,26 +15,129 @@
 Error: expect(locator).toContainText(expected) failed
 
 Locator: getByTestId('kotc-host-action-status')
-Expected substring: "Preparing Round 2"
-Received string:    "Checking Round 1 scores…RallyHub has accepted your tap. Keep this screen open; the button will stay locked until the action resolves."
-Timeout: 300ms
+Expected substring: "Starting Round 2"
+Timeout: 3000ms
+Error: element(s) not found
 
 Call log:
-  - Expect "toContainText" getByTestId('kotc-host-action-status') with timeout 300ms
+  - Expect "toContainText" getByTestId('kotc-host-action-status') with timeout 3000ms
   - waiting for getByTestId('kotc-host-action-status')
-    7 × locator resolved to <div data-dynamic-content="true" data-testid="kotc-host-action-status" data-source-location="src/components/kotc/KotcV2SessionView.jsx:308:15" class="sticky top-2 z-30 rounded-xl border-2 border-primary/40 bg-background/95 p-3 shadow-lg">…</div>
-      - unexpected value "Checking Round 1 scores…RallyHub has accepted your tap. Keep this screen open; the button will stay locked until the action resolves."
 
 ```
 
 ```yaml
-- paragraph: Checking Round 1 scores…
-- paragraph: RallyHub has accepted your tap. Keep this screen open; the button will stay locked until the action resolves.
+- main:
+  - paragraph: Round 2 — LIVE
+  - paragraph: 4 courts · 2 bench · 0/4 scores saved
+  - button "Roster":
+    - img
+    - text: Roster
+  - button "Links":
+    - img
+    - text: Links
+  - button "Menu":
+    - img
+    - text: Menu
+  - paragraph: What happens next
+  - paragraph: Round 2 live · 0/4 scores saved
+  - paragraph: "Next: collect Court 1, Court 2, Court 3, Court 4 results. You can correct any saved score before advancing."
+  - paragraph: Play Time
+  - paragraph: 8 min round timer
+  - button "Test speaker and spoken announcement":
+    - img
+  - button "Float and move timer":
+    - img
+  - button "Full screen timer":
+    - img
+  - text: 07:58
+  - paragraph: Cue and announcements play at full RallyHub volume using this device’s default voice. Set the actual hall loudness with the device media-volume buttons before play.
+  - button "Pause Timer":
+    - img
+    - text: Pause Timer
+  - button "Reset":
+    - img
+    - text: Reset
+  - paragraph: Need to finish early? Pause the timer and enter the final scores now — you do not need to wait for 00:00.
+  - button "Undo Start / Back to Round Setup":
+    - img
+    - text: Undo Start / Back to Round Setup
+  - paragraph: Bench This Round
+  - paragraph: Player 17 · Player 18
+  - img
+  - text: Court 1 LIVE
+  - paragraph: Team A
+  - paragraph: Player 01 & Player 08
+  - textbox
+  - paragraph: Team B
+  - paragraph: Player 09 & Player 16
+  - textbox
+  - button "Complete Match" [disabled]
+  - text: Court 2 LIVE
+  - paragraph: Team A
+  - paragraph: Player 02 & Player 07
+  - textbox
+  - paragraph: Team B
+  - paragraph: Player 10 & Player 15
+  - textbox
+  - button "Complete Match" [disabled]
+  - text: Court 3 LIVE
+  - paragraph: Team A
+  - paragraph: Player 03 & Player 06
+  - textbox
+  - paragraph: Team B
+  - paragraph: Player 11 & Player 14
+  - textbox
+  - button "Complete Match" [disabled]
+  - text: Court 4 LIVE
+  - paragraph: Team A
+  - paragraph: Player 04 & Player 05
+  - textbox
+  - paragraph: Team B
+  - paragraph: Player 12 & Player 13
+  - textbox
+  - button "Complete Match" [disabled]
+  - paragraph: Round 2 · 0/4 scores showing on this device
+  - paragraph: If players used the court scoring link, press the button below. RallyHub will check the latest saved court scores before advancing.
+  - button "Check Scores & Prepare Next Round":
+    - img
+    - text: Check Scores & Prepare Next Round
 ```
 
 # Test source
 
 ```ts
+  517 |   await reviewCard.getByTestId('kotc-score-1-a').fill('2');
+  518 |   await reviewCard.getByTestId('kotc-score-1-b').fill('12');
+  519 |   await reviewCard.getByRole('button',{name:'Save Correction'}).click();
+  520 |   await expect(reviewCard).toContainText('Saved 2–12',{timeout:1800});
+  521 |   const corrected=model.matches.find(m=>m.id==='match-r1-c1');
+  522 |   expect(corrected.correction_count).toBe(1);
+  523 |   expect(corrected.winner_side).toBe('B');
+  524 |   expect(JSON.stringify(model.slots.filter(s=>s.round_id==='round-2'))).toBe(preCorrectionRound2);
+  525 |   report.post_event_score_correction=true;
+  526 | 
+  527 |   report.rounds_created = model.rounds.length;
+  528 |   report.function_calls = model.calls.length;
+  529 |   console.log(`KOTC DESKTOP HOST JOURNEY REPORT\n${JSON.stringify(report, null, 2)}`);
+  530 |   await testInfo.attach('kotc-host-desktop-journey-report.json', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
+  531 | });
+  532 | 
+  533 | test('Base44 resilience: score committed but response fails is reconciled as Saved',async({page})=>{
+  534 |   const model=createModel({commitThenFailScore:true});await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+  535 |   await createAndStartRoundOne(page);
+  536 |   await page.getByTestId('kotc-score-1-a').fill('11');await page.getByTestId('kotc-score-1-b').fill('7');
+  537 |   await page.getByTestId('kotc-complete-1').click();
+  538 |   await expect(page.getByTestId('kotc-score-card-1')).toContainText('Saved 11–7',{timeout:2200});
+  539 |   await expect(page.getByTestId('kotc-score-card-1')).not.toContainText('Retry Save');
+  540 |   expect(model.scoreFailureInjected).toBe(true);expect(model.matches.find(m=>m.id==='match-r1-c1').revision).toBe(1);
+  541 | });
+  542 | 
+  543 | test('Base44 resilience: next round committed but response fails is reconciled without duplicate generation',async({page})=>{
+  544 |   const model=createModel({commitThenFailPrepare:true});await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+  545 |   await createAndStartRoundOne(page);await scoreCurrentRound(page,4,11);
+  546 |   await page.getByTestId('kotc-prepare-next-round').click();
+  547 |   await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 2',{timeout:2500});
+  548 |   expect(model.prepareFailureInjected).toBe(true);expect(model.rounds.filter(r=>r.round_number===2)).toHaveLength(1);
   549 | });
   550 | 
   551 | test('Base44 resilience: genuine prepare failure stays explicit and safely retryable',async({page})=>{
@@ -103,7 +206,8 @@ Call log:
   614 |     await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Starting Round ${round}`,{timeout:300});
   615 |     await sleep(180);
   616 |     await page.evaluate(()=>{window.dispatchEvent(new Event('focus'));document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:false}));});
-  617 |     await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Starting Round ${round}`);
+> 617 |     await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Starting Round ${round}`);
+      |                                                               ^ Error: expect(locator).toContainText(expected) failed
   618 |     await expect(start).toBeDisabled();
   619 |     await expect(page.getByText(`Round ${round} — LIVE`)).toBeVisible({timeout:3500});
   620 |     report.start_confirm_ms.push(Date.now()-startAt);
@@ -135,8 +239,7 @@ Call log:
   646 |       await prepare.click();
   647 |       await expect(prepare).toContainText('Preparing Round…',{timeout:250});
   648 |       report.prepare_ack_ms.push(Date.now()-prepAt);
-> 649 |       await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Preparing Round ${round+1}`,{timeout:300});
-      |                                                                 ^ Error: expect(locator).toContainText(expected) failed
+  649 |       await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Checking Round ${round} scores`,{timeout:300});
   650 |       await sleep(300);
   651 |       await page.evaluate(()=>{window.dispatchEvent(new Event('focus'));document.dispatchEvent(new Event('visibilitychange'));});
   652 |       await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Preparing Round ${round+1}`);
