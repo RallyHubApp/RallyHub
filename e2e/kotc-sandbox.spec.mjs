@@ -61,7 +61,7 @@ test('sandbox safety guards are hard-coded server-side',async()=>{
   expect(share).toContain("personaliseEditableBody");
   expect(share).toContain("body.subject??sample.subject");
   expect(share).toContain("body.messageBody??sample.body");
-  expect(share).toContain("personaliseEditableBody(editableBody,p.display_name");
+  expect(share).toContain("emailBodies(editableBody,p.display_name");
   expect(aggregate).toContain("s.exclude_from_aggregates!==true");
 });
 
