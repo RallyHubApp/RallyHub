@@ -12,17 +12,9 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Error: expect(received).toBeTruthy()
 
-Locator: getByText('Collaborative Score E2E')
-Expected: visible
-Timeout: 3000ms
-Error: element(s) not found
-
-Call log:
-  - Expect "toBeVisible" getByText('Collaborative Score E2E') with timeout 3000ms
-  - waiting for getByText('Collaborative Score E2E')
-
+Received: null
 ```
 
 # Page snapshot
@@ -51,7 +43,7 @@ Call log:
           - button "Test speaker and spoken announcement" [ref=e23] [cursor=pointer]
           - button "Float and move timer" [ref=e24] [cursor=pointer]
           - button "Full screen timer" [ref=e25] [cursor=pointer]
-      - generic [ref=e26]: 06:55
+      - generic [ref=e26]: 06:57
       - paragraph [ref=e30]: Cue and announcements play at full RallyHub volume using this device’s default voice. Set the actual hall loudness with the device media-volume buttons before play.
       - generic [ref=e31]:
         - button "Pause Timer" [ref=e32] [cursor=pointer]
@@ -72,202 +64,78 @@ Call log:
       - generic [ref=e49]:
         - generic [ref=e50]:
           - generic [ref=e51]: Court 1
-          - generic [ref=e55]: LIVE
+          - generic [ref=e55]: HOST ENTERING
         - generic [ref=e56]:
           - generic [ref=e57]:
             - paragraph [ref=e58]: Team A
             - paragraph [ref=e59]: Player 01 & Player 02
-          - textbox [ref=e60]
+          - textbox [active] [ref=e60]: "4"
         - generic [ref=e61]:
           - generic [ref=e62]:
             - paragraph [ref=e63]: Team B
             - paragraph [ref=e64]: Player 03 & Player 04
           - textbox [ref=e65]
-        - generic [ref=e66]: Start typing in either score box to claim this court as host.
-      - generic [ref=e67]:
-        - generic [ref=e68]:
-          - generic [ref=e69]: Court 2
-          - generic [ref=e71]: LIVE
-        - generic [ref=e72]:
-          - generic [ref=e73]:
-            - paragraph [ref=e74]: Team A
-            - paragraph [ref=e75]: Player 05 & Player 06
-          - textbox [ref=e76]
-        - generic [ref=e77]:
-          - generic [ref=e78]:
-            - paragraph [ref=e79]: Team B
-            - paragraph [ref=e80]: Player 07 & Player 08
-          - textbox [ref=e81]
-        - generic [ref=e82]: Start typing in either score box to claim this court as host.
-      - generic [ref=e83]:
-        - generic [ref=e84]:
-          - generic [ref=e85]: Court 3
-          - generic [ref=e87]: LIVE
-        - generic [ref=e88]:
-          - generic [ref=e89]:
-            - paragraph [ref=e90]: Team A
-            - paragraph [ref=e91]: Player 09 & Player 10
-          - textbox [ref=e92]
-        - generic [ref=e93]:
-          - generic [ref=e94]:
-            - paragraph [ref=e95]: Team B
-            - paragraph [ref=e96]: Player 11 & Player 12
-          - textbox [ref=e97]
-        - generic [ref=e98]: Start typing in either score box to claim this court as host.
-      - generic [ref=e99]:
-        - generic [ref=e100]:
-          - generic [ref=e101]: Court 4
-          - generic [ref=e103]: LIVE
-        - generic [ref=e104]:
-          - generic [ref=e105]:
-            - paragraph [ref=e106]: Team A
-            - paragraph [ref=e107]: Player 13 & Player 14
-          - textbox [ref=e108]
-        - generic [ref=e109]:
-          - generic [ref=e110]:
-            - paragraph [ref=e111]: Team B
-            - paragraph [ref=e112]: Player 15 & Player 16
-          - textbox [ref=e113]
-        - generic [ref=e114]: Start typing in either score box to claim this court as host.
-    - generic [ref=e115]:
-      - generic [ref=e116]:
-        - paragraph [ref=e117]: Round 1 · 0/4 scores showing on this device
-        - paragraph [ref=e118]: If players used the court scoring link, press the button below. RallyHub will check the latest saved court scores before advancing.
-      - button "Check Scores & Prepare Next Round" [ref=e120] [cursor=pointer]
-  - generic [ref=e121]:
+        - generic [ref=e66]:
+          - button "Complete Match" [disabled]
+          - button "Cancel" [ref=e67] [cursor=pointer]
+      - generic [ref=e68]:
+        - generic [ref=e69]:
+          - generic [ref=e70]: Court 2
+          - generic [ref=e72]: LIVE
+        - generic [ref=e73]:
+          - generic [ref=e74]:
+            - paragraph [ref=e75]: Team A
+            - paragraph [ref=e76]: Player 05 & Player 06
+          - textbox [ref=e77]
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - paragraph [ref=e80]: Team B
+            - paragraph [ref=e81]: Player 07 & Player 08
+          - textbox [ref=e82]
+        - generic [ref=e83]: Start typing in either score box to claim this court as host.
+      - generic [ref=e84]:
+        - generic [ref=e85]:
+          - generic [ref=e86]: Court 3
+          - generic [ref=e88]: LIVE
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - paragraph [ref=e91]: Team A
+            - paragraph [ref=e92]: Player 09 & Player 10
+          - textbox [ref=e93]
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - paragraph [ref=e96]: Team B
+            - paragraph [ref=e97]: Player 11 & Player 12
+          - textbox [ref=e98]
+        - generic [ref=e99]: Start typing in either score box to claim this court as host.
+      - generic [ref=e100]:
+        - generic [ref=e101]:
+          - generic [ref=e102]: Court 4
+          - generic [ref=e104]: LIVE
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - paragraph [ref=e107]: Team A
+            - paragraph [ref=e108]: Player 13 & Player 14
+          - textbox [ref=e109]
+        - generic [ref=e110]:
+          - generic [ref=e111]:
+            - paragraph [ref=e112]: Team B
+            - paragraph [ref=e113]: Player 15 & Player 16
+          - textbox [ref=e114]
+        - generic [ref=e115]: Start typing in either score box to claim this court as host.
+    - generic [ref=e116]:
+      - generic [ref=e117]:
+        - paragraph [ref=e118]: Round 1 · 0/4 scores showing on this device
+        - paragraph [ref=e119]: If players used the court scoring link, press the button below. RallyHub will check the latest saved court scores before advancing.
+      - button "Check Scores & Prepare Next Round" [ref=e121] [cursor=pointer]
+  - generic [ref=e122]:
     - button "Scroll up" [disabled]
-    - button "Scroll down" [ref=e122] [cursor=pointer]
+    - button "Scroll down" [ref=e123] [cursor=pointer]
 ```
 
 # Test source
 
 ```ts
-  7   | function createModel(){
-  8   |   const participants=Array.from({length:18},(_,i)=>({id:`participant-${String(i+1).padStart(2,'0')}`,player_id:`player-${String(i+1).padStart(2,'0')}`,display_name:`Player ${String(i+1).padStart(2,'0')}`,status:'present',seed_rank:i+1}));
-  9   |   const slots=[];const matches=[];
-  10  |   for(let c=1;c<=4;c++){
-  11  |     const ids=participants.slice((c-1)*4,c*4).map(p=>p.id);
-  12  |     slots.push(
-  13  |       {id:`slot-${c}-a1`,round_id:'round-1',round_number:1,ladder_court_rank:c,team_side:'A',slot_number:1,participant_id:ids[0]},
-  14  |       {id:`slot-${c}-a2`,round_id:'round-1',round_number:1,ladder_court_rank:c,team_side:'A',slot_number:2,participant_id:ids[1]},
-  15  |       {id:`slot-${c}-b1`,round_id:'round-1',round_number:1,ladder_court_rank:c,team_side:'B',slot_number:1,participant_id:ids[2]},
-  16  |       {id:`slot-${c}-b2`,round_id:'round-1',round_number:1,ladder_court_rank:c,team_side:'B',slot_number:2,participant_id:ids[3]},
-  17  |     );
-  18  |     matches.push({id:`match-${c}`,session_id:'session-live',round_id:'round-1',round_number:1,ladder_court_rank:c,team_a_participant_ids:ids.slice(0,2),team_b_participant_ids:ids.slice(2),status:'scheduled',revision:0,team_a_score:null,team_b_score:null,scoring_lock_owner:null,scoring_lock_expires_at:null,scorer_correction_owner_client_id:null});
-  19  |   }
-  20  |   const model={
-  21  |     calls:[],participants,slots,matches,rateLimits:{},
-  22  |     round:{id:'round-1',session_id:'session-live',round_number:1,status:'started',proposal_revision:1,active_court_count:4,bench_count:2},
-  23  |     session:{id:'session-live',tournament_id:'e2e-kotc-tournament',name:'Collaborative Score E2E',status:'in_progress',current_round_number:1,current_round_id:'round-1',revision:2,play_minutes:8,scoring_mode:'timed',score_target:11,win_by_two:false,timer_state_json:JSON.stringify({roundId:'round-1',roundNumber:1,durationSeconds:480,remainingSeconds:420,running:true,deadlineAt:new Date(Date.now()+420000).toISOString(),lastAction:'start'})},
-  24  |   };
-  25  |   model.setRateLimit=(source,name,action,count=1)=>{model.rateLimits[`${source}:${name}:${action}`]=count;};
-  26  |   const active=m=>!!(m.scoring_lock_owner&&m.scoring_lock_expires_at&&Date.parse(m.scoring_lock_expires_at)>now());
-  27  |   const names=Object.fromEntries(participants.map(p=>[p.id,p.display_name]));
-  28  |   const currentMatches=()=>model.matches.filter(m=>String(m.round_id)===String(model.session.current_round_id));
-  29  |   const liveScorePayload=()=>({liveScoresOnly:true,session:{id:model.session.id,status:model.session.status,current_round_id:model.session.current_round_id,current_round_number:model.session.current_round_number,revision:model.session.revision,timer_state_json:model.session.timer_state_json},matches:currentMatches().map(m=>({id:m.id,status:m.status,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,serving_side_at_horn:m.serving_side_at_horn,result_method:m.result_method,revision:m.revision,correction_count:0,completed_at:m.completed_at,command_id:m.command_id,scoring_lock_active:active(m),scoring_lock_kind:active(m)?(String(m.scoring_lock_owner).startsWith('host:')?'host':'player'):'none',scoring_lock_expires_at:active(m)?m.scoring_lock_expires_at:null}))});
-  30  |   const correctionOpen=(m,clientId)=>m.status==='completed'&&m.scorer_correction_owner_client_id===clientId&&m.completed_at&&Date.now()-Date.parse(m.completed_at)<=90000;
-  31  |   const scorerState=clientId=>({success:true,session:{name:model.session.name,status:model.session.status,current_round_number:model.session.current_round_number,scoring_mode:'timed',score_target:11,win_by_two:false},round:{id:model.round.id,round_number:model.round.round_number,status:model.round.status},bench:['Player 17','Player 18'],timer:{running:true,remainingSeconds:420,deadlineAt:new Date(Date.now()+420000).toISOString()},matches:currentMatches().map(m=>({id:m.id,court:m.ladder_court_rank,status:m.status,revision:m.revision,team_a:m.team_a_participant_ids.map(id=>names[id]),team_b:m.team_b_participant_ids.map(id=>names[id]),team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:active(m)?(m.scoring_lock_owner===clientId?'mine':'other'):'free',lock_seconds:active(m)?Math.ceil((Date.parse(m.scoring_lock_expires_at)-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((Date.parse(m.completed_at)+90000-Date.now())/1000)):0}))});
-  32  |   model.handle=async(source,name,body)=>{
-  33  |     model.calls.push({source,name,body:{...body},at:Date.now()});
-  34  |     const actionKey=String(body.action||body.commandType||(body.liveScoresOnly?'liveScoresOnly':'state'));const rateKey=`${source}:${name}:${actionKey}`;
-  35  |     if(Number(model.rateLimits[rateKey]||0)>0){model.rateLimits[rateKey]-=1;return {status:429,body:{error:'Rate limit exceeded'}};}
-  36  |     if(name==='getKotcV2State'){
-  37  |       if(body.liveScoresOnly)return liveScorePayload();
-  38  |       return {session:model.session,participants:model.participants,rounds:[model.round],slots:model.slots,matches:model.matches,fixedPairs:[],scorerLinkActive:true,contactDirectory:{},currentAccessRole:'admin',isAdmin:true};
-  39  |     }
-  40  |     if(name==='kotcTimer')return {success:true,state:JSON.parse(model.session.timer_state_json)};
-  41  |     if(name==='kotcScorer'){
-  42  |       const action=body.action||'state',clientId=body.clientId||'';
-  43  |       if(action==='state')return scorerState(clientId);
-  44  |       const m=currentMatches().find(x=>x.id===body.matchId);if(!m)return {status:404,body:{error:'Current-round match not found'}};
-  45  |       if(action==='claim'){
-  46  |         if(m.status==='completed'&&!correctionOpen(m,clientId))return {status:423,body:{error:`Court ${m.ladder_court_rank} is already saved. The scorer correction window has closed; the host can still correct this result.`,saved:true,read_only:true}};
-  47  |         const mine=model.matches.find(x=>x.id!==m.id&&x.scoring_lock_owner===clientId&&active(x));if(mine)return {status:423,body:{error:`This device is already scoring Court ${mine.ladder_court_rank}. Save or cancel that court first.`,locked:true}};
-  48  |         if(active(m)&&m.scoring_lock_owner!==clientId)return {status:423,body:{error:`Court ${m.ladder_court_rank} is being scored on another device.`,locked:true}};
-  49  |         await new Promise(r=>setTimeout(r,10));m.scoring_lock_owner=clientId;m.scoring_lock_expires_at=new Date(Date.now()+90000).toISOString();await new Promise(r=>setTimeout(r,35));
-  50  |         if(m.scoring_lock_owner!==clientId||!active(m))return {status:423,body:{error:`Court ${m.ladder_court_rank} was claimed by another scorer.`,locked:true}};
-  51  |         return {success:true,claimed:true,lease_seconds:90,expires_at:m.scoring_lock_expires_at};
-  52  |       }
-  53  |       if(action==='heartbeat'){
-  54  |         if(!active(m)||m.scoring_lock_owner!==clientId)return {status:423,body:{error:'Your scoring lock is no longer active.'}};
-  55  |         m.scoring_lock_expires_at=new Date(Date.now()+90000).toISOString();return {success:true};
-  56  |       }
-  57  |       if(action==='release'){
-  58  |         if(m.scoring_lock_owner===clientId){m.scoring_lock_owner=null;m.scoring_lock_expires_at=null;}return {success:true,released:true};
-  59  |       }
-  60  |       if(action==='save'||action==='correct'){
-  61  |         if(!active(m)||m.scoring_lock_owner!==clientId)return {status:423,body:{error:`Court ${m.ladder_court_rank} is not locked to this scorer.`}};
-  62  |         if(Number(body.expectedRevision)!==m.revision)return {status:409,body:{error:'This score changed since you opened it.'}};
-  63  |         const correcting=action==='correct';if(correcting&&!correctionOpen(m,clientId))return {status:423,body:{error:'The 90-second scorer correction window has closed. Ask the host to correct this result.'}};
-  64  |         m.team_a_score=Number(body.teamAScore);m.team_b_score=Number(body.teamBScore);m.winner_side=m.team_a_score>m.team_b_score?'A':'B';m.status='completed';m.revision+=1;if(!correcting)m.completed_at=new Date().toISOString();m.scoring_lock_owner=null;m.scoring_lock_expires_at=null;m.scorer_correction_owner_client_id=clientId;
-  65  |         return {success:true,message:correcting?'Updated score saved':'Score saved',match:{...m,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((Date.parse(m.completed_at)+90000-Date.now())/1000)):0,lock_status:'free'}};
-  66  |       }
-  67  |     }
-  68  |     if(name==='kotcCommand'&&body.commandType==='host_claim_score'){
-  69  |       const m=model.matches.find(x=>x.id===body.matchId);if(!m)return {status:404,body:{error:'Match not found'}};
-  70  |       const correction=body.forCorrection===true;
-  71  |       if(m.status==='completed'&&!correction)return {status:409,body:{error:`Court ${m.ladder_court_rank} has already been saved. Refresh player scores to load the result before making any correction.`,saved:true,refresh_required:true}};
-  72  |       if(m.status!=='completed'&&correction)return {status:409,body:{error:`Court ${m.ladder_court_rank} has not been saved yet.`}};
-  73  |       if(active(m)&&m.scoring_lock_owner!=='host:host-e2e')return {status:423,body:{error:correction?`Court ${m.ladder_court_rank} is already being corrected on another device.`:`Court ${m.ladder_court_rank} is already being entered by a player. Wait for them to save or cancel, then refresh player scores.`,locked:true}};
-  74  |       await new Promise(r=>setTimeout(r,10));m.scoring_lock_owner='host:host-e2e';m.scoring_lock_expires_at=new Date(Date.now()+90000).toISOString();await new Promise(r=>setTimeout(r,35));
-  75  |       if(m.scoring_lock_owner!=='host:host-e2e'||!active(m))return {status:423,body:{error:`Court ${m.ladder_court_rank} was claimed by another scorer.`,locked:true}};
-  76  |       return {success:true,hostAuthority:true,expires_at:m.scoring_lock_expires_at};
-  77  |     }
-  78  |     if(name==='kotcCommand'&&body.commandType==='host_release_score'){
-  79  |       const m=model.matches.find(x=>x.id===body.matchId);if(m?.scoring_lock_owner==='host:host-e2e'){m.scoring_lock_owner=null;m.scoring_lock_expires_at=null;}return {success:true,released:true};
-  80  |     }
-  81  |     if(name==='kotcCommand'&&body.commandType==='correct_match'){
-  82  |       const m=model.matches.find(x=>x.id===body.matchId);if(!m)return {status:404,body:{error:'Match not found'}};
-  83  |       if(!active(m)||m.scoring_lock_owner!=='host:host-e2e')return {status:423,body:{error:'This saved score is being corrected elsewhere or your correction lock expired. Refresh before trying again.',locked:true}};
-  84  |       if(Number(body.expectedMatchRevision)!==m.revision)return {status:409,body:{error:'Match changed since you opened it.'}};
-  85  |       m.team_a_score=Number(body.teamAScore);m.team_b_score=Number(body.teamBScore);m.winner_side=m.team_a_score>m.team_b_score?'A':'B';m.revision+=1;m.scoring_lock_owner=null;m.scoring_lock_expires_at=null;m.scorer_correction_owner_client_id=null;return {success:true,match:{...m},correction:true};
-  86  |     }
-  87  |     if(name==='saveKotcScore'){
-  88  |       const m=model.matches.find(x=>x.id===body.matchId);if(!m)return {status:404,body:{error:'Match not found'}};
-  89  |       if(active(m)&&m.scoring_lock_owner!=='host:host-e2e')return {status:423,body:{error:`Court ${m.ladder_court_rank} is already being entered by a player.`}};
-  90  |       if(Number(body.expectedMatchRevision)!==m.revision)return {status:409,body:{error:'Match changed since you opened it.'}};
-  91  |       m.team_a_score=Number(body.teamAScore);m.team_b_score=Number(body.teamBScore);m.winner_side=m.team_a_score>m.team_b_score?'A':'B';m.status='completed';m.revision+=1;m.completed_at=new Date().toISOString();m.scoring_lock_owner=null;m.scoring_lock_expires_at=null;m.scorer_correction_owner_client_id=null;return {success:true,match:{...m}};
-  92  |     }
-  93  |     return {success:true};
-  94  |   };
-  95  |   return model;
-  96  | }
-  97  | 
-  98  | async function install(context,model,source){
-  99  |   await context.route('**/api/apps/**',async route=>{
-  100 |     const req=route.request(),url=new URL(req.url()),marker=`/api/apps/${APP_ID}/functions/`;
-  101 |     if(!url.pathname.includes(marker))return json(route,[]);
-  102 |     const name=decodeURIComponent(url.pathname.split(marker)[1]?.split('/')[0]||'');let body={};try{body=req.postDataJSON()||{};}catch{}
-  103 |     const out=await model.handle(source,name,body);if(out?.status)return json(route,out.body,out.status);return json(route,out);
-  104 |   });
-  105 | }
-  106 | 
-> 107 | async function openScorer(context){const page=await context.newPage();await page.goto('/e2e/kotcScorerHarness.html');await expect(page.getByText('Collaborative Score E2E')).toBeVisible();return page;}
-      |                                                                                                                                                                              ^ Error: expect(locator).toBeVisible() failed
-  108 | async function fillCourt(page,court,a,b){const card=page.getByTestId(`scorer-court-${court}`);await card.locator('input').nth(0).fill(String(a));await card.locator('input').nth(1).fill(String(b));return card;}
-  109 | 
-  110 | test('host + two scorer devices: first claim wins, mixed parallel scoring, manual host refresh only',async({browser})=>{
-  111 |   test.setTimeout(60000);
-  112 |   const model=createModel();
-  113 |   const hostCtx=await browser.newContext({viewport:{width:1280,height:900}}),aCtx=await browser.newContext({viewport:{width:390,height:844}}),bCtx=await browser.newContext({viewport:{width:390,height:844}});
-  114 |   await install(hostCtx,model,'host');await install(aCtx,model,'scorer-a');await install(bCtx,model,'scorer-b');
-  115 |   const host=await hostCtx.newPage();await host.goto('/e2e/kotcHarness.html');await expect(host.getByText('Round 1 — LIVE')).toBeVisible();
-  116 |   await expect(host.getByTestId('kotc-refresh-player-scores')).toBeVisible();
-  117 | 
-  118 |   // No background host score polling: wait longer than the old polling interval.
-  119 |   const before=model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length;
-  120 |   await host.waitForTimeout(4500);
-  121 |   expect(model.calls.filter(c=>c.source==='host'&&c.name==='getKotcV2State'&&c.body.liveScoresOnly).length).toBe(before);
-  122 | 
-  123 |   const [a,b]=await Promise.all([openScorer(aCtx),openScorer(bCtx)]);
-  124 |   const scorerStateBefore=model.calls.filter(c=>c.name==='kotcScorer'&&c.body.action==='state').length;
-  125 |   await a.waitForTimeout(5500);
-  126 |   expect(model.calls.filter(c=>c.name==='kotcScorer'&&c.body.action==='state').length).toBe(scorerStateBefore);
-  127 |   await a.getByTestId('scorer-court-1').locator('input').nth(0).fill('1');
-  128 |   await b.getByTestId('scorer-court-2').locator('input').nth(0).fill('7');
-  129 |   await expect(a.getByTestId('scorer-court-1')).toContainText('locked to you');
-  130 |   await expect(b.getByTestId('scorer-court-2')).toContainText('locked to you');
-  131 | 
   132 |   // Host learns ownership only when deliberately refreshing; claimed player courts become unavailable to host.
   133 |   await host.getByTestId('kotc-refresh-player-scores').click();
   134 |   await expect(host.getByTestId('kotc-score-card-1')).toContainText('Player entering this court');
@@ -344,4 +212,130 @@ Call log:
   205 |   const hostCtx=await browser.newContext({viewport:{width:1280,height:900}}),scorerCtx=await browser.newContext({viewport:{width:390,height:844}});
   206 |   await install(hostCtx,model,'host');await install(scorerCtx,model,'scorer-a');
   207 |   const host=await hostCtx.newPage();await host.goto('/e2e/kotcHarness.html');await expect(host.getByText('Round 1 — LIVE')).toBeVisible();
+  208 |   const scorer=await openScorer(scorerCtx);
+  209 |   const hostInput=host.getByTestId('kotc-score-1-a'),scorerInput=scorer.getByTestId('scorer-court-1').locator('input').nth(0);
+  210 | 
+  211 |   await Promise.allSettled([hostInput.fill('8'),scorerInput.fill('9')]);
+  212 |   await host.waitForTimeout(250);
+  213 |   const scorerClaim=model.calls.find(c=>c.source==='scorer-a'&&c.name==='kotcScorer'&&c.body.action==='claim');
+  214 |   const scorerClient=scorerClaim?.body.clientId;
+  215 |   const owner=model.matches[0].scoring_lock_owner;
+  216 |   expect(['host:host-e2e',scorerClient]).toContain(owner);
+  217 |   expect(owner).toBeTruthy();
+  218 | 
+  219 |   if(owner==='host:host-e2e'){
+  220 |     await expect(hostInput).toHaveValue('8');
+  221 |     await expect(scorerInput).toHaveValue('');
+  222 |     await host.getByTestId('kotc-score-card-1').getByRole('button',{name:'Cancel'}).click();
+  223 |     await scorer.getByTestId('scorer-refresh').click();
+  224 |     await scorerInput.fill('4');await expect(scorerInput).toHaveValue('4');
+  225 |   }else{
+  226 |     await expect(scorerInput).toHaveValue('9');
+  227 |     await expect(hostInput).toHaveValue('');
+  228 |     await scorer.getByTestId('scorer-court-1').getByRole('button',{name:'Cancel'}).click();
+  229 |     await host.getByTestId('kotc-refresh-player-scores').click();
+  230 |     await hostInput.fill('4');await expect(hostInput).toHaveValue('4');
+  231 |   }
+> 232 |   expect(model.matches[0].scoring_lock_owner).toBeTruthy();
+      |                                               ^ Error: expect(received).toBeTruthy()
+  233 |   await hostCtx.close();await scorerCtx.close();
+  234 | });
+  235 | 
+  236 | test('host/helper simultaneous correction attempts use first-claim-wins correction lock',async({browser})=>{
+  237 |   const model=createModel();
+  238 |   const hostCtx=await browser.newContext({viewport:{width:1280,height:900}}),scorerCtx=await browser.newContext({viewport:{width:390,height:844}});
+  239 |   await install(hostCtx,model,'host');await install(scorerCtx,model,'scorer-a');
+  240 |   const host=await hostCtx.newPage();await host.goto('/e2e/kotcHarness.html');await expect(host.getByText('Round 1 — LIVE')).toBeVisible();
+  241 |   const scorer=await openScorer(scorerCtx);
+  242 | 
+  243 |   const helperCard=await fillCourt(scorer,1,11,2);await helperCard.getByRole('button',{name:'Save Result'}).click();await expect(helperCard).toContainText('Score saved: 11–2');
+  244 |   await host.getByTestId('kotc-refresh-player-scores').click();await expect(host.getByTestId('kotc-score-card-1')).toContainText('Saved 11–2');
+  245 |   const hostEdit=host.getByTestId('kotc-score-card-1').getByRole('button',{name:'Edit result'}),helperEdit=helperCard.getByRole('button',{name:/Undo \/ Update Score/});
+  246 |   await Promise.allSettled([hostEdit.click(),helperEdit.click()]);
+  247 |   await host.waitForTimeout(250);
+  248 | 
+  249 |   const scorerClaim=[...model.calls].reverse().find(c=>c.source==='scorer-a'&&c.name==='kotcScorer'&&c.body.action==='claim');
+  250 |   const scorerClient=scorerClaim?.body.clientId;const owner=model.matches[0].scoring_lock_owner;
+  251 |   expect(['host:host-e2e',scorerClient]).toContain(owner);
+  252 |   if(owner==='host:host-e2e'){
+  253 |     await host.getByTestId('kotc-score-1-a').fill('12');await host.getByTestId('kotc-score-1-b').fill('3');
+  254 |     await host.getByTestId('kotc-score-card-1').getByRole('button',{name:'Save Correction'}).click();
+  255 |   }else{
+  256 |     await helperCard.locator('input').nth(0).fill('12');await helperCard.locator('input').nth(1).fill('3');
+  257 |     await helperCard.getByRole('button',{name:'Save Updated Score'}).click();
+  258 |   }
+  259 |   await expect.poll(()=>model.matches[0].revision).toBe(2);
+  260 |   expect(model.matches[0].team_a_score).toBe(12);expect(model.matches[0].team_b_score).toBe(3);expect(model.matches[0].scoring_lock_owner).toBe(null);
+  261 |   await hostCtx.close();await scorerCtx.close();
+  262 | });
+  263 | 
+  264 | test('stale helper correction button cannot bypass the 90-second correction window',async({browser})=>{
+  265 |   const model=createModel();
+  266 |   const hostCtx=await browser.newContext({viewport:{width:1280,height:900}}),scorerCtx=await browser.newContext({viewport:{width:390,height:844}});
+  267 |   await install(hostCtx,model,'host');await install(scorerCtx,model,'scorer-a');
+  268 |   const host=await hostCtx.newPage();await host.goto('/e2e/kotcHarness.html');await expect(host.getByText('Round 1 — LIVE')).toBeVisible();
+  269 |   const scorer=await openScorer(scorerCtx);const card=await fillCourt(scorer,1,11,2);await card.getByRole('button',{name:'Save Result'}).click();
+  270 |   await expect(card).toContainText('Score saved: 11–2');await expect(card.getByRole('button',{name:/Undo \/ Update Score/})).toBeVisible();
+  271 | 
+  272 |   // Simulate the helper leaving this stale page open until the server-side 90-second window expires.
+  273 |   model.matches[0].completed_at=new Date(Date.now()-91000).toISOString();
+  274 |   await card.getByRole('button',{name:/Undo \/ Update Score/}).click();
+  275 |   await expect(card.getByRole('button',{name:/Undo \/ Update Score/})).toHaveCount(0);
+  276 |   await expect(card).toContainText('Result already entered');
+  277 |   expect(model.matches[0].revision).toBe(1);expect(model.matches[0].team_a_score).toBe(11);expect(model.matches[0].team_b_score).toBe(2);
+  278 | 
+  279 |   // Host authority to correct remains available after the helper window closes.
+  280 |   await host.getByTestId('kotc-refresh-player-scores').click();await expect(host.getByTestId('kotc-score-card-1')).toContainText('Saved 11–2');
+  281 |   await host.getByTestId('kotc-score-card-1').getByRole('button',{name:'Edit result'}).click();await expect(host.getByTestId('kotc-score-card-1')).toContainText('HOST ENTERING');
+  282 |   await host.getByTestId('kotc-score-card-1').getByRole('button',{name:'Cancel'}).click();
+  283 |   await hostCtx.close();await scorerCtx.close();
+  284 | });
+  285 | 
+  286 | test('Prepare Next Round immediately cuts off helper correction rights even on a stale scorer screen',async({browser})=>{
+  287 |   const model=createModel();const scorerCtx=await browser.newContext({viewport:{width:390,height:844}});await install(scorerCtx,model,'scorer-a');
+  288 |   const scorer=await openScorer(scorerCtx);const card=await fillCourt(scorer,1,11,3);await card.getByRole('button',{name:'Save Result'}).click();
+  289 |   await expect(card).toContainText('Score saved: 11–3');await expect(card.getByRole('button',{name:/Undo \/ Update Score/})).toBeVisible();
+  290 | 
+  291 |   // Simulate host preparing/starting Round 2 while helper still has the old Round 1 screen open.
+  292 |   const round2Matches=model.matches.slice(0,4).map((m,i)=>({...m,id:`match-r2-${i+1}`,round_id:'round-2',round_number:2,status:'scheduled',revision:0,team_a_score:null,team_b_score:null,winner_side:null,completed_at:null,scoring_lock_owner:null,scoring_lock_expires_at:null,scorer_correction_owner_client_id:null}));
+  293 |   model.matches.push(...round2Matches);model.round={id:'round-2',session_id:model.session.id,round_number:2,status:'started',proposal_revision:1,active_court_count:4,bench_count:2};model.session.current_round_number=2;model.session.current_round_id='round-2';model.session.revision+=1;
+  294 | 
+  295 |   // Stale helper action must be rejected against the old match, then refresh to the new round.
+  296 |   await card.getByRole('button',{name:/Undo \/ Update Score/}).click();
+  297 |   await expect(scorer.getByText('Round 2')).toBeVisible();await expect(scorer.getByTestId('scorer-court-1')).not.toContainText('Score saved: 11–3');
+  298 |   await expect(scorer.getByTestId('scorer-court-1').getByRole('button',{name:/Undo \/ Update Score/})).toHaveCount(0);
+  299 |   expect(model.matches[0].revision).toBe(1);expect(model.matches[0].team_a_score).toBe(11);expect(model.matches[0].team_b_score).toBe(3);
+  300 |   await scorerCtx.close();
+  301 | });
+  302 | 
+  303 | test('four scorer phones recover from simultaneous 429 claim/save burst with bounded calls',async({browser})=>{
+  304 |   test.setTimeout(60000);
+  305 |   const model=createModel();
+  306 |   const hostCtx=await browser.newContext({viewport:{width:1280,height:900}});await install(hostCtx,model,'host');
+  307 |   const host=await hostCtx.newPage();await host.goto('/e2e/kotcHarness.html');await expect(host.getByText('Round 1 — LIVE')).toBeVisible();
+  308 |   const contexts=[],pages=[];
+  309 |   for(let i=1;i<=4;i++){
+  310 |     const ctx=await browser.newContext({viewport:{width:390,height:844}});contexts.push(ctx);await install(ctx,model,`scorer-${i}`);pages.push(await openScorer(ctx));
+  311 |     model.setRateLimit(`scorer-${i}`,'kotcScorer','claim',1);model.setRateLimit(`scorer-${i}`,'kotcScorer','save',1);
+  312 |   }
+  313 |   const stateBefore=model.calls.filter(c=>c.name==='kotcScorer'&&c.body.action==='state').length;
+  314 |   await pages[0].waitForTimeout(5500);
+  315 |   expect(model.calls.filter(c=>c.name==='kotcScorer'&&c.body.action==='state').length).toBe(stateBefore);
+  316 | 
+  317 |   await Promise.all(pages.map((p,i)=>p.getByTestId(`scorer-court-${i+1}`).locator('input').nth(0).fill(String(i+1))));
+  318 |   for(let i=0;i<4;i++){
+  319 |     const card=pages[i].getByTestId(`scorer-court-${i+1}`);await expect(card).toContainText('locked to you');await expect(card).not.toContainText(/rate limit/i);
+  320 |     await card.locator('input').nth(0).fill('11');await card.locator('input').nth(1).fill(String(i+1));
+  321 |   }
+  322 | 
+  323 |   await Promise.all(pages.map((p,i)=>p.getByTestId(`scorer-court-${i+1}`).getByRole('button',{name:'Save Result'}).click()));
+  324 |   for(let i=0;i<4;i++){const card=pages[i].getByTestId(`scorer-court-${i+1}`);await expect(card).toContainText(`Score saved: 11–${i+1}`);await expect(card).not.toContainText(/rate limit/i);}
+  325 |   expect(model.matches.every(m=>m.status==='completed'&&m.revision===1&&!m.scoring_lock_owner)).toBe(true);
+  326 | 
+  327 |   await expect(host.getByTestId('kotc-player-score-toolbar')).toContainText('0/4 saved');
+  328 |   await host.getByTestId('kotc-refresh-player-scores').click();await expect(host.getByText('All scores saved for Round 1')).toBeVisible();
+  329 |   await expect(host.getByTestId('kotc-player-score-toolbar')).toContainText('4/4 saved');
+  330 | 
+  331 |   const scorerCalls=model.calls.filter(c=>c.name==='kotcScorer');
+  332 |   const claimCalls=scorerCalls.filter(c=>c.body.action==='claim').length,saveCalls=scorerCalls.filter(c=>c.body.action==='save').length,stateCalls=scorerCalls.filter(c=>c.body.action==='state').length,heartbeatCalls=scorerCalls.filter(c=>c.body.action==='heartbeat').length;
 ```

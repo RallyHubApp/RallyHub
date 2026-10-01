@@ -12,74 +12,29 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Error: expect(locator).toContainText(expected) failed
 
-Locator: getByText('E2E Player Scoring')
-Expected: visible
+Locator: getByTestId('kotc-final-round-results-help')
+Expected substring: "This same player link will then open the final results"
+Received string:    "Final roundWhen the host presses Finish King of the Court, tap Refresh / View Results — or simply refresh this page. This same player link will then open the final podium and saved round results."
 Timeout: 3000ms
-Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('E2E Player Scoring') with timeout 3000ms
-  - waiting for getByText('E2E Player Scoring')
+  - Expect "toContainText" getByTestId('kotc-final-round-results-help') with timeout 3000ms
+  - waiting for getByTestId('kotc-final-round-results-help')
+    10 × locator resolved to <div data-dynamic-content="false" data-testid="kotc-final-round-results-help" data-source-location="src/pages/PublicKotcScorer.jsx:60:1311" class="mt-3 rounded-lg border border-primary/25 bg-primary/5 p-3 text-left">…</div>
+       - unexpected value "Final roundWhen the host presses Finish King of the Court, tap Refresh / View Results — or simply refresh this page. This same player link will then open the final podium and saved round results."
 
+```
+
+```yaml
+- paragraph: Final round
+- paragraph: When the host presses Finish King of the Court, tap Refresh / View Results — or simply refresh this page. This same player link will then open the final podium and saved round results.
 ```
 
 # Test source
 
 ```ts
-  1   | import { test, expect } from '@playwright/test';
-  2   | 
-  3   | const APP_ID = process.env.VITE_BASE44_APP_ID || '6a01dc00702b7dd2a2978c28';
-  4   | const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-  5   | const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
-  6   | 
-  7   | function createModel(){
-  8   |   const now=()=>Date.now();
-  9   |   const matches=[1,2].map(c=>({id:`match-${c}`,court:c,status:'scheduled',revision:0,team_a:[`P${c}A1`,`P${c}A2`],team_b:[`P${c}B1`,`P${c}B2`],team_a_score:null,team_b_score:null,lockOwner:'',lockExpires:0,correctionOwner:'',correction_count:0,completedAt:0}));
-  10  |   const calls=[];let transientSaveRateLimits=0,commitThenFail=0,finished=false;
-  11  |   const correctionOpen=(m,clientId)=>m.status==='completed'&&m.correctionOwner===clientId&&m.completedAt>0&&now()-m.completedAt<=90000;
-  12  |   const state=(clientId)=>finished?{success:true,finished:true,results_path:'/kotc-live/e2e-final-results',session:{name:'E2E Player Scoring',status:'completed',current_round_number:1}}:({success:true,session:{name:'E2E Player Scoring',status:'in_progress',current_round_number:1,planned_rounds:1,scoring_mode:'timed'},round:{id:'round-1',round_number:1,status:'started'},bench:[],timer:{running:true,remainingSeconds:300,deadlineAt:new Date(Date.now()+300000).toISOString()},matches:matches.map(m=>({id:m.id,court:m.court,status:m.status,revision:m.revision,team_a:m.team_a,team_b:m.team_b,team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,lock_status:m.lockOwner&&m.lockExpires>now()?(m.lockOwner===clientId?'mine':'other'):'free',lock_seconds:m.lockExpires>now()?Math.ceil((m.lockExpires-now())/1000):0,can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0}))});
-  13  |   const handle=async(body)=>{
-  14  |     calls.push({...body,at:Date.now()});
-  15  |     const action=body.action||'state',clientId=body.clientId||'';
-  16  |     if(action==='state') return state(clientId);
-  17  |     const m=matches.find(x=>x.id===body.matchId); if(!m) return {status:404,body:{error:'Current-round match not found'}};
-  18  |     if(action==='claim'){
-  19  |       if(m.status==='completed'&&!correctionOpen(m,clientId))return {status:423,body:{error:`Court ${m.court} is already saved. The scorer correction window has closed; the host can still correct this result.`,saved:true,read_only:true}};
-  20  |       const mine=matches.find(x=>x.id!==m.id&&x.lockOwner===clientId&&x.lockExpires>now());
-  21  |       if(mine)return {status:423,body:{error:`This device is already scoring Court ${mine.court}. Save or cancel that court first.`,locked:true}};
-  22  |       if(m.lockOwner&&m.lockExpires>now()&&m.lockOwner!==clientId)return {status:423,body:{error:`Court ${m.court} is being scored on another device.`,locked:true}};
-  23  |       await sleep(10);m.lockOwner=clientId;m.lockExpires=now()+90000;await sleep(35);
-  24  |       if(m.lockOwner!==clientId||m.lockExpires<=now())return {status:423,body:{error:`Court ${m.court} was claimed by another scorer.`,locked:true}};
-  25  |       return {status:200,body:{success:true,claimed:true,lease_seconds:90}};
-  26  |     }
-  27  |     if(action==='heartbeat'){
-  28  |       if(m.lockOwner!==clientId||m.lockExpires<=now())return {status:423,body:{error:'Your scoring lock is no longer active.'}};
-  29  |       m.lockExpires=now()+90000;return {status:200,body:{success:true}};
-  30  |     }
-  31  |     if(action==='release'){
-  32  |       if(m.lockOwner===clientId){m.lockOwner='';m.lockExpires=0;}return {status:200,body:{success:true,released:true}};
-  33  |     }
-  34  |     if(action==='save'||action==='correct'){
-  35  |       if(transientSaveRateLimits>0){transientSaveRateLimits--;return {status:429,body:{error:'Rate limit exceeded'}};}
-  36  |       if(m.lockOwner!==clientId||m.lockExpires<=now())return {status:423,body:{error:`Court ${m.court} is not locked to this scorer.`}};
-  37  |       if(Number(body.expectedRevision)!==m.revision)return {status:409,body:{error:'This score changed since you opened it.',conflict:true,currentRevision:m.revision}};
-  38  |       const correcting=action==='correct';
-  39  |       if(correcting&&m.status!=='completed')return {status:409,body:{error:'This score has not been saved yet.'}};
-  40  |       if(correcting&&!correctionOpen(m,clientId))return {status:423,body:{error:'The 90-second scorer correction window has closed. Ask the host to correct this result.',read_only:true}};
-  41  |       if(!correcting&&m.status==='completed')return {status:409,body:{error:'This result is already saved. Use Undo / Update on the scorer screen.'}};
-  42  |       m.team_a_score=Number(body.teamAScore);m.team_b_score=Number(body.teamBScore);m.winner_side=m.team_a_score>=m.team_b_score?'A':'B';m.status='completed';m.revision++;if(correcting)m.correction_count++;else m.completedAt=now();m.lockOwner='';m.lockExpires=0;m.correctionOwner=clientId;
-  43  |       if(commitThenFail>0){commitThenFail--;return {status:503,body:{error:'Response lost after committed sporting write'}};}
-  44  |       return {status:200,body:{success:true,corrected:correcting,message:correcting?'Updated score saved':'Score saved',match:{...m,completed_at:new Date(m.completedAt).toISOString(),can_correct:correctionOpen(m,clientId),correction_seconds_remaining:correctionOpen(m,clientId)?Math.max(0,Math.ceil((m.completedAt+90000-now())/1000)):0,lock_status:'free'}}};
-  45  |     }
-  46  |     return {status:400,body:{error:'Unsupported'}};
-  47  |   };
-  48  |   return {matches,calls,handle,setTransientSaveRateLimits:n=>{transientSaveRateLimits=n;},setCommitThenFail:n=>{commitThenFail=n;},setFinished:v=>{finished=Boolean(v);}};
-  49  | }
-  50  | 
-  51  | async function install(context,model){
-  52  |   await context.route('**/api/apps/**', async route=>{
   53  |     const req=route.request(),url=new URL(req.url()),marker=`/api/apps/${APP_ID}/functions/`;
   54  |     if(!url.pathname.includes(marker)) return json(route,[]);
   55  |     const name=decodeURIComponent(url.pathname.split(marker)[1]?.split('/')[0]||'');
@@ -89,8 +44,7 @@ Call log:
   59  |   });
   60  | }
   61  | 
-> 62  | async function openScorer(context){const page=await context.newPage();await page.goto('/e2e/kotcScorerHarness.html');await expect(page.getByText('E2E Player Scoring')).toBeVisible();return page;}
-      |                                                                                                                                                                         ^ Error: expect(locator).toBeVisible() failed
+  62  | async function openScorer(context){const page=await context.newPage();await page.goto('/e2e/kotcScorerHarness.html');await expect(page.getByText('E2E Player Scoring')).toBeVisible();return page;}
   63  | 
   64  | async function fillCourt(page,court,a,b){const card=page.getByTestId(`scorer-court-${court}`);await card.locator('input').nth(0).fill(String(a));await card.locator('input').nth(1).fill(String(b));return card;}
   65  | 
@@ -181,7 +135,8 @@ Call log:
   150 | test('finished KOTC: existing player scorer link becomes the final results link on Refresh Round',async({browser})=>{
   151 |   const model=createModel();
   152 |   const ctx=await browser.newContext({viewport:{width:390,height:844}});await install(ctx,model);const page=await openScorer(ctx);
-  153 |   await expect(page.getByTestId('kotc-final-round-results-help')).toContainText('This same player link will then open the final results');
+> 153 |   await expect(page.getByTestId('kotc-final-round-results-help')).toContainText('This same player link will then open the final results');
+      |                                                                   ^ Error: expect(locator).toContainText(expected) failed
   154 |   await expect(page.getByTestId('scorer-refresh')).toContainText('Refresh / View Results');
   155 |   model.setFinished(true);
   156 |   await page.getByTestId('scorer-refresh').click();
@@ -191,4 +146,12 @@ Call log:
   160 | 
   161 | test('scorer reconciles committed save when Base44 response is lost and ignores double tap',async({browser})=>{
   162 |   const model=createModel();model.setCommitThenFail(1);
+  163 |   const ctx=await browser.newContext({viewport:{width:390,height:844}});await install(ctx,model);const page=await openScorer(ctx);
+  164 |   const card=await fillCourt(page,1,11,4),save=card.getByRole('button',{name:'Save Result'});
+  165 |   await save.evaluate(el=>{el.dispatchEvent(new MouseEvent('click',{bubbles:true}));el.dispatchEvent(new MouseEvent('click',{bubbles:true}));});
+  166 |   await expect(card).toContainText('Score saved: 11–4');await expect(card).not.toContainText(/Response lost|Save failed|rate limit/i);
+  167 |   expect(model.matches[0].revision).toBe(1);expect(model.matches[0].team_a_score).toBe(11);expect(model.matches[0].team_b_score).toBe(4);
+  168 |   expect(model.calls.filter(c=>c.action==='save').length).toBe(1);
+  169 |   await ctx.close();
+  170 | });
 ```
