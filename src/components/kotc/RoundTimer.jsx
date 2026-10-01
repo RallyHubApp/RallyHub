@@ -68,14 +68,14 @@ export function KotcSoundCheck({ compact = false }) {
       const ctx = createAudioContext();
       if (ctx?.state === 'suspended') await ctx.resume();
       playSignal(ctx, 'start', 1);
-      window.setTimeout(() => speak('Sound check. RallyHub timer ready.'), 500);
+      window.setTimeout(() => speak('5, 4, 3, 2, 1. Hand in your scores.'), 500);
       if ('vibrate' in navigator) navigator.vibrate(120);
     } finally { window.setTimeout(() => setChecking(false), 1200); }
   };
   return <div data-testid="kotc-sound-check" className={cn('rounded-xl border border-primary/25 bg-primary/5', compact ? 'p-2' : 'p-3')}>
     <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-      <div className="flex-1 min-w-0"><p className="text-xs font-bold">Hall sound check</p><p className="text-[10px] text-muted-foreground mt-0.5">Test the real cue and spoken voice before play. This uses your device/speaker only — no Base44 call.</p></div>
-      <Button type="button" variant="outline" className="min-h-10" onClick={testSound} disabled={checking}><Volume2 className="w-4 h-4 mr-2"/>{checking?'Playing…':'Test Sound'}</Button>
+      <div className="flex-1 min-w-0"><p className="text-xs font-bold">Audio & announcements check</p><p className="text-[10px] text-muted-foreground mt-0.5">Current KOTC announcement: “5, 4, 3, 2, 1. Hand in your scores.” No other automatic round warnings.</p></div>
+      <Button type="button" variant="outline" className="min-h-10" onClick={testSound} disabled={checking}><Volume2 className="w-4 h-4 mr-2"/>{checking?'Playing…':'Test Full Announcement'}</Button>
     </div>
   </div>;
 }
@@ -142,7 +142,7 @@ export default function RoundTimer({
     setAudioReady(true);
     if (test) {
       playSignal(audioRef.current, 'start', Math.max(0.75, volume));
-      window.setTimeout(() => speak('Sound check. RallyHub timer ready.'), 500);
+      window.setTimeout(() => speak('5, 4, 3, 2, 1. Hand in your scores.'), 500);
       if ('vibrate' in navigator) navigator.vibrate(120);
     }
   };
