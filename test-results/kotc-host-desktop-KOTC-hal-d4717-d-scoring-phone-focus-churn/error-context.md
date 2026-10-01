@@ -12,29 +12,214 @@
 # Error details
 
 ```
-Error: expect(locator).toContainText(expected) failed
+Error: expect(locator).toBeVisible() failed
 
-Locator: getByTestId('kotc-host-action-status')
-Expected substring: "Checking Round 2 scores"
-Received string:    "Preparing Round 3… command sentRallyHub has accepted your tap. Keep this screen open; the button will stay locked until the action resolves."
-Timeout: 300ms
+Locator: getByTestId('kotc-round-editor')
+Expected: visible
+Timeout: 3000ms
+Error: element(s) not found
 
 Call log:
-  - Expect "toContainText" getByTestId('kotc-host-action-status') with timeout 300ms
-  - waiting for getByTestId('kotc-host-action-status')
-    - locator resolved to <div data-dynamic-content="true" data-testid="kotc-host-action-status" data-source-location="src/components/kotc/KotcV2SessionView.jsx:308:15" class="sticky top-2 z-30 rounded-xl border-2 border-primary/40 bg-background/95 p-3 shadow-lg">…</div>
-    - unexpected value "Preparing Round 3… command sentRallyHub has accepted your tap. Keep this screen open; the button will stay locked until the action resolves."
+  - Expect "toBeVisible" getByTestId('kotc-round-editor') with timeout 3000ms
+  - waiting for getByTestId('kotc-round-editor')
 
 ```
 
 ```yaml
-- paragraph: Preparing Round 3… command sent
-- paragraph: RallyHub has accepted your tap. Keep this screen open; the button will stay locked until the action resolves.
+- main:
+  - paragraph: Round 1 — ROUND READY
+  - paragraph: 4 courts · 2 bench
+  - button "Roster":
+    - img
+    - text: Roster
+  - button "Links":
+    - img
+    - text: Links
+  - button "Menu":
+    - img
+    - text: Menu
+  - paragraph: What happens next
+  - paragraph: Round 1 ready
+  - paragraph: "Next: check the 4 court assignments and bench, then Start Round 1."
+  - paragraph: Bench This Round
+  - button "Player 17"
+  - button "Player 18"
+  - paragraph: Tap a court player, then a bench player, to swap them.
+  - heading "Host Round Editor" [level=4]
+  - paragraph: Tap two players to swap them, or drag a whole court by its handle to move that four-player group to another court rank.
+  - img
+  - text: Court 1
+  - button "Move whole Court 1":
+    - img
+    - text: Move court
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 01":
+    - img
+    - text: Player 01
+  - button "Player 08":
+    - img
+    - text: Player 08
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 09":
+    - img
+    - text: Player 09
+  - button "Player 16":
+    - img
+    - text: Player 16
+  - text: Court 2
+  - button "Move whole Court 2":
+    - img
+    - text: Move court
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 02":
+    - img
+    - text: Player 02
+  - button "Player 07":
+    - img
+    - text: Player 07
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 10":
+    - img
+    - text: Player 10
+  - button "Player 15":
+    - img
+    - text: Player 15
+  - text: Court 3
+  - button "Move whole Court 3":
+    - img
+    - text: Move court
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 03":
+    - img
+    - text: Player 03
+  - button "Player 06":
+    - img
+    - text: Player 06
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 11":
+    - img
+    - text: Player 11
+  - button "Player 14":
+    - img
+    - text: Player 14
+  - text: Court 4
+  - button "Move whole Court 4":
+    - img
+    - text: Move court
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 04":
+    - img
+    - text: Player 04
+  - button "Player 05":
+    - img
+    - text: Player 05
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 12":
+    - img
+    - text: Player 12
+  - button "Player 13":
+    - img
+    - text: Player 13
+  - paragraph: Round setup is saved
+  - paragraph: You can leave this screen and return without losing the court layout.
+  - button "Saved ✓" [disabled]
+  - paragraph: Pre-Round Check
+  - paragraph: Confirm the round time and hall sound before players begin.
+  - img
+  - paragraph: Round timer
+  - paragraph: Adjust now if tonight needs a shorter or longer round.
+  - text: 08:00
+  - button "− 1 min"
+  - button "+ 1 min"
+  - paragraph: Hall sound check
+  - paragraph: Test the real cue and spoken voice before play. This uses your device/speaker only — no Base44 call.
+  - button "Test Sound":
+    - img
+    - text: Test Sound
+  - button "START ROUND 1":
+    - img
+    - text: START ROUND 1
+  - button "Back to Setup":
+    - img
+    - text: Back to Setup
+  - button "Restore Original Draw":
+    - img
+    - text: Restore Original Draw
 ```
 
 # Test source
 
 ```ts
+  505 |   await expect(page.getByText('Session complete')).toBeVisible();
+  506 |   await expect(page.getByText('Gold')).toBeVisible();
+  507 |   await expect(page.getByText('Silver')).toBeVisible();
+  508 |   await expect(page.getByText('Bronze')).toBeVisible();
+  509 | 
+  510 |   // Post-event audit correction: reopen Round 1 / Court 1, reverse the result and
+  511 |   // confirm RallyHub stores it as a correction without rewriting later court assignments.
+  512 |   await expect(page.getByText('Review & Correct Results')).toBeVisible();
+  513 |   await page.getByRole('button',{name:'Round 1',exact:true}).click();
+  514 |   const preCorrectionRound2=JSON.stringify(model.slots.filter(s=>s.round_id==='round-2'));
+  515 |   const reviewCard=page.getByTestId('kotc-score-card-1').first();
+  516 |   await reviewCard.getByRole('button',{name:'Edit result'}).click();
+  517 |   await reviewCard.getByTestId('kotc-score-1-a').fill('2');
+  518 |   await reviewCard.getByTestId('kotc-score-1-b').fill('12');
+  519 |   await reviewCard.getByRole('button',{name:'Save Correction'}).click();
+  520 |   await expect(reviewCard).toContainText('Saved 2–12',{timeout:1800});
+  521 |   const corrected=model.matches.find(m=>m.id==='match-r1-c1');
+  522 |   expect(corrected.correction_count).toBe(1);
+  523 |   expect(corrected.winner_side).toBe('B');
+  524 |   expect(JSON.stringify(model.slots.filter(s=>s.round_id==='round-2'))).toBe(preCorrectionRound2);
+  525 |   report.post_event_score_correction=true;
+  526 | 
+  527 |   report.rounds_created = model.rounds.length;
+  528 |   report.function_calls = model.calls.length;
+  529 |   console.log(`KOTC DESKTOP HOST JOURNEY REPORT\n${JSON.stringify(report, null, 2)}`);
+  530 |   await testInfo.attach('kotc-host-desktop-journey-report.json', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
+  531 | });
+  532 | 
+  533 | test('Base44 resilience: score committed but response fails is reconciled as Saved',async({page})=>{
+  534 |   const model=createModel({commitThenFailScore:true});await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+  535 |   await createAndStartRoundOne(page);
+  536 |   await page.getByTestId('kotc-score-1-a').fill('11');await page.getByTestId('kotc-score-1-b').fill('7');
+  537 |   await page.getByTestId('kotc-complete-1').click();
+  538 |   await expect(page.getByTestId('kotc-score-card-1')).toContainText('Saved 11–7',{timeout:2200});
+  539 |   await expect(page.getByTestId('kotc-score-card-1')).not.toContainText('Retry Save');
+  540 |   expect(model.scoreFailureInjected).toBe(true);expect(model.matches.find(m=>m.id==='match-r1-c1').revision).toBe(1);
+  541 | });
+  542 | 
+  543 | test('Base44 resilience: next round committed but response fails is reconciled without duplicate generation',async({page})=>{
+  544 |   const model=createModel({commitThenFailPrepare:true});await installMockBackend(page,model);page.on('dialog',d=>d.accept());
+  545 |   await createAndStartRoundOne(page);await scoreCurrentRound(page,4,11);
+  546 |   await page.getByTestId('kotc-prepare-next-round').click();
+  547 |   await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 2',{timeout:2500});
+  548 |   expect(model.prepareFailureInjected).toBe(true);expect(model.rounds.filter(r=>r.round_number===2)).toHaveLength(1);
+  549 | });
+  550 | 
   551 | test('Base44 resilience: genuine prepare failure stays explicit and safely retryable',async({page})=>{
   552 |   const model=createModel({failPrepareBeforeCommit:true});await installMockBackend(page,model);page.on('dialog',d=>d.accept());
   553 |   await createAndStartRoundOne(page);await scoreCurrentRound(page,4,11);
@@ -89,7 +274,8 @@ Call log:
   602 |   await page.getByRole('button',{name:'Player 17',exact:true}).click();
   603 |   await page.getByRole('button',{name:'Player 18',exact:true}).click();
   604 |   await page.getByTestId('kotc-create-session').click();
-  605 |   await expect(page.getByTestId('kotc-round-editor')).toBeVisible({timeout:3000});
+> 605 |   await expect(page.getByTestId('kotc-round-editor')).toBeVisible({timeout:3000});
+      |                                                       ^ Error: expect(locator).toBeVisible() failed
   606 | 
   607 |   for(let round=1;round<=12;round++){
   608 |     const start=page.getByTestId('kotc-start-round');
@@ -135,12 +321,11 @@ Call log:
   648 |       await prepare.click();
   649 |       await expect(prepare).toContainText('Preparing Round…',{timeout:250});
   650 |       report.prepare_ack_ms.push(Date.now()-prepAt);
-> 651 |       await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Checking Round ${round} scores`,{timeout:300});
-      |                                                                 ^ Error: expect(locator).toContainText(expected) failed
+  651 |       await expect(page.getByTestId('kotc-host-action-status')).toContainText(new RegExp(`Checking Round ${round} scores|Preparing Round ${round+1}`),{timeout:300});
   652 |       await sleep(300);
   653 |       await page.evaluate(()=>{window.dispatchEvent(new Event('focus'));document.dispatchEvent(new Event('visibilitychange'));});
   654 |       if(await page.getByTestId('kotc-host-action-status').isVisible().catch(()=>false)){
-  655 |         await expect(page.getByTestId('kotc-host-action-status')).toContainText(`Preparing Round ${round+1}`);
+  655 |         await expect(page.getByTestId('kotc-host-action-status')).toContainText(new RegExp(`Checking Round ${round} scores|Preparing Round ${round+1}`));
   656 |         await expect(prepare).toBeDisabled();
   657 |       }
   658 |       await expect(page.getByTestId('kotc-start-round')).toContainText(`START ROUND ${round+1}`,{timeout:4000});
@@ -191,5 +376,4 @@ Call log:
   703 |   console.log(`KOTC HALL-PRESSURE SIMULATOR REPORT\n${JSON.stringify(report,null,2)}`);
   704 |   await testInfo.attach('kotc-hall-pressure-report.json',{body:JSON.stringify(report,null,2),contentType:'application/json'});
   705 | });
-  706 | 
 ```
