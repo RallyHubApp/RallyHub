@@ -42,7 +42,8 @@ test('desktop public KOTC: live session and round history are clear without over
 
   phase='finished';await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await expect(page.getByTestId('public-kotc-podium')).toBeVisible({timeout:1800});
-  await expect(page.getByText('King of the Court · Final Results')).toBeVisible();
+  await expect(page.getByText('King of the Court',{exact:true})).toBeVisible();
+  await expect(page.getByText('Final Results',{exact:true})).toBeVisible();
   await expect(page.getByTestId('public-kotc-round-history')).toBeVisible();
   await expect(page.getByTestId('public-kotc-round-history')).toContainText('Round 2');
   await page.getByTestId('public-kotc-round-history').getByRole('button',{name:'Round 1'}).click();
