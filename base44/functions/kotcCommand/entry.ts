@@ -370,7 +370,9 @@ Deno.serve(async (req) => {
       const projected=eligible.map((p:any)=>({...p,rounds_played:Number(p.rounds_played||0)+(currentCourtIds.has(p.id)?1:0),fairness_benches:Number(p.fairness_benches||0)+(currentBenchIds.has(p.id)?1:0),consecutive_rounds_played:currentCourtIds.has(p.id)?Number(p.consecutive_rounds_played||0)+1:0,consecutive_court1_rounds:currentCourtIds.has(p.id)&&court1Ids.has(p.id)?Number(p.consecutive_court1_rounds||0)+1:0,court1_rounds:Number(p.court1_rounds||0)+(currentCourtIds.has(p.id)&&court1Ids.has(p.id)?1:0),_previousBench:currentBenchIds.has(p.id)}));
       const benchPlaces=eligible.length-activeCourts*4;
       const lockedIds=new Set(activeLocks.flatMap((l:any)=>[String(l.participant1_id),String(l.participant2_id)]));
-      const selected=[...projected].sort((a:any,b:any)=>Number(lockedIds.has(String(a.id)))-Number(lockedIds.has(String(b.id)))||Number(a.fairness_benches)-Number(b.fairness_benches)||Number(a._previousBench)-Number(b._previousBench)||Number(b.consecutive_rounds_played)-Number(a.consecutive_rounds_played)||Number(b.rounds_played)-Number(a.rounds_played)||Number(b.consecutive_court1_rounds)-Number(a.consecutive_court1_rounds)||Number(a.recent_fairness_burden||0)-Number(b.recent_fairness_burden||0)||Number(destinationRank[b.id]||99)-Number(destinationRank[a.id]||99)||stableHash(`${session.random_seed}|r${nextNumber}|${a.id}`)-stableHash(`${session.random_seed}|r${nextNumber}|${b.id}`)).slice(0,benchPlaces).map((p:any)=>p.id);
+      // Fairness only decides who sits when there are genuinely more available players than court places.
+      // It must never alter winner/loser movement when every available player fits on court.
+      const selected=benchPlaces===0?[]:[...projected].sort((a:any,b:any)=>Number(lockedIds.has(String(a.id)))-Number(lockedIds.has(String(b.id)))||Number(a.fairness_benches)-Number(b.fairness_benches)||Number(a._previousBench)-Number(b._previousBench)||Number(b.consecutive_rounds_played)-Number(a.consecutive_rounds_played)||Number(b.rounds_played)-Number(a.rounds_played)||Number(b.consecutive_court1_rounds)-Number(a.consecutive_court1_rounds)||Number(a.recent_fairness_burden||0)-Number(b.recent_fairness_burden||0)||Number(destinationRank[b.id]||99)-Number(destinationRank[a.id]||99)||stableHash(`${session.random_seed}|r${nextNumber}|${a.id}`)-stableHash(`${session.random_seed}|r${nextNumber}|${b.id}`)).slice(0,benchPlaces).map((p:any)=>p.id);
       const selectedSet=new Set(selected); let finalSlots:any[]=[];
       if(activeCourts===currentActiveCourts){
         const destinations=sportingDestinations(courts,results); const sportingSlots:any[]=[];
@@ -425,6 +427,15 @@ Deno.serve(async (req) => {
       else if(action==='back_available'){update.status='present';update.availability_effective_from_round=undefined;update.available_again_from_round=undefined;update.left_after_round=undefined;eventType='returned_available';reason=reason||'Host returned player to available';}
       else return Response.json({error:'Unknown participant status action.'},{status:400});
       const updated=await base44.asServiceRole.entities.KotcSessionParticipant.update(participant.id,update);
+      // If play has not started yet, an availability change must be reflected in the proposed
+      // courts before START. Never leave an unavailable player silently assigned to a proposal.
+      // The host is forced to regenerate/adjust rather than discovering the problem after Start.
+      if(round?.status==='proposed' && ['injured','leaving_early','temporarily_unavailable','voluntary_rest'].includes(action)){
+        const proposedSlots=await base44.asServiceRole.entities.KotcRoundSlot.filter({round_id:round.id,session_id:session.id});
+        if((proposedSlots||[]).some((s:any)=>String(s.participant_id)===String(participant.id))){
+          await base44.asServiceRole.entities.KotcRound.update(round.id,{proposal_revision:Number(round.proposal_revision||1)+1});
+        }
+      }
       await base44.asServiceRole.entities.KotcParticipationEvent.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:participant.id,round_id:round?.id,round_number:effectiveRound,event_type:eventType,effective_from_round:effectiveRound,effective_to_round:action==='voluntary_rest'?effectiveRound:undefined,fairness_credit:false,reason,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now});
       await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_participant_status_changed',entity_type:'KotcSessionParticipant',entity_id:participant.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({status:participant.status,availability_effective_from_round:participant.availability_effective_from_round,available_again_from_round:participant.available_again_from_round}),after_state:JSON.stringify(update),reason});
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
