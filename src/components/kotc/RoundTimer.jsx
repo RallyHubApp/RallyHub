@@ -233,33 +233,17 @@ export default function RoundTimer({
       const remaining = Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000));
       setSeconds(remaining);
 
-      const announcements = phase === 'play'
-        ? {
-            60: announcementText('one_minute', ''),
-            30: announcementText('thirty_seconds', ''),
-            10: announcementText('ten_seconds', ''),
-          }
-        : {
-            30: announcementText('rest_thirty_seconds', ''),
-            10: '',
-          };
-
-      if (announcements[remaining] && !lastAnnouncedRef.current.has(remaining)) {
-        lastAnnouncedRef.current.add(remaining);
-        announce(announcements[remaining], 'warning');
-      }
+      // KOTC hall audio is deliberately minimal: no 60/30/10 warnings and no
+      // start/rest chatter. Every playing round ends with 5-4-3-2-1, then the
+      // single instruction to hand in scores.
       if (phase === 'play' && remaining <= 5 && remaining > 0 && !lastAnnouncedRef.current.has(`count-${remaining}`)) {
         lastAnnouncedRef.current.add(`count-${remaining}`);
-        playSignal(audioRef.current, 'warning', volume * 0.9);
-        const countdownText = announcementText('countdown', String(remaining)).replace('{seconds}', String(remaining));
-        if (countdownText) speak(countdownText);
+        speak(String(remaining));
       }
       if (remaining === 0) {
         setRunning(false);
         if (phase === 'play') {
-          announce(announcementText('round_end', 'Round over. Please give in your scores.'), 'end');
-        } else {
-          announce(announcementText('rest_end', 'Rest finished.'), 'end');
+          announce('Hand in your scores.', 'end');
         }
       }
     }, 250);
