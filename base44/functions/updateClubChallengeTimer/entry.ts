@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
         round: Number(event.current_round || 1),
       };
     } else if (action === 'reset') {
-      next = { phase: 'ready', running: false, remaining_seconds: Number(event.play_minutes || 10) * 60, started_at: null, round: Number(event.current_round || 1) };
+      next = { phase: 'ready', running: false, remaining_seconds: Number(event.play_minutes || 10) * 60, started_at: null, round: Number(event.current_round || 1), round_started: !!current.round_started };
     } else {
       return Response.json({ error: 'Unknown timer action' }, { status: 400 });
     }
