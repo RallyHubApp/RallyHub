@@ -1647,6 +1647,47 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reset voting'); }
   };
 
+  const configureSpotPrizeDraw = async ({ enabled = setup.spotPrizeEnabled, mode = setup.spotPrizeMode, prizeCount = setup.spotPrizeCount } = {}) => {
+    if (!event || !canManageSpotPrize) return false;
+    setSpotPrizeBusy(true);
+    try {
+      const res = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'configure', enabled:!!enabled, mode, prizeCount:Number(prizeCount || 1) });
+      if (res.data?.error) throw new Error(res.data.error);
+      await refetchSpotPrizeDraw?.();
+      setSetup(s => ({ ...s, spotPrizeEnabled:!!enabled, spotPrizeMode:mode, spotPrizeCount:Number(prizeCount || 1), ...(enabled ? { potEnabled:false } : {}) }));
+      toast.success(enabled ? 'Spot Prize Draw is ready.' : 'Spot Prize Draw disabled.');
+      return true;
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not configure Spot Prize Draw'); return false; }
+    finally { setSpotPrizeBusy(false); }
+  };
+
+  const drawNextSpotPrize = async () => {
+    if (!event || !canManageSpotPrize || !spotPrizeDraw?.enabled || spotPrizeBusy) return;
+    setSpotPrizeBusy(true);
+    try {
+      const res = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'draw' });
+      if (res.data?.error) throw new Error(res.data.error);
+      await refetchSpotPrizeDraw?.();
+      const w = res.data?.winner;
+      if (w) toast.success(`Spot Prize ${w.pull}: #${w.number} ${w.display_name}`);
+      if (res.data?.complete) toast.success('Spot Prize Draw complete.');
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not draw a spot prize'); }
+    finally { setSpotPrizeBusy(false); }
+  };
+
+  const resetSpotPrizeDraw = async () => {
+    if (!event || !canManageSpotPrize || !spotPrizeDraw?.enabled || spotPrizeBusy) return;
+    if (!window.confirm('Reset the Spot Prize Draw and clear all drawn winners?')) return;
+    setSpotPrizeBusy(true);
+    try {
+      const res = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'reset' });
+      if (res.data?.error) throw new Error(res.data.error);
+      await refetchSpotPrizeDraw?.();
+      toast.success('Spot Prize Draw reset.');
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reset Spot Prize Draw'); }
+    finally { setSpotPrizeBusy(false); }
+  };
+
   const ensurePublicLinks = async ({ quiet = false } = {}) => {
     if (!event || !hasManagePermission) return null;
     try {
