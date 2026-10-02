@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
 import { CheckCircle2, GripVertical, RefreshCw, Save } from 'lucide-react';
-import { INTERCLUB_MODULE_NAME } from '@/lib/interclubBranding';
+import { INTERCLUB_MODULE_NAME, interclubPublicUrl } from '@/lib/interclubBranding';
 
 function formatDate(value) {
   if (!value) return '';
@@ -40,6 +40,10 @@ export default function PublicInterclubTeamManager() {
     try {
       const res = await base44.functions.invoke('interclubTeamManager', { token, action:'get' });
       if (res.data?.error) throw new Error(res.data.error);
+      if (res.data?.redirect_to_display_token) {
+        window.location.replace(interclubPublicUrl(`/club-challenge/display/${res.data.redirect_to_display_token}`));
+        return;
+      }
       setData(res.data);
       setPlayers((res.data?.players || []).map((p, index) => ({ ...p, rank:index + 1 })));
       setDirty(false);
