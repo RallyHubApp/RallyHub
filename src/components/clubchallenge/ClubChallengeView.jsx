@@ -1515,6 +1515,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       speak(text, { signal });
     };
     const prefix = `${currentRound}-${phase}`;
+    if (phase === 'break' && Number(event?.break_minutes || 0) > 2 && timerRemaining === 120) {
+      const nextRoundLabel = roundLabel(Number(currentRound) + 1);
+      announceOnce(`${prefix}-two-minute-warning`, announcementText('break_two_minute_warning', `Two minutes remaining. Please return to court and be ready for ${nextRoundLabel}.`, { next_round_label:nextRoundLabel }));
+    }
     if (timerRemaining <= 5 && timerRemaining > 0) announceOnce(`${prefix}-count-${timerRemaining}`, announcementText('countdown', String(timerRemaining), { seconds:timerRemaining }));
     if (timerRemaining === 0) {
       const nextRoundLabel = roundLabel(Number(currentRound) + 1);
