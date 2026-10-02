@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, action, phase, expectedRevision, minutes } = body;
+    const { eventId, action, phase, expectedRevision, minutes, seconds } = body;
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id: eventId });
     const event = events?.[0];
     if (!event) return Response.json({ error: 'Interclub Challenge event not found' }, { status: 404 });
@@ -73,6 +73,16 @@ Deno.serve(async (req) => {
         timer_revision: revision + 1,
       });
       return Response.json({ success: true, timer_revision: revision + 1, timer_state: current, event: updated, server_now: now.toISOString() });
+    } else if (action === 'test_set_remaining') {
+      if (user.role !== 'admin') return Response.json({ error: 'Test timer shortcut is admin only.' }, { status: 403 });
+      const tournaments = await base44.asServiceRole.entities.Tournament.filter({ id: event.tournament_id });
+      const tournament = tournaments?.[0];
+      const testLabel = `${tournament?.name || ''} ${tournament?.title || ''} ${tournament?.description || ''}`;
+      if (!/(^|\b)(TEST|ISOLATED TEST)(\b|\s|[-–—])/i.test(testLabel)) return Response.json({ error: 'Test timer shortcut is restricted to isolated test events.' }, { status: 403 });
+      const value = Number(seconds);
+      if (!Number.isInteger(value) || value < 1 || value > 3600) return Response.json({ error: 'Invalid test timer value.' }, { status: 400 });
+      if (!current.running || !['play','changeover','break'].includes(String(current.phase || ''))) return Response.json({ error: 'Start a round, changeover or break before using the test timer shortcut.' }, { status: 400 });
+      next = { ...current, running:true, remaining_seconds:value, started_at:now.toISOString(), round:Number(event.current_round || 1) };
     } else if (action === 'end_play') {
       if (String(current.phase || '') !== 'play') return Response.json({ error: 'Round timer is not in play.' }, { status: 400 });
       next = { ...current, phase:'play', running:false, remaining_seconds:0, started_at:null, round:Number(event.current_round || 1), round_started:true };
