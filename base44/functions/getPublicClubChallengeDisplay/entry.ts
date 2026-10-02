@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     if (!link) return Response.json({ error:'Display link is invalid or inactive.' }, { status:404 });
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:link.challenge_event_id });
     const event = events?.[0];
-    if (!event || !['draw_approved','in_progress','paused','completed','archived'].includes(event.status)) return Response.json({ error:'Interclub Challenge display is not available.' }, { status:404 });
+    if (!event || !['draft','draw_generated','draw_approved','in_progress','paused','completed','archived'].includes(event.status)) return Response.json({ error:'Interclub Challenge display is not available.' }, { status:404 });
     const [participants,matches,hostClubRows] = await Promise.all([
       base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100),
       base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200),
@@ -81,7 +81,8 @@ Deno.serve(async (req) => {
         replacement_effective_round:p.replacement_effective_round || incoming?.replacement_effective_round || null
       };
     });
-    const safeMatches = matches.map((m:any) => ({
+    const preEvent = ['draft','draw_generated','draw_approved'].includes(event.status);
+    const safeMatches = preEvent ? [] : matches.map((m:any) => ({
       id:m.id, round_number:m.round_number, court_number:m.court_number, status:m.status, winner:m.winner,
       score_a:m.score_a, score_b:m.score_b, is_showcase:!!m.is_showcase,
       showcase_mode:m.showcase_mode, showcase_target_points:m.showcase_target_points, showcase_win_by:m.showcase_win_by,
@@ -103,14 +104,14 @@ Deno.serve(async (req) => {
       club_a_logo_url:event.club_a_logo_url, club_b_logo_url:event.club_b_logo_url,
       club_a_primary_colour:event.club_a_primary_colour, club_b_primary_colour:event.club_b_primary_colour,
       club_a_secondary_colour:event.club_a_secondary_colour, club_b_secondary_colour:event.club_b_secondary_colour,
-      current_round:event.current_round, planned_rounds:event.planned_rounds, courts:event.courts, timer_state_json:event.timer_state_json, timer_revision:event.timer_revision,
+      current_round:preEvent ? 0 : event.current_round, planned_rounds:event.planned_rounds, courts:event.courts, timer_state_json:preEvent ? null : event.timer_state_json, timer_revision:event.timer_revision,
       play_minutes:event.play_minutes, changeover_minutes:event.changeover_minutes,
       normal_match_type:event.normal_match_type, normal_target_points:event.normal_target_points, normal_win_by:event.normal_win_by,
       timed_draws_allowed:event.timed_draws_allowed !== false, showcase_enabled:!!event.showcase_enabled,
       include_break:!!event.include_break, break_minutes:event.break_minutes, break_after_round:event.break_after_round,
       junior_display_mode:!!event.junior_display_mode,
-      pot_enabled:!!event.pot_enabled, pot_method:event.pot_method || 'none', pot_status:event.pot_status, pot_vote_closes_at:event.pot_vote_closes_at || null,
-      pot_voting_token:votingToken, pot_winners:potWinners,
+      pot_enabled:!!event.pot_enabled, pot_method:event.pot_method || 'none', pot_status:preEvent ? 'closed' : event.pot_status, pot_vote_closes_at:preEvent ? null : (event.pot_vote_closes_at || null),
+      pot_voting_token:preEvent ? null : votingToken, pot_winners:preEvent ? [] : potWinners,
       pot_ballot_count:publicBallotCount, pot_vote_results:publicVoteResults,
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
     }, participants:safeParticipants, matches:safeMatches });
