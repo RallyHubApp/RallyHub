@@ -1494,6 +1494,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       toast.success(`Changeover set to ${minutes} minute${minutes===1?'':'s'}.`);
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not change the changeover duration'); await refetchEvent(); }
   };
+  const setBreakMinutes = async value => {
+    const minutes = Math.max(1, Math.min(60, Math.round(Number(value) || Number(event?.break_minutes || 20))));
+    if (!event || !canManageEvent || (timerState?.running && String(timerState?.phase || '') === 'break')) return;
+    try {
+      const res = await invokeBase44Safely('updateClubChallengeTimer', { eventId:event.id, action:'set_break_minutes', minutes, expectedRevision:Number(event.timer_revision || 0) });
+      if (res.data?.error) { toast.error(res.data.error); return; }
+      await refetchEvent();
+      toast.success(`Mid-event break set to ${minutes} minute${minutes===1?'':'s'}.`);
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not change the break duration'); await refetchEvent(); }
+  };
   const fmtTimer = s => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
   const testVoice = () => unlockHallAudio({ test:true });
   React.useEffect(() => {
