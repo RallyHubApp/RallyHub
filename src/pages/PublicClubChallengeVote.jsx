@@ -46,6 +46,10 @@ export default function PublicClubChallengeVote(){
     try {
       const r = await base44.functions.invoke('getPublicClubChallengeVote',{ token });
       if (r.data?.error) throw new Error(r.data.error);
+      if (r.data?.redirect_to_display_token) {
+        window.location.replace(interclubPublicUrl(`/club-challenge/display/${r.data.redirect_to_display_token}`));
+        return;
+      }
       setData(r.data);
       setError('');
     } catch(e) {
