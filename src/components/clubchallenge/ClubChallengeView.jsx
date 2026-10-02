@@ -2064,6 +2064,30 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     finally { sportingActionRef.current = false; setHostAction(''); }
   };
 
+  React.useEffect(() => {
+    if (!event || !canManageEvent || !['in_progress','paused'].includes(event.status)) return;
+    if (timerRemaining !== 0 || timerState?.running !== true) return;
+    const phase = String(timerState?.phase || '');
+    const key = `${currentRound}-${phase}`;
+    if (autoRoundTransitionRef.current.has(key)) return;
+    autoRoundTransitionRef.current.add(key);
+
+    if (phase === 'play') {
+      if (currentRound >= plannedRounds) return;
+      const scheduledBreak = !!event.include_break && Number(currentRound) === Number(event.break_after_round || 0);
+      if (scheduledBreak) {
+        window.setTimeout(() => advanceRound(), 150);
+      } else {
+        window.setTimeout(() => startPhase('changeover'), 150);
+      }
+      return;
+    }
+
+    if (phase === 'changeover' && currentRound < plannedRounds) {
+      window.setTimeout(() => advanceRound({ skipChangeover:true }), 150);
+    }
+  }, [timerRemaining, timerState?.running, timerState?.phase, currentRound, plannedRounds, event?.id, event?.status, event?.include_break, event?.break_after_round, canManageEvent]);
+
   const endBreakEarly = async () => {
     if (!canManageEvent || sportingActionRef.current || !event || currentRound >= plannedRounds) return;
     const nextRound = currentRound + 1;
