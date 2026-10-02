@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const nextTimer = { phase:'ready', running:false, remaining_seconds:Number(event.play_minutes || 10) * 60, started_at:null, round };
+    const nextTimer = { phase:'ready', running:false, remaining_seconds:Number(event.play_minutes || 10) * 60, started_at:null, round, round_started:false };
     const nextTimerRevision = Number(event.timer_revision || 0) + 1;
     const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
       current_round: round,
