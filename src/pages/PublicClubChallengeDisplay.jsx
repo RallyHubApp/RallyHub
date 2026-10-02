@@ -87,7 +87,8 @@ export default function PublicClubChallengeDisplay(){
     } catch(e){ if(dataRef.current) setDisconnected(true); else setError(e?.response?.data?.error||e?.message||'Display unavailable'); }
     finally { loadInFlightRef.current=false; }
   },[token]);
-  const pollMs=(data?.matches?.some(m=>m.is_showcase)?10000:18000)+pollJitterRef.current;
+  const spotDrawLive=!!data?.event?.spot_prize_enabled&&data?.event?.spot_prize_status!=='completed';
+  const pollMs=spotDrawLive?3000:(data?.matches?.some(m=>m.is_showcase)?10000:18000)+pollJitterRef.current;
   React.useEffect(()=>{
     load();
     const poll=setInterval(()=>{ if(document.visibilityState==='visible') load(); },pollMs);
@@ -121,6 +122,10 @@ export default function PublicClubChallengeDisplay(){
   const potWinnersB=potWinners.filter(p=>p.side==='club_b');
   const awardLabel=event.pot_method==='points'?'Top Points Scorer':'Player of the Tournament';
   const awardRevealed=event.pot_status==='revealed'&&potWinners.length>0;
+  const spotPrizeEnabled=!!event.spot_prize_enabled;
+  const spotPrizeWinners=Array.isArray(event.spot_prize_winners)?event.spot_prize_winners:[];
+  const spotPrizeMax=spotPrizeEnabled?(event.spot_prize_mode==='per_team'?Number(event.spot_prize_count||1)*2:Number(event.spot_prize_count||1)):0;
+  const spotPrizeComplete=spotPrizeEnabled&&event.spot_prize_status==='completed';
   const completed=['completed','archived'].includes(event.status);
   const preEvent=['draft','draw_generated','draw_approved'].includes(event.status);
   const finalTitle=s.a===s.b?'Interclub Draw':`${s.a>s.b?event.club_a_name:event.club_b_name} win the Interclub`;
