@@ -1445,6 +1445,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || `Could not reopen ${INTERCLUB_EVENT_LABEL}`); }
   };
   const startPhase = async phase => {
+    autoRoundTransitionRef.current.delete(`${currentRound}-${phase}`);
     // The host's tap is the best chance to unlock mobile audio before the network await.
     await unlockHallAudio();
     if (await timerAction('start', phase)) {
