@@ -1,0 +1,95 @@
+{
+  "name": "ClubChallengeSpotPrizeDraw",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "challenge_event_id": {
+      "type": "string"
+    },
+    "tournament_id": {
+      "type": "string"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "all_players",
+        "per_team"
+      ],
+      "default": "all_players"
+    },
+    "prize_count": {
+      "type": "number",
+      "default": 2
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "in_progress",
+        "completed"
+      ],
+      "default": "ready"
+    },
+    "winners_json": {
+      "type": "string"
+    },
+    "draw_count": {
+      "type": "number",
+      "default": 0
+    },
+    "revision": {
+      "type": "number",
+      "default": 0
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "updated_by_user_id": {
+      "type": "string"
+    },
+    "last_drawn_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "challenge_event_id",
+    "tournament_id",
+    "enabled",
+    "mode",
+    "prize_count",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
