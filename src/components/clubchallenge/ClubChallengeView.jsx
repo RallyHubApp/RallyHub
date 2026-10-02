@@ -2235,7 +2235,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const unusedTeamReserves = participants.filter(p => ['club_a','club_b'].includes(p.side) && (p.roster_role || 'rotation') === 'reserve' && !p.reserve_activated && ['active','late'].includes(p.status) && Number(p.available_from_round || 1) <= currentRound);
   const gate3ParticipantIds = new Set(participants.filter(p => String(p.unique_identity_key || '').startsWith('gate3-')).map(p => p.id));
   const isGate3TestEvent = gate3ParticipantIds.size >= 8 && participants.every(p => String(p.unique_identity_key || '').startsWith('gate3-') || (p.replacement_for_participant_id && gate3ParticipantIds.has(p.replacement_for_participant_id)));
-  const isIsolatedTestEvent = /(^|\b)(TEST|ISOLATED TEST)(\b|\s|[-–—])/i.test(String(tournament?.name || tournament?.title || tournament?.description || ''));
+  const testEventLabel = [tournament?.name, tournament?.title, tournament?.description, event?.name, event?.description].filter(Boolean).join(' ');
+  const isIsolatedTestEvent = /(^|\b)(TEST|ISOLATED TEST)(\b|\s|[-–—])/i.test(testEventLabel);
   const canQuickFillTestScores = !!isAdmin && isIsolatedTestEvent;
   const addSimLog = (message, status = 'info') => setSimLog(log => [{ at: new Date().toLocaleTimeString('en-IE'), message, status }, ...log].slice(0, 12));
   const scoreForSimulation = (match, index = 0, mode = 'mixed') => {
