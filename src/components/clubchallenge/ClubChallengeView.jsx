@@ -2045,6 +2045,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         const message = `Round ${nextRound} ready · ${nextMatches.length} courts · ${restingCount} players resting${unresolved.length ? ` · ${unresolved.length} Round ${currentRound} score${unresolved.length === 1 ? '' : 's'} still to enter` : ''}`;
         setRoundActionStatus({ state:'success', text:message });
         toast.success(message);
+        setHostScoreRound(null);
         await refetchEvent();
       } else {
         if (resolvedNormalCount !== normalMatches.length) { toast.error('All normal match results must be resolved before the event can finish.'); return; }
@@ -2071,6 +2072,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try {
       const res = await invokeBase44Safely('updateClubChallengeRound', { eventId:event.id, nextRound, skipBreak:true, allowPendingScores:true });
       if (res.data?.error) throw new Error(res.data.error);
+      setHostScoreRound(null);
       await refetchEvent();
       const message = `Break ended early · Round ${nextRound} ready`;
       setRoundActionStatus({ state:'success', text:message });
