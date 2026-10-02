@@ -2973,6 +2973,24 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             <details id="cc-player-controls" className="rounded-xl border border-border bg-card overflow-hidden">
               <summary className="cursor-pointer list-none p-4 sm:p-5 flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">Player Changes & Reserves</p><p className="text-xs text-muted-foreground">Quick reserve handover, injury, withdrawal, replacement or late arrival.</p></div><ChevronDown className="w-4 h-4 text-muted-foreground" /></summary>
               <div className="border-t border-border p-4 sm:p-5 space-y-4">
+                <details className="rounded-lg border border-border bg-secondary/20 p-3">
+                  <summary className="cursor-pointer list-none flex items-center justify-between gap-3 text-xs font-semibold"><span>Player status colour key</span><ChevronDown className="w-4 h-4 text-muted-foreground" /></summary>
+                  <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+                    {[
+                      ['TEMP SUB','amber','Temporary sub for 1–2 games'],
+                      ['RESERVE IN','sky','Reserve activated into play'],
+                      ['COVER','violet','Existing rotation player covering'],
+                      ['REPLACEMENT','emerald','New permanent replacement'],
+                      ['INJURED','red','Player injured'],
+                      ['WITHDRAWN / UNAVAILABLE','slate','Player withdrawn or unavailable'],
+                      ['REPLACED','slate','Original player replaced'],
+                      ['LATE · R#','yellow','Available from a later round'],
+                    ].map(([label,tone,help]) => {
+                      const cls = tone === 'amber' ? 'border-amber-500/70 bg-amber-500/15 text-amber-800 dark:text-amber-200' : tone === 'sky' ? 'border-sky-500/70 bg-sky-500/15 text-sky-800 dark:text-sky-200' : tone === 'violet' ? 'border-violet-500/70 bg-violet-500/15 text-violet-800 dark:text-violet-200' : tone === 'emerald' ? 'border-emerald-500/70 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200' : tone === 'red' ? 'border-red-500/70 bg-red-500/15 text-red-800 dark:text-red-200' : tone === 'yellow' ? 'border-yellow-500/70 bg-yellow-500/15 text-yellow-800 dark:text-yellow-200' : 'border-slate-500/60 bg-slate-500/15 text-slate-800 dark:text-slate-200';
+                      return <div key={label} className={cn('rounded-md border px-2.5 py-2', cls)}><div className="font-black uppercase text-[10px]">{label}</div><div className="mt-0.5 text-[10px] font-medium opacity-90">{help}</div></div>;
+                    })}
+                  </div>
+                </details>
                 {unusedTeamReserves.length > 0 && <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-3"><div><p className="text-sm font-bold">Quick Reserve Handover</p><p className="text-xs text-muted-foreground mt-1">For a planned reserve change: choose the player coming off, then press the handover button. Only future unplayed fixtures change.</p></div><div className="grid md:grid-cols-2 gap-3">{unusedTeamReserves.map(reserve => { const sameSidePlayers = participants.filter(p => p.side === reserve.side && p.id !== reserve.id && ['active','late'].includes(p.status) && ((p.roster_role || 'rotation') === 'rotation' || p.reserve_activated)); const selected = quickReserveOutgoing[reserve.id] || ''; return <div key={reserve.id} className="rounded-lg border border-border bg-card p-3 space-y-2"><div><p className="text-xs text-muted-foreground">Reserve ready · {reserve.side === 'club_a' ? event.club_a_name : event.club_b_name}</p><p className="font-bold">{reserve.display_name}</p></div><Select value={selected} onValueChange={v => setQuickReserveOutgoing(q => ({ ...q, [reserve.id]:v }))} disabled={playerControlBusy}><SelectTrigger data-testid={`cc-quick-reserve-outgoing-${reserve.id}`} className="bg-secondary"><SelectValue placeholder="Who is coming off?" /></SelectTrigger><SelectContent>{sameSidePlayers.map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select><Button data-testid={`cc-quick-reserve-activate-${reserve.id}`} className="w-full" disabled={!selected || playerControlBusy} onClick={() => activateReserveQuick(reserve.id, selected)}>Put {reserve.display_name} In Now</Button></div>; })}</div></div>}
                 <div className="rounded-lg bg-secondary/30 p-4 space-y-3">
                   <div><p className="text-sm font-semibold">Event Display Name</p><p className="text-xs text-muted-foreground">Correct a spelling or shorten an imported full name for this event only. The original registration / Respond record is not changed.</p></div>
