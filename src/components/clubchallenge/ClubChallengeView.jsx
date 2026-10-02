@@ -883,8 +883,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         matchedVenue = await base44.entities.Venue.create({ tenant_id: tenantId, club_id: hostClubId, name: venueName, status:'active' });
         await refetchVenueOptions();
       }
-      if (event) await base44.entities.ClubChallengeEvent.update(event.id, { ...data, status: event.status, draw_version: event.draw_version || 0, current_round: event.current_round || 0 });
-      else await base44.entities.ClubChallengeEvent.create(data);
+      let savedEvent = event;
+      if (event) savedEvent = await base44.entities.ClubChallengeEvent.update(event.id, { ...data, status: event.status, draw_version: event.draw_version || 0, current_round: event.current_round || 0 });
+      else savedEvent = await base44.entities.ClubChallengeEvent.create(data);
+      if (savedEvent?.id) {
+        const spotRes = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:savedEvent.id, action:'configure', enabled:!!setup.spotPrizeEnabled, mode:setup.spotPrizeMode, prizeCount:number(setup.spotPrizeCount,2) });
+        if (spotRes.data?.error) throw new Error(spotRes.data.error);
+      }
       const tournamentUpdate = {
         tenant_id: tenantId,
         host_club_id: hostClubId,
