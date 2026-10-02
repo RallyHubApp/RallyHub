@@ -66,6 +66,7 @@ function VotingPrompt({ onVote, countdown }){ return <div className="text-center
 export default function PublicClubChallengeDisplay(){
   const { token } = useParams();
   const [data,setData]=React.useState(null), [error,setError]=React.useState(''), [disconnected,setDisconnected]=React.useState(false), [now,setNow]=React.useState(Date.now()), [view,setView]=React.useState('live');
+  const [drawFlash,setDrawFlash]=React.useState(1);
   const [voteA,setVoteA]=React.useState(''), [voteB,setVoteB]=React.useState(''), [voteSaving,setVoteSaving]=React.useState(false), [voteDone,setVoteDone]=React.useState(false), [voteError,setVoteError]=React.useState('');
   const [deviceId]=React.useState(getDeviceId);
   const voteSavingRef=React.useRef(false);
@@ -88,7 +89,7 @@ export default function PublicClubChallengeDisplay(){
     finally { loadInFlightRef.current=false; }
   },[token]);
   const spotDrawLive=!!data?.event?.spot_prize_enabled&&data?.event?.spot_prize_status!=='completed';
-  const pollMs=spotDrawLive?3000:(data?.matches?.some(m=>m.is_showcase)?10000:18000)+pollJitterRef.current;
+  const pollMs=spotDrawLive?1000:(data?.matches?.some(m=>m.is_showcase)?10000:18000)+pollJitterRef.current;
   React.useEffect(()=>{
     load();
     const poll=setInterval(()=>{ if(document.visibilityState==='visible') load(); },pollMs);
@@ -99,6 +100,12 @@ export default function PublicClubChallengeDisplay(){
     window.addEventListener('offline',off); window.addEventListener('online',refreshIfStale); document.addEventListener('visibilitychange',visible);
     return()=>{clearInterval(poll);clearInterval(tick);window.removeEventListener('offline',off);window.removeEventListener('online',refreshIfStale);document.removeEventListener('visibilitychange',visible);};
   },[load,pollMs]);
+  React.useEffect(()=>{
+    if(data?.event?.spot_prize_status!=='drawing') return undefined;
+    const max=Math.max(1,(data?.participants||[]).filter(p=>['club_a','club_b'].includes(p.side)).length);
+    const id=setInterval(()=>setDrawFlash(1+Math.floor(Math.random()*max)),110);
+    return()=>clearInterval(id);
+  },[data?.event?.spot_prize_status,data?.participants?.length]);
   if(error&&!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center p-6 text-center"><div><WifiOff className="mx-auto mb-3"/><p className="font-semibold">{error}</p></div></div>;
   if(!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center"><RefreshCw className="animate-spin"/></div>;
   const {event,matches,participants=[]}=data, s=score(matches,event), round=Number(event.current_round||1), plannedRounds=Number(event.planned_rounds||0);
