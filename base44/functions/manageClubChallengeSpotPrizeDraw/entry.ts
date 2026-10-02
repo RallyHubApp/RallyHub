@@ -89,6 +89,9 @@ Deno.serve(async (req) => {
     const winners = parseWinners(draw.winners_json);
     const maxPulls = draw.mode === 'per_team' ? Number(draw.prize_count||1)*2 : Number(draw.prize_count||1);
     if (winners.length >= maxPulls || draw.status === 'completed') return Response.json({ error:'Spot Prize Draw is complete.', complete:true, draw, winners }, { status:409 });
+    if (draw.status === 'drawing') return Response.json({ error:'A spot-prize pull is already in progress.' }, { status:409 });
+    draw = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.update(draw.id,{ status:'drawing', revision:Number(draw.revision||0)+1, updated_by_user_id:user.id });
+    await new Promise(resolve => setTimeout(resolve, 2200));
 
     const targetSide = draw.mode === 'per_team' ? (winners.length % 2 === 0 ? 'club_a' : 'club_b') : null;
     const poolBase = targetSide === 'club_a' ? teamA : targetSide === 'club_b' ? teamB : all;
