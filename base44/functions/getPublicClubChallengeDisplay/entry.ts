@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
         replacement_effective_round:p.replacement_effective_round || incoming?.replacement_effective_round || null
       };
     });
-    const preEvent = ['draft','draw_generated','draw_approved'].includes(event.status);
+    const preEvent = ['draft','draw_generated'].includes(event.status);
     const safeMatches = preEvent ? [] : matches.map((m:any) => ({
       id:m.id, round_number:m.round_number, court_number:m.court_number, status:m.status, winner:m.winner,
       score_a:m.score_a, score_b:m.score_b, is_showcase:!!m.is_showcase,
