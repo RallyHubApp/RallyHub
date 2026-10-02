@@ -468,7 +468,7 @@ Deno.serve(async (req) => {
         tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id,
         side:outgoing.side, display_name:cleanName, gender:String(incomingGender || outgoing.gender || ''),
         source_player_id:String(incomingSourcePlayerId || ''), participant_type:String(incomingParticipantType || outgoing.participant_type || 'guest'),
-        event_rank:outgoing.event_rank, roster_role:'rotation', status:'active', available_from_round:currentRound,
+        event_rank:outgoing.event_rank, roster_role:'rotation', status:'active', available_from_round:playerChangeRound,
         unique_identity_key:`temporary-sub-${outgoing.side}-${cleanName.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${crypto.randomUUID().slice(0,8)}`,
       });
       for (const m of targets) {
