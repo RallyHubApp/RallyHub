@@ -22,12 +22,17 @@ Deno.serve(async (req) => {
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:link.challenge_event_id });
     const event = events?.[0];
     if (!event || !['draft','draw_generated','draw_approved','in_progress','paused','completed','archived'].includes(event.status)) return Response.json({ error:'Interclub Challenge display is not available.' }, { status:404 });
-    const [participants,matches,hostClubRows] = await Promise.all([
+    const [participants,matches,hostClubRows,spotPrizeRows] = await Promise.all([
       base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100),
       base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200),
-      event.host_club_id ? base44.asServiceRole.entities.Club.filter({ id:event.host_club_id, tenant_id:event.tenant_id }, '-updated_date', 5) : Promise.resolve([])
+      event.host_club_id ? base44.asServiceRole.entities.Club.filter({ id:event.host_club_id, tenant_id:event.tenant_id }, '-updated_date', 5) : Promise.resolve([]),
+      base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5)
     ]);
     const hostClub = hostClubRows?.[0] || null;
+    const spotPrizeDraw = spotPrizeRows?.[0] || null;
+    let spotPrizeWinners:any[] = [];
+    try { spotPrizeWinners = spotPrizeDraw?.winners_json ? JSON.parse(spotPrizeDraw.winners_json) : []; } catch { spotPrizeWinners = []; }
+    if (!Array.isArray(spotPrizeWinners)) spotPrizeWinners = [];
     const votingTokens = event.pot_enabled
       ? await base44.asServiceRole.entities.ClubChallengeVotingToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5)
       : [];
@@ -113,6 +118,12 @@ Deno.serve(async (req) => {
       pot_enabled:!!event.pot_enabled, pot_method:event.pot_method || 'none', pot_status:preEvent ? 'closed' : event.pot_status, pot_vote_closes_at:preEvent ? null : (event.pot_vote_closes_at || null),
       pot_voting_token:preEvent ? null : votingToken, pot_winners:preEvent ? [] : potWinners,
       pot_ballot_count:publicBallotCount, pot_vote_results:publicVoteResults,
+      spot_prize_enabled:!!spotPrizeDraw?.enabled,
+      spot_prize_mode:spotPrizeDraw?.mode || 'all_players',
+      spot_prize_count:Number(spotPrizeDraw?.prize_count || 0),
+      spot_prize_status:spotPrizeDraw?.status || 'ready',
+      spot_prize_draw_count:Number(spotPrizeDraw?.draw_count || 0),
+      spot_prize_winners:spotPrizeWinners.map((w:any)=>({ pull:Number(w.pull||0), participant_id:w.participant_id, display_name:maskName(w.display_name,!!event.junior_display_mode), side:w.side, team_name:w.team_name, number:Number(w.number||0), drawn_at:w.drawn_at || null })),
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
     }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
