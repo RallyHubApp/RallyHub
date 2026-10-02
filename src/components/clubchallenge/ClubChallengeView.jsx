@@ -510,6 +510,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [displayMode, setDisplayMode] = useState(false);
   const [potDuration, setPotDuration] = useState('10');
   const [potTiebreakUi, setPotTiebreakUi] = useState({});
+  const [spotPrizeBusy, setSpotPrizeBusy] = useState(false);
   const potAutoCloseRef = React.useRef('');
   const [publicLinks, setPublicLinks] = useState(null);
   const [registrationLinks, setRegistrationLinks] = useState({ club_a:'', club_b:'' });
@@ -905,6 +906,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       // parallel reads; this path is part of the Interclub event-readiness gate.
       setTab('teams');
       await refetchEvent();
+      await refetchSpotPrizeDraw?.();
       await refetchParticipants();
       await refetchMatches();
       queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
