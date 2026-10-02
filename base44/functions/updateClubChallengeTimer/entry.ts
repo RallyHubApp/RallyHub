@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
         : 0;
       const seconds = preparedPlaySeconds || (phase === 'play' ? Number(event.play_minutes || 10) * 60 : phase === 'changeover' ? Number(event.changeover_minutes || 2) * 60 : phase === 'break' ? Number(event.break_minutes || 20) * 60 : 0);
       if (!seconds) return Response.json({ error: 'Invalid timer phase' }, { status: 400 });
-      next = { phase, running: true, remaining_seconds: seconds, started_at: now.toISOString(), round: currentRound };
+      next = { phase, running: true, remaining_seconds: seconds, started_at: now.toISOString(), round: currentRound, round_started: phase === 'play' ? true : !!current.round_started };
     } else if (action === 'set_round_minutes') {
       const value = Number(minutes);
       if (!Number.isInteger(value) || value < 1 || value > 60) return Response.json({ error: 'Round duration must be between 1 and 60 minutes.' }, { status: 400 });
