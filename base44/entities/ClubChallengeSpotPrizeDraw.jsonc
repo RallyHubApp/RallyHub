@@ -40,6 +40,19 @@
     "winners_json": {
       "type": "string"
     },
+    "pending_winner_json": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "draw_started_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
     "draw_count": {
       "type": "number",
       "default": 0
