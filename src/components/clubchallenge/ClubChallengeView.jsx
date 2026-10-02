@@ -2466,7 +2466,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const currentSittingOut = participants.filter(p => !isTemporarySub(p) && (p.status === 'active' || (p.status === 'late' && Number(p.available_from_round || 1) <= currentRound)) && !currentActiveIds.has(p.id));
   const currentSittingOutA = currentSittingOut.filter(p => p.side === 'club_a');
   const currentSittingOutB = currentSittingOut.filter(p => p.side === 'club_b');
-  const playerStatusChanges = participants.filter(p => ['club_a','club_b'].includes(p.side) && !!playerTreatment(p));
+  const playerStatusChanges = Array.from(new Map(participants.filter(p => ['club_a','club_b'].includes(p.side) && !!playerTreatment(p)).map(p => [`${p.side}:${String(p.display_name || '').trim().toLowerCase()}:${playerTreatment(p)?.label}`, p])).values());
   const validPotVotes = potVotes.filter(v => v.valid !== false);
   const potCounts = validPotVotes.reduce((a,v) => ({ ...a, [v.nominee_participant_id]: (a[v.nominee_participant_id] || 0) + 1 }), {});
   const potBallotCount = new Set(validPotVotes.map(v => v.voter_identity_key).filter(Boolean)).size;
