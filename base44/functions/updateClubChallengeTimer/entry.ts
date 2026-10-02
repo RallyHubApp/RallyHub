@@ -64,6 +64,15 @@ Deno.serve(async (req) => {
         timer_revision: revision + 1,
       });
       return Response.json({ success: true, timer_revision: revision + 1, timer_state: current, event: updated, server_now: now.toISOString() });
+    } else if (action === 'set_break_minutes') {
+      const value = Number(minutes);
+      if (!Number.isInteger(value) || value < 1 || value > 60) return Response.json({ error: 'Break duration must be between 1 and 60 minutes.' }, { status: 400 });
+      if (current.running && String(current.phase || '') === 'break') return Response.json({ error: 'Use the live break controls while the break is running.' }, { status: 400 });
+      const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
+        break_minutes: value,
+        timer_revision: revision + 1,
+      });
+      return Response.json({ success: true, timer_revision: revision + 1, timer_state: current, event: updated, server_now: now.toISOString() });
     } else if (action === 'end_play') {
       if (String(current.phase || '') !== 'play') return Response.json({ error: 'Round timer is not in play.' }, { status: 400 });
       next = { ...current, phase:'play', running:false, remaining_seconds:0, started_at:null, round:Number(event.current_round || 1), round_started:true };
