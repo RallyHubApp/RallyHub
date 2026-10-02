@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       const value = Number(minutes);
       if (!Number.isInteger(value) || value < 1 || value > 60) return Response.json({ error: 'Round duration must be between 1 and 60 minutes.' }, { status: 400 });
       if (current.running) return Response.json({ error: 'Pause the timer before changing the round duration.' }, { status: 400 });
-      next = { phase: 'ready', running: false, remaining_seconds: value * 60, started_at: null, round: Number(event.current_round || 1) };
+      next = { phase: current.round_started ? 'play' : 'ready', running: false, remaining_seconds: value * 60, started_at: null, round: Number(event.current_round || 1), round_started: !!current.round_started };
     } else if (action === 'pause') {
       next = { ...current, running: false, remaining_seconds: remainingNow, started_at: null };
     } else if (action === 'resume') {
