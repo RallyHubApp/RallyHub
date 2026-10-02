@@ -35,7 +35,7 @@ function podiumForSide(stats,participants,side){
 function TeamPodiums({event,podiumA=[],podiumB=[]}){
   const medal=index=>index===0?'🥇':index===1?'🥈':'🥉';
   const place=index=>index===0?'1st':index===1?'2nd':'3rd';
-  const sizeClass=index=>index===0?'h-40 min-h-40 sm:h-44 sm:min-h-44 px-3 py-4':index===1?'h-36 min-h-36 sm:h-40 sm:min-h-40 px-3 py-3.5':'h-32 min-h-32 sm:h-36 sm:min-h-36 px-3 py-3';
+  const sizeClass=index=>index===0?'min-h-40 sm:min-h-44 h-40 sm:h-44 px-3 py-4':index===1?'min-h-36 sm:min-h-40 h-36 sm:h-40 px-3 py-3.5':'min-h-32 sm:min-h-36 h-32 sm:h-36 px-3 py-3';
   const medalClass=index=>index===0?'text-4xl sm:text-5xl':index===1?'text-3xl sm:text-4xl':'text-2xl sm:text-3xl';
   const nameClass=index=>index===0?'text-base sm:text-lg':index===1?'text-sm sm:text-base':'text-sm';
   return <section className="mt-6 grid gap-4 md:grid-cols-2" data-testid="interclub-team-podiums">
