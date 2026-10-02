@@ -56,6 +56,7 @@ Deno.serve(async (req) => {
 
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id: event.id }, 'event_rank', 100);
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id: event.id }, 'round_number', 200);
+    const spotPrizeDraw = (await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5))?.[0] || null;
     const scorerRows = user.role === 'admin' ? await base44.asServiceRole.entities.ClubChallengeScorer.filter({ challenge_event_id: event.id }, 'role', 100) : [];
 
     // Never expose participant contact details through scorer/display state.
@@ -69,7 +70,7 @@ Deno.serve(async (req) => {
       withdrawn_at:p.withdrawn_at, withdrawal_reason:p.withdrawal_reason,
     }));
 
-    return Response.json({ success:true, accessRole, permissions, event, participants:safeParticipants, matches, scorers:scorerRows });
+    return Response.json({ success:true, accessRole, permissions, event, participants:safeParticipants, matches, spotPrizeDraw, scorers:scorerRows });
   } catch (error) {
     return Response.json({ error: error?.message || 'Unexpected Interclub Challenge state error' }, { status: 500 });
   }
