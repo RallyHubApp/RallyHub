@@ -55,6 +55,15 @@ Deno.serve(async (req) => {
       if (!Number.isInteger(value) || value < 1 || value > 60) return Response.json({ error: 'Round duration must be between 1 and 60 minutes.' }, { status: 400 });
       if (current.running) return Response.json({ error: 'Pause the timer before changing the round duration.' }, { status: 400 });
       next = { phase: current.round_started ? 'play' : 'ready', running: false, remaining_seconds: value * 60, started_at: null, round: Number(event.current_round || 1), round_started: !!current.round_started };
+    } else if (action === 'set_changeover_minutes') {
+      const value = Number(minutes);
+      if (!Number.isInteger(value) || value < 1 || value > 10) return Response.json({ error: 'Changeover duration must be between 1 and 10 minutes.' }, { status: 400 });
+      if (current.running && String(current.phase || '') === 'changeover') return Response.json({ error: 'Wait until the current changeover finishes before changing its duration.' }, { status: 400 });
+      const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
+        changeover_minutes: value,
+        timer_revision: revision + 1,
+      });
+      return Response.json({ success: true, timer_revision: revision + 1, timer_state: current, event: updated, server_now: now.toISOString() });
     } else if (action === 'end_play') {
       if (String(current.phase || '') !== 'play') return Response.json({ error: 'Round timer is not in play.' }, { status: 400 });
       next = { ...current, phase:'play', running:false, remaining_seconds:0, started_at:null, round:Number(event.current_round || 1), round_started:true };
