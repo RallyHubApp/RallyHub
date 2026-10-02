@@ -1677,7 +1677,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         playRallyHubSignal(ctx, 'warning', hallVolume * 0.55);
         raffleSoundTimer = window.setInterval(() => playRallyHubSignal(ctx, 'warning', hallVolume * 0.45), 220);
       }
-      const res = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'draw' });
+      const begin = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'begin_draw' });
+      if (begin.data?.error) throw new Error(begin.data.error);
+      await refetchSpotPrizeDraw?.();
+      await new Promise(resolve => window.setTimeout(resolve, 3800));
+      const res = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'complete_draw' });
       if (res.data?.error) throw new Error(res.data.error);
       if (raffleSoundTimer) { window.clearInterval(raffleSoundTimer); raffleSoundTimer = null; }
       const w = res.data?.winner;
@@ -1707,13 +1711,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const resetSpotPrizeDraw = async () => {
     if (!event || !canManageSpotPrize || !spotPrizeDraw?.enabled || spotPrizeBusy) return;
-    if (!window.confirm('Reset the Spot Prize Draw and clear all drawn winners?')) return;
     setSpotPrizeBusy(true);
     try {
       const res = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'reset' });
       if (res.data?.error) throw new Error(res.data.error);
+      if (isAdmin) queryClient.setQueryData(['club-challenge-spot-prize', event.id], res.data?.draw || { ...spotPrizeDraw, status:'ready', winners_json:'[]', draw_count:0, pending_winner_json:null, draw_started_at:null });
       await refetchSpotPrizeDraw?.();
-      toast.success('Spot Prize Draw reset.');
+      toast.success('Spot Prize Draw reset — all previous winners cleared.');
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reset Spot Prize Draw'); }
     finally { setSpotPrizeBusy(false); }
   };
