@@ -648,7 +648,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const eventReadOnly = ['completed','archived'].includes(event?.status);
   const canManageEvent = !!permissions.canManage && !eventReadOnly;
   const canManagePot = !!permissions.canManage && !!event && event.status !== 'archived';
+  const canManageSpotPrize = !!permissions.canManage && !!event && event.status !== 'archived';
   const effectivePotStatus = event?.pot_status || (event?.pot_enabled ? 'closed' : 'disabled');
+  const spotPrizeWinners = useMemo(() => { try { const v = spotPrizeDraw?.winners_json ? JSON.parse(spotPrizeDraw.winners_json) : []; return Array.isArray(v) ? v : []; } catch { return []; } }, [spotPrizeDraw?.winners_json]);
+  const spotPrizeMaxPulls = spotPrizeDraw?.enabled ? (spotPrizeDraw.mode === 'per_team' ? Number(spotPrizeDraw.prize_count || 1) * 2 : Number(spotPrizeDraw.prize_count || 1)) : 0;
   const canScoreEvent = !!permissions.canScore && !eventReadOnly;
   const canCorrectScoreEvent = !!permissions.canCorrectScore && !!event && event.status !== 'archived';
   const canFinaliseEvent = !!permissions.canFinalise && !eventReadOnly;
