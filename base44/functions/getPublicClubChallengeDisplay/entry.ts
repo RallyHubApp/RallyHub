@@ -22,14 +22,16 @@ Deno.serve(async (req) => {
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:link.challenge_event_id });
     const event = events?.[0];
     if (!event || !['draft','draw_generated','draw_approved','in_progress','paused','completed','archived'].includes(event.status)) return Response.json({ error:'Interclub Challenge display is not available.' }, { status:404 });
-    const [participants,matches,hostClubRows,spotPrizeRows] = await Promise.all([
+    const [participants,matches,hostClubRows,spotPrizeRows,tournamentRows] = await Promise.all([
       base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100),
       base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200),
       event.host_club_id ? base44.asServiceRole.entities.Club.filter({ id:event.host_club_id, tenant_id:event.tenant_id }, '-updated_date', 5) : Promise.resolve([]),
-      base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5)
+      base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5),
+      base44.asServiceRole.entities.Tournament.filter({ id:event.tournament_id }, '-updated_date', 5)
     ]);
     const hostClub = hostClubRows?.[0] || null;
     const spotPrizeDraw = spotPrizeRows?.[0] || null;
+    const tournament = tournamentRows?.[0] || null;
     let spotPrizeWinners:any[] = [];
     try { spotPrizeWinners = spotPrizeDraw?.winners_json ? JSON.parse(spotPrizeDraw.winners_json) : []; } catch { spotPrizeWinners = []; }
     if (!Array.isArray(spotPrizeWinners)) spotPrizeWinners = [];
@@ -110,6 +112,11 @@ Deno.serve(async (req) => {
       club_a_primary_colour:event.club_a_primary_colour, club_b_primary_colour:event.club_b_primary_colour,
       club_a_secondary_colour:event.club_a_secondary_colour, club_b_secondary_colour:event.club_b_secondary_colour,
       current_round:preEvent ? 0 : event.current_round, planned_rounds:event.planned_rounds, courts:event.courts, timer_state_json:preEvent ? null : event.timer_state_json, timer_revision:event.timer_revision,
+      event_date:tournament?.start_date || null,
+      event_start_time:tournament?.event_start_time || event.scheduled_start_time || null,
+      event_end_time:tournament?.event_end_time || null,
+      event_venue:tournament?.location || null,
+      event_map_url:tournament?.event_map_url || null,
       play_minutes:event.play_minutes, changeover_minutes:event.changeover_minutes,
       normal_match_type:event.normal_match_type, normal_target_points:event.normal_target_points, normal_win_by:event.normal_win_by,
       timed_draws_allowed:event.timed_draws_allowed !== false, showcase_enabled:!!event.showcase_enabled,
