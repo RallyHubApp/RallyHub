@@ -35,7 +35,7 @@ function podiumForSide(stats,participants,side){
 function TeamPodiums({event,podiumA=[],podiumB=[]}){
   const medal=index=>index===0?'🥇':index===1?'🥈':'🥉';
   const place=index=>index===0?'1st':index===1?'2nd':'3rd';
-  const sizeClass=index=>index===0?'min-h-40 sm:min-h-44 px-3 py-4':index===1?'min-h-36 sm:min-h-40 px-3 py-3.5':'min-h-32 sm:min-h-36 px-3 py-3';
+  const sizeClass=index=>index===0?'h-40 sm:h-44 px-3 py-4':index===1?'h-36 sm:h-40 px-3 py-3.5':'h-32 sm:h-36 px-3 py-3';
   const medalClass=index=>index===0?'text-4xl sm:text-5xl':index===1?'text-3xl sm:text-4xl':'text-2xl sm:text-3xl';
   const nameClass=index=>index===0?'text-base sm:text-lg':index===1?'text-sm sm:text-base':'text-sm';
   return <section className="mt-6 grid gap-4 md:grid-cols-2" data-testid="interclub-team-podiums">
@@ -268,7 +268,7 @@ export default function PublicClubChallengeDisplay(){
         <div className="order-1 col-span-2 sm:order-2 sm:col-span-1"><p className="text-xs sm:text-base uppercase tracking-widest text-muted-foreground">FINAL</p><p className="mt-2 text-6xl sm:text-9xl font-black tabular-nums text-primary">{s.a}–{s.b}</p></div>
         <div className="order-3 sm:order-3 flex flex-col items-center gap-3 rounded-3xl border bg-card p-4 sm:p-5" style={{borderTopWidth:'8px',borderTopColor:event.club_b_primary_colour||'#7f1d1d',borderBottomWidth:'4px',borderBottomColor:event.club_b_secondary_colour||event.club_b_primary_colour||'#7f1d1d'}}>{event.club_b_logo_url&&<img src={event.club_b_logo_url} alt={`${event.club_b_name} logo`} className="w-24 h-24 sm:w-36 sm:h-36 object-contain rounded-2xl bg-white p-2"/>}<h2 className="text-2xl sm:text-5xl font-black">{event.club_b_name}</h2></div>
       </div>
-      <p className="mt-7 text-2xl sm:text-4xl font-black">{finalTitle}</p>
+      <div className="mt-7 flex flex-col items-center gap-3"><div className="text-3xl sm:text-4xl" aria-hidden="true">🎈🎉🏆🎉🎈</div><p className="text-3xl sm:text-5xl font-black text-primary">{finalTitle}</p><p className="text-sm sm:text-base font-bold text-muted-foreground">Congratulations to the winning team</p></div>
       <TeamPodiums event={event} podiumA={podiumA} podiumB={podiumB}/>
       <PoweredByRallyHub />
     </div></div>
