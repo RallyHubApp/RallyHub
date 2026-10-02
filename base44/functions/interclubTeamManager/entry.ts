@@ -20,7 +20,12 @@ Deno.serve(async (req) => {
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:link.challenge_event_id });
     const event = events?.[0];
-    if (!event || !['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Team editing is closed for this Interclub event.' }, { status:409 });
+    if (!event) return Response.json({ error:'Interclub event not found.' }, { status:404 });
+    if (!['draft','draw_generated'].includes(event.status)) {
+      const displayLinks = await base44.asServiceRole.entities.ClubChallengeDisplayToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5);
+      if (action === 'get' && displayLinks?.[0]?.token) return Response.json({ success:true, redirect_to_display_token:displayLinks[0].token, event_status:event.status });
+      return Response.json({ error:'Team editing is closed for this Interclub event.' }, { status:409 });
+    }
 
     const tournaments = await base44.asServiceRole.entities.Tournament.filter({ id:event.tournament_id });
     const tournament = tournaments?.[0] || null;
