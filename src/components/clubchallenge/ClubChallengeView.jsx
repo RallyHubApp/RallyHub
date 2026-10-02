@@ -2093,18 +2093,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (autoRoundTransitionRef.current.has(key)) return;
     autoRoundTransitionRef.current.add(key);
 
-    if (phase === 'play') {
-      if (currentRound >= plannedRounds) return;
-      const scheduledBreak = !!event.include_break && Number(currentRound) === Number(event.break_after_round || 0);
-      if (scheduledBreak) {
-        window.setTimeout(() => advanceRound(), 150);
-      } else {
-        window.setTimeout(() => startPhase('changeover'), 150);
-      }
+    // Physical transitions stay under host control. When play ends, RallyHub asks
+    // for scores and waits for the host to start the changeover or scheduled break.
+    // Once a host-started changeover/break finishes, RallyHub can safely prepare
+    // the next round automatically without starting play.
+    if (phase === 'changeover' && currentRound < plannedRounds) {
+      window.setTimeout(() => advanceRound({ skipChangeover:true }), 150);
       return;
     }
 
-    if (phase === 'changeover' && currentRound < plannedRounds) {
+    if (phase === 'break' && currentRound < plannedRounds) {
       window.setTimeout(() => advanceRound({ skipChangeover:true }), 150);
     }
   }, [timerRemaining, timerState?.running, timerState?.phase, currentRound, plannedRounds, event?.id, event?.status, event?.include_break, event?.break_after_round, canManageEvent]);
