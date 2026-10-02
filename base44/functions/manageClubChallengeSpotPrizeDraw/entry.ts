@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
       const mode = body.mode === 'per_team' ? 'per_team' : 'all_players';
       const max = mode === 'per_team' ? 8 : 16;
       const prizeCount = Math.max(1, Math.min(max, Math.floor(Number(body.prizeCount || 2))));
+      if (enabled && event.pot_status === 'open') return Response.json({ error:'Close Player Vote before switching this event to a Spot Prize Draw.' }, { status:409 });
       const payload:any = {
         tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id,
         enabled, mode, prize_count:prizeCount, updated_by_user_id:user.id,
@@ -68,6 +69,7 @@ Deno.serve(async (req) => {
         payload.revision=Number(draw.revision||0)+1;
         draw = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.update(draw.id,payload);
       }
+      if (enabled) await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id,{ pot_enabled:false, pot_method:'none', pot_status:'disabled', pot_winner_participant_ids:[], pot_revealed_at:null, pot_vote_opened_at:null, pot_vote_closes_at:null, pot_vote_duration_minutes:null });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'spot_prize_configured', user_id:user.id, occurred_at:nowIso, new_value_json:JSON.stringify({enabled,mode,prize_count:prizeCount}), note:'Spot-prize draw is independent of sporting results and uses the eligible event roster only.' });
       return Response.json({ success:true, draw });
     }
