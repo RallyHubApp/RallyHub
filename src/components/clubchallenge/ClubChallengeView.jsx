@@ -2764,7 +2764,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <Badge className={breakActive ? 'bg-red-600 text-white' : 'bg-primary/10 text-primary'}>{breakActive ? 'BREAK' : `Round ${currentRound}/${plannedRounds}`}</Badge>
                 <div className="font-bold tabular-nums text-lg sm:text-xl">{fmtTimer(timerRemaining)}</div>
-                <div className="text-xs text-muted-foreground"><strong className="text-foreground">{currentRoundSavedCount}/{currentMatches.length}</strong> current scores saved</div>
+                {scoreEntryVisible && <div className="text-xs text-muted-foreground"><strong className="text-foreground">{currentRoundSavedCount}/{currentMatches.length}</strong> current scores saved</div>}
                 {pendingPastMatches.length > 0 && <Badge variant="outline" className="border-amber-500/50 text-amber-700">{pendingPastMatches.length} earlier score{pendingPastMatches.length === 1 ? '' : 's'} pending</Badge>}
                 <div className="ml-auto flex flex-wrap items-center gap-2">
                   <Button size="sm" variant={audioMuted ? 'destructive' : 'outline'} onClick={audioMuted ? enableAudio : silenceAudio}>{audioMuted ? <VolumeX className="w-4 h-4 mr-1" /> : <Volume2 className="w-4 h-4 mr-1" />}{audioMuted ? 'Audio OFF' : 'Audio ON'}</Button>
