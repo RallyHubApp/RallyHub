@@ -49,6 +49,7 @@ const DEFAULT_SETUP = {
   includeBreak: true, breakMinutes: 20, breakAfterRound: 6,
   matchType: 'timed', target: 11, winBy: 1, drawsAllowed: true,
   compositionMode: 'open', showcaseEnabled: true, showcasePoints: 5, potEnabled: true, juniorDisplayMode: false,
+  spotPrizeEnabled: false, spotPrizeMode: 'all_players', spotPrizeCount: 2,
 };
 
 function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
@@ -578,6 +579,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     refetchOnWindowFocus:false,
   });
   const matches = isAdmin ? adminMatches : secureState?.matches || [];
+  const { data: adminSpotPrizeDraw = null, refetch: refetchAdminSpotPrizeDraw } = useQuery({
+    queryKey: ['club-challenge-spot-prize', event?.id],
+    queryFn: async () => event ? (await base44.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5))[0] || null : null,
+    enabled: isAdmin && !!event?.id,
+    refetchInterval: isAdmin && !!event?.id ? 8000 : false,
+    refetchOnWindowFocus:false,
+  });
+  const spotPrizeDraw = isAdmin ? adminSpotPrizeDraw : secureState?.spotPrizeDraw || null;
+  const refetchSpotPrizeDraw = isAdmin ? refetchAdminSpotPrizeDraw : refetchSecureState;
   const refetchEvent = isAdmin ? refetchAdminEvent : refetchSecureState;
   const refetchParticipants = isAdmin ? refetchAdminParticipants : refetchSecureState;
   const refetchMatches = isAdmin ? refetchAdminMatches : refetchSecureState;
@@ -601,8 +611,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       matchType: event.normal_match_type || s.matchType, target: event.normal_target_points || s.target, winBy: event.normal_win_by || s.winBy,
       drawsAllowed: event.timed_draws_allowed !== false, compositionMode: event.composition_mode || s.compositionMode,
       showcaseEnabled: !!event.showcase_enabled, showcasePoints: event.showcase_points ?? s.showcasePoints, potEnabled: !!event.pot_enabled, juniorDisplayMode: !!event.junior_display_mode,
+      spotPrizeEnabled: spotPrizeDraw?.enabled ?? s.spotPrizeEnabled,
+      spotPrizeMode: spotPrizeDraw?.mode || s.spotPrizeMode,
+      spotPrizeCount: spotPrizeDraw?.prize_count ?? s.spotPrizeCount,
     }));
-  }, [event?.id, event?.club_a_name, event?.club_b_name]);
+  }, [event?.id, event?.club_a_name, event?.club_b_name, spotPrizeDraw?.id, spotPrizeDraw?.enabled, spotPrizeDraw?.mode, spotPrizeDraw?.prize_count]);
 
   React.useEffect(() => {
     if (event || !hostClub) return;
