@@ -678,9 +678,19 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if ((p.roster_role || 'rotation') === 'reserve' && p.reserve_activated) return `${name} · Reserve`;
     return name;
   }).join(' & ');
-  const hostPlayerChipClass = p => isTemporarySub(p)
-    ? 'border-amber-500/70 bg-amber-500/15 text-amber-800 dark:text-amber-200'
-    : '';
+  const playerTreatment = p => {
+    if (!p) return null;
+    if (isTemporarySub(p)) return { label:'TEMP SUB', className:'border-amber-500/70 bg-amber-500/15 text-amber-800 dark:text-amber-200' };
+    if (p.status === 'injured') return { label:'INJURED', className:'border-red-500/70 bg-red-500/15 text-red-800 dark:text-red-200' };
+    if (p.status === 'withdrawn') return { label:'WITHDRAWN / UNAVAILABLE', className:'border-slate-500/60 bg-slate-500/15 text-slate-800 dark:text-slate-200' };
+    if (p.status === 'replaced') return { label:'REPLACED', className:'border-slate-400/60 bg-slate-400/10 text-slate-700 dark:text-slate-300' };
+    if (p.replacement_for_participant_id) return { label:'REPLACEMENT', className:'border-emerald-500/70 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200' };
+    if (Array.isArray(p.covering_for_participant_ids) && p.covering_for_participant_ids.length) return { label:'COVER', className:'border-violet-500/70 bg-violet-500/15 text-violet-800 dark:text-violet-200' };
+    if ((p.roster_role || 'rotation') === 'reserve' && p.reserve_activated) return { label:'RESERVE IN', className:'border-sky-500/70 bg-sky-500/15 text-sky-800 dark:text-sky-200' };
+    if (p.status === 'late') return { label:`LATE · R${Number(p.available_from_round || 1)}`, className:'border-yellow-500/70 bg-yellow-500/15 text-yellow-800 dark:text-yellow-200' };
+    return null;
+  };
+  const hostPlayerChipClass = p => playerTreatment(p)?.className || '';
   const normalMatches = matches.filter(m => !m.is_showcase);
   const scheduleMaxRound = normalMatches.length ? Math.max(...normalMatches.map(m => Number(m.round_number || 0))) : 0;
   const plannedRounds = Number(event?.planned_rounds || 0) > 0 ? Number(event.planned_rounds) : scheduleMaxRound;
