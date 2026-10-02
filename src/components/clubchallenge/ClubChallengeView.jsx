@@ -495,6 +495,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const sportingActionRef = React.useRef(false);
   const lastTimerAnnouncementRef = React.useRef(new Set());
   const timerSpeechArmedRef = React.useRef(false);
+  const autoRoundTransitionRef = React.useRef(new Set());
   const announcedRoundStartsRef = React.useRef(new Set());
   const lastShowcaseSideChangeRef = React.useRef('');
   const lastShowcaseCompleteRef = React.useRef('');
