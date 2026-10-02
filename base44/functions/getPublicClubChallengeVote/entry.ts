@@ -24,7 +24,10 @@ Deno.serve(async (req) => {
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:link.challenge_event_id });
     const event = events?.[0];
-    if (!event || !event.pot_enabled) return Response.json({ error:'Player of Tournament voting is not enabled.' }, { status:404 });
+    if (!event) return Response.json({ error:'Interclub event not found.' }, { status:404 });
+
+    const displayLinks = await base44.asServiceRole.entities.ClubChallengeDisplayToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5);
+    if (!event.pot_enabled) return Response.json({ success:true, redirect_to_display_token:displayLinks?.[0]?.token || null });
 
     let effectiveStatus = event.pot_status;
     const closesAtMs = event.pot_vote_closes_at ? Date.parse(event.pot_vote_closes_at) : NaN;
@@ -33,10 +36,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { pot_status:'closed' });
     }
 
-    const [participants, displayLinks] = await Promise.all([
-      base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100),
-      base44.asServiceRole.entities.ClubChallengeDisplayToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5)
-    ]);
+    const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100);
     const nominees = participants
       .filter((p:any) => ['club_a','club_b'].includes(p.side) && ((p.roster_role || 'rotation') !== 'reserve' || p.reserve_activated))
       .map((p:any) => ({
