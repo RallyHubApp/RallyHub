@@ -63,10 +63,38 @@ function LiveEventBrand({ event, pageLabel='Live Event View' }){
 }
 function VotingPrompt({ onVote, countdown }){ return <div className="text-center"><p className="text-sm sm:text-lg font-black uppercase tracking-[.16em] text-primary">Players of the Tournament voting open</p><p className="mt-1 text-2xl sm:text-4xl font-black tabular-nums">{countdown}</p><p className="mt-1 text-xs sm:text-sm text-muted-foreground">Voting is built into this player link.</p><button type="button" onClick={onVote} className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-sm">Vote now</button></div>; }
 
+let spotPrizeAudioContext=null;
+function getSpotPrizeAudio(){
+  if(typeof window==='undefined') return null;
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;
+  if(!AudioCtx) return null;
+  if(!spotPrizeAudioContext) spotPrizeAudioContext=new AudioCtx();
+  if(spotPrizeAudioContext.state==='suspended') spotPrizeAudioContext.resume().catch(()=>{});
+  return spotPrizeAudioContext;
+}
+function spotPrizeTick(){
+  const ctx=getSpotPrizeAudio(); if(!ctx) return;
+  const osc=ctx.createOscillator(), gain=ctx.createGain();
+  osc.type='triangle'; osc.frequency.value=220+Math.random()*180;
+  gain.gain.setValueAtTime(0.0001,ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.08,ctx.currentTime+0.01); gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.07);
+  osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime+0.08);
+}
+function spotPrizeFanfare(){
+  const ctx=getSpotPrizeAudio(); if(!ctx) return;
+  [523.25,659.25,783.99,1046.5].forEach((frequency,i)=>{
+    const osc=ctx.createOscillator(), gain=ctx.createGain(), start=ctx.currentTime+i*0.11;
+    osc.type='sine'; osc.frequency.value=frequency;
+    gain.gain.setValueAtTime(0.0001,start); gain.gain.exponentialRampToValueAtTime(0.16,start+0.02); gain.gain.exponentialRampToValueAtTime(0.0001,start+0.32);
+    osc.connect(gain); gain.connect(ctx.destination); osc.start(start); osc.stop(start+0.34);
+  });
+}
+
 export default function PublicClubChallengeDisplay(){
   const { token } = useParams();
   const [data,setData]=React.useState(null), [error,setError]=React.useState(''), [disconnected,setDisconnected]=React.useState(false), [now,setNow]=React.useState(Date.now()), [view,setView]=React.useState('live');
   const [drawFlash,setDrawFlash]=React.useState(1);
+  const [drawSoundEnabled,setDrawSoundEnabled]=React.useState(false);
+  const lastSpotPrizeWinnerCountRef=React.useRef(0);
   const [voteA,setVoteA]=React.useState(''), [voteB,setVoteB]=React.useState(''), [voteSaving,setVoteSaving]=React.useState(false), [voteDone,setVoteDone]=React.useState(false), [voteError,setVoteError]=React.useState('');
   const [deviceId]=React.useState(getDeviceId);
   const voteSavingRef=React.useRef(false);
@@ -103,9 +131,14 @@ export default function PublicClubChallengeDisplay(){
   React.useEffect(()=>{
     if(data?.event?.spot_prize_status!=='drawing') return undefined;
     const max=Math.max(1,(data?.participants||[]).filter(p=>['club_a','club_b'].includes(p.side)).length);
-    const id=setInterval(()=>setDrawFlash(1+Math.floor(Math.random()*max)),110);
+    const id=setInterval(()=>{ setDrawFlash(1+Math.floor(Math.random()*max)); if(drawSoundEnabled) spotPrizeTick(); },110);
     return()=>clearInterval(id);
-  },[data?.event?.spot_prize_status,data?.participants?.length]);
+  },[data?.event?.spot_prize_status,data?.participants?.length,drawSoundEnabled]);
+  React.useEffect(()=>{
+    const count=Array.isArray(data?.event?.spot_prize_winners)?data.event.spot_prize_winners.length:0;
+    if(drawSoundEnabled&&count>lastSpotPrizeWinnerCountRef.current) spotPrizeFanfare();
+    lastSpotPrizeWinnerCountRef.current=count;
+  },[data?.event?.spot_prize_winners?.length,drawSoundEnabled]);
   if(error&&!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center p-6 text-center"><div><WifiOff className="mx-auto mb-3"/><p className="font-semibold">{error}</p></div></div>;
   if(!data) return <div className="min-h-screen bg-background text-foreground grid place-items-center"><RefreshCw className="animate-spin"/></div>;
   const {event,matches,participants=[]}=data, s=score(matches,event), round=Number(event.current_round||1), plannedRounds=Number(event.planned_rounds||0);
@@ -133,6 +166,7 @@ export default function PublicClubChallengeDisplay(){
   const spotPrizeWinners=Array.isArray(event.spot_prize_winners)?event.spot_prize_winners:[];
   const spotPrizeMax=spotPrizeEnabled?(event.spot_prize_mode==='per_team'?Number(event.spot_prize_count||1)*2:Number(event.spot_prize_count||1)):0;
   const spotPrizeComplete=spotPrizeEnabled&&event.spot_prize_status==='completed';
+  const spotPrizeDrawing=spotPrizeEnabled&&event.spot_prize_status==='drawing';
   const completed=['completed','archived'].includes(event.status);
   const preEvent=['draft','draw_generated','draw_approved'].includes(event.status);
   const finalTitle=s.a===s.b?'Interclub Draw':`${s.a>s.b?event.club_a_name:event.club_b_name} win the Interclub`;
@@ -183,7 +217,7 @@ export default function PublicClubChallengeDisplay(){
     </div>
   </section>:null;
 
-  const publicSpotPrizePanel=spotPrizeEnabled?<section className="mt-6 rounded-3xl border-2 border-amber-500/35 bg-amber-500/5 p-5 sm:p-8 text-center"><p className="text-xs sm:text-sm font-black uppercase tracking-[.22em] text-amber-700 dark:text-amber-300">Spot Prize Draw</p><p className="mt-2 text-sm text-muted-foreground">Random names from the event roster · completely separate from match results.</p>{spotPrizeWinners.length?<div className="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">{spotPrizeWinners.map(w=><div key={`${w.pull}-${w.participant_id}`} className="rounded-2xl border bg-card p-4"><p className="text-[10px] uppercase tracking-widest text-muted-foreground">Prize {w.pull}</p><p className="mt-1 text-3xl font-black">#{w.number}</p><p className="mt-2 text-lg font-black">{w.display_name}</p><p className="text-xs text-muted-foreground">{w.team_name}</p></div>)}</div>:<div className="mt-5 rounded-xl border bg-card p-5"><p className="font-black">Waiting for the host to start the draw</p><p className="mt-1 text-sm text-muted-foreground">Keep this screen open. Winners will appear here automatically.</p></div>}<p className="mt-4 text-xs font-semibold text-muted-foreground">{spotPrizeComplete?'Spot Prize Draw complete':`${spotPrizeWinners.length} of ${spotPrizeMax} prizes drawn`}</p></section>:null;
+  const publicSpotPrizePanel=spotPrizeEnabled?<section className="mt-6 rounded-3xl border-2 border-amber-500/35 bg-amber-500/5 p-5 sm:p-8 text-center"><p className="text-xs sm:text-sm font-black uppercase tracking-[.22em] text-amber-700 dark:text-amber-300">Spot Prize Draw</p><p className="mt-2 text-sm text-muted-foreground">Random names from the event roster · completely separate from match results.</p>{spotPrizeDrawing?<div className="mt-6"><div className="relative mx-auto h-48 w-48 sm:h-64 sm:w-64 rounded-full border-8 border-secondary bg-card grid place-items-center overflow-hidden"><div className="absolute inset-3 rounded-full border-4 border-dashed border-primary animate-spin"/><div className="absolute inset-10 rounded-full border bg-background grid place-items-center"><div><p className="text-xs font-black uppercase tracking-[.2em] text-muted-foreground">Drawing</p><p className="mt-1 text-6xl sm:text-8xl font-black tabular-nums text-primary">{drawFlash}</p></div></div></div><p className="mt-4 text-lg sm:text-2xl font-black">Drum spinning…</p><p className="mt-1 text-sm text-muted-foreground">Prize {spotPrizeWinners.length+1} is being drawn</p></div>:spotPrizeWinners.length?<div className="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">{spotPrizeWinners.map(w=><div key={`${w.pull}-${w.participant_id}`} className="rounded-2xl border bg-card p-4"><p className="text-[10px] uppercase tracking-widest text-muted-foreground">Prize {w.pull}</p><p className="mt-1 text-3xl font-black">#{w.number}</p><p className="mt-2 text-lg font-black">{w.display_name}</p><p className="text-xs text-muted-foreground">{w.team_name}</p></div>)}</div>:<div className="mt-5 rounded-xl border bg-card p-5"><p className="font-black">Waiting for the host to start the draw</p><p className="mt-1 text-sm text-muted-foreground">Keep this screen open. Winners will appear here automatically.</p></div>}<p className="mt-4 text-xs font-semibold text-muted-foreground">{spotPrizeComplete?'Spot Prize Draw complete':`${spotPrizeWinners.length} of ${spotPrizeMax} prizes drawn`}</p></section>:null;
 
   if(view==='info' && !completed) return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8"><AppearanceQuickButton className="fixed right-3 top-3 z-40 h-10 px-2 sm:px-3"/>{playerNav}<div className="mx-auto max-w-5xl"><LiveEventBrand event={event} pageLabel="Event Briefing & Rules"/><h1 className="mt-4 text-center text-2xl sm:text-3xl font-black">Interclub Event Information</h1><p className="mt-1 text-center text-sm text-muted-foreground">{event.club_a_name} vs {event.club_b_name}</p>
     <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -197,7 +231,7 @@ export default function PublicClubChallengeDisplay(){
     <PoweredByRallyHub />
   </div></div>;
 
-  if(view==='draw'&&spotPrizeEnabled) return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8"><AppearanceQuickButton className="fixed right-3 top-3 z-40 h-10 px-2 sm:px-3"/>{playerNav}<div className="mx-auto max-w-3xl"><LiveEventBrand event={event} pageLabel="Spot Prize Draw"/><h1 className="mt-4 text-center text-3xl sm:text-5xl font-black">Names Out of the Hat</h1><p className="mt-2 text-center text-sm text-muted-foreground">{event.spot_prize_mode==='per_team'?`${event.spot_prize_count} prize${Number(event.spot_prize_count)===1?'':'s'} per team`:`${event.spot_prize_count} prize${Number(event.spot_prize_count)===1?'':'s'} from all eligible players`}</p>{publicSpotPrizePanel}<PoweredByRallyHub /></div></div>;
+  if(view==='draw'&&spotPrizeEnabled) return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8"><AppearanceQuickButton className="fixed right-3 top-3 z-40 h-10 px-2 sm:px-3"/>{playerNav}<div className="mx-auto max-w-3xl"><LiveEventBrand event={event} pageLabel="Spot Prize Draw"/><h1 className="mt-4 text-center text-3xl sm:text-5xl font-black">Names Out of the Hat</h1><p className="mt-2 text-center text-sm text-muted-foreground">{event.spot_prize_mode==='per_team'?`${event.spot_prize_count} prize${Number(event.spot_prize_count)===1?'':'s'} per team`:`${event.spot_prize_count} prize${Number(event.spot_prize_count)===1?'':'s'} from all eligible players`}</p><div className="mt-4 flex justify-center"><button type="button" onClick={()=>{ getSpotPrizeAudio(); setDrawSoundEnabled(v=>!v); }} className={`min-h-11 rounded-md border px-4 py-2 text-sm font-bold ${drawSoundEnabled?'bg-primary text-primary-foreground':'bg-card hover:bg-secondary'}`}>{drawSoundEnabled?'Hall sound ON':'Enable hall sound on this device'}</button></div><p className="mt-2 text-center text-[11px] text-muted-foreground">Use sound only on the laptop / hall display connected to the speaker. Player phones stay silent unless they enable it themselves.</p>{publicSpotPrizePanel}<PoweredByRallyHub /></div></div>;
 
   if(view==='vote') return <div className="min-h-screen bg-background text-foreground p-4 sm:p-8"><AppearanceQuickButton className="fixed right-3 top-3 z-40 h-10 px-2 sm:px-3"/>{playerNav}<div className="mx-auto max-w-xl"><LiveEventBrand event={event} pageLabel={event.pot_method==='points'&&event.pot_status==='revealed'?'Team Player Awards':'Players of the Tournament Voting'}/><div className="mt-5 rounded-2xl border bg-card p-5 sm:p-7 shadow-sm">
     <Trophy className="mx-auto h-10 w-10 text-primary"/><h1 className="mt-2 text-center text-2xl font-black">{event.pot_method==='points'&&event.pot_status==='revealed'?'Top Points Scorers':'Players of the Tournament'}</h1><p className="mt-2 text-center text-sm text-muted-foreground">{event.pot_method==='points'&&event.pot_status==='revealed'?'One top points scorer from each team.':'Choose one player from each team when voting is open.'}</p>
