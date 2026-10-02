@@ -2108,7 +2108,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const timerRunning = !!timerState?.running && timerRemaining > 0;
   const timerPaused = !!timerState && !timerState?.running && timerRemaining > 0 && ['play','changeover','break'].includes(timerPhase);
   const roundStarted = timerState?.round_started === true || (timerPhase === 'play' && (timerRunning || timerPaused || timerRemaining <= 0)) || ['changeover','break'].includes(timerPhase);
-  const scoreEntryVisible = event?.status === 'completed' || viewingHistoricalRound || currentRoundComplete || playFinished || ['changeover','break'].includes(timerPhase);
+  const scoreEntryVisible = event?.status === 'completed' || viewingHistoricalRound || currentRoundComplete || (timerPhase === 'play' && timerRemaining <= 0) || ['changeover','break'].includes(timerPhase);
   const scheduledBreakHere = !!event?.include_break && Number(currentRound) === Number(event?.break_after_round || 0);
   const breakActive = scheduledBreakHere && timerPhase === 'break';
   const timingGuide = (() => {
