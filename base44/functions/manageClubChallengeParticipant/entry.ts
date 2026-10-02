@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, players, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, teamName, rosterRole, playingCategory, reserveParticipantId, coverParticipantId, playerId } = body;
-    if (!eventId || !['replace','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','bulk_add_manual','reorder','save_team','organise_teams','replacement_candidates','set_roster_role','set_playing_category','club_player_candidates','add_club_player','add_guest','remove_pre_draw'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
+    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, players, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, teamName, rosterRole, playingCategory, reserveParticipantId, coverParticipantId, playerId, temporaryGames } = body;
+    if (!eventId || !['replace','temporary_sub','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','bulk_add_manual','reorder','save_team','organise_teams','replacement_candidates','set_roster_role','set_playing_category','club_player_candidates','add_club_player','add_guest','remove_pre_draw'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -413,6 +413,41 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { event_pack_stale:true });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_replaced', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({participant_id:outgoing.id,name:outgoing.display_name,status:outgoing.status}), new_value_json:JSON.stringify({participant_id:incoming.id,name:incoming.display_name,effective_round:currentRound,fixtures_changed:affected.length}), note:String(reason || `${status} replacement`) });
       return Response.json({ success:true, outgoingName:outgoing.display_name, incomingName:incoming.display_name, effectiveRound:currentRound, affected:affected.length });
+    }
+
+    if (action === 'temporary_sub') {
+      const outgoing = participants.find((p:any) => p.id === outgoingParticipantId);
+      const cleanName = String(incomingName || '').trim();
+      const games = Math.max(1, Math.min(2, Number(temporaryGames || 1)));
+      if (!outgoing || !cleanName) return Response.json({ error:'Outgoing participant and temporary sub name are required.' }, { status:400 });
+      if (['withdrawn','injured','replaced'].includes(outgoing.status)) return Response.json({ error:'Outgoing participant is inactive and cannot be temporarily covered.' }, { status:409 });
+      const identity = cleanName.toLowerCase().replace(/\s+/g,' ');
+      if (participants.some((p:any) => p.id !== outgoing.id && ['active','late'].includes(p.status) && String(p.display_name||'').trim().toLowerCase().replace(/\s+/g,' ') === identity)) {
+        return Response.json({ error:'That temporary sub is already an active participant. Use Existing rotation player covers instead.' }, { status:409 });
+      }
+      const sideKey = outgoing.side === 'club_a' ? 'club_a' : 'club_b';
+      const idsKey = `${sideKey}_participant_ids`, namesKey = `${sideKey}_names`;
+      const targets = normal
+        .filter((m:any) => Number(m.round_number) >= currentRound && !TERMINAL.has(m.status) && (m[idsKey] || []).includes(outgoing.id))
+        .sort((a:any,b:any)=>Number(a.round_number)-Number(b.round_number)||Number(a.court_number)-Number(b.court_number))
+        .slice(0, games);
+      if (!targets.length) return Response.json({ error:'This player has no remaining unresolved fixture to cover.' }, { status:409 });
+      const incoming = await base44.asServiceRole.entities.ClubChallengeParticipant.create({
+        tenant_id:event.tenant_id, challenge_event_id:event.id, tournament_id:event.tournament_id,
+        side:outgoing.side, display_name:cleanName, gender:String(incomingGender || outgoing.gender || ''),
+        source_player_id:String(incomingSourcePlayerId || ''), participant_type:String(incomingParticipantType || outgoing.participant_type || 'guest'),
+        event_rank:outgoing.event_rank, roster_role:'rotation', status:'active', available_from_round:currentRound,
+        unique_identity_key:`temporary-sub-${outgoing.side}-${cleanName.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${crypto.randomUUID().slice(0,8)}`,
+      });
+      for (const m of targets) {
+        const ids = [...(m[idsKey] || [])], names = [...(m[namesKey] || [])];
+        const idx = ids.indexOf(outgoing.id);
+        if (idx >= 0) { ids[idx] = incoming.id; names[idx] = incoming.display_name; }
+        await base44.asServiceRole.entities.ClubChallengeMatch.update(m.id, { [idsKey]:ids, [namesKey]:names, revision:Number(m.revision||0)+1 });
+      }
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'temporary_sub_applied', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({participant_id:outgoing.id,name:outgoing.display_name}), new_value_json:JSON.stringify({temporary_sub_participant_id:incoming.id,temporary_sub_name:incoming.display_name,fixtures_changed:targets.length,rounds:targets.map((m:any)=>Number(m.round_number))}), note:String(reason || 'Temporary event-day cover') });
+      return Response.json({ success:true, outgoingName:outgoing.display_name, incomingName:incoming.display_name, affected:targets.length, rounds:targets.map((m:any)=>Number(m.round_number)), mode:'temporary_sub' });
     }
 
     if (action === 'activate_reserve') {
