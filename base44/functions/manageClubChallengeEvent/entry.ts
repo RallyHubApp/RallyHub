@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
           }
         }
       }
-      const initialTimer = { phase:'ready', running:false, remaining_seconds:Number(event.play_minutes || 10) * 60, started_at:null, round:1 };
+      const initialTimer = { phase:'ready', running:false, remaining_seconds:Number(event.play_minutes || 10) * 60, started_at:null, round:1, round_started:false };
       const initialTimerRevision = Number(event.timer_revision || 0) + 1;
       const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
         status:'in_progress',
