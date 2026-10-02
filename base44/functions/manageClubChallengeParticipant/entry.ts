@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
     const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, players, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, teamName, rosterRole, playingCategory, reserveParticipantId, coverParticipantId, playerId, temporaryGames } = body;
-    if (!eventId || !['replace','temporary_sub','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','bulk_add_manual','reorder','save_team','organise_teams','replacement_candidates','set_roster_role','set_playing_category','club_player_candidates','add_club_player','add_guest','remove_pre_draw'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
+    if (!eventId || !['replace','temporary_sub','rename_display','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','bulk_add_manual','reorder','save_team','organise_teams','replacement_candidates','set_roster_role','set_playing_category','club_player_candidates','add_club_player','add_guest','remove_pre_draw'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -380,6 +380,34 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true, [side === 'club_a' ? 'club_a_roster_saved_at' : 'club_b_roster_saved_at']:savedAt });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_ranking_changed', user_id:user.id, occurred_at:now, new_value_json:JSON.stringify({side,ordered_participant_ids:requested,changed}) });
       return Response.json({ success:true, side, changed });
+    }
+
+    if (action === 'rename_display') {
+      const participant = participants.find((p:any) => p.id === participantId);
+      const cleanName = String(displayName || '').trim().replace(/\s+/g, ' ');
+      if (!participant || !cleanName) return Response.json({ error:'Player and event display name are required.' }, { status:400 });
+      if (cleanName.length > 80) return Response.json({ error:'Display name is too long.' }, { status:400 });
+      const duplicate = participants.find((p:any) => p.id !== participant.id && ['active','late'].includes(p.status) && String(p.display_name || '').trim().toLowerCase() === cleanName.toLowerCase());
+      if (duplicate) return Response.json({ error:'Another active player in this event already uses that display name.' }, { status:409 });
+      const oldName = String(participant.display_name || '');
+      if (oldName === cleanName) return Response.json({ success:true, participantName:cleanName, matchesUpdated:0, unchanged:true });
+      await base44.asServiceRole.entities.ClubChallengeParticipant.update(participant.id, { display_name:cleanName });
+      let matchesUpdated = 0;
+      for (const m of normal) {
+        let changed = false;
+        const patch:any = {};
+        for (const sideKey of ['club_a','club_b']) {
+          const idsKey = `${sideKey}_participant_ids`, namesKey = `${sideKey}_names`;
+          const ids = Array.isArray(m[idsKey]) ? [...m[idsKey]] : [];
+          const names = Array.isArray(m[namesKey]) ? [...m[namesKey]] : [];
+          const idx = ids.indexOf(participant.id);
+          if (idx >= 0 && names[idx] !== cleanName) { names[idx] = cleanName; patch[namesKey] = names; changed = true; }
+        }
+        if (changed) { patch.revision = Number(m.revision || 0) + 1; await base44.asServiceRole.entities.ClubChallengeMatch.update(m.id, patch); matchesUpdated++; }
+      }
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_display_name_changed', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({participant_id:participant.id,display_name:oldName}), new_value_json:JSON.stringify({participant_id:participant.id,display_name:cleanName,matches_updated:matchesUpdated}), note:'Event display name only; source registration record unchanged.' });
+      return Response.json({ success:true, participantName:cleanName, oldName, matchesUpdated });
     }
 
     if (action === 'replace') {
