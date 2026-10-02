@@ -453,6 +453,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [showcaseScorerLink, setShowcaseScorerLink] = useState('');
   const [replacement, setReplacement] = useState({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn', temporaryGames:1 });
   const [playerSearch, setPlayerSearch] = useState('');
+  const [displayNameEdit, setDisplayNameEdit] = useState({ participantId:'', displayName:'' });
+  const [displayNameBusy, setDisplayNameBusy] = useState(false);
   const [lateArrival, setLateArrival] = useState({ participantId: '', round: 1 });
   const [eventDayAdjust, setEventDayAdjust] = useState({ courts: 0, availableMinutes: 0 });
   const [eventDayProposal, setEventDayProposal] = useState(null);
@@ -1860,6 +1862,32 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     }
   };
 
+  const saveEventDisplayName = async () => {
+    if (!event || !canManageEvent || !displayNameEdit.participantId || !displayNameEdit.displayName.trim() || displayNameBusy) return;
+    const participant = participants.find(p => p.id === displayNameEdit.participantId);
+    if (!participant) return;
+    setDisplayNameBusy(true);
+    setPlayerControlStatus({ state:'working', text:`Updating ${participant.display_name} for this event…` });
+    try {
+      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+        eventId:event.id,
+        action:'rename_display',
+        participantId:participant.id,
+        displayName:displayNameEdit.displayName.trim(),
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      const message = `${res.data.oldName || participant.display_name} will display as ${res.data.participantName} for this event. Source registration details are unchanged.`;
+      setPlayerControlStatus({ state:'success', text:message });
+      toast.success(message);
+      setDisplayNameEdit({ participantId:'', displayName:'' });
+      await sync();
+    } catch (e) {
+      const message = e?.response?.data?.error || e?.message || 'Could not update event display name';
+      setPlayerControlStatus({ state:'error', text:message });
+      toast.error(message);
+    } finally { setDisplayNameBusy(false); }
+  };
+
   const withdrawWithoutReplacement = async () => {
     if (!event || !canManageEvent || !replacement.outgoingId) { toast.error('Choose the player who is withdrawing.'); return; }
     if (sportingActionRef.current || playerControlBusy) return;
@@ -2928,6 +2956,17 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               <summary className="cursor-pointer list-none p-4 sm:p-5 flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">Player Changes & Reserves</p><p className="text-xs text-muted-foreground">Quick reserve handover, injury, withdrawal, replacement or late arrival.</p></div><ChevronDown className="w-4 h-4 text-muted-foreground" /></summary>
               <div className="border-t border-border p-4 sm:p-5 space-y-4">
                 {unusedTeamReserves.length > 0 && <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-3"><div><p className="text-sm font-bold">Quick Reserve Handover</p><p className="text-xs text-muted-foreground mt-1">For a planned reserve change: choose the player coming off, then press the handover button. Only future unplayed fixtures change.</p></div><div className="grid md:grid-cols-2 gap-3">{unusedTeamReserves.map(reserve => { const sameSidePlayers = participants.filter(p => p.side === reserve.side && p.id !== reserve.id && ['active','late'].includes(p.status) && ((p.roster_role || 'rotation') === 'rotation' || p.reserve_activated)); const selected = quickReserveOutgoing[reserve.id] || ''; return <div key={reserve.id} className="rounded-lg border border-border bg-card p-3 space-y-2"><div><p className="text-xs text-muted-foreground">Reserve ready · {reserve.side === 'club_a' ? event.club_a_name : event.club_b_name}</p><p className="font-bold">{reserve.display_name}</p></div><Select value={selected} onValueChange={v => setQuickReserveOutgoing(q => ({ ...q, [reserve.id]:v }))} disabled={playerControlBusy}><SelectTrigger data-testid={`cc-quick-reserve-outgoing-${reserve.id}`} className="bg-secondary"><SelectValue placeholder="Who is coming off?" /></SelectTrigger><SelectContent>{sameSidePlayers.map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent></Select><Button data-testid={`cc-quick-reserve-activate-${reserve.id}`} className="w-full" disabled={!selected || playerControlBusy} onClick={() => activateReserveQuick(reserve.id, selected)}>Put {reserve.display_name} In Now</Button></div>; })}</div></div>}
+                <div className="rounded-lg bg-secondary/30 p-4 space-y-3">
+                  <div><p className="text-sm font-semibold">Event Display Name</p><p className="text-xs text-muted-foreground">Correct a spelling or shorten an imported full name for this event only. The original registration / Respond record is not changed.</p></div>
+                  <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
+                    <Select value={displayNameEdit.participantId} onValueChange={v => { const p = participants.find(x => x.id === v); setDisplayNameEdit({ participantId:v, displayName:p?.display_name || '' }); }} disabled={displayNameBusy}>
+                      <SelectTrigger className="bg-secondary"><SelectValue placeholder="Choose player" /></SelectTrigger>
+                      <SelectContent>{participants.filter(p => ['club_a','club_b'].includes(p.side) && !['replaced'].includes(p.status)).sort((a,b)=>String(a.display_name||'').localeCompare(String(b.display_name||''))).map(p => <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Input value={displayNameEdit.displayName} onChange={e => setDisplayNameEdit(x => ({ ...x, displayName:e.target.value }))} placeholder="Event display name" className="bg-secondary" disabled={!displayNameEdit.participantId || displayNameBusy} />
+                    <Button variant="outline" disabled={!canManageEvent || displayNameBusy || !displayNameEdit.participantId || !displayNameEdit.displayName.trim()} onClick={saveEventDisplayName}>{displayNameBusy ? 'Saving…' : 'Save Name'}</Button>
+                  </div>
+                </div>
                 <div className="rounded-lg bg-secondary/30 p-4 space-y-3">
                   <div><p className="text-sm font-semibold">Player Change</p><p className="text-xs text-muted-foreground">Choose how RallyHub should handle an injury or early departure. Completed results stay unchanged; only future unplayed fixtures can change.</p></div>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-2">
