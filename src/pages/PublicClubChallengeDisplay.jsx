@@ -111,7 +111,7 @@ export default function PublicClubChallengeDisplay(){
       const r=await base44.functions.invoke('getPublicClubChallengeDisplay',{token});
       if(r.data?.error) throw new Error(r.data.error);
       setData(r.data); dataRef.current=r.data; lastLoadAtRef.current=Date.now();
-      if(!initialViewSetRef.current){ if(['draft','draw_generated','draw_approved'].includes(r.data?.event?.status)) setView('info'); else if(['completed','archived'].includes(r.data?.event?.status)) setView('live'); initialViewSetRef.current=true; }
+      if(!initialViewSetRef.current){ if(['draft','draw_generated'].includes(r.data?.event?.status)) setView('info'); else if(['draw_approved','in_progress','paused'].includes(r.data?.event?.status)) setView('live'); else if(['completed','archived'].includes(r.data?.event?.status)) setView('live'); initialViewSetRef.current=true; }
       setError(''); setDisconnected(false);
     } catch(e){ if(dataRef.current) setDisconnected(true); else setError(e?.response?.data?.error||e?.message||'Display unavailable'); }
     finally { loadInFlightRef.current=false; }
@@ -168,7 +168,7 @@ export default function PublicClubChallengeDisplay(){
   const spotPrizeComplete=spotPrizeEnabled&&event.spot_prize_status==='completed';
   const spotPrizeDrawing=spotPrizeEnabled&&event.spot_prize_status==='drawing';
   const completed=['completed','archived'].includes(event.status);
-  const preEvent=['draft','draw_generated','draw_approved'].includes(event.status);
+  const preEvent=['draft','draw_generated'].includes(event.status);
   const finalTitle=s.a===s.b?'Interclub Draw':`${s.a>s.b?event.club_a_name:event.club_b_name} win the Interclub`;
   const performance=individualPerformance(matches,participants);
   const podiumA=podiumForSide(performance,participants,'club_a');
