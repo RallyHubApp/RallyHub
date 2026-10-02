@@ -2050,7 +2050,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         const message = `Round ${currentRound} play finished ✓ · ${Number(event.break_minutes || 20)}-minute break started${unresolved.length ? ` · ${unresolved.length} score${unresolved.length === 1 ? '' : 's'} still to enter` : ''}`;
         setRoundActionStatus({ state:'success', text:message });
         toast.success(message);
-        speak(announcementText('break_after_round_start', `${roundLabel(currentRound)} saved. Your ${Number(event.break_minutes || 20)} minute break starts now. Please make sure all scores are in. Enjoy your break.`, { round_label:roundLabel(currentRound), break_minutes:Number(event.break_minutes || 20) }), { signal:'start' });
+        speak(announcementText('break_after_round_start', `Our ${Number(event.break_minutes || 20)} minute mid-event break starts now. Please return to court when the two minute warning is called.`, { round_label:roundLabel(currentRound), break_minutes:Number(event.break_minutes || 20) }), { signal:'start' });
         requestWakeLock();
       } else setRoundActionStatus({ state:'error', text:'Could not start the scheduled break.' });
       return;
