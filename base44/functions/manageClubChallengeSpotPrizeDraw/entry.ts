@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const eventId = String(body.eventId || '');
     const action = String(body.action || '');
-    if (!eventId || !['configure','draw','reset'].includes(action)) return Response.json({ error:'Invalid spot-prize request.' }, { status:400 });
+    if (!eventId || !['configure','begin_draw','complete_draw','reset'].includes(action)) return Response.json({ error:'Invalid spot-prize request.' }, { status:400 });
 
     const event = (await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId }))?.[0];
     if (!event) return Response.json({ error:'Interclub event not found.' }, { status:404 });
@@ -59,12 +59,12 @@ Deno.serve(async (req) => {
         enabled, mode, prize_count:prizeCount, updated_by_user_id:user.id,
       };
       if (!draw) {
-        draw = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.create({ ...payload, status:'ready', winners_json:'[]', draw_count:0, revision:0, created_by_user_id:user.id, last_drawn_at:null });
+        draw = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.create({ ...payload, status:'ready', winners_json:'[]', pending_winner_json:null, draw_started_at:null, draw_count:0, revision:0, created_by_user_id:user.id, last_drawn_at:null });
       } else {
         const winners = parseWinners(draw.winners_json);
         const configChanged = draw.mode !== mode || Number(draw.prize_count || 0) !== prizeCount || !!draw.enabled !== enabled;
         if (configChanged && winners.length) {
-          payload.status='ready'; payload.winners_json='[]'; payload.draw_count=0; payload.last_drawn_at=null;
+          payload.status='ready'; payload.winners_json='[]'; payload.pending_winner_json=null; payload.draw_started_at=null; payload.draw_count=0; payload.last_drawn_at=null;
         }
         payload.revision=Number(draw.revision||0)+1;
         draw = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.update(draw.id,payload);
@@ -76,9 +76,9 @@ Deno.serve(async (req) => {
 
     if (!draw || !draw.enabled) return Response.json({ error:'Spot-prize draw is not enabled.' }, { status:409 });
     if (action === 'reset') {
-      draw = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.update(draw.id,{ status:'ready', winners_json:'[]', draw_count:0, revision:Number(draw.revision||0)+1, updated_by_user_id:user.id, last_drawn_at:null });
+      draw = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.update(draw.id,{ status:'ready', winners_json:'[]', pending_winner_json:null, draw_started_at:null, draw_count:0, revision:Number(draw.revision||0)+1, updated_by_user_id:user.id, last_drawn_at:null });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'spot_prize_reset', user_id:user.id, occurred_at:nowIso, note:'Spot-prize winners cleared by host.' });
-      return Response.json({ success:true, draw });
+      return Response.json({ success:true, draw, winners:[] });
     }
 
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 150);
@@ -88,32 +88,38 @@ Deno.serve(async (req) => {
     const all = [...teamA,...teamB];
     const winners = parseWinners(draw.winners_json);
     const maxPulls = draw.mode === 'per_team' ? Number(draw.prize_count||1)*2 : Number(draw.prize_count||1);
-    if (winners.length >= maxPulls || draw.status === 'completed') return Response.json({ error:'Spot Prize Draw is complete.', complete:true, draw, winners }, { status:409 });
-    if (draw.status === 'drawing') return Response.json({ error:'A spot-prize pull is already in progress.' }, { status:409 });
-    draw = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.update(draw.id,{ status:'drawing', revision:Number(draw.revision||0)+1, updated_by_user_id:user.id });
-    await new Promise(resolve => setTimeout(resolve, 2200));
 
-    const targetSide = draw.mode === 'per_team' ? (winners.length % 2 === 0 ? 'club_a' : 'club_b') : null;
-    const poolBase = targetSide === 'club_a' ? teamA : targetSide === 'club_b' ? teamB : all;
-    const usedIds = new Set(winners.map((w:any)=>String(w.participant_id)));
-    const pool = poolBase.filter((p:any)=>!usedIds.has(String(p.id)));
-    if (!pool.length) return Response.json({ error:'No eligible players remain in this draw pool.' }, { status:409 });
-    const selected:any = pool[secureRandomIndex(pool.length)];
-    const teamList = selected.side === 'club_a' ? teamA : teamB;
-    const teamNumber = Math.max(1, teamList.findIndex((p:any)=>p.id===selected.id)+1);
-    const allNumber = Math.max(1, all.findIndex((p:any)=>p.id===selected.id)+1);
-    const winner = {
-      pull:winners.length+1,
-      participant_id:selected.id,
-      display_name:selected.display_name,
-      side:selected.side,
-      team_name:selected.side==='club_a'?event.club_a_name:event.club_b_name,
-      number:draw.mode==='per_team'?teamNumber:allNumber,
-      drawn_at:nowIso,
-    };
+    if (action === 'begin_draw') {
+      if (winners.length >= maxPulls || draw.status === 'completed') return Response.json({ error:'Spot Prize Draw is complete.', complete:true, draw, winners }, { status:409 });
+      if (draw.status === 'drawing' && draw.pending_winner_json) return Response.json({ success:true, draw, drawing:true, pending:true, maxPulls });
+      const targetSide = draw.mode === 'per_team' ? (winners.length % 2 === 0 ? 'club_a' : 'club_b') : null;
+      const poolBase = targetSide === 'club_a' ? teamA : targetSide === 'club_b' ? teamB : all;
+      const usedIds = new Set(winners.map((w:any)=>String(w.participant_id)));
+      const pool = poolBase.filter((p:any)=>!usedIds.has(String(p.id)));
+      if (!pool.length) return Response.json({ error:'No eligible players remain in this draw pool.' }, { status:409 });
+      const selected:any = pool[secureRandomIndex(pool.length)];
+      const teamList = selected.side === 'club_a' ? teamA : teamB;
+      const teamNumber = Math.max(1, teamList.findIndex((p:any)=>p.id===selected.id)+1);
+      const allNumber = Math.max(1, all.findIndex((p:any)=>p.id===selected.id)+1);
+      const pendingWinner = {
+        pull:winners.length+1,
+        participant_id:selected.id,
+        display_name:selected.display_name,
+        side:selected.side,
+        team_name:selected.side==='club_a'?event.club_a_name:event.club_b_name,
+        number:draw.mode==='per_team'?teamNumber:allNumber,
+        drawn_at:nowIso,
+      };
+      draw = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.update(draw.id,{ status:'drawing', pending_winner_json:JSON.stringify(pendingWinner), draw_started_at:nowIso, revision:Number(draw.revision||0)+1, updated_by_user_id:user.id });
+      return Response.json({ success:true, draw, drawing:true, maxPulls });
+    }
+
+    if (draw.status !== 'drawing' || !draw.pending_winner_json) return Response.json({ error:'No spot-prize draw is currently in progress.' }, { status:409 });
+    const winner = parseWinners(`[${draw.pending_winner_json}]`)[0];
+    if (!winner) return Response.json({ error:'Pending spot-prize winner is invalid. Reset the draw and try again.' }, { status:409 });
     const nextWinners = [...winners,winner];
     const complete = nextWinners.length >= maxPulls;
-    draw = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.update(draw.id,{ status:complete?'completed':'in_progress', winners_json:JSON.stringify(nextWinners), draw_count:nextWinners.length, revision:Number(draw.revision||0)+1, updated_by_user_id:user.id, last_drawn_at:nowIso });
+    draw = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.update(draw.id,{ status:complete?'completed':'in_progress', winners_json:JSON.stringify(nextWinners), pending_winner_json:null, draw_started_at:null, draw_count:nextWinners.length, revision:Number(draw.revision||0)+1, updated_by_user_id:user.id, last_drawn_at:nowIso });
     await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'spot_prize_drawn', user_id:user.id, occurred_at:nowIso, new_value_json:JSON.stringify(winner), note:`Spot Prize ${winner.pull} drawn server-side from the eligible event roster.` });
     return Response.json({ success:true, draw, winner, winners:nextWinners, complete, maxPulls });
   } catch (error) {
