@@ -1,0 +1,54 @@
+{
+  "name": "InterclubCommitteeBriefing",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "challenge_event_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "intro": {
+      "type": "string"
+    },
+    "sections_json": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "challenge_event_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

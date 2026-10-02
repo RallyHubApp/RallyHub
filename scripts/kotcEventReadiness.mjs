@@ -15,14 +15,14 @@ const courts = [
 const results = {1:{winnerSide:'A'},2:{winnerSide:'A'},3:{winnerSide:'A'},4:{winnerSide:'A'}};
 const moves = buildSportingMovements({ courts, resultsByCourt:results });
 const byId = Object.fromEntries(moves.map(m => [m.participantId, m]));
-for (const id of ['p1','p2']) assert.equal(byId[id].destinationCourtRank,1,'Court 1 winner must stay on Court 1');
-for (const id of ['p3','p4']) assert.equal(byId[id].destinationCourtRank,2,'Court 1 loser must move toward bottom court');
-for (const id of ['p5','p6']) assert.equal(byId[id].destinationCourtRank,1,'Court 2 winner must move toward Court 1');
-for (const id of ['p7','p8']) assert.equal(byId[id].destinationCourtRank,3,'Court 2 loser must move toward bottom court');
-for (const id of ['p9','p10']) assert.equal(byId[id].destinationCourtRank,2,'Court 3 winner must move toward Court 1');
-for (const id of ['p11','p12']) assert.equal(byId[id].destinationCourtRank,4,'Court 3 loser must move toward bottom court');
-for (const id of ['p13','p14']) assert.equal(byId[id].destinationCourtRank,3,'Court 4 winner must move toward Court 1');
-for (const id of ['p15','p16']) assert.equal(byId[id].destinationCourtRank,4,'Bottom-court loser must stay on bottom court');
+for (const id of ['p1','p2']) assert.equal(byId[id].earnedCourtRank,1,'Court 1 winner must stay on Court 1');
+for (const id of ['p3','p4']) assert.equal(byId[id].earnedCourtRank,2,'Court 1 loser must move toward bottom court');
+for (const id of ['p5','p6']) assert.equal(byId[id].earnedCourtRank,1,'Court 2 winner must move toward Court 1');
+for (const id of ['p7','p8']) assert.equal(byId[id].earnedCourtRank,3,'Court 2 loser must move toward bottom court');
+for (const id of ['p9','p10']) assert.equal(byId[id].earnedCourtRank,2,'Court 3 winner must move toward Court 1');
+for (const id of ['p11','p12']) assert.equal(byId[id].earnedCourtRank,4,'Court 3 loser must move toward bottom court');
+for (const id of ['p13','p14']) assert.equal(byId[id].earnedCourtRank,3,'Court 4 winner must move toward Court 1');
+for (const id of ['p15','p16']) assert.equal(byId[id].earnedCourtRank,4,'Bottom-court loser must stay on bottom court');
 
 console.log('RALLYHUB KOTC — EVENT READINESS ENGINE GATE PASS');
 console.log(`Scenarios: ${result.scenarioCount}`);

@@ -21,7 +21,9 @@
     "qa:protocol": "node testing/control-pack/validateControlPack.mjs",
     "qa:risk": "node testing/control-pack/evaluateRiskGate.mjs",
     "qa:evidence": "node testing/control-pack/validateEvidence.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:competition-fast": "npm run test:kotc-readiness && npm run test:interclub-readiness && npm run build",
+    "test:competition-browser": "playwright test e2e/kotc-host-journey.spec.mjs e2e/club-challenge-browser-robot.spec.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.52",
