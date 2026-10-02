@@ -451,7 +451,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [showcaseSelection, setShowcaseSelection] = useState({ a1: '', a2: '', b1: '', b2: '' });
   const [showcaseFormat, setShowcaseFormat] = useState({ targetPoints: 11, winBy: 1 });
   const [showcaseScorerLink, setShowcaseScorerLink] = useState('');
-  const [replacement, setReplacement] = useState({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
+  const [replacement, setReplacement] = useState({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn', temporaryGames:1 });
+  const [playerSearch, setPlayerSearch] = useState('');
   const [lateArrival, setLateArrival] = useState({ participantId: '', round: 1 });
   const [eventDayAdjust, setEventDayAdjust] = useState({ courts: 0, availableMinutes: 0 });
   const [eventDayProposal, setEventDayProposal] = useState(null);
@@ -1809,7 +1810,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const reserve = participants.find(p => p.id === replacement.reserveParticipantId);
     const cover = participants.find(p => p.id === replacement.coverParticipantId);
     const incomingName = mode === 'reserve' ? reserve?.display_name : mode === 'cover' ? cover?.display_name : replacement.incomingName.trim();
-    if (mode === 'new' && !incomingName) { toast.error('Enter or choose the replacement player.'); return; }
+    if (['new','temporary'].includes(mode) && !incomingName) { toast.error('Enter or choose the incoming player.'); return; }
     if (mode === 'reserve' && !reserve) { toast.error('Choose a team reserve.'); return; }
     if (mode === 'cover' && !cover) { toast.error('Choose an existing rotation player to cover.'); return; }
     if (sportingActionRef.current || playerControlBusy) return;
@@ -1819,16 +1820,19 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       ? `Activating reserve ${incomingName} for ${outgoing.display_name} from Round ${currentRound}…`
       : mode === 'cover'
         ? `Rebalancing future fixtures with ${incomingName} covering ${outgoing.display_name}…`
-        : `Replacing ${outgoing.display_name} with ${incomingName} from Round ${currentRound}…`;
+        : mode === 'temporary'
+          ? `Putting ${incomingName} in temporarily for ${outgoing.display_name} for the next ${Number(replacement.temporaryGames || 1)} game${Number(replacement.temporaryGames || 1) === 1 ? '' : 's'}…`
+          : `Replacing ${outgoing.display_name} with ${incomingName} from Round ${currentRound}…`;
     setPlayerControlStatus({ state:'working', text:workingText });
     setHostAction(`${workingText} command sent`);
     try {
-      const action = mode === 'reserve' ? 'activate_reserve' : mode === 'cover' ? 'cover_existing' : 'replace';
+      const action = mode === 'reserve' ? 'activate_reserve' : mode === 'cover' ? 'cover_existing' : mode === 'temporary' ? 'temporary_sub' : 'replace';
       const res = await base44.functions.invoke('manageClubChallengeParticipant', {
         eventId:event.id, action, outgoingParticipantId:replacement.outgoingId,
         reserveParticipantId:replacement.reserveParticipantId, coverParticipantId:replacement.coverParticipantId,
         incomingName, incomingGender:replacement.incomingGender,
         incomingSourcePlayerId:replacement.incomingSourcePlayerId, incomingParticipantType:replacement.incomingParticipantType,
+        temporaryGames:Number(replacement.temporaryGames || 1),
         reason:replacement.reason, withdrawalStatus:replacement.status,
       });
       if (res.data?.error) throw new Error(res.data.error);
@@ -1836,8 +1840,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         ? `${res.data.incomingName} activated from the Reserve bench for ${res.data.outgoingName} from Round ${res.data.effectiveRound}. ${res.data.affected} future fixture${res.data.affected === 1 ? '' : 's'} updated.`
         : mode === 'cover'
           ? `${res.data.incomingName} is covering ${res.data.outgoingName} from Round ${res.data.effectiveRound}. ${res.data.coverGames} fixture${res.data.coverGames === 1 ? '' : 's'} go directly to the cover player${res.data.rebalanced ? `; ${res.data.rebalanced} conflict${res.data.rebalanced === 1 ? '' : 's'} safely rebalanced through resting rotation players` : ''}. Completed results unchanged.`
-          : `${res.data.outgoingName} replaced by ${res.data.incomingName} from Round ${res.data.effectiveRound}. ${res.data.affected} future fixture${res.data.affected === 1 ? '' : 's'} updated; completed results unchanged.`;
-      setReplacement({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
+          : mode === 'temporary'
+            ? `${res.data.incomingName} is temporarily in for ${res.data.outgoingName} for ${res.data.affected} game${res.data.affected === 1 ? '' : 's'}${Array.isArray(res.data.rounds) && res.data.rounds.length ? ` (Round${res.data.rounds.length === 1 ? '' : 's'} ${res.data.rounds.join(', ')})` : ''}. ${res.data.outgoingName} remains active for later games.`
+            : `${res.data.outgoingName} replaced by ${res.data.incomingName} from Round ${res.data.effectiveRound}. ${res.data.affected} future fixture${res.data.affected === 1 ? '' : 's'} updated; completed results unchanged.`;
+      setReplacement({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn', temporaryGames:1 });
+      setPlayerSearch('');
       setPlayerControlStatus({ state:'success', text:message });
       toast.success(message);
       await sync();
@@ -1868,7 +1875,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       });
       if (res.data?.error) throw new Error(res.data.error);
       const message = `${res.data.outgoingName} withdrawn from Round ${res.data.effectiveRound}; ${res.data.affected} future match${res.data.affected === 1 ? '' : 'es'} marked Not Played.`;
-      setReplacement({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn' });
+      setReplacement({ mode:'new', outgoingId:'', candidateId:'', reserveParticipantId:'', coverParticipantId:'', incomingName:'', incomingGender:'', incomingSourcePlayerId:'', incomingParticipantType:'', reason:'', status:'withdrawn', temporaryGames:1 });
+      setPlayerSearch('');
       setPlayerControlStatus({ state:'success', text:message });
       toast.success(message);
       await sync();
