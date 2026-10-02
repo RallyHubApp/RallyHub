@@ -1664,14 +1664,29 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const drawNextSpotPrize = async () => {
     if (!event || !canManageSpotPrize || !spotPrizeDraw?.enabled || spotPrizeBusy) return;
     setSpotPrizeBusy(true);
+    let raffleSoundTimer = null;
     try {
+      // The host laptop is the authoritative hall-audio source. Because this runs
+      // directly from the host's Draw button click, Chrome allows us to unlock
+      // Web Audio here and route the raffle sounds to the laptop's selected output
+      // (for example the Bluetooth JBL speaker).
+      const ctx = audioMuted ? null : await unlockHallAudio();
+      if (ctx) {
+        playRallyHubSignal(ctx, 'warning', hallVolume * 0.55);
+        raffleSoundTimer = window.setInterval(() => playRallyHubSignal(ctx, 'warning', hallVolume * 0.45), 220);
+      }
       const res = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'draw' });
       if (res.data?.error) throw new Error(res.data.error);
-      await refetchSpotPrizeDraw?.();
+      if (raffleSoundTimer) { window.clearInterval(raffleSoundTimer); raffleSoundTimer = null; }
       const w = res.data?.winner;
+      if (ctx && w) playRallyHubSignal(ctx, 'announcement', hallVolume);
+      await refetchSpotPrizeDraw?.();
       if (w) toast.success(`Spot Prize ${w.pull}: #${w.number} ${w.display_name}`);
       if (res.data?.complete) toast.success('Spot Prize Draw complete.');
-    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not draw a spot prize'); }
+    } catch (e) {
+      if (raffleSoundTimer) { window.clearInterval(raffleSoundTimer); raffleSoundTimer = null; }
+      toast.error(e?.response?.data?.error || e?.message || 'Could not draw a spot prize');
+    }
     finally { setSpotPrizeBusy(false); }
   };
 
