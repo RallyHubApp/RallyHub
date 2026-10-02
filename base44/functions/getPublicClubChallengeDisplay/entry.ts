@@ -89,9 +89,10 @@ Deno.serve(async (req) => {
       };
     });
     const preEvent = ['draft','draw_generated'].includes(event.status);
+    const drawApprovedPreview = event.status === 'draw_approved';
     const safeMatches = preEvent ? [] : matches.map((m:any) => ({
-      id:m.id, round_number:m.round_number, court_number:m.court_number, status:m.status, winner:m.winner,
-      score_a:m.score_a, score_b:m.score_b, is_showcase:!!m.is_showcase,
+      id:m.id, round_number:m.round_number, court_number:m.court_number, status:drawApprovedPreview ? 'scheduled' : m.status, winner:drawApprovedPreview ? 'none' : m.winner,
+      score_a:drawApprovedPreview ? null : m.score_a, score_b:drawApprovedPreview ? null : m.score_b, is_showcase:!!m.is_showcase,
       showcase_mode:m.showcase_mode, showcase_target_points:m.showcase_target_points, showcase_win_by:m.showcase_win_by,
       side_change_at:m.side_change_at || null,
       club_a_participant_ids:m.club_a_participant_ids || [], club_b_participant_ids:m.club_b_participant_ids || [],
@@ -111,7 +112,7 @@ Deno.serve(async (req) => {
       club_a_logo_url:event.club_a_logo_url, club_b_logo_url:event.club_b_logo_url,
       club_a_primary_colour:event.club_a_primary_colour, club_b_primary_colour:event.club_b_primary_colour,
       club_a_secondary_colour:event.club_a_secondary_colour, club_b_secondary_colour:event.club_b_secondary_colour,
-      current_round:preEvent ? 0 : event.current_round, planned_rounds:event.planned_rounds, courts:event.courts, timer_state_json:preEvent ? null : event.timer_state_json, timer_revision:event.timer_revision,
+      current_round:preEvent ? 0 : (drawApprovedPreview ? 1 : event.current_round), planned_rounds:event.planned_rounds, courts:event.courts, timer_state_json:(preEvent || drawApprovedPreview) ? null : event.timer_state_json, timer_revision:event.timer_revision,
       event_date:tournament?.start_date || null,
       event_start_time:tournament?.event_start_time || event.scheduled_start_time || null,
       event_end_time:tournament?.event_end_time || null,
