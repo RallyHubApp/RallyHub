@@ -101,6 +101,10 @@ Deno.serve(async (req) => {
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300);
     const normal = matches.filter((m:any) => !m.is_showcase);
     const currentRound = Math.max(1, Number(event.current_round || 1));
+    let timerState:any = {};
+    try { timerState = event.timer_state_json ? JSON.parse(event.timer_state_json) : {}; } catch { timerState = {}; }
+    const currentRoundAlreadyStarted = Number(timerState.round || currentRound) === currentRound && !!timerState.round_started;
+    const playerChangeRound = currentRoundAlreadyStarted ? currentRound + 1 : currentRound;
     const now = new Date().toISOString();
     const normalise = (value:any) => String(value || '').trim().toLowerCase().replace(/\s+/g,' ');
     const preDrawStatus = ['draft','draw_generated'].includes(event.status);
@@ -456,7 +460,7 @@ Deno.serve(async (req) => {
       const sideKey = outgoing.side === 'club_a' ? 'club_a' : 'club_b';
       const idsKey = `${sideKey}_participant_ids`, namesKey = `${sideKey}_names`;
       const targets = normal
-        .filter((m:any) => Number(m.round_number) >= currentRound && !TERMINAL.has(m.status) && (m[idsKey] || []).includes(outgoing.id))
+        .filter((m:any) => Number(m.round_number) >= playerChangeRound && !TERMINAL.has(m.status) && (m[idsKey] || []).includes(outgoing.id))
         .sort((a:any,b:any)=>Number(a.round_number)-Number(b.round_number)||Number(a.court_number)-Number(b.court_number))
         .slice(0, games);
       if (!targets.length) return Response.json({ error:'This player has no remaining unresolved fixture to cover.' }, { status:409 });
@@ -475,7 +479,7 @@ Deno.serve(async (req) => {
       }
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { event_pack_stale:true });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'temporary_sub_applied', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({participant_id:outgoing.id,name:outgoing.display_name}), new_value_json:JSON.stringify({temporary_sub_participant_id:incoming.id,temporary_sub_name:incoming.display_name,fixtures_changed:targets.length,rounds:targets.map((m:any)=>Number(m.round_number))}), note:String(reason || 'Temporary event-day cover') });
-      return Response.json({ success:true, outgoingName:outgoing.display_name, incomingName:incoming.display_name, affected:targets.length, rounds:targets.map((m:any)=>Number(m.round_number)), mode:'temporary_sub' });
+      return Response.json({ success:true, outgoingName:outgoing.display_name, incomingName:incoming.display_name, affected:targets.length, rounds:targets.map((m:any)=>Number(m.round_number)), effectiveRound:playerChangeRound, mode:'temporary_sub' });
     }
 
     if (action === 'activate_reserve') {
