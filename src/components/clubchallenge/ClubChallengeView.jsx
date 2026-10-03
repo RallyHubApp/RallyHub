@@ -520,9 +520,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [spondImportSide, setSpondImportSide] = useState('');
   const [teamsDirty, setTeamsDirty] = useState(false);
   const [printPackOpen, setPrintPackOpen] = useState(false);
-  const [printSelection, setPrintSelection] = useState({ score:true, handoverScore:false, schedule:false, roster:false, briefing:false, final:false, includeVotingQr:false });
-  const [printWifiSsid, setPrintWifiSsid] = useState('');
-  const [printWifiPassword, setPrintWifiPassword] = useState('');
+  const [printSelection, setPrintSelection] = useState({ score:true, handoverScore:false, schedule:false, roster:false, briefing:false, final:false });
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: venueOptions = [], refetch: refetchVenueOptions } = useQuery({
@@ -1884,9 +1882,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const selection = { ...printSelection, final: completed ? printSelection.final : false };
     if (!Object.values(selection).some(Boolean)) { toast.error('Choose at least one sheet to print.'); return; }
 
-    if (selection.briefing && (!publicLinks?.displayUrl || (selection.includeVotingQr && !publicLinks?.votingUrl))) {
+    if (selection.briefing && (!publicLinks?.displayUrl || (event?.pot_enabled && !publicLinks?.votingUrl))) {
       const links = await ensurePublicLinks({ quiet:true });
-      if (!links?.displayUrl || (selection.includeVotingQr && !links?.votingUrl)) { toast.error('Could not prepare the requested Event Pack links. Printing has been cancelled.'); return; }
+      if (!links?.displayUrl || (event?.pot_enabled && !links?.votingUrl)) { toast.error('Could not prepare the Live Event View / voting links. Printing has been cancelled.'); return; }
       await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
     }
 
@@ -2693,7 +2691,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     <div data-testid="cc-root" className="space-y-4 print:space-y-0">
       {hostAction && <div className="print:hidden sticky top-2 z-40 rounded-xl border-2 border-primary/40 bg-background/95 p-3 shadow-lg"><p className="text-sm font-bold text-primary">{hostAction}</p><p className="text-xs text-muted-foreground mt-1">RallyHub has accepted your tap. Keep this screen open; the control stays locked until the action resolves.</p></div>}
       {typeof document !== 'undefined' && event && ['draw_approved','in_progress','paused','completed','archived'].includes(event.status) ? createPortal(
-        <div className="rhpp-print-host"><InterclubPrintPack event={event} tournament={tournament} matches={matches} participants={participants} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} sections={printSelection} displayUrl={publicLinks?.displayUrl || ''} votingUrl={printSelection.includeVotingQr ? (publicLinks?.votingUrl || '') : ''} wifiSsid={printWifiSsid} wifiPassword={printWifiPassword} /></div>,
+        <div className="rhpp-print-host"><InterclubPrintPack event={event} tournament={tournament} matches={matches} participants={participants} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} sections={printSelection} displayUrl={publicLinks?.displayUrl || ''} votingUrl={publicLinks?.votingUrl || ''} /></div>,
         document.body
       ) : null}
       {printPackOpen && <div className="print:hidden fixed inset-0 z-[100] bg-black/55 flex items-center justify-center p-4" onMouseDown={e => { if (e.target === e.currentTarget) setPrintPackOpen(false); }}>
@@ -2709,18 +2707,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               ...(hasPlannedHandoverCopy ? [{ key:'handoverScore', label:`Master Score Sheet · Handover from Round ${firstPlannedHandoverRound}`, pages:handoverScorePages, orientation:'L', orientationLabel:'Landscape', note:'Uses recorded replacements and the effective round automatically' }] : []),
               { key:'schedule', label:'Master Schedule / Court Assignment', pages:Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)), orientation:'P', orientationLabel:'Portrait', note:'Two rounds per A4 page' },
               { key:'roster', label:'Team Rosters / Check-In', pages:2, orientation:'P', orientationLabel:'Portrait', note:'Private ranked host copy + alphabetical player check-in copy' },
-              { key:'briefing', label:'Event Briefing & Rules', pages:2, orientation:'P', orientationLabel:'Portrait', note:'Rules, Interclub etiquette, player link and optional Wi‑Fi details' },
+              { key:'briefing', label:'Event Briefing & Rules', pages:1, orientation:'P', orientationLabel:'Portrait', note:'Operational rules for the event' },
               { key:'final', label:'Final Result / Sign-off', pages:1, orientation:'P', orientationLabel:'Portrait', note:['completed','archived'].includes(event?.status) ? 'Completed result and signatures' : 'Available after the event is completed', disabled:!['completed','archived'].includes(event?.status) },
             ].map(item => <label key={item.key} className={cn('flex items-start gap-3 rounded-xl border p-3 transition-colors', item.disabled ? 'opacity-50 cursor-not-allowed bg-muted/30' : 'cursor-pointer hover:bg-secondary/40', printSelection[item.key] && !item.disabled ? 'border-primary/50 bg-primary/5' : 'border-border')}>
               <input type="checkbox" className="mt-1 h-4 w-4 accent-current" checked={!!printSelection[item.key] && !item.disabled} disabled={item.disabled} onChange={e => setPrintSelection(prev => ({ ...prev, [item.key]:e.target.checked }))} />
               <span className="flex-1 min-w-0"><span className="flex items-center justify-between gap-3"><strong className="text-sm">{item.label}</strong><span className="flex items-center gap-2 whitespace-nowrap"><span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-border bg-secondary px-1.5 text-[10px] font-black" title={item.orientationLabel}>{item.orientation}</span><span className="text-xs font-semibold text-muted-foreground">{item.pages} page{item.pages === 1 ? '' : 's'}</span></span></span><span className="block text-[11px] text-muted-foreground mt-1">{item.note} · {item.orientationLabel}</span></span>
             </label>)}
           </div>
-          {printSelection.briefing && <div className="mt-3 rounded-xl border border-border bg-secondary/20 p-3 space-y-3">
-            <label className="flex items-start gap-3 cursor-pointer"><input type="checkbox" className="mt-1 h-4 w-4 accent-current" checked={!!printSelection.includeVotingQr} onChange={e=>setPrintSelection(prev=>({...prev,includeVotingQr:e.target.checked}))}/><span><strong className="text-sm">Include separate voting QR</strong><span className="block text-[11px] text-muted-foreground mt-0.5">Off by default. The normal Player Link already handles voting when you open it.</span></span></label>
-            <div className="grid sm:grid-cols-2 gap-2"><div><label className="text-xs font-semibold">Venue Wi‑Fi name (SSID)</label><input value={printWifiSsid} onChange={e=>setPrintWifiSsid(e.target.value)} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" placeholder="Wi‑Fi network name"/></div><div><label className="text-xs font-semibold">Venue Wi‑Fi password</label><input value={printWifiPassword} onChange={e=>setPrintWifiPassword(e.target.value)} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm" placeholder="Wi‑Fi password"/></div></div>
-            <p className="text-[11px] text-muted-foreground">When both are entered, the briefing prints a scannable Wi‑Fi QR and the network name/password in text as a fallback.</p>
-          </div>}
           <div className="mt-4 rounded-xl bg-secondary/40 px-3 py-2 flex items-center justify-between gap-3 text-sm">
             <span>Selected print total</span>
             <strong>{(
@@ -2728,14 +2721,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               (printSelection.handoverScore && hasPlannedHandoverCopy ? handoverScorePages : 0) +
               (printSelection.schedule ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)) : 0) +
               (printSelection.roster ? 2 : 0) +
-              (printSelection.briefing ? 2 : 0) +
+              (printSelection.briefing ? 1 : 0) +
               (printSelection.final && ['completed','archived'].includes(event?.status) ? 1 : 0)
             )} page{(
               (printSelection.score ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 12)) : 0) +
               (printSelection.handoverScore && hasPlannedHandoverCopy ? handoverScorePages : 0) +
               (printSelection.schedule ? Math.max(1, Math.ceil(Math.max(1, plannedRounds) / 2)) : 0) +
               (printSelection.roster ? 2 : 0) +
-              (printSelection.briefing ? 2 : 0) +
+              (printSelection.briefing ? 1 : 0) +
               (printSelection.final && ['completed','archived'].includes(event?.status) ? 1 : 0)
             ) === 1 ? '' : 's'}</strong>
           </div>
