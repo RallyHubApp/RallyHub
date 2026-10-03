@@ -1102,6 +1102,24 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     return res.data;
   };
 
+  const setParticipantGender = async (participantId, gender) => {
+    if (!event || !canManageEvent) throw new Error('Event manager permission required.');
+    const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'set_gender', participantId, gender });
+    if (res.data?.error) throw new Error(res.data.error);
+    await sync();
+    toast.success(`${res.data.participantName} gender ${res.data.gender ? `set to ${res.data.gender}` : 'cleared'}.`);
+    return res.data;
+  };
+
+  const editParticipantDisplayName = async (participantId, displayName) => {
+    if (!event || !canManageEvent) throw new Error('Event manager permission required.');
+    const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'rename_display', participantId, displayName });
+    if (res.data?.error) throw new Error(res.data.error);
+    await sync();
+    toast.success(`${res.data.oldName || 'Player'} will display as ${res.data.participantName} for this event.`);
+    return res.data;
+  };
+
   const rostersSaved = !!event?.club_a_roster_saved_at && !!event?.club_b_roster_saved_at;
   const calculateFormat = () => {
     if (teamsDirty || !rostersSaved || poolPlayers.length || !aRotationPlayers.length || !bRotationPlayers.length || aRotationPlayers.length !== bRotationPlayers.length) return null;
@@ -2946,6 +2964,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
               onSave={organiseTeams}
               onSetRosterRole={setRosterRole}
               onSetPlayingCategory={setPlayingCategory}
+              onSetGender={setParticipantGender}
+              onEditDisplayName={editParticipantDisplayName}
               onDirtyChange={setTeamsDirty}
             />
             {formatInfo ? <div className="glass rounded-xl p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-center"><div><p className="text-xl font-bold">{formatInfo.recommendedRounds}</p><p className="text-[10px] text-muted-foreground">Rounds</p></div><div><p className="text-xl font-bold">{formatInfo.totalMatches}</p><p className="text-[10px] text-muted-foreground">Matches</p></div><div><p className="text-xl font-bold">{formatInfo.gamesRangeClubA.join('–')}</p><p className="text-[10px] text-muted-foreground">Games/player</p></div><div><p className="text-xl font-bold">{formatInfo.structuredMinutes}</p><p className="text-[10px] text-muted-foreground">Structured min</p></div><div><p className="text-xl font-bold">{formatInfo.remainingMinutes}</p><p className="text-[10px] text-muted-foreground">Contingency min</p></div></div> : participants.length > 0 && <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-700">Working rosters can be saved at any time. The draw unlocks only when there are no unassigned players, both current team configurations are saved, and the Rotation squads are equal. Reserve numbers may differ.</div>}
