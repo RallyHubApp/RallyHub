@@ -1893,12 +1893,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setPrintPackOpen(false);
     const selectedScoreSheets = Number(!!selection.score) + Number(!!selection.handoverScore);
     const scoreOnly = selectedScoreSheets === 1 && !selection.schedule && !selection.roster && !selection.briefing && !selection.final;
+    const portraitOnly = selectedScoreSheets === 0;
     const cleanupPrintMode = () => {
       document.body.classList.remove('rh-printing-interclub');
       document.body.classList.remove('rh-printing-score-only');
+      document.body.classList.remove('rh-printing-portrait-only');
     };
     document.body.classList.add('rh-printing-interclub');
     if (scoreOnly) document.body.classList.add('rh-printing-score-only');
+    if (portraitOnly) document.body.classList.add('rh-printing-portrait-only');
     window.addEventListener('afterprint', cleanupPrintMode, { once:true });
     window.setTimeout(() => window.print(), 250);
   };
