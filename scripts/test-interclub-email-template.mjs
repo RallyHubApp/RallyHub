@@ -1,0 +1,20 @@
+import { chromium } from 'playwright';
+import fs from 'fs';
+import http from 'http';
+import path from 'path';
+const root=process.cwd();
+const mime={'.png':'image/png','.html':'text/html','.js':'text/javascript'};
+const server=http.createServer((req,res)=>{let f=path.join(root,'public',decodeURIComponent(req.url.split('?')[0]));if(!f.startsWith(path.join(root,'public'))||!fs.existsSync(f)){res.writeHead(404);return res.end('404')}res.writeHead(200,{'Content-Type':mime[path.extname(f)]||'application/octet-stream'});fs.createReadStream(f).pipe(res)});
+await new Promise(r=>server.listen(4173,'127.0.0.1',r));
+const src=fs.readFileSync('base44/functions/interclubTournamentUpdate/entry.ts','utf8');
+const seg=src.slice(src.indexOf('function clareInterclubApprovedHtml'),src.indexOf('function renderEmailTemplate'));
+const m=seg.match(/return `(<!doctype html>.*?)`;}/s); if(!m)throw Error('Could not extract email template');
+let html=m[1]; const base='http://127.0.0.1:4173';
+html=html.replaceAll('${esc(header)}',base+'/email-templates/clare-interclub/header.png').replaceAll('${esc(footer)}',base+'/email-templates/clare-interclub/footer.png').replaceAll('${esc(base)}',base).replaceAll('${esc(title)}','Tournament Update').replaceAll('${esc(message)}','Test message').replaceAll('${esc(url)}','https://rallyhub.ie/club-challenge/display/TESTTOKEN');
+const browser=await chromium.launch({headless:true}); const page=await browser.newPage({viewport:{width:900,height:1200}}); await page.setContent(html,{waitUntil:'networkidle'});
+const expected=[['Call 087 810 0333','tel:+353878100333'],['Email clarepb2025@gmail.com','mailto:clarepb2025@gmail.com'],['ClarePickleball.ie','https://clarepickleball.ie/'],['Facebook','https://www.facebook.com/clarepickleball'],['Instagram','https://www.instagram.com/clarepickleball/'],['RallyHub.ie','https://rallyhub.ie/']];
+for(const [alt,href] of expected){const img=page.locator(`img[alt="${alt}"]`).first();if(await img.count()!==1)throw Error(`FAIL missing ${alt}`);const got=await img.locator('xpath=ancestor::a[1]').getAttribute('href');if(got!==href)throw Error(`FAIL ${alt}: expected ${href}; got ${got}`);const b=await img.boundingBox();if(!b||b.width<20||b.height<20)throw Error(`FAIL ${alt}: not visibly rendered`);console.log(`PASS ${alt} -> ${got} [${Math.round(b.width)}x${Math.round(b.height)}]`)}
+const player=page.getByText('View Player Link');const ph=await player.getAttribute('href');if(ph!=='https://rallyhub.ie/club-challenge/display/TESTTOKEN')throw Error(`FAIL Player Link: ${ph}`);console.log('PASS View Player Link -> '+ph);
+const failed=await page.locator('img').evaluateAll(imgs=>imgs.filter(i=>!i.complete||i.naturalWidth===0).map(i=>i.src));if(failed.length)throw Error('FAIL broken images: '+failed.join(','));console.log('PASS all template images loaded');
+await page.screenshot({path:'/tmp/interclub-email-template-tested.png',fullPage:true});
+await browser.close();server.close();
