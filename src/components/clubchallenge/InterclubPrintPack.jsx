@@ -289,7 +289,12 @@ function RuleCard({ n, title, children }) {
   return <div className="rhpp-rule"><div className="rhpp-rule-number">{n}</div><div><h3>{n}. {title}</h3>{children}</div></div>;
 }
 
-function BriefingPage({ event, tournament, roundsCount, courtsCount, displayUrl, votingUrl }) {
+function wifiQrValue(ssid='', password='') {
+  const esc = value => String(value || '').replace(/([\\;,:"])/g, '\\$1');
+  return ssid && password ? `WIFI:T:WPA;S:${esc(ssid)};P:${esc(password)};;` : '';
+}
+
+function BriefingPage({ event, tournament, roundsCount, courtsCount, displayUrl, votingUrl, wifiSsid='', wifiPassword='' }) {
   const format = event.normal_match_type === 'timed'
     ? `Timed rounds · ${event.play_minutes || 0} minutes${event.timed_draws_allowed === false ? ' · no draws' : ' · draws allowed'}`
     : `First to ${event.normal_target_points || 11} · win by ${event.normal_win_by || 1}`;
@@ -306,17 +311,44 @@ function BriefingPage({ event, tournament, roundsCount, courtsCount, displayUrl,
         <RuleCard n="5" title="Showcase Final (if included)"><ul><li>Each team selects two players of its choice to represent the team</li><li>Host chooses 11 or 15, win by 1 or 2</li><li>Any two eligible players from each club may be selected</li><li>An exhibition Showcase does not change the Interclub result</li></ul></RuleCard>
       </div>
     </div>
-    {(displayUrl || (event.pot_enabled && votingUrl)) && <div className="rhpp-public-links">
+    {(displayUrl || votingUrl || (wifiSsid && wifiPassword)) && <div className="rhpp-public-links">
       {displayUrl && <div className="rhpp-public-card rhpp-live-card">
-        <div className="rhpp-public-qr"><QRCodeSVG value={displayUrl} size={72} level="M" /></div>
-        <div><h3>Live Event View</h3><p>Scan to follow the live score, current courts, rests and what is coming next.</p><a href={displayUrl}>Open Live Event View</a><small>{displayUrl}</small></div>
+        <div className="rhpp-public-qr"><QRCodeSVG value={displayUrl} size={72} level="H" includeMargin /></div>
+        <div><h3>Player / Live Event View</h3><p>Scan to follow courts, rests, scores and results throughout the day.</p><a href={displayUrl}>Open Player Link</a><small>{displayUrl}</small></div>
       </div>}
-      {event.pot_enabled && votingUrl && <div className="rhpp-public-card rhpp-vote-card">
-        <div className="rhpp-public-qr"><QRCodeSVG value={votingUrl} size={72} level="M" /></div>
-        <div><h3>Players of the Tournament Voting</h3><p>Scan the QR or tap the link when voting opens. One ballot per phone/browser.</p><a href={votingUrl}>Open Voting</a><small>{votingUrl}</small></div>
+      {wifiSsid && wifiPassword && <div className="rhpp-public-card rhpp-wifi-card">
+        <div className="rhpp-public-qr"><QRCodeSVG value={wifiQrValue(wifiSsid,wifiPassword)} size={72} level="H" includeMargin /></div>
+        <div><h3>Venue Wi‑Fi</h3><p><strong>Network:</strong> {wifiSsid}<br/><strong>Password:</strong> {wifiPassword}</p><small>Scan to join, or enter these details manually.</small></div>
+      </div>}
+      {votingUrl && <div className="rhpp-public-card rhpp-vote-card">
+        <div className="rhpp-public-qr"><QRCodeSVG value={votingUrl} size={72} level="H" includeMargin /></div>
+        <div><h3>Players of the Tournament Voting</h3><p>Optional separate voting QR selected by the host.</p><a href={votingUrl}>Open Voting</a><small>{votingUrl}</small></div>
       </div>}
     </div>}
     <div className="rhpp-most-important"><strong>Most importantly ...</strong><span>Be fair, have fun, and represent your team with pride!</span></div>
+    <Footer />
+  </Page>;
+}
+
+function EtiquettePage({ event, tournament }) {
+  const items = [
+    ['Greet all participants','Show courtesy and respect throughout the event.'],
+    ['No ball is worth a fall','Call “Ball!” clearly if your ball goes onto another court.'],
+    ['When you hear “Ball!”','Stop play immediately and return the ball safely.'],
+    ['Server','Announce the score clearly before every serve.'],
+    ['Line calls','Make fair, clear and prompt calls. If in doubt, it’s in.'],
+    ['Respect the call','Fair play and sportsmanship are at the heart of the game.'],
+    ['No replays','Unless a stray ball comes onto your court and interrupts play.'],
+    ['Disagreements','Handle them calmly; call an official if help is needed.'],
+    ['Report results','Report the result promptly to the Tournament Desk.'],
+    ['Respect the venue','Treat the courts, equipment and facilities with care.'],
+    ['Most importantly','Have fun and enjoy the competition. May the best team win!'],
+  ];
+  return <Page className="rhpp-etiquette-page">
+    <StandardHeader event={event} tournament={tournament} title="Interclub Etiquette" />
+    <div className="rhpp-etiquette-intro">A few simple reminders to keep the day safe, fair, friendly and moving smoothly.</div>
+    <div className="rhpp-etiquette-list">{items.map(([title,text],i)=><div className="rhpp-etiquette-item" key={title}><div className="rhpp-etiquette-num">{i+1}</div><div><strong>{title}</strong><span>{text}</span></div></div>)}</div>
+    <div className="rhpp-most-important"><strong>Good people · Great games · Stronger together</strong><span>Represent your team with pride and enjoy the day.</span></div>
     <Footer />
   </Page>;
 }
@@ -361,7 +393,7 @@ function FinalResultPage({ event, tournament, score, overallScore, showcaseMatch
   </Page>;
 }
 
-export default function InterclubPrintPack({ event, tournament, matches=[], participants=[], score, overallScore, showcaseMatch, sections, displayUrl='', votingUrl='' }) {
+export default function InterclubPrintPack({ event, tournament, matches=[], participants=[], score, overallScore, showcaseMatch, sections, displayUrl='', votingUrl='', wifiSsid='', wifiPassword='' }) {
   if (!event) return null;
   const roundsCount = Math.max(Number(event.planned_rounds || 0), ...matches.filter(m => !m.is_showcase && Number(m.round_number || 0) <= Number(event.planned_rounds || 9999)).map(m => Number(m.round_number || 0)), 1);
   const rounds = Array.from({length:roundsCount},(_,i)=>i+1);
@@ -414,7 +446,7 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
       .rhpp-schedule-stack{display:grid;gap:2.2mm}.rhpp-round-block{border:.25mm solid #8ab5d4;border-radius:1mm;overflow:hidden;background:#fff}.rhpp-round-band{height:7mm;background:linear-gradient(90deg,#07558d,#0d4d82);color:#fff;font-size:11pt;font-weight:900;display:flex;align-items:center;padding:0 3mm}.rhpp-court-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.4mm;padding:1.5mm}.rhpp-court-card{border:.3mm solid #63a6d2;border-radius:.6mm;overflow:hidden}.rhpp-court-head{height:5.8mm;background:#d8effc;font-size:7.7pt;font-weight:900;display:flex;align-items:center;justify-content:center}.rhpp-court-body{height:16.5mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:.6mm 1mm;box-sizing:border-box;font-size:5.9pt;font-weight:700;line-height:1.14}.rhpp-court-body em{font-style:normal;font-size:5pt;color:#405b72;margin:.3mm 0}
       .rhpp-rest-wrap{margin:0 1.5mm 1.5mm;border:.25mm solid #8ab5d4}.rhpp-rest-title{height:6mm;background:#d8effc;font-size:7.5pt;font-weight:900;display:flex;align-items:center;padding:0 2mm}.rhpp-rest-heads,.rhpp-rest-row{display:grid;grid-template-columns:1fr 1fr}.rhpp-rest-heads strong{height:5.5mm;background:#dff2c9;border:.2mm solid #7eb5d6;display:flex;align-items:center;justify-content:center;font-size:6.4pt}.rhpp-rest-row span{height:4.15mm;border:.2mm solid #bad0df;border-top:0;padding:0 2mm;display:flex;align-items:center;font-size:5.45pt}.rhpp-break{height:7mm;margin:1.5mm;background:#dff2c9;color:#073866;font-size:7.4pt;font-weight:900;display:flex;align-items:center;justify-content:center}.rhpp-page-number{position:absolute;right:7mm;bottom:26mm;font-size:5.5pt;color:#7890a3}
       .rhpp-roster-note{margin:0 0 2.5mm;padding:1.7mm 2.5mm;border:.25mm solid #9fc8e1;background:#eef8fd;border-radius:1.5mm;text-align:center;font-size:7pt;font-weight:800;color:#28506e}.rhpp-host-note{border-color:#e3c474;background:#fff8df;color:#725913}.rhpp-roster-layout{display:grid;grid-template-columns:1fr 1fr;gap:4mm;align-items:start}.rhpp-roster-title{height:16mm;border:.4mm solid;border-radius:2mm 2mm 0 0;display:flex;align-items:center;gap:3mm;padding:1.5mm 3mm;box-sizing:border-box;font-size:13pt}.rhpp-roster-title img{width:12mm;height:12mm;object-fit:contain;border-radius:50%;background:#fff}.rhpp-roster table{width:100%;border-collapse:collapse;font-size:10.2pt;table-layout:fixed}.rhpp-roster th{height:8.5mm;background:${BLUE};color:white;padding:1mm;font-size:9.5pt}.rhpp-roster td{border:.25mm solid #9eb8cb;height:9.5mm;padding:.8mm 1.2mm;line-height:1.1}.rhpp-roster-ranked td:first-child,.rhpp-roster-ranked th:first-child{width:10mm;text-align:center;font-weight:800}.rhpp-roster-ranked th:nth-child(3),.rhpp-roster-ranked td:nth-child(3){width:12mm;text-align:center}.rhpp-roster-ranked th:last-child{width:18mm}.rhpp-roster-alphabetical th:nth-child(2),.rhpp-roster-alphabetical td:nth-child(2){width:18mm;text-align:center}.rhpp-roster-alphabetical th:last-child{width:24mm}.rhpp-check-box-cell{font-size:16pt!important;text-align:center!important;line-height:1!important}.rhpp-reserve-title{height:9.5mm;background:#dde9f0;padding:2mm 2.5mm;box-sizing:border-box;font-size:10pt;font-weight:900;margin-top:3mm;border-radius:1mm 1mm 0 0}.rhpp-reserves td{height:8.5mm!important;font-size:10pt}.rhpp-roster-ranked .rhpp-reserves td:first-child{width:12mm;text-align:center;font-weight:800}.rhpp-reserves-checkin td:nth-child(2){width:18mm;text-align:center}.rhpp-reserves-checkin td:last-child{width:24mm}
-      .rhpp-rule-columns{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm}.rhpp-rule-column{display:grid;gap:2.5mm;align-content:start}.rhpp-rule{display:grid;grid-template-columns:10mm 1fr;gap:2mm;border:.3mm solid #bdd7e8;border-radius:2mm;padding:3mm;min-height:45mm;box-sizing:border-box}.rhpp-rule-number{width:8mm;height:8mm;border-radius:50%;background:${NAVY};color:#fff;display:flex;align-items:center;justify-content:center;font-size:7pt;font-weight:900}.rhpp-rule h3{font-size:8pt;margin:0 0 2mm}.rhpp-rule ul{padding-left:4mm;margin:0;font-size:6.6pt;line-height:1.55}.rhpp-public-links{height:34mm;margin-top:3mm;display:grid;grid-template-columns:1fr 1fr;gap:3mm}.rhpp-public-card{border:.35mm solid #9bbbd3;background:#f4f9fd;border-radius:2mm;display:grid;grid-template-columns:24mm 1fr;align-items:center;gap:2.5mm;padding:2.5mm 3mm;box-sizing:border-box;min-width:0}.rhpp-vote-card{border-color:#8fc6a3;background:#f2fbf4}.rhpp-public-qr{display:flex;align-items:center;justify-content:center}.rhpp-public-card h3{margin:0 0 1mm;color:${NAVY};font-size:7.2pt}.rhpp-vote-card h3{color:#087e42}.rhpp-public-card p{margin:.5mm 0;font-size:5.6pt;line-height:1.25}.rhpp-public-card a{display:block;margin-top:.7mm;color:${BLUE};font-size:5.6pt;font-weight:800;text-decoration:underline}.rhpp-public-card small{display:block;margin-top:.5mm;font-size:4.2pt;line-height:1.15;color:#5d6d7e;word-break:break-all}.rhpp-most-important{height:18mm;margin-top:2.5mm;border:.3mm solid #9fd3b3;background:#eef9ef;border-radius:2mm;display:flex;align-items:center;justify-content:center;gap:5mm}.rhpp-most-important strong{color:#098844;font-size:8pt}.rhpp-most-important span{font-size:7pt;font-weight:700}
+      .rhpp-rule-columns{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm}.rhpp-rule-column{display:grid;gap:2.5mm;align-content:start}.rhpp-rule{display:grid;grid-template-columns:10mm 1fr;gap:2mm;border:.3mm solid #bdd7e8;border-radius:2mm;padding:3mm;min-height:45mm;box-sizing:border-box}.rhpp-rule-number{width:8mm;height:8mm;border-radius:50%;background:${NAVY};color:#fff;display:flex;align-items:center;justify-content:center;font-size:7pt;font-weight:900}.rhpp-rule h3{font-size:8pt;margin:0 0 2mm}.rhpp-rule ul{padding-left:4mm;margin:0;font-size:6.6pt;line-height:1.55}.rhpp-public-links{height:34mm;margin-top:3mm;display:grid;grid-template-columns:1fr 1fr;gap:3mm}.rhpp-public-card{border:.35mm solid #9bbbd3;background:#f4f9fd;border-radius:2mm;display:grid;grid-template-columns:24mm 1fr;align-items:center;gap:2.5mm;padding:2.5mm 3mm;box-sizing:border-box;min-width:0}.rhpp-vote-card{border-color:#8fc6a3;background:#f2fbf4}.rhpp-wifi-card{border-color:#a8b9d9;background:#f5f8ff}.rhpp-public-qr{display:flex;align-items:center;justify-content:center}.rhpp-public-card h3{margin:0 0 1mm;color:${NAVY};font-size:7.2pt}.rhpp-vote-card h3{color:#087e42}.rhpp-public-card p{margin:.5mm 0;font-size:5.6pt;line-height:1.25}.rhpp-public-card a{display:block;margin-top:.7mm;color:${BLUE};font-size:5.6pt;font-weight:800;text-decoration:underline}.rhpp-public-card small{display:block;margin-top:.5mm;font-size:4.2pt;line-height:1.15;color:#5d6d7e;word-break:break-all}.rhpp-most-important{height:18mm;margin-top:2.5mm;border:.3mm solid #9fd3b3;background:#eef9ef;border-radius:2mm;display:flex;align-items:center;justify-content:center;gap:5mm}.rhpp-most-important strong{color:#098844;font-size:8pt}.rhpp-most-important span{font-size:7pt;font-weight:700}.rhpp-etiquette-intro{margin:1mm 0 4mm;text-align:center;font-size:8.5pt;font-weight:700;color:#315579}.rhpp-etiquette-list{display:grid;grid-template-columns:1fr 1fr;gap:2.4mm 3mm}.rhpp-etiquette-item{display:grid;grid-template-columns:8mm 1fr;gap:2mm;align-items:start;border:.25mm solid #bdd7e8;border-radius:1.5mm;padding:2.5mm;min-height:25mm;box-sizing:border-box}.rhpp-etiquette-num{width:7mm;height:7mm;border-radius:50%;background:${NAVY};color:#fff;display:flex;align-items:center;justify-content:center;font-size:7pt;font-weight:900}.rhpp-etiquette-item strong{display:block;font-size:8pt;color:${NAVY};margin-bottom:1mm}.rhpp-etiquette-item span{display:block;font-size:6.6pt;line-height:1.38;color:#294b6d}
       .rhpp-result-layout{display:grid;grid-template-columns:1fr 57mm;gap:3mm}.rhpp-team-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:3mm}.rhpp-team-score-grid>div{height:59mm;border:.35mm solid #bfd5e4;border-top:1.2mm solid;border-radius:2mm;padding:3mm;text-align:center;box-sizing:border-box;background:#f5fbff}.rhpp-team-score-grid>div.b{background:#fff7f7}.rhpp-team-score-grid img{width:15mm;height:15mm;object-fit:contain;display:block;margin:0 auto 1mm}.rhpp-team-score-grid strong{display:block;font-size:8.5pt}.rhpp-team-score-grid b{display:block;font-size:31pt;line-height:1;margin:2mm 0}.rhpp-team-score-grid small{font-size:6pt}.rhpp-result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:2mm;margin-top:2.5mm}.rhpp-result-stats>div{border:.25mm solid #b7cad8;border-radius:1.5mm;padding:2mm;text-align:center}.rhpp-result-stats b{display:block;font-size:13pt}.rhpp-result-stats span{display:block;font-size:5.5pt}.rhpp-showcase-result{margin-top:3mm;background:#eff9ef;border:.3mm solid #aad7b1;border-radius:2mm;padding:3mm;text-align:center}.rhpp-showcase-result>*{display:block}.rhpp-showcase-result strong{font-size:7pt;color:#087e42}.rhpp-showcase-result b{font-size:8.5pt;margin-top:1mm}.rhpp-showcase-result span,.rhpp-showcase-result small{font-size:5.6pt;margin-top:.7mm}.rhpp-winner{margin-top:4mm;text-align:center;font-size:9pt}.rhpp-signoff{background:#eff8fd;border-radius:2mm;padding:3mm;font-size:6pt}.rhpp-signoff h3{font-size:8pt;margin:0 0 2mm}.rhpp-signoff h3:not(:first-child){margin-top:6mm}.rhpp-signoff p{margin:1.5mm 0}.rhpp-signoff label{display:grid;grid-template-columns:auto 1fr;gap:2mm;margin-top:5mm}.rhpp-signoff i{border-bottom:.25mm solid #7894aa}
     `}</style>
 
@@ -422,7 +454,7 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
     {selected.handoverScore && hasPlannedHandoverCopy && scorePages.map((rs,i)=><MasterScorePage key={`handover-score-${i}`} event={event} tournament={tournament} matches={plannedHandoverPlayable} rounds={rs} courts={courts} title={`Master Score Sheet · Handover from Round ${firstHandoverRound}`} />)}
     {selected.schedule && schedulePages.map((rs,i)=><MasterSchedulePage key={`schedule-${i}`} event={event} tournament={tournament} matches={playable} participants={participants} rounds={rs} lastScheduledById={lastScheduledById} pageIndex={i} totalPages={schedulePages.length} />)}
     {selected.roster && <><TeamRosterPage event={event} tournament={tournament} participants={participants} order="ranked" /><TeamRosterPage event={event} tournament={tournament} participants={participants} order="alphabetical" /></>}
-    {selected.briefing && <BriefingPage event={event} tournament={tournament} roundsCount={roundsCount} courtsCount={courts.length} displayUrl={displayUrl} votingUrl={votingUrl} />}
+    {selected.briefing && <><BriefingPage event={event} tournament={tournament} roundsCount={roundsCount} courtsCount={courts.length} displayUrl={displayUrl} votingUrl={votingUrl} wifiSsid={wifiSsid} wifiPassword={wifiPassword} /><EtiquettePage event={event} tournament={tournament} /></>}
     {selected.final && ['completed','archived'].includes(event.status) && <FinalResultPage event={event} tournament={tournament} score={score} overallScore={overallScore} showcaseMatch={showcaseMatch} courtsCount={courts.length} roundsCount={roundsCount} />}
   </div>;
 }
