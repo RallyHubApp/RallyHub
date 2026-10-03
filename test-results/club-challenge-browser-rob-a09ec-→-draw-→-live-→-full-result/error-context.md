@@ -82,7 +82,7 @@ Call log:
   - button "R12"
   - paragraph: Finish-on-Time Guide
   - text: RECOVERY NEEDED
-  - paragraph: Booked finish 06:38 PM · projected finish 07:50 PM · started 90 min late
+  - paragraph: Booked finish 06:49 PM · projected finish 08:01 PM · started 90 min late
   - paragraph: 73 min over
   - paragraph: Recalculates throughout the event
   - paragraph: Recommended recovery
