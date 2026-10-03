@@ -120,6 +120,8 @@ Deno.serve(async (req) => {
       event_venue:tournament?.location || null,
       event_map_url:tournament?.event_map_url || null,
       event_contact_phone:tournament?.event_contact_phone || null,
+      event_player_info:tournament?.event_player_info || null,
+      event_slug:tournament?.event_slug || null,
       play_minutes:event.play_minutes, changeover_minutes:event.changeover_minutes,
       normal_match_type:event.normal_match_type, normal_target_points:event.normal_target_points, normal_win_by:event.normal_win_by,
       timed_draws_allowed:event.timed_draws_allowed !== false, showcase_enabled:!!event.showcase_enabled,
