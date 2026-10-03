@@ -289,12 +289,7 @@ function RuleCard({ n, title, children }) {
   return <div className="rhpp-rule"><div className="rhpp-rule-number">{n}</div><div><h3>{n}. {title}</h3>{children}</div></div>;
 }
 
-function wifiQrValue(ssid='', password='') {
-  const esc = value => String(value || '').replace(/([\\;,:"])/g, '\\$1');
-  return ssid && password ? `WIFI:T:WPA;S:${esc(ssid)};P:${esc(password)};;` : '';
-}
-
-function BriefingPage({ event, tournament, roundsCount, courtsCount, displayUrl, votingUrl, wifiSsid='', wifiPassword='' }) {
+function BriefingPage({ event, tournament, roundsCount, courtsCount, displayUrl, votingUrl }) {
   const format = event.normal_match_type === 'timed'
     ? `Timed rounds · ${event.play_minutes || 0} minutes${event.timed_draws_allowed === false ? ' · no draws' : ' · draws allowed'}`
     : `First to ${event.normal_target_points || 11} · win by ${event.normal_win_by || 1}`;
@@ -311,18 +306,14 @@ function BriefingPage({ event, tournament, roundsCount, courtsCount, displayUrl,
         <RuleCard n="5" title="Showcase Final (if included)"><ul><li>Each team selects two players of its choice to represent the team</li><li>Host chooses 11 or 15, win by 1 or 2</li><li>Any two eligible players from each club may be selected</li><li>An exhibition Showcase does not change the Interclub result</li></ul></RuleCard>
       </div>
     </div>
-    {(displayUrl || votingUrl || (wifiSsid && wifiPassword)) && <div className="rhpp-public-links">
+    {(displayUrl || (event.pot_enabled && votingUrl)) && <div className="rhpp-public-links">
       {displayUrl && <div className="rhpp-public-card rhpp-live-card">
-        <div className="rhpp-public-qr"><QRCodeSVG value={displayUrl} size={72} level="H" includeMargin /></div>
-        <div><h3>Player / Live Event View</h3><p>Scan to follow courts, rests, scores and results throughout the day.</p><a href={displayUrl}>Open Player Link</a><small>{displayUrl}</small></div>
+        <div className="rhpp-public-qr"><QRCodeSVG value={displayUrl} size={72} level="M" /></div>
+        <div><h3>Live Event View</h3><p>Scan to follow the live score, current courts, rests and what is coming next.</p><a href={displayUrl}>Open Live Event View</a><small>{displayUrl}</small></div>
       </div>}
-      {wifiSsid && wifiPassword && <div className="rhpp-public-card rhpp-wifi-card">
-        <div className="rhpp-public-qr"><QRCodeSVG value={wifiQrValue(wifiSsid,wifiPassword)} size={72} level="H" includeMargin /></div>
-        <div><h3>Venue Wi‑Fi</h3><p><strong>Network:</strong> {wifiSsid}<br/><strong>Password:</strong> {wifiPassword}</p><small>Scan the QR to join, or enter the details above manually.</small></div>
-      </div>}
-      {votingUrl && <div className="rhpp-public-card rhpp-vote-card">
-        <div className="rhpp-public-qr"><QRCodeSVG value={votingUrl} size={72} level="H" includeMargin /></div>
-        <div><h3>Players of the Tournament Voting</h3><p>Optional separate voting QR — only included when selected by the host.</p><a href={votingUrl}>Open Voting</a><small>{votingUrl}</small></div>
+      {event.pot_enabled && votingUrl && <div className="rhpp-public-card rhpp-vote-card">
+        <div className="rhpp-public-qr"><QRCodeSVG value={votingUrl} size={72} level="M" /></div>
+        <div><h3>Players of the Tournament Voting</h3><p>Scan the QR or tap the link when voting opens. One ballot per phone/browser.</p><a href={votingUrl}>Open Voting</a><small>{votingUrl}</small></div>
       </div>}
     </div>}
     <div className="rhpp-most-important"><strong>Most importantly ...</strong><span>Be fair, have fun, and represent your team with pride!</span></div>
