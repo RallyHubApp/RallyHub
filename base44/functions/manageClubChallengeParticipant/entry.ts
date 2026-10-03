@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error:'Unauthorized' }, { status:401 });
     const body = await req.json().catch(() => ({}));
-    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, players, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, teamName, rosterRole, playingCategory, reserveParticipantId, coverParticipantId, playerId, temporaryGames } = body;
-    if (!eventId || !['replace','temporary_sub','rename_display','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','bulk_add_manual','reorder','save_team','organise_teams','replacement_candidates','set_roster_role','set_playing_category','club_player_candidates','add_club_player','add_guest','remove_pre_draw'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
+    const { eventId, action, outgoingParticipantId, incomingName, incomingGender, incomingSourcePlayerId, incomingParticipantType, reason, withdrawalStatus, participantId, fromRound, side, displayName, gender, players, orderedParticipantIds, poolParticipantIds, clubAParticipantIds, clubBParticipantIds, clubAName, clubBName, teamName, rosterRole, playingCategory, reserveParticipantId, coverParticipantId, playerId, temporaryGames } = body;
+    if (!eventId || !['replace','temporary_sub','rename_display','set_gender','activate_reserve','cover_existing','continue_short','late_arrival','add_manual','bulk_add_manual','reorder','save_team','organise_teams','replacement_candidates','set_roster_role','set_playing_category','club_player_candidates','add_club_player','add_guest','remove_pre_draw'].includes(action)) return Response.json({ error:'Invalid participant-management action.' }, { status:400 });
 
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:eventId });
     const event = events?.[0];
@@ -258,6 +258,18 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { fairness_json:'', status:event.status === 'draw_generated' ? 'draft' : event.status, event_pack_stale:true });
       await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_roster_role_changed', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({participant_id:p.id,roster_role:p.roster_role || 'rotation'}), new_value_json:JSON.stringify({participant_id:p.id,roster_role:role}) });
       return Response.json({ success:true, participantId:p.id, participantName:p.display_name, rosterRole:role });
+    }
+
+    if (action === 'set_gender') {
+      if (!['draft','draw_generated'].includes(event.status)) return Response.json({ error:'Gender can only be changed before the draw is approved.' }, { status:409 });
+      const p = participants.find((x:any) => x.id === participantId);
+      if (!p || !['club_a','club_b'].includes(p.side)) return Response.json({ error:'Choose a player already assigned to a team.' }, { status:400 });
+      const cleanGender = String(gender || '').trim();
+      if (!['Male','Female','Non-binary','Prefer not to say',''].includes(cleanGender)) return Response.json({ error:'Choose a valid gender value.' }, { status:400 });
+      await base44.asServiceRole.entities.ClubChallengeParticipant.update(p.id, { gender:cleanGender });
+      await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, { event_pack_stale:true });
+      await base44.asServiceRole.entities.ClubChallengeAudit.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, action:'participant_gender_changed', user_id:user.id, occurred_at:now, old_value_json:JSON.stringify({participant_id:p.id,gender:p.gender || ''}), new_value_json:JSON.stringify({participant_id:p.id,gender:cleanGender}) });
+      return Response.json({ success:true, participantId:p.id, participantName:p.display_name, gender:cleanGender });
     }
 
     if (action === 'set_playing_category') {
