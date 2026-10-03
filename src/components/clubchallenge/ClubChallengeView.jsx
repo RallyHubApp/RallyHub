@@ -561,12 +561,6 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     refetchOnWindowFocus:false,
   });
   const event = isAdmin ? adminEvent : secureState?.event || null;
-  useEffect(() => {
-    const venue = venueOptions.find(v => String(v.id) === String(tournament?.venue_id || ''));
-    if (!venue) return;
-    setPrintWifiSsid(venue.wifi_ssid || '');
-    setPrintWifiPassword(venue.wifi_password || '');
-  }, [venueOptions, tournament?.venue_id]);
   const { data: adminParticipants = [], refetch: refetchAdminParticipants } = useQuery({
     queryKey: ['club-challenge-participants', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeParticipant.filter({ challenge_event_id: event.id }, 'event_rank', 100) : [],
