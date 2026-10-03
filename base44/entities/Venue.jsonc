@@ -37,6 +37,14 @@
     },
     "notes": {
       "type": "string"
+    },
+    "wifi_ssid": {
+      "type": "string",
+      "description": "Optional venue Wi-Fi network name for event operations."
+    },
+    "wifi_password": {
+      "type": "string",
+      "description": "Optional venue Wi-Fi password for event operations and event packs."
     }
   },
   "required": [
