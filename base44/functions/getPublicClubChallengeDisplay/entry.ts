@@ -22,12 +22,13 @@ Deno.serve(async (req) => {
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:link.challenge_event_id });
     const event = events?.[0];
     if (!event || !['draft','draw_generated','draw_approved','in_progress','paused','completed','archived'].includes(event.status)) return Response.json({ error:'Interclub Challenge display is not available.' }, { status:404 });
-    const [participants,matches,hostClubRows,spotPrizeRows,tournamentRows] = await Promise.all([
+    const [participants,matches,hostClubRows,spotPrizeRows,tournamentRows,updateRows] = await Promise.all([
       base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100),
       base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200),
       event.host_club_id ? base44.asServiceRole.entities.Club.filter({ id:event.host_club_id, tenant_id:event.tenant_id }, '-updated_date', 5) : Promise.resolve([]),
       base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5),
-      base44.asServiceRole.entities.Tournament.filter({ id:event.tournament_id }, '-updated_date', 5)
+      base44.asServiceRole.entities.Tournament.filter({ id:event.tournament_id }, '-updated_date', 5),
+      base44.asServiceRole.entities.InterclubTournamentUpdate.filter({ challenge_event_id:event.id, status:'published' }, '-published_at', 5)
     ]);
     const hostClub = hostClubRows?.[0] || null;
     const spotPrizeDraw = spotPrizeRows?.[0] || null;
@@ -134,6 +135,7 @@ Deno.serve(async (req) => {
       spot_prize_draw_count:Number(spotPrizeDraw?.draw_count || 0),
       spot_prize_winners:spotPrizeWinners.map((w:any)=>({ pull:Number(w.pull||0), participant_id:w.participant_id, display_name:maskName(w.display_name,!!event.junior_display_mode), side:w.side, team_name:w.team_name, number:Number(w.number||0), drawn_at:w.drawn_at || null })),
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
+      tournament_update:updateRows?.[0] ? { title:updateRows[0].title || 'Tournament Update', message:updateRows[0].message || '', published_at:updateRows[0].published_at || null } : null,
     }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
     console.error('getPublicClubChallengeDisplay failed', error);
