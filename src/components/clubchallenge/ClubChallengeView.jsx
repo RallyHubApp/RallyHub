@@ -513,6 +513,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [spotPrizeBusy, setSpotPrizeBusy] = useState(false);
   const potAutoCloseRef = React.useRef('');
   const [publicLinks, setPublicLinks] = useState(null);
+  const [tournamentUpdateDraft, setTournamentUpdateDraft] = useState('');
+  const [tournamentUpdateInfo, setTournamentUpdateInfo] = useState(null);
+  const [tournamentUpdateBusy, setTournamentUpdateBusy] = useState(false);
   const [registrationLinks, setRegistrationLinks] = useState({ club_a:'', club_b:'' });
   const [registrationLinkBusy, setRegistrationLinkBusy] = useState('');
   const [teamManagerLinks, setTeamManagerLinks] = useState({ club_a:'', club_b:'' });
@@ -1755,6 +1758,35 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     }
   };
   const preparePublicLinks = () => ensurePublicLinks();
+  const loadTournamentUpdate = React.useCallback(async () => {
+    if (!event?.id || !hasManagePermission) return;
+    try {
+      const res = await base44.functions.invoke('interclubTournamentUpdate', { eventId:event.id, action:'status' });
+      if (!res.data?.error) setTournamentUpdateInfo(res.data);
+    } catch {}
+  }, [event?.id, hasManagePermission]);
+  React.useEffect(() => { loadTournamentUpdate(); }, [loadTournamentUpdate]);
+  const publishTournamentUpdate = async (sendEmail) => {
+    const message = tournamentUpdateDraft.trim();
+    if (!event?.id || !message || tournamentUpdateBusy) return;
+    if (sendEmail && !window.confirm(`Publish this Tournament Update and email ${Number(tournamentUpdateInfo?.emailRecipients || 0)} player email address${Number(tournamentUpdateInfo?.emailRecipients || 0)===1?'':'es'}?`)) return;
+    setTournamentUpdateBusy(true);
+    try {
+      const res = await base44.functions.invoke('interclubTournamentUpdate', { eventId:event.id, action:'publish', title:'Tournament Update', message, sendEmail:!!sendEmail, origin:window.location.origin });
+      if (res.data?.error) throw new Error(res.data.error);
+      setTournamentUpdateInfo(res.data);
+      setTournamentUpdateDraft('');
+      toast.success(sendEmail ? `Tournament Update published · ${res.data?.sent || 0} email${Number(res.data?.sent||0)===1?'':'s'} sent${res.data?.failed ? ` · ${res.data.failed} failed` : ''}.` : 'Tournament Update published to the Player Link.');
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not publish Tournament Update'); }
+    finally { setTournamentUpdateBusy(false); }
+  };
+  const removeTournamentUpdate = async () => {
+    if (!event?.id || tournamentUpdateBusy || !window.confirm('Remove the current Tournament Update from the Player Link? This does not recall any email already sent.')) return;
+    setTournamentUpdateBusy(true);
+    try { const res=await base44.functions.invoke('interclubTournamentUpdate',{eventId:event.id,action:'remove'}); if(res.data?.error)throw new Error(res.data.error); await loadTournamentUpdate(); toast.success('Tournament Update removed from the Player Link.'); }
+    catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not remove Tournament Update');}
+    finally{setTournamentUpdateBusy(false);}
+  };
   const prepareRegistrationLink = async side => {
     if (!event || !hasManagePermission || !['club_a','club_b'].includes(side)) return;
     setRegistrationLinkBusy(side);
@@ -2747,6 +2779,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         {event && <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center"><div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:flex items-center gap-1.5 sm:gap-2 w-full lg:w-auto min-w-0"><ClubBadge name={event.club_a_name} logo={event.club_a_logo_url} primary={event.club_a_primary_colour} secondary={event.club_a_secondary_colour} /><span className="text-xs text-muted-foreground text-center">vs</span><ClubBadge name={event.club_b_name} logo={event.club_b_logo_url} primary={event.club_b_primary_colour} secondary={event.club_b_secondary_colour} /></div>{!networkOnline && <Badge className="bg-yellow-500/10 text-yellow-400">OFFLINE · not saved</Badge>}{pendingScores.length > 0 && <><Badge variant="outline">{pendingScores.length} unsynchronised</Badge>{networkOnline && <Button variant="outline" size="sm" onClick={retryPendingScores}>Retry Sync</Button>}</>}{['in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={() => setDisplayMode(true)}>Live Event View</Button>}{hasManagePermission && <Button variant="outline" size="sm" onClick={preparePublicLinks}>Player Link / QR</Button>}{['draw_approved','in_progress','paused','completed'].includes(event.status) && <Button variant="outline" size="sm" onClick={printEventPack}>{event.event_pack_stale ? 'Print Sheets · OUT OF DATE' : `Print Sheets · Pack v${event.event_pack_version || event.draw_version || 1}`}</Button>}</div>}
       </div>
 
+      {event && hasManagePermission && <div data-testid="cc-tournament-update" className="print:hidden rounded-xl border border-amber-400/40 bg-amber-500/5 p-4 space-y-3"><div className="flex items-start gap-2"><Megaphone className="mt-0.5 h-5 w-5 text-amber-600"/><div><p className="text-sm font-black">Tournament Update</p><p className="text-xs text-muted-foreground">Publish a last-minute message to the Player Link. You can also email every active player who has an email address.</p></div></div>{tournamentUpdateInfo?.update?.message&&<div className="rounded-lg border bg-background p-3"><p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Currently live</p><p className="mt-1 whitespace-pre-line text-sm font-semibold">{tournamentUpdateInfo.update.message}</p><p className="mt-2 text-[10px] text-muted-foreground">{tournamentUpdateInfo.update.email_sent_at?`Email sent ${tournamentUpdateInfo.update.email_sent_count||0}/${tournamentUpdateInfo.update.email_recipient_count||0}`:'Published to Player Link only'}</p></div>}<textarea data-testid="cc-tournament-update-message" value={tournamentUpdateDraft} onChange={e=>setTournamentUpdateDraft(e.target.value)} maxLength={2000} rows={4} placeholder="Type the player update here…" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"/><div className="flex flex-col sm:flex-row gap-2"><Button type="button" variant="outline" disabled={tournamentUpdateBusy||!tournamentUpdateDraft.trim()} onClick={()=>publishTournamentUpdate(false)}>Publish to Player Link</Button><Button data-testid="cc-publish-email-tournament-update" type="button" disabled={tournamentUpdateBusy||!tournamentUpdateDraft.trim()||!Number(tournamentUpdateInfo?.emailRecipients||0)} onClick={()=>publishTournamentUpdate(true)}>{tournamentUpdateBusy?'Publishing…':`Publish & Email Players (${Number(tournamentUpdateInfo?.emailRecipients||0)})`}</Button>{tournamentUpdateInfo?.update?.message&&<Button type="button" variant="ghost" disabled={tournamentUpdateBusy} onClick={removeTournamentUpdate}>Remove</Button>}</div><p className="text-[10px] text-muted-foreground">Active roster: {Number(tournamentUpdateInfo?.eligiblePlayers||participants.filter(p=>['club_a','club_b'].includes(p.side)&&!['withdrawn','replaced'].includes(p.status)).length)} players · {Number(tournamentUpdateInfo?.emailRecipients||0)} unique email recipients. Editing/publishing a new update never automatically resends an earlier email.</p></div>}
       {publicLinks && <div className="print:hidden rounded-xl border border-primary/20 bg-card p-4 space-y-4"><div><p className="text-sm font-semibold">Interclub Player Link</p><p className="text-xs text-muted-foreground">One player link for teams, event information, live/final results and Player of the Tournament voting when the host opens it.</p></div><div className="rounded-lg bg-secondary/40 p-4 flex flex-col sm:flex-row gap-4 items-center"><QRCodeSVG value={publicLinks.displayUrl} size={132} level="H" includeMargin/><div className="min-w-0 flex-1"><p className="text-xs font-semibold">Player Link</p><a href={publicLinks.displayUrl} target="_blank" rel="noreferrer" className="text-[10px] text-primary underline underline-offset-2 break-all mt-1 block">{publicLinks.displayUrl}</a><div className="mt-2 flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(publicLinks.displayUrl)}>Copy</Button>{isSuperAdmin && <><Button size="sm" variant="outline" onClick={() => sharePublicLink(publicLinks.displayUrl,'RallyHub Interclub Player Link')}>Share</Button><Button size="sm" variant="outline" onClick={() => shareOnWhatsApp(publicLinks.displayUrl,'RallyHub Interclub Player Link')}>WhatsApp</Button></>}</div></div></div></div>}
 
       <div className="print:hidden rounded-xl border border-border bg-card/50 p-2 sm:p-3">
