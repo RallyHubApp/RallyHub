@@ -82,6 +82,9 @@ export default function PublicKotcResults(){
   const historyRounds=[...new Set((data.matches||[]).map(m=>Number(m.round_number)))].sort((a,b)=>a-b);
   const selectedHistoryRound=historyRound&&historyRounds.includes(Number(historyRound))?Number(historyRound):(historyRounds.at(-1)||null);
   const historyMatches=selectedHistoryRound?(data.matches||[]).filter(m=>Number(m.round_number)===selectedHistoryRound):[];
+  const configuredTabs=Array.isArray(data.player_link?.tabs)&&data.player_link.tabs.length?data.player_link.tabs:['live','players','rounds','leaderboard','event_info'];
+  const visibleTabs=finished?['results',...configuredTabs.filter(x=>!['live','scores'].includes(x))]:configuredTabs;
+  const tabLabels={results:'Results',live:'Live',players:'Players',rounds:'Rounds',scores:'Scores',leaderboard:'Leaderboard',event_info:'Event Info'};
 
   if(hallMode){
     return <div className="min-h-screen bg-background text-foreground p-4 sm:p-6" data-testid="public-kotc-hall-display">
