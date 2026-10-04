@@ -19,7 +19,8 @@ function validClubChallengeGrant(a:any, tenantId:string) {
 }
 function updateVisible(update:any, event:any) {
   if (!update || update.status !== 'published') return false;
-  if (update.expiry_mode === 'event_start' && ['in_progress','paused','completed','archived'].includes(event.status)) return false;
+  const expiryMode = update.expiry_mode || 'event_start';
+  if (expiryMode === 'event_start' && ['in_progress','paused','completed','archived'].includes(event.status)) return false;
   if (update.expires_at) {
     const expires = Date.parse(update.expires_at);
     if (Number.isFinite(expires) && expires <= Date.now()) return false;
