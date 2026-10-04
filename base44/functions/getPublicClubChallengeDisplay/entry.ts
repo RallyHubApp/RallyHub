@@ -22,14 +22,12 @@ Deno.serve(async (req) => {
     const events = await base44.asServiceRole.entities.ClubChallengeEvent.filter({ id:link.challenge_event_id });
     const event = events?.[0];
     if (!event || !['draft','draw_generated','draw_approved','in_progress','paused','completed','archived'].includes(event.status)) return Response.json({ error:'Interclub Challenge display is not available.' }, { status:404 });
-    const [participants,matches,hostClubRows,spotPrizeRows,tournamentRows,updateRows] = await Promise.all([
-      base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, undefined, 100),
-      base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, undefined, 200),
-      Promise.resolve([]),
-      Promise.resolve([]),
-      base44.asServiceRole.entities.Tournament.filter({ id:event.tournament_id }, undefined, 5),
-      Promise.resolve([])
-    ]);
+    const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id });
+    const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id });
+    const hostClubRows:any[] = [];
+    const spotPrizeRows = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id });
+    const tournamentRows:any[] = [];
+    const updateRows = await base44.asServiceRole.entities.InterclubTournamentUpdate.filter({ challenge_event_id:event.id, status:'published' });
     const hostClub = hostClubRows?.[0] || null;
     const spotPrizeDraw = spotPrizeRows?.[0] || null;
     const tournament = tournamentRows?.[0] || null;
