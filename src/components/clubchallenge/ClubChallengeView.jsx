@@ -69,7 +69,10 @@ function isAmbiguousBase44TransportError(error) {
 }
 function isBase44RateLimitError(error) { return isExplicitBase44CapacityRejection(error) || isAmbiguousBase44TransportError(error); }
 function isReplayProtectedBase44Action(name, payload={}) {
-  if (['saveClubChallengeScore','updateClubChallengeTimer','updateClubChallengeRound','updateClubChallengeSchedule','finaliseClubChallenge','refreshClubChallengePublicSnapshot'].includes(name)) return true;
+  if (['saveClubChallengeScore','updateClubChallengeRound','updateClubChallengeSchedule','finaliseClubChallenge','refreshClubChallengePublicSnapshot'].includes(name)) return true;
+  // Timer commands are retried on explicit Base44 capacity rejection, but not on
+  // an ambiguous lost response: commands such as +1 minute are not inherently
+  // idempotent and must never be applied twice.
   if (name === 'manageClubChallengeEvent' && ['approve_draw','unlock_draw','start'].includes(payload?.action)) return true;
   if (name === 'manageClubChallengeSpotPrizeDraw' && ['begin_draw','complete_draw'].includes(payload?.action) && payload?.operationId) return true;
   if (name === 'manageClubChallengeParticipant' && ['rename_display','set_gender','set_roster_role','set_playing_category','save_team','organise_teams','reorder'].includes(payload?.action)) return true;
