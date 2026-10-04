@@ -530,6 +530,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [teamsDirty, setTeamsDirty] = useState(false);
   const [printPackOpen, setPrintPackOpen] = useState(false);
   const [printSelection, setPrintSelection] = useState({ score:true, handoverScore:false, schedule:false, roster:false, briefing:false, final:false, includeVotingQr:false });
+  const [printOrientation, setPrintOrientation] = useState('recommended');
 
   const { data: currentUser } = useQuery({ queryKey: ['cc-current-user'], queryFn: () => base44.auth.me() });
   const { data: venueOptions = [], refetch: refetchVenueOptions } = useQuery({
@@ -1932,6 +1933,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const printEventPack = () => {
     if (!event || !['draw_approved','in_progress','paused','completed'].includes(event.status) || !normalMatches.length) { toast.error('Approve the draw before producing the Event Pack.'); return; }
     if (event.event_pack_stale) toast.warning('Event Pack is OUT OF DATE because fixtures changed. You can still open and review it; re-approve the draw before treating it as the current authoritative pack.');
+    setPrintOrientation('recommended');
     setPrintPackOpen(true);
   };
   const confirmPrintEventPack = async () => {
@@ -1973,18 +1975,25 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const packCss = printRoot.querySelector(':scope > style')?.textContent || '';
     const pageHtml = Array.from(printRoot.querySelectorAll(':scope > .rhpp-page')).map(node => node.outerHTML).join('');
     if (!pageHtml) { toast.error('No Event Pack pages were selected.'); return; }
-    const homogeneousPageCss = scoreOnly
-      ? '@page { size:A4 landscape; margin:5mm; } .rhpp-page{page:auto!important}'
+    const recommendedPageCss = scoreOnly
+      ? '@page { size:297mm 210mm; margin:5mm; } .rhpp-page,.rhpp-score-page{page:auto!important}'
       : portraitOnly
-        ? '@page { size:A4 portrait; margin:5mm; } .rhpp-page{page:auto!important}'
+        ? '@page { size:210mm 297mm; margin:5mm; } .rhpp-page,.rhpp-score-page{page:auto!important}'
         : '';
+    const orientationPageCss = printOrientation === 'portrait'
+      ? '@page { size:210mm 297mm; margin:5mm; } .rhpp-page,.rhpp-score-page{page:auto!important}'
+      : printOrientation === 'landscape'
+        ? '@page { size:297mm 210mm; margin:5mm; } .rhpp-page,.rhpp-score-page{page:auto!important}'
+        : printOrientation === 'printer'
+          ? '@page { margin:5mm; } .rhpp-page,.rhpp-score-page{page:auto!important}'
+          : recommendedPageCss;
     const iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
     iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none;';
     document.body.appendChild(iframe);
     const printDoc = iframe.contentDocument;
     printDoc.open();
-    printDoc.write(`<!doctype html><html><head><base href="${window.location.origin}/"><meta charset="utf-8"><style>html,body{margin:0!important;padding:0!important;background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}${packCss}${homogeneousPageCss}</style></head><body>${pageHtml}</body></html>`);
+    printDoc.write(`<!doctype html><html><head><base href="${window.location.origin}/"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0!important;padding:0!important;background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}${packCss}${orientationPageCss}</style></head><body>${pageHtml}</body></html>`);
     printDoc.close();
     const images = Array.from(printDoc.images || []);
     await Promise.all(images.map(img => img.complete ? Promise.resolve() : new Promise(resolve => { img.addEventListener('load', resolve, { once:true }); img.addEventListener('error', resolve, { once:true }); })));
@@ -2803,6 +2812,12 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
             </label>)}
           </div>
           {printSelection.briefing && <label className="mt-3 flex items-start gap-3 rounded-xl border border-border bg-secondary/20 p-3 cursor-pointer"><input type="checkbox" className="mt-1 h-4 w-4 accent-current" checked={!!printSelection.includeVotingQr} onChange={e=>setPrintSelection(prev=>({...prev,includeVotingQr:e.target.checked}))}/><span><strong className="text-sm">Include separate voting QR</strong><span className="block text-[11px] text-muted-foreground mt-0.5">Off by default. The normal Player Link remains in the pack.</span></span></label>}
+          <div className="mt-3 rounded-xl border border-border bg-secondary/20 p-3">
+            <div className="flex items-start justify-between gap-3"><div><p className="text-sm font-bold">Print orientation</p><p className="mt-0.5 text-[11px] text-muted-foreground">Recommended keeps the Master Score Sheet landscape and the other Event Pack sheets portrait. Choose Printer controls if you want the browser/printer orientation selector available.</p></div><span className="rounded-md border bg-background px-2 py-1 text-[10px] font-black">{printOrientation === 'recommended' ? 'AUTO' : printOrientation === 'landscape' ? 'L' : printOrientation === 'portrait' ? 'P' : 'PRINTER'}</span></div>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[['recommended','Recommended'],['landscape','Landscape'],['portrait','Portrait'],['printer','Printer controls']].map(([value,label])=><button key={value} type="button" onClick={()=>setPrintOrientation(value)} className={cn('min-h-9 rounded-lg border px-2 py-1.5 text-[11px] font-semibold',printOrientation===value?'border-primary bg-primary/10 text-primary':'border-border bg-background hover:bg-secondary')}>{label}</button>)}
+            </div>
+          </div>
           <div className="mt-4 rounded-xl bg-secondary/40 px-3 py-2 flex items-center justify-between gap-3 text-sm">
             <span>Selected print total</span>
             <strong>{(
