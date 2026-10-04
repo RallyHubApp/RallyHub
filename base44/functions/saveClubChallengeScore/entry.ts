@@ -73,12 +73,26 @@ Deno.serve(async (req) => {
     if (!accessRole) return Response.json({ error: 'Scoring permission required' }, { status: 403 });
 
     const currentRevision = Number(match.revision || 0);
-    if (Number(expectedRevision) !== currentRevision) {
+    const requestedRevision = Number(expectedRevision);
+    const requestedA = Number(scoreA), requestedB = Number(scoreB);
+    // A Base44 threshold/transport error can happen after the score write was
+    // accepted but before the browser receives the response. The client then
+    // retries the exact same command. If the authoritative match is precisely
+    // one revision ahead and already contains that score, acknowledge the
+    // retry as success rather than surfacing a false conflict or writing again.
+    if (requestedRevision !== currentRevision) {
+      const duplicateAcceptedWrite = currentRevision === requestedRevision + 1
+        && ['completed','draw'].includes(match.status)
+        && Number(match.score_a) === requestedA
+        && Number(match.score_b) === requestedB;
+      if (duplicateAcceptedWrite) {
+        return Response.json({ success:true, match, correction:false, alreadyApplied:true });
+      }
       return Response.json({
         conflict: true,
         error: 'Result changed since you opened it.',
         current: { id: match.id, score_a: match.score_a, score_b: match.score_b, winner: match.winner, status: match.status, revision: currentRevision },
-        attempted: { score_a: Number(scoreA), score_b: Number(scoreB), expectedRevision: Number(expectedRevision) }
+        attempted: { score_a: requestedA, score_b: requestedB, expectedRevision: requestedRevision }
       }, { status: 409 });
     }
 
