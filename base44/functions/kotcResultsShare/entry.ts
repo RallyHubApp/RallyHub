@@ -76,7 +76,8 @@ Deno.serve(async req=>{try{
    const matches=await retry('management matches',()=>base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id}));
    const names=Object.fromEntries((participants||[]).map((p:any)=>[p.id,p.display_name]));
    const editableMatches=(matches||[]).filter((m:any)=>m.status==='completed').sort((a:any,b:any)=>Number(a.round_number)-Number(b.round_number)||Number(a.ladder_court_rank)-Number(b.ladder_court_rank)).map((m:any)=>({id:m.id,round_id:m.round_id,round_number:m.round_number,court:m.ladder_court_rank,team_a_participant_ids:m.team_a_participant_ids||[],team_b_participant_ids:m.team_b_participant_ids||[],team_a:(m.team_a_participant_ids||[]).map((id:string)=>names[id]||'Player'),team_b:(m.team_b_participant_ids||[]).map((id:string)=>names[id]||'Player'),team_a_score:m.team_a_score,team_b_score:m.team_b_score,winner_side:m.winner_side,result_method:m.result_method,serving_side_at_horn:m.serving_side_at_horn,revision:m.revision||0}));
-   return Response.json({canManage:true,role,sessionId:session.id,tournamentId:session.tournament_id,sessionName:session.name,matches:editableMatches,runtimeVersion:RUNTIME_VERSION});
+   const shares=(await retry('management share settings',()=>base44.asServiceRole.entities.KotcSessionShare.filter({session_id:session.id,status:'active'})))||[];const activeShare=shares.sort((a:any,b:any)=>Date.parse(b.created_date||0)-Date.parse(a.created_date||0))[0]||null;const config=shareConfig(activeShare||{});
+   return Response.json({canManage:true,role,sessionId:session.id,tournamentId:session.tournament_id,sessionName:session.name,matches:editableMatches,playerLink:activeShare?{shareId:activeShare.id,token:activeShare.token,livePath:`/kotc-live/${activeShare.token}`,...config}:null,runtimeVersion:RUNTIME_VERSION});
  }
  let sessionId=String(body.sessionId||'');let session:any=null;
  if(action==='get_or_create_by_tournament'){
@@ -93,9 +94,16 @@ Deno.serve(async req=>{try{
  let allowed=user.role==='admin';if(!allowed){const grants=await retry('host access read',()=>base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'}));allowed=(grants||[]).some((a:any)=>validAccess(a,session.tenant_id,session.id));}if(!allowed)return Response.json({error:'Primary session host access required',runtimeVersion:RUNTIME_VERSION},{status:403});
  let shares=await retry('existing share read',()=>base44.asServiceRole.entities.KotcSessionShare.filter({session_id:session.id,status:'active'}));let share=(shares||[]).sort((a:any,b:any)=>Date.parse(b.created_date||0)-Date.parse(a.created_date||0))[0]||null;
  if(action==='revoke'){if(share)await retry('revoke share',()=>base44.asServiceRole.entities.KotcSessionShare.update(share.id,{status:'revoked'}));return Response.json({success:true,runtimeVersion:RUNTIME_VERSION});}
- // Results links do not expire automatically. They remain available after Finish until explicitly revoked.
- if(!share){share=await retry('create share',()=>base44.asServiceRole.entities.KotcSessionShare.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,tournament_id:session.tournament_id,token:token(),status:'active',created_by_user_id:user.id}));}
- if(action==='get_or_create'||action==='get_or_create_by_tournament')return Response.json({success:true,token:share.token,shareId:share.id,livePath:`/kotc-live/${share.token}`,permanent:true,runtimeVersion:RUNTIME_VERSION});
+ // Player links do not expire automatically. They remain available after Finish until explicitly revoked.
+ if(!share){share=await retry('create share',()=>base44.asServiceRole.entities.KotcSessionShare.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,tournament_id:session.tournament_id,token:token(),status:'active',created_by_user_id:user.id,visible_tabs_json:JSON.stringify(DEFAULT_TABS),scoring_access:'read_only',identification_mode:'host_code'}));}
+ if(action==='update_player_link'){
+   const requestedTabs=Array.isArray(body.visibleTabs)?body.visibleTabs.map((v:any)=>String(v)).filter((v:string)=>['live','players','rounds','scores','leaderboard','event_info'].includes(v)):DEFAULT_TABS;const tabs=[...new Set(requestedTabs.length?requestedTabs:DEFAULT_TABS)];
+   const scoringAccess=['off','read_only','verified_players'].includes(String(body.scoringAccess||''))?String(body.scoringAccess):'read_only';const identificationMode=String(body.identificationMode)==='none'?'none':'host_code';
+   if(scoringAccess==='verified_players'&&!tabs.includes('scores'))tabs.push('scores');
+   share=await retry('update player link',()=>base44.asServiceRole.entities.KotcSessionShare.update(share.id,{visible_tabs_json:JSON.stringify(tabs),scoring_access:scoringAccess,identification_mode:identificationMode}));
+   return Response.json({success:true,playerLink:{shareId:share.id,token:share.token,livePath:`/kotc-live/${share.token}`,...shareConfig(share)},runtimeVersion:RUNTIME_VERSION});
+ }
+ if(action==='get_or_create'||action==='get_or_create_by_tournament')return Response.json({success:true,token:share.token,shareId:share.id,livePath:`/kotc-live/${share.token}`,permanent:true,...shareConfig(share),runtimeVersion:RUNTIME_VERSION});
  if(action==='email_preview'||action==='email_test'||action==='email_players'){
    const {mailScope,transportConfig,sessionSpecific}=await emailTransportForSession(base44,session);
    const link=`${APP_BASE_URL}/kotc-live/${share.token}`;const resend=body.resend===true;
