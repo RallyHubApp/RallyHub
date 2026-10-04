@@ -43,6 +43,8 @@ check('tournament update supports event-start expiry', updateFn.includes("expiry
 check('host bulletin expiry control exists', host.includes('cc-tournament-update-expiry') && host.includes('Event starts · recommended'));
 check('public bulletin is collapsible', publicPage.includes("updateExpanded?'Hide':'Show update'"));
 check('public bulletin expiry applied in snapshot', snapshotFn.includes("expiryMode === 'event_start'") && snapshotFn.includes('update.expires_at'));
+check('snapshot fast path re-checks bulletin expiry at read time', publicFn.includes('expiredAtStart') && publicFn.includes('expiredByTime'));
+check('player UI hides a timed bulletin without waiting for another server write', publicPage.includes('updateExpiry') && publicPage.includes('updateExpiry>now'));
 check('real Interclub load gate targets Player Link endpoint', loadGate.includes('/functions/getPublicClubChallengeDisplay'));
 check('real Interclub load gate reaches 200 devices by default', loadGate.includes("'25,50,100,200'"));
 check('load gate requires snapshot fast path', loadGate.includes('fallbackResponses') && loadGate.includes('snapshot fast path'));
