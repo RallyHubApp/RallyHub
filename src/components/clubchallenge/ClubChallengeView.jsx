@@ -56,16 +56,29 @@ function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n
 function isBase44RateLimitError(error) {
   const status = Number(error?.response?.status || error?.status || 0);
   const message = String(error?.response?.data?.error || error?.message || error || '').toLowerCase();
-  return status === 429 || message.includes('rate limit') || message.includes('burst');
+  return [429,502,503,504].includes(status)
+    || message.includes('rate limit')
+    || message.includes('burst')
+    || message.includes('threshold')
+    || message.includes('too many requests')
+    || message.includes('temporarily unavailable')
+    || message.includes('overload')
+    || message.includes('server busy');
 }
-async function invokeBase44Safely(name, payload, { retries = 2 } = {}) {
+async function invokeBase44Safely(name, payload, { retries = 5 } = {}) {
   let attempt = 0;
   while (true) {
-    try { return await base44.functions.invoke(name, payload); }
-    catch (error) {
+    try {
+      const response = await base44.functions.invoke(name, payload);
+      if (attempt > 0 && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('rallyhub:base44-pressure-recovered',{detail:{name,attempts:attempt}}));
+      return response;
+    } catch (error) {
       if (!isBase44RateLimitError(error) || attempt >= retries) throw error;
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('rallyhub:base44-pressure',{detail:{name,attempt:attempt+1,status:Number(error?.response?.status||error?.status||0),message:String(error?.response?.data?.error||error?.message||'Base44 busy')}}));
       const retryAfterHeader = Number(error?.response?.headers?.['retry-after'] || 0);
-      const waitMs = retryAfterHeader > 0 ? retryAfterHeader * 1000 : 700 * (2 ** attempt);
+      const exponential = Math.min(8000, 800 * (2 ** attempt));
+      const jitter = Math.floor(Math.random() * 350);
+      const waitMs = retryAfterHeader > 0 ? retryAfterHeader * 1000 + jitter : exponential + jitter;
       await new Promise(resolve => window.setTimeout(resolve, waitMs));
       attempt += 1;
     }
