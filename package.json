@@ -18,11 +18,13 @@
     "test:member-guest-booking": "node scripts/memberGuestBookingGate.mjs && node scripts/spondExactEventFixture.mjs && playwright test e2e/member-guest-booking.spec.mjs",
     "test:finance": "node scripts/financeSpondMatchingGate.mjs && playwright test e2e/finance-summary-journey.spec.mjs",
     "test:public-read-load": "node scripts/publicReadLoadGate.mjs",
+    "test:interclub-reliability": "node scripts/interclubReliabilityGate.mjs",
+    "test:interclub-live-load": "node scripts/interclubLiveLoadGate.mjs",
     "qa:protocol": "node testing/control-pack/validateControlPack.mjs",
     "qa:risk": "node testing/control-pack/evaluateRiskGate.mjs",
     "qa:evidence": "node testing/control-pack/validateEvidence.mjs",
     "preview": "vite preview",
-    "test:competition-fast": "npm run test:kotc-readiness && npm run test:interclub-readiness && npm run build",
+    "test:competition-fast": "npm run test:kotc-readiness && npm run test:interclub-readiness && npm run test:interclub-reliability && npm run build",
     "test:competition-browser": "playwright test e2e/kotc-host-journey.spec.mjs e2e/club-challenge-browser-robot.spec.mjs"
   },
   "dependencies": {
