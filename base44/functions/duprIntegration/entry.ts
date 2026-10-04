@@ -12,8 +12,12 @@ Deno.serve(async (req) => {
     }
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || 'status');
+    const clientId = Deno.env.get('DUPR_CLIENT_ID') || '';
+    const clientKey = Deno.env.get('DUPR_CLIENT_KEY') || '';
+    const clientSecret = Deno.env.get('DUPR_CLIENT_SECRET') || '';
+    const configured = { clientId: !!clientId, clientKey: !!clientKey, clientSecret: !!clientSecret };
     if (action === 'status') {
-      return Response.json({ success: true, environment: 'uat', apiVersion: API_VERSION, baseUrl: UAT_BASE });
+      return Response.json({ success: true, environment: 'uat', apiVersion: API_VERSION, configured, ready: configured.clientId && configured.clientKey && configured.clientSecret });
     }
     return Response.json({ error: 'Unknown DUPR integration action.' }, { status: 400 });
   } catch (error) {
