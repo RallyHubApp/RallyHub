@@ -33,6 +33,15 @@ Deno.serve(async (req) => {
 
     const round = Number(nextRound);
     if (!Number.isInteger(round) || round < 1) return Response.json({ error: 'Invalid round' }, { status: 400 });
+    const currentRound = Number(event.current_round || 0);
+    // A Base44 threshold can occur after the write was accepted but before the
+    // browser receives the response. Treat an identical retry as success instead
+    // of advancing timer revisions / audit records a second time.
+    if (round === currentRound && ['in_progress','paused'].includes(event.status)) {
+      let currentTimer:any = {};
+      try { currentTimer = event.timer_state_json ? JSON.parse(event.timer_state_json) : {}; } catch { currentTimer = {}; }
+      return Response.json({ success:true, event, timer_state:currentTimer, timer_revision:Number(event.timer_revision || 0), alreadyApplied:true });
+    }
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id: event.id }, 'round_number', 200);
     const normal = matches.filter((m:any) => !m.is_showcase);
     const storedPlannedRounds = Number(event.planned_rounds || 0);
@@ -40,7 +49,6 @@ Deno.serve(async (req) => {
     if (round > maxRound) return Response.json({ error: 'Round exceeds approved schedule' }, { status: 400 });
     const previousRound = Math.max(1, round - 1);
     const unresolved = normal.filter((m:any) => Number(m.round_number) === previousRound && !['completed','draw','retired','forfeit','abandoned','not_played'].includes(m.status));
-    const currentRound = Number(event.current_round || 0);
     const advancing = round > currentRound;
     let timer:any = {};
     try { timer = event.timer_state_json ? JSON.parse(event.timer_state_json) : {}; } catch { timer = {}; }
