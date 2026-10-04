@@ -28,27 +28,26 @@ function updateVisible(update:any, event:any) {
   return true;
 }
 
-async function buildPayload(base44:any, event:any) {
-  const [participants, matches, hostClubRows, tournamentRows, spotPrizeRows, updateRows, displayTokens] = await Promise.all([
+async function buildPayload(base44:any, event:any, votingTokenOverride:string|null = null) {
+  const [participants, matches, hostClubRows, tournamentRows, spotPrizeRows, updateRows] = await Promise.all([
     base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 150),
     base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300),
     event.host_club_id ? base44.asServiceRole.entities.Club.filter({ id:event.host_club_id, tenant_id:event.tenant_id }) : Promise.resolve([]),
     base44.asServiceRole.entities.Tournament.filter({ id:event.tournament_id }),
     base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5),
     base44.asServiceRole.entities.InterclubTournamentUpdate.filter({ challenge_event_id:event.id, status:'published' }, '-published_at', 10),
-    base44.asServiceRole.entities.ClubChallengeDisplayToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5),
   ]);
   const hostClub = hostClubRows?.[0] || null;
   const tournament = tournamentRows?.[0] || null;
   const spotPrizeDraw = spotPrizeRows?.[0] || null;
-  const displayToken = displayTokens?.[0]?.token || '';
   let spotPrizeWinners:any[] = [];
   try { spotPrizeWinners = spotPrizeDraw?.winners_json ? JSON.parse(spotPrizeDraw.winners_json) : []; } catch { spotPrizeWinners = []; }
   if (!Array.isArray(spotPrizeWinners)) spotPrizeWinners = [];
-  const votingTokens = event.pot_enabled
-    ? await base44.asServiceRole.entities.ClubChallengeVotingToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5)
-    : [];
-  const votingToken = votingTokens?.[0]?.token || null;
+  let votingToken = votingTokenOverride || null;
+  if (event.pot_enabled && !votingToken) {
+    const votingTokens = await base44.asServiceRole.entities.ClubChallengeVotingToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5);
+    votingToken = votingTokens?.[0]?.token || null;
+  }
   const pmap = new Map(participants.map((p:any) => [p.id, maskName(p.display_name, !!event.junior_display_mode)]));
   const potWinnerIds = event.pot_status === 'revealed' ? (event.pot_winner_participant_ids || []) : [];
   let publicVoteResults:any[] = [];
@@ -168,9 +167,9 @@ Deno.serve(async (req) => {
       votingTokenRow = (await base44.asServiceRole.entities.ClubChallengeVotingToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5))?.[0] || null;
       if (!votingTokenRow) votingTokenRow = await base44.asServiceRole.entities.ClubChallengeVotingToken.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, token:`ccv_${crypto.randomUUID().replaceAll('-','')}`, active:true, created_at:now });
     }
-    const payload = await buildPayload(base44,event);
     const displayToken = displayTokenRow?.token || '';
     const votingToken = votingTokenRow?.token || '';
+    const payload = await buildPayload(base44,event,votingToken);
     const rows = await base44.asServiceRole.entities.ClubChallengePublicSnapshot.filter({ challenge_event_id:event.id }, '-updated_at', 5);
     const current = rows?.[0] || null;
     const data = { tenant_id:event.tenant_id, challenge_event_id:event.id, display_token:displayToken, voting_token:votingToken, display_payload_json:JSON.stringify(payload), voting_payload_json:'', updated_at:now, active:true };
