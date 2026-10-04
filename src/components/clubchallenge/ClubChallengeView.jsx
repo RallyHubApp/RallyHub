@@ -1708,8 +1708,20 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const begin = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'begin_draw' });
       if (begin.data?.error) throw new Error(begin.data.error);
       await refetchSpotPrizeDraw?.();
-      await new Promise(resolve => window.setTimeout(resolve, 3800));
-      const res = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'complete_draw' });
+      await new Promise(resolve => window.setTimeout(resolve, 2600));
+      let res;
+      try {
+        res = await Promise.race([
+          invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'complete_draw' }),
+          new Promise((_, reject) => window.setTimeout(() => reject(new Error('Draw completion timed out')), 6000)),
+        ]);
+      } catch (completeError) {
+        // One immediate retry prevents a transient function/network delay leaving the hall UI spinning forever.
+        res = await Promise.race([
+          invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'complete_draw' }),
+          new Promise((_, reject) => window.setTimeout(() => reject(new Error('Draw could not complete. Press Draw again.')), 6000)),
+        ]);
+      }
       if (res.data?.error) throw new Error(res.data.error);
       if (raffleSoundTimer) { window.clearInterval(raffleSoundTimer); raffleSoundTimer = null; }
       const w = res.data?.winner;
