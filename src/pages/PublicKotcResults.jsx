@@ -54,6 +54,7 @@ export default function PublicKotcResults(){
   const [hallMode,setHallMode]=useState(()=>params.get('display')==='1');
   const [historyRound,setHistoryRound]=useState(null);
   const [activeTab,setActiveTab]=useState('live');
+  const [broadcastOpen,setBroadcastOpen]=useState(true);
   const [management,setManagement]=useState(null),[managementLoading,setManagementLoading]=useState(false),[hostMenuOpen,setHostMenuOpen]=useState(false),[correctionOpen,setCorrectionOpen]=useState(false),[sendingPlayers,setSendingPlayers]=useState(false);
   const [editingMatchId,setEditingMatchId]=useState(''),[editA,setEditA]=useState(''),[editB,setEditB]=useState(''),[editServing,setEditServing]=useState(''),[savingCorrection,setSavingCorrection]=useState(false);
   const dataRef=useRef(null);
@@ -61,6 +62,8 @@ export default function PublicKotcResults(){
   const load=useCallback(async()=>{try{const r=await base44.functions.invoke('kotcResultsShare',{action:'public_state',token});if(r.data?.error)throw new Error(r.data.error);setData(r.data);dataRef.current=r.data;setError('');setOffline(false);}catch(e){if(dataRef.current)setOffline(true);else setError(message(e));}},[token]);
   const loadManagement=useCallback(async()=>{if(!requestedManage)return;try{setManagementLoading(true);const r=await base44.functions.invoke('kotcResultsShare',{action:'management_state',token});if(r.data?.canManage)setManagement(r.data);}catch{setManagement(null);}finally{setManagementLoading(false);}},[requestedManage,token]);
   useEffect(()=>{loadManagement();},[loadManagement]);
+  useEffect(()=>{if(data?.broadcast?.id)setBroadcastOpen(true);},[data?.broadcast?.id]);
+  useEffect(()=>{if(!data)return;const finishedNow=['completed','finalised'].includes(data.session?.status);const configured=Array.isArray(data.player_link?.tabs)&&data.player_link.tabs.length?data.player_link.tabs:['live','players','rounds','leaderboard','event_info'];const allowed=finishedNow?['results',...configured.filter(x=>!['live','scores'].includes(x))]:configured;if(!allowed.includes(activeTab))setActiveTab(finishedNow?'results':(allowed[0]||'live'));},[data?.session?.status,JSON.stringify(data?.player_link?.tabs||[]),activeTab]);
   const shareResults=async()=>{const url=`${window.location.origin}/kotc-live/${token}`;try{if(navigator.share){await navigator.share({title:`${data?.session?.name||'KOTC'} results`,text:'King of the Court results',url});return;}await navigator.clipboard.writeText(url);toast.success('Results link copied');}catch(e){if(e?.name!=='AbortError')toast.error('Could not share the results link.');}};
   const sendToPlayers=async()=>{if(!management?.sessionId||sendingPlayers)return;try{setSendingPlayers(true);const r=await base44.functions.invoke('kotcResultsShare',{action:'email_players',sessionId:management.sessionId,resend:false});toast.success(`Results sent: ${r.data?.sent||0} emailed${r.data?.alreadySent?`, ${r.data.alreadySent} already sent`:''}${r.data?.skipped?`, ${r.data.skipped} skipped`:''}`);}catch(e){toast.error(message(e));}finally{setSendingPlayers(false);}};
   const beginCorrection=m=>{setEditingMatchId(m.id);setEditA(String(m.team_a_score??''));setEditB(String(m.team_b_score??''));setEditServing(m.serving_side_at_horn||'');};
