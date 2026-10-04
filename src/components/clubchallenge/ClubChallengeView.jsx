@@ -1951,22 +1951,34 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const selectedScoreSheets = Number(!!selection.score) + Number(!!selection.handoverScore);
     const scoreOnly = selectedScoreSheets === 1 && !selection.schedule && !selection.roster && !selection.briefing && !selection.final;
     const portraitOnly = selectedScoreSheets === 0;
-    const printPageStyle = document.createElement('style');
-    printPageStyle.id = 'rh-interclub-active-page-style';
-    if (scoreOnly) printPageStyle.textContent = '@page { size: A4 landscape; margin: 5mm; }';
-    else if (portraitOnly) printPageStyle.textContent = '@page { size: A4 portrait; margin: 5mm; }';
-    if (printPageStyle.textContent) document.head.appendChild(printPageStyle);
-    const cleanupPrintMode = () => {
-      document.body.classList.remove('rh-printing-interclub');
-      document.body.classList.remove('rh-printing-score-only');
-      document.body.classList.remove('rh-printing-portrait-only');
-      document.getElementById('rh-interclub-active-page-style')?.remove();
-    };
-    document.body.classList.add('rh-printing-interclub');
-    if (scoreOnly) document.body.classList.add('rh-printing-score-only');
-    if (portraitOnly) document.body.classList.add('rh-printing-portrait-only');
-    window.addEventListener('afterprint', cleanupPrintMode, { once:true });
-    window.setTimeout(() => window.print(), 250);
+    // Print from an isolated document. Printing the live app DOM can create anonymous
+    // first/last pages around named @page sections in Chromium. The iframe contains
+    // only the actual Event Pack sheets, so there is nothing else for the browser to paginate.
+    await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+    const printRoot = document.querySelector('.rhpp-print-host .rhpp-root');
+    if (!printRoot) { toast.error('Could not prepare the Event Pack for printing.'); return; }
+    const packCss = printRoot.querySelector(':scope > style')?.textContent || '';
+    const pageHtml = Array.from(printRoot.querySelectorAll(':scope > .rhpp-page')).map(node => node.outerHTML).join('');
+    if (!pageHtml) { toast.error('No Event Pack pages were selected.'); return; }
+    const homogeneousPageCss = scoreOnly
+      ? '@page { size:A4 landscape; margin:5mm; } .rhpp-page{page:auto!important}'
+      : portraitOnly
+        ? '@page { size:A4 portrait; margin:5mm; } .rhpp-page{page:auto!important}'
+        : '';
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none;';
+    document.body.appendChild(iframe);
+    const printDoc = iframe.contentDocument;
+    printDoc.open();
+    printDoc.write(`<!doctype html><html><head><base href="${window.location.origin}/"><meta charset="utf-8"><style>html,body{margin:0!important;padding:0!important;background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}${packCss}${homogeneousPageCss}</style></head><body>${pageHtml}</body></html>`);
+    printDoc.close();
+    const images = Array.from(printDoc.images || []);
+    await Promise.all(images.map(img => img.complete ? Promise.resolve() : new Promise(resolve => { img.addEventListener('load', resolve, { once:true }); img.addEventListener('error', resolve, { once:true }); })));
+    const cleanupPrintFrame = () => { if (iframe.isConnected) iframe.remove(); };
+    iframe.contentWindow.addEventListener('afterprint', cleanupPrintFrame, { once:true });
+    window.setTimeout(cleanupPrintFrame, 60000);
+    window.setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); }, 100);
   };
   const activateReserveQuick = async (reserveId, outgoingId) => {
     if (!event || !canManageEvent || !reserveId || !outgoingId || playerControlBusy || sportingActionRef.current) return;
