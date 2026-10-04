@@ -41,7 +41,7 @@ Deno.serve(async req=>{try{
     const participantId=clean(body.participantId,180),clientId=clean(body.clientId,180);if(!participantId||!clientId)return Response.json({error:'Choose your name and try again.'},{status:400});
     const participant=(await base44.asServiceRole.entities.KotcSessionParticipant.filter({id:participantId,session_id:session.id}))?.[0];if(!participant||['withdrawn','replaced','no_show'].includes(participant.status))return Response.json({error:'That player is not available for verification in this session.'},{status:404});
     const existing=(await base44.asServiceRole.entities.KotcPlayerDeviceAccess.filter({session_id:session.id,participant_id:participant.id,client_id:clientId},'-requested_at',10))||[];
-    for(const row of existing){if(row.status==='pending'&&row.expires_at&&Date.parse(row.expires_at)>Date.now())return Response.json({success:true,pending:true,deviceToken:null,reuse:true,verificationCode:row.verification_code,requestId:row.id,displayName:participant.display_name,error:'Please use the existing code shown on this device.'});}
+    for(const row of existing){if(row.status==='pending')try{await base44.asServiceRole.entities.KotcPlayerDeviceAccess.update(row.id,{status:'revoked'});}catch{}}
     const rawToken=`kpd_${randomHex(32)}`,hash=await sha256(rawToken),verificationCode=code4();let autoVerified=false;
     if(user?.id&&participant.player_id){try{const linked=(await base44.asServiceRole.entities.Player.filter({id:participant.player_id,user_id:user.id}))?.[0];autoVerified=!!linked;}catch{}}
     const requestedAt=new Date().toISOString();const expiresAt=new Date(Date.now()+(autoVerified?VERIFIED_MS:PENDING_MS)).toISOString();
