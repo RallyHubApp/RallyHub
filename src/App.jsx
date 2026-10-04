@@ -48,6 +48,7 @@ import PublicGuestRequest from '@/pages/PublicGuestRequest';
 import KotcHostSession from '@/pages/KotcHostSession';
 import PublicKotcResults from '@/pages/PublicKotcResults';
 import PublicKotcScorer from '@/pages/PublicKotcScorer';
+import PublicKotcParticipantResult from '@/pages/PublicKotcParticipantResult';
 import PublicPlayerLinkGuide from '@/pages/PublicPlayerLinkGuide';
 import PublicDirectory from '@/pages/PublicDirectory';
 import PublicClubProfile from '@/pages/PublicClubProfile';
@@ -298,6 +299,7 @@ function App() {
             <Route path="/kotc-results/:token" element={<PublicKotcResults />} />
             <Route path="/kotc-live/:token" element={<PublicKotcResults />} />
             <Route path="/kotc-score/:token" element={<PublicKotcScorer />} />
+            <Route path="/kotc-player/:token" element={<PublicKotcParticipantResult />} />
             <Route path="/guides/clare-pickleball/player-link" element={<PublicPlayerLinkGuide />} />
 
             {/* Protected app routes */}
