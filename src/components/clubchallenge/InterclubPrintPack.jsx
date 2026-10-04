@@ -411,11 +411,11 @@ export default function InterclubPrintPack({ event, tournament, matches=[], part
         html,body { margin:0!important; padding:0!important; min-height:0!important; height:auto!important; background:#fff!important; }
         body { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
         body.rh-printing-interclub > *:not(.rhpp-print-host){display:none!important}
-        body.rh-printing-interclub > .rhpp-print-host{display:contents!important}
-        body.rh-printing-interclub .rhpp-root{display:contents!important}
+        body.rh-printing-interclub > .rhpp-print-host{display:block!important;position:static!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;background:#fff!important;overflow:visible!important}
+        body.rh-printing-interclub .rhpp-root{display:block!important;margin:0!important;padding:0!important;width:auto!important;height:auto!important;min-height:0!important;background:#fff!important}
         html:has(body.rh-printing-score-only),body.rh-printing-score-only{width:auto!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important}
-        body.rh-printing-score-only > .rhpp-print-host{display:contents!important}
-        body.rh-printing-score-only .rhpp-root{display:contents!important}
+        body.rh-printing-score-only > .rhpp-print-host,body.rh-printing-score-only .rhpp-root{page:scoreLandscape!important}
+        body.rh-printing-portrait-only > .rhpp-print-host,body.rh-printing-portrait-only .rhpp-root{page:portraitPack!important}
         body.rh-printing-score-only .rhpp-score-page{width:286mm!important;height:199mm!important;max-width:286mm!important;max-height:199mm!important;margin:0!important;break-before:avoid!important;page-break-before:avoid!important;break-after:avoid!important;page-break-after:avoid!important;overflow:hidden!important}
         body.rh-printing-portrait-only .rhpp-page{page:portraitPack!important;}
         body.rh-printing-portrait-only .rhpp-page:first-child{break-before:avoid!important;page-break-before:avoid!important;}
