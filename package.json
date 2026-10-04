@@ -14,7 +14,7 @@
     "test:club-challenge-browser-robot": "playwright test e2e/club-challenge-browser-robot.spec.mjs",
     "test:kotc-host-journey": "playwright test e2e/kotc-host-journey.spec.mjs",
     "test:kotc-readiness": "node scripts/kotcEventReadiness.mjs",
-    "test:interclub-readiness": "node scripts/clubChallengeGate1.mjs && node scripts/clubChallengeInteractionRobot.mjs",
+    "test:interclub-readiness": "node scripts/clubChallengeGate1.mjs && node scripts/clubChallengeInteractionRobot.mjs && node scripts/interclubReliabilityGate.mjs",
     "test:member-guest-booking": "node scripts/memberGuestBookingGate.mjs && node scripts/spondExactEventFixture.mjs && playwright test e2e/member-guest-booking.spec.mjs",
     "test:finance": "node scripts/financeSpondMatchingGate.mjs && playwright test e2e/finance-summary-journey.spec.mjs",
     "test:public-read-load": "node scripts/publicReadLoadGate.mjs",
@@ -24,7 +24,7 @@
     "qa:risk": "node testing/control-pack/evaluateRiskGate.mjs",
     "qa:evidence": "node testing/control-pack/validateEvidence.mjs",
     "preview": "vite preview",
-    "test:competition-fast": "npm run test:kotc-readiness && npm run test:interclub-readiness && npm run test:interclub-reliability && npm run build",
+    "test:competition-fast": "npm run test:kotc-readiness && npm run test:interclub-readiness && npm run build",
     "test:competition-browser": "playwright test e2e/kotc-host-journey.spec.mjs e2e/club-challenge-browser-robot.spec.mjs"
   },
   "dependencies": {
