@@ -53,19 +53,27 @@ const DEFAULT_SETUP = {
 };
 
 function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
-function isBase44RateLimitError(error) {
+function base44PressureText(error) {
+  return String(error?.response?.data?.error || error?.data?.error || error?.data?.message || error?.message || error || '').toLowerCase();
+}
+function isExplicitBase44CapacityRejection(error) {
   const status = Number(error?.response?.status || error?.status || 0);
-  const message = String(error?.response?.data?.error || error?.data?.error || error?.data?.message || error?.message || error || '').toLowerCase();
+  const message = base44PressureText(error);
+  return status === 429 || message.includes('rate limit') || message.includes('burst') || message.includes('threshold') || message.includes('too many requests') || message.includes('temporarily unavailable') || message.includes('overload') || message.includes('server busy');
+}
+function isAmbiguousBase44TransportError(error) {
+  const status = Number(error?.response?.status || error?.status || 0);
+  const message = base44PressureText(error);
   const transientNetwork = (!status && typeof navigator !== 'undefined' && navigator.onLine !== false && (message.includes('failed to fetch') || message.includes('network error') || message.includes('timeout')));
-  return [429,502,503,504].includes(status)
-    || transientNetwork
-    || message.includes('rate limit')
-    || message.includes('burst')
-    || message.includes('threshold')
-    || message.includes('too many requests')
-    || message.includes('temporarily unavailable')
-    || message.includes('overload')
-    || message.includes('server busy');
+  return [502,503,504].includes(status) || transientNetwork;
+}
+function isBase44RateLimitError(error) { return isExplicitBase44CapacityRejection(error) || isAmbiguousBase44TransportError(error); }
+function isReplayProtectedBase44Action(name, payload={}) {
+  if (['saveClubChallengeScore','updateClubChallengeTimer','updateClubChallengeRound','updateClubChallengeSchedule','finaliseClubChallenge','refreshClubChallengePublicSnapshot'].includes(name)) return true;
+  if (name === 'manageClubChallengeEvent' && ['approve_draw','unlock_draw','start'].includes(payload?.action)) return true;
+  if (name === 'manageClubChallengeSpotPrizeDraw' && ['begin_draw','complete_draw'].includes(payload?.action) && payload?.operationId) return true;
+  if (name === 'manageClubChallengeParticipant' && ['rename_display','set_gender','set_roster_role','set_playing_category','save_team','organise_teams','reorder'].includes(payload?.action)) return true;
+  return false;
 }
 async function invokeBase44Safely(name, payload, { retries = 5 } = {}) {
   let attempt = 0;
@@ -80,7 +88,9 @@ async function invokeBase44Safely(name, payload, { retries = 5 } = {}) {
       if (attempt > 0 && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('rallyhub:base44-pressure-recovered',{detail:{name,attempts:attempt}}));
       return response;
     } catch (error) {
-      if (!isBase44RateLimitError(error) || attempt >= retries) throw error;
+      const capacityRejection = isExplicitBase44CapacityRejection(error);
+      const ambiguousTransport = isAmbiguousBase44TransportError(error);
+      if (!isBase44RateLimitError(error) || attempt >= retries || (ambiguousTransport && !capacityRejection && !isReplayProtectedBase44Action(name,payload))) throw error;
       if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('rallyhub:base44-pressure',{detail:{name,attempt:attempt+1,status:Number(error?.response?.status||error?.status||0),message:String(error?.response?.data?.error||error?.message||'Base44 busy')}}));
       const retryHeaders = error?.response?.headers;
       const retryAfterHeader = Number(retryHeaders?.['retry-after'] || retryHeaders?.get?.('retry-after') || 0);
