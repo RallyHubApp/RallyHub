@@ -94,6 +94,7 @@ export default function PublicClubChallengeDisplay(){
   const [data,setData]=React.useState(null), [error,setError]=React.useState(''), [disconnected,setDisconnected]=React.useState(false), [now,setNow]=React.useState(Date.now()), [view,setView]=React.useState('live');
   const [drawFlash,setDrawFlash]=React.useState(1);
   const [drawSoundEnabled,setDrawSoundEnabled]=React.useState(false);
+  const [updateExpanded,setUpdateExpanded]=React.useState(true);
   const lastSpotPrizeWinnerCountRef=React.useRef(0);
   const [voteA,setVoteA]=React.useState(''), [voteB,setVoteB]=React.useState(''), [voteSaving,setVoteSaving]=React.useState(false), [voteDone,setVoteDone]=React.useState(false), [voteError,setVoteError]=React.useState('');
   const [deviceId]=React.useState(getDeviceId);
@@ -116,8 +117,24 @@ export default function PublicClubChallengeDisplay(){
     } catch(e){ if(dataRef.current) setDisconnected(true); else setError(e?.response?.data?.error||e?.message||'Display unavailable'); }
     finally { loadInFlightRef.current=false; }
   },[token]);
-  const spotDrawLive=!!data?.event?.spot_prize_enabled&&data?.event?.spot_prize_status!=='completed';
-  const pollMs=spotDrawLive?1000:(data?.matches?.some(m=>m.is_showcase)?10000:18000)+pollJitterRef.current;
+  const publicStatus=String(data?.event?.status||'');
+  const publicSpotStatus=String(data?.event?.spot_prize_status||'');
+  const publicCompleted=['completed','archived'].includes(publicStatus);
+  const publicPreEvent=['draft','draw_generated','draw_approved'].includes(publicStatus);
+  const publicHasShowcase=!!data?.matches?.some(m=>m.is_showcase);
+  const jitter=pollJitterRef.current;
+  // Keep every player device de-synchronised and deliberately conservative with
+  // Base44 reads. The prize drum itself animates locally at 110 ms; phones only
+  // need a modest refresh while the server-side draw is genuinely in progress.
+  const pollMs=publicSpotStatus==='drawing'
+    ? 4500+(jitter%2500)
+    : publicCompleted
+      ? 60000+jitter
+      : publicPreEvent
+        ? 30000+jitter
+        : publicHasShowcase
+          ? 12000+(jitter%4000)
+          : 18000+jitter;
   React.useEffect(()=>{
     load();
     const poll=setInterval(()=>{ if(document.visibilityState==='visible') load(); },pollMs);
@@ -205,7 +222,10 @@ export default function PublicClubChallengeDisplay(){
   const playerNav=<div className="sticky top-2 z-30 mx-auto mb-4 flex w-full max-w-4xl items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur">{preEvent?<><button onClick={()=>setView('contact')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='contact'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><MapPin className="w-4 h-4"/>Venue & Contact</button><button onClick={()=>setView('info')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='info'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><Info className="w-4 h-4"/>Event Info</button><button onClick={()=>setView('teams')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='teams'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><Users className="w-4 h-4"/>Teams</button></>:<><button onClick={()=>setView('live')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold ${view==='live'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}>{completed?'Final':'Live'}</button><button onClick={()=>setView('results')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='results'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><ListChecks className="w-4 h-4"/>{completed?'Summary':'Results'}</button>{spotPrizeEnabled?<button onClick={()=>setView('draw')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='draw'?'bg-primary text-primary-foreground':spotPrizeComplete?'text-muted-foreground hover:bg-secondary':'bg-primary/10 text-primary hover:bg-primary/20'}`}><Trophy className="w-4 h-4"/>Draw{spotPrizeComplete?' · Complete':''}</button>:event.pot_enabled?<button onClick={()=>setView('vote')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='vote'?'bg-primary text-primary-foreground':potOpen?'bg-primary/10 text-primary hover:bg-primary/20':'text-muted-foreground hover:bg-secondary'}`}><Trophy className="w-4 h-4"/>{awardRevealed?'Awards':'Vote'}{potOpen?' · Open':''}</button>:null}{!completed&&<button onClick={()=>setView('info')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='info'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><Info className="w-4 h-4"/>Event Info</button>}<button onClick={()=>setView('teams')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='teams'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><Users className="w-4 h-4"/>Teams</button>{!completed&&<button onClick={()=>setView('contact')} className={`shrink-0 min-h-10 rounded-full px-4 text-sm font-bold inline-flex items-center gap-1.5 ${view==='contact'?'bg-primary text-primary-foreground':'hover:bg-secondary'}`}><MapPin className="w-4 h-4"/>Venue & Contact</button>}</>}</div>;
 
   const tournamentUpdate=event.tournament_update;
-  const tournamentUpdatePanel=tournamentUpdate?.message?<section data-testid="interclub-tournament-update" className="mb-5 rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 sm:p-5 text-amber-950 shadow-sm dark:bg-amber-950/30 dark:text-amber-100"><div className="flex items-start gap-3"><Info className="mt-0.5 h-5 w-5 shrink-0"/><div className="min-w-0"><p className="text-xs font-black uppercase tracking-[.16em]">{tournamentUpdate.title||'Tournament Update'}</p><p className="mt-2 whitespace-pre-line text-sm sm:text-base font-semibold leading-6">{tournamentUpdate.message}</p>{tournamentUpdate.published_at&&<p className="mt-2 text-[11px] opacity-70">Updated {new Date(tournamentUpdate.published_at).toLocaleString('en-IE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</p>}</div></div></section>:null;
+  React.useEffect(()=>{ if(tournamentUpdate?.published_at) setUpdateExpanded(true); },[tournamentUpdate?.published_at]);
+  const tournamentUpdatePanel=tournamentUpdate?.message?<section data-testid="interclub-tournament-update" className="mb-5 rounded-2xl border-2 border-amber-400 bg-amber-50 p-3 sm:p-4 text-amber-950 shadow-sm dark:bg-amber-950/30 dark:text-amber-100">
+    <div className="flex items-start gap-3"><Info className="mt-0.5 h-5 w-5 shrink-0"/><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[.16em]">{tournamentUpdate.title||'Tournament Update'}</p>{tournamentUpdate.published_at&&<p className="mt-1 text-[10px] opacity-70">Updated {new Date(tournamentUpdate.published_at).toLocaleString('en-IE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</p>}</div><button type="button" onClick={()=>setUpdateExpanded(v=>!v)} className="shrink-0 rounded-md border border-amber-500/40 bg-white/50 px-2.5 py-1 text-[11px] font-black hover:bg-white/80 dark:bg-black/10">{updateExpanded?'Hide':'Show update'}</button></div>{updateExpanded&&<p className="mt-2 whitespace-pre-line text-sm sm:text-base font-semibold leading-6">{tournamentUpdate.message}</p>}</div></div>
+  </section>:null;
 
   const publicAwardPanel=awardRevealed?<section className="mt-6 rounded-3xl border-2 border-primary/30 bg-primary/5 p-5 sm:p-8 text-center shadow-sm">
     <p className="text-xs sm:text-sm font-black uppercase tracking-[.22em] text-primary">{awardLabel}</p>
