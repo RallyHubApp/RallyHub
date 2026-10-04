@@ -156,7 +156,8 @@ Deno.serve(async (req) => {
         const latest=[...updateRows]
           .sort((a:any,b:any)=>Date.parse(b.published_at||b.created_date||0)-Date.parse(a.published_at||a.created_date||0))
           .find((row:any)=>{
-            if (row.expiry_mode === 'event_start' && ['in_progress','paused','completed','archived'].includes(event.status)) return false;
+            const expiryMode=row.expiry_mode || 'event_start';
+            if (expiryMode === 'event_start' && ['in_progress','paused','completed','archived'].includes(event.status)) return false;
             if (row.expires_at) { const expiry=Date.parse(row.expires_at); if (Number.isFinite(expiry) && expiry <= Date.now()) return false; }
             return true;
           });
