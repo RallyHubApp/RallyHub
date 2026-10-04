@@ -82,7 +82,8 @@ async function invokeBase44Safely(name, payload, { retries = 5 } = {}) {
     } catch (error) {
       if (!isBase44RateLimitError(error) || attempt >= retries) throw error;
       if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('rallyhub:base44-pressure',{detail:{name,attempt:attempt+1,status:Number(error?.response?.status||error?.status||0),message:String(error?.response?.data?.error||error?.message||'Base44 busy')}}));
-      const retryAfterHeader = Number(error?.response?.headers?.['retry-after'] || 0);
+      const retryHeaders = error?.response?.headers;
+      const retryAfterHeader = Number(retryHeaders?.['retry-after'] || retryHeaders?.get?.('retry-after') || 0);
       const exponential = Math.min(8000, 800 * (2 ** attempt));
       const jitter = Math.floor(Math.random() * 350);
       const waitMs = retryAfterHeader > 0 ? retryAfterHeader * 1000 + jitter : exponential + jitter;
