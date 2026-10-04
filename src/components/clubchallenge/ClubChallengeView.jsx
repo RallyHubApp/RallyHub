@@ -526,8 +526,13 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [spotPrizeBusy, setSpotPrizeBusy] = useState(false);
   const potAutoCloseRef = React.useRef('');
   const [publicLinks, setPublicLinks] = useState(null);
+  const publicSnapshotRefreshTimerRef = React.useRef(null);
+  const publicSnapshotRefreshInFlightRef = React.useRef(false);
+  const [base44Pressure, setBase44Pressure] = useState({ count:0, lastAt:null, recoveredAt:null, lastFunction:'' });
   const [tournamentUpdateDraft, setTournamentUpdateDraft] = useState('');
   const [tournamentUpdateTemplateId, setTournamentUpdateTemplateId] = useState('clare_interclub_approved');
+  const [tournamentUpdateExpiryMode, setTournamentUpdateExpiryMode] = useState('event_start');
+  const [tournamentUpdateCustomMinutes, setTournamentUpdateCustomMinutes] = useState(60);
   const [tournamentUpdateInfo, setTournamentUpdateInfo] = useState(null);
   const [tournamentUpdateBusy, setTournamentUpdateBusy] = useState(false);
   const [tournamentUpdatePreviewOpen, setTournamentUpdatePreviewOpen] = useState(false);
@@ -571,14 +576,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-secure-state', tournament.id, currentUser?.id],
     queryFn: async () => (await base44.functions.invoke('getClubChallengeState', { tournamentId: tournament.id })).data,
     enabled: !!currentUser && !isAdmin,
-    refetchInterval: 12000,
+    refetchInterval: 30000,
     refetchOnWindowFocus:false,
   });
   const { data: adminEvent, refetch: refetchAdminEvent } = useQuery({
     queryKey: ['club-challenge-event', tournament.id],
     queryFn: async () => (await base44.entities.ClubChallengeEvent.filter({ tournament_id: tournament.id }))[0] || null,
     enabled: isAdmin,
-    refetchInterval: 15000,
+    refetchInterval: 30000,
     refetchOnWindowFocus:false,
   });
   const event = isAdmin ? adminEvent : secureState?.event || null;
@@ -591,15 +596,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-registrations', event?.id],
     queryFn: () => event ? base44.entities.InterclubGuestRegistration.filter({ challenge_event_id:event.id, status:'active' }, '-registered_at', 200) : [],
     enabled: isAdmin && !!event?.id,
-    refetchInterval: 15000,
-    refetchOnWindowFocus: true,
+    refetchInterval: event && ['draft','draw_generated','draw_approved'].includes(event.status) ? 30000 : false,
+    refetchOnWindowFocus: event && ['draft','draw_generated','draw_approved'].includes(event.status),
   });
   const participants = isAdmin ? adminParticipants : secureState?.participants || [];
   const { data: adminMatches = [], refetch: refetchAdminMatches } = useQuery({
     queryKey: ['club-challenge-matches', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeMatch.filter({ challenge_event_id: event.id }, 'round_number', 200) : [],
     enabled: isAdmin && !!event?.id,
-    refetchInterval: isAdmin && showcaseScorerLink ? 5000 : isAdmin && ['in_progress','paused'].includes(event?.status) ? 12000 : false,
+    refetchInterval: isAdmin && showcaseScorerLink ? 8000 : isAdmin && ['in_progress','paused'].includes(event?.status) ? 30000 : false,
     refetchOnWindowFocus:false,
   });
   const matches = isAdmin ? adminMatches : secureState?.matches || [];
@@ -607,7 +612,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-spot-prize', event?.id],
     queryFn: async () => event ? (await base44.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5))[0] || null : null,
     enabled: isAdmin && !!event?.id,
-    refetchInterval: isAdmin && !!event?.id ? 8000 : false,
+    refetchInterval: isAdmin && spotPrizeDraw?.status === 'drawing' ? 5000 : false,
     refetchOnWindowFocus:false,
   });
   const spotPrizeDraw = isAdmin ? adminSpotPrizeDraw : secureState?.spotPrizeDraw || null;
@@ -619,7 +624,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-votes', event?.id],
     queryFn: () => event ? base44.entities.ClubChallengeVote.filter({ challenge_event_id: event.id }, '-cast_at', 200) : [],
     enabled: isAdmin && !!event?.id && !!event?.pot_enabled,
-    refetchInterval: isAdmin && event?.pot_status === 'open' ? 5000 : false,
+    refetchInterval: isAdmin && event?.pot_status === 'open' ? 15000 : false,
     refetchOnWindowFocus:false,
   });
 
