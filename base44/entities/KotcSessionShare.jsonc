@@ -54,6 +54,22 @@
     },
     "event_info_json": {
       "type": "string"
+    },
+    "player_link_email_recipient_count": {
+      "type": "number",
+      "default": 0
+    },
+    "player_link_email_sent_count": {
+      "type": "number",
+      "default": 0
+    },
+    "player_link_email_failed_count": {
+      "type": "number",
+      "default": 0
+    },
+    "player_link_email_sent_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
