@@ -15,7 +15,7 @@ const TAB_OPTIONS=[
 ];
 const DEFAULT_TABS=['live','players','rounds','leaderboard','event_info'];
 
-export default function KotcHostAccessPanel({session,isAdmin}){
+export default function KotcHostAccessPanel({session,isAdmin,onScorerLinkReady}){
   const [open,setOpen]=useState(false);const [email,setEmail]=useState('');const [loading,setLoading]=useState(false);const [grants,setGrants]=useState([]);const [copied,setCopied]=useState('');const [playerUrl,setPlayerUrl]=useState('');const [share,setShare]=useState(null);const [visibleTabs,setVisibleTabs]=useState(DEFAULT_TABS);const [scoringAccess,setScoringAccess]=useState('read_only');const [settingsDirty,setSettingsDirty]=useState(false);
   const hostUrl=useMemo(()=>`${window.location.origin}/kotc-host/${session?.id||''}`,[session?.id]);
   const applyShare=(data)=>{const token=data?.token||data?.playerLink?.token;if(token)setPlayerUrl(`${window.location.origin}/kotc-live/${token}`);const tabs=data?.tabs||data?.playerLink?.tabs;if(Array.isArray(tabs)&&tabs.length)setVisibleTabs(tabs);const access=data?.scoring_access||data?.playerLink?.scoring_access;if(access)setScoringAccess(access);setShare(data?.playerLink||data||null);setSettingsDirty(false);};
@@ -25,7 +25,7 @@ export default function KotcHostAccessPanel({session,isAdmin}){
   const copyText=async(url,label,key)=>{try{await navigator.clipboard.writeText(url);setCopied(key);setTimeout(()=>setCopied(''),1800);toast.success(`${label} copied`);}catch{window.prompt(`Copy ${label}:`,url);}};
   const toggleTab=(key)=>{setVisibleTabs(prev=>{const next=prev.includes(key)?prev.filter(x=>x!==key):[...prev,key];return next.length?next:prev;});setSettingsDirty(true);};
   const changeScoring=(value)=>{setScoringAccess(value);if(value==='verified_players'&&!visibleTabs.includes('scores'))setVisibleTabs(prev=>[...prev,'scores']);setSettingsDirty(true);};
-  const saveSettings=async()=>{try{setLoading(true);const r=await base44.functions.invoke('kotcResultsShare',{action:'update_player_link',sessionId:session.id,visibleTabs,scoringAccess,identificationMode:'host_code'});applyShare(r.data||{});toast.success('KOTC Player Link settings saved');}catch(e){toast.error(errorMessage(e));}finally{setLoading(false);}};
+  const saveSettings=async()=>{try{setLoading(true);const r=await base44.functions.invoke('kotcResultsShare',{action:'update_player_link',sessionId:session.id,visibleTabs,scoringAccess,identificationMode:'host_code'});applyShare(r.data||{});if(scoringAccess==='verified_players')onScorerLinkReady?.();toast.success('KOTC Player Link settings saved');}catch(e){toast.error(errorMessage(e));}finally{setLoading(false);}};
   const grant=async()=>{if(!email.trim())return;setLoading(true);try{const res=await base44.functions.invoke('manageKotcSessionAccess',{action:'grant',sessionId:session.id,email:email.trim(),role:'session_host'});if(res.data?.success){toast.success(`Session Host access granted to ${res.data.user?.full_name||res.data.user?.email||email}`);setEmail('');await load();}else toast.error(res.data?.error||'Could not grant Session Host access.');}catch(e){toast.error(errorMessage(e));}finally{setLoading(false);}};
   const revoke=async userId=>{setLoading(true);try{await base44.functions.invoke('manageKotcSessionAccess',{action:'revoke',sessionId:session.id,userId});toast.success('Session Host access revoked');await load();}catch(e){toast.error(errorMessage(e));}finally{setLoading(false);}};
 
