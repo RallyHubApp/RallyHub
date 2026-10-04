@@ -1,8 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { requireConfiguredEmailTransport, sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
-const RUNTIME_VERSION='kotc-results-2026-09-27-r12';
+const RUNTIME_VERSION='kotc-player-link-2026-10-04-r1';
 const APP_BASE_URL='https://rallyhub.ie';
+const DEFAULT_TABS=['live','players','rounds','leaderboard','event_info'];
+function shareConfig(share:any){let tabs=DEFAULT_TABS;try{const parsed=share?.visible_tabs_json?JSON.parse(share.visible_tabs_json):null;if(Array.isArray(parsed)&&parsed.length)tabs=parsed.filter((v:any)=>['live','players','rounds','scores','leaderboard','event_info'].includes(String(v)));}catch{}return{tabs:[...new Set(tabs)],scoring_access:['off','read_only','verified_players'].includes(share?.scoring_access)?share.scoring_access:'read_only',identification_mode:share?.identification_mode==='none'?'none':'host_code'};}
+function broadcastVisible(row:any,session:any){if(!row||row.status!=='published')return false;const mode=row.expiry_mode||'manual';if(mode==='event_start'&&['in_progress','paused','completed','finalised','abandoned'].includes(session.status))return false;if(row.expires_at&&Date.parse(row.expires_at)<=Date.now())return false;return true;}
 const SHARED_GMAIL_ADDRESS='clarepb2025@gmail.com';
 function token(){const b=new Uint8Array(32);crypto.getRandomValues(b);return Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join('');}
 function nowIso(){return new Date().toISOString();}
