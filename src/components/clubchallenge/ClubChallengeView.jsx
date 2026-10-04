@@ -920,6 +920,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       } catch (e) { remaining.push(item); conflicts.push({ ...item, reason:e?.response?.data?.error || e?.message || 'Retry failed' }); }
     }
     setPendingScores(remaining); await refetchMatches();
+    if (pendingScores.length !== remaining.length) schedulePublicSnapshotRefresh(1800);
     if (!remaining.length) toast.success('All offline results synchronised successfully.'); else toast.error(`${remaining.length} offline result${remaining.length===1?'':'s'} need manual review; nothing was overwritten.`);
     if (conflicts.length) conflicts.forEach(c => addSimLog(`Offline conflict ${c.matchLabel}: ${c.reason}`, 'info'));
   };
@@ -1303,6 +1304,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         queryClient.setQueryData(['club-challenge-event', tournament.id], old => old ? ({ ...old, timer_state_json:JSON.stringify(optimistic), timer_revision:Number(old.timer_revision || event.timer_revision || 0) + 1 }) : old);
         refetchEvent();
       }
+      schedulePublicSnapshotRefresh(1800);
       return true;
     } catch (e) {
       await refetchEvent();
