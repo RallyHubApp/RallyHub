@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       event.host_club_id ? base44.asServiceRole.entities.Club.filter({ id:event.host_club_id, tenant_id:event.tenant_id }, '-updated_date', 5) : Promise.resolve([]),
       base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5),
       base44.asServiceRole.entities.Tournament.filter({ id:event.tournament_id }, '-updated_date', 5),
-      base44.asServiceRole.entities.InterclubTournamentUpdate.filter({ challenge_event_id:event.id, status:'published' }, '-created_date', 5)
+      base44.asServiceRole.entities.InterclubTournamentUpdate.filter({ challenge_event_id:event.id, status:'published' }, undefined, 5)
     ]);
     const hostClub = hostClubRows?.[0] || null;
     const spotPrizeDraw = spotPrizeRows?.[0] || null;
