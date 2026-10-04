@@ -137,6 +137,7 @@ export default function PublicClubChallengeDisplay(){
   },[token]);
   const publicStatus=String(data?.event?.status||'');
   const publicSpotStatus=String(data?.event?.spot_prize_status||'');
+  const publicPotOpen=data?.event?.pot_status==='open';
   const publicCompleted=['completed','archived'].includes(publicStatus);
   const publicPreEvent=['draft','draw_generated','draw_approved'].includes(publicStatus);
   const publicHasShowcase=!!data?.matches?.some(m=>m.is_showcase);
@@ -146,8 +147,10 @@ export default function PublicClubChallengeDisplay(){
   // need a modest refresh while the server-side draw is genuinely in progress.
   const pollMs=publicSpotStatus==='drawing'
     ? 4500+(jitter%2500)
-    : publicCompleted
-      ? 60000+jitter
+    : publicPotOpen
+      ? 12000+(jitter%4000)
+      : publicCompleted
+        ? 60000+jitter
       : publicPreEvent
         ? 30000+jitter
         : publicHasShowcase
