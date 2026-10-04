@@ -2417,7 +2417,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         setRoundActionStatus({ state:'success', text:message });
         toast.success(message);
         setHostScoreRound(null);
-        await refetchEvent();
+        if (res.data?.event) {
+          if (isAdmin) queryClient.setQueryData(['club-challenge-event', tournament.id], res.data.event);
+          else queryClient.setQueryData(['club-challenge-secure-state', tournament.id, currentUser?.id], old => old ? ({ ...old, event:res.data.event }) : old);
+        } else await refetchEvent();
+        schedulePublicSnapshotRefresh(900);
       } else {
         if (resolvedNormalCount !== normalMatches.length) { toast.error('All normal match results must be resolved before the event can finish.'); return; }
         if (score.clubA === score.clubB) {
@@ -2466,7 +2470,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       const res = await invokeBase44Safely('updateClubChallengeRound', { eventId:event.id, nextRound, skipBreak:true, allowPendingScores:true });
       if (res.data?.error) throw new Error(res.data.error);
       setHostScoreRound(null);
-      await refetchEvent();
+      if (res.data?.event) {
+        if (isAdmin) queryClient.setQueryData(['club-challenge-event', tournament.id], res.data.event);
+        else queryClient.setQueryData(['club-challenge-secure-state', tournament.id, currentUser?.id], old => old ? ({ ...old, event:res.data.event }) : old);
+      } else await refetchEvent();
+      schedulePublicSnapshotRefresh(900);
       const message = `Break ended early · Round ${nextRound} ready`;
       setRoundActionStatus({ state:'success', text:message });
       toast.success(message);
