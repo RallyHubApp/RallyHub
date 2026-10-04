@@ -856,14 +856,48 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     return () => { window.removeEventListener('online', online); window.removeEventListener('offline', offline); };
   }, []);
   React.useEffect(() => { localStorage.setItem(`cc-pending-${tournament.id}`, JSON.stringify(pendingScores)); }, [pendingScores, tournament.id]);
+  React.useEffect(() => {
+    const pressure = event => setBase44Pressure(current => ({ count:current.count + 1, lastAt:new Date().toISOString(), recoveredAt:current.recoveredAt, lastFunction:event?.detail?.name || current.lastFunction }));
+    const recovered = event => setBase44Pressure(current => ({ ...current, recoveredAt:new Date().toISOString(), lastFunction:event?.detail?.name || current.lastFunction }));
+    window.addEventListener('rallyhub:base44-pressure', pressure);
+    window.addEventListener('rallyhub:base44-pressure-recovered', recovered);
+    return () => { window.removeEventListener('rallyhub:base44-pressure', pressure); window.removeEventListener('rallyhub:base44-pressure-recovered', recovered); };
+  }, []);
+
+  const refreshPublicSnapshotNow = React.useCallback(async () => {
+    if (!event?.id || publicSnapshotRefreshInFlightRef.current) return false;
+    if (sportingActionRef.current || timerCommandRef.current) return false;
+    publicSnapshotRefreshInFlightRef.current = true;
+    try {
+      const res = await invokeBase44Safely('refreshClubChallengePublicSnapshot', { eventId:event.id }, { retries:3 });
+      if (res.data?.error) throw new Error(res.data.error);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      publicSnapshotRefreshInFlightRef.current = false;
+    }
+  }, [event?.id]);
+  const schedulePublicSnapshotRefresh = React.useCallback((delayMs = 2500) => {
+    if (!event?.id) return;
+    if (publicSnapshotRefreshTimerRef.current) window.clearTimeout(publicSnapshotRefreshTimerRef.current);
+    publicSnapshotRefreshTimerRef.current = window.setTimeout(async () => {
+      publicSnapshotRefreshTimerRef.current = null;
+      if (sportingActionRef.current || timerCommandRef.current) { schedulePublicSnapshotRefresh(1800); return; }
+      const ok = await refreshPublicSnapshotNow();
+      if (!ok) schedulePublicSnapshotRefresh(8000);
+    }, delayMs);
+  }, [event?.id, refreshPublicSnapshotNow]);
+  React.useEffect(() => () => { if (publicSnapshotRefreshTimerRef.current) window.clearTimeout(publicSnapshotRefreshTimerRef.current); }, []);
 
   const sync = async () => {
-    // Serialise authoritative refreshes instead of firing four Base44 reads in the same burst.
+    // Serialise authoritative refreshes instead of firing Base44 reads in the same burst.
     await refetchEvent();
     await refetchParticipants();
     await refetchMatches();
     if (event?.pot_enabled) await refetchPotVotes();
     queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+    schedulePublicSnapshotRefresh();
   };
   const mergeSavedMatch = async savedMatch => {
     if (!savedMatch) { await refetchMatches(); return; }
