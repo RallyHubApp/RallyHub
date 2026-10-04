@@ -1957,6 +1957,19 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
     const printRoot = document.querySelector('.rhpp-print-host .rhpp-root');
     if (!printRoot) { toast.error('Could not prepare the Event Pack for printing.'); return; }
+    if (selection.briefing) {
+      const qrDeadline = Date.now() + 5000;
+      while (Date.now() < qrDeadline) {
+        const qrs = Array.from(printRoot.querySelectorAll('.rhpp-briefing-page [data-rh-qr-ready]'));
+        if (qrs.length && qrs.every(node => node.getAttribute('data-rh-qr-ready') === 'true')) break;
+        await new Promise(resolve => window.setTimeout(resolve, 75));
+      }
+      const qrs = Array.from(printRoot.querySelectorAll('.rhpp-briefing-page [data-rh-qr-ready]'));
+      if (!qrs.length || qrs.some(node => node.getAttribute('data-rh-qr-ready') !== 'true')) {
+        toast.error('The Event Pack QR codes are not ready. Printing has been stopped rather than producing an unusable sheet.');
+        return;
+      }
+    }
     const packCss = printRoot.querySelector(':scope > style')?.textContent || '';
     const pageHtml = Array.from(printRoot.querySelectorAll(':scope > .rhpp-page')).map(node => node.outerHTML).join('');
     if (!pageHtml) { toast.error('No Event Pack pages were selected.'); return; }
