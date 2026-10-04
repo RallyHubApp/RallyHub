@@ -27,7 +27,18 @@ Deno.serve(async (req) => {
       const snapshot = snapshots?.[0];
       if (snapshot?.display_payload_json) {
         const payload = JSON.parse(snapshot.display_payload_json);
-        if (payload?.event?.id) return Response.json({ ...payload, server_now:new Date().toISOString(), snapshot_updated_at:snapshot.updated_at || null, snapshot:true });
+        if (payload?.event?.id) {
+          const update = payload.event.tournament_update;
+          if (update) {
+            const expiryMode = update.expiry_mode || 'event_start';
+            const status = String(payload.event.status || '');
+            const expiredAtStart = expiryMode === 'event_start' && ['in_progress','paused','completed','archived'].includes(status);
+            const expiry = update.expires_at ? Date.parse(update.expires_at) : NaN;
+            const expiredByTime = Number.isFinite(expiry) && expiry <= Date.now();
+            if (expiredAtStart || expiredByTime) payload.event.tournament_update = null;
+          }
+          return Response.json({ ...payload, server_now:new Date().toISOString(), snapshot_updated_at:snapshot.updated_at || null, snapshot:true });
+        }
       }
     } catch (snapshotError) {
       console.warn('Public snapshot fast path unavailable; using fallback builder.', snapshotError?.message || snapshotError);
