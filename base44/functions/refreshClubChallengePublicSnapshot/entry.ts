@@ -159,10 +159,17 @@ Deno.serve(async (req) => {
       allowed = ta.some((a:any) => ['event_manager','event_host'].includes(a.role)) || ca.some((a:any) => ['owner','organiser'].includes(a.role));
     }
     if (!allowed) return Response.json({ error:'Event manager permission required.' }, { status:403 });
-    const payload = await buildPayload(base44,event);
     const now = new Date().toISOString();
-    const displayToken = (await base44.asServiceRole.entities.ClubChallengeDisplayToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5))?.[0]?.token || '';
-    const votingToken = event.pot_enabled ? (await base44.asServiceRole.entities.ClubChallengeVotingToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5))?.[0]?.token || '' : '';
+    let displayTokenRow = (await base44.asServiceRole.entities.ClubChallengeDisplayToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5))?.[0] || null;
+    if (!displayTokenRow) displayTokenRow = await base44.asServiceRole.entities.ClubChallengeDisplayToken.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, token:`ccd_${crypto.randomUUID().replaceAll('-','')}`, active:true, created_at:now });
+    let votingTokenRow:any = null;
+    if (event.pot_enabled) {
+      votingTokenRow = (await base44.asServiceRole.entities.ClubChallengeVotingToken.filter({ challenge_event_id:event.id, active:true }, '-created_at', 5))?.[0] || null;
+      if (!votingTokenRow) votingTokenRow = await base44.asServiceRole.entities.ClubChallengeVotingToken.create({ tenant_id:event.tenant_id, challenge_event_id:event.id, token:`ccv_${crypto.randomUUID().replaceAll('-','')}`, active:true, created_at:now });
+    }
+    const payload = await buildPayload(base44,event);
+    const displayToken = displayTokenRow?.token || '';
+    const votingToken = votingTokenRow?.token || '';
     const rows = await base44.asServiceRole.entities.ClubChallengePublicSnapshot.filter({ challenge_event_id:event.id }, '-updated_at', 5);
     const current = rows?.[0] || null;
     const data = { tenant_id:event.tenant_id, challenge_event_id:event.id, display_token:displayToken, voting_token:votingToken, display_payload_json:JSON.stringify(payload), voting_payload_json:'', updated_at:now, active:true };
