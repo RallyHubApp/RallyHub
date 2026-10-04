@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
 
     if (action === 'approve_draw') {
+      if (event.status === 'draw_approved') return Response.json({ success:true, event, alreadyApplied:true });
       if (event.status !== 'draw_generated') return Response.json({ error:'Only a generated draw can be approved.' }, { status:409 });
       const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300);
       if (!matches.length) return Response.json({ error:'No fixtures exist to approve.' }, { status:409 });
@@ -51,6 +52,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'unlock_draw') {
+      if (event.status === 'draw_generated' && !event.draw_approved_at) return Response.json({ success:true, event, alreadyApplied:true });
       if (event.status !== 'draw_approved') return Response.json({ error:'Only an approved, not-yet-started draw can be unlocked.' }, { status:409 });
       const updated = await base44.asServiceRole.entities.ClubChallengeEvent.update(event.id, {
         status:'draw_generated',
@@ -72,6 +74,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'start') {
+      if (['in_progress','paused'].includes(event.status) && event.actual_started_at) return Response.json({ success:true, event, alreadyApplied:true });
       if (event.status !== 'draw_approved') return Response.json({ error:'Interclub Challenge draw must be approved before starting.' }, { status:409 });
       const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 300);
       if (!matches.length) return Response.json({ error:'No approved fixtures found.' }, { status:409 });
