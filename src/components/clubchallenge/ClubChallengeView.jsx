@@ -688,8 +688,8 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-club-player-candidates', event?.id],
     queryFn: async () => {
       const [aRes,bRes] = await Promise.all([
-        base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'club_player_candidates', side:'club_a' }),
-        base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'club_player_candidates', side:'club_b' }),
+        invokeBase44Safely('manageClubChallengeParticipant', { eventId:event.id, action:'club_player_candidates', side:'club_a' }),
+        invokeBase44Safely('manageClubChallengeParticipant', { eventId:event.id, action:'club_player_candidates', side:'club_b' }),
       ]);
       if (aRes.data?.error) throw new Error(aRes.data.error);
       if (bRes.data?.error) throw new Error(bRes.data.error);
@@ -701,7 +701,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const { data: replacementCandidates = [], refetch: refetchReplacementCandidates } = useQuery({
     queryKey: ['club-challenge-replacement-candidates', event?.id],
     queryFn: async () => {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'replacement_candidates' });
+      const res = await invokeBase44Safely('manageClubChallengeParticipant', { eventId:event.id, action:'replacement_candidates' });
       if (res.data?.error) throw new Error(res.data.error);
       return res.data?.candidates || [];
     },
@@ -1054,7 +1054,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const addClubPlayer = async (side, playerId) => {
     if (!event || !playerId || !canManageEvent) throw new Error('Event manager permission required.');
     try {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'add_club_player', side, playerId });
+      const res = await invokeBase44Safely('manageClubChallengeParticipant', { eventId:event.id, action:'add_club_player', side, playerId });
       if (res.data?.error) throw new Error(res.data.error);
       await sync();
       await refetchClubPlayerCandidates();
@@ -1071,7 +1071,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const name = String(displayName || '').trim();
     if (!event || !name || !canManageEvent) throw new Error('Guest name and event manager permission are required.');
     try {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'add_guest', side, displayName:name, incomingGender:gender });
+      const res = await invokeBase44Safely('manageClubChallengeParticipant', { eventId:event.id, action:'add_guest', side, displayName:name, incomingGender:gender });
       if (res.data?.error) throw new Error(res.data.error);
       await sync();
       await refetchClubPlayerCandidates();
@@ -1087,7 +1087,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const removePreDrawPlayer = async participantId => {
     if (!event || !participantId || !canManageEvent) throw new Error('Event manager permission required.');
     try {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'remove_pre_draw', participantId });
+      const res = await invokeBase44Safely('manageClubChallengeParticipant', { eventId:event.id, action:'remove_pre_draw', participantId });
       if (res.data?.error) throw new Error(res.data.error);
       await sync();
       await refetchClubPlayerCandidates();
@@ -1106,7 +1106,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const players = parseCsvPlayers(text);
     if (!players.length) throw new Error('No player names could be read from that CSV. Use a Name column, or First Name and Last Name columns.');
     try {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+      const res = await invokeBase44Safely('manageClubChallengeParticipant', {
         eventId:event.id,
         action:'bulk_add_manual',
         side,
@@ -1129,7 +1129,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setSaving(true);
     flushSync(() => setHostAction('Saving teams and rankings… one command sent'));
     try {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+      const res = await invokeBase44Safely('manageClubChallengeParticipant', {
         eventId:event.id,
         action:'organise_teams',
         poolParticipantIds:poolIds,
@@ -1155,7 +1155,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const setRosterRole = async (participantId, rosterRole) => {
     if (!event || !canManageEvent) throw new Error('Event manager permission required.');
-    const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'set_roster_role', participantId, rosterRole });
+    const res = await invokeBase44Safely('manageClubChallengeParticipant', { eventId:event.id, action:'set_roster_role', participantId, rosterRole });
     if (res.data?.error) throw new Error(res.data.error);
     await sync();
     toast.success(`${res.data.participantName} set as ${res.data.rosterRole === 'reserve' ? 'Reserve' : 'Rotation'} player.`);
@@ -1164,7 +1164,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const setPlayingCategory = async (participantId, playingCategory) => {
     if (!event || !canManageEvent) throw new Error('Event manager permission required.');
-    const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'set_playing_category', participantId, playingCategory });
+    const res = await invokeBase44Safely('manageClubChallengeParticipant', { eventId:event.id, action:'set_playing_category', participantId, playingCategory });
     if (res.data?.error) throw new Error(res.data.error);
     await sync();
     toast.success(`${res.data.participantName} set as ${res.data.playingCategory === 'social' ? 'Social' : 'Improver'}.`);
@@ -1173,7 +1173,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const setParticipantGender = async (participantId, gender) => {
     if (!event || !canManageEvent) throw new Error('Event manager permission required.');
-    const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'set_gender', participantId, gender });
+    const res = await invokeBase44Safely('manageClubChallengeParticipant', { eventId:event.id, action:'set_gender', participantId, gender });
     if (res.data?.error) throw new Error(res.data.error);
     await sync();
     toast.success(`${res.data.participantName} gender ${res.data.gender ? `set to ${res.data.gender}` : 'cleared'}.`);
@@ -1182,7 +1182,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
 
   const editParticipantDisplayName = async (participantId, displayName) => {
     if (!event || !canManageEvent) throw new Error('Event manager permission required.');
-    const res = await base44.functions.invoke('manageClubChallengeParticipant', { eventId:event.id, action:'rename_display', participantId, displayName });
+    const res = await invokeBase44Safely('manageClubChallengeParticipant', { eventId:event.id, action:'rename_display', participantId, displayName });
     if (res.data?.error) throw new Error(res.data.error);
     await sync();
     toast.success(`${res.data.oldName || 'Player'} will display as ${res.data.participantName} for this event.`);
@@ -1244,7 +1244,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (fairness.duplicatePlayerRoundIssues || fairness.sameClubIntegrityIssues || !fairness.equalGames) { toast.error('Hard fairness checks must pass before approval.'); return; }
     sportingActionRef.current = true; setHostAction('Approving and locking draw… command sent');
     try {
-      const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'approve_draw' });
+      const res = await invokeBase44Safely('manageClubChallengeEvent', { eventId:event.id, action:'approve_draw' });
       if (res.data?.error) throw new Error(res.data.error);
       toast.success('Draw approved and locked');
       await sync();
@@ -1257,7 +1257,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!window.confirm('Unlock the approved draw for changes? The current print pack will be marked out of date until you approve the draw again.')) return;
     sportingActionRef.current = true; setHostAction('Unlocking draw for changes… command sent');
     try {
-      const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'unlock_draw' });
+      const res = await invokeBase44Safely('manageClubChallengeEvent', { eventId:event.id, action:'unlock_draw' });
       if (res.data?.error) throw new Error(res.data.error);
       toast.success('Draw unlocked. You can edit teams or rankings, then regenerate and approve again.');
       await sync();
@@ -1276,7 +1276,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     sportingActionRef.current = true; setHostAction(`Starting ${INTERCLUB_EVENT_LABEL}… command sent`);
     try {
       await unlockHallAudio();
-      const res = await base44.functions.invoke('manageClubChallengeEvent', { eventId:event.id, action:'start' });
+      const res = await invokeBase44Safely('manageClubChallengeEvent', { eventId:event.id, action:'start' });
       if (res.data?.error) throw new Error(res.data.error);
       toast.success(`${INTERCLUB_EVENT_LABEL} started`);
       await sync(); setTab('live');
@@ -2083,7 +2083,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setPlayerControlBusy(true);
     setPlayerControlStatus({ state:'working', text:`Putting ${reserve.display_name} in for ${outgoing.display_name} from Round ${currentRound}…` });
     try {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+      const res = await invokeBase44Safely('manageClubChallengeParticipant', {
         eventId:event.id,
         action:'activate_reserve',
         outgoingParticipantId:outgoing.id,
@@ -2133,7 +2133,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setHostAction(`${workingText} command sent`);
     try {
       const action = mode === 'reserve' ? 'activate_reserve' : mode === 'cover' ? 'cover_existing' : mode === 'temporary' ? 'temporary_sub' : 'replace';
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+      const res = await invokeBase44Safely('manageClubChallengeParticipant', {
         eventId:event.id, action, outgoingParticipantId:replacement.outgoingId,
         reserveParticipantId:replacement.reserveParticipantId, coverParticipantId:replacement.coverParticipantId,
         incomingName, incomingGender:replacement.incomingGender,
@@ -2173,7 +2173,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setDisplayNameBusy(true);
     setPlayerControlStatus({ state:'working', text:`Updating ${participant.display_name} for this event…` });
     try {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+      const res = await invokeBase44Safely('manageClubChallengeParticipant', {
         eventId:event.id,
         action:'rename_display',
         participantId:participant.id,
@@ -2201,7 +2201,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setPlayerControlStatus({ state:'working', text:`Withdrawing ${outgoingName} from Round ${currentRound} and continuing short…` });
     setHostAction(`Applying withdrawal from Round ${currentRound}… command sent`);
     try {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+      const res = await invokeBase44Safely('manageClubChallengeParticipant', {
         eventId:event.id, action:'continue_short', outgoingParticipantId:replacement.outgoingId,
         reason:replacement.reason, withdrawalStatus:replacement.status,
       });
@@ -2232,7 +2232,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     setPlayerControlStatus({ state:'working', text:`Marking ${participantName} available from Round ${fromRound}…` });
     setHostAction(`Applying late arrival from Round ${fromRound}… command sent`);
     try {
-      const res = await base44.functions.invoke('manageClubChallengeParticipant', {
+      const res = await invokeBase44Safely('manageClubChallengeParticipant', {
         eventId:event.id, action:'late_arrival', participantId:lateArrival.participantId, fromRound,
       });
       if (res.data?.error) throw new Error(res.data.error);
