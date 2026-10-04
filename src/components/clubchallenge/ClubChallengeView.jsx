@@ -2314,7 +2314,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (!event || !canFinaliseEvent || !['club_a','club_b','draw'].includes(winner)) return;
     if (event.pot_enabled && event.pot_status === 'open') { toast.error('Player of the Tournament voting is still open.'); return; }
     try {
-      const res = await base44.functions.invoke('finaliseClubChallenge', { eventId:event.id, method });
+      const res = await invokeBase44Safely('finaliseClubChallenge', { eventId:event.id, method });
       if (res.data?.error) { toast.error(res.data.error); return; }
       toast.success(res.data?.winner === 'draw' ? `${INTERCLUB_EVENT_LABEL} finalised as an overall draw` : `${res.data?.winner === 'club_b' ? event.club_b_name : event.club_a_name} confirmed as ${INTERCLUB_EVENT_LABEL} winner`);
       await sync(); setTab('results');
