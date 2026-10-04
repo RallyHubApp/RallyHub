@@ -4,10 +4,12 @@ import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { ArrowLeft,Crown,Mail,Menu,Minimize2,MonitorUp,Pencil,RefreshCw,Save,Share2,Trophy,WifiOff,X } from 'lucide-react';
+import { ArrowLeft,Bell,Crown,Mail,Menu,Minimize2,MonitorUp,Pencil,RefreshCw,Save,Share2,Trophy,WifiOff,X } from 'lucide-react';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
 import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
+import KotcMyPlayerPanel from '@/components/kotc/KotcMyPlayerPanel';
 
 function message(e){return e?.response?.data?.error||e?.data?.error||e?.message||'Live KOTC view unavailable';}
 function fmt(v){const n=Math.max(0,Number(v||0));return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(Math.floor(n%60)).padStart(2,'0')}`;}
@@ -51,6 +53,7 @@ export default function PublicKotcResults(){
   const [data,setData]=useState(null),[error,setError]=useState(''),[offline,setOffline]=useState(false),[now,setNow]=useState(Date.now());
   const [hallMode,setHallMode]=useState(()=>params.get('display')==='1');
   const [historyRound,setHistoryRound]=useState(null);
+  const [activeTab,setActiveTab]=useState('live');
   const [management,setManagement]=useState(null),[managementLoading,setManagementLoading]=useState(false),[hostMenuOpen,setHostMenuOpen]=useState(false),[correctionOpen,setCorrectionOpen]=useState(false),[sendingPlayers,setSendingPlayers]=useState(false);
   const [editingMatchId,setEditingMatchId]=useState(''),[editA,setEditA]=useState(''),[editB,setEditB]=useState(''),[editServing,setEditServing]=useState(''),[savingCorrection,setSavingCorrection]=useState(false);
   const dataRef=useRef(null);
