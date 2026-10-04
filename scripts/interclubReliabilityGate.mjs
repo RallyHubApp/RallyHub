@@ -7,6 +7,7 @@ const publicFn = read('base44/functions/getPublicClubChallengeDisplay/entry.ts')
 const snapshotFn = read('base44/functions/refreshClubChallengePublicSnapshot/entry.ts');
 const drawFn = read('base44/functions/manageClubChallengeSpotPrizeDraw/entry.ts');
 const roundFn = read('base44/functions/updateClubChallengeRound/entry.ts');
+const scoreFn = read('base44/functions/saveClubChallengeScore/entry.ts');
 const updateFn = read('base44/functions/interclubTournamentUpdate/entry.ts');
 const loadGate = read('scripts/interclubLiveLoadGate.mjs');
 const updateSchema = read('base44/entities/InterclubTournamentUpdate.jsonc');
@@ -33,9 +34,11 @@ check('spot draw server requires operationId', drawFn.includes("operationId requ
 check('spot draw completion replay is idempotent', drawFn.includes('last_completed_operation_id === operationId') && drawFn.includes('last_completed_winner_json'));
 check('spot draw schema persists operation identity', drawSchema.includes('pending_operation_id') && drawSchema.includes('last_completed_operation_id'));
 check('round advance duplicate retry is idempotent', roundFn.includes('alreadyApplied:true') && roundFn.includes('round === currentRound'));
-check('Base44 pressure helper catches threshold/overload', host.includes("message.includes('threshold')") && host.includes("message.includes('overload')") && host.includes('[429,502,503,504]'));
+check('score duplicate retry acknowledges an already-accepted write', scoreFn.includes('duplicateAcceptedWrite') && scoreFn.includes('alreadyApplied:true'));
+check('Base44 pressure helper catches threshold/overload', host.includes("status === 429") && host.includes('[502,503,504]') && host.includes("message.includes('threshold')") && host.includes("message.includes('overload')"));
 check('Base44 pressure helper retries busy responses as well as thrown errors', host.includes('response?.data?.error && isBase44RateLimitError(response)'));
 check('Base44 pressure retry has backoff+jitter', host.includes('Math.min(8000, 800 * (2 ** attempt))') && host.includes('Math.random() * 350'));
+check('ambiguous timer responses are not replayed', !/\['saveClubChallengeScore','updateClubChallengeTimer'/.test(host) && host.includes('Timer commands are retried on explicit Base44 capacity rejection'));
 check('host registration polling disabled during live play', host.includes("refetchInterval: event && ['draft','draw_generated','draw_approved'].includes(event.status) ? 30000 : false"));
 check('host live match polling reduced', host.includes("? 8000 : isAdmin && ['in_progress','paused'].includes(event?.status) ? 30000 : false"));
 check('tournament update expiry schema exists', updateSchema.includes('expiry_mode') && updateSchema.includes('expires_at'));
