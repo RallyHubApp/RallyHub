@@ -141,6 +141,6 @@ Deno.serve(async (req) => {
     }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
     console.error('getPublicClubChallengeDisplay failed', error);
-    return Response.json({ error:'Unable to load the public display right now.' }, { status:500 });
+    return Response.json({ error:'Unable to load the public display right now.', diagnostic:String((error as any)?.message || error || 'unknown') }, { status:500 });
   }
 });
