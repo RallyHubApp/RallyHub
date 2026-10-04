@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id }, 'event_rank', 100),
       base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id }, 'round_number', 200),
       event.host_club_id ? base44.asServiceRole.entities.Club.filter({ id:event.host_club_id, tenant_id:event.tenant_id }, '-updated_date', 5) : Promise.resolve([]),
-      base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5),
+      base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, undefined, 5),
       base44.asServiceRole.entities.Tournament.filter({ id:event.tournament_id }, '-updated_date', 5),
       base44.asServiceRole.entities.InterclubTournamentUpdate.filter({ challenge_event_id:event.id, status:'published' }, undefined, 5)
     ]);
@@ -141,6 +141,6 @@ Deno.serve(async (req) => {
     }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
     console.error('getPublicClubChallengeDisplay failed', error);
-    return Response.json({ error:'Unable to load the public display right now.', diagnostic:String((error as any)?.message || error || 'unknown') }, { status:500 });
+    return Response.json({ error:'Unable to load the public display right now.' }, { status:500 });
   }
 });
