@@ -1739,6 +1739,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       if (res.data?.error) throw new Error(res.data.error);
       await refetchSpotPrizeDraw?.();
       setSetup(s => ({ ...s, spotPrizeEnabled:!!enabled, spotPrizeMode:mode, spotPrizeCount:Number(prizeCount || 1), ...(enabled ? { potEnabled:false } : {}) }));
+      schedulePublicSnapshotRefresh(1200);
       toast.success(enabled ? 'Spot Prize Draw is ready.' : 'Spot Prize Draw disabled.');
       return true;
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not configure Spot Prize Draw'); return false; }
@@ -1761,28 +1762,24 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
         playRallyHubSignal(ctx, 'warning', hallVolume * 0.55);
         raffleSoundTimer = window.setInterval(() => playRallyHubSignal(ctx, 'warning', hallVolume * 0.45), 220);
       }
-      const begin = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'begin_draw' });
+      const operationId = window.crypto?.randomUUID?.() || `spot-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const begin = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'begin_draw', operationId });
       if (begin.data?.error) throw new Error(begin.data.error);
       await refetchSpotPrizeDraw?.();
-      await new Promise(resolve => window.setTimeout(resolve, 2600));
-      let res;
-      try {
-        res = await Promise.race([
-          invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'complete_draw' }),
-          new Promise((_, reject) => window.setTimeout(() => reject(new Error('Draw completion timed out')), 6000)),
-        ]);
-      } catch (completeError) {
-        // One immediate retry prevents a transient function/network delay leaving the hall UI spinning forever.
-        res = await Promise.race([
-          invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'complete_draw' }),
-          new Promise((_, reject) => window.setTimeout(() => reject(new Error('Draw could not complete. Press Draw again.')), 6000)),
-        ]);
-      }
+      // Publish the server-decided 'drawing' state once. Phones animate locally;
+      // they do not hammer Base44 every second.
+      await refreshPublicSnapshotNow();
+      await new Promise(resolve => window.setTimeout(resolve, 4800));
+      // Completion is idempotent for this operationId. If Base44 accepts the write
+      // but its response is delayed/lost, every retry returns the same winner rather
+      // than turning a successful draw into an apparent failure.
+      const res = await invokeBase44Safely('manageClubChallengeSpotPrizeDraw', { eventId:event.id, action:'complete_draw', operationId }, { retries:5 });
       if (res.data?.error) throw new Error(res.data.error);
       if (raffleSoundTimer) { window.clearInterval(raffleSoundTimer); raffleSoundTimer = null; }
       const w = res.data?.winner;
       if (ctx && w) playRallyHubSignal(ctx, 'announcement', hallVolume);
       await refetchSpotPrizeDraw?.();
+      schedulePublicSnapshotRefresh(500);
       if (w) toast.success(`Spot Prize ${w.pull}: #${w.number} ${w.display_name}`);
       if (res.data?.complete) toast.success('Spot Prize Draw complete.');
     } catch (e) {
@@ -1813,6 +1810,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       if (res.data?.error) throw new Error(res.data.error);
       if (isAdmin) queryClient.setQueryData(['club-challenge-spot-prize', event.id], res.data?.draw || { ...spotPrizeDraw, status:'ready', winners_json:'[]', draw_count:0, pending_winner_json:null, draw_started_at:null });
       await refetchSpotPrizeDraw?.();
+      schedulePublicSnapshotRefresh(800);
       toast.success('Spot Prize Draw reset — all previous winners cleared.');
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not reset Spot Prize Draw'); }
     finally { setSpotPrizeBusy(false); }
