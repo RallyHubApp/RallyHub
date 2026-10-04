@@ -612,7 +612,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     queryKey: ['club-challenge-spot-prize', event?.id],
     queryFn: async () => event ? (await base44.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5))[0] || null : null,
     enabled: isAdmin && !!event?.id,
-    refetchInterval: isAdmin && spotPrizeDraw?.status === 'drawing' ? 5000 : false,
+    refetchInterval: false,
     refetchOnWindowFocus:false,
   });
   const spotPrizeDraw = isAdmin ? adminSpotPrizeDraw : secureState?.spotPrizeDraw || null;
