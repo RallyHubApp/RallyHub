@@ -56,6 +56,24 @@ function getDeviceId() {
     return id;
   } catch { return window.crypto?.randomUUID?.() || `rh-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
 }
+function isPublicBase44Pressure(errorOrResponse){
+  const status=Number(errorOrResponse?.response?.status||errorOrResponse?.status||0);
+  const message=String(errorOrResponse?.response?.data?.error||errorOrResponse?.data?.error||errorOrResponse?.message||'').toLowerCase();
+  return [429,502,503,504].includes(status)||message.includes('rate limit')||message.includes('burst')||message.includes('threshold')||message.includes('too many requests')||message.includes('temporarily unavailable')||message.includes('server busy')||message.includes('overload')||((status===0||!status)&&typeof navigator!=='undefined'&&navigator.onLine!==false&&(message.includes('failed to fetch')||message.includes('network error')||message.includes('timeout')));
+}
+async function loadPublicDisplayWithBackoff(token){
+  for(let attempt=0;;attempt+=1){
+    try{
+      const response=await base44.functions.invoke('getPublicClubChallengeDisplay',{token});
+      if(response?.data?.error&&isPublicBase44Pressure(response)){const error=new Error(response.data.error);error.response={status:429,data:response.data};throw error;}
+      return response;
+    }catch(error){
+      if(attempt>=3||!isPublicBase44Pressure(error)) throw error;
+      const wait=Math.min(6000,650*(2**attempt))+Math.floor(Math.random()*900);
+      await new Promise(resolve=>window.setTimeout(resolve,wait));
+    }
+  }
+}
 function PoweredByRallyHub(){ return <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground/70"><span>Powered by</span><img src={RALLYHUB_LOGO_URL} alt="RallyHub" className="h-4 w-auto object-contain opacity-80"/></div>; }
 function LiveEventBrand({ event, pageLabel='Live Event View' }){
   if(event?.host_club) return <RallyHubPublicBrand club={event.host_club} clubFirst moduleName="Interclub" pageLabel={pageLabel}/>;
@@ -109,7 +127,7 @@ export default function PublicClubChallengeDisplay(){
     if(loadInFlightRef.current) return;
     loadInFlightRef.current=true;
     try {
-      const r=await base44.functions.invoke('getPublicClubChallengeDisplay',{token});
+      const r=await loadPublicDisplayWithBackoff(token);
       if(r.data?.error) throw new Error(r.data.error);
       setData(r.data); dataRef.current=r.data; lastLoadAtRef.current=Date.now();
       if(!initialViewSetRef.current){ if(['draft','draw_generated','draw_approved'].includes(r.data?.event?.status)) setView('contact'); else if(['in_progress','paused'].includes(r.data?.event?.status)) setView('live'); else if(['completed','archived'].includes(r.data?.event?.status)) setView('live'); initialViewSetRef.current=true; }
