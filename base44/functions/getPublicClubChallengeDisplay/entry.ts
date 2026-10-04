@@ -16,6 +16,23 @@ Deno.serve(async (req) => {
     const { token } = await req.json().catch(() => ({}));
     const displayToken = String(token || '').trim();
     if (!/^ccd_[0-9a-f]{32}$/i.test(displayToken)) return Response.json({ error:'Display link is invalid or inactive.' }, { status:404 });
+
+    // Fast path for live event traffic: one lightweight snapshot read instead of
+    // rebuilding the entire public event from participants/matches/update tables
+    // on every phone poll. The authenticated host refreshes this snapshot after
+    // authoritative event changes. If no usable snapshot exists we safely fall
+    // back to the legacy builder below.
+    try {
+      const snapshots = await base44.asServiceRole.entities.ClubChallengePublicSnapshot.filter({ display_token:displayToken, active:true }, '-updated_at', 5);
+      const snapshot = snapshots?.[0];
+      if (snapshot?.display_payload_json) {
+        const payload = JSON.parse(snapshot.display_payload_json);
+        if (payload?.event?.id) return Response.json({ ...payload, server_now:new Date().toISOString(), snapshot_updated_at:snapshot.updated_at || null, snapshot:true });
+      }
+    } catch (snapshotError) {
+      console.warn('Public snapshot fast path unavailable; using fallback builder.', snapshotError?.message || snapshotError);
+    }
+
     const rows = await base44.asServiceRole.entities.ClubChallengeDisplayToken.filter({ token:displayToken, active:true }, '-created_at', 5);
     const link = rows?.[0];
     if (!link) return Response.json({ error:'Display link is invalid or inactive.' }, { status:404 });
@@ -24,9 +41,9 @@ Deno.serve(async (req) => {
     if (!event || !['draft','draw_generated','draw_approved','in_progress','paused','completed','archived'].includes(event.status)) return Response.json({ error:'Interclub Challenge display is not available.' }, { status:404 });
     const participants = await base44.asServiceRole.entities.ClubChallengeParticipant.filter({ challenge_event_id:event.id });
     const matches = await base44.asServiceRole.entities.ClubChallengeMatch.filter({ challenge_event_id:event.id });
-    const hostClubRows:any[] = [];
+    const hostClubRows:any[] = event.host_club_id ? await base44.asServiceRole.entities.Club.filter({ id:event.host_club_id, tenant_id:event.tenant_id }) : [];
     const spotPrizeRows = await base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id });
-    const tournamentRows:any[] = [];
+    const tournamentRows:any[] = await base44.asServiceRole.entities.Tournament.filter({ id:event.tournament_id });
     const updateRows = await base44.asServiceRole.entities.InterclubTournamentUpdate.filter({ challenge_event_id:event.id, status:'published' });
     const hostClub = hostClubRows?.[0] || null;
     const spotPrizeDraw = spotPrizeRows?.[0] || null;
@@ -135,7 +152,16 @@ Deno.serve(async (req) => {
       spot_prize_draw_count:Number(spotPrizeDraw?.draw_count || 0),
       spot_prize_winners:spotPrizeWinners.map((w:any)=>({ pull:Number(w.pull||0), participant_id:w.participant_id, display_name:maskName(w.display_name,!!event.junior_display_mode), side:w.side, team_name:w.team_name, number:Number(w.number||0), drawn_at:w.drawn_at || null })),
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
-      tournament_update:updateRows?.length ? (() => { const latest=[...updateRows].sort((a:any,b:any)=>Date.parse(b.published_at||b.created_date||0)-Date.parse(a.published_at||a.created_date||0))[0]; return { title:latest.title || 'Tournament Update', message:latest.message || '', published_at:latest.published_at || null }; })() : null,
+      tournament_update:updateRows?.length ? (() => {
+        const latest=[...updateRows]
+          .sort((a:any,b:any)=>Date.parse(b.published_at||b.created_date||0)-Date.parse(a.published_at||a.created_date||0))
+          .find((row:any)=>{
+            if (row.expiry_mode === 'event_start' && ['in_progress','paused','completed','archived'].includes(event.status)) return false;
+            if (row.expires_at) { const expiry=Date.parse(row.expires_at); if (Number.isFinite(expiry) && expiry <= Date.now()) return false; }
+            return true;
+          });
+        return latest ? { title:latest.title || 'Tournament Update', message:latest.message || '', published_at:latest.published_at || null, expires_at:latest.expires_at || null, expiry_mode:latest.expiry_mode || 'manual' } : null;
+      })() : null,
     }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
     console.error('getPublicClubChallengeDisplay failed', error);
