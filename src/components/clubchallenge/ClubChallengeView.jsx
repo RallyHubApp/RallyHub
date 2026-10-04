@@ -889,6 +889,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     }, delayMs);
   }, [event?.id, refreshPublicSnapshotNow]);
   React.useEffect(() => () => { if (publicSnapshotRefreshTimerRef.current) window.clearTimeout(publicSnapshotRefreshTimerRef.current); }, []);
+  React.useEffect(() => {
+    if (!event?.id || !hasManagePermission) return;
+    schedulePublicSnapshotRefresh(1400);
+  }, [event?.id, event?.updated_date, hasManagePermission, schedulePublicSnapshotRefresh]);
 
   const sync = async () => {
     // Serialise authoritative refreshes instead of firing Base44 reads in the same burst.
@@ -1823,6 +1827,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       if (res.data?.error) { if (!quiet) toast.error(res.data.error); return null; }
       const links = { ...res.data, displayUrl:interclubPublicUrl(`/club-challenge/display/${res.data.displayToken}`), votingUrl:interclubPublicUrl(`/club-challenge/vote/${res.data.votingToken}`) };
       setPublicLinks(links);
+      schedulePublicSnapshotRefresh(500);
       if (!quiet) toast.success('Live Event View and Players of the Tournament voting links are ready.');
       return links;
     } catch (e) {
