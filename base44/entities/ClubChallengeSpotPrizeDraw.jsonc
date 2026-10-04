@@ -73,6 +73,24 @@
         "null"
       ],
       "format": "date-time"
+    },
+    "pending_operation_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "last_completed_operation_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "last_completed_winner_json": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "required": [
