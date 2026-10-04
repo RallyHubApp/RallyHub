@@ -1,5 +1,5 @@
 {
-  "name": "KotcSessionShare",
+  "name": "KotcPlayerDeviceAccess",
   "type": "object",
   "properties": {
     "tenant_id": {
@@ -11,57 +11,66 @@
     "session_id": {
       "type": "string"
     },
-    "tournament_id": {
+    "share_id": {
       "type": "string"
     },
-    "token": {
+    "participant_id": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "device_token_hash": {
+      "type": "string"
+    },
+    "verification_code": {
       "type": "string"
     },
     "status": {
       "type": "string",
       "enum": [
-        "active",
-        "revoked"
+        "pending",
+        "approved",
+        "revoked",
+        "expired"
       ],
-      "default": "active"
+      "default": "pending"
     },
-    "created_by_user_id": {
-      "type": "string"
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "expires_at": {
       "type": "string",
       "format": "date-time"
     },
-    "visible_tabs_json": {
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "approved_by_user_id": {
       "type": "string"
     },
-    "scoring_access": {
-      "type": "string",
-      "enum": [
-        "off",
-        "read_only",
-        "verified_players"
-      ],
-      "default": "read_only"
-    },
-    "identification_mode": {
-      "type": "string",
-      "enum": [
-        "none",
-        "host_code"
-      ],
-      "default": "host_code"
-    },
-    "event_info_json": {
+    "auto_verified_user_id": {
       "type": "string"
+    },
+    "last_used_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
     "tenant_id",
     "club_id",
     "session_id",
-    "token",
-    "status"
+    "share_id",
+    "participant_id",
+    "client_id",
+    "device_token_hash",
+    "verification_code",
+    "status",
+    "requested_at",
+    "expires_at"
   ],
   "rls": {
     "create": {

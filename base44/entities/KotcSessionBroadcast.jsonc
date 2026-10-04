@@ -1,5 +1,5 @@
 {
-  "name": "KotcSessionShare",
+  "name": "KotcSessionBroadcast",
   "type": "object",
   "properties": {
     "tenant_id": {
@@ -11,57 +11,71 @@
     "session_id": {
       "type": "string"
     },
-    "tournament_id": {
+    "share_id": {
       "type": "string"
     },
-    "token": {
+    "title": {
+      "type": "string"
+    },
+    "message": {
       "type": "string"
     },
     "status": {
       "type": "string",
       "enum": [
-        "active",
-        "revoked"
+        "published",
+        "removed"
       ],
-      "default": "active"
+      "default": "published"
     },
-    "created_by_user_id": {
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "published_by_user_id": {
       "type": "string"
+    },
+    "expiry_mode": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "event_start",
+        "30m",
+        "60m",
+        "120m",
+        "custom"
+      ],
+      "default": "manual"
     },
     "expires_at": {
       "type": "string",
       "format": "date-time"
     },
-    "visible_tabs_json": {
-      "type": "string"
+    "email_recipient_count": {
+      "type": "number",
+      "default": 0
     },
-    "scoring_access": {
+    "email_sent_count": {
+      "type": "number",
+      "default": 0
+    },
+    "email_failed_count": {
+      "type": "number",
+      "default": 0
+    },
+    "email_sent_at": {
       "type": "string",
-      "enum": [
-        "off",
-        "read_only",
-        "verified_players"
-      ],
-      "default": "read_only"
-    },
-    "identification_mode": {
-      "type": "string",
-      "enum": [
-        "none",
-        "host_code"
-      ],
-      "default": "host_code"
-    },
-    "event_info_json": {
-      "type": "string"
+      "format": "date-time"
     }
   },
   "required": [
     "tenant_id",
     "club_id",
     "session_id",
-    "token",
-    "status"
+    "title",
+    "message",
+    "status",
+    "published_at"
   ],
   "rls": {
     "create": {
