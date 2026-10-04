@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       event.host_club_id ? base44.asServiceRole.entities.Club.filter({ id:event.host_club_id, tenant_id:event.tenant_id }, '-updated_date', 5) : Promise.resolve([]),
       base44.asServiceRole.entities.ClubChallengeSpotPrizeDraw.filter({ challenge_event_id:event.id }, '-updated_date', 5),
       base44.asServiceRole.entities.Tournament.filter({ id:event.tournament_id }, '-updated_date', 5),
-      base44.asServiceRole.entities.InterclubTournamentUpdate.filter({ challenge_event_id:event.id, status:'published' }, '-published_at', 5)
+      base44.asServiceRole.entities.InterclubTournamentUpdate.filter({ challenge_event_id:event.id, status:'published' }, '-created_date', 5)
     ]);
     const hostClub = hostClubRows?.[0] || null;
     const spotPrizeDraw = spotPrizeRows?.[0] || null;
@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
       spot_prize_draw_count:Number(spotPrizeDraw?.draw_count || 0),
       spot_prize_winners:spotPrizeWinners.map((w:any)=>({ pull:Number(w.pull||0), participant_id:w.participant_id, display_name:maskName(w.display_name,!!event.junior_display_mode), side:w.side, team_name:w.team_name, number:Number(w.number||0), drawn_at:w.drawn_at || null })),
       win_points:event.win_points, draw_points:event.draw_points, loss_points:event.loss_points,
-      tournament_update:updateRows?.[0] ? { title:updateRows[0].title || 'Tournament Update', message:updateRows[0].message || '', published_at:updateRows[0].published_at || null } : null,
+      tournament_update:updateRows?.length ? (() => { const latest=[...updateRows].sort((a:any,b:any)=>Date.parse(b.published_at||b.created_date||0)-Date.parse(a.published_at||a.created_date||0))[0]; return { title:latest.title || 'Tournament Update', message:latest.message || '', published_at:latest.published_at || null }; })() : null,
     }, participants:safeParticipants, matches:safeMatches });
   } catch (error) {
     console.error('getPublicClubChallengeDisplay failed', error);
