@@ -907,6 +907,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       queryClient.setQueryData(['club-challenge-secure-state', tournament.id, currentUser?.id], old => old ? ({ ...old, matches:(old.matches || []).map(m => m.id === savedMatch.id ? savedMatch : m) }) : old);
     }
     if (event?.status === 'completed') await refetchEvent();
+    schedulePublicSnapshotRefresh(1800);
   };
   const queueOfflineScore = item => setPendingScores(q => [...q.filter(x => x.matchId !== item.matchId), item]);
   const retryPendingScores = async () => {
@@ -975,6 +976,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
       await refetchParticipants();
       await refetchMatches();
       queryClient.invalidateQueries({ queryKey: ['tournament', tournament.id] });
+      schedulePublicSnapshotRefresh(1200);
     } catch (e) { toast.error(e?.message || 'Could not save setup'); }
     setSaving(false);
   };
