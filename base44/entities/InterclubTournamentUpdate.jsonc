@@ -35,6 +35,25 @@
     "published_by_user_id": {
       "type": "string"
     },
+    "expiry_mode": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "event_start",
+        "30m",
+        "60m",
+        "120m",
+        "custom"
+      ],
+      "default": "event_start"
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
     "email_sent_at": {
       "type": [
         "string",
