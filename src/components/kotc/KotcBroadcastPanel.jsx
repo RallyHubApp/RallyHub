@@ -1,0 +1,28 @@
+import React,{useEffect,useState} from 'react';
+import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+import { Bell,Mail,Trash2 } from 'lucide-react';
+
+function err(e){return e?.response?.data?.error||e?.data?.error||e?.message||'Broadcast action failed.';}
+
+export default function KotcBroadcastPanel({session}){
+ const [message,setMessage]=useState('');const [expiry,setExpiry]=useState('60m');const [customMinutes,setCustomMinutes]=useState('60');const [sendEmail,setSendEmail]=useState(true);const [busy,setBusy]=useState(false);const [status,setStatus]=useState(null);
+ const load=async()=>{if(!session?.id)return;try{const r=await base44.functions.invoke('kotcSessionBroadcast',{action:'status',sessionId:session.id});setStatus(r.data||null);}catch{}};
+ useEffect(()=>{load();},[session?.id]);
+ const test=async()=>{if(!message.trim())return toast.error('Enter the KOTC update first.');try{setBusy(true);const r=await base44.functions.invoke('kotcSessionBroadcast',{action:'test_email',sessionId:session.id,message});toast.success(`Test update sent to ${r.data?.to||'your email'}`);}catch(e){toast.error(err(e));}finally{setBusy(false);}};
+ const publish=async()=>{if(!message.trim())return toast.error('Enter the KOTC update first.');try{setBusy(true);const r=await base44.functions.invoke('kotcSessionBroadcast',{action:'publish',sessionId:session.id,message,expiryMode:expiry,customMinutes:Number(customMinutes||60),sendEmail});const sent=Number(r.data?.sent||0),failed=Number(r.data?.failed||0),recipients=Number(r.data?.emailRecipients||0);setStatus({...r.data,broadcast:r.data?.broadcast});setMessage('');if(sendEmail){if(failed)toast.error(`KOTC update published · ${sent} of ${recipients} emails sent · ${failed} failed`);else toast.success(`KOTC update published · ${sent} of ${recipients} player emails sent`);}else toast.success('KOTC update published to the Player Link');}catch(e){toast.error(err(e));}finally{setBusy(false);}};
+ const remove=async()=>{try{setBusy(true);await base44.functions.invoke('kotcSessionBroadcast',{action:'remove',sessionId:session.id});setStatus(s=>({...s,broadcast:null}));toast.success('KOTC update removed from the Player Link');}catch(e){toast.error(err(e));}finally{setBusy(false);}};
+ const b=status?.broadcast;
+ return <div className="rounded-xl border border-primary/20 p-3 space-y-3" data-testid="kotc-broadcast-panel">
+   <div className="flex items-start gap-2"><Bell className="w-4 h-4 text-primary mt-0.5"/><div><p className="text-sm font-semibold">KOTC Update Broadcast</p><p className="text-[11px] text-muted-foreground mt-0.5">Publish a temporary notice on the Player Link and optionally email the same update to linked players.</p></div></div>
+   {b&&<div className="rounded-lg border border-primary/20 bg-primary/5 p-3"><div className="flex items-start justify-between gap-2"><div><p className="text-xs font-bold">Current update</p><p className="text-sm mt-1 whitespace-pre-wrap">{b.message}</p><p className="text-[10px] text-muted-foreground mt-2">{b.expires_at?`Expires ${new Date(b.expires_at).toLocaleString()}`:b.expiry_mode==='event_start'?'Expires when play starts':'Stays until removed'}</p></div><Button size="sm" variant="ghost" onClick={remove} disabled={busy}><Trash2 className="w-4 h-4"/></Button></div>{Number(b.email_recipient_count||0)>0&&<p className="mt-2 text-xs font-semibold text-green-600">{Number(b.email_sent_count||0)} of {Number(b.email_recipient_count||0)} player emails sent{Number(b.email_failed_count||0)?` · ${b.email_failed_count} failed`:''}</p>}</div>}
+   <Textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="e.g. Courts 1–4 are ready. Please move to your next court." className="min-h-24"/>
+   <div className="grid sm:grid-cols-2 gap-2"><div><p className="text-[10px] text-muted-foreground mb-1">Show until</p><Select value={expiry} onValueChange={setExpiry}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="30m">30 minutes</SelectItem><SelectItem value="60m">1 hour</SelectItem><SelectItem value="120m">2 hours</SelectItem><SelectItem value="event_start">Event starts</SelectItem><SelectItem value="custom">Custom minutes</SelectItem><SelectItem value="manual">Until host removes it</SelectItem></SelectContent></Select></div>{expiry==='custom'&&<div><p className="text-[10px] text-muted-foreground mb-1">Minutes</p><Input type="number" min="5" max="1440" value={customMinutes} onChange={e=>setCustomMinutes(e.target.value)}/></div>}</div>
+   <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={sendEmail} onChange={e=>setSendEmail(e.target.checked)}/><span>Email this update to linked players as well ({Number(status?.emailRecipients||0)} available)</span></label>
+   <div className="grid grid-cols-2 gap-2"><Button variant="outline" onClick={test} disabled={busy||!message.trim()}><Mail className="w-4 h-4 mr-1"/>Send Test</Button><Button onClick={publish} disabled={busy||!message.trim()}>{busy?'Working…':'Publish Update'}</Button></div>
+ </div>;
+}
