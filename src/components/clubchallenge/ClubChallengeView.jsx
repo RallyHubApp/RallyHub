@@ -1951,10 +1951,16 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     const selectedScoreSheets = Number(!!selection.score) + Number(!!selection.handoverScore);
     const scoreOnly = selectedScoreSheets === 1 && !selection.schedule && !selection.roster && !selection.briefing && !selection.final;
     const portraitOnly = selectedScoreSheets === 0;
+    const printPageStyle = document.createElement('style');
+    printPageStyle.id = 'rh-interclub-active-page-style';
+    if (scoreOnly) printPageStyle.textContent = '@page { size: A4 landscape; margin: 5mm; }';
+    else if (portraitOnly) printPageStyle.textContent = '@page { size: A4 portrait; margin: 5mm; }';
+    if (printPageStyle.textContent) document.head.appendChild(printPageStyle);
     const cleanupPrintMode = () => {
       document.body.classList.remove('rh-printing-interclub');
       document.body.classList.remove('rh-printing-score-only');
       document.body.classList.remove('rh-printing-portrait-only');
+      document.getElementById('rh-interclub-active-page-style')?.remove();
     };
     document.body.classList.add('rh-printing-interclub');
     if (scoreOnly) document.body.classList.add('rh-printing-score-only');
