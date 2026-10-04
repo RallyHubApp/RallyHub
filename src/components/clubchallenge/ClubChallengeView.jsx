@@ -55,8 +55,10 @@ const DEFAULT_SETUP = {
 function number(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
 function isBase44RateLimitError(error) {
   const status = Number(error?.response?.status || error?.status || 0);
-  const message = String(error?.response?.data?.error || error?.message || error || '').toLowerCase();
+  const message = String(error?.response?.data?.error || error?.data?.error || error?.data?.message || error?.message || error || '').toLowerCase();
+  const transientNetwork = (!status && typeof navigator !== 'undefined' && navigator.onLine !== false && (message.includes('failed to fetch') || message.includes('network error') || message.includes('timeout')));
   return [429,502,503,504].includes(status)
+    || transientNetwork
     || message.includes('rate limit')
     || message.includes('burst')
     || message.includes('threshold')
@@ -70,6 +72,11 @@ async function invokeBase44Safely(name, payload, { retries = 5 } = {}) {
   while (true) {
     try {
       const response = await base44.functions.invoke(name, payload);
+      if (response?.data?.error && isBase44RateLimitError(response)) {
+        const pressureError = new Error(String(response.data.error));
+        pressureError.response = { status:Number(response?.status || 429), data:response.data, headers:response?.headers || {} };
+        throw pressureError;
+      }
       if (attempt > 0 && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('rallyhub:base44-pressure-recovered',{detail:{name,attempts:attempt}}));
       return response;
     } catch (error) {
