@@ -27,8 +27,8 @@ Deno.serve(async(req)=>{try{
  const rounds=await retry('rounds read',()=>base44.asServiceRole.entities.KotcRound.filter({session_id:session.id},'round_number',100));
  const matches=await retry('matches read',()=>base44.asServiceRole.entities.KotcMatch.filter({session_id:session.id},'round_number',500));
  const fixedPairs=await retry('pair locks read',()=>base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id},'phase_order',100));
- const scorerTokens=await retry('scorer link status read',()=>base44.asServiceRole.entities.KotcScorerToken.filter({session_id:session.id,status:'active'}));
- const scorerLinkActive=(scorerTokens||[]).some((t:any)=>!t.expires_at||Date.parse(t.expires_at)>Date.now());
+ const [scorerTokens,playerShares]=await Promise.all([retry('legacy scorer link status read',()=>base44.asServiceRole.entities.KotcScorerToken.filter({session_id:session.id,status:'active'})),retry('player link status read',()=>base44.asServiceRole.entities.KotcSessionShare.filter({session_id:session.id,status:'active'}))]);
+ const legacyScorerActive=(scorerTokens||[]).some((t:any)=>!t.expires_at||Date.parse(t.expires_at)>Date.now());const playerScoringActive=(playerShares||[]).some((s:any)=>String(s.scoring_access||'')==='verified_players');const scorerLinkActive=legacyScorerActive||playerScoringActive;
  const currentRound=(rounds||[]).filter((r:any)=>Number(r.round_number)===Number(session.current_round_number)&&!['superseded'].includes(r.status)).sort((a:any,b:any)=>Number(b.proposal_revision||0)-Number(a.proposal_revision||0))[0]||null;
  const slots=currentRound?await retry('current slots read',()=>base44.asServiceRole.entities.KotcRoundSlot.filter({session_id:session.id,round_id:currentRound.id},'ladder_court_rank',100)):[];
  return Response.json({session,participants,rounds,slots,matches,fixedPairs:fixedPairs||[],scorerLinkActive,contactDirectory:{},currentUserId:user.id,currentAccessRole,isAdmin:user.role==='admin',runtimeVersion:RUNTIME_VERSION});
