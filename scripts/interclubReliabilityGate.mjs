@@ -16,6 +16,7 @@ const checks = [];
 const check = (name, condition) => checks.push({name,condition:!!condition});
 
 check('public link no 1-second server poll', !/spotDrawLive\s*\?\s*1000/.test(publicPage) && !/pollMs\s*=\s*1000/.test(publicPage));
+check('public link retries transient Base44 pressure with jitter', publicPage.includes('loadPublicDisplayWithBackoff') && publicPage.includes('Math.random()*900') && publicPage.includes("message.includes('threshold')"));
 check('spot draw polling only while drawing', publicPage.includes("publicSpotStatus==='drawing'"));
 check('normal public polling remains jittered', publicPage.includes('18000+jitter'));
 check('completed public polling slows down', publicPage.includes('60000+jitter'));
@@ -33,6 +34,7 @@ check('spot draw completion replay is idempotent', drawFn.includes('last_complet
 check('spot draw schema persists operation identity', drawSchema.includes('pending_operation_id') && drawSchema.includes('last_completed_operation_id'));
 check('round advance duplicate retry is idempotent', roundFn.includes('alreadyApplied:true') && roundFn.includes('round === currentRound'));
 check('Base44 pressure helper catches threshold/overload', host.includes("message.includes('threshold')") && host.includes("message.includes('overload')") && host.includes('[429,502,503,504]'));
+check('Base44 pressure helper retries busy responses as well as thrown errors', host.includes('response?.data?.error && isBase44RateLimitError(response)'));
 check('Base44 pressure retry has backoff+jitter', host.includes('Math.min(8000, 800 * (2 ** attempt))') && host.includes('Math.random() * 350'));
 check('host registration polling disabled during live play', host.includes("refetchInterval: event && ['draft','draw_generated','draw_approved'].includes(event.status) ? 30000 : false"));
 check('host live match polling reduced', host.includes("? 8000 : isAdmin && ['in_progress','paused'].includes(event?.status) ? 30000 : false"));
