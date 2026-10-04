@@ -857,12 +857,17 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   }, []);
   React.useEffect(() => { localStorage.setItem(`cc-pending-${tournament.id}`, JSON.stringify(pendingScores)); }, [pendingScores, tournament.id]);
   React.useEffect(() => {
-    const pressure = event => setBase44Pressure(current => ({ count:current.count + 1, lastAt:new Date().toISOString(), recoveredAt:current.recoveredAt, lastFunction:event?.detail?.name || current.lastFunction }));
-    const recovered = event => setBase44Pressure(current => ({ ...current, recoveredAt:new Date().toISOString(), lastFunction:event?.detail?.name || current.lastFunction }));
+    try {
+      const saved = JSON.parse(localStorage.getItem(`cc-base44-pressure-${tournament.id}`) || 'null');
+      if (saved && typeof saved === 'object') setBase44Pressure(current => ({ ...current, ...saved }));
+    } catch {}
+    const persist = next => { try { localStorage.setItem(`cc-base44-pressure-${tournament.id}`, JSON.stringify(next)); } catch {} return next; };
+    const pressure = evt => setBase44Pressure(current => persist({ count:Number(current.count||0) + 1, lastAt:new Date().toISOString(), recoveredAt:current.recoveredAt, lastFunction:evt?.detail?.name || current.lastFunction }));
+    const recovered = evt => setBase44Pressure(current => persist({ ...current, recoveredAt:new Date().toISOString(), lastFunction:evt?.detail?.name || current.lastFunction }));
     window.addEventListener('rallyhub:base44-pressure', pressure);
     window.addEventListener('rallyhub:base44-pressure-recovered', recovered);
     return () => { window.removeEventListener('rallyhub:base44-pressure', pressure); window.removeEventListener('rallyhub:base44-pressure-recovered', recovered); };
-  }, []);
+  }, [tournament.id]);
 
   const refreshPublicSnapshotNow = React.useCallback(async () => {
     if (!event?.id || publicSnapshotRefreshInFlightRef.current) return false;
