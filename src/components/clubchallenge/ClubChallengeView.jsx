@@ -1864,10 +1864,11 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if (sendEmail && !window.confirm(`Publish this Tournament Update and email ${Number(tournamentUpdateInfo?.emailRecipients || 0)} player email address${Number(tournamentUpdateInfo?.emailRecipients || 0)===1?'':'es'}?`)) return;
     setTournamentUpdateBusy(true);
     try {
-      const res = await base44.functions.invoke('interclubTournamentUpdate', { eventId:event.id, action:'publish', title:'Tournament Update', message, templateId:tournamentUpdateTemplateId, sendEmail:!!sendEmail, origin:window.location.origin });
+      const res = await base44.functions.invoke('interclubTournamentUpdate', { eventId:event.id, action:'publish', title:'Tournament Update', message, templateId:tournamentUpdateTemplateId, expiryMode:tournamentUpdateExpiryMode, customMinutes:Number(tournamentUpdateCustomMinutes || 60), sendEmail:!!sendEmail, origin:window.location.origin });
       if (res.data?.error) throw new Error(res.data.error);
       setTournamentUpdateInfo(res.data);
       setTournamentUpdateDraft('');
+      schedulePublicSnapshotRefresh(500);
       toast.success(sendEmail ? `Tournament Update published · ${res.data?.sent || 0} email${Number(res.data?.sent||0)===1?'':'s'} sent${res.data?.failed ? ` · ${res.data.failed} failed` : ''}.` : 'Tournament Update published to the Player Link.');
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not publish Tournament Update'); }
     finally { setTournamentUpdateBusy(false); }
@@ -1875,7 +1876,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const removeTournamentUpdate = async () => {
     if (!event?.id || tournamentUpdateBusy || !window.confirm('Remove the current Tournament Update from the Player Link? This does not recall any email already sent.')) return;
     setTournamentUpdateBusy(true);
-    try { const res=await base44.functions.invoke('interclubTournamentUpdate',{eventId:event.id,action:'remove'}); if(res.data?.error)throw new Error(res.data.error); await loadTournamentUpdate(); toast.success('Tournament Update removed from the Player Link.'); }
+    try { const res=await base44.functions.invoke('interclubTournamentUpdate',{eventId:event.id,action:'remove'}); if(res.data?.error)throw new Error(res.data.error); await loadTournamentUpdate(); schedulePublicSnapshotRefresh(500); toast.success('Tournament Update removed from the Player Link.'); }
     catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not remove Tournament Update');}
     finally{setTournamentUpdateBusy(false);}
   };
