@@ -118,6 +118,21 @@ export default function AdminPanel() {
   const [inviteRole, setInviteRole] = useState('user');
   const [inviting, setInviting] = useState(false);
   const [membershipSyncing, setMembershipSyncing] = useState(false);
+  const [duprTesting, setDuprTesting] = useState(false);
+  const [duprResult, setDuprResult] = useState(null);
+  const testDuprUat = async () => {
+    setDuprTesting(true); setDuprResult(null);
+    try {
+      const response = await base44.functions.invoke('duprIntegration', { action: 'test_connection' });
+      const data = response?.data || response;
+      setDuprResult(data);
+      data?.authenticated ? toast.success('DUPR UAT authentication passed') : toast.error(data?.message || 'DUPR UAT authentication failed');
+    } catch (e) {
+      const data = e?.response?.data || {};
+      setDuprResult({ authenticated:false, environment:'uat', httpStatus:e?.response?.status, message:data?.message || data?.error || 'DUPR UAT authentication failed.' });
+      toast.error(data?.message || data?.error || 'DUPR UAT authentication failed');
+    } finally { setDuprTesting(false); }
+  };
   const [membershipSyncResult, setMembershipSyncResult] = useState(null);
   const [membershipSearch, setMembershipSearch] = useState('');
   const [selectedMembershipPersonId, setSelectedMembershipPersonId] = useState('');
