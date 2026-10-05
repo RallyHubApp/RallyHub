@@ -1923,6 +1923,32 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not send test email'); }
     finally { setTournamentUpdateTestBusy(false); }
   };
+  const previewPressReleaseEmail = async () => {
+    const title = pressReleaseTitle.trim();
+    const message = pressReleaseDraft.trim();
+    if (!event?.id || !title || !message || pressReleaseBusy) return;
+    setPressReleaseBusy(true);
+    try {
+      const res = await base44.functions.invoke('interclubTournamentUpdate', { eventId:event.id, action:'press_preview', title, message, origin:window.location.origin });
+      if (res.data?.error) throw new Error(res.data.error);
+      setTournamentUpdatePreviewHtml(res.data?.previewHtml || '');
+      setTournamentUpdatePreviewOpen(true);
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not load press release preview'); }
+    finally { setPressReleaseBusy(false); }
+  };
+  const sendPressReleaseTestEmail = async () => {
+    const title = pressReleaseTitle.trim();
+    const message = pressReleaseDraft.trim();
+    const testEmail = pressReleaseTestEmail.trim();
+    if (!event?.id || !title || !message || !testEmail || pressReleaseBusy) return;
+    setPressReleaseBusy(true);
+    try {
+      const res = await base44.functions.invoke('interclubTournamentUpdate', { eventId:event.id, action:'press_test_email', title, message, testEmail, origin:window.location.origin });
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success(`Press release test sent to ${res.data?.testEmail || testEmail}.`);
+    } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not send press release test'); }
+    finally { setPressReleaseBusy(false); }
+  };
   const publishTournamentUpdate = async (sendEmail) => {
     const message = tournamentUpdateDraft.trim();
     if (!event?.id || !message || tournamentUpdateBusy) return;
