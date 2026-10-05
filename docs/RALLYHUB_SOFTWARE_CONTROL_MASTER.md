@@ -66,6 +66,8 @@ Silence is not permission to alter a protected behaviour. A protected behaviour 
 - `KOTC-SCORE-005`: Prepare Next Round must not perform redundant full-state reads when the host already has authoritative resolved score state; server-side preparation still validates current matches.
 - `KOTC-SCORE-006`: Lost-response, stale-revision, double-tap, scorer-lock and Base44 429 behaviour remain mandatory Deep tests.
 - `KOTC-SCORE-007`: Courtside performance is correctness. Score Save, Prepare Next Round and Start Round require performance regression evidence, not only functional pass/fail.
+- `KOTC-HOST-001`: The primary/Superhost has a live session leaderboard directly inside the KOTC host interface. It must not require opening the public Results link or leaving the live host workflow.
+- `KOTC-HOST-002`: The live host leaderboard recalculates from authoritative completed session matches and shows position, player, played, wins, losses, score differential and Court 1 appearances using the same session ranking order as KOTC results.
 
 ### 3.4 Host/session behaviour already established
 
