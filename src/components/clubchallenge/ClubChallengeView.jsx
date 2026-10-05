@@ -588,6 +588,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [tournamentUpdatePreviewBusy, setTournamentUpdatePreviewBusy] = useState(false);
   const [tournamentUpdateTestEmail, setTournamentUpdateTestEmail] = useState('');
   const [tournamentUpdateTestBusy, setTournamentUpdateTestBusy] = useState(false);
+  const [resultsEmailInfo, setResultsEmailInfo] = useState(null);
+  const [resultsEmailBusy, setResultsEmailBusy] = useState(false);
+  const [resultsEmailTest, setResultsEmailTest] = useState('brian.moore007@gmail.com');
   const [pressReleaseTitle, setPressReleaseTitle] = useState(CLARE_GALWAY_PRESS_HEADLINE);
   const [pressReleaseDraft, setPressReleaseDraft] = useState(CLARE_GALWAY_PRESS_RELEASE);
   const [pressReleaseTestEmail, setPressReleaseTestEmail] = useState('clarepb2025@gmail.com');
@@ -1970,6 +1973,30 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try { const res=await base44.functions.invoke('interclubTournamentUpdate',{eventId:event.id,action:'remove'}); if(res.data?.error)throw new Error(res.data.error); await loadTournamentUpdate(); schedulePublicSnapshotRefresh(500); toast.success('Tournament Update removed from the Player Link.'); }
     catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not remove Tournament Update');}
     finally{setTournamentUpdateBusy(false);}
+  };
+  const loadResultsEmailPreview = async () => {
+    if (!event?.id || resultsEmailBusy) return;
+    setResultsEmailBusy(true);
+    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'preview',origin:window.location.origin}); if(res.data?.error)throw new Error(res.data.error); setResultsEmailInfo(res.data); setTournamentUpdatePreviewHtml(res.data.previewHtml||''); setTournamentUpdatePreviewOpen(true); }
+    catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not load results email preview');}
+    finally{setResultsEmailBusy(false);}
+  };
+  const sendResultsEmailTest = async () => {
+    if (!event?.id || !resultsEmailTest.trim() || resultsEmailBusy) return;
+    setResultsEmailBusy(true);
+    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'test',testEmail:resultsEmailTest.trim(),origin:window.location.origin}); if(res.data?.error)throw new Error(res.data.error); toast.success(`Results test email sent to ${res.data.to}.`); }
+    catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not send results test email');}
+    finally{setResultsEmailBusy(false);}
+  };
+  const sendResultsEmails = async () => {
+    if (!event?.id || resultsEmailBusy) return;
+    const info=resultsEmailInfo || (await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'status',origin:window.location.origin})).data;
+    if(info?.error)return toast.error(info.error);
+    if(!window.confirm(`Send the approved Your Results email to ${Number(info?.recipientCount||0)} participants? Players without an email address will not be sent anything.`))return;
+    setResultsEmailBusy(true);
+    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'send',origin:window.location.origin}); if(res.data?.error)throw new Error(res.data.error); setResultsEmailInfo(res.data); toast.success(`Your Results sent · ${res.data.sent}/${res.data.recipientCount}${res.data.failed?` · ${res.data.failed} failed`:''}.`); }
+    catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not send results emails');}
+    finally{setResultsEmailBusy(false);}
   };
   const prepareRegistrationLink = async side => {
     if (!event || !hasManagePermission || !['club_a','club_b'].includes(side)) return;
@@ -3513,6 +3540,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           <div className="flex items-center justify-start">
             <Button variant="outline" onClick={() => setTab('live')}><ArrowLeft className="w-4 h-4 mr-2" />Back to Live Event</Button>
           </div>
+          {['completed','archived'].includes(event?.status) && hasManagePermission && <div data-testid="cc-results-email" className="print:hidden rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3"><div><p className="text-sm font-black">Email 1 · Your Results</p><p className="mt-1 text-xs text-muted-foreground">Approved Clare v Galway HTML email with each player's private results link. Preview the exact HTML, send yourself a test, then send to all participants with an email address.</p></div>{resultsEmailInfo&&<div className="rounded-lg border bg-background p-3 text-xs"><strong>{Number(resultsEmailInfo.recipientCount||resultsEmailInfo.sent||0)} recipients ready.</strong>{resultsEmailInfo.missing?.length?` Missing email: ${resultsEmailInfo.missing.map(p=>p.name).join(', ')}.`:''}</div>}<div className="flex flex-col sm:flex-row gap-2"><Button type="button" variant="outline" disabled={resultsEmailBusy} onClick={loadResultsEmailPreview}>{resultsEmailBusy?'Working…':'Preview HTML'}</Button><div className="flex min-w-[280px] flex-1 gap-2"><input type="email" value={resultsEmailTest} onChange={e=>setResultsEmailTest(e.target.value)} aria-label="Results test email address" className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"/><Button type="button" variant="outline" disabled={resultsEmailBusy||!resultsEmailTest.trim()} onClick={sendResultsEmailTest}>Send Test Email</Button></div><Button type="button" disabled={resultsEmailBusy} onClick={sendResultsEmails}>Send Your Results</Button></div><p className="text-[10px] text-muted-foreground">Nothing is sent from Preview. The final Send confirmation shows the recipient count before delivery.</p></div>}
           {event?.pot_enabled && <div className="rounded-xl border border-border bg-card p-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
