@@ -10,11 +10,21 @@ const EMPTY={
 
 
 export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
-  const [form,setForm]=useState(EMPTY);
+  const initial=useMemo(()=>{
+    if(typeof window==='undefined')return EMPTY;
+    const p=new URLSearchParams(window.location.search);
+    return {...EMPTY,
+      firstName:p.get('firstName')||'',
+      email:p.get('email')||'',
+      mobile:p.get('mobile')||'',
+      county:p.get('county')||''
+    };
+  },[]);
+  const [form,setForm]=useState(initial);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [done,setDone]=useState(null);
-  const [signupOpen,setSignupOpen]=useState(false);
+  const [signupOpen,setSignupOpen]=useState(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('join')==='1');
   const [shareDraft,setShareDraft]=useState(null);
 
   const clubOptions=useMemo(()=>[...clubs]
