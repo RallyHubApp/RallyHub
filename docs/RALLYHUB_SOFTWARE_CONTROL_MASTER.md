@@ -1,0 +1,229 @@
+# RallyHub Software Control Master (SCM)
+
+**Status:** LIVE CONTROL MASTER — repository authority for signed-off behaviour and change control  
+**Version:** 1.0  
+**Date:** 5 October 2026  
+**Owner:** RallyHub  
+**Relationship to testing:** `docs/RALLYHUB_MASTER_TESTING_BLUEPRINT.md` defines how RallyHub is tested. This SCM defines what is approved/protected and what must not regress.
+
+## 1. Permanent control rule
+
+RallyHub is a commercial multi-tenant sporting platform. A feature is not accepted merely because a new request works. Every change must preserve all previously signed-off behaviour unless an explicit approved change says otherwise.
+
+For protected modules the sequence is mandatory:
+
+1. identify the affected module and protected requirements;
+2. identify the signed-off baseline/checkpoint;
+3. run the applicable pre-change regression/golden scenarios where practical;
+4. make the smallest modular change;
+5. run affected module tests plus all shared regressions;
+6. compare correctness, security and performance with the baseline;
+7. do not alter a protected requirement/test merely to make changed code pass;
+8. create a named checkpoint only after the gate passes;
+9. update this SCM when an approved behaviour genuinely changes.
+
+Silence is not permission to alter a protected behaviour. A protected behaviour may change only by explicit approval.
+
+## 2. Platform architecture — protected
+
+- Permanent hierarchy: platform → tenant → club → venue/courts → session series/occurrences/events.
+- Tenant is the security and commercial boundary.
+- Canonical Person is separate from account, membership, player and competition entry.
+- Multi-tenant, multi-club and multi-sport behaviour must not hard-code Clare names, colours, logos or IDs into shared logic.
+- Public discovery/read models remain separated from private transactional club/competition data.
+- Backend authorisation is authoritative; UI visibility is not a security boundary.
+- Tenant/role/entitlement/resource isolation, auditability and versioned rulesets are permanent controls.
+- Trial expiry preserves tenant data/history and must not interrupt a live event.
+- Shared changes trigger regressions in every consuming module.
+
+## 3. King of the Court (KOTC) — PROTECTED COMMERCIAL MODULE
+
+### 3.1 Sporting invariants
+
+- `KOTC-SPORT-001`: Court 1 is always the King Court / highest court.
+- `KOTC-SPORT-002`: Winners move exactly one court towards Court 1. Winners already on Court 1 stay on Court 1.
+- `KOTC-SPORT-003`: Losers move exactly one court away from Court 1. Losers on the bottom active court remain at the bottom end.
+- `KOTC-SPORT-004`: The number of active courts changes the bottom court only; it never changes the hierarchy. Examples: 3 courts => Court 3 bottom; 4 courts => Court 4 bottom.
+- `KOTC-SPORT-005`: Incoming result pairs split into new partnerships unless an explicit valid host pair lock requires otherwise.
+- `KOTC-SPORT-006`: A pair lock may not silently reverse earned ladder movement. Impossible constraints must fail visibly rather than manufacture a bad round.
+- `KOTC-SPORT-007`: Round generation must enforce a final sporting invariant before persistence. Wrong-direction movement must fail closed.
+
+### 3.2 Bench/fairness invariants
+
+- `KOTC-BENCH-001`: Bench pressure starts at the bottom of the sporting ladder; bench fairness must not redesign earned movement.
+- `KOTC-BENCH-002`: Do not give a player a second bench while another otherwise eligible player has never benched, unless no valid alternative exists.
+- `KOTC-BENCH-003`: Court 1 winners are protected from ordinary bench rotation because King Court was earned.
+- `KOTC-BENCH-004`: Exception: after three consecutive wins on Court 1, a player becomes eligible for bench rotation.
+- `KOTC-BENCH-005`: The Court 1 streak means consecutive Court 1 wins, not appearances or wins elsewhere. Loss, bench or play away from Court 1 resets it.
+- `KOTC-BENCH-006`: Host locks remain respected where a valid sporting arrangement exists.
+
+### 3.3 Scoring/live-host invariants
+
+- `KOTC-SCORE-001`: Player Link scoring may operate without identity verification when configured as open player scoring; first scorer/device claims the court.
+- `KOTC-SCORE-002`: One scorer per court at a time. A saved result is locked against competing first-pass writes; corrections are controlled.
+- `KOTC-SCORE-003`: Score digits are entered locally; the application must not make a network request for every key press.
+- `KOTC-SCORE-004`: Authoritative score persistence is the critical path. Audit/telemetry must not hold the host on a Saving state after the authoritative match write succeeds.
+- `KOTC-SCORE-005`: Prepare Next Round must not perform redundant full-state reads when the host already has authoritative resolved score state; server-side preparation still validates current matches.
+- `KOTC-SCORE-006`: Lost-response, stale-revision, double-tap, scorer-lock and Base44 429 behaviour remain mandatory Deep tests.
+- `KOTC-SCORE-007`: Courtside performance is correctness. Score Save, Prepare Next Round and Start Round require performance regression evidence, not only functional pass/fail.
+
+### 3.4 Host/session behaviour already established
+
+- Start gate before score entry; clear current-round state.
+- Auto/controlled progression only after required scores are resolved.
+- Undo/recovery must preserve authoritative sporting state.
+- Live roster supports injury, leaving, late join/return and bench handling without corrupting historical rounds.
+- Hall announcements include the established `5-4-3-2-1, hand in scores` sequence where enabled.
+- Cumulative leaderboard/history, head-to-head and future prediction features must consume authoritative completed results and not mutate sporting movement.
+- KOTC is generally not DUPR-rated; DUPR is an explicit per-event choice, not an implicit KOTC behaviour.
+
+### 3.5 Current protected restore points
+
+- `LOCKED KOTC sporting and bench hierarchy` — signed-off sporting/bench implementation checkpoint, 5 Oct 2026.
+- `KOTC live score latency fast path` — live scoring latency/control checkpoint, 5 Oct 2026.
+
+These checkpoints are rollback references, not permission to bypass regression testing.
+
+## 4. RallyHub Interclub — PROTECTED MODULE
+
+- Dedicated club-versus-club module, not a generic tournament fallback.
+- Existing teams, registrations, scores and event history are protected; live events must never be used as disposable test data.
+- Team setup supports club players, guests, ranking/order, reserves, planned substitutions and handover.
+- Event-day host controls include draw approval/undo, court/time controls, break controls, reserve/replacement handling, score correction, PA/announcements and public/live views.
+- Historical rounds/results remain immutable when future substitutions/replacements are applied.
+- Public/player links are read projections and must not expose private participant/contact data.
+- Scoring and event management remain permission-controlled and tenant-scoped.
+- Completed/archived events are read-only except through explicitly authorised audited correction/reopen workflows.
+- Public link resilience and concurrent access are release requirements; player/public views should tolerate the expected event audience (current operational target up to approximately 200 simultaneous viewers).
+- Live Event View standard: responsive phone/screen layout, RallyHub/module branding, QR/clickable links, Copy/Share/WhatsApp, appearance controls and event-specific final/showcase handling.
+- Clare v Galway, 4 Oct 2026, is production evidence: 4 courts, 12 rounds, 20-minute break after Round 6, optional showcase/final. Day-of failures (public link load, draw spinner, missing draw icon) are permanent regression cases.
+- Draw/spot-prize behaviour is non-sporting unless explicitly configured; it must never alter scores/rankings.
+- DUPR can be enabled for an Interclub event only by explicit event configuration/agreement.
+
+## 5. DUPR integration — CONTROLLED INTEGRATION MODULE
+
+### 5.1 Architecture decisions
+
+- Central RallyHub DUPR service; no DUPR-specific logic duplicated independently inside each sporting module.
+- DUPR is optional per event/format. Tournament, Interclub, ladder/league fixture or club night can opt in when appropriate.
+- KOTC is normally DUPR-off because its scoring/rotation format is generally unsuitable.
+- Official integration path uses DUPR SSO/authentication; do not rely on manually typed player IDs as the primary production identity mechanism.
+- Server-side partner/UAT token handling only. Secrets remain server-side and must never be exposed in frontend code/logs/public responses.
+- Ratings are visible from authorised DUPR data/webhook updates where permitted.
+- Organiser flow: score/result → organiser review/approval → DUPR submission. Submission must never happen merely because a score exists.
+- Match create/update/delete permissions and club permissions must follow DUPR partner rules and RallyHub tenant/event authority.
+- UAT and production remain separated. Certification/integration review precedes production credentials.
+- Provider-neutral CSV/manual interoperability remains a permanent fallback, not a replacement for the official API integration.
+
+### 5.2 UAT work completed / in progress
+
+- NDA/access process completed sufficiently to obtain UAT partner credentials; UAT credentials are held in Base44 Secrets.
+- Four test identities are part of the controlled UAT set: Brian, Róisín, RallyHub app/test identity and Marie; three were verified during the current cycle and Marie required re-verification after an expired link.
+- DUPR instructed logout before each verification; MFA is required for club-admin access.
+- UAT club access follows identity verification and password-reset/MFA setup.
+- The integration work reviewed mandatory SSO, ratings/webhooks, result publication and DUPR's integration checklist.
+- Per-event enable/disable remains a protected product requirement.
+- Existing historical Phase-1 interoperability decision: provider-neutral CSV/manual export/import fallback remains available even after API integration.
+
+### 5.3 DUPR regression/security requirements
+
+- No token/secret in browser bundle, logs, public payloads or tenant-visible configuration.
+- Wrong tenant/club/event cannot submit another entity's results.
+- Duplicate/retry/idempotency behaviour must prevent accidental duplicate DUPR publication.
+- Correction/deletion flows must reconcile with DUPR rather than creating contradictory RallyHub/DUPR records.
+- Opted-out events must make zero DUPR publication calls.
+- UAT test accounts/data must not contaminate production leaderboards or club records.
+- Player consent/SSO linkage must be durable enough that normal use does not repeatedly force unnecessary re-verification, while respecting DUPR token/security requirements.
+
+## 6. Membership / Member Portal — PROTECTED SHARED MODULE
+
+- Membership year for Clare currently runs September–September; displayed 2026–27 fee is €36. Tenant configuration must remain dynamic rather than hard-coded globally.
+- Membership list requires operational filters including A–Z, membership ID, payment date and DOB where authorised.
+- Member profile supports controlled profile photo/crop and initials fallback.
+- Member contact details are private by default; public/member-facing projections must not expose full mobile/email without explicit authorised design. Existing masked-display requirement includes last-four-digit style where appropriate.
+- GDPR communications/consent is one-way/controlled where specified and must be auditable.
+- Canonical identity/member reconciliation must handle aliases/duplicates without silently creating duplicate people.
+- Member Portal Phase 1: Home | Play | Clubhouse | Learn | Me; combined personal calendar/map; KOTC/Interclub/Directory events; posts/polls/comments; privacy-controlled messaging; profiles/membership/payment/playing groups; competition results/leaderboard; Learn/resources; notifications/digital membership card/onboarding.
+- Phase 1 continues to use Spond for sessions/bookings/payments where agreed. Phase 2 progressively replaces Spond with native sessions, eligibility, capacity/waitlists, payment-confirmed booking, reminders, cancellations/refunds, attendance, event chat/broadcasts, host tools and analytics.
+
+## 7. Events / Public Directory / Discovery
+
+- Public Directory supports 32-county discovery and filters including county/day/time/level/indoor/outdoor/name.
+- Claim → verify → edit remains the ownership flow; private owner/contact records are not public listing fields.
+- Protected Call/WhatsApp/Email actions must respect GDPR/privacy and tracking rules.
+- Directory/public discovery is a public read layer, separated from transactional competition state and private club/member data.
+- Event creation is tenant-controlled with public categories such as Tournaments, Coaching, Holidays and Other; upcoming fixtures/events must remain discoverable.
+- Public listing counts/data imports are controlled datasets; regressions in count or protected records require reconciliation rather than silent overwrite.
+
+## 8. Trials, entitlements and external clubs
+
+- External trials use isolated tenants and explicit entitlements/capabilities.
+- Demo Mode data remains separate from real statistics.
+- Trial-to-paid conversion preserves tenant, users, integrations and history.
+- Expiry preserves data and must not terminate a live event mid-session.
+- Ashbourne/external KOTC trials must use the same protected KOTC sporting engine, not a divergent copy.
+
+## 9. Testing and release control
+
+The Master Testing Blueprint remains mandatory. In addition:
+
+- Protected requirement IDs in this SCM are release gates.
+- Golden scenarios must cover at minimum KOTC 12/3, 14/3+2 bench, 16/4, 18/4+2 bench, locks, three consecutive Court-1 wins, injury, late join, odd/even bench cycles, host overrides, crash/recovery, player scoring and Base44 slow/429/lost-response conditions.
+- Interclub golden scenarios include full draw → live → scores → break → substitutions/replacements → final result → archive/reopen/public view.
+- Every meaningful live defect becomes a permanent regression case.
+- Production membership and proven live competition data are never disposable test fixtures.
+- Test harnesses must label TEST MODE and isolate synthetic data.
+- A build pass proves compilation only. It does not prove sporting correctness, performance, security or release readiness.
+
+## 10. Development/tool control
+
+- Prefer direct, reviewable repository/code changes for controlled RallyHub engineering work where the capability exists.
+- Do not substitute an AI builder message/request for a previously agreed direct-code workflow merely for convenience.
+- If a different implementation route is genuinely required, record the reason before changing the protected module.
+- Approved visual/email/document assets are references to reuse, not prompts to redesign.
+- Changes to shared components must identify every consuming module before release.
+
+## 11. Next modular build: Communications / Email Engine
+
+This is the next shared platform module and must be designed once for all sporting/product modules rather than separately inside KOTC, Interclub, Membership, Events, DUPR, trials, etc.
+
+Initial scope to formalise before implementation:
+
+- tenant/club/event-aware branding and approved templates;
+- reusable header/footer/signature assets;
+- transactional vs announcement/broadcast message types;
+- recipient sources and segmentation from authorised membership/event data;
+- preview/test-send/approval/send workflow;
+- per-recipient delivery status, retry and audit;
+- suppression/unsubscribe/GDPR rules where applicable;
+- attachments/media and approved asset handling;
+- module-generated variables without hard-coded Clare content;
+- permissions: who may draft, approve and send;
+- idempotency/duplicate-send protection;
+- provider abstraction so sporting modules call one communications service;
+- no sporting module should implement its own independent email delivery logic after migration;
+- existing approved email template(s) are protected inputs and must not be redesigned without explicit approval.
+
+## 12. Module register
+
+| Module | Current control status | Primary next control work |
+|---|---|---|
+| Platform architecture/security | Protected | Maintain isolation/entitlement regressions |
+| KOTC | Commercial / protected | Golden sporting + latency gates |
+| Interclub | Production-proven / protected | Convert live defects into permanent regressions |
+| DUPR | UAT integration / protected design | Complete controlled UAT/certification and event toggle |
+| Membership/Member Portal | Active development / protected data model | Continue modular Phase 1 |
+| Events | Active | Consolidate shared event/public projections |
+| Public Directory | Production dataset / protected privacy | Continue controlled reconciliation/claim flow |
+| Trials/Entitlements | Controlled pilot | External-club isolation and conversion testing |
+| Communications/Email Engine | NEXT SHARED MODULE | Architecture, approved templates, provider/service contract |
+
+## 13. Change log
+
+### 5 October 2026 — SCM v1.0
+
+- Created permanent Software Control Master.
+- Captured platform architecture, KOTC sporting/bench/scoring invariants, Interclub, DUPR, Membership/Member Portal, Events/Directory, trials and release controls.
+- Recorded KOTC sporting and live-score-latency checkpoints.
+- Established Communications/Email Engine as the next shared modular build.
+- Established explicit rule that approved behaviour cannot be changed silently and that build success alone is not release evidence.
