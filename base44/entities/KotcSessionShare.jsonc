@@ -40,7 +40,8 @@
       "enum": [
         "off",
         "read_only",
-        "verified_players"
+        "verified_players",
+        "open_players"
       ],
       "default": "read_only"
     },
