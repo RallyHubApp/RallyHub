@@ -6,10 +6,31 @@ const firstName=(v:any)=>clean(v,160).split(/\s+/).filter(Boolean)[0] || 'there'
 Deno.serve(async (req)=>{
   try{
     const base44=createClientFromRequest(req);
-    const user=await base44.auth.me();
-    if(!user) return Response.json({error:'Sign in required'},{status:401});
     const body=await req.json().catch(()=>({}));
     const action=clean(body.action,40);
+
+    if(action==='public_contact'){
+      const name=clean(body.name,160);
+      const email=clean(body.email,240).toLowerCase();
+      const clubName=clean(body.clubName,180);
+      const phone=clean(body.phone,80);
+      const message=clean(body.message,4000);
+      const category=['bug','confusing','improvement','feature_request','other'].includes(body.category) ? body.category : 'other';
+      if(!name||!email||!clubName||!message) return Response.json({error:'Name, email, club and message are required.'},{status:400});
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.json({error:'Please enter a valid email address.'},{status:400});
+      const now=new Date().toISOString();
+      const row=await base44.asServiceRole.entities.RallyHubFeedback.create({
+        user_id:'public',listing_slug:'public-contact',club_name:clubName,
+        person_name:name,person_email:email,person_phone:phone||null,
+        category,area:clean(body.area,160)||'general',message,importance:'important',
+        contact_ok:true,page_path:clean(body.pagePath,300)||'/contact',user_agent:clean(body.userAgent,700)||null,
+        status:'new',submitted_at:now,updated_at:now,
+      });
+      return Response.json({success:true,id:row.id,message:`Thanks, ${firstName(name)}. Your message has been sent to RallyHub.`});
+    }
+
+    const user=await base44.auth.me();
+    if(!user) return Response.json({error:'Sign in required'},{status:401});
 
     if(action==='submit'){
       const listingSlug=clean(body.listingSlug,220);
