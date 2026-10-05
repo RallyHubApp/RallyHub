@@ -2888,9 +2888,10 @@ Brian`;
           <GlassCard className="p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div><p className="text-xs font-semibold uppercase tracking-wider text-primary">Super Admin · UAT only</p><h2 className="mt-1 text-xl font-bold">DUPR backend authentication</h2><p className="mt-1 text-sm text-muted-foreground">Protected server-side connection test against DUPR UAT. Credentials and tokens are never shown here.</p></div>
-              <Button onClick={testDuprUat} disabled={duprTesting}>{duprTesting ? 'Testing…' : 'Test DUPR UAT'}</Button>
+              <Button onClick={testDuprUat} disabled={duprTesting} className={duprTesting ? 'opacity-60 cursor-wait' : ''}>{duprTesting ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Connecting to DUPR UAT…</> : 'Test DUPR UAT'}</Button>
             </div>
-            {duprResult && <div className="mt-5 rounded-xl border p-4">
+            {duprTesting && <div className="mt-5 rounded-xl border bg-muted/30 p-4"><p className="flex items-center gap-2 font-semibold"><RefreshCw className="h-4 w-4 animate-spin" />Contacting DUPR UAT…</p><p className="mt-1 text-sm text-muted-foreground">Secure server-side authentication is in progress. Please wait.</p></div>}
+            {!duprTesting && duprResult && <div className="mt-5 rounded-xl border p-4">
               <p className="font-bold">Authentication: {duprResult.authenticated ? 'PASS' : 'FAIL'}</p>
               <p className="mt-1 text-sm text-muted-foreground">Environment: UAT{duprResult.apiVersion ? ` · API ${duprResult.apiVersion}` : ''}</p>
               {duprResult.timestamp && <p className="mt-1 text-xs text-muted-foreground">Tested {new Date(duprResult.timestamp).toLocaleString('en-IE')}</p>}
