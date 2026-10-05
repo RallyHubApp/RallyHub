@@ -10,6 +10,7 @@ import Seo, { SITE_URL } from '@/components/public/Seo';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
 import PublicDirectoryLogo from '@/components/directory/PublicDirectoryLogo';
 import DirectoryPlayerNetworkPanel from '@/components/directory/DirectoryPlayerNetworkPanel';
+import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import { trackSiteEvent } from '@/lib/site-analytics';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -544,24 +545,7 @@ export default function PublicDirectory() {
           </div>
         </main>
 
-        <footer className="mt-4 bg-[#053c56] text-white">
-          <div className="bg-[#053c56] text-white">
-            <div className="mx-auto flex min-h-[70px] max-w-[1380px] flex-col items-center justify-center gap-3 px-4 py-4 text-center sm:px-6 md:flex-row md:justify-between md:text-left lg:px-10 xl:px-12">
-              <div>
-                <div className="font-black">RallyHub</div>
-                <div className="mt-1 text-[8px] font-bold tracking-[.30em] text-white/90">PLAY • CONNECT • BELONG</div>
-              </div>
-              <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[11px] font-bold text-white/85">
-                <Link to="/directory">Directory</Link>
-                <Link to="/events">Events</Link>
-                <Link to="/directory/help">Club Guide</Link>
-                <Link to="/about">About</Link>
-                <Link to="/contact">Contact</Link>
-              </div>
-            </div>
-          </div>
-          <div className="mx-auto flex min-h-[36px] max-w-[1380px] items-center justify-center border-t border-white/10 px-4 py-2 text-center text-[10px] font-medium text-white/70 sm:px-6 sm:text-[11px] lg:px-10 xl:px-12">© 2026 RallyHub All rights reserved.</div>
-        </footer>
+        <div className="mt-4"><PublicCopyrightFooter /></div>
       </div>
     </>
   );
