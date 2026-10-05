@@ -77,6 +77,7 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl}:any){
     </tr></table>
   </td></tr>
 
+  <tr><td style="padding:5px 28px 8px;font-family:Arial,Helvetica,sans-serif;color:#253c84;font-size:16px;line-height:1.45"><strong>Photos from the day:</strong> we’ll send you a link to the event photos tomorrow.</td></tr>
   <tr><td style="padding:5px 28px 16px;font-family:Arial,Helvetica,sans-serif;color:#253c84;font-size:16px;line-height:1.45">Thanks again for being part of the day. We look forward to welcoming you back on court and to the next ${a} v ${b} meeting in Galway.</td></tr>
   ${clickableFooter}
 </table></td></tr></table></body></html>`;
@@ -84,5 +85,5 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl}:any){
 
 export function interclubResultsText({event,name,url,alertsUrl}:any){
   const a=event?.club_a_name||'Clare', b=event?.club_b_name||'Galway';
-  return `Hi ${first(name)},\n\nThanks very much for taking part in the ${a} v ${b} Interclub.\n\nYour individual results are ready. To see your own games, scores, overall performance, final team result and both team podiums, open this link:\n${url}\n\nLooking forward to the return fixture\nWe hope this becomes a regular home-and-away fixture between ${a} and ${b}.\n\nMore pickleball with RallyHub\nExplore the RallyHub Directory: https://rallyhub.ie/directory\nNever miss a pickleball event again: ${alertsUrl||'https://rallyhub.ie/directory'}\nSend us feedback: https://rallyhub.ie/contact\nShare RallyHub with a friend: https://rallyhub.ie/directory\n\nThanks again for being part of the day.\n\nClare Pickleball\nPowered by RallyHub`;
+  return `Hi ${first(name)},\n\nThanks very much for taking part in the ${a} v ${b} Interclub.\n\nYour individual results are ready. To see your own games, scores, overall performance, final team result and both team podiums, open this link:\n${url}\n\nLooking forward to the return fixture\nWe hope this becomes a regular home-and-away fixture between ${a} and ${b}.\n\nMore pickleball with RallyHub\nExplore the RallyHub Directory: https://rallyhub.ie/directory\nNever miss a pickleball event again: ${alertsUrl||'https://rallyhub.ie/directory'}\nSend us feedback: https://rallyhub.ie/contact\nShare RallyHub with a friend: https://rallyhub.ie/directory\n\nPhotos from the day: we’ll send you a link to the event photos tomorrow.\n\nThanks again for being part of the day.\n\nClare Pickleball\nPowered by RallyHub`;
 }
