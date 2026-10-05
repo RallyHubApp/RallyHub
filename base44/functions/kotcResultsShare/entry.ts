@@ -4,7 +4,7 @@ import { requireConfiguredEmailTransport, sendWithConfiguredEmailTransport } fro
 const RUNTIME_VERSION='kotc-player-link-2026-10-04-r1';
 const APP_BASE_URL='https://rallyhub.ie';
 const DEFAULT_TABS=['live','players','rounds','leaderboard','event_info'];
-function shareConfig(share:any){let tabs=DEFAULT_TABS;try{const parsed=share?.visible_tabs_json?JSON.parse(share.visible_tabs_json):null;if(Array.isArray(parsed)&&parsed.length)tabs=parsed.filter((v:any)=>['live','players','rounds','scores','leaderboard','event_info'].includes(String(v)));}catch{}return{tabs:[...new Set(tabs)],scoring_access:['off','read_only','verified_players'].includes(share?.scoring_access)?share.scoring_access:'read_only',identification_mode:share?.identification_mode==='none'?'none':'host_code'};}
+function shareConfig(share:any){let tabs=DEFAULT_TABS;try{const parsed=share?.visible_tabs_json?JSON.parse(share.visible_tabs_json):null;if(Array.isArray(parsed)&&parsed.length)tabs=parsed.filter((v:any)=>['live','players','rounds','scores','leaderboard','event_info'].includes(String(v)));}catch{}return{tabs:[...new Set(tabs)],scoring_access:['off','read_only','verified_players','open_players'].includes(share?.scoring_access)?share.scoring_access:'read_only',identification_mode:share?.identification_mode==='none'?'none':'host_code'};}
 function broadcastVisible(row:any,session:any){if(!row||row.status!=='published')return false;const mode=row.expiry_mode||'manual';if(mode==='event_start'&&['in_progress','paused','completed','finalised','abandoned'].includes(session.status))return false;if(row.expires_at&&Date.parse(row.expires_at)<=Date.now())return false;return true;}
 const SHARED_GMAIL_ADDRESS='clarepb2025@gmail.com';
 function token(){const b=new Uint8Array(32);crypto.getRandomValues(b);return Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join('');}
@@ -100,8 +100,8 @@ Deno.serve(async req=>{try{
  if(!share){share=await retry('create share',()=>base44.asServiceRole.entities.KotcSessionShare.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,tournament_id:session.tournament_id,token:token(),status:'active',created_by_user_id:user.id,visible_tabs_json:JSON.stringify(DEFAULT_TABS),scoring_access:'read_only',identification_mode:'host_code'}));}
  if(action==='update_player_link'){
    const requestedTabs=Array.isArray(body.visibleTabs)?body.visibleTabs.map((v:any)=>String(v)).filter((v:string)=>['live','players','rounds','scores','leaderboard','event_info'].includes(v)):DEFAULT_TABS;const tabs=[...new Set(requestedTabs.length?requestedTabs:DEFAULT_TABS)];
-   const scoringAccess=['off','read_only','verified_players'].includes(String(body.scoringAccess||''))?String(body.scoringAccess):'read_only';const identificationMode=String(body.identificationMode)==='none'?'none':'host_code';
-   if(scoringAccess==='verified_players'&&!tabs.includes('scores'))tabs.push('scores');
+   const scoringAccess=['off','read_only','verified_players','open_players'].includes(String(body.scoringAccess||''))?String(body.scoringAccess):'read_only';const identificationMode=String(body.identificationMode)==='none'?'none':'host_code';
+   if(['verified_players','open_players'].includes(scoringAccess)&&!tabs.includes('scores'))tabs.push('scores');
    share=await retry('update player link',()=>base44.asServiceRole.entities.KotcSessionShare.update(share.id,{visible_tabs_json:JSON.stringify(tabs),scoring_access:scoringAccess,identification_mode:identificationMode}));
    return Response.json({success:true,playerLink:{shareId:share.id,token:share.token,livePath:`/kotc-live/${share.token}`,...shareConfig(share)},runtimeVersion:RUNTIME_VERSION});
  }
