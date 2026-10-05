@@ -585,6 +585,9 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [tournamentUpdateBusy, setTournamentUpdateBusy] = useState(false);
   const [tournamentUpdatePreviewOpen, setTournamentUpdatePreviewOpen] = useState(false);
   const [tournamentUpdatePreviewHtml, setTournamentUpdatePreviewHtml] = useState('');
+  const [emailPreviewKind, setEmailPreviewKind] = useState('');
+  const [resultsEmailHtmlEdit, setResultsEmailHtmlEdit] = useState('');
+  const [resultsEmailApprovedHtml, setResultsEmailApprovedHtml] = useState('');
   const [tournamentUpdatePreviewBusy, setTournamentUpdatePreviewBusy] = useState(false);
   const [tournamentUpdateTestEmail, setTournamentUpdateTestEmail] = useState('');
   const [tournamentUpdateTestBusy, setTournamentUpdateTestBusy] = useState(false);
@@ -1910,7 +1913,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const previewTournamentUpdateEmail = async () => {
     const message=tournamentUpdateDraft.trim(); if(!event?.id||!message||tournamentUpdatePreviewBusy)return;
     setTournamentUpdatePreviewBusy(true);
-    try { const res=await base44.functions.invoke('interclubTournamentUpdate',{eventId:event.id,action:'preview',message,templateId:tournamentUpdateTemplateId,origin:window.location.origin}); if(res.data?.error)throw new Error(res.data.error); setTournamentUpdatePreviewHtml(res.data?.previewHtml||''); setTournamentUpdatePreviewOpen(true); }
+    try { const res=await base44.functions.invoke('interclubTournamentUpdate',{eventId:event.id,action:'preview',message,templateId:tournamentUpdateTemplateId,origin:window.location.origin}); if(res.data?.error)throw new Error(res.data.error); setEmailPreviewKind('tournament'); setTournamentUpdatePreviewHtml(res.data?.previewHtml||''); setTournamentUpdatePreviewOpen(true); }
     catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not load email preview');}
     finally{setTournamentUpdatePreviewBusy(false);}
   };
@@ -1934,6 +1937,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     try {
       const res = await base44.functions.invoke('interclubTournamentUpdate', { eventId:event.id, action:'press_preview', title, message, origin:window.location.origin });
       if (res.data?.error) throw new Error(res.data.error);
+      setEmailPreviewKind('press');
       setTournamentUpdatePreviewHtml(res.data?.previewHtml || '');
       setTournamentUpdatePreviewOpen(true);
     } catch (e) { toast.error(e?.response?.data?.error || e?.message || 'Could not load press release preview'); }
@@ -1977,14 +1981,14 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const loadResultsEmailPreview = async () => {
     if (!event?.id || resultsEmailBusy) return;
     setResultsEmailBusy(true);
-    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'preview',origin:window.location.origin}); if(res.data?.error)throw new Error(res.data.error); setResultsEmailInfo(res.data); setTournamentUpdatePreviewHtml(res.data.previewHtml||''); setTournamentUpdatePreviewOpen(true); }
+    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'preview',origin:window.location.origin}); if(res.data?.error)throw new Error(res.data.error); const approved=res.data.editableHtml||res.data.previewHtml||''; setResultsEmailInfo(res.data); setResultsEmailApprovedHtml(approved); setResultsEmailHtmlEdit(approved); setEmailPreviewKind('results'); setTournamentUpdatePreviewHtml(approved); setTournamentUpdatePreviewOpen(true); }
     catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not load results email preview');}
     finally{setResultsEmailBusy(false);}
   };
   const sendResultsEmailTest = async () => {
     if (!event?.id || !resultsEmailTest.trim() || resultsEmailBusy) return;
     setResultsEmailBusy(true);
-    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'test',testEmail:resultsEmailTest.trim(),origin:window.location.origin}); if(res.data?.error)throw new Error(res.data.error); toast.success(`Results test email sent to ${res.data.to}.`); }
+    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'test',testEmail:resultsEmailTest.trim(),origin:window.location.origin,htmlOverride:resultsEmailHtmlEdit||undefined}); if(res.data?.error)throw new Error(res.data.error); toast.success(`Results test email sent to ${res.data.to}.`); }
     catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not send results test email');}
     finally{setResultsEmailBusy(false);}
   };
@@ -1994,7 +1998,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
     if(info?.error)return toast.error(info.error);
     if(!window.confirm(`Send the approved Your Results email to ${Number(info?.recipientCount||0)} participants? Players without an email address will not be sent anything.`))return;
     setResultsEmailBusy(true);
-    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'send',origin:window.location.origin}); if(res.data?.error)throw new Error(res.data.error); setResultsEmailInfo(res.data); toast.success(`Your Results sent · ${res.data.sent}/${res.data.recipientCount}${res.data.failed?` · ${res.data.failed} failed`:''}.`); }
+    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'send',origin:window.location.origin,htmlOverride:resultsEmailHtmlEdit||undefined}); if(res.data?.error)throw new Error(res.data.error); setResultsEmailInfo(res.data); toast.success(`Your Results sent · ${res.data.sent}/${res.data.recipientCount}${res.data.failed?` · ${res.data.failed} failed`:''}.`); }
     catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not send results emails');}
     finally{setResultsEmailBusy(false);}
   };
