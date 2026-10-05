@@ -2,6 +2,8 @@ import React,{useCallback,useEffect,useRef,useState} from 'react';
 import { useNavigate,useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs';
