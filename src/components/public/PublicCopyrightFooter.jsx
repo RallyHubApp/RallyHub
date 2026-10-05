@@ -14,7 +14,7 @@ const footerLinks = [
 export default function PublicCopyrightFooter({ className = '', maxWidthClass = 'max-w-[1380px]' }) {
   return (
     <footer aria-label="RallyHub footer" className={cn('w-full bg-transparent px-4 text-white sm:px-6 lg:px-10 xl:px-12', className)}>
-      <div className={cn('mx-auto w-full overflow-hidden rounded-t-2xl bg-[#053c56]', maxWidthClass)}>
+      <div className={cn('mx-auto w-full overflow-hidden bg-[#053c56]', maxWidthClass)}>
         <div className="flex min-h-[70px] flex-col items-center justify-center gap-4 px-4 py-5 text-center sm:px-6 md:flex-row md:justify-between md:text-left lg:px-8">
           <Link to="/" className="shrink-0" aria-label="RallyHub home">
             <img src={rallyHubLogoApprovedUrl} alt="RallyHub · Play Connect Belong" className="h-11 w-auto object-contain sm:h-12" />
