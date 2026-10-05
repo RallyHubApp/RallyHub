@@ -2884,6 +2884,21 @@ Brian`;
         </TabsContent>
 
         {/* ── ASSET UPLOADER TAB — RallyHub Super Admin only ── */}
+        <TabsContent value="dupr" className="mt-4">
+          <GlassCard className="p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div><p className="text-xs font-semibold uppercase tracking-wider text-primary">Super Admin · UAT only</p><h2 className="mt-1 text-xl font-bold">DUPR backend authentication</h2><p className="mt-1 text-sm text-muted-foreground">Protected server-side connection test against DUPR UAT. Credentials and tokens are never shown here.</p></div>
+              <Button onClick={testDuprUat} disabled={duprTesting}>{duprTesting ? 'Testing…' : 'Test DUPR UAT'}</Button>
+            </div>
+            {duprResult && <div className="mt-5 rounded-xl border p-4">
+              <p className="font-bold">Authentication: {duprResult.authenticated ? 'PASS' : 'FAIL'}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Environment: UAT{duprResult.apiVersion ? ` · API ${duprResult.apiVersion}` : ''}</p>
+              {duprResult.timestamp && <p className="mt-1 text-xs text-muted-foreground">Tested {new Date(duprResult.timestamp).toLocaleString('en-IE')}</p>}
+              {!duprResult.authenticated && <p className="mt-2 text-sm text-destructive">{duprResult.message || 'Authentication failed.'}{duprResult.httpStatus ? ` (HTTP ${duprResult.httpStatus})` : ''}</p>}
+            </div>}
+          </GlassCard>
+        </TabsContent>
+
         <TabsContent value="assets" className="mt-4">
           <GlassCard>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Upload className="w-4 h-4 text-primary" /> RallyHub Asset Uploader</h3>
