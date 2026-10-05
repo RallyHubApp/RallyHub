@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { ArrowLeft,Bell,Crown,Mail,Menu,Minimize2,MonitorUp,Pencil,RefreshCw,Save,Share2,Trophy,WifiOff,X } from 'lucide-react';
