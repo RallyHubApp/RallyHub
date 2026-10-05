@@ -3,8 +3,8 @@
 > **Development mirror only.** The canonical master is `RallyHub_Master_Testing_Blueprint.docx` kept in the RallyHub project files beside `RallyHub_Master_Backlog_and_Decisions.docx`. Keep this repo copy aligned when major reusable testing rules change, but do not treat it as the user-facing master.
 
 **Status:** Development mirror of LIVE MASTER  
-**Version:** 1.4  
-**Date:** 30 September 2026  
+**Version:** 1.5  
+**Date:** 5 October 2026  
 **Applies to:** RallyHub Core, King of the Court (KOTC), Club Challenge, Tournival, shared tournament formats, memberships, public displays, and future RallyHub modules.
 
 ## 1. Purpose
@@ -12,6 +12,8 @@
 This document is the single source of truth for how RallyHub is tested. It consolidates the earlier **Testing approach summary**, the historical pre-deployment plan, KOTC hall failures and fixes, Club Challenge testing, Base44 rate-limit lessons, code-health cleanup rules, security/isolation requirements, browser robots, and the September 2026 collaborative-scoring stress work.
 
 The aim is not merely to prove that a feature works once. The aim is to **actively try to break RallyHub before a real organiser, player or club can do so**.
+
+The companion repository control authority is `docs/RALLYHUB_SOFTWARE_CONTROL_MASTER.md`. The Software Control Master defines the signed-off module behaviours, protected invariants, baselines and change-control rules. This Testing Blueprint defines the evidence required to prove that changes preserve them. For commercial/protected modules, both documents apply together.
 
 The permanent standard is:
 
@@ -39,6 +41,10 @@ RallyHub is never called “ready” merely because code was written, a build pa
 14. **A sandbox pass is not a persisted release.** Before calling a change release-ready, prove the exact tested edits exist in the persisted source/commit and release checkpoint.
 15. **A republish is not assumed live.** After deployment, fingerprint the production assets or equivalent live markers and prove the intended release is what the public domain is actually serving.
 16. **The user is never the first integration tester.** Before handing back any meaningful workflow, run the complete journey as the intended user would: find the feature, understand what to do, complete setup, perform the primary action, interpret success/failure, and repeat on mobile where relevant. A technically correct feature that is undiscoverable, unclear, misleading, or only proven by build/static checks is not ready for handover.
+17. **Protected invariants are executable contracts.** Signed-off rules in the Software Control Master must have automated/golden regression coverage wherever practical. A developer may not weaken or rewrite a protected test merely to make changed code pass.
+18. **Performance regression is a release failure.** For courtside/live operations, materially slower Save Score, Prepare Next Round, Start Round, public-link loading or equivalent critical actions fail the relevant gate even when they eventually succeed.
+19. **Approved baselines are compared, not remembered.** Protected modules use named checkpoints/commits plus the Software Control Master. Conversation memory is not an acceptable substitute for configuration control.
+20. **Approved assets are protected inputs.** Signed-off email templates, visual assets and reusable layouts must be reused from their approved source. A later task must not silently redesign them.
 
 ---
 
