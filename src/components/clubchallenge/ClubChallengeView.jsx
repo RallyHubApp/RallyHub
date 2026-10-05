@@ -32,6 +32,33 @@ import {
 } from '@/lib/clubChallengeWorkflow.js';
 
 const RALLYHUB_LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const CLARE_GALWAY_PRESS_HEADLINE = 'Clare Pickleball Make History with First Inter-Club Victory Over Galway';
+const CLARE_GALWAY_PRESS_RELEASE = `Clare Pickleball Club marked another milestone in its rapid growth at the weekend, defeating Galway Pickleball Club 64–32 in the clubs’ first ever inter-club challenge.
+
+The inaugural fixture brought together 16 players from each club for three hours of competitive and hugely enjoyable pickleball at St Joseph’s Doora-Barefield Sports Hall.
+
+A total of 32 players took part, with Clare eventually coming out on top by 64 points to 32. For many members of the Clare team, it was their first experience of competing in a pickleball tournament or inter-club event.
+
+The result represents another significant step for Clare Pickleball, which was only established in May 2025 and has already grown to more than 155 members.
+
+The club now has playing opportunities across four locations in Clare — St Joseph’s Doora-Barefield, Ennistymon Community Centre, Corofin GAA Sports Hall and the Scouts Hall in Clarecastle.
+
+The recent establishment of pickleball in Ennistymon has been another major boost for the sport in the county, with Clare Pickleball particularly acknowledging the valiant efforts of Miriam and Dennis Cronin, who were instrumental in getting the new Ennistymon venue up and running.
+
+Clare Pickleball founder and chairperson Brian Moore said the event demonstrated just how quickly the sport has developed locally.
+
+“When we established Clare Pickleball in May 2025, we could never have imagined that within such a short period we would have more than 155 members, be playing across four centres and be hosting our first inter-club challenge. What made the day particularly special was seeing so many of our players competing for the first time and representing Clare so well. The result was fantastic, but just as important was the atmosphere, the friendships and the enjoyment on both sides. Pickleball is going from strength to strength in Clare, and we feel we are only getting started.”
+
+The club also thanked Jessica Dee and Tio Koochi of Galway Pickleball for their work in helping to organise the Galway side of the inaugural challenge and for supporting what both clubs hope will become a long-standing fixture.
+
+A perpetual Clare–Galway inter-club trophy has now been established, with the clubs planning to play regular home-and-away challenges. Galway will host the next meeting between the two clubs.
+
+Brian Moore added:
+
+“Galway were tremendous sports and played a huge part in making the first challenge such an enjoyable occasion. We hope this is the first of many meetings between the clubs, and we are already looking forward to travelling to Galway for the return fixture.”
+
+PHOTO CAPTION
+Members of Clare Pickleball celebrate their 64–32 victory over Galway Pickleball following the clubs’ inaugural inter-club challenge at St Joseph’s Doora-Barefield Sports Hall. The three-hour event featured 16 players from each club and marked the beginning of a new home-and-away inter-club series.`;
 
 const TABS = [
   ['setup', 'Setup'],
@@ -561,6 +588,10 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [tournamentUpdatePreviewBusy, setTournamentUpdatePreviewBusy] = useState(false);
   const [tournamentUpdateTestEmail, setTournamentUpdateTestEmail] = useState('');
   const [tournamentUpdateTestBusy, setTournamentUpdateTestBusy] = useState(false);
+  const [pressReleaseTitle, setPressReleaseTitle] = useState(CLARE_GALWAY_PRESS_HEADLINE);
+  const [pressReleaseDraft, setPressReleaseDraft] = useState(CLARE_GALWAY_PRESS_RELEASE);
+  const [pressReleaseTestEmail, setPressReleaseTestEmail] = useState('clarepb2025@gmail.com');
+  const [pressReleaseBusy, setPressReleaseBusy] = useState(false);
   const [registrationLinks, setRegistrationLinks] = useState({ club_a:'', club_b:'' });
   const [registrationLinkBusy, setRegistrationLinkBusy] = useState('');
   const [teamManagerLinks, setTeamManagerLinks] = useState({ club_a:'', club_b:'' });
