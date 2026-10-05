@@ -74,13 +74,16 @@ Deno.serve(async (req) => {
       console.warn('DUPR UAT authentication failed: malformed JSON');
       return safeFailure(502, 'invalid_response', 'DUPR UAT returned an invalid authentication response.');
     }
-    const token = payload?.accessToken ?? payload?.access_token ?? payload?.token;
+    // DUPR partner-token responses use a top-level token in the current Partner API,
+    // but tolerate the documented wrapper shape used by other DUPR auth responses.
+    const token = payload?.token ?? payload?.accessToken ?? payload?.access_token
+      ?? payload?.result?.token ?? payload?.result?.accessToken ?? payload?.result?.access_token;
     if (typeof token !== 'string' || token.length < 1) {
       console.warn('DUPR UAT authentication failed: expected token missing');
       return safeFailure(502, 'invalid_response', 'DUPR UAT authentication response did not contain a usable access token.');
     }
 
-    const expiresIn = Number(payload?.expiresIn ?? payload?.expires_in);
+    const expiresIn = Number(payload?.expiresIn ?? payload?.expires_in ?? payload?.result?.expiresIn ?? payload?.result?.expires_in);
     const expiry = Number.isFinite(expiresIn) && expiresIn > 0 ? new Date(Date.now() + expiresIn * 1000).toISOString() : undefined;
     console.info('DUPR UAT authentication succeeded');
     return Response.json({ success: true, authenticated: true, environment: 'uat', apiVersion: API_VERSION, timestamp: new Date().toISOString(), ...(expiry ? { expiresAt: expiry } : {}) });
