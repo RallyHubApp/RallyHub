@@ -1,0 +1,103 @@
+{
+  "name": "CommunicationWorkflow",
+  "type": "object",
+  "properties": {
+    "owner_scope": {
+      "type": "string",
+      "enum": [
+        "platform",
+        "tenant"
+      ]
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "source_module": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "paused",
+        "retired"
+      ],
+      "default": "draft"
+    },
+    "trigger": {
+      "type": "object"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "goal": {
+      "type": "object"
+    },
+    "exit_rules": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "quiet_hours_policy": {
+      "type": "object"
+    },
+    "simulation_cases": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "activated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "owner_scope",
+    "name",
+    "purpose",
+    "version",
+    "status",
+    "trigger",
+    "steps"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
