@@ -86,6 +86,16 @@ Silence is not permission to alter a protected behaviour. A protected behaviour 
 
 These checkpoints are rollback references, not permission to bypass regression testing.
 
+## 3A. Universal player measurement model — PROTECTED
+
+RallyHub preserves three separate player measures. They may be displayed together for context, but none may silently modify another.
+
+1. **Club Leaderboard / Club Rank** — official cumulative club competition table. Eligible completed results score Win = 2, Draw = 1, Loss = 0. Ranking order is total leaderboard points, then total wins, then score differential (PF − PA), then Points For. Court 1 appearances, bench frequency, starting/final court, DUPR and predictive strength do not affect Club Rank. For Clare's current production history the controlled baseline begins 17 September 2026; demos, tests and sandboxes are excluded. Genuine KOTC, Banner Bash, Interclub and other explicitly leaderboard-enabled sporting events feed the same cumulative table. Interclub showcase/exhibition matches do not count.
+2. **DUPR Rating** — external DUPR measure. RallyHub may display the current DUPR and preserve the DUPR snapshot at match time for context/analysis. DUPR does not alter Club Leaderboard points or rank.
+3. **RallyHub Performance Rating / Performance Analysis** — separate RallyHub intelligence layer for opponent strength, score margins, head-to-head, partners/opponents, recent form, expected versus actual performance, trends and future prediction. It does not alter Club Leaderboard points/rank and does not overwrite DUPR.
+
+Protected invariant: **Club Points ≠ DUPR ≠ RallyHub Performance Rating.**
+
 ## 4. RallyHub Interclub — PROTECTED MODULE
 
 - Dedicated club-versus-club module, not a generic tournament fallback.
