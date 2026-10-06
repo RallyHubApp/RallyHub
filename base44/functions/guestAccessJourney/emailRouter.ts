@@ -36,12 +36,13 @@ function gmailRawEmail({to,senderEmail,senderName,replyTo,subject,textBody,htmlB
   return utf8Base64(mime).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
-export async function sendWithConfiguredEmailTransport(base44:any,scope:EmailScope,message:{to:string;subject:string;textBody:string;htmlBody?:string|null}) {
+export async function sendWithConfiguredEmailTransport(base44:any,scope:EmailScope,message:{to:string;subject:string;textBody:string;htmlBody?:string|null;senderName?:string|null}) {
   const config = await requireConfiguredEmailTransport(base44, scope);
+  const senderName=String(message.senderName||config.sender_name||'RallyHub').trim();
   if (config.provider === 'gmail_connector') {
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('gmail');
     if (!accessToken) throw new Error('The Gmail connector is not authorised.');
-    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify({raw:gmailRawEmail({to:message.to,senderEmail:config.sender_email,senderName:config.sender_name,replyTo:config.reply_to,subject:message.subject,textBody:message.textBody,htmlBody:message.htmlBody})})});
+    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify({raw:gmailRawEmail({to:message.to,senderEmail:config.sender_email,senderName,replyTo:config.reply_to,subject:message.subject,textBody:message.textBody,htmlBody:message.htmlBody})})});
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload?.error?.message || `Gmail send failed (${response.status})`);
     return {provider:config.provider,senderEmail:config.sender_email,payload};
@@ -52,13 +53,13 @@ export async function sendWithConfiguredEmailTransport(base44:any,scope:EmailSco
     const secret=secretEnvVar?Deno.env.get(secretEnvVar):'';
     if (!gatewayUrl || !/^https:\/\//i.test(gatewayUrl)) throw new Error('The tenant mail gateway URL is not configured.');
     if (!secret) throw new Error('The tenant mail gateway secret is not configured in the backend environment.');
-    const response=await fetch(gatewayUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({secret,to:message.to,subject:message.subject,textBody:message.textBody,htmlBody:message.htmlBody||'',senderName:config.sender_name,replyTo:config.reply_to||config.sender_email})});
+    const response=await fetch(gatewayUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({secret,to:message.to,subject:message.subject,textBody:message.textBody,htmlBody:message.htmlBody||'',senderName,replyTo:config.reply_to||config.sender_email})});
     const payload=await response.json().catch(()=>({}));
     if (!response.ok || payload?.ok===false) throw new Error(payload?.error || `Tenant mail gateway failed (${response.status})`);
     return {provider:config.provider,senderEmail:config.sender_email,payload};
   }
   if (config.provider === 'base44_core') {
-    await base44.asServiceRole.integrations.Core.SendEmail({to:message.to,from_name:config.sender_name,subject:message.subject,body:message.textBody});
+    await base44.asServiceRole.integrations.Core.SendEmail({to:message.to,from_name:senderName,subject:message.subject,body:message.textBody});
     return {provider:config.provider,senderEmail:config.sender_email};
   }
   throw new Error(`Email provider ${config.provider} is configured for ${scope.scopeType}:${scope.purpose}, but its secure transport endpoint is not connected yet.`);
