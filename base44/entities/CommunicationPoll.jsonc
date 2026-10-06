@@ -1,0 +1,118 @@
+{
+  "name": "CommunicationPoll",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "campaign_id": {
+      "type": "string"
+    },
+    "source_module": {
+      "type": "string"
+    },
+    "source_record_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "poll_type": {
+      "type": "string",
+      "enum": [
+        "poll",
+        "feedback",
+        "suggestion",
+        "survey",
+        "rsvp",
+        "availability"
+      ]
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "anonymous": {
+      "type": "boolean",
+      "default": false
+    },
+    "allow_multiple_submissions": {
+      "type": "boolean",
+      "default": false
+    },
+    "results_visibility": {
+      "type": "string",
+      "enum": [
+        "admins_only",
+        "after_vote",
+        "live",
+        "closed_only"
+      ],
+      "default": "admins_only"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "open",
+        "closed",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "opens_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "closes_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reminder_workflow_id": {
+      "type": "string"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "title",
+    "poll_type",
+    "status",
+    "questions",
+    "created_by_user_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
