@@ -1,0 +1,97 @@
+{
+  "name": "CommunicationMessage",
+  "type": "object",
+  "properties": {
+    "campaign_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "email",
+        "whatsapp",
+        "in_app",
+        "push",
+        "sms",
+        "player_link"
+      ]
+    },
+    "template_id": {
+      "type": "string"
+    },
+    "template_version": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "html_body": {
+      "type": "string"
+    },
+    "plain_text_body": {
+      "type": "string"
+    },
+    "channel_body": {
+      "type": "string"
+    },
+    "merge_schema": {
+      "type": "object"
+    },
+    "rendered_snapshot": {
+      "type": "object"
+    },
+    "brand_kit_version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready",
+        "queued",
+        "sent",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "content_hash": {
+      "type": "string"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "campaign_id",
+    "channel",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
