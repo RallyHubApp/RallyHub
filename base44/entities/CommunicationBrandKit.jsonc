@@ -1,0 +1,102 @@
+{
+  "name": "CommunicationBrandKit",
+  "type": "object",
+  "properties": {
+    "owner_scope": {
+      "type": "string",
+      "enum": [
+        "platform",
+        "tenant"
+      ]
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "retired"
+      ],
+      "default": "draft"
+    },
+    "logos": {
+      "type": "object"
+    },
+    "colours": {
+      "type": "object"
+    },
+    "typography": {
+      "type": "object"
+    },
+    "layout": {
+      "type": "object"
+    },
+    "buttons": {
+      "type": "object"
+    },
+    "imagery": {
+      "type": "object"
+    },
+    "voice_tone": {
+      "type": "object"
+    },
+    "contact": {
+      "type": "object"
+    },
+    "social_links": {
+      "type": "object"
+    },
+    "compliance_footer": {
+      "type": "object"
+    },
+    "channel_overrides": {
+      "type": "object"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "owner_scope",
+    "name",
+    "version",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
