@@ -1,7 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 const CONSENT_VERSION='rallyhub-directory-player-updates-v1-2026-09';
-const TOPICS=['events','coaching','pickleball_updates'];
+const LEGACY_TOPICS=['tournaments_events','coaching','club_session_updates'];
+function cleanTopics(v:any){
+  const raw=Array.isArray(v)?v:[];
+  const mapped=raw.map((x:any)=>clean(x,80)).filter(Boolean).map((x:string)=>x==='events'?'tournaments_events':x==='pickleball_updates'?'club_session_updates':x);
+  return [...new Set(mapped)].slice(0,30);
+}
 
 function clean(v:any,max=250){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
 function emailKey(v:any){return clean(v,240).toLowerCase()}
@@ -12,7 +17,7 @@ function token(){return `dp_${crypto.randomUUID().replaceAll('-','')}`}
 function safe(row:any){return {
   id:row.id,firstName:row.first_name||'',fullName:row.full_name||'',email:row.email||'',mobile:row.mobile||'',
   clubName:row.club_name||'',clubSlug:row.club_slug||'',county:row.county||'',duprRating:row.dupr_rating??null,
-  emailOptIn:row.email_opt_in===true,whatsappOptIn:row.whatsapp_opt_in===true,topics:Array.isArray(row.topics)?row.topics:TOPICS,
+  emailOptIn:row.email_opt_in===true,whatsappOptIn:row.whatsapp_opt_in===true,topics:cleanTopics(row.topics).length?cleanTopics(row.topics):LEGACY_TOPICS,
   status:row.status||'active',consentAt:row.consent_at||'',createdAt:row.created_at||row.created_date||'',updatedAt:row.updated_at||row.updated_date||''
 }}
 
@@ -66,10 +71,12 @@ Deno.serve(async(req)=>{
       const whatsappOptIn=body.whatsappOptIn===true;
       if(emailOptIn&&!validEmail(row.email))return Response.json({error:'A valid email address is required for email updates.'},{status:400});
       if(whatsappOptIn&&phoneDigits(row.mobile).length<8)return Response.json({error:'A valid mobile number is required for WhatsApp/SMS updates.'},{status:400});
+      const topics=cleanTopics(body.topics);
+      if((emailOptIn||whatsappOptIn)&&!topics.length)return Response.json({error:'Choose at least one type of pickleball update you want to receive.'},{status:400});
       const now=new Date().toISOString();
       const status=emailOptIn||whatsappOptIn?'active':'unsubscribed';
       const updated=await base44.asServiceRole.entities.DirectoryPlayerSubscriber.update(row.id,{
-        email_opt_in:emailOptIn,whatsapp_opt_in:whatsappOptIn,status,
+        email_opt_in:emailOptIn,whatsapp_opt_in:whatsappOptIn,topics,status,
         unsubscribed_at:status==='unsubscribed'?now:'',updated_at:now,
         consent_version:CONSENT_VERSION,consent_at:now,
       });
@@ -90,11 +97,13 @@ Deno.serve(async(req)=>{
     const county=clean(body.county,100);
     const emailOptIn=body.emailOptIn===true;
     const whatsappOptIn=body.whatsappOptIn===true;
+    const topics=cleanTopics(body.topics);
     const duprRaw=body.duprRating===undefined||body.duprRating===null||body.duprRating===''?null:Number(body.duprRating);
 
     if(!firstName)return Response.json({error:'Please enter your first name.'},{status:400});
     if(!county)return Response.json({error:'Please choose your county.'},{status:400});
     if(!emailOptIn&&!whatsappOptIn)return Response.json({error:'Choose email and/or WhatsApp/SMS updates.'},{status:400});
+    if(!topics.length)return Response.json({error:'Choose at least one type of pickleball update you want to receive.'},{status:400});
     if(emailOptIn&&!validEmail(email))return Response.json({error:'Please enter a valid email address for email updates.'},{status:400});
     if(whatsappOptIn&&phoneDigits(mobile).length<8)return Response.json({error:'Please enter a valid mobile number for WhatsApp/SMS updates.'},{status:400});
     if(email&&!validEmail(email))return Response.json({error:'Please enter a valid email address or leave it blank.'},{status:400});
@@ -108,7 +117,7 @@ Deno.serve(async(req)=>{
     const now=new Date().toISOString();
     const data:any={
       first_name:firstName,full_name:fullName,email,mobile,club_name:clubName,club_slug:clubSlug,county,
-      dupr_rating:duprRaw,email_opt_in:emailOptIn,whatsapp_opt_in:whatsappOptIn,topics:TOPICS,status:'active',
+      dupr_rating:duprRaw,email_opt_in:emailOptIn,whatsapp_opt_in:whatsappOptIn,topics,status:'active',
       consent_version:CONSENT_VERSION,consent_at:now,source:'rallyhub_directory',updated_at:now,unsubscribed_at:''
     };
     let saved;
