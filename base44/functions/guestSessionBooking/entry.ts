@@ -1009,7 +1009,7 @@ Deno.serve(async(req)=>{
               paymentMethod:b.payment_method,paymentStatus:b.payment_status,amount:b.amount,
               refundedAmount,refundableAmount:Math.max(0,Math.round((originalAmount-refundedAmount)*100)/100),
               provider:payment?.provider||b.payment_method||'',providerTransactionId:payment?.provider_transaction_id||'',
-              registeredAt:b.registered_at,paidAt:b.paid_at||'',confirmationCode:b.confirmation_code||'',
+              registeredAt:b.registered_at,paidAt:b.paid_at||'',confirmationCode:b.confirmation_code||'',sumupCheckoutUrl:b.sumup_checkout_url||'',
               hostMessage:hostText(s,b),
             });
           }
