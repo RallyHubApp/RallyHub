@@ -134,7 +134,7 @@ export default function AddDirectoryClub() {
           listingType,
           listingCategoryLabel: selectedCategory?.pluralLabel || selectedCategory?.label || '',
           serviceArea,
-          county:
+          county,
           town,
           primaryVenue,
           address,
@@ -150,7 +150,7 @@ export default function AddDirectoryClub() {
           notes,
         });
         if (res.data?.error) throw new Error(res.data.error);
-        if (!res.data?.listingSlug) throw new Error('The club was created but RallyHub did not return the listing address.');
+        if (!res.data?.listingSlug) throw new Error('The listing was created but RallyHub did not return the listing address.');
         navigate(`/directory/${res.data.listingSlug}/edit?created=1`);
         return;
       }
