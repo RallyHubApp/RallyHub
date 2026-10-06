@@ -13,6 +13,7 @@ Backlog sync: Phase 2 scope copied into RallyHub Master Backlog & Decisions v4 o
 6. Spond remains the source of truth for Clare Pickleball sessions in Phase 1. RallyHub displays only Spond sessions the authenticated member is actually invited to or included in. Filtering must happen on the backend, never by sending all sessions to the client and hiding them.
 7. The member portal must not expose private member data to other members. Member-visible profiles are a deliberately small projection controlled by privacy settings.
 8. Competition history is generic. The portal asks competition modules for summaries instead of hard-coding Interclub, KOTC or Tournament into the shell.
+9. Shared platform capabilities must be implemented as central engines, not repeated inside individual modules. Communications, Finance, Payments/Entitlements, Analytics/Attribution, People/Identity, Notifications, Files/Assets and Audit/Change Control are shared services consumed by Directory, Membership, Events, KOTC, Interclub and future modules. Module-specific screens and journeys may differ, but they must not create separate islands of overlapping business logic. Finance in particular must use one tenant-aware, product-aware ledger and entitlement engine so club transactions, directory listings, subscriptions, affiliate commissions, refunds, credits and future commercial products share the same underlying financial architecture while preserving tenant isolation and RallyHub-global accounting.
 
 ## Product shell
 
