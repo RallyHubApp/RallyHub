@@ -1970,13 +1970,20 @@ Deno.serve(async (req) => {
         return Response.json({ success: true, status: 'approved', listingSlug: request.approved_listing_slug });
       }
 
+      const category = await directoryCategoryConfig(base44, request.listing_type || 'club');
+      const listingType = category.key;
+      const listingCategoryLabel = request.listing_category_label || category.pluralLabel || category.label;
       const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500);
-      const duplicate = (dynamicRows || []).find(x => normaliseName(x.name) === normaliseName(request.club_name) && normaliseName(x.county || '') === normaliseName(request.county || ''));
+      const duplicate = (dynamicRows || []).find(x =>
+        normaliseName(x.name) === normaliseName(request.club_name) &&
+        String(x.listing_type || 'club') === listingType &&
+        (category.locationMode !== 'county' || normaliseName(x.county || '') === normaliseName(request.county || ''))
+      );
       const listingSlug = duplicate?.slug || await uniqueListingSlug(base44, request.club_name);
-      const listing = { slug: listingSlug, name: request.club_name, county: request.county };
+      const listing = { slug: listingSlug, name: request.club_name, county: request.county || null, listingType, listingCategoryLabel, serviceArea: request.service_area || null };
 
       if (!duplicate) {
-        const venueId = request.primary_venue ? `venue-${slugify(request.primary_venue)}` : null;
+        const venueId = category.locationMode === 'county' && request.primary_venue ? `venue-${slugify(request.primary_venue)}` : null;
         const submittedVenue = venueId ? {
           id: venueId,
           name: request.primary_venue,
@@ -1996,22 +2003,27 @@ Deno.serve(async (req) => {
           id: listingSlug,
           slug: listingSlug,
           name: request.club_name,
+          listingType,
+          listingCategoryLabel,
+          serviceArea: request.service_area || null,
           sport: 'Pickleball',
-          county: request.county,
+          county: request.county || null,
           town: request.town || null,
           region: null,
           status: 'active',
-          membershipStatus: 'Contact the club for joining information',
+          membershipStatus: listingType === 'club' ? 'Contact the club for joining information' : null,
           affiliation: null,
           logoUrl: null,
           website: safePublicUrl(request.website),
           facebook: safePublicUrl(request.facebook),
           instagram: safePublicUrl(request.instagram),
           waitingListUrl: null,
-          joiningCtaLabel: 'Contact club',
-          policyLabel: 'Club information',
-          description: `${request.club_name} is a pickleball club or group in County ${request.county}. The verified club representative is completing this listing.`,
-          guestPolicy: 'Contact the club before attending a session.',
+          joiningCtaLabel: listingType === 'club' ? 'Contact club' : 'Contact listing',
+          policyLabel: listingType === 'club' ? 'Club information' : 'Listing information',
+          description: listingType === 'club'
+            ? `${request.club_name} is a pickleball club or group in County ${request.county}. The verified club representative is completing this listing.`
+            : `${request.club_name} is a ${listingCategoryLabel || category.label} listing in the RallyHub Pickleball Directory.`,
+          guestPolicy: listingType === 'club' ? 'Contact the club before attending a session.' : null,
           contact: request.publish_contact === true ? {
             name: request.claimant_name || null,
             phone: request.claimant_phone || null,
@@ -2031,7 +2043,10 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.DirectoryListingRecord.create({
           slug: listingSlug,
           name: request.club_name,
-          county: request.county,
+          listing_type: listingType,
+          listing_category_label: listingCategoryLabel,
+          service_area: request.service_area || null,
+          county: request.county || null,
           sport: 'Pickleball',
           status: 'active',
           visibility: 'public',
@@ -2040,6 +2055,7 @@ Deno.serve(async (req) => {
           source_request_id: request.id,
           created_by_user_id: request.claimant_user_id,
           published_at: now,
+          commercial_status: 'free',
         });
       }
 
