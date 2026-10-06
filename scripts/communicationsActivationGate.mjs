@@ -1,0 +1,7 @@
+import assert from "node:assert/strict";import {prepareCommunication,assertExternalDeliveryAllowed} from "../src/services/communications/engine.js";import {WORKFLOW_LIBRARY} from "../src/services/communications/workflowLibrary.js";
+const p=prepareCommunication({mode:"simulation",campaign:{kind:"operational",purpose:"competition",audience_definition:{},sample_data:{name:"Player"}},people:[{person_id:"1",email:"a@example.test"}],template:{subjectTemplate:"Results {{name}}",htmlTemplate:"<p>Hi {{name}}</p>",plainTextTemplate:"Hi {{name}}"},brandKit:{name:"Club"}});
+assert.equal(p.can_external_deliver,false);assert.throws(()=>assertExternalDeliveryAllowed(p,{activationToken:"x"}),/DISABLED/);
+const live=prepareCommunication({mode:"live",campaign:{kind:"operational",purpose:"competition",audience_definition:{},sample_data:{name:"Player"}},people:[{person_id:"1",email:"a@example.test"}],template:{subjectTemplate:"Results {{name}}",htmlTemplate:"<p>Hi {{name}}</p>",plainTextTemplate:"Hi {{name}}"},brandKit:{name:"Club"}});
+assert.throws(()=>assertExternalDeliveryAllowed(live),/ACTIVATION_TOKEN/);assert.equal(assertExternalDeliveryAllowed(live,{activationToken:"controlled-adapter-token"}),true);
+assert.ok(WORKFLOW_LIBRARY.payment_collection);assert.ok(WORKFLOW_LIBRARY.interclub_participant);assert.ok(WORKFLOW_LIBRARY.kotc_results);assert.ok(WORKFLOW_LIBRARY.event_feedback);
+console.log("PASS communicationsActivationGate: simulation cannot send + live requires explicit activation + workflow library present");
