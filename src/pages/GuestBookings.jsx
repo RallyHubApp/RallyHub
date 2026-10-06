@@ -35,6 +35,7 @@ export default function GuestBookings(){
   const [notificationEmail,setNotificationEmail]=useState(user?.email||'');
   const [busy,setBusy]=useState('');
   const [expanded,setExpanded]=useState('');
+  const [messagePreview,setMessagePreview]=useState(null);
 
   const {data:templateData={templates:[],sumupConfigured:false},isLoading:templatesLoading}=useQuery({
     queryKey:['guest-session-templates'],
@@ -159,14 +160,31 @@ export default function GuestBookings(){
     finally{setBusy('')}
   };
 
-  const whatsappApproved=async(request)=>{
+  const previewApprovedMessage=async(request,channel)=>{
     const data=await approvedPrivateLink(request);
     if(!data?.magicInviteUrl)return;
-    const target=whatsappNumber(request.mobile);
-    if(!target){toast.error('No valid mobile number is saved for this guest');return}
+    const first=String(request.fullName||'').split(/\s+/)[0]||'there';
     const sessionDate=data.sessionDate?niceDate(data.sessionDate):request.approvedSessionDate?niceDate(request.approvedSessionDate):'';
-    const msg=`Clare Pickleball session booking\n\nHi ${String(request.fullName||'').split(/\s+/)[0]||'there'}, your guest request has been approved.\n\n${sessionDate}${request.start?` · ${request.start}${request.end?`–${request.end}`:''}`:''}\n${request.venueName||''}\n\nComplete your booking/payment using your private RallyHub link:\n${data.magicInviteUrl}\n\nThis link is for you only.`;
-    window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
+    const time=request.start?`${request.start}${request.end?`–${request.end}`:''}`:'';
+    const fee=request.amount!==null&&request.amount!==undefined?`€${Number(request.amount||0).toFixed(2)} ${request.paymentMethod==='cash'?'cash on arrival':'online'}`:'';
+    const whatsapp=`Clare Pickleball session booking\n\nHi ${first}, your guest request has been reviewed and approved.\n\n${sessionDate}${time?` · ${time}`:''}\n${request.venueName||''}${fee?`\n${fee}`:''}\n\nComplete your booking/payment using your private link:\n${data.magicInviteUrl}\n\nThis link is for you only. Please don't share it.\n\nHope you enjoy the session.\n\nYours in sport,\nBrian Moore\nChairperson, Clare Pickleball`;
+    const emailSubject=`Clare Pickleball · Guest request approved · ${sessionDate}${request.start?` ${request.start}`:''}`;
+    const emailBody=`Hi ${first},\n\nYour guest request has been reviewed and approved.\n\nDate: ${sessionDate}\nTime: ${time}\nVenue: ${request.venueName||''}${fee?`\nFee: ${fee}`:''}\n\nComplete your waiver, Code of Conduct and booking/payment using your private link:\n${data.magicInviteUrl}\n\nThis link is for you only. Please don't share it.\n\nHope you enjoy the session.\n\nYours in sport,\nBrian Moore\nChairperson, Clare Pickleball\n\nPowered by RallyHub`;
+    setMessagePreview({channel,request,data,subject:emailSubject,message:channel==='email'?emailBody:whatsapp});
+  };
+
+  const sendPreviewedMessage=async()=>{
+    const preview=messagePreview;
+    if(!preview)return;
+    if(preview.channel==='email'){
+      const sent=await approvedPrivateLink(preview.request,{sendEmail:true});
+      if(sent?.emailSent)setMessagePreview(null);
+      return;
+    }
+    const target=whatsappNumber(preview.request.mobile);
+    if(!target){toast.error('No valid mobile number is saved for this guest');return}
+    window.open(`https://wa.me/${target}?text=${encodeURIComponent(preview.message)}`,'_blank','noopener,noreferrer');
+    setMessagePreview(null);
   };
 
   const whatsappBooking=async(row)=>{
@@ -344,8 +362,8 @@ export default function GuestBookings(){
               </div>
               <div className="flex flex-wrap gap-2">
                 {row.kind==='approved_request'&&!row.bookingId&&<>
-                  <Button size="sm" variant="outline" disabled={busy===`resend-${row.request.id}`} onClick={()=>approvedPrivateLink(row.request,{sendEmail:true})}>{busy===`resend-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend email</Button>
-                  <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>whatsappApproved(row.request)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
+                  <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>previewApprovedMessage(row.request,'email')}><Mail className="mr-1.5 h-3.5 w-3.5"/>Preview / resend email</Button>
+                  <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>previewApprovedMessage(row.request,'whatsapp')}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>Preview WhatsApp</Button>
                   <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>approvedPrivateLink(row.request,{copyOnly:true})}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy private link</Button>
                 </>}
                 {row.kind==='approved_request'&&row.bookingId&&<>
@@ -366,6 +384,17 @@ export default function GuestBookings(){
         })}
       </div>}
     </section>
+
+    {messagePreview&&<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-background p-5 shadow-2xl sm:p-6">
+        <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-primary">{messagePreview.channel==='email'?'Email preview':'WhatsApp preview'}</p><h2 className="mt-1 text-xl font-black">Clare Pickleball guest booking</h2></div><Button size="sm" variant="ghost" onClick={()=>setMessagePreview(null)}>Close</Button></div>
+        <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2"><div className="rounded-xl border p-3"><span className="text-xs text-muted-foreground">From</span><p className="font-bold">Clare Pickleball</p></div><div className="rounded-xl border p-3"><span className="text-xs text-muted-foreground">To</span><p className="font-bold break-all">{messagePreview.channel==='email'?messagePreview.request.email:messagePreview.request.mobile}</p></div></div>
+        {messagePreview.channel==='email'&&<div className="mt-3 rounded-xl border p-3"><span className="text-xs text-muted-foreground">Subject</span><p className="mt-1 font-semibold">{messagePreview.subject}</p></div>}
+        <div className="mt-3 rounded-xl border bg-secondary/20 p-4"><p className="whitespace-pre-wrap text-sm leading-6">{messagePreview.message}</p></div>
+        <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground"><strong className="text-foreground">Branding:</strong> this communication is from Clare Pickleball. RallyHub appears only as the technology provider / “Powered by RallyHub”.</div>
+        <div className="mt-4 flex flex-wrap gap-2"><Button onClick={sendPreviewedMessage}>{messagePreview.channel==='email'?<Mail className="mr-2 h-4 w-4"/>:<MessageCircle className="mr-2 h-4 w-4"/>}{messagePreview.channel==='email'?'Send email':'Open WhatsApp'}</Button><Button variant="outline" onClick={()=>copy(messagePreview.message,'Message copied')}><Copy className="mr-2 h-4 w-4"/>Copy message</Button><Button variant="ghost" onClick={()=>setMessagePreview(null)}>Cancel</Button></div>
+      </div>
+    </div>}
 
     <section className="glass rounded-2xl p-5 sm:p-6 space-y-5">
       <div><h2 className="text-lg font-black">Create guest booking link</h2><p className="mt-1 text-xs text-muted-foreground">Choose the actual session date. RallyHub checks that it matches the weekday of the selected slot.</p></div>
