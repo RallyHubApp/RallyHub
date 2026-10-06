@@ -174,6 +174,45 @@ export default function PublicClubProfile() {
     contact: protectedContact ? { ...(dynamicBase?.contact || {}), protected:true } : (baseClub.contact || {})
   };
 
+  const listingType = club.listingType || 'club';
+  if (listingType !== 'club') {
+    const listingDescription = String(club.description || '').trim() || `${club.name} is listed in the RallyHub Pickleball Directory.`;
+    const listingUrl = `${SITE_URL}/directory/${club.slug}`;
+    const listingLabel = club.listingCategoryLabel || 'Pickleball listing';
+    return <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <Seo title={`${club.name} | RallyHub Directory`} description={listingDescription} path={`/directory/${club.slug}`} />
+      <PublicDirectoryHeader />
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-7 sm:px-6 lg:px-8">
+        <Link to="/directory" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"><ArrowLeft className="h-4 w-4"/>Back to Directory</Link>
+        <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_340px]">
+          <section className="glass rounded-2xl p-5 sm:p-7">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+              <PublicDirectoryLogo logoUrl={normaliseDirectoryAssetUrl(club.logoUrl)} clubName={club.name} sizeClass="h-24 w-24" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-extrabold uppercase tracking-wider text-primary">{listingLabel}</p>
+                <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">{club.name}</h1>
+                {club.serviceArea&&<p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4 text-primary"/>{club.serviceArea}</p>}
+                <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">{listingDescription}</p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {club.website&&<a href={club.website} target="_blank" rel="noreferrer" onClick={()=>trackSiteEvent('directory_outbound_click',{clubSlug:club.slug,clubName:club.name,metadata:{listingType,channel:'website'}})} className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"><Globe2 className="h-4 w-4"/>Visit website</a>}
+                  {club.facebook&&<a href={club.facebook} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl border border-border px-4 text-sm font-bold"><Facebook className="h-4 w-4"/>Facebook</a>}
+                  {club.instagram&&<a href={club.instagram} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center rounded-xl border border-border px-4 text-sm font-bold">Instagram</a>}
+                </div>
+              </div>
+            </div>
+          </section>
+          <aside className="space-y-4">
+            {!hasDirectoryAccess&&<section className="rounded-2xl border border-amber-400/35 bg-amber-400/10 p-5"><div className="flex items-center gap-2"><UserCheck className="h-5 w-5 text-amber-500"/><h2 className="font-bold">Is this your listing?</h2></div><p className="mt-2 text-sm text-muted-foreground">Verify your connection to manage this public Directory listing.</p><Link to={`/directory/${club.slug}/claim`} className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-amber-300 px-4 py-3 text-sm font-bold text-slate-950">Update this listing</Link></section>}
+            {hasDirectoryAccess&&<Link to={`/directory/${club.slug}/edit`} className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground">Manage this listing</Link>}
+            {protectedContact ? <ProtectedContactCard listingSlug={club.slug} clubName={club.name} county={club.county||''} entityLabel="listing"/> : <section className="glass rounded-2xl p-5"><p className="text-xs uppercase tracking-wider text-muted-foreground">Listing contact</p><div className="mt-3 space-y-2">{club.contact?.phoneHref&&club.contact?.phone&&<a href={club.contact.phoneHref} onClick={()=>trackSiteEvent('club_call_click',{clubSlug:club.slug,clubName:club.name,metadata:{listingType,channel:'phone'}})} className="flex items-center gap-3 rounded-xl border border-border p-3"><Phone className="h-4 w-4 text-primary"/><span className="text-sm font-medium">Call</span></a>}{club.contact?.whatsapp&&<a href={club.contact.whatsapp} target="_blank" rel="noreferrer" onClick={()=>trackSiteEvent('club_whatsapp_click',{clubSlug:club.slug,clubName:club.name,metadata:{listingType,channel:'whatsapp'}})} className="flex items-center gap-3 rounded-xl border border-border p-3"><MessageCircle className="h-4 w-4 text-primary"/><span className="text-sm font-medium">WhatsApp</span></a>}{club.contact?.email&&<a href={`mailto:${club.contact.email}`} onClick={()=>trackSiteEvent('club_email_click',{clubSlug:club.slug,clubName:club.name,metadata:{listingType,channel:'email'}})} className="flex items-center gap-3 rounded-xl border border-border p-3"><Mail className="h-4 w-4 text-primary"/><span className="text-sm font-medium">Email</span></a>}</div></section>}
+            <section className="glass rounded-2xl p-5"><h2 className="font-bold">Listing details</h2><dl className="mt-3 space-y-2 text-sm"><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Category</dt><dd className="text-right">{listingLabel}</dd></div>{club.serviceArea&&<div className="flex justify-between gap-4"><dt className="text-muted-foreground">Area / coverage</dt><dd className="text-right">{club.serviceArea}</dd></div>}</dl></section>
+          </aside>
+        </div>
+      </main>
+      <PublicCopyrightFooter maxWidthClass="max-w-6xl" />
+    </div>;
+  }
+
   const schedule = groupByDay(club.sessions);
   const displayDescription = publicDescription(club);
   const displayMembershipStatus = publicMembershipStatus(club);
