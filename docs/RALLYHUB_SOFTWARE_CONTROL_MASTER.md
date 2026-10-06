@@ -1,7 +1,7 @@
 # RallyHub Software Control Master (SCM)
 
 **Status:** LIVE CONTROL MASTER — repository authority for signed-off behaviour and change control  
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 6 October 2026
 **Owner:** RallyHub  
 **Relationship to testing:** `docs/RALLYHUB_MASTER_TESTING_BLUEPRINT.md` defines how RallyHub is tested. This SCM defines what is approved/protected and what must not regress.
@@ -244,6 +244,9 @@ The Master Testing Blueprint remains mandatory. In addition:
 - If a different implementation route is genuinely required, record the reason before changing the protected module.
 - Approved visual/email/document assets are references to reuse, not prompts to redesign.
 - Changes to shared components must identify every consuming module before release.
+- The protected **Development & Control Library** in Super Admin is the human-readable access point for RallyHub control/reference documents. Repository files under `docs/` remain authoritative; the library is a read-only generated mirror and must not become an independently edited copy.
+- Control-library document retrieval is backend-authorised for RallyHub Super Admin; hiding a frontend tab is not sufficient security.
+- When a controlled document changes, regenerate/synchronise the secure library mirror before checkpoint/release.
 
 ## 11. Next modular build: Communications / Email Engine
 
@@ -282,6 +285,13 @@ Initial scope to formalise before implementation:
 | Communications/Email Engine | NEXT SHARED MODULE | Architecture, approved templates, provider/service contract |
 
 ## 13. Change log
+
+### 6 October 2026 — SCM v1.2
+
+- Added the secure Super Admin **Development & Control Library** as the readable in-product access point for RallyHub control/reference documentation.
+- Repository `docs/` files remain the authority; the in-product library is a generated read-only mirror to prevent document drift.
+- Added backend Super Admin authorisation, searchable document index and in-app Markdown reader.
+- Indexed all 13 current Markdown documents held under RallyHub `docs/` at this baseline.
 
 ### 6 October 2026 — SCM v1.1
 
