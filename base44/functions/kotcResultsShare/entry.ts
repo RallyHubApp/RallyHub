@@ -67,6 +67,16 @@ Deno.serve(async req=>{try{
    return Response.json({session:{id:session.id,name:session.name,status:session.status,current_round_number:finished?currentRound?.round_number:session.current_round_number,planned_rounds:session.planned_rounds,scoring_mode:session.scoring_mode,score_target:session.score_target,win_by_two:session.win_by_two,scheduled_start:session.scheduled_start,actual_session_end:session.actual_session_end},player_link:{...config,share_id:share.id},club_brand:clubBrand,venue:venue?{name:venue.name,address:venue.address||venue.full_address||'',postcode:venue.postcode||venue.eircode||''}:session.custom_location?{name:session.custom_location,address:'',postcode:''}:null,broadcast:activeBroadcast?{id:activeBroadcast.id,title:activeBroadcast.title,message:activeBroadcast.message,published_at:activeBroadcast.published_at,expires_at:activeBroadcast.expires_at,expiry_mode:activeBroadcast.expiry_mode}:null,participants:publicParticipants,completed_rounds:completedRounds.length,current_round:currentRound?{id:currentRound.id,round_number:currentRound.round_number,status:currentRound.status}:null,current_matches:currentMatches,bench,timer,standings:table,matches:publicMatches,podium:finished?table.slice(0,3):[],finished,poll_after_ms:finished?0:12000,runtimeVersion:RUNTIME_VERSION});
  }
  const user=await base44.auth.me();if(!user)return Response.json({error:'Unauthorized',runtimeVersion:RUNTIME_VERSION},{status:401});
+ if(action==='admin_recent_sessions'){
+   if(user.role!=='admin')return Response.json({error:'Administrator access required',runtimeVersion:RUNTIME_VERSION},{status:403});
+   const tenantId=String(user.active_tenant_id||'');const clubId=String(user.active_club_id||'');
+   let sessions:any[]=[];
+   if(tenantId) sessions=await retry('recent KOTC sessions by tenant',()=>base44.asServiceRole.entities.KotcSession.filter({tenant_id:tenantId}));
+   if(!sessions.length&&clubId) sessions=await retry('recent KOTC sessions by club',()=>base44.asServiceRole.entities.KotcSession.filter({club_id:clubId}));
+   if(!sessions.length) sessions=await retry('recent KOTC sessions fallback',()=>base44.asServiceRole.entities.KotcSession.list('-created_date',100));
+   const visible=(sessions||[]).filter((s:any)=>s.demo_mode!==true&&!['cancelled'].includes(String(s.status||''))).filter((s:any)=>!tenantId||String(s.tenant_id||'')===tenantId||(!s.tenant_id&&clubId&&String(s.club_id||'')===clubId)).sort((a:any,b:any)=>Date.parse(b.scheduled_start||b.actual_session_end||b.created_date||0)-Date.parse(a.scheduled_start||a.actual_session_end||a.created_date||0)).slice(0,50).map((s:any)=>({id:s.id,name:s.name||'King of the Court',status:s.status,scheduled_start:s.scheduled_start||null,actual_session_end:s.actual_session_end||null,tournament_id:s.tournament_id||null}));
+   return Response.json({success:true,sessions:visible,runtimeVersion:RUNTIME_VERSION});
+ }
  if(action==='management_state'){
    const shareToken=String(body.token||'');if(!shareToken)return Response.json({error:'Token required',runtimeVersion:RUNTIME_VERSION},{status:400});
    const share=(await retry('management share read',()=>base44.asServiceRole.entities.KotcSessionShare.filter({token:shareToken,status:'active'})))?.[0];if(!share)return Response.json({error:'Results link is invalid or revoked.',runtimeVersion:RUNTIME_VERSION},{status:404});
