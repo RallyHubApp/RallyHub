@@ -3,5 +3,5 @@ const ids=new Set(LEGACY_APPROVED_TEMPLATES.map(t=>t.id));assert.equal(ids.size,
 const inter=LEGACY_APPROVED_TEMPLATES.find(t=>t.id==="interclub_results");assert.equal(inter.status,"approved-locked");assert.equal(inter.renderer,"specialised-approved");
 const source=fs.readFileSync("base44/functions/interclubResultsEmail/resultsEmailTemplate.ts","utf8");assert.match(source,/Do not redesign this template/);
 const kotc=fs.readFileSync("base44/functions/kotcResultsShare/entry.ts","utf8");assert.match(kotc,/your KOTC result/);assert.match(kotc,/Open your private KOTC player summary/);
-const ui=fs.readFileSync("src/pages/CommunicationsCentre.jsx","utf8");assert.match(ui,/Approved RallyHub template library/);assert.match(ui,/external delivery disabled/i);
+const ui=fs.readFileSync("src/pages/CommunicationsCentre.jsx","utf8");assert.match(ui,/Approved template library/);assert.match(ui,/external delivery disabled/i);
 console.log("PASS communicationsLegacyTemplateGate: "+LEGACY_APPROVED_TEMPLATES.length+" existing approved communications catalogued + specialist Interclub locked + no-send UI retained");
