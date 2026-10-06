@@ -193,15 +193,15 @@ export default function AddDirectoryClub() {
   return (
     <>
       <Seo
-        title="Add or Update Your Pickleball Club | RallyHub Ireland Directory"
-        description="Find your existing pickleball club listing and update it, or submit a missing club from anywhere on the island of Ireland for the RallyHub Club Directory."
+        title="Add or Update a Pickleball Listing | RallyHub Ireland Directory"
+        description="Add or update a RallyHub pickleball listing. Clubs and places to play remain the primary Directory experience, with coaching, events, holidays, equipment and other approved listings available too."
         path="/directory/add"
       />
       <div className="min-h-screen bg-background text-foreground">
       <PublicDirectoryHeader />
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         <Link to="/directory" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to club directory
+          <ArrowLeft className="w-4 h-4" /> Back to directory
         </Link>
 
         {!isSuperAdmin && (
@@ -209,8 +209,8 @@ export default function AddDirectoryClub() {
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"><Search className="w-5 h-5 text-primary" /></div>
               <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl font-black">Add or update your club</h1>
-                <p className="mt-2 text-sm text-muted-foreground">First check whether your club is already listed. If it is, open the club and choose <strong className="text-foreground">Update this club</strong>. If it is not listed, continue below to add it.</p>
+                <h1 className="text-2xl sm:text-3xl font-black">Add or update your club or listing</h1>
+                <p className="mt-2 text-sm text-muted-foreground">Clubs and places to play are RallyHub's primary Directory experience. If your club is already listed, open it and choose <strong className="text-foreground">Update this club</strong>. Otherwise continue below to add a club, coach, event organiser, holiday, supplier or other approved pickleball listing.</p>
                 <Label htmlFor="existingClubSearch" className="sr-only">Find your club</Label>
                 <div className="relative mt-4">
                   <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
@@ -239,11 +239,11 @@ export default function AddDirectoryClub() {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">RallyHub Directory</p>
-                <h2 className="text-3xl font-black mt-1">{isSuperAdmin ? 'Add an unclaimed club' : 'Add a new club'}</h2>
+                <h2 className="text-3xl font-black mt-1">{isSuperAdmin ? 'Add an unclaimed club or listing' : 'Add a new listing'}</h2>
                 <p className="text-muted-foreground mt-2">
                   {isSuperAdmin
-                    ? 'Create and pre-populate a public club listing without claiming it. Club name and county are enough to start; add either an email address or a mobile / WhatsApp number for outreach, plus any other information you have. You can complete the listing later before or after sending the claim invitation.'
-                    : "If your club is not already listed, send us the basic details and RallyHub will review the listing before it is added."}
+                    ? 'Use the same Directory intake for clubs and other pickleball listings. Choose the listing type first; county and venue details are required only where they are relevant.'
+                    : "Choose what you are listing, send us the basic details and RallyHub will review it before it becomes public."}
                 </p>
               </div>
             </div>
@@ -252,9 +252,9 @@ export default function AddDirectoryClub() {
               <div className="mt-8 rounded-xl border border-border bg-background/40 p-5 text-sm text-muted-foreground">Checking your sign-in…</div>
             ) : !isAuthenticated ? (
               <div className="mt-8 rounded-2xl border border-border bg-background/40 p-6">
-                <h2 className="text-xl font-bold">Sign in to submit a club</h2>
+                <h2 className="text-xl font-bold">Sign in to submit a listing</h2>
                 <p className="text-sm text-muted-foreground mt-2">
-                  We require a verified RallyHub account so we know who submitted the club and can contact you if we need to check the details. The same account can be used elsewhere in RallyHub, but submitting a Directory listing does not create a RallyHub Club or player membership.
+                  We require a verified RallyHub account so we know who submitted the listing and can contact you if we need to check the details. Submitting a Directory listing does not create RallyHub Club or player membership.
                 </p>
                 <div className="flex flex-wrap gap-3 mt-5">
                   <Link to={loginHref}><Button>Sign in</Button></Link>
@@ -290,20 +290,32 @@ export default function AddDirectoryClub() {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="clubName">Club or group name</Label>
-                    <Input id="clubName" value={clubName} onChange={e => setClubName(e.target.value)} placeholder="e.g. Example Pickleball Club" required maxLength={180} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="county">County</Label>
-                    <select id="county" value={county} onChange={e => setCounty(e.target.value)} required className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-                      <option value="">Select county</option>
-                      {irelandCounties.map(item => <option key={item} value={item}>{item}</option>)}
+                    <Label htmlFor="listingType">What are you listing?</Label>
+                    <select id="listingType" value={listingType} onChange={e => { setListingType(e.target.value); setCounty(''); setTown(''); setPrimaryVenue(''); setAddress(''); setVenuePostcode(''); setServiceArea(''); }} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                      {formCategories.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
                     </select>
+                    <p className="text-xs text-muted-foreground">Clubs and places to play remain the primary RallyHub Directory category.</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="town">Town / area {isSuperAdmin && <span className="text-muted-foreground font-normal">(optional)</span>}</Label>
-                    <Input id="town" value={town} onChange={e => setTown(e.target.value)} required={!isSuperAdmin} maxLength={120} />
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="clubName">Club, business or listing name</Label>
+                    <Input id="clubName" value={clubName} onChange={e => setClubName(e.target.value)} placeholder={clubListing ? 'e.g. Example Pickleball Club' : 'Public name for this listing'} required maxLength={180} />
                   </div>
+                  {clubListing ? <>
+                    <div className="space-y-2">
+                      <Label htmlFor="county">County</Label>
+                      <select id="county" value={county} onChange={e => setCounty(e.target.value)} required className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                        <option value="">Select county</option>
+                        {irelandCounties.map(item => <option key={item} value={item}>{item}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="town">Town / area {isSuperAdmin && <span className="text-muted-foreground font-normal">(optional)</span>}</Label>
+                      <Input id="town" value={town} onChange={e => setTown(e.target.value)} required={!isSuperAdmin} maxLength={120} />
+                    </div>
+                  </> : selectedCategory?.locationMode === 'service_area' ? <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="serviceArea">Area, destination or service coverage <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                    <Input id="serviceArea" value={serviceArea} onChange={e => setServiceArea(e.target.value)} placeholder="e.g. Nationwide, Munster, Dublin, Spain, Online" maxLength={180} />
+                  </div> : null}
                 </div>
 
                 {exactExisting && (
@@ -314,7 +326,7 @@ export default function AddDirectoryClub() {
                   </div>
                 )}
 
-                <div className="grid sm:grid-cols-2 gap-4">
+                {clubListing && <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="primaryVenue">Primary venue <span className="text-muted-foreground font-normal">(optional)</span></Label>
                     <Input id="primaryVenue" value={primaryVenue} onChange={e => setPrimaryVenue(e.target.value)} maxLength={220} />
@@ -328,7 +340,7 @@ export default function AddDirectoryClub() {
                     <Input id="venuePostcode" value={venuePostcode} onChange={e => setVenuePostcode(e.target.value.toUpperCase())} placeholder="e.g. V95 PD96 or BT…" maxLength={40} autoComplete="postal-code" />
                     <p className="text-xs text-muted-foreground">A full address or Eircode/postcode helps RallyHub place the venue accurately on the all-Ireland club map.</p>
                   </div>
-                </div>
+                </div>}
 
                 <div className="grid sm:grid-cols-3 gap-4">
                   <div className="space-y-2"><Label htmlFor="website">Website <span className="text-muted-foreground font-normal">(optional)</span></Label><Input id="website" value={website} onChange={e => setWebsite(e.target.value)} maxLength={320} /></div>
@@ -337,7 +349,7 @@ export default function AddDirectoryClub() {
                 </div>
 
                 <div className="border-t border-border pt-5">
-                  <h2 className="font-bold mb-4">{isSuperAdmin ? 'Club contact' : 'About you'}</h2>
+                  <h2 className="font-bold mb-4">{isSuperAdmin ? 'Listing contact' : 'About you'}</h2>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2"><Label htmlFor="claimantName">{isSuperAdmin ? <>Contact name <span className="text-muted-foreground font-normal">(optional)</span></> : 'Your name'}</Label><Input id="claimantName" value={claimantName} onChange={e => setClaimantName(e.target.value)} required={!isSuperAdmin} maxLength={160} /></div>
                     <div className="space-y-2"><Label htmlFor="claimantRole">{isSuperAdmin ? 'Role / connection' : 'Your role / connection'}</Label><Input id="claimantRole" value={claimantRole} onChange={e => setClaimantRole(e.target.value)} placeholder="e.g. Chairperson, organiser" required={!isSuperAdmin} maxLength={160} /></div>
@@ -346,7 +358,7 @@ export default function AddDirectoryClub() {
                   </div>
                   <label className="mt-4 flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4 cursor-pointer">
                     <input type="checkbox" checked={publishContact} onChange={e => setPublishContact(e.target.checked)} className="mt-1 h-4 w-4 accent-primary" />
-                    <span className="text-sm text-muted-foreground"><strong className="text-foreground">Use these as the public club contact details.</strong> {isSuperAdmin ? 'They will appear on the club profile, while the email is also retained as the trusted contact for the future claim.' : 'If the listing is approved, show my submitted name, email and mobile on the club profile. Untick this if you want to add different public contact details later.'}</span>
+                    <span className="text-sm text-muted-foreground"><strong className="text-foreground">Use these as the public listing contact details.</strong> {isSuperAdmin ? 'They will appear on the club profile, while the email is also retained as the trusted contact for the future claim.' : 'If the listing is approved, show my submitted name, email and mobile on the club profile. Untick this if you want to add different public contact details later.'}</span>
                   </label>
                   <div className="space-y-2 mt-4"><Label htmlFor="notes">Anything else we should know <span className="text-muted-foreground font-normal">(optional)</span></Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4} maxLength={1500} /></div>
                   {!isSuperAdmin && <label className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-background/30 p-4 cursor-pointer">
@@ -356,7 +368,7 @@ export default function AddDirectoryClub() {
                 </div>
 
                 <Button type="submit" disabled={submitting || !!exactExisting} className="w-full sm:w-auto">
-                  {submitting ? (isSuperAdmin ? 'Creating…' : 'Submitting…') : (isSuperAdmin ? 'Create unclaimed listing & continue' : 'Submit club for review')}
+                  {submitting ? (isSuperAdmin ? 'Creating…' : 'Submitting…') : (isSuperAdmin ? 'Create unclaimed listing & continue' : 'Submit listing for review')}
                 </Button>
               </form>
             )}
@@ -365,7 +377,7 @@ export default function AddDirectoryClub() {
           <aside className="space-y-4">
             <div className="glass rounded-2xl p-5">
               <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" /><h2 className="font-bold">Directory only</h2></div>
-              <p className="text-sm text-muted-foreground mt-3">{isSuperAdmin ? 'This creates a public Directory listing only. It remains unclaimed until the club representative signs in and claims it. It does not create a RallyHub tenant, RallyHub Club or player account.' : 'Adding a club here creates a request for a public directory listing. It does not create a RallyHub tenant, RallyHub Club or player account.'}</p>
+              <p className="text-sm text-muted-foreground mt-3">{isSuperAdmin ? 'This creates a public Directory listing only. It remains unclaimed until an authorised representative signs in and claims it. It does not create a RallyHub tenant, RallyHub Club or player account.' : 'Adding an item here creates a request for a public Directory listing. It does not create a RallyHub tenant, RallyHub Club or player account.'}</p>
             </div>
             <div className="glass rounded-2xl p-5">
               <div className="flex items-center gap-2"><Building2 className="w-4 h-4 text-primary" /><h2 className="font-bold">Already listed?</h2></div>
