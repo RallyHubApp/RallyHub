@@ -453,12 +453,14 @@ async function sendDirectoryWelcomeEmail(base44, { listing, recipientName = '', 
     return { sent: 0, error: 'A valid Directory owner/editor email is required.' };
   }
   const firstName = String(recipientName || '').trim().split(/\s+/)[0] || 'there';
-  const clubName = String(listing?.name || listing?.slug || 'your club').trim();
+  const clubName = String(listing?.name || listing?.slug || 'your listing').trim();
   const listingSlug = String(listing?.slug || '').trim();
+  const listingType = String(listing?.listingType || listing?.listing_type || 'club');
+  const isClubListing = listingType === 'club';
   const manageUrl = `https://rallyhub.ie/directory/${encodeURIComponent(listingSlug)}/edit`;
   const helpUrl = 'https://rallyhub.ie/directory/help';
   const subject = `Welcome to RallyHub – your ${clubName} Directory listing is ready`;
-  const textBody = `Hi ${firstName},
+  const textBody = isClubListing ? `Hi ${firstName},
 
 Thanks for connecting with RallyHub. Your access to the ${clubName} Directory listing is now ready.
 
@@ -467,16 +469,12 @@ Your listing is now ready for you to manage. You can check or update the club de
 Manage your listing:
 ${manageUrl}
 
-Using Spond? You can connect your club’s Spond account under Enhanced listing. RallyHub can scan your upcoming Spond events and bring in your regular venues and session times, which should save you quite a bit of work.
+Using Spond? You can connect your club’s Spond account under Enhanced listing. RallyHub can scan your upcoming Spond events and bring in your regular venues and session times.
 
 Club Guide & Help:
 ${helpUrl}
 
-If there is anything we can do to help, just reply to this email or WhatsApp Brian on 087 810 0333.
-
-We’re building the Directory with clubs, so if you have any thoughts, suggestions or ideas about how we could make it better, please let us know. You can use the Feedback button inside RallyHub, or simply send Brian a text or voice note on WhatsApp — whatever is easiest.
-
-And if you notice a club, venue or regular session that is missing from the Directory, or anything that doesn’t look quite right, please let us know. We know there are still clubs and groups around the country that we may not have identified yet, and we’d be delighted to contact them and invite them to join the Directory.
+If there is anything we can do to help, just reply to this email.
 
 Thanks again for being part of it.
 
@@ -484,7 +482,26 @@ Yours in sport,
 
 Brian Moore
 RallyHub
-087 810 0333
+https://rallyhub.ie` : `Hi ${firstName},
+
+Thanks for connecting with RallyHub. Your access to the ${clubName} Directory listing is now ready.
+
+You can update the listing name, description, public contact details, area or service coverage, website and social links at any time.
+
+Manage your listing:
+${manageUrl}
+
+Directory Help:
+${helpUrl}
+
+If there is anything we can do to help, just reply to this email.
+
+Thanks again for being part of the RallyHub Pickleball Directory.
+
+Yours in sport,
+
+Brian Moore
+RallyHub
 https://rallyhub.ie`;
   const finalTextBody = normaliseDirectorySignatureText(textBody);
   const htmlBody = rallyHubEmailShell({
@@ -493,7 +510,7 @@ https://rallyhub.ie`;
     content: `${textToBrandedHtml(finalTextBody, manageUrl)}
       <div style="margin:4px 0 0;padding:15px 17px;border:1px solid #cfe6d7;background:#f1faf4;border-radius:12px;">
         <div style="font-size:13px;font-weight:800;color:${RALLYHUB_NAVY};margin-bottom:5px;">Your listing is ready</div>
-        <div style="font-size:13px;line-height:1.6;color:#52606d;">You can update your club description, public contact details, venues and regular sessions at any time. If you use Spond, Enhanced listing can help bring in regular venue and session information.</div>
+        <div style="font-size:13px;line-height:1.6;color:#52606d;">${isClubListing ? 'You can update your club description, public contact details, venues and regular sessions at any time. If you use Spond, Enhanced listing can help bring in regular venue and session information.' : 'You can update the listing description, public contact details, service area, website and social links at any time.'}</div>
       </div>`,
     actionUrl: manageUrl,
     actionLabel: 'Manage your Directory listing',
