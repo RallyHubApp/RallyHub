@@ -324,7 +324,15 @@ Phase-1 gate covers tenant scope, marketing permission, suppression, dedupe, ide
 | Trials/Entitlements | Controlled pilot | External-club isolation and conversion testing |
 | Communications Engine | Phase 1 isolated core / protected | BrandKit + composer, then controlled caller adapters |
 
-## 13. Change log\n\n### 6 October 2026 — SCM v1.3\n\n- Began standalone Communications Engine Phase 1 behind the pre-build checkpoint `Pre-Communications Engine baseline`.\n- Added central campaign/message/recipient/delivery/BrandKit/template/workflow entities plus first-class polls/feedback/survey/RSVP/availability entities.\n- Added executable core gate and protected strangler-migration order; no existing production communication caller changed.\n- Expanded the protected specification to include consent/double opt-in, HTML/plain-text parity, workflow goals/exits, deliverability/anti-spam controls, tenant style guides, interactive communications and future channel adapters.\n
+## 13. Change log
+
+### 6 October 2026 — SCM v1.3
+
+- Began standalone Communications Engine Phase 1 behind the pre-build checkpoint `Pre-Communications Engine baseline`.
+- Added central campaign/message/recipient/delivery/BrandKit/template/workflow entities plus first-class polls/feedback/survey/RSVP/availability entities.
+- Added executable core gate and protected strangler-migration order; no existing production communication caller changed.
+- Expanded the protected specification to include consent/double opt-in, HTML/plain-text parity, workflow goals/exits, deliverability/anti-spam controls, tenant style guides, interactive communications and future channel adapters.
+
 
 ### 6 October 2026 — SCM v1.2
 
