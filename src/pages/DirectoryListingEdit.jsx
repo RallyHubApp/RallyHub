@@ -328,25 +328,28 @@ export default function DirectoryListingEdit() {
 
   const validate = () => {
     const issues = [];
-    if (!String(form?.name || '').trim()) issues.push('Add the public club name.');
-    if (!String(form?.description || '').trim()) issues.push('Add a short public club description.');
-    if (!isValidEmail(form?.contact?.email)) issues.push('The club contact email is not valid.');
+    const clubListing = String(form?.listingType || baseClub?.listingType || 'club') === 'club';
+    if (!String(form?.name || '').trim()) issues.push('Add the public listing name.');
+    if (!String(form?.description || '').trim()) issues.push('Add a short public listing description.');
+    if (!isValidEmail(form?.contact?.email)) issues.push('The listing contact email is not valid.');
     [
       ['Website', form?.website], ['Facebook', form?.facebook], ['Instagram', form?.instagram],
       ['Joining link', form?.waitingListUrl], ['WhatsApp link', form?.contact?.whatsapp]
     ].forEach(([label, value]) => { if (!isValidUrl(value)) issues.push(`${label} must be a full http:// or https:// link.`); });
-    (form?.venues || []).forEach((venue, index) => {
-      if (!String(venue.name || '').trim()) issues.push(`Venue ${index + 1} needs a name.`);
-      if (!isValidUrl(venue.mapUrl)) issues.push(`Venue ${index + 1} map link is not valid.`);
-      if (!isValidUrl(venue.websiteUrl)) issues.push(`Venue ${index + 1} website link is not valid.`);
-    });
-    (form?.sessions || []).forEach((session, index) => {
-      if (!session.day) issues.push(`Session ${index + 1} needs a day.`);
-      if (!session.venueId) issues.push(`Session ${index + 1} needs a venue.`);
-      if (!session.start) issues.push(`Session ${index + 1} needs a start time.`);
-      if (session.showPublicJoinLink && !isValidUrl(session.publicJoinUrl)) issues.push(`Session ${index + 1} public join link is not valid.`);
-      if (session.showPublicJoinLink && !String(session.publicJoinUrl || '').trim()) issues.push(`Session ${index + 1} needs a public join link or the join-link option should be switched off.`);
-    });
+    if (clubListing) {
+      (form?.venues || []).forEach((venue, index) => {
+        if (!String(venue.name || '').trim()) issues.push(`Venue ${index + 1} needs a name.`);
+        if (!isValidUrl(venue.mapUrl)) issues.push(`Venue ${index + 1} map link is not valid.`);
+        if (!isValidUrl(venue.websiteUrl)) issues.push(`Venue ${index + 1} website link is not valid.`);
+      });
+      (form?.sessions || []).forEach((session, index) => {
+        if (!session.day) issues.push(`Session ${index + 1} needs a day.`);
+        if (!session.venueId) issues.push(`Session ${index + 1} needs a venue.`);
+        if (!session.start) issues.push(`Session ${index + 1} needs a start time.`);
+        if (session.showPublicJoinLink && !isValidUrl(session.publicJoinUrl)) issues.push(`Session ${index + 1} public join link is not valid.`);
+        if (session.showPublicJoinLink && !String(session.publicJoinUrl || '').trim()) issues.push(`Session ${index + 1} needs a public join link or the join-link option should be switched off.`);
+      });
+    }
     setValidation(issues);
     return issues.length === 0;
   };
@@ -640,6 +643,7 @@ export default function DirectoryListingEdit() {
   };
 
   if (!loadingListing && !baseClub) return <Navigate to="/directory" replace />;
+  const isClubListing = String(form?.listingType || baseClub?.listingType || 'club') === 'club';
 
   return (
     <>
@@ -667,8 +671,8 @@ export default function DirectoryListingEdit() {
           ) : !access?.hasAccess && user?.role !== 'admin' ? (
             <div className="glass rounded-2xl p-7 max-w-xl mx-auto text-center">
               <h1 className="text-2xl font-black">Verification required</h1>
-              <p className="text-sm text-muted-foreground mt-2">You need verified directory-editor access before you can edit this club.</p>
-              <Link to={`/directory/${slug}/claim`}><Button className="mt-5">Verify & update this club</Button></Link>
+              <p className="text-sm text-muted-foreground mt-2">You need verified directory-editor access before you can edit this listing.</p>
+              <Link to={`/directory/${slug}/claim`}><Button className="mt-5">Verify & update this listing</Button></Link>
             </div>
           ) : form ? (
             <div className="space-y-5">
@@ -679,15 +683,20 @@ export default function DirectoryListingEdit() {
                     <p className="text-xs uppercase tracking-wider text-primary font-semibold">{user?.role === 'admin' && !isClaimed ? 'Super Admin · Unclaimed listing' : access?.accessRole === 'owner' ? 'Primary Directory Owner' : 'Verified Directory Editor'}</p>
                     <h1 className="text-3xl sm:text-4xl font-black mt-1 truncate">{form.name || baseClub.name}</h1>
                     <div className="flex flex-wrap gap-2 mt-3 text-xs text-muted-foreground">
-                      <span className="rounded-full border border-border px-2.5 py-1">County {baseClub.county}</span>
-                      <span className="rounded-full border border-border px-2.5 py-1">{form.venues?.length || 0} venues</span>
-                      <span className="rounded-full border border-border px-2.5 py-1">{form.sessions?.length || 0} weekly sessions</span>
+                      {isClubListing ? <>
+                        <span className="rounded-full border border-border px-2.5 py-1">County {baseClub.county}</span>
+                        <span className="rounded-full border border-border px-2.5 py-1">{form.venues?.length || 0} venues</span>
+                        <span className="rounded-full border border-border px-2.5 py-1">{form.sessions?.length || 0} weekly sessions</span>
+                      </> : <>
+                        <span className="rounded-full border border-border px-2.5 py-1">{form.listingCategoryLabel || baseClub.listingCategoryLabel || 'Directory listing'}</span>
+                        {(form.serviceArea || baseClub.serviceArea) && <span className="rounded-full border border-border px-2.5 py-1">{form.serviceArea || baseClub.serviceArea}</span>}
+                      </>}
                     </div>
-                    <p className="text-sm text-muted-foreground mt-3 max-w-2xl">Keep the public listing accurate. The displayed club name can be corrected at any time; the underlying RallyHub URL stays fixed so existing links and ownership are not affected. County remains fixed.</p>
+                    <p className="text-sm text-muted-foreground mt-3 max-w-2xl">{isClubListing ? 'Keep the public listing accurate. The displayed club name can be corrected at any time; the underlying RallyHub URL stays fixed so existing links and ownership are not affected. County remains fixed.' : 'Keep the public listing accurate. The displayed name, description, contact details, service area and links can be updated at any time; the underlying RallyHub URL stays fixed.'}</p>
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
                     <Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><ExternalLink className="w-4 h-4" /> View public listing</Button>
-                    <Link to={`/directory/${slug}/events`}><Button type="button" variant="outline" className="gap-2" disabled={saving}><CalendarDays className="w-4 h-4" /> Manage events</Button></Link>
+                    {isClubListing && <Link to={`/directory/${slug}/events`}><Button type="button" variant="outline" className="gap-2" disabled={saving}><CalendarDays className="w-4 h-4" /> Manage events</Button></Link>}
                     {user?.role === 'admin' && !isClaimed && <>
                       {form?.contact?.phone && <Button type="button" className="gap-2" onClick={openWhatsAppClaimInvite} disabled={saving || inviting || dirty} title={dirty ? 'Save changes before opening WhatsApp' : undefined}>
                         {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
@@ -707,11 +716,11 @@ export default function DirectoryListingEdit() {
                 <nav className="mt-5 flex gap-2 overflow-x-auto pb-1 text-sm">
                   <a href="#basics" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Basics</a>
                   <a href="#contact" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Contact</a>
-                  <a href="#venues" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Venues</a>
+                  {isClubListing && <><a href="#venues" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Venues</a>
                   <a href="#sessions" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Sessions</a>
-                  <Link to={`/directory/${slug}/events`} className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40 inline-flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5" /> Events</Link>
+                  <Link to={`/directory/${slug}/events`} className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40 inline-flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5" /> Events</Link></>}
                   {isClaimed && <a href="#access" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Access</a>}
-                  {isClaimed && <button type="button" onClick={() => { setShowEnhancements(true); window.setTimeout(() => document.getElementById('spond')?.scrollIntoView({ behavior: 'auto', block: 'start' }), 60); }} className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Spond</button>}
+                  {isClubListing && isClaimed && <button type="button" onClick={() => { setShowEnhancements(true); window.setTimeout(() => document.getElementById('spond')?.scrollIntoView({ behavior: 'auto', block: 'start' }), 60); }} className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Spond</button>}
                   <button type="button" onClick={() => setShowEnhancements(true)} className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40">Enhance listing</button>
                   <Link to="/directory/help" className="shrink-0 rounded-lg bg-background/50 border border-border px-3 py-2 hover:border-primary/40 inline-flex items-center gap-1.5"><HelpCircle className="w-3.5 h-3.5" /> Help</Link>
                 </nav>
@@ -725,9 +734,9 @@ export default function DirectoryListingEdit() {
               <section className="rounded-2xl border border-primary/25 bg-primary/10 p-5 sm:p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-primary" /><h2 className="font-bold">Start with four things</h2></div>
-                    <p className="text-sm text-muted-foreground mt-2">1. Check the club description · 2. Check the public contact · 3. Check the main venue · 4. Check the regular sessions. That is enough for a useful listing. Everything else is optional.</p>
-                    <p className="text-sm text-muted-foreground mt-2"><span className="font-bold text-foreground">Using Spond?</span> Open <span className="font-semibold text-foreground">Enhanced listing</span> to connect Spond and automatically import your club’s events and regular sessions.</p>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-primary" /><h2 className="font-bold">{isClubListing ? 'Start with four things' : 'Keep the essentials accurate'}</h2></div>
+                    <p className="text-sm text-muted-foreground mt-2">{isClubListing ? '1. Check the club description · 2. Check the public contact · 3. Check the main venue · 4. Check the regular sessions. That is enough for a useful listing. Everything else is optional.' : 'Check the listing name, description, public contact, area or coverage, website and social links. Keep it concise and useful for players.'}</p>
+                    {isClubListing && <p className="text-sm text-muted-foreground mt-2"><span className="font-bold text-foreground">Using Spond?</span> Open <span className="font-semibold text-foreground">Enhanced listing</span> to connect Spond and automatically import your club’s events and regular sessions.</p>}
                   </div>
                   <Link to="/directory/help"><Button type="button" variant="outline" className="gap-2"><HelpCircle className="w-4 h-4" /> Open help guide</Button></Link>
                 </div>
@@ -738,26 +747,27 @@ export default function DirectoryListingEdit() {
               {isClaimed && <ClubFeedbackPanel listingSlug={slug} clubName={form?.name || baseClub?.name || 'this club'} />}
 
               <section id="basics" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
-                <div className="flex items-center gap-2"><Info className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Public club information</h2></div>
+                <div className="flex items-center gap-2"><Info className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club information' : 'Public listing information'}</h2></div>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2 sm:col-span-2"><Label>Club name</Label><Input value={form.name || ''} onChange={e => setField('name', e.target.value)} maxLength={220} placeholder="e.g. Dalkey Pickleball Club" /><p className="text-xs text-muted-foreground">This changes the public heading only. The RallyHub listing link stays the same.</p></div>
-                  <div className="space-y-2 sm:col-span-2"><Label>Club description</Label><Textarea value={form.description || ''} onChange={e => setField('description', e.target.value)} rows={4} placeholder="Tell players what your club is about, where you play and who you welcome." /><p className="text-xs text-muted-foreground">This is the main introduction players see in search and on your club page. Claim/unclaimed status is controlled automatically by RallyHub and does not need to be typed here.</p></div>
+                  <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club name' : 'Business / listing name'}</Label><Input value={form.name || ''} onChange={e => setField('name', e.target.value)} maxLength={220} placeholder={isClubListing ? 'e.g. Dalkey Pickleball Club' : 'Public listing name'} /><p className="text-xs text-muted-foreground">This changes the public heading only. The RallyHub listing link stays the same.</p></div>
+                  <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club description' : 'Listing description'}</Label><Textarea value={form.description || ''} onChange={e => setField('description', e.target.value)} rows={4} placeholder={isClubListing ? 'Tell players what your club is about, where you play and who you welcome.' : 'Tell players clearly what you provide and why it may be useful.'} /><p className="text-xs text-muted-foreground">This is the main introduction players see in search and on the public listing page.</p></div>
+                  {!isClubListing && <div className="space-y-2 sm:col-span-2"><Label>Area, destination or service coverage</Label><Input value={form.serviceArea || ''} onChange={e => setField('serviceArea', e.target.value)} placeholder="e.g. Nationwide, Munster, Dublin, Spain, Online" /><p className="text-xs text-muted-foreground">Leave blank when location is not relevant.</p></div>}
                   <div className="sm:col-span-2 rounded-xl border border-border bg-background/35 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div><p className="font-semibold">Optional club details</p><p className="text-xs text-muted-foreground mt-1">Website, social links, joining information and attendance policy can all be added later. If your club uses Spond, you can also connect your Spond account here to bring your regular venues and session times into RallyHub instead of entering them manually.</p></div>
+                    <div><p className="font-semibold">{isClubListing ? 'Optional club details' : 'Optional listing details'}</p><p className="text-xs text-muted-foreground mt-1">{isClubListing ? 'Website, social links, joining information and attendance policy can all be added later. If your club uses Spond, you can also connect your Spond account here to bring your regular venues and session times into RallyHub instead of entering them manually.' : 'Add your website and social links so players can learn more or continue to your own site.'}</p></div>
                     <Button type="button" variant="outline" onClick={() => setShowEnhancements(value => !value)} className="gap-2 shrink-0"><Sparkles className="w-4 h-4" /> {showEnhancements ? 'Hide optional details' : 'Enhance listing'}</Button>
                   </div>
                   {showEnhancements && <>
-                  <div className="space-y-2"><Label>Membership / joining status</Label><Input value={form.membershipStatus || ''} onChange={e => setField('membershipStatus', e.target.value)} placeholder="e.g. New members welcome" /></div>
+                  {isClubListing && <><div className="space-y-2"><Label>Membership / joining status</Label><Input value={form.membershipStatus || ''} onChange={e => setField('membershipStatus', e.target.value)} placeholder="e.g. New members welcome" /></div>
                   <div className="space-y-2"><Label>Information heading</Label><Input value={form.policyLabel || ''} onChange={e => setField('policyLabel', e.target.value)} placeholder="e.g. Joining information" /></div>
                   <div className="space-y-2 sm:col-span-2"><Label>Guest / attendance information</Label><Textarea value={form.guestPolicy || ''} onChange={e => setField('guestPolicy', e.target.value)} rows={3} placeholder="What should someone know before attending?" /></div>
-                  <div className="space-y-2"><Label>Website</Label><Input value={form.website || ''} onChange={e => setField('website', e.target.value)} placeholder="https://…" /></div>
                   <div className="space-y-2"><Label>Joining / waiting-list link</Label><Input value={form.waitingListUrl || ''} onChange={e => setField('waitingListUrl', e.target.value)} placeholder="https://…" /></div>
-                  <div className="space-y-2"><Label>Joining button label</Label><Input value={form.joiningCtaLabel || ''} onChange={e => setField('joiningCtaLabel', e.target.value)} placeholder="e.g. Join waiting list" /></div>
+                  <div className="space-y-2"><Label>Joining button label</Label><Input value={form.joiningCtaLabel || ''} onChange={e => setField('joiningCtaLabel', e.target.value)} placeholder="e.g. Join waiting list" /></div></>}
+                  <div className="space-y-2"><Label>Website</Label><Input value={form.website || ''} onChange={e => setField('website', e.target.value)} placeholder="https://…" /></div>
                   <div className="space-y-2"><Label>Facebook page</Label><Input type="url" value={form.facebook || ''} onChange={e => setField('facebook', e.target.value)} placeholder="https://facebook.com/…" /><p className="text-xs text-muted-foreground">Only the Facebook button is shown publicly — not this full link as text.</p></div>
                   <div className="space-y-2"><Label>Instagram page</Label><Input type="url" value={form.instagram || ''} onChange={e => setField('instagram', e.target.value)} placeholder="https://instagram.com/…" /><p className="text-xs text-muted-foreground">Only the Instagram button is shown publicly — not this full link as text.</p></div>
                   </>}
                   <div className="space-y-2 sm:col-span-2">
-                    <Label>Club logo</Label>
+                    <Label>{isClubListing ? 'Club logo' : 'Logo / image'}</Label>
                     <div className="rounded-xl border border-border bg-background/30 p-4 flex flex-col sm:flex-row sm:items-center gap-4">
                       {form.logoUrl && isValidUrl(form.logoUrl) ? <img src={form.logoUrl} alt="Club logo preview" className="h-24 w-24 rounded-xl bg-white object-contain p-1 shrink-0" /> : <div className="h-24 w-24 rounded-xl border border-dashed border-border flex items-center justify-center shrink-0"><ImageIcon className="w-6 h-6 text-muted-foreground" /></div>}
                       <div className="space-y-2">
@@ -828,8 +838,8 @@ export default function DirectoryListingEdit() {
               </section>
 
               <section id="contact" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
-                <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Public club contact</h2></div>
-                <p className="text-sm text-muted-foreground">These details are shown publicly and are separate from the private verified owner/editor identity held by RallyHub. Use whatever public label suits the club, for example “Chairperson”, “Rackets Coach”, “Club Contact” or a person’s name.</p>
+                <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club contact' : 'Public listing contact'}</h2></div>
+                <p className="text-sm text-muted-foreground">These details are separate from the private verified owner/editor identity held by RallyHub. Use whatever public contact label is appropriate.</p>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2"><Label>Public contact label / name</Label><Input value={form.contact?.name || ''} onChange={e => setContact('name', e.target.value)} placeholder="e.g. Chairperson, Club Contact, Debbie Brown" /><p className="text-xs text-muted-foreground">This does not change the privately verified RallyHub account holder.</p></div>
                   <div className="space-y-2"><Label>Contact email</Label><Input type="email" value={form.contact?.email || ''} onChange={e => setContact('email', e.target.value)} /></div>
@@ -849,7 +859,9 @@ export default function DirectoryListingEdit() {
                 </div>
               </section>
 
-              {showEnhancements && <DirectorySpondPanel listingSlug={slug} clubName={baseClub?.name || ''} onImport={importSpondDirectoryData} onSave={save} saveBusy={saving} hasUnsavedChanges={dirty} saved={saved} existingSessions={form.sessions || []} />}
+              {isClubListing && showEnhancements && <DirectorySpondPanel listingSlug={slug} clubName={baseClub?.name || ''} onImport={importSpondDirectoryData} onSave={save} saveBusy={saving} hasUnsavedChanges={dirty} saved={saved} existingSessions={form.sessions || []} />}
+
+              {isClubListing && <>
 
               <section id="venues" className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
                 <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Venues</h2></div><p className="text-sm text-muted-foreground mt-1">Add every regular place where the club plays.</p></div><Button variant="outline" size="sm" onClick={addVenue} className="gap-1"><Plus className="w-4 h-4" /> Add venue</Button></div>
@@ -914,10 +926,12 @@ export default function DirectoryListingEdit() {
                 ))}
               </section>
 
+              </>}
+
               <div className={`sticky bottom-3 z-20 rounded-2xl border backdrop-blur-xl p-3 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${saving ? 'border-primary/40 bg-card/98' : saved && !dirty ? 'border-green-500/40 bg-card/98' : 'border-border bg-card/95'}`}>
                 <div className="text-sm" aria-live="polite">
                   <p className="font-semibold flex items-center gap-2">{saving ? <><Loader2 className="w-4 h-4 animate-spin text-primary" /> Saving your changes…</> : dirty ? 'You have unsaved changes' : saved ? <><CheckCircle2 className="w-4 h-4 text-green-400" /> Saved successfully</> : 'All changes saved'}</p>
-                  <p className="text-xs text-muted-foreground">{saving ? 'Keep this page open until the save is confirmed.' : saved && !dirty ? 'Your public club listing has been updated.' : 'Changes become public as soon as the save completes.'}</p>
+                  <p className="text-xs text-muted-foreground">{saving ? 'Keep this page open until the save is confirmed.' : saved && !dirty ? 'Your public Directory listing has been updated.' : 'Changes become public as soon as the save completes.'}</p>
                 </div>
                 <div className="flex gap-2"><Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><Globe2 className="w-4 h-4" /> View listing</Button><Button onClick={save} disabled={saving || !dirty} size="lg" className="gap-2 min-w-40">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : !dirty && saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />} {saving ? 'Saving changes…' : dirty ? 'Save changes' : saved ? 'Saved ✓' : 'All saved'}</Button></div>
               </div>
