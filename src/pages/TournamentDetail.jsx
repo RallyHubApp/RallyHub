@@ -223,6 +223,7 @@ export default function TournamentDetail() {
       end_date: tournament.end_date || '',
       description: tournament.description || '',
       counts_toward_leaderboard: tournament.counts_toward_leaderboard === true,
+      counts_toward_performance_analytics: tournament.counts_toward_performance_analytics !== false,
     });
     setEditOpen(true);
   };
@@ -736,6 +737,19 @@ export default function TournamentDetail() {
               <span>
                 <span className="text-sm font-semibold text-foreground">Counts toward club leaderboard</span>
                 <span className="block text-[11px] text-muted-foreground mt-0.5">Set this before play starts. Test and practice competitions should stay excluded.</span>
+              </span>
+            </label>
+            <label className={`flex items-start gap-3 rounded-lg border border-border bg-secondary/30 p-3 ${['In Progress','Completed'].includes(tournament.status) ? 'opacity-60' : 'cursor-pointer'}`}>
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-primary"
+                checked={editForm.counts_toward_performance_analytics !== false}
+                disabled={['In Progress','Completed'].includes(tournament.status)}
+                onChange={e => setEditForm(f => ({ ...f, counts_toward_performance_analytics: e.target.checked }))}
+              />
+              <span>
+                <span className="text-sm font-semibold text-foreground">Include in performance intelligence</span>
+                <span className="block text-[11px] text-muted-foreground mt-0.5">Independent of Club Rank: feeds RallyHub rating, form, head-to-head, partnerships and forecasts.</span>
               </span>
             </label>
             <div>
