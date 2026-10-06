@@ -15,6 +15,19 @@ Backlog sync: Phase 2 scope copied into RallyHub Master Backlog & Decisions v4 o
 8. Competition history is generic. The portal asks competition modules for summaries instead of hard-coding Interclub, KOTC or Tournament into the shell.
 9. Shared platform capabilities must be implemented as central engines, not repeated inside individual modules. Communications, Finance, Payments/Entitlements, Analytics/Attribution, People/Identity, Notifications, Files/Assets and Audit/Change Control are shared services consumed by Directory, Membership, Events, KOTC, Interclub and future modules. Module-specific screens and journeys may differ, but they must not create separate islands of overlapping business logic. Finance in particular must use one tenant-aware, product-aware ledger and entitlement engine so club transactions, directory listings, subscriptions, affiliate commissions, refunds, credits and future commercial products share the same underlying financial architecture while preserving tenant isolation and RallyHub-global accounting.
 
+## Directory architecture decision — 6 October 2026
+
+- The public Directory remains club-first. Finding a club, place to play and regular session is the primary discovery journey and the default public category.
+- The same Directory infrastructure also supports configurable secondary listing categories such as tournaments/events, coaching, pickleball holidays, equipment/suppliers and future categories added by Super Admin.
+- Listing categories are configuration, not hard-coded UI. Super Admin controls category label/order, active state, public filter visibility, listing-form visibility, player-notification eligibility, location behaviour and commercial capability.
+- County, venue, map and regular-session behaviour belongs to club/place-to-play listings only. Other categories use optional service area/destination or no location requirement as appropriate.
+- One add/update listing intake is reused for all categories; fields and wording adapt to the selected category rather than creating separate forms.
+- Player update preferences use the same category taxonomy. A player receives promotional/update communications only for categories they explicitly select; selecting tournaments does not subscribe them to holidays, equipment or other categories. Contact-channel consent and topic consent remain separate and editable.
+- Directory listings have separate publication/verification/commercial concepts. Current listing entitlement is free, while the model preserves future free, trial, paid, complimentary and expired entitlement states for the central Finance/Payments engine.
+- Listing analytics and attribution reuse the shared Analytics engine. Track listing impressions/views and outbound actions such as call, email, WhatsApp and website/referral clicks so RallyHub can demonstrate listing value and later support affiliate/referral/discount attribution.
+- Non-club listings use a simplified public profile and editor; club-only venue/session/Spond tooling must not leak into supplier, holiday, coaching or other listing journeys.
+- Interclub and other acquisition journeys may prefill the existing player-update form, but the player must still choose the categories and channels they want before subscribing.
+
 ## Product shell
 
 Default mobile navigation:
