@@ -1,0 +1,75 @@
+{
+  "name": "CommunicationContentBlock",
+  "type": "object",
+  "properties": {
+    "owner_scope": {
+      "type": "string",
+      "enum": [
+        "platform",
+        "tenant"
+      ]
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "block_type": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved",
+        "retired"
+      ]
+    },
+    "html": {
+      "type": "string"
+    },
+    "plain_text": {
+      "type": "string"
+    },
+    "config": {
+      "type": "object"
+    },
+    "locked": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "owner_scope",
+    "name",
+    "block_type",
+    "version",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
