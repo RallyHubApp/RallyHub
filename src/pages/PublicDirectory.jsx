@@ -120,6 +120,8 @@ const directorySearchScore = (club, rawQuery) => {
     [club.name, 120],
     [club.town, 80],
     [club.county, 70],
+    [club.serviceArea, 65],
+    [club.listingCategoryLabel, 45],
     [club.sport, 25],
     ...(club.venues || []).flatMap(venue => [
       [venue.name, 75], [venue.shortName, 70], [venue.address, 60], [venue.eircode, 65]
@@ -392,26 +394,34 @@ export default function PublicDirectory() {
 
         <section className="bg-white">
           <div className="mx-auto max-w-[1380px] px-4 pb-2 pt-4 sm:px-6 lg:px-10 xl:px-12">
-            <div className="grid gap-2.5 rounded-2xl border border-[#dbe6e8] bg-white p-2.5 shadow-[0_9px_25px_rgba(8,24,77,.055)] lg:grid-cols-[minmax(300px,1.5fr)_220px_190px_auto]">
+            <div className={`grid gap-2.5 rounded-2xl border border-[#dbe6e8] bg-white p-2.5 shadow-[0_9px_25px_rgba(8,24,77,.055)] ${clubCategoryActive ? 'lg:grid-cols-[minmax(300px,1.5fr)_220px_190px_auto]' : 'lg:grid-cols-[minmax(300px,1fr)_auto]'}`}>
               <label className="relative">
                 <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-[#738096]" />
                 <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Club, town, venue or Eircode" aria-label="Search club directory" className="h-11 w-full rounded-xl border border-[#cfdde0] bg-[#fbfdfd] pl-10 pr-3 text-sm text-[#1a2c58] outline-none focus:border-[#078e48] focus:ring-2 focus:ring-[#078e48]/20" />
               </label>
-              <select aria-label="Filter by county" value={county} onChange={e => setCounty(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm text-[#1a2c58]">
-                {counties.map(item => <option key={item}>{item}</option>)}
-              </select>
-              <select aria-label="Filter by day" value={day} onChange={e => setDay(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm text-[#1a2c58]">
-                <option>Any day</option>
-                {weekDays.map(item => <option key={item}>{item}</option>)}
-              </select>
-              <div className="flex h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] p-1">
-                {['clubs','sessions','map'].map(item => (
-                  <button key={item} onClick={() => setView(item)} className={`flex-1 rounded-lg px-3 text-[12px] font-bold capitalize transition ${view === item ? 'bg-[#078e48] text-white' : 'text-[#6a778a] hover:text-[#07184c]'}`}>{item}</button>
-                ))}
-              </div>
+              {clubCategoryActive && <>
+                <select aria-label="Filter by county" value={county} onChange={e => setCounty(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm text-[#1a2c58]">
+                  {counties.map(item => <option key={item}>{item}</option>)}
+                </select>
+                <select aria-label="Filter by day" value={day} onChange={e => setDay(e.target.value)} className="h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] px-3 text-sm text-[#1a2c58]">
+                  <option>Any day</option>
+                  {weekDays.map(item => <option key={item}>{item}</option>)}
+                </select>
+                <div className="flex h-11 rounded-xl border border-[#cfdde0] bg-[#fbfdfd] p-1">
+                  {['clubs','sessions','map'].map(item => (
+                    <button key={item} onClick={() => setView(item)} className={`flex-1 rounded-lg px-3 text-[12px] font-bold capitalize transition ${view === item ? 'bg-[#078e48] text-white' : 'text-[#6a778a] hover:text-[#07184c]'}`}>{item}</button>
+                  ))}
+                </div>
+              </>}
+              {!clubCategoryActive && <Link to="/directory/add" className="inline-flex h-11 items-center justify-center rounded-xl bg-[#078e48] px-4 text-sm font-bold text-white">Add a {selectedCategory?.label?.toLowerCase() || 'listing'}</Link>}
             </div>
 
             <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-none">
+              <span className="mr-1 shrink-0 text-[12px] font-extrabold text-[#07184c]">Explore</span>
+              {publicCategories.map(item => <button key={item.key} type="button" onClick={()=>{setCategoryKey(item.key);setCounty('All counties');setDay('Any day');setView('clubs');}} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${categoryKey===item.key?'border-[#078e48] bg-[#078e48] text-white':'border-[#dbe6e8] bg-white text-[#56677c] hover:border-[#b8dfc7] hover:text-[#067b3f]'}`}>{item.pluralLabel||item.label}</button>)}
+            </div>
+
+            {clubCategoryActive && <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-none">
               <span className="mr-1 hidden shrink-0 text-[12px] font-extrabold text-[#07184c] sm:inline">Browse by county</span>
               {irelandCounties.map(item => {
                 const count = effectiveClubs.filter(club => club.county === item).length;
@@ -421,13 +431,13 @@ export default function PublicDirectory() {
                   </Link>
                 );
               })}
-            </div>
+            </div>}
           </div>
         </section>
 
         <main className="bg-white">
           <div className="mx-auto max-w-[1380px] px-4 pb-8 pt-2 sm:px-6 lg:px-10 xl:px-12">
-            {view === 'map' ? (
+            {clubCategoryActive && view === 'map' ? (
               <section>
                 <div className="mb-4 flex items-end justify-between gap-3">
                   <div>
@@ -449,13 +459,13 @@ export default function PublicDirectory() {
                 <section>
                   <div className="mb-4 flex items-end justify-between gap-3">
                     <div>
-                      <p className="text-[12px] text-[#6a778a]">{filteredClubs.length} club{filteredClubs.length === 1 ? '' : 's'} found{query.trim() ? ` for “${query.trim()}”` : ''}</p>
-                      <h2 className="mt-1 text-[26px] font-black tracking-[-.03em] text-[#07184c]">{view === 'sessions' ? 'Weekly sessions' : query.trim() ? 'Best matches' : 'Club directory'}</h2>
+                      <p className="text-[12px] text-[#6a778a]">{filteredClubs.length} {clubCategoryActive ? `club${filteredClubs.length === 1 ? '' : 's'}` : `listing${filteredClubs.length === 1 ? '' : 's'}`} found{query.trim() ? ` for “${query.trim()}”` : ''}</p>
+                      <h2 className="mt-1 text-[26px] font-black tracking-[-.03em] text-[#07184c]">{clubCategoryActive && view === 'sessions' ? 'Weekly sessions' : query.trim() ? 'Best matches' : clubCategoryActive ? 'Club directory' : (selectedCategory?.pluralLabel || 'Directory listings')}</h2>
                     </div>
                     <SlidersHorizontal className="h-5 w-5 text-[#8a95a5]" />
                   </div>
 
-                  {view === 'clubs' ? (
+                  {view === 'clubs' || !clubCategoryActive ? (
                     <div className="space-y-3">
                       {filteredClubs.map(club => (
                         <article key={club.id} className="rounded-2xl border border-[#dbe6e8] bg-white p-4 shadow-[0_6px_18px_rgba(8,24,77,.035)] transition hover:border-[#b8dfc7] sm:p-5">
@@ -469,17 +479,20 @@ export default function PublicDirectory() {
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-start justify-between gap-2">
                                 <div>
-                                  <p className="text-[10px] font-extrabold uppercase tracking-[.09em] text-[#078e48]">{club.sport} · County {club.county}</p>
+                                  <p className="text-[10px] font-extrabold uppercase tracking-[.09em] text-[#078e48]">{(club.listingType||'club')==='club' ? `${club.sport} · County ${club.county}` : (club.listingCategoryLabel || selectedCategory?.pluralLabel || 'Pickleball listing')}</p>
                                   <h3 className="mt-1 text-[18px] font-extrabold tracking-[-.02em] text-[#07184c] sm:text-[20px]">{club.name}</h3>
                                 </div>
 
                               </div>
                               <p className="mt-2 line-clamp-2 text-[12.5px] leading-[1.45] text-[#405174]">{publicDescription(club)}</p>
-                              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-[#67748a]">
-                                <span className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-[#078e48]" /> {club.venues.length} venue{club.venues.length === 1 ? '' : 's'}</span>
-                                <span className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-[#078e48]" /> {club.sessions.length ? `${club.sessions.length} weekly session${club.sessions.length === 1 ? '' : 's'}` : 'Schedule pending'}</span>
+                              {(club.listingType||'club')==='club' ? <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-[#67748a]">
+                                <span className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5 text-[#078e48]" /> {(club.venues||[]).length} venue{(club.venues||[]).length === 1 ? '' : 's'}</span>
+                                <span className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-[#078e48]" /> {(club.sessions||[]).length ? `${club.sessions.length} weekly session${club.sessions.length === 1 ? '' : 's'}` : 'Schedule pending'}</span>
                                 <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-[#078e48]" /> {club.county}</span>
-                              </div>
+                              </div> : <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-[#67748a]">
+                                {club.serviceArea&&<span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-[#078e48]" /> {club.serviceArea}</span>}
+                                {club.website&&<span className="font-semibold text-[#07528a]">Website available</span>}
+                              </div>}
                             </div>
                           </div>
 
@@ -492,7 +505,7 @@ export default function PublicDirectory() {
                                 {shareCopiedSlug === club.slug ? <Check className="h-3.5 w-3.5 text-[#078e48]" /> : <Share2 className="h-3.5 w-3.5" />} {shareCopiedSlug === club.slug ? 'Link copied' : 'Share'}
                               </button>
                               <Link to={`/directory/${club.slug}`} className="inline-flex h-9 items-center gap-1 rounded-lg bg-[#078e48] px-3 text-[11px] font-bold text-white transition hover:bg-[#067b3f]">
-                                View club <ArrowRight className="h-3.5 w-3.5" />
+                                {(club.listingType||'club')==='club'?'View club':'View listing'} <ArrowRight className="h-3.5 w-3.5" />
                               </Link>
                             </div>
                           </div>
@@ -523,17 +536,17 @@ export default function PublicDirectory() {
                   {filteredClubs.length === 0 && (
                     <div className="rounded-2xl border border-[#dbe6e8] bg-white p-10 text-center shadow-sm">
                       <Search className="mx-auto mb-3 h-8 w-8 text-[#8792a4]" />
-                      <h3 className="font-bold text-[#07184c]">No matching clubs yet</h3>
-                      <p className="mt-1 text-sm text-[#6a778a]">Try removing a filter or searching a nearby county. If the club is missing, you can add it for review.</p>
+                      <h3 className="font-bold text-[#07184c]">{clubCategoryActive?'No matching clubs yet':`No ${String(selectedCategory?.pluralLabel||'listings').toLowerCase()} yet`}</h3>
+                      <p className="mt-1 text-sm text-[#6a778a]">{clubCategoryActive?'Try removing a filter or searching a nearby county. If the club is missing, you can add it for review.':'Be among the first to add this type of pickleball listing to RallyHub.'}</p>
                       <div className="mt-4 flex flex-wrap justify-center gap-2">
-                        <Link to="/directory/add" className="inline-flex h-10 items-center rounded-lg bg-[#078e48] px-4 text-sm font-bold text-white">Add a missing club</Link>
+                        <Link to="/directory/add" className="inline-flex h-10 items-center rounded-lg bg-[#078e48] px-4 text-sm font-bold text-white">{clubCategoryActive?'Add a missing club':'Add a listing'}</Link>
                         <a href="#player-network" className="inline-flex h-10 items-center rounded-lg border border-[#cbd7dc] bg-white px-4 text-sm font-bold text-[#07184c]">Invite the club by WhatsApp / email</a>
                       </div>
                     </div>
                   )}
                 </section>
 
-                <aside className="hidden h-fit xl:sticky xl:top-24 xl:block">
+                {clubCategoryActive && <aside className="hidden h-fit xl:sticky xl:top-24 xl:block">
                   <div className="overflow-hidden rounded-2xl border border-[#dbe6e8] bg-white shadow-[0_8px_24px_rgba(8,24,77,.05)]">
                     <div className="border-b border-[#dbe6e8] p-4">
                       <h2 className="font-extrabold text-[#07184c]">Explore clubs on the map</h2>
@@ -558,7 +571,7 @@ export default function PublicDirectory() {
                         ))}
                     </MapContainer>
                   </div>
-                </aside>
+                </aside>}
               </div>
             )}
           </div>
