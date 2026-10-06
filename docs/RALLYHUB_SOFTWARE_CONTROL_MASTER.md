@@ -248,26 +248,66 @@ The Master Testing Blueprint remains mandatory. In addition:
 - Control-library document retrieval is backend-authorised for RallyHub Super Admin; hiding a frontend tab is not sufficient security.
 - When a controlled document changes, regenerate/synchronise the secure library mirror before checkpoint/release.
 
-## 11. Next modular build: Communications / Email Engine
+## 11. Communications Engine — SHARED PROTECTED MODULE
 
-This is the next shared platform module and must be designed once for all sporting/product modules rather than separately inside KOTC, Interclub, Membership, Events, DUPR, trials, etc.
+Implementation began 6 October 2026 as an additive, standalone shared service. Existing module callers remain unchanged until their individual adapter gate passes. The detailed architecture contract is `docs/RALLYHUB_COMMUNICATIONS_ENGINE_ARCHITECTURE.md`.
 
-Initial scope to formalise before implementation:
+Protected scope:
 
-- tenant/club/event-aware branding and approved templates;
-- reusable header/footer/signature assets;
-- transactional vs announcement/broadcast message types;
-- recipient sources and segmentation from authorised membership/event data;
-- preview/test-send/approval/send workflow;
-- per-recipient delivery status, retry and audit;
-- suppression/unsubscribe/GDPR rules where applicable;
-- attachments/media and approved asset handling;
-- module-generated variables without hard-coded Clare content;
-- permissions: who may draft, approve and send;
-- idempotency/duplicate-send protection;
-- provider abstraction so sporting modules call one communications service;
-- no sporting module should implement its own independent email delivery logic after migration;
-- existing approved email template(s) are protected inputs and must not be redesigned without explicit approval.
+- multi-tenant/platform owner identity, sender identity, audience and purpose on every communication;
+- tenant BrandKits/style guides: approved logos, colours, typography/fallbacks, layout, buttons, imagery, voice/tone, contact/social/legal footer and channel overrides; no hard-coded Clare identity in shared code;
+- reusable/versioned templates, components/content blocks and approved custom HTML;
+- independently editable HTML and plain-text email bodies with desktop/mobile/plain-text preview and parity checking;
+- operational, transactional, campaign, emergency and interactive communications;
+- interactive communication types include polls, feedback, suggestions, surveys, RSVP and availability requests; they use the same audiences, branding, scheduling, reminders, workflow and audit controls;
+- dynamic/saved audiences resolved from authorised live RallyHub data, with exact eligible/excluded/suppressed counts before bulk send;
+- central permission/consent gate, preference centre, double-opt-in evidence where configured, persistent suppression and tenant-vs-platform consent separation;
+- workflow/journey orchestration: trigger → condition → action/send → wait → live-state re-check → branch → goal → exit/escalation; completion of the goal immediately stops irrelevant reminders;
+- event-relative and scheduled delivery, quiet hours, frequency/communication-pressure controls and workflow simulation;
+- recipient-level delivery ledger including queued/sent/accepted/delivered/opened/clicked/action-completed plus bounce/failure/complaint/unsubscribe where providers support the event; opens are indicative, first-party RallyHub actions are preferred outcome evidence;
+- controlled bulk sends: batching/throttling, progressive limits, sender/domain health, pre-flight checks, cancellable safety delay, stop-remaining delivery, staged sends and circuit breakers;
+- list provenance and anti-spam controls; purchased/scraped lists are prohibited;
+- recipient deduplication, idempotency and targeted resend/correction;
+- provider abstraction: email now; assisted WhatsApp hand-off retained; future WhatsApp Business API/SMS/push are adapters rather than module rewrites;
+- protected contact relay/replies must avoid unnecessary disclosure of raw email/mobile data;
+- campaigns may later use A/B testing, conversion attribution, behavioural follow-up, best-time optimisation and AI drafting/recommendations; AI never silently expands an audience or sends;
+- suppliers/providers may use governed communications but never receive raw Directory contact databases;
+- existing approved email templates/assets and current KOTC/Interclub/Session Booking behaviour are protected migration inputs, not redesign prompts;
+- no sporting/product module should retain independent communication transport/template/workflow logic after its migration is signed off.
+
+### 11.1 Phase-1 isolated core — 6 October 2026
+
+Created without wiring any production caller:
+
+- `CommunicationCampaign`
+- `CommunicationMessage`
+- `CommunicationRecipient`
+- `CommunicationDeliveryAttempt`
+- `CommunicationBrandKit`
+- `CommunicationTemplate`
+- `CommunicationWorkflow`
+- `CommunicationPoll`
+- `CommunicationPollResponse`
+- pure policy core `src/services/communications/core.js`
+- executable gate `scripts/communicationsCoreGate.mjs`
+
+Phase-1 gate covers tenant scope, marketing permission, suppression, dedupe, idempotency, HTML/plain-text readiness, workflow exits and poll validation. Existing `EmailTransportConfig`, `ConsentRecord`, `ClubBroadcast`, feedback entities and all current module callers remain untouched.
+
+### 11.2 Controlled rollout
+
+1. Phase 1 core + architecture gate.
+2. BrandKit + reusable renderer/composer.
+3. Central delivery/ledger adapter around existing transport.
+4. Session Booking as first contained caller migration.
+5. KOTC results/player communications with all current private-link/test-send/dedupe/resend behaviour preserved.
+6. Interclub as first reusable multi-step journey.
+7. General workflow engine + simulation.
+8. Membership/payment journeys.
+9. Preference centre/double opt-in UX.
+10. Deliverability/anti-spam guard before broad Directory/provider campaigns.
+11. Directory/network audience engine.
+12. Campaign optimisation/analytics/AI and additional channel adapters.
+13. Full migration/duplicate-code cleanup only after each module passes regression.
 
 ## 12. Module register
 
@@ -282,9 +322,9 @@ Initial scope to formalise before implementation:
 | Events | Active | Consolidate shared event/public projections |
 | Public Directory | Production dataset / protected privacy | Continue controlled reconciliation/claim flow |
 | Trials/Entitlements | Controlled pilot | External-club isolation and conversion testing |
-| Communications/Email Engine | NEXT SHARED MODULE | Architecture, approved templates, provider/service contract |
+| Communications Engine | Phase 1 isolated core / protected | BrandKit + composer, then controlled caller adapters |
 
-## 13. Change log
+## 13. Change log\n\n### 6 October 2026 — SCM v1.3\n\n- Began standalone Communications Engine Phase 1 behind the pre-build checkpoint `Pre-Communications Engine baseline`.\n- Added central campaign/message/recipient/delivery/BrandKit/template/workflow entities plus first-class polls/feedback/survey/RSVP/availability entities.\n- Added executable core gate and protected strangler-migration order; no existing production communication caller changed.\n- Expanded the protected specification to include consent/double opt-in, HTML/plain-text parity, workflow goals/exits, deliverability/anti-spam controls, tenant style guides, interactive communications and future channel adapters.\n
 
 ### 6 October 2026 — SCM v1.2
 
