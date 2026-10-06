@@ -240,7 +240,10 @@ function publicListingRequest(request) {
   return {
     id: request.id,
     club_name: request.club_name,
-    county: request.county,
+    listing_type: request.listing_type || 'club',
+    listing_category_label: request.listing_category_label || null,
+    service_area: request.service_area || null,
+    county: request.county || null,
     town: request.town || null,
     status: request.status,
     approved_listing_slug: request.approved_listing_slug || null,
@@ -251,7 +254,30 @@ function publicListingRequest(request) {
 }
 
 function slugify(value = '') {
-  return normaliseName(value).replace(/\s+/g, '-').replace(/^-+|-+$/g, '') || 'club';
+  return normaliseName(value).replace(/\s+/g, '-').replace(/^-+|-+$/g, '') || 'listing';
+}
+
+async function directoryCategoryConfig(base44:any, keyRaw:any) {
+  const key = String(keyRaw || 'club').trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_').slice(0, 80) || 'club';
+  try {
+    const rows = await base44.asServiceRole.entities.DirectoryCategory.filter({ key }, 'sort_order', 5);
+    if (rows?.[0]) return {
+      key,
+      label: rows[0].label || key,
+      pluralLabel: rows[0].plural_label || rows[0].label || key,
+      locationMode: rows[0].location_mode || 'none',
+      commercialListing: rows[0].commercial_listing === true,
+    };
+  } catch {}
+  const fallback:any = {
+    club: { label:'Club / place to play', pluralLabel:'Clubs & places to play', locationMode:'county', commercialListing:false },
+    tournaments_events: { label:'Tournament / event organiser', pluralLabel:'Tournaments & events', locationMode:'service_area', commercialListing:false },
+    coaching: { label:'Coach / coaching', pluralLabel:'Coaching', locationMode:'service_area', commercialListing:false },
+    holidays: { label:'Pickleball holiday', pluralLabel:'Pickleball holidays', locationMode:'service_area', commercialListing:true },
+    equipment: { label:'Equipment / supplier', pluralLabel:'Equipment & suppliers', locationMode:'none', commercialListing:true },
+    other: { label:'Other pickleball service', pluralLabel:'Other pickleball services', locationMode:'service_area', commercialListing:true },
+  }[key] || { label:key.replace(/_/g,' '), pluralLabel:key.replace(/_/g,' '), locationMode:'none', commercialListing:false };
+  return { key, ...fallback };
 }
 
 function safePublicUrl(value = '') {
