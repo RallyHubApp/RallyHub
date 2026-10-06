@@ -77,7 +77,7 @@ export default function GuestBookings(){
     for(const s of sessions){
       for(const b of (s.bookings||[])){
         if(approvedBookingIds.has(b.id))continue;
-        direct.push({kind:'booking',key:`booking-${b.id}`,booking:b,session:s,fullName:b.fullName,email:b.email,mobile:b.mobile,sessionDate:s.sessionDate,day:s.weekday||'',start:s.startTime,end:s.endTime,venueName:s.venueName,bookingStatus:b.bookingStatus,paymentStatus:b.paymentStatus,amount:b.amount,paymentMethod:b.paymentMethod,bookingId:b.id});
+        direct.push({kind:'booking',key:`booking-${b.id}`,booking:b,session:s,fullName:b.fullName,email:b.email,mobile:b.mobile,sessionDate:s.sessionDate,day:s.weekday||'',start:s.startTime,end:s.endTime,venueName:s.venueName,bookingStatus:b.bookingStatus,paymentStatus:b.paymentStatus,amount:b.amount,paymentMethod:b.paymentMethod,bookingId:b.id,sumupCheckoutUrl:b.sumupCheckoutUrl||''});
       }
     }
     return [...approved,...direct].sort((a,b)=>`${b.sessionDate||''} ${b.start||''}`.localeCompare(`${a.sessionDate||''} ${a.start||''}`));
@@ -166,6 +166,17 @@ export default function GuestBookings(){
     if(!target){toast.error('No valid mobile number is saved for this guest');return}
     const sessionDate=data.sessionDate?niceDate(data.sessionDate):request.approvedSessionDate?niceDate(request.approvedSessionDate):'';
     const msg=`Clare Pickleball session booking\n\nHi ${String(request.fullName||'').split(/\s+/)[0]||'there'}, your guest request has been approved.\n\n${sessionDate}${request.start?` · ${request.start}${request.end?`–${request.end}`:''}`:''}\n${request.venueName||''}\n\nComplete your booking/payment using your private RallyHub link:\n${data.magicInviteUrl}\n\nThis link is for you only.`;
+    window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
+  };
+
+  const whatsappBooking=async(row)=>{
+    const target=whatsappNumber(row.mobile);
+    if(!target){toast.error('No valid mobile number is saved for this booking');return}
+    const first=String(row.fullName||'').split(/\s+/)[0]||'there';
+    const when=`${row.sessionDate?niceDate(row.sessionDate):''}${row.start?` · ${row.start}${row.end?`–${row.end}`:''}`:''}`;
+    const paymentLine=row.paymentStatus==='paid'?'Payment confirmed':row.paymentStatus==='cash_due'?'Cash due on arrival':row.paymentStatus==='pending'?'Payment still pending':String(row.paymentStatus||'').replaceAll('_',' ');
+    const action=row.sumupCheckoutUrl?`\n\nComplete payment here:\n${row.sumupCheckoutUrl}`:'';
+    const msg=`Clare Pickleball session booking\n\nHi ${first},\n${when}\n${row.venueName||''}\n${paymentLine}${action}\n\nRallyHub`;
     window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
   };
 
