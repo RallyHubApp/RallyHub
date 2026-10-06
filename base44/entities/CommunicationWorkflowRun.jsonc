@@ -1,0 +1,80 @@
+{
+  "name": "CommunicationWorkflowRun",
+  "type": "object",
+  "properties": {
+    "workflow_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "subject_person_id": {
+      "type": "string"
+    },
+    "source_module": {
+      "type": "string"
+    },
+    "source_record_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "running",
+        "waiting",
+        "goal_achieved",
+        "cancelled",
+        "expired",
+        "failed",
+        "completed"
+      ]
+    },
+    "step_index": {
+      "type": "number"
+    },
+    "step_started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "next_action_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "goal_state": {
+      "type": "object"
+    },
+    "state": {
+      "type": "object"
+    },
+    "last_error": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "workflow_id",
+    "status",
+    "step_index"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
