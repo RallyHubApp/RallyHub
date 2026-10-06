@@ -82,7 +82,8 @@ import TrialApply from '@/pages/TrialApply';
 import TrialActivate from '@/pages/TrialActivate';
 import TrialPortal from '@/pages/TrialPortal';
 import TrialAdmin from '@/pages/TrialAdmin';
-import ProtectedContactActionPreview from '@/pages/ProtectedContactActionPreview';\nimport CommunicationsCentre from '@/pages/CommunicationsCentre';
+import ProtectedContactActionPreview from '@/pages/ProtectedContactActionPreview';
+import CommunicationsCentre from '@/pages/CommunicationsCentre';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -214,7 +215,8 @@ const AuthenticatedRoutes = () => (
       <Route path="membership" element={<MembershipConsole />} />
       <Route path="finance" element={<FinanceSummary />} />
       <Route path="waiting-list" element={<WaitingList />} />
-      <Route path="trials" element={<TrialAdmin />} />\n      <Route path="communications" element={<CommunicationsCentre />} />
+      <Route path="trials" element={<TrialAdmin />} />
+      <Route path="communications" element={<CommunicationsCentre />} />
     </Route>
     <Route path="*" element={<Navigate to="/app" replace />} />
   </Routes>
