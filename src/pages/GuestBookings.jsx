@@ -72,7 +72,7 @@ export default function GuestBookings(){
   const sessions=useMemo(()=>[...(listData.sessions||[])].sort((a,b)=>`${b.sessionDate} ${b.startTime}`.localeCompare(`${a.sessionDate} ${a.startTime}`)),[listData.sessions]);
   const bookingRows=useMemo(()=>{
     const approvedBookingIds=new Set(approvedRequests.map(r=>r.bookingId).filter(Boolean));
-    const approved=approvedRequests.map(r=>({kind:'approved_request',key:`request-${r.id}`,request:r,fullName:r.fullName,email:r.email,mobile:r.mobile,sessionDate:r.approvedSessionDate,day:r.day,start:r.start,end:r.end,venueName:r.venueName,bookingStatus:r.bookingStatus||'approved',paymentStatus:r.paymentStatus||'not_started',amount:r.amount,paymentMethod:r.paymentMethod,bookingId:r.bookingId||''}));
+    const approved=approvedRequests.map(r=>({kind:'approved_request',key:`request-${r.id}`,request:r,fullName:r.fullName,email:r.email,mobile:r.mobile,sessionDate:r.approvedSessionDate,day:r.day,start:r.start,end:r.end,venueName:r.venueName,bookingStatus:r.bookingStatus||'approved',paymentStatus:r.paymentStatus||'not_started',amount:r.amount,paymentMethod:r.paymentMethod,bookingId:r.bookingId||'',sumupCheckoutUrl:r.sumupCheckoutUrl||''}));
     const direct=[];
     for(const s of sessions){
       for(const b of (s.bookings||[])){
@@ -343,10 +343,16 @@ export default function GuestBookings(){
                 {row.kind==='booking'&&row.booking?.registeredAt&&<p className="mt-1 text-xs text-muted-foreground">Booking started {new Date(row.booking.registeredAt).toLocaleString('en-IE')}{row.booking?.paidAt?` · paid ${new Date(row.booking.paidAt).toLocaleString('en-IE')}`:''}</p>}
               </div>
               <div className="flex flex-wrap gap-2">
-                {row.kind==='approved_request'&&<>
+                {row.kind==='approved_request'&&!row.bookingId&&<>
                   <Button size="sm" variant="outline" disabled={busy===`resend-${row.request.id}`} onClick={()=>approvedPrivateLink(row.request,{sendEmail:true})}>{busy===`resend-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend email</Button>
                   <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>whatsappApproved(row.request)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
                   <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>approvedPrivateLink(row.request,{copyOnly:true})}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy private link</Button>
+                </>}
+                {row.kind==='approved_request'&&row.bookingId&&<>
+                  <Button size="sm" variant="outline" onClick={()=>whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
+                  {row.sumupCheckoutUrl&&row.paymentStatus==='pending'&&<Button size="sm" variant="outline" onClick={()=>copy(row.sumupCheckoutUrl,'Payment link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy payment link</Button>}
+                  {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend confirmation</Button>}
+                  {row.paymentMethod==='sumup'&&!paid&&<Button size="sm" variant="outline" disabled={busy===`verify-${row.bookingId}`} onClick={()=>verifyPayment(row.bookingId)}>{busy===`verify-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
                 </>}
                 {row.kind==='booking'&&<>
                   <Button size="sm" variant="outline" onClick={()=>whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
