@@ -180,10 +180,45 @@ Deno.serve(async(req)=>{
     }
 
     if(action==='admin_list'){
-      const requests=await base44.asServiceRole.entities.GuestBookingRequest.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',200);
-      const directory=await loadDirectory(base44,club.slug);
+      const [requests,directory,sessionLinks,invites,bookings]=await Promise.all([
+        base44.asServiceRole.entities.GuestBookingRequest.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',200),
+        loadDirectory(base44,club.slug),
+        base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-created_at',300),
+        base44.asServiceRole.entities.AccessInviteToken.filter({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking'},'-created_at',500),
+        base44.asServiceRole.entities.GuestSessionBooking.filter({tenant_id:tenantId,club_id:clubId},'-registered_at',500),
+      ]);
       const options=publicOptions(directory,await loadConfig(base44,tenantId,clubId));
-      return Response.json({success:true,requests:(requests||[]).map((r:any)=>{const s=options.sessions.find((x:any)=>x.id===r.preferred_session_key);return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:s?.venueName||r.preferred_venue_key,day:s?.day||'',start:s?.start||'',end:s?.end||'',nextDate:s?nextDateForDay(s.day):'',submittedAt:r.submitted_at};})});
+      const nowMs=Date.now();
+      return Response.json({success:true,requests:(requests||[]).map((r:any)=>{
+        const s=options.sessions.find((x:any)=>x.id===r.preferred_session_key);
+        const link=(sessionLinks||[]).find((x:any)=>String(x.id)===String(r.approved_session_link_id||''));
+        const booking=(bookings||[]).find((b:any)=>String(b.session_link_id)===String(r.approved_session_link_id||'')&&(emailKey(b.email||'')===emailKey(r.email||'')||mobileKey(b.mobile||'')===mobileKey(r.mobile||'')));
+        const invite=(invites||[]).find((i:any)=>String(i.access_request_id||'')===String(r.id)&&i.status==='active'&&(!i.expires_at||Date.parse(i.expires_at)>nowMs));
+        return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:link?.venue_name||s?.venueName||r.preferred_venue_key,day:link?.weekday||s?.day||'',start:link?.start_time||s?.start||'',end:link?.end_time||s?.end||'',nextDate:s?nextDateForDay(s.day):'',submittedAt:r.submitted_at,approvedAt:r.approved_at||'',approvedSessionLinkId:r.approved_session_link_id||'',approvedSessionDate:link?.session_date||'',privateInviteUrl:invite&&link?`https://rallyhub.ie/book/${encodeURIComponent(link.token)}?invite=${encodeURIComponent(invite.token)}`:'',inviteExpiresAt:invite?.expires_at||'',bookingId:booking?.id||'',bookingStatus:booking?.booking_status||'',paymentStatus:booking?.payment_status||'',amount:booking?.amount??link?.fee_amount??null,paymentMethod:booking?.payment_method||link?.payment_method||''};
+      })});
+    }
+
+    if(action==='admin_private_link'){
+      const id=clean(body.requestId,100);
+      const sendEmail=body.sendEmail===true;
+      const row=(await base44.asServiceRole.entities.GuestBookingRequest.filter({id,tenant_id:tenantId,club_id:clubId},'-submitted_at',5))?.[0];
+      if(!row)return Response.json({error:'Guest request not found.'},{status:404});
+      if(row.status!=='approved')return Response.json({error:'This guest request is not currently approved.'},{status:409});
+      const sessionLink=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:row.approved_session_link_id,tenant_id:tenantId,club_id:clubId},'-created_at',5))?.[0];
+      if(!sessionLink)return Response.json({error:'The approved session link is unavailable.'},{status:404});
+      const currentInvites=await base44.asServiceRole.entities.AccessInviteToken.filter({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',access_request_id:row.id},'-created_at',20);
+      const now=new Date();
+      let invite=(currentInvites||[]).find((i:any)=>i.status==='active'&&(!i.expires_at||Date.parse(i.expires_at)>now.getTime()));
+      if(!invite){
+        invite=await base44.asServiceRole.entities.AccessInviteToken.create({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',token:inviteToken(),status:'active',session_link_id:sessionLink.id,access_request_id:row.id,intended_email:row.email,intended_mobile:row.mobile||'',intended_name:row.full_name,expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),created_by_user_id:user.id,created_at:now.toISOString(),notes:`Replacement private invite for approved guest request ${row.id}`});
+      }
+      const magicInviteUrl=`https://rallyhub.ie/book/${encodeURIComponent(sessionLink.token)}?invite=${encodeURIComponent(invite.token)}`;
+      let emailSent=false;
+      if(sendEmail){
+        const {session,venue}=await sessionFromDirectory(base44,club,row.preferred_session_key);
+        try{await sendApprovedGuestInvite(base44,club,row,session,venue,sessionLink.session_date,magicInviteUrl);emailSent=true}catch(e){console.error('approved guest resend email failed',e?.message||e)}
+      }
+      return Response.json({success:true,magicInviteUrl,emailSent,expiresAt:invite.expires_at,sessionDate:sessionLink.session_date,session:{day:sessionLink.weekday,start:sessionLink.start_time,end:sessionLink.end_time,venueName:sessionLink.venue_name}});
     }
 
     if(action==='admin_reject'){
