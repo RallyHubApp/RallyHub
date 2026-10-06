@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { createCheckout, retrievePayment, refundPayment, providerConfigured, verifyProviderConnection, type ProviderAccount } from './payments.ts';
-import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
+// Communications Engine adapter: booking/business logic stays here; shared transport is central.
+import { sendWithConfiguredEmailTransport } from '../communicationsEngine/emailRouter.ts';
 import { findUniqueSpondPersonRow } from './spondIdentityMatch.js';
 
 const PRIVACY_VERSION='clare-guest-session-privacy-v1-2026-09';
