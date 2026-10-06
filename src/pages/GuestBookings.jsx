@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
-import { CalendarCheck, CheckCircle2, Copy, ExternalLink, Mail, MapPin, MessageCircle, RefreshCw, RotateCcw, ShieldCheck, UserCheck, XCircle } from 'lucide-react';
+import { Archive, CalendarCheck, CheckCircle2, Copy, ExternalLink, History, Mail, MapPin, MessageCircle, RefreshCw, RotateCcw, ShieldCheck, Trash2, UserCheck, XCircle } from 'lucide-react';
 
 function niceDate(value){
   if(!value)return '';
@@ -36,6 +36,7 @@ export default function GuestBookings(){
   const [busy,setBusy]=useState('');
   const [expanded,setExpanded]=useState('');
   const [messagePreview,setMessagePreview]=useState(null);
+  const [showArchived,setShowArchived]=useState(false);
 
   const {data:templateData={templates:[],sumupConfigured:false},isLoading:templatesLoading}=useQuery({
     queryKey:['guest-session-templates'],
@@ -71,6 +72,9 @@ export default function GuestBookings(){
   const pendingRequests=useMemo(()=>[...(requestData.requests||[])].filter(r=>r.status==='pending_approval'),[requestData]);
   const approvedRequests=useMemo(()=>[...(requestData.requests||[])].filter(r=>r.status==='approved'),[requestData]);
   const sessions=useMemo(()=>[...(listData.sessions||[])].sort((a,b)=>`${b.sessionDate} ${b.startTime}`.localeCompare(`${a.sessionDate} ${a.startTime}`)),[listData.sessions]);
+  const currentSessions=useMemo(()=>sessions.filter(s=>!s.archivedAt),[sessions]);
+  const archivedSessions=useMemo(()=>sessions.filter(s=>!!s.archivedAt),[sessions]);
+  const visibleSessions=showArchived?archivedSessions:currentSessions;
   const bookingRows=useMemo(()=>{
     const approvedBookingIds=new Set(approvedRequests.map(r=>r.bookingId).filter(Boolean));
     const approved=approvedRequests.map(r=>({kind:'approved_request',key:`request-${r.id}`,request:r,fullName:r.fullName,email:r.email,mobile:r.mobile,sessionDate:r.approvedSessionDate,day:r.day,start:r.start,end:r.end,venueName:r.venueName,bookingStatus:r.bookingStatus||'approved',paymentStatus:r.paymentStatus||'not_started',amount:r.amount,paymentMethod:r.paymentMethod,bookingId:r.bookingId||'',sumupCheckoutUrl:r.sumupCheckoutUrl||''}));
@@ -196,6 +200,52 @@ export default function GuestBookings(){
     const action=row.sumupCheckoutUrl?`\n\nComplete payment here:\n${row.sumupCheckoutUrl}`:'';
     const msg=`Clare Pickleball session booking\n\nHi ${first},\n${when}\n${row.venueName||''}\n${paymentLine}${action}\n\nRallyHub`;
     window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
+  };
+
+  const archiveSession=async(session)=>{
+    setBusy(`archive-${session.id}`);
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_archive_session',sessionId:session.id,reason:'Archived from Session Bookings'});
+      if(res.data?.error)throw new Error(res.data.error);
+      await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
+      toast.success('Session archived');
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not archive session')}
+    finally{setBusy('')}
+  };
+
+  const restoreSession=async(session)=>{
+    setBusy(`restore-${session.id}`);
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_restore_session',sessionId:session.id});
+      if(res.data?.error)throw new Error(res.data.error);
+      await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
+      toast.success('Session restored');
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not restore session')}
+    finally{setBusy('')}
+  };
+
+  const deleteSession=async(session)=>{
+    if(!window.confirm(`Permanently delete the ${niceDate(session.sessionDate)} ${session.startTime} session? Only test/empty sessions without confirmed or financial history can be deleted.`))return;
+    setBusy(`delete-session-${session.id}`);
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_delete_session',sessionId:session.id});
+      if(res.data?.error)throw new Error(res.data.error);
+      await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
+      toast.success('Test/empty session deleted');
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not delete session')}
+    finally{setBusy('')}
+  };
+
+  const deleteBooking=async(booking)=>{
+    if(!window.confirm(`Delete the test/incomplete booking for ${booking.fullName}? Confirmed and financial bookings cannot be deleted.`))return;
+    setBusy(`delete-booking-${booking.id}`);
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_delete_booking',bookingId:booking.id});
+      if(res.data?.error)throw new Error(res.data.error);
+      await Promise.all([qc.invalidateQueries({queryKey:['guest-session-admin-list']}),qc.invalidateQueries({queryKey:['guest-access-requests']})]);
+      toast.success('Test/incomplete booking deleted');
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not delete booking')}
+    finally{setBusy('')}
   };
 
   const shareMagicWhatsApp=async(session)=>{
@@ -431,8 +481,8 @@ export default function GuestBookings(){
     </section>
 
     <section className="space-y-3">
-      <div><h2 className="text-lg font-black">Session booking links</h2><p className="mt-1 text-xs text-muted-foreground">Each link is tied to one date/time, so member fallbacks and guest bookings are always attached to the correct session and host.</p></div>
-      {sessions.length===0?<div className="glass rounded-2xl p-6 text-sm text-muted-foreground">No guest booking links have been created yet.</div>:sessions.map(s=>{
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-lg font-black">Session booking links</h2><p className="mt-1 text-xs text-muted-foreground">Past sessions are archived automatically and remain available for review. Test/empty sessions can be deleted; sessions with confirmed or financial history are retained.</p></div><div className="flex gap-2"><Button size="sm" variant={!showArchived?'default':'outline'} onClick={()=>setShowArchived(false)}>Current ({currentSessions.length})</Button><Button size="sm" variant={showArchived?'default':'outline'} onClick={()=>setShowArchived(true)}><History className="mr-1.5 h-3.5 w-3.5"/>Archived ({archivedSessions.length})</Button></div></div>
+      {visibleSessions.length===0?<div className="glass rounded-2xl p-6 text-sm text-muted-foreground">{showArchived?'No archived sessions yet.':'No current guest booking links have been created yet.'}</div>:visibleSessions.map(s=>{
         const url=`${window.location.origin}/book/${s.token}`;
         const confirmed=(s.bookings||[]).filter(b=>['confirmed','cash_due'].includes(b.bookingStatus)).length;
         return <div key={s.id} className="glass rounded-2xl p-5">
@@ -440,7 +490,7 @@ export default function GuestBookings(){
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-black">{niceDate(s.sessionDate)} · {s.startTime}{s.endTime?`–${s.endTime}`:''}</h3>
-                <Badge variant="outline">{s.active?'Open':'Closed'}</Badge>
+                <Badge variant="outline">{s.archivedAt?'Archived':s.active?'Open':'Closed'}</Badge>
                 <Badge variant="outline">{confirmed} booking{confirmed===1?'':'s'}</Badge>
               </div>
               <p className="mt-2 font-semibold">{s.venueName}</p>
@@ -454,7 +504,10 @@ export default function GuestBookings(){
               <Button size="sm" variant="outline" disabled={busy===`invite-${s.id}`} onClick={()=>emailInvite(s)}>{busy===`invite-${s.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Email booking link</Button>
               <Button size="sm" variant="outline" disabled={busy===`whatsapp-${s.id}`} onClick={()=>shareMagicWhatsApp(s)}>{busy===`whatsapp-${s.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<MessageCircle className="mr-1.5 h-3.5 w-3.5"/>}WhatsApp</Button>
               <a href={s.mapsUrl} target="_blank" rel="noreferrer"><Button size="sm" variant="outline"><MapPin className="mr-1.5 h-3.5 w-3.5"/>Map</Button></a>
-              {s.active&&<Button size="sm" variant="ghost" className="text-destructive" disabled={busy===`close-${s.id}`} onClick={()=>closeSession(s.id)}><XCircle className="mr-1.5 h-3.5 w-3.5"/>Close link</Button>}
+              {!s.archivedAt&&s.active&&<Button size="sm" variant="ghost" className="text-destructive" disabled={busy===`close-${s.id}`} onClick={()=>closeSession(s.id)}><XCircle className="mr-1.5 h-3.5 w-3.5"/>Close link</Button>}
+              {!s.archivedAt&&<Button size="sm" variant="outline" disabled={busy===`archive-${s.id}`} onClick={()=>archiveSession(s)}><Archive className="mr-1.5 h-3.5 w-3.5"/>Archive</Button>}
+              {s.archivedAt&&<Button size="sm" variant="outline" disabled={busy===`restore-${s.id}`} onClick={()=>restoreSession(s)}><RotateCcw className="mr-1.5 h-3.5 w-3.5"/>Restore</Button>}
+              <Button size="sm" variant="ghost" className="text-destructive" disabled={busy===`delete-session-${s.id}`} onClick={()=>deleteSession(s)}><Trash2 className="mr-1.5 h-3.5 w-3.5"/>Delete test/empty</Button>
             </div>
           </div>
 
@@ -486,6 +539,7 @@ export default function GuestBookings(){
                   {['paid','partially_refunded','refunded'].includes(b.paymentStatus)&&<Button size="sm" variant="outline" disabled={busy===`email-${b.id}`} onClick={()=>resendEmails(b.id)}>{busy===`email-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend all emails</Button>}
                   {b.paymentMethod!=='cash'&&['paid','partially_refunded'].includes(b.paymentStatus)&&Number(b.refundableAmount||0)>0&&<Button size="sm" variant="outline" disabled={busy===`refund-${b.id}`} onClick={()=>issueRefund(b)}>{busy===`refund-${b.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Refund</Button>}
                   {b.paymentMethod==='cash'&&b.paymentStatus!=='paid'&&<Button size="sm" variant="outline" disabled={busy===`cash-${b.id}`} onClick={()=>markCashPaid(b.id)}><CheckCircle2 className="mr-1.5 h-3.5 w-3.5"/>Mark cash paid</Button>}
+                  {!['paid','partially_refunded','refunded'].includes(b.paymentStatus)&&!['confirmed','cash_due'].includes(b.bookingStatus)&&<Button size="sm" variant="ghost" className="text-destructive" disabled={busy===`delete-booking-${b.id}`} onClick={()=>deleteBooking(b)}><Trash2 className="mr-1.5 h-3.5 w-3.5"/>Delete test/incomplete</Button>}
                 </div>
               </div>
             </div>)}
