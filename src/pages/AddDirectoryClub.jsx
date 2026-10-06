@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Seo from '@/components/public/Seo';
 import { loadPublicDirectoryState } from '@/lib/public-directory-cache';
+import { DIRECTORY_CATEGORY_FALLBACK, isClubCategory, loadDirectoryCategories } from '@/lib/directory-categories';
 
 const normalise = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -20,6 +21,9 @@ export default function AddDirectoryClub() {
   const navigate = useNavigate();
   const isSuperAdmin = user?.role === 'admin';
   const [clubName, setClubName] = useState('');
+  const [listingType, setListingType] = useState('club');
+  const [categories, setCategories] = useState(DIRECTORY_CATEGORY_FALLBACK);
+  const [serviceArea, setServiceArea] = useState('');
   const [existingSearch, setExistingSearch] = useState('');
   const [county, setCounty] = useState('');
   const [town, setTown] = useState('');
@@ -45,6 +49,12 @@ export default function AddDirectoryClub() {
   const returnTo = '/directory/add';
   const loginHref = `/login?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
   const registerHref = `/register?mode=directory&returnTo=${encodeURIComponent(returnTo)}`;
+
+  useEffect(() => {
+    let active = true;
+    loadDirectoryCategories().then(rows => { if (active) setCategories(rows); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (!user || user.role === 'admin') return;
@@ -97,10 +107,14 @@ export default function AddDirectoryClub() {
       .slice(0, 6);
   }, [existingSearch, knownClubs]);
 
+  const selectedCategory = useMemo(() => categories.find(item => item.key === listingType) || categories.find(item => item.key === 'club') || DIRECTORY_CATEGORY_FALLBACK[0], [categories, listingType]);
+  const clubListing = isClubCategory(selectedCategory);
+  const formCategories = useMemo(() => categories.filter(item => item.active !== false && item.showListingForm !== false).sort((a,b)=>(a.sortOrder||100)-(b.sortOrder||100)), [categories]);
+
   const exactExisting = useMemo(() => {
-    if (!clubName.trim() || !county) return null;
-    return knownClubs.find(club => normalise(club.name) === normalise(clubName) && normalise(club.county) === normalise(county)) || null;
-  }, [clubName, county, knownClubs]);
+    if (!clubListing || !clubName.trim() || !county) return null;
+    return knownClubs.find(club => (club.listingType || 'club') === 'club' && normalise(club.name) === normalise(clubName) && normalise(club.county) === normalise(county)) || null;
+  }, [clubListing, clubName, county, knownClubs]);
 
   const submit = async event => {
     event.preventDefault();
@@ -117,7 +131,10 @@ export default function AddDirectoryClub() {
         const res = await base44.functions.invoke('directoryClaim', {
           action: 'admin_create_unclaimed',
           clubName,
-          county,
+          listingType,
+          listingCategoryLabel: selectedCategory?.pluralLabel || selectedCategory?.label || '',
+          serviceArea,
+          county:
           town,
           primaryVenue,
           address,
@@ -141,7 +158,10 @@ export default function AddDirectoryClub() {
       const res = await base44.functions.invoke('directoryClaim', {
         action: 'submit_new',
         clubName,
-        county,
+        listingType,
+        listingCategoryLabel: selectedCategory?.pluralLabel || selectedCategory?.label || '',
+        serviceArea,
+        county:
         town,
         primaryVenue,
         address,
@@ -159,7 +179,7 @@ export default function AddDirectoryClub() {
       if (res.data?.error) throw new Error(res.data.error);
       setRequest(res.data?.request || { status: 'pending', club_name: clubName, county, town });
     } catch (err) {
-      setError(err.message || 'Could not submit this club for the directory.');
+      setError(err.message || 'Could not submit this listing for the directory.');
     } finally {
       setSubmitting(false);
     }
