@@ -68,7 +68,20 @@ export default function GuestBookings(){
 
   const selected=useMemo(()=>templateData.templates?.find(t=>t.key===templateKey)||null,[templateData,templateKey]);
   const pendingRequests=useMemo(()=>[...(requestData.requests||[])].filter(r=>r.status==='pending_approval'),[requestData]);
+  const approvedRequests=useMemo(()=>[...(requestData.requests||[])].filter(r=>r.status==='approved'),[requestData]);
   const sessions=useMemo(()=>[...(listData.sessions||[])].sort((a,b)=>`${b.sessionDate} ${b.startTime}`.localeCompare(`${a.sessionDate} ${a.startTime}`)),[listData.sessions]);
+  const bookingRows=useMemo(()=>{
+    const approvedBookingIds=new Set(approvedRequests.map(r=>r.bookingId).filter(Boolean));
+    const approved=approvedRequests.map(r=>({kind:'approved_request',key:`request-${r.id}`,request:r,fullName:r.fullName,email:r.email,mobile:r.mobile,sessionDate:r.approvedSessionDate,day:r.day,start:r.start,end:r.end,venueName:r.venueName,bookingStatus:r.bookingStatus||'approved',paymentStatus:r.paymentStatus||'not_started',amount:r.amount,paymentMethod:r.paymentMethod,bookingId:r.bookingId||''}));
+    const direct=[];
+    for(const s of sessions){
+      for(const b of (s.bookings||[])){
+        if(approvedBookingIds.has(b.id))continue;
+        direct.push({kind:'booking',key:`booking-${b.id}`,booking:b,session:s,fullName:b.fullName,email:b.email,mobile:b.mobile,sessionDate:s.sessionDate,day:s.weekday||'',start:s.startTime,end:s.endTime,venueName:s.venueName,bookingStatus:b.bookingStatus,paymentStatus:b.paymentStatus,amount:b.amount,paymentMethod:b.paymentMethod,bookingId:b.id});
+      }
+    }
+    return [...approved,...direct].sort((a,b)=>`${b.sessionDate||''} ${b.start||''}`.localeCompare(`${a.sessionDate||''} ${a.start||''}`));
+  },[approvedRequests,sessions]);
 
   const createSession=async()=>{
     if(!templateKey||!sessionDate){toast.error('Choose a session slot and date');return}
@@ -110,7 +123,7 @@ export default function GuestBookings(){
       const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_approve',requestId:request.id,sessionDate:date.trim()});
       if(res.data?.error)throw new Error(res.data.error);
       copy(res.data.magicInviteUrl,res.data.emailSent?'Guest approved – private link emailed and copied':'Guest approved – private link copied');
-      await Promise.all([qc.invalidateQueries({queryKey:['guest-access-requests']}),qc.invalidateQueries({queryKey:['guest-session-admin-list']})]);
+      await Promise.all([qc.invalidateQueries({queryKey:['guest-access-requests']}),qc.invalidateQueries({queryKey:['guest-access-requests','pending-count']}),qc.invalidateQueries({queryKey:['guest-session-admin-list']})]);
       toast.success(res.data.emailSent?'Guest approved. Private booking/payment link emailed and copied.':'Guest approved. Email delivery failed, so send the copied private link manually.');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not approve guest request')}
     finally{setBusy('')}
@@ -123,10 +136,37 @@ export default function GuestBookings(){
     try{
       const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_reject',requestId:request.id,reason});
       if(res.data?.error)throw new Error(res.data.error);
-      await qc.invalidateQueries({queryKey:['guest-access-requests']});
+      await Promise.all([qc.invalidateQueries({queryKey:['guest-access-requests']}),qc.invalidateQueries({queryKey:['guest-access-requests','pending-count']})]);
       toast.success('Guest request declined');
     }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not decline guest request')}
     finally{setBusy('')}
+  };
+
+  const approvedPrivateLink=async(request,{sendEmail=false,copyOnly=false}={})=>{
+    setBusy(`${sendEmail?'resend':'link'}-${request.id}`);
+    try{
+      const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_private_link',requestId:request.id,sendEmail});
+      if(res.data?.error)throw new Error(res.data.error);
+      await qc.invalidateQueries({queryKey:['guest-access-requests']});
+      if(sendEmail){
+        if(res.data.emailSent)toast.success(`Booking link resent to ${request.email}`);
+        else toast.error('RallyHub could not resend the email. Use WhatsApp or copy the private link.');
+      }else if(copyOnly){
+        copy(res.data.magicInviteUrl,'Private booking link copied');
+      }
+      return res.data;
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not prepare the private booking link');return null}
+    finally{setBusy('')}
+  };
+
+  const whatsappApproved=async(request)=>{
+    const data=await approvedPrivateLink(request);
+    if(!data?.magicInviteUrl)return;
+    const target=whatsappNumber(request.mobile);
+    if(!target){toast.error('No valid mobile number is saved for this guest');return}
+    const sessionDate=data.sessionDate?niceDate(data.sessionDate):request.approvedSessionDate?niceDate(request.approvedSessionDate):'';
+    const msg=`Clare Pickleball session booking\n\nHi ${String(request.fullName||'').split(/\s+/)[0]||'there'}, your guest request has been approved.\n\n${sessionDate}${request.start?` · ${request.start}${request.end?`–${request.end}`:''}`:''}\n${request.venueName||''}\n\nComplete your booking/payment using your private RallyHub link:\n${data.magicInviteUrl}\n\nThis link is for you only.`;
+    window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
   };
 
   const shareMagicWhatsApp=async(session)=>{
