@@ -129,3 +129,6 @@ No existing source module is redirected by this standalone build and no legacy c
 
 ## Existing communications asset migration — 6 October 2026
 The Communications Centre now catalogues 21 existing approved/working communications rather than requiring administrators to recreate them. The catalogue covers KOTC, Interclub, Session Bookings, Membership/payment, Waiting List, Directory and Events. Source wording, merge semantics, branding and specialised renderers remain authoritative. The signed-off Clare v Galway Interclub results renderer is locked as a specialist approved asset and is not redesigned. This is an asset-library migration only; existing live callers are not redirected.
+
+## Operator UX rule — 6 October 2026
+Communications capabilities must never be presented as passive feature lists. Every visible asset must have an obvious operator action. Templates open into Compose and are selectable from a module-grouped dropdown. Workflows open into review/configuration. Poll/feedback types open into creation/configuration. Audience, Delivery, Consent, Analytics and Settings surfaces use task/action entry points. Production activation remains independently gated.
