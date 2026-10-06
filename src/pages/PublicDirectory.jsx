@@ -12,6 +12,7 @@ import PublicDirectoryLogo from '@/components/directory/PublicDirectoryLogo';
 import DirectoryPlayerNetworkPanel from '@/components/directory/DirectoryPlayerNetworkPanel';
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 import { trackSiteEvent } from '@/lib/site-analytics';
+import { DIRECTORY_CATEGORY_FALLBACK, loadDirectoryCategories } from '@/lib/directory-categories';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -165,8 +166,16 @@ export default function PublicDirectory() {
   const [county, setCounty] = useState('All counties');
   const [day, setDay] = useState('Any day');
   const [view, setView] = useState('clubs');
+  const [categoryKey, setCategoryKey] = useState('club');
+  const [categories, setCategories] = useState(DIRECTORY_CATEGORY_FALLBACK);
   const [directoryState, setDirectoryState] = useState({});
   const [shareCopiedSlug, setShareCopiedSlug] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    loadDirectoryCategories().then(rows => { if (active) setCategories(rows); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -180,10 +189,12 @@ export default function PublicDirectory() {
     const staticClubs = directoryClubs.map(club => {
       const state = directoryState[club.slug];
       const profile = state?.profile;
-      if (!profile) return { ...club, verificationStatus: state?.verificationStatus || club.verificationStatus };
+      if (!profile) return { ...club, listingType:'club', listingCategoryLabel:'Clubs & places to play', verificationStatus: state?.verificationStatus || club.verificationStatus };
       return {
         ...club,
         ...profile,
+        listingType: profile?.listingType || 'club',
+        listingCategoryLabel: profile?.listingCategoryLabel || 'Clubs & places to play',
         verificationStatus: state?.verificationStatus || club.verificationStatus,
         contact: { ...(club.contact || {}), ...(profile.contact || {}) },
         venues: Array.isArray(profile.venues) ? profile.venues : club.venues,
@@ -202,6 +213,9 @@ export default function PublicDirectory() {
           id: base.id || slug,
           slug,
           sport: base.sport || 'Pickleball',
+          listingType: profile?.listingType || base.listingType || 'club',
+          listingCategoryLabel: profile?.listingCategoryLabel || base.listingCategoryLabel || 'Clubs & places to play',
+          serviceArea: profile?.serviceArea || base.serviceArea || null,
           verificationStatus: state.verificationStatus || 'unclaimed',
           contact: { ...(base.contact || {}), ...(profile.contact || {}) },
           venues: Array.isArray(profile.venues) ? profile.venues : (base.venues || []),
@@ -211,23 +225,28 @@ export default function PublicDirectory() {
     return [...staticClubs, ...dynamicClubs].sort((a, b) => a.name.localeCompare(b.name));
   }, [directoryState]);
 
-  const allSessions = useMemo(() => effectiveClubs.flatMap(club => (club.sessions || []).map(session => ({...session, club}))), [effectiveClubs]);
-  const listedCountyCount = useMemo(() => new Set(effectiveClubs.map(club => club.county)).size, [effectiveClubs]);
+  const clubListings = useMemo(() => effectiveClubs.filter(item => (item.listingType || 'club') === 'club'), [effectiveClubs]);
+  const publicCategories = useMemo(() => categories.filter(item => item.active !== false && item.showPublicFilter !== false).sort((a,b)=>(a.sortOrder||100)-(b.sortOrder||100)), [categories]);
+  const selectedCategory = publicCategories.find(item => item.key === categoryKey) || categories.find(item => item.key === categoryKey) || DIRECTORY_CATEGORY_FALLBACK[0];
+  const clubCategoryActive = categoryKey === 'club' || selectedCategory?.clubFirst === true || selectedCategory?.locationMode === 'county';
+  const allSessions = useMemo(() => clubListings.flatMap(club => (club.sessions || []).map(session => ({...session, club}))), [clubListings]);
+  const listedCountyCount = useMemo(() => new Set(clubListings.map(club => club.county).filter(Boolean)).size, [clubListings]);
   const counties = ['All counties', ...irelandCounties];
 
   const filteredClubs = useMemo(() => effectiveClubs
     .map(club => ({ club, searchScore: directorySearchScore(club, query) }))
     .filter(({ club, searchScore }) => {
+      const categoryMatch = String(club.listingType || 'club') === categoryKey;
       const queryMatch = !query.trim() || searchScore > 0;
-      const countyMatch = county === 'All counties' || club.county === county;
-      const dayMatch = day === 'Any day' || (club.sessions || []).some(session => session.day === day);
-      return queryMatch && countyMatch && dayMatch;
+      const countyMatch = !clubCategoryActive || county === 'All counties' || club.county === county;
+      const dayMatch = !clubCategoryActive || day === 'Any day' || (club.sessions || []).some(session => session.day === day);
+      return categoryMatch && queryMatch && countyMatch && dayMatch;
     })
     .sort((a, b) => query.trim() ? (b.searchScore - a.searchScore || a.club.name.localeCompare(b.club.name)) : a.club.name.localeCompare(b.club.name))
-    .map(({ club }) => club), [effectiveClubs, query, county, day]);
+    .map(({ club }) => club), [effectiveClubs, query, county, day, categoryKey, clubCategoryActive]);
 
   useEffect(() => {
-    trackSiteEvent('directory_view', { metadata: { clubCount: effectiveClubs.length } });
+    trackSiteEvent('directory_view', { metadata: { clubCount: clubListings.length, listingCount: effectiveClubs.length } });
   }, []);
 
   useEffect(() => {
@@ -324,7 +343,7 @@ export default function PublicDirectory() {
 
                 <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
                   <Link to="/directory/add" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#078e48] px-5 text-[13px] font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] transition hover:bg-[#067b3f]">
-                    <Building2 className="h-4 w-4" /> Add or update your club
+                    <Building2 className="h-4 w-4" /> Add or update a club or listing
                   </Link>
                   <a href="#player-network" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[#b8dfc7] bg-[#eef9f3] px-5 text-[13px] font-bold text-[#067b3f] transition hover:bg-[#e4f5eb]">
                     <BellRing className="h-4 w-4" /> Player updates
@@ -344,7 +363,7 @@ export default function PublicDirectory() {
                   />
                 </div>
                 <div className="grid grid-cols-3 divide-x divide-[#dfe8ea] bg-white px-3 py-4">
-                  <div className="px-3"><strong className="block text-[24px] font-black text-[#07184c]">{effectiveClubs.length}</strong><span className="text-[11px] text-[#67748a]">club listings</span></div>
+                  <div className="px-3"><strong className="block text-[24px] font-black text-[#07184c]">{clubListings.length}</strong><span className="text-[11px] text-[#67748a]">club listings</span></div>
                   <div className="px-3"><strong className="block text-[24px] font-black text-[#07184c]">{listedCountyCount}</strong><span className="text-[11px] text-[#67748a]">counties listed</span></div>
                   <div className="px-3"><strong className="block text-[24px] font-black text-[#07184c]">32</strong><span className="text-[11px] text-[#67748a]">counties supported</span></div>
                 </div>
