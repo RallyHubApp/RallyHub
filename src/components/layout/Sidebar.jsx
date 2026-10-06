@@ -51,7 +51,7 @@ export default function Sidebar({ isOpen, onToggle }) {
     { path: '/app/finance', label: 'Finance Summary', icon: WalletCards, section: 'CLUB OPERATIONS' },
     { path: '/app/waiting-list', label: 'Waiting List', icon: ClipboardList, section: 'CLUB OPERATIONS' },
     { path: '/app/players', label: 'Players', icon: Users, section: 'CLUB OPERATIONS' },
-    { path: '/app/guest-bookings', label: 'Session Bookings', icon: CalendarCheck, section: 'CLUB OPERATIONS' },
+    { path: '/app/guest-bookings', label: 'Session Bookings', icon: CalendarCheck, bookingApprovals: true, section: 'CLUB OPERATIONS' },
     { path: '/app/events', label: 'Events', icon: CalendarDays, section: 'CLUB OPERATIONS' },
     { path: '/app/tournaments', label: 'Tournaments', icon: Trophy, section: 'CLUB OPERATIONS' },
     { path: '/app/trials', label: 'Club Trials', icon: ClipboardList, section: 'CLUB OPERATIONS' },
@@ -82,6 +82,18 @@ export default function Sidebar({ isOpen, onToggle }) {
     },
     enabled: canAccessAdmin,
     refetchInterval: 60_000,
+    refetchOnWindowFocus: true
+  });
+
+  const { data: pendingBookingApprovalCount = 0 } = useQuery({
+    queryKey: ['guest-access-requests', 'pending-count', user?.active_tenant_id, user?.active_club_id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('guestAccessJourney', { action: 'admin_pending_count' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return Number(res.data?.pendingCount || 0);
+    },
+    enabled: canAccessAdmin && !!user?.active_tenant_id && !!user?.active_club_id,
+    refetchInterval: 30_000,
     refetchOnWindowFocus: true
   });
 
@@ -179,13 +191,16 @@ export default function Sidebar({ isOpen, onToggle }) {
                   {item.messages && memberMessageUnread > 0 && (
                     <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center">{memberMessageUnread > 99 ? '99+' : memberMessageUnread}</span>
                   )}
+                  {item.bookingApprovals && pendingBookingApprovalCount > 0 && (
+                    <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center" aria-label={`${pendingBookingApprovalCount} session booking request${pendingBookingApprovalCount === 1 ? '' : 's'} awaiting approval`} title={`${pendingBookingApprovalCount} session booking request${pendingBookingApprovalCount === 1 ? '' : 's'} awaiting approval`}>{pendingBookingApprovalCount > 99 ? '99+' : pendingBookingApprovalCount}</span>
+                  )}
                   {directoryAdmin && pendingDirectoryAdminCount > 0 && (
                     <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-black text-[11px] font-black flex items-center justify-center">{pendingDirectoryAdminCount}</span>
                   )}
                   {adminPanel && pendingApprovalCount > 0 && (
                     <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-amber-400 text-black text-[11px] font-black flex items-center justify-center">{pendingApprovalCount}</span>
                   )}
-                  {isActive && !item.messages && !directoryAdmin && !adminPanel && (
+                  {isActive && !item.messages && !item.bookingApprovals && !directoryAdmin && !adminPanel && (
                     <ChevronRight className="w-3.5 h-3.5 ml-auto text-primary/60 shrink-0" />
                   )}
                 </Link>
@@ -201,7 +216,7 @@ export default function Sidebar({ isOpen, onToggle }) {
               { path: '/directory', label: 'Switch to Directory', icon: MapPin },
               { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield }
             ] : []),
-            ...(canAccessAdmin ? [{ path: '/app/guest-bookings', label: 'Session Bookings', icon: CalendarCheck }] : []),
+            ...(canAccessAdmin ? [{ path: '/app/guest-bookings', label: 'Session Bookings', icon: CalendarCheck, bookingApprovals: true }] : []),
             ...(canAccessAdmin ? [{ path: '/app/trials', label: 'Club Trials', icon: ClipboardList }] : []),
             { path: '/app/my-profile', label: 'My Profile', icon: UserCircle },
             ...(canAccessAdmin ? [{ path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [])
