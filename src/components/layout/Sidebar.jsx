@@ -44,6 +44,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   const superAdminNavItems = [
     { path: '/app', label: 'Dashboard', icon: LayoutDashboard, section: 'SUPER ADMIN' },
     { path: '/app/admin', label: 'Admin Panel', icon: Shield, admin: true, section: 'SUPER ADMIN' },
+    { path: '/app/admin?tab=control-library', label: 'Control Library', icon: BookOpen, admin: true, section: 'SUPER ADMIN' },
     { path: '/app/admin?tab=directory', label: 'Directory Admin', icon: Shield, directoryAdmin: true, section: 'SUPER ADMIN' },
     { path: '/directory', label: 'Public Directory', icon: MapPin, section: 'SUPER ADMIN' },
     { path: '/app/messages', label: 'Member Messages', icon: MessageCircle, messages: true, section: 'CLUB OPERATIONS' },
