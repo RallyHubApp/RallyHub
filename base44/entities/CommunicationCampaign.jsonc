@@ -1,0 +1,146 @@
+{
+  "name": "CommunicationCampaign",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "owner_scope": {
+      "type": "string",
+      "enum": [
+        "platform",
+        "tenant"
+      ]
+    },
+    "source_module": {
+      "type": "string"
+    },
+    "source_record_id": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "operational",
+        "transactional",
+        "campaign",
+        "poll",
+        "feedback",
+        "survey",
+        "rsvp",
+        "emergency"
+      ]
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "scheduled",
+        "queued",
+        "sending",
+        "paused",
+        "completed",
+        "cancelled",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "audience_definition": {
+      "type": "object"
+    },
+    "audience_snapshot": {
+      "type": "object"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "routine",
+        "important",
+        "urgent",
+        "emergency"
+      ],
+      "default": "routine"
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "workflow_id": {
+      "type": "string"
+    },
+    "brand_kit_id": {
+      "type": "string"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "approved_by_user_id": {
+      "type": "string"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "recipient_count": {
+      "type": "number",
+      "default": 0
+    },
+    "eligible_count": {
+      "type": "number",
+      "default": 0
+    },
+    "suppressed_count": {
+      "type": "number",
+      "default": 0
+    },
+    "idempotency_key": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "owner_scope",
+    "kind",
+    "purpose",
+    "name",
+    "status",
+    "created_by_user_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
