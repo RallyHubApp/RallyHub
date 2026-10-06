@@ -1072,6 +1072,10 @@ Deno.serve(async (req) => {
       if (!user.email) return Response.json({ error: 'A verified account email is required' }, { status: 400 });
 
       const clubName = String(body.clubName || '').trim().slice(0, 180);
+      const category = await directoryCategoryConfig(base44, body.listingType || 'club');
+      const listingType = category.key;
+      const listingCategoryLabel = String(body.listingCategoryLabel || category.pluralLabel || category.label || '').trim().slice(0, 140);
+      const serviceArea = String(body.serviceArea || '').trim().slice(0, 180);
       const county = String(body.county || '').trim().slice(0, 100);
       const town = String(body.town || '').trim().slice(0, 120);
       const primaryVenue = String(body.primaryVenue || '').trim().slice(0, 220);
@@ -1087,39 +1091,46 @@ Deno.serve(async (req) => {
       const networkUpdatesOptIn = body.networkUpdatesOptIn === true;
       const notes = String(body.notes || '').trim().slice(0, 1500);
 
-      if (!clubName) return Response.json({ error: 'Club name is required' }, { status: 400 });
-      if (!county) return Response.json({ error: 'County is required' }, { status: 400 });
+      if (!clubName) return Response.json({ error: 'Listing name is required' }, { status: 400 });
+      if (category.locationMode === 'county' && !county) return Response.json({ error: 'County is required for clubs and places to play' }, { status: 400 });
       if (!claimantName) return Response.json({ error: 'Your name is required' }, { status: 400 });
-      if (!claimantRole) return Response.json({ error: 'Your role or connection to the club is required' }, { status: 400 });
+      if (!claimantRole) return Response.json({ error: 'Your role or connection to the listing is required' }, { status: 400 });
       if (!claimantPhone) return Response.json({ error: 'Your mobile number is required' }, { status: 400 });
 
-      const staticDuplicate = directoryVerificationIndex.find(x =>
+      const staticDuplicate = listingType === 'club' ? directoryVerificationIndex.find(x =>
         normaliseName(x.name) === normaliseName(clubName) &&
         normaliseName(x.county || '') === normaliseName(county)
-      );
+      ) : null;
       const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500);
-      const dynamicDuplicate = (dynamicRows || []).find(x => normaliseName(x.name) === normaliseName(clubName) && normaliseName(x.county || '') === normaliseName(county));
+      const dynamicDuplicate = (dynamicRows || []).find(x =>
+        normaliseName(x.name) === normaliseName(clubName) &&
+        String(x.listing_type || 'club') === listingType &&
+        (category.locationMode !== 'county' || normaliseName(x.county || '') === normaliseName(county))
+      );
       const duplicate = staticDuplicate || dynamicDuplicate;
       if (duplicate) {
         return Response.json({
-          error: 'This club already appears to be in the RallyHub directory.',
+          error: 'This listing already appears to be in the RallyHub directory.',
           existingSlug: duplicate.slug,
           existingName: duplicate.name,
         }, { status: 409 });
       }
 
       const existingRequests = await base44.asServiceRole.entities.DirectoryListingRequest.filter({ claimant_user_id: user.id });
-      const samePending = existingRequests.find(x => x.status === 'pending' && normaliseName(x.club_name) === normaliseName(clubName));
+      const samePending = existingRequests.find(x => x.status === 'pending' && normaliseName(x.club_name) === normaliseName(clubName) && String(x.listing_type || 'club') === listingType);
       if (samePending) {
         return Response.json({ success: true, status: 'pending', request: publicListingRequest(samePending) });
       }
       if (user.role !== 'admin' && recentCount(existingRequests, 24) >= 5) {
-        return Response.json({ error: 'Too many new-club submissions. Please try again later.' }, { status: 429 });
+        return Response.json({ error: 'Too many new listing submissions. Please try again later.' }, { status: 429 });
       }
 
       const request = await base44.asServiceRole.entities.DirectoryListingRequest.create({
         club_name: clubName,
-        county,
+        listing_type: listingType,
+        listing_category_label: listingCategoryLabel || category.label,
+        service_area: serviceArea || null,
+        county: county || null,
         town: town || null,
         primary_venue: primaryVenue || null,
         address: address || null,
@@ -1143,8 +1154,8 @@ Deno.serve(async (req) => {
         user,
         kind: 'new_club_review',
         contextId: request.id,
-        subject: `[RallyHub Directory] New club submission — ${clubName}`,
-        body: `A new club has been submitted for the RallyHub Directory.\n\nClub: ${clubName}\nCounty: ${county}\nTown / area: ${town || '(not supplied)'}\nPrimary venue: ${primaryVenue || '(not supplied)'}\nAddress: ${address || '(not supplied)'}\nEircode / postcode: ${venuePostcode || '(not supplied)'}\n\nSubmitted by: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\nUse submitted details as public club contact: ${publishContact ? 'Yes' : 'No'}\nNetwork updates: ${networkUpdatesOptIn ? 'Opted in' : 'No'}\n\nWebsite: ${website || '(none)'}\nFacebook: ${facebook || '(none)'}\nInstagram: ${instagram || '(none)'}\n\nNotes: ${notes || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin?tab=directory`,
+        subject: `[RallyHub Directory] New ${listingCategoryLabel || category.label} submission — ${clubName}`,
+        body: `A new listing has been submitted for the RallyHub Directory.\n\nType: ${listingCategoryLabel || category.label}\nListing: ${clubName}\nCounty: ${county || '(not applicable)'}\nService area / destination: ${serviceArea || '(not supplied)'}\nTown / area: ${town || '(not supplied)'}\nPrimary venue: ${primaryVenue || '(not applicable)'}\nAddress: ${address || '(not supplied)'}\nEircode / postcode: ${venuePostcode || '(not supplied)'}\n\nSubmitted by: ${claimantName}\nRole: ${claimantRole}\nEmail: ${user.email}\nMobile: ${claimantPhone}\nUse submitted details as public listing contact: ${publishContact ? 'Yes' : 'No'}\nNetwork updates: ${networkUpdatesOptIn ? 'Opted in' : 'No'}\n\nWebsite: ${website || '(none)'}\nFacebook: ${facebook || '(none)'}\nInstagram: ${instagram || '(none)'}\n\nNotes: ${notes || '(none)'}\n\nReview this request in RallyHub Admin → Directory Claims.\nhttps://rallyhub.ie/app/admin?tab=directory`,
       });
 
       return Response.json({ success: true, status: 'pending', request: publicListingRequest(request) });
