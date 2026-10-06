@@ -935,6 +935,10 @@ Deno.serve(async (req) => {
       if (user.role !== 'admin') return Response.json({ error: 'Admin access required' }, { status: 403 });
 
       const clubName = String(body.clubName || '').trim().slice(0, 180);
+      const category = await directoryCategoryConfig(base44, body.listingType || 'club');
+      const listingType = category.key;
+      const listingCategoryLabel = String(body.listingCategoryLabel || category.pluralLabel || category.label || '').trim().slice(0, 140);
+      const serviceArea = String(body.serviceArea || '').trim().slice(0, 180);
       const county = String(body.county || '').trim().slice(0, 100);
       const town = String(body.town || '').trim().slice(0, 120);
       const primaryVenue = String(body.primaryVenue || '').trim().slice(0, 220);
@@ -950,25 +954,29 @@ Deno.serve(async (req) => {
       const publishContact = body.publishContact !== false;
       const notes = String(body.notes || '').trim().slice(0, 1500);
 
-      if (!clubName) return Response.json({ error: 'Club name is required' }, { status: 400 });
-      if (!county) return Response.json({ error: 'County is required' }, { status: 400 });
-      if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return Response.json({ error: 'The club contact email is not valid' }, { status: 400 });
-      if (!contactEmail && !contactPhone) return Response.json({ error: 'Enter either a club contact email address or mobile number' }, { status: 400 });
+      if (!clubName) return Response.json({ error: 'Listing name is required' }, { status: 400 });
+      if (category.locationMode === 'county' && !county) return Response.json({ error: 'County is required for clubs and places to play' }, { status: 400 });
+      if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return Response.json({ error: 'The listing contact email is not valid' }, { status: 400 });
+      if (!contactEmail && !contactPhone) return Response.json({ error: 'Enter either a listing contact email address or mobile number' }, { status: 400 });
 
-      const staticDuplicate = directoryVerificationIndex.find(x =>
+      const staticDuplicate = listingType === 'club' ? directoryVerificationIndex.find(x =>
         normaliseName(x.name) === normaliseName(clubName) &&
         normaliseName(x.county || '') === normaliseName(county)
-      );
+      ) : null;
       const dynamicRows = await base44.asServiceRole.entities.DirectoryListingRecord.filter({ status: 'active' }, '-published_at', 500);
-      const dynamicDuplicate = (dynamicRows || []).find(x => normaliseName(x.name) === normaliseName(clubName) && normaliseName(x.county || '') === normaliseName(county));
+      const dynamicDuplicate = (dynamicRows || []).find(x =>
+        normaliseName(x.name) === normaliseName(clubName) &&
+        String(x.listing_type || 'club') === listingType &&
+        (category.locationMode !== 'county' || normaliseName(x.county || '') === normaliseName(county))
+      );
       const duplicate = staticDuplicate || dynamicDuplicate;
       if (duplicate) {
-        return Response.json({ error: 'This club already appears to be in the RallyHub directory.', existingSlug: duplicate.slug, existingName: duplicate.name }, { status: 409 });
+        return Response.json({ error: 'This listing already appears to be in the RallyHub directory.', existingSlug: duplicate.slug, existingName: duplicate.name }, { status: 409 });
       }
 
       const now = new Date().toISOString();
       const listingSlug = await uniqueListingSlug(base44, clubName);
-      const venueId = primaryVenue ? `venue-${slugify(primaryVenue)}` : null;
+      const venueId = category.locationMode === 'county' && primaryVenue ? `venue-${slugify(primaryVenue)}` : null;
       const submittedVenue = venueId ? {
         id: venueId,
         name: primaryVenue,
