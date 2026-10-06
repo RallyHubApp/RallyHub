@@ -161,7 +161,7 @@ export default function AddDirectoryClub() {
         listingType,
         listingCategoryLabel: selectedCategory?.pluralLabel || selectedCategory?.label || '',
         serviceArea,
-        county:
+        county,
         town,
         primaryVenue,
         address,
