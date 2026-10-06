@@ -1003,22 +1003,27 @@ Deno.serve(async (req) => {
         id: listingSlug,
         slug: listingSlug,
         name: clubName,
+        listingType,
+        listingCategoryLabel,
+        serviceArea: serviceArea || null,
         sport: 'Pickleball',
-        county,
+        county: county || null,
         town: town || null,
         region: null,
         status: 'active',
-        membershipStatus: 'Contact the club for joining information',
+        membershipStatus: listingType === 'club' ? 'Contact the club for joining information' : null,
         affiliation: null,
         logoUrl: null,
         website: safePublicUrl(website),
         facebook: safePublicUrl(facebook),
         instagram: safePublicUrl(instagram),
         waitingListUrl: null,
-        joiningCtaLabel: 'Contact club',
-        policyLabel: 'Club information',
-        description: `${clubName} is listed in the RallyHub Club Directory for County ${county}. This listing has not yet been claimed and can be updated by an authorised club representative.`,
-        guestPolicy: 'Contact the club before attending a session.',
+        joiningCtaLabel: listingType === 'club' ? 'Contact club' : 'Contact listing',
+        policyLabel: listingType === 'club' ? 'Club information' : 'Listing information',
+        description: listingType === 'club'
+          ? `${clubName} is listed in the RallyHub Club Directory for County ${county}. This listing has not yet been claimed and can be updated by an authorised club representative.`
+          : `${clubName} is listed in the RallyHub Pickleball Directory under ${listingCategoryLabel || category.label}. This listing has not yet been claimed and can be updated by an authorised representative.`,
+        guestPolicy: listingType === 'club' ? 'Contact the club before attending a session.' : null,
         contact: publicContact,
         venues: submittedVenue ? [{ ...submittedVenue, latitude: geocodedVenue?.latitude ?? null, longitude: geocodedVenue?.longitude ?? null }] : [],
         sessions: [],
@@ -1029,7 +1034,10 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.DirectoryListingRecord.create({
         slug: listingSlug,
         name: clubName,
-        county,
+        listing_type: listingType,
+        listing_category_label: listingCategoryLabel || category.label,
+        service_area: serviceArea || null,
+        county: county || null,
         sport: 'Pickleball',
         status: 'active',
         visibility: 'public',
@@ -1037,6 +1045,7 @@ Deno.serve(async (req) => {
         trusted_contacts_json: JSON.stringify([{ name: contactName || null, role: contactRole || null, email: contactEmail || null, phone: contactPhone || null }]),
         created_by_user_id: user.id,
         published_at: now,
+        commercial_status: 'free',
       });
 
       try {
@@ -1049,8 +1058,8 @@ Deno.serve(async (req) => {
           entity_id: listingSlug,
           scope_type: 'Directory',
           scope_id: listingSlug,
-          after_state: JSON.stringify({ clubName, county, contactEmail, contactPhone, notes: notes || null }),
-          reason: 'Super Admin pre-populated an unclaimed directory listing for later club representative claim.',
+          after_state: JSON.stringify({ clubName, listingType, listingCategoryLabel, serviceArea, county: county || null, contactEmail, contactPhone, notes: notes || null }),
+          reason: 'Super Admin pre-populated an unclaimed Directory listing for later authorised representative claim.',
         });
       } catch (auditError) {
         console.warn('Directory admin-create audit failed', auditError?.message || auditError);
