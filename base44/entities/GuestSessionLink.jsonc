@@ -89,6 +89,16 @@
     },
     "notes": {
       "type": "string"
+    },
+    "archived_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "archived_by_user_id": {
+      "type": "string"
+    },
+    "archive_reason": {
+      "type": "string"
     }
   },
   "required": [
