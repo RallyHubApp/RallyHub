@@ -96,3 +96,33 @@ The domain gate includes KOTC-results, Interclub-journey and payment-reminder si
 
 ### Explicitly deferred to controlled activation
 No existing KOTC, Interclub, Session Booking, Membership, Directory, Events or other communication caller is redirected by this standalone build. No legacy communication code is deleted. Those are migration phases, not module-build phases.
+
+## Standalone build completed — 6 October 2026
+
+The Communications Engine is now built as a dormant RallyHub module in the live repository. Existing KOTC, Interclub, Session Booking, Membership, Directory and Events communication callers remain unchanged until separately approved adapter migrations.
+
+### Portable domain layer
+The platform-independent layer now covers core policy, BrandKit rendering, audiences/deduplication, consent and double-opt-in evidence, workflow execution/simulation, reusable journey definitions, deliverability/pre-flight, polls/feedback/RSVP/availability, analytics, provider/repository ports, orchestration and no-send simulation.
+
+### Persistence model
+The standalone model includes campaign, message, recipient, delivery attempt, BrandKit, template, workflow, poll and poll response plus preference, suppression, channel configuration, immutable communication event, conversation/inbound thread, reusable content block and workflow-run state.
+
+### Communications Centre
+Super Admin has a standalone `/app/communications` route marked BUILD / SIMULATION — external delivery disabled. It exposes Overview, Compose, Audiences, Templates & Brand, Workflows, Polls & Feedback, Delivery, Consent, Analytics and Settings. The composer can run a no-send KOTC-style simulation and render HTML and plain-text previews. There is deliberately no live Send action.
+
+### Portability and activation boundary
+Base44 is current infrastructure, not the Communications architecture. Base44 persistence/functions and each delivery provider belong behind adapters so future infrastructure replacement does not rewrite the domain engine. Engine modes are simulation, test and live; simulation cannot externally deliver, and controlled activation requires successful pre-flight plus an explicit adapter-level activation credential.
+
+A Base44 bundling constraint discovered during the first adapter experiment prevents one backend-function directory directly importing source from another backend-function directory. Future module integration must use a stable Communications service/API boundary or separately packaged shared dependency; it must not copy domain rules back into source modules.
+
+### Test gates
+- `communicationsCoreGate.mjs`
+- `communicationsRendererGate.mjs`
+- `communicationsDeliveryGate.mjs`
+- `communicationsDomainGate.mjs`
+- `communicationsActivationGate.mjs`
+
+The domain gate includes KOTC-results, Interclub-journey and payment-reminder simulations. The activation gate proves simulation cannot send and controlled live delivery requires explicit activation. The full production Vite build also passes.
+
+### Deferred to controlled migration
+No existing source module is redirected by this standalone build and no legacy communication code is deleted. Source-module integration is a later migration phase with its own checkpoint and regression gate.

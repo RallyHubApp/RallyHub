@@ -322,9 +322,16 @@ Phase-1 gate covers tenant scope, marketing permission, suppression, dedupe, ide
 | Events | Active | Consolidate shared event/public projections |
 | Public Directory | Production dataset / protected privacy | Continue controlled reconciliation/claim flow |
 | Trials/Entitlements | Controlled pilot | External-club isolation and conversion testing |
-| Communications Engine | Phase 1 isolated core / protected | BrandKit + composer, then controlled caller adapters |
+| Communications Engine | Standalone dormant module complete / protected | Controlled caller adapters only after explicit activation approval |
 
 ## 13. Change log
+
+### 6 October 2026 — SCM v1.4
+
+- Completed the dormant standalone Communications Engine: portable domain layer, BrandKit/renderer, audiences, consent, workflows, polls/feedback/RSVP/availability, deliverability, analytics, reusable journeys, persistence entities and Super Admin Communications Centre.
+- Added explicit simulation/test/live activation boundary; standalone UI has no live Send action and existing source-module callers remain unchanged.
+- Formalised Base44 and delivery providers as replaceable infrastructure adapters for longer-term RallyHub portability.
+- Added KOTC, Interclub and payment-style no-send simulations and five Communications-specific gates; production build passes.
 
 ### 6 October 2026 — SCM v1.3
 
