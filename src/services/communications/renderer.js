@@ -36,6 +36,7 @@ export function renderEmail({brandKit,subjectTemplate,htmlTemplate,plainTextTemp
 }
 export function paritySignals({html,plainText}){
   const extract=(s)=>new Set((String(s||"").match(/(?:https?:\/\/[^\s<"]+|\b\d{1,2}:\d{2}\b|€\s?\d+(?:\.\d{1,2})?)/g)||[]).map(x=>x.replace(/[),.;]+$/,"")));
-  const visibleHtml=String(html||"").replace(/<[^>]+>/g," ");\n  const h=extract(visibleHtml),p=extract(plainText);
+  const visibleHtml=String(html||"").replace(/<[^>]+>/g," ");
+  const h=extract(visibleHtml),p=extract(plainText);
   return {htmlOnly:[...h].filter(x=>!p.has(x)),plainOnly:[...p].filter(x=>!h.has(x)),ok:[...h].every(x=>p.has(x))&&[...p].every(x=>h.has(x))};
 }
