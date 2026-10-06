@@ -1,10 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 
 const CONSENT_VERSION='rallyhub-directory-player-updates-v1-2026-09';
-const LEGACY_TOPICS=['tournaments_events','coaching','club_session_updates'];
+const LEGACY_TOPICS=['tournaments_events','coaching','club'];
 function cleanTopics(v:any){
   const raw=Array.isArray(v)?v:[];
-  const mapped=raw.map((x:any)=>clean(x,80)).filter(Boolean).map((x:string)=>x==='events'?'tournaments_events':x==='pickleball_updates'?'club_session_updates':x);
+  const mapped=raw.map((x:any)=>clean(x,80)).filter(Boolean).map((x:string)=>x==='events'?'tournaments_events':x==='pickleball_updates'?'club':x);
   return [...new Set(mapped)].slice(0,30);
 }
 
