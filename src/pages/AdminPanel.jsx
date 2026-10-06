@@ -17,6 +17,7 @@ import GlassCard from '@/components/shared/GlassCard';
 import { useAuth } from '@/lib/AuthContext';
 import MemberPortalPreview from '@/components/admin/MemberPortalPreview';
 import DirectoryAnalyticsDashboard from '@/components/admin/DirectoryAnalyticsDashboard';
+import DirectoryCategoryManager from '@/components/admin/DirectoryCategoryManager';
 import AnnouncementSettingsPanel from '@/components/admin/AnnouncementSettingsPanel';
 import { directoryClubs } from '@/data/directorySeed';
 
@@ -1913,13 +1914,15 @@ Brian`;
               </p>
             </div>
 
+            <DirectoryCategoryManager />
+
             <div className="order-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button type="button" onClick={() => scrollToDirectorySection('directory-pending-claims')} className="glass rounded-xl p-3 text-left hover:bg-secondary/40 transition-colors">
                 <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold text-muted-foreground">Pending verification</span><span className={`text-xl font-black ${pendingDirectoryClaims.length ? 'text-amber-400' : 'text-muted-foreground'}`}>{pendingDirectoryClaims.length}</span></div>
                 <p className="text-[11px] text-muted-foreground mt-1">Claims that may need approval</p>
               </button>
               <button type="button" onClick={() => scrollToDirectorySection('directory-pending-actions')} className="glass rounded-xl p-3 text-left hover:bg-secondary/40 transition-colors">
-                <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold text-muted-foreground">New club requests</span><span className={`text-xl font-black ${pendingNewDirectoryRequests.length ? 'text-amber-400' : 'text-muted-foreground'}`}>{pendingNewDirectoryRequests.length}</span></div>
+                <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold text-muted-foreground">New listing requests</span><span className={`text-xl font-black ${pendingNewDirectoryRequests.length ? 'text-amber-400' : 'text-muted-foreground'}`}>{pendingNewDirectoryRequests.length}</span></div>
                 <p className="text-[11px] text-muted-foreground mt-1">New listings waiting for a decision</p>
               </button>
               <button type="button" onClick={() => scrollToDirectorySection('directory-outstanding-invitations')} className="glass rounded-xl p-3 text-left hover:bg-secondary/40 transition-colors">
