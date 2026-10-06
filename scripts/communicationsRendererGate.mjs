@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import {mergeTemplate,normaliseBrandKit,renderEmail,paritySignals} from "../src/services/communications/renderer.js";
+const kit={name:"Tenant A",logos:{primary:"https://example.invalid/logo.png"},colours:{primary:"#112233",secondary:"#ffffff"},typography:{body_font:"Arial"}};
+assert.deepEqual(mergeTemplate("Hi {{person.first_name}}",{person:{first_name:"Alex"}}).missing,[]);
+assert.deepEqual(mergeTemplate("Hi {{missing}}",{}).missing,["missing"]);
+assert.equal(normaliseBrandKit({name:"X"}).name,"X");
+const r=renderEmail({brandKit:kit,subjectTemplate:"Results for {{name}}",htmlTemplate:"<h1>Hello {{name}}</h1><p>Starts 19:00</p>",plainTextTemplate:"Hello {{name}}\nStarts 19:00",data:{name:"Alex"}});
+assert.equal(r.subject,"Results for Alex"); assert.match(r.html,/Tenant A/); assert.match(r.plainText,/19:00/); assert.deepEqual(r.missing,[]);
+assert.equal(paritySignals({html:r.html,plainText:r.plainText}).ok,true);
+assert.equal(paritySignals({html:"Starts 19:00",plainText:"Starts 20:00"}).ok,false);
+console.log("PASS communicationsRendererGate: BrandKit + merge fields + HTML/plain-text + parity");
