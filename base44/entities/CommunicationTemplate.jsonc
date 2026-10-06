@@ -1,0 +1,100 @@
+{
+  "name": "CommunicationTemplate",
+  "type": "object",
+  "properties": {
+    "owner_scope": {
+      "type": "string",
+      "enum": [
+        "platform",
+        "tenant"
+      ]
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "module": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved",
+        "retired"
+      ],
+      "default": "draft"
+    },
+    "subject_template": {
+      "type": "string"
+    },
+    "html_template": {
+      "type": "string"
+    },
+    "plain_text_template": {
+      "type": "string"
+    },
+    "channel_templates": {
+      "type": "object"
+    },
+    "block_manifest": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "merge_schema": {
+      "type": "object"
+    },
+    "brand_kit_id": {
+      "type": "string"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "approved_by_user_id": {
+      "type": "string"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "owner_scope",
+    "name",
+    "purpose",
+    "version",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
