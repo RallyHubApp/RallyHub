@@ -1,0 +1,7 @@
+import {resolveAudience,dedupeContacts} from "./audience.js";import {resolvePermission} from "./consent.js";import {preflight} from "./deliverability.js";import {renderEmail} from "./renderer.js";import {simulateWorkflow} from "./workflow.js";
+export function simulateCampaign({campaign,people,consents=[],suppressions=[],template,brandKit,workflow}){
+ const resolved=resolveAudience({people,definition:campaign.audience_definition||{}}),deduped=dedupeContacts(resolved),blocked=new Set(suppressions.map(s=>s.person_id||s.email));
+ const recipients=deduped.people.map(p=>{const permission=resolvePermission({purpose:campaign.purpose,channel:"email",records:consents.filter(c=>c.person_id===p.person_id),suppressed:blocked.has(p.person_id)||blocked.has(p.email)});return{...p,eligibility_status:permission.allowed?"eligible":"suppressed",eligibility_reason:permission.reason}});
+ const eligible=recipients.filter(r=>r.eligibility_status==="eligible"),rendered=renderEmail({brandKit,...template,data:campaign.sample_data||{}});
+ return{mode:"SIMULATION_ONLY",source_count:people.length,resolved_count:resolved.length,duplicate_count:deduped.duplicates.length,eligible_count:eligible.length,recipients,rendered,preflight:preflight({campaign,message:{channel:"email",html_body:rendered.html,plain_text_body:rendered.plainText},audience:{eligible_count:eligible.length}}),workflow_timeline:workflow?simulateWorkflow({workflow,scenario:{}}):[]};
+}
