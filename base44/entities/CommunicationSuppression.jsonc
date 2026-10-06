@@ -1,0 +1,82 @@
+{
+  "name": "CommunicationSuppression",
+  "type": "object",
+  "properties": {
+    "owner_scope": {
+      "type": "string",
+      "enum": [
+        "platform",
+        "tenant"
+      ]
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "endpoint_hash": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "unsubscribe",
+        "hard_bounce",
+        "complaint",
+        "invalid",
+        "manual",
+        "legal"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "released_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "owner_scope",
+    "channel",
+    "reason",
+    "active"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
