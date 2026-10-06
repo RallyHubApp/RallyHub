@@ -1,0 +1,95 @@
+{
+  "name": "CommunicationRecipient",
+  "type": "object",
+  "properties": {
+    "campaign_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "person_id": {
+      "type": "string"
+    },
+    "source_module": {
+      "type": "string"
+    },
+    "source_record_id": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string"
+    },
+    "eligible_channels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "selected_channels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "eligibility_status": {
+      "type": "string",
+      "enum": [
+        "eligible",
+        "suppressed",
+        "invalid",
+        "excluded",
+        "pending_consent"
+      ]
+    },
+    "eligibility_reason": {
+      "type": "string"
+    },
+    "consent_evidence": {
+      "type": "object"
+    },
+    "dedupe_key": {
+      "type": "string"
+    },
+    "personalisation": {
+      "type": "object"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "campaign_id",
+    "eligibility_status",
+    "dedupe_key"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
