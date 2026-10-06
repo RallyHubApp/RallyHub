@@ -37,7 +37,7 @@ const PARTNERSHIP_TYPES = [
 const initialForm = {
   name: '', format: '', partnership_type: 'Singles', start_date: '', end_date: '',
   location: '', max_players: '', description: '', prize_info: '',
-  skill_range_min: '', skill_range_max: '', counts_toward_leaderboard: false,
+  skill_range_min: '', skill_range_max: '', counts_toward_leaderboard: false, counts_toward_performance_analytics: true,
 };
 
 export default function CreateTournamentModal({ open, onOpenChange, onCreated, initialFormat = '' }) {
@@ -264,6 +264,18 @@ export default function CreateTournamentModal({ open, onOpenChange, onCreated, i
                 <span>
                   <span className="text-sm font-semibold text-foreground">Counts toward club leaderboard</span>
                   <span className="block text-[11px] text-muted-foreground mt-0.5">Leave this off for practice, testing or events that should not affect club standings.</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-3 rounded-xl border border-border bg-secondary/20 p-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 accent-primary"
+                  checked={form.counts_toward_performance_analytics !== false}
+                  onChange={e => update('counts_toward_performance_analytics', e.target.checked)}
+                />
+                <span>
+                  <span className="text-sm font-semibold text-foreground">Include in performance intelligence</span>
+                  <span className="block text-[11px] text-muted-foreground mt-0.5">Feeds RallyHub rating, form, head-to-head, partnerships and forecasting. This is independent of the official club leaderboard.</span>
                 </span>
               </label>
 

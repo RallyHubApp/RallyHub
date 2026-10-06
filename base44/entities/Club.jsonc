@@ -42,6 +42,33 @@
     },
     "notes": {
       "type": "string"
+    },
+    "sporting_intelligence_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Master club switch for RallyHub sporting intelligence."
+    },
+    "performance_rating_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable RallyHub performance rating and rating history."
+    },
+    "head_to_head_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "partnership_analysis_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "forecasting_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "dupr_context_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Allow DUPR to be used as contextual intelligence only; never changes Club Points."
     }
   },
   "required": [

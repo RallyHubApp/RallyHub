@@ -402,6 +402,30 @@
         "null"
       ],
       "format": "date-time"
+    },
+    "counts_toward_performance_analytics": {
+      "type": "boolean",
+      "description": "Include this event in RallyHub sporting intelligence. Independent of official club leaderboard eligibility."
+    },
+    "performance_rating_enabled": {
+      "type": "boolean",
+      "description": "Optional event override for RallyHub performance rating."
+    },
+    "head_to_head_enabled": {
+      "type": "boolean",
+      "description": "Optional event override for head-to-head statistics."
+    },
+    "partnership_analysis_enabled": {
+      "type": "boolean",
+      "description": "Optional event override for partnership statistics."
+    },
+    "forecasting_context_enabled": {
+      "type": "boolean",
+      "description": "Optional event override allowing results to inform forecasts."
+    },
+    "dupr_context_enabled": {
+      "type": "boolean",
+      "description": "Optional event override allowing DUPR context; never changes Club Points."
     }
   },
   "required": [],
