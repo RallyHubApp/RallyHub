@@ -39,3 +39,60 @@ Session Booking first contained adapter; KOTC results/player communications; Int
 
 ## Test gate
 scripts/communicationsCoreGate.mjs must pass before any existing module imports the core.
+
+## Standalone build completed — 6 October 2026
+
+The Communications Engine is now built as a dormant RallyHub module in the live repository. This does **not** mean existing communications have been migrated. The activation boundary is deliberate: KOTC, Interclub, Session Booking, Membership, Directory and Events retain their existing callers until a separately approved adapter migration.
+
+### Portable domain layer
+The following code is intentionally independent of Base44:
+- `src/services/communications/core.js` — scope, dedupe/idempotency primitives, readiness and workflow exit rules.
+- `renderer.js` — BrandKit, merge fields, HTML/plain-text rendering and parity signals.
+- `audience.js` — dynamic AND/OR audiences, exclusions and contact dedupe.
+- `consent.js` — purpose-aware permission, tenant/platform scope and double-opt-in evidence.
+- `workflow.js` — goal-based journey state and simulation.
+- `workflowLibrary.js` — reusable payment, Interclub, KOTC, membership and feedback journey definitions.
+- `deliverability.js` — pre-flight risk, bounce/complaint circuit breakers, staged-send advice, communication pressure and safety delay.
+- `polls.js` — poll/survey/feedback/RSVP/availability question validation and result aggregation.
+- `analytics.js` — delivery and outcome metrics.
+- `ports.js` — repository/provider/clock boundaries for future migration away from Base44.
+- `engine.js` — orchestration/activation boundary.
+- `simulator.js` — no-send campaign simulation.
+
+### Persistence model
+In addition to the Phase-1 entities, the standalone build now includes:
+- `CommunicationPreference`
+- `CommunicationSuppression`
+- `CommunicationChannelConfig`
+- `CommunicationEvent`
+- `CommunicationConversation`
+- `CommunicationContentBlock`
+- `CommunicationWorkflowRun`
+
+These support preference centre/double opt-in, suppression, provider configuration, immutable audit events, replies/inbox, reusable blocks and journey state.
+
+### Communications Centre
+Super Admin now has a standalone `/app/communications` route. It is visibly marked **BUILD / SIMULATION — external delivery disabled**. It exposes the intended product areas:
+Overview; Compose; Audiences; Templates & Brand; Workflows; Polls & Feedback; Delivery; Consent; Analytics; Settings.
+
+The composer can already run a no-send KOTC-style simulation, render HTML and plain text and report audience/pre-flight state. There is deliberately no live Send button.
+
+### Activation safety
+The portable engine has explicit modes: `simulation`, `test`, `live`. Simulation cannot externally deliver. Live preparation alone is insufficient: the activation boundary also requires a successful pre-flight and an explicit activation token supplied by a controlled adapter. Existing source modules do not possess that adapter/token.
+
+### Base44 boundary
+Base44 is treated as current infrastructure, not the architecture. Base44 entity/function access belongs behind adapters. Delivery providers are also adapters. A future move from Base44 therefore replaces infrastructure adapters rather than the Communications domain/workflow/template/audience engine.
+
+A discovered Base44 bundling constraint prevents one backend-function directory directly importing source from another backend-function directory. Future source-module integration must therefore use a stable Communications service/API boundary or a separately packaged shared dependency; it must not duplicate the Communications domain rules back into source modules.
+
+### Test gates
+- `communicationsCoreGate.mjs`
+- `communicationsRendererGate.mjs`
+- `communicationsDeliveryGate.mjs`
+- `communicationsDomainGate.mjs`
+- `communicationsActivationGate.mjs`
+
+The domain gate includes KOTC-results, Interclub-journey and payment-reminder simulations. The activation gate proves simulation cannot send and live delivery requires explicit activation. The full production Vite build must also pass.
+
+### Explicitly deferred to controlled activation
+No existing KOTC, Interclub, Session Booking, Membership, Directory, Events or other communication caller is redirected by this standalone build. No legacy communication code is deleted. Those are migration phases, not module-build phases.
