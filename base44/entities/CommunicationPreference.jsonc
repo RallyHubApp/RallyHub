@@ -1,0 +1,87 @@
+{
+  "name": "CommunicationPreference",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "type": "string"
+    },
+    "owner_scope": {
+      "type": "string",
+      "enum": [
+        "platform",
+        "tenant"
+      ]
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "accepted",
+        "pending_confirmation",
+        "withdrawn",
+        "not_recorded"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "wording_version": {
+      "type": "string"
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "withdrawn_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidence": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "person_id",
+    "owner_scope",
+    "channel",
+    "purpose",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
