@@ -92,8 +92,8 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#e8f7ee] text-[#078e48]"><BellRing className="h-5 w-5"/></div>
             <div>
               <p className="text-[11px] font-extrabold uppercase tracking-[.09em] text-[#078e48]">For players across Ireland</p>
-              <h2 className="mt-1 text-[24px] font-black tracking-[-.03em] text-[#07184c]">Playing pickleball? Stay in the loop.</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#52627d]">Get occasional RallyHub updates about tournaments, events, coaching and other worthwhile pickleball opportunities around Ireland.</p>
+              <h2 className="mt-1 text-[24px] font-black tracking-[-.03em] text-[#07184c]">Never miss another tournament!</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#52627d]">Never miss another tournament, event, coaching session or other worthwhile pickleball opportunity in Ireland. Get notified by RallyHub.</p>
             </div>
           </div>
           {!done&&!signupOpen&&<div className="mt-auto pt-3"><button type="button" onClick={()=>setSignupOpen(true)} className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-[#078e48] px-4 text-xs font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f] sm:w-auto xl:w-full">Sign up for updates</button></div>}
