@@ -749,7 +749,7 @@ async function sendHostBookingEmail(base44:any,scope:any,club:any,session:any,bo
   await sendWithConfiguredEmailTransport(base44,scope,{
     to:host.email,
     subject:`Session booking confirmed · ${booking.full_name} · ${session.venue_name} · ${session.start_time}`,
-    textBody,htmlBody,
+    textBody,htmlBody,senderName:club.name,
   });
   return true;
 }
@@ -807,6 +807,7 @@ ${isMember?'':`<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;
           subject:`${isMember?'Member':'Guest'} booking confirmed · ${booking.full_name} · ${session.venue_name} · ${session.start_time}`,
           textBody:adminText,
           htmlBody:adminHtml,
+          senderName:club.name,
         });
       }catch(e){organiserNotificationsOk=false;console.error('club/admin booking notification failed',e?.message||e)}
     }
@@ -902,6 +903,7 @@ ${isMember?'':`<p style="margin:0 0 22px;font-size:12px;line-height:1.55;color:#
         subject:`${club.name} · ${isMember?'Member':'Guest'} booking confirmed · ${dateLabel} ${session.start_time}`,
         textBody:guestText,
         htmlBody:guestHtml,
+        senderName:club.name,
       });
       updates.guest_confirmation_sent_at=now;
     }catch(e){console.error('guest confirmation failed',e?.message||e)}
@@ -1131,7 +1133,7 @@ ${detailRow('Fee',session.payment_method==='cash'?`${amount} cash on arrival`:`$
         await sendWithConfiguredEmailTransport(base44,scope,{
           to:recipientEmail,
           subject:`${club.name} · Guest session · ${dateLabel} ${session.start_time}`,
-          textBody,htmlBody,
+          textBody,htmlBody,senderName:club.name,
         });
         return Response.json({success:true});
       }
@@ -1311,6 +1313,7 @@ ${detailRow('Reason',reason)}
                 subject:`${club.name} · Refund issued · ${refundLabel}`,
                 textBody:refundText,
                 htmlBody:refundHtml,
+                senderName:club.name,
               });
             }catch(e){console.error('refund confirmation email failed',e?.message||e)}
           }
