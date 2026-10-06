@@ -326,6 +326,12 @@ Phase-1 gate covers tenant scope, marketing permission, suppression, dedupe, ide
 
 ## 13. Change log
 
+### 6 October 2026 — SCM v1.5
+
+- Audited existing live communication assets and catalogued 21 approved/working templates in the Communications Centre across KOTC, Interclub, Session Bookings, Membership/payment, Waiting List, Directory and Events.
+- Preserved existing wording and source renderers rather than recreating templates. Clare v Galway Interclub results remains an approved locked specialist renderer.
+- Added a template-library gate; all Communications gates and production build pass. Existing live callers remain unchanged.
+
 ### 6 October 2026 — SCM v1.4
 
 - Completed the dormant standalone Communications Engine: portable domain layer, BrandKit/renderer, audiences, consent, workflows, polls/feedback/RSVP/availability, deliverability, analytics, reusable journeys, persistence entities and Super Admin Communications Centre.
