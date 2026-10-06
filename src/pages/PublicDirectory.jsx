@@ -37,7 +37,9 @@ const compactSearchText = value => normaliseSearchText(value).replace(/\s+/g, ''
 const publicDescription = club => {
   const description = String(club?.description || '').trim();
   if (/has not yet been claimed|listing is currently unclaimed|unclaimed listing/i.test(description)) {
-    return `${club.name} is listed in the RallyHub Club Directory for County ${club.county}.`;
+    return (club?.listingType || 'club') === 'club'
+      ? `${club.name} is listed in the RallyHub Club Directory for County ${club.county}.`
+      : `${club.name} is listed in the RallyHub Pickleball Directory${club?.listingCategoryLabel ? ` under ${club.listingCategoryLabel}` : ''}.`;
   }
   return description;
 };
