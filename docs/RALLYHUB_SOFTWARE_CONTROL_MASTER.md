@@ -1,8 +1,8 @@
 # RallyHub Software Control Master (SCM)
 
 **Status:** LIVE CONTROL MASTER — repository authority for signed-off behaviour and change control  
-**Version:** 1.0  
-**Date:** 5 October 2026  
+**Version:** 1.1
+**Date:** 6 October 2026
 **Owner:** RallyHub  
 **Relationship to testing:** `docs/RALLYHUB_MASTER_TESTING_BLUEPRINT.md` defines how RallyHub is tested. This SCM defines what is approved/protected and what must not regress.
 
@@ -86,15 +86,65 @@ Silence is not permission to alter a protected behaviour. A protected behaviour 
 
 These checkpoints are rollback references, not permission to bypass regression testing.
 
-## 3A. Universal player measurement model — PROTECTED
+## 3A. Universal player measurement & sporting intelligence module — PROTECTED
 
 RallyHub preserves three separate player measures. They may be displayed together for context, but none may silently modify another.
 
-1. **Club Leaderboard / Club Rank** — official cumulative club competition table. Eligible completed results score Win = 2, Draw = 1, Loss = 0. Ranking order is total leaderboard points, then total wins, then score differential (PF − PA), then Points For. Court 1 appearances, bench frequency, starting/final court, DUPR and predictive strength do not affect Club Rank. For Clare's current production history the controlled baseline begins 17 September 2026; demos, tests and sandboxes are excluded. Genuine KOTC, Banner Bash, Interclub and other explicitly leaderboard-enabled sporting events feed the same cumulative table. Interclub showcase/exhibition matches do not count.
+1. **Club Leaderboard / Club Rank** — official cumulative club competition table. Eligible completed results score Win = 2, Draw = 1, Loss = 0. Ranking order is total leaderboard points, then total wins, then score differential (PF − PA), then Points For. Court 1 appearances, bench frequency, starting/final court, DUPR and predictive strength do not affect Club Rank. If all sporting tie-breaks remain equal, players share the same rank; alphabetical order is display-only and is never a sporting tie-break. For Clare's current production history the controlled baseline begins 17 September 2026; demos, tests and sandboxes are excluded. Genuine KOTC, Banner Bash, Interclub and other explicitly leaderboard-enabled sporting events feed the same cumulative table. Interclub showcase/exhibition matches do not count.
 2. **DUPR Rating** — external DUPR measure. RallyHub may display the current DUPR and preserve the DUPR snapshot at match time for context/analysis. DUPR does not alter Club Leaderboard points or rank.
 3. **RallyHub Performance Rating / Performance Analysis** — separate RallyHub intelligence layer for opponent strength, score margins, head-to-head, partners/opponents, recent form, expected versus actual performance, trends and future prediction. It does not alter Club Leaderboard points/rank and does not overwrite DUPR.
 
 Protected invariant: **Club Points ≠ DUPR ≠ RallyHub Performance Rating.**
+
+### 3A.1 Shared multi-tenant sporting-intelligence architecture
+
+- Sporting intelligence is a **shared RallyHub platform module**, not a Clare-specific feature and not duplicated inside each sporting format.
+- All shared logic is tenant/club scoped. Clare names, colours, IDs or event assumptions must never be hard-coded into the generic engine.
+- KOTC, RallyHub Interclub, Tournival, standard tournaments and future sporting formats consume the same canonical intelligence service where their match model is compatible.
+- A new tenant/club inherits the reusable module and can configure its capabilities without a bespoke code fork.
+- Official Club Leaderboard eligibility and Performance Intelligence eligibility are **independent controls**. An event may feed intelligence without affecting Club Rank.
+- Existing genuine leaderboard-enabled events remain eligible for both unless deliberately configured otherwise; test/demo/sandbox/abandoned/cancelled data must not contaminate either measure.
+- The implemented performance service version is `performance-2026-10-06-v2-multitenant`.
+- Protected restore point: `Multi-tenant sporting intelligence module v2` — 6 October 2026.
+
+### 3A.2 Club-level capability controls
+
+Each tenant club may enable/disable the following capabilities independently:
+
+- Sporting Intelligence master capability;
+- RallyHub Performance Rating;
+- Head-to-Head analysis;
+- Partnership/partner analysis;
+- Forecasting/prediction;
+- DUPR contextual intelligence.
+
+These controls determine which intelligence capabilities are available to that club. They do not rewrite historic sporting results and do not silently change Club Points.
+
+### 3A.3 Event/format controls
+
+Every sporting logic must expose or inherit appropriate event-level policy controls rather than embedding its own leaderboard/rating rules.
+
+- **Counts toward Club Leaderboard** — controls official Club Points/Rank only.
+- **Include in Performance Intelligence** — controls whether eligible completed results feed RallyHub rating/analysis.
+- Format/event overrides may separately govern RallyHub rating, H2H, partnership analysis, forecasting context and DUPR context where supported.
+- The two primary switches are deliberately independent: an event can contribute to Performance Intelligence while being excluded from the official Club Leaderboard.
+- Test/practice/demo events default away from official standings and must be explicitly isolated.
+- Event policy must be resolved before results are consumed; no silent retrospective reclassification.
+
+### 3A.4 Intelligence inputs and outputs
+
+The Performance Analysis layer may use authoritative completed match data to calculate or expose opponent strength and quality of result; score margin and points for/against; head-to-head records; partner combinations/chemistry and opponent combinations; recent form and trends; expected versus actual performance; activity/format splits; RallyHub performance rating/history; and future match/team predictions and forecasting.
+
+Court position, Court 1 appearances and other format-specific metadata may be retained as descriptive statistics where useful, but do not alter official Club Rank unless a future explicitly approved versioned methodology says otherwise.
+
+### 3A.5 Governance and change control
+
+- The sporting-intelligence engine must consume authoritative completed sporting results; it must never mutate match outcomes, KOTC movement or other sporting state.
+- Club Rank methodology, DUPR and RallyHub Performance Rating remain separately versioned concepts.
+- No future sporting module may create an independent competing player-rating/leaderboard implementation where the shared module can be used.
+- Any change that would make Performance Intelligence influence Club Points/Rank requires an explicit methodology version change, impact analysis, Super Admin approval, shadow/dry-run comparison and SCM update before production.
+- Historical DUPR snapshots may be retained for analysis, but current DUPR must never be retroactively substituted as if it were the rating at match time.
+- The canonical separation rule must be preserved in UI/API behaviour and regression testing: **Club Points ≠ DUPR ≠ RallyHub Performance Rating.**
 
 ## 4. RallyHub Interclub — PROTECTED MODULE
 
@@ -224,6 +274,7 @@ Initial scope to formalise before implementation:
 | KOTC | Commercial / protected | Golden sporting + latency gates |
 | Interclub | Production-proven / protected | Convert live defects into permanent regressions |
 | DUPR | UAT integration / protected design | Complete controlled UAT/certification and event toggle |
+| Sporting Intelligence / Player Measurement | Protected shared multi-tenant module | Regression-test tenant/event capability policies and leaderboard separation |
 | Membership/Member Portal | Active development / protected data model | Continue modular Phase 1 |
 | Events | Active | Consolidate shared event/public projections |
 | Public Directory | Production dataset / protected privacy | Continue controlled reconciliation/claim flow |
@@ -231,6 +282,17 @@ Initial scope to formalise before implementation:
 | Communications/Email Engine | NEXT SHARED MODULE | Architecture, approved templates, provider/service contract |
 
 ## 13. Change log
+
+### 6 October 2026 — SCM v1.1
+
+- Replaced the earlier partial Universal Player Measurement section with the implemented shared multi-tenant Sporting Intelligence architecture.
+- Preserved the three independent measures: Club Leaderboard / Club Rank, DUPR Rating, and RallyHub Performance Rating / Performance Analysis.
+- Recorded club-level capability controls for Sporting Intelligence, Performance Rating, Head-to-Head, Partnership Analysis, Forecasting and DUPR context.
+- Recorded independent event controls for official Club Leaderboard eligibility versus Performance Intelligence eligibility.
+- Recorded reusable consumption by KOTC, Interclub, Tournival, standard tournaments and future sporting formats.
+- Recorded implementation version `performance-2026-10-06-v2-multitenant` and checkpoint `Multi-tenant sporting intelligence module v2`.
+- Reaffirmed the protected invariant: **Club Points ≠ DUPR ≠ RallyHub Performance Rating.**
+
 
 ### 5 October 2026 — SCM v1.0
 
