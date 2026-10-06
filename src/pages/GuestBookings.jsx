@@ -322,6 +322,45 @@ export default function GuestBookings(){
       </div>)}
     </section>
 
+    <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div><h2 className="text-lg font-black">Session attendees & payment status</h2><p className="mt-1 text-xs text-muted-foreground">One working list for approved guests, people awaiting payment and completed bookings. Use this if somebody says they did not receive their booking email.</p></div>
+        <Badge variant="outline">{bookingRows.length} people</Badge>
+      </div>
+      {bookingRows.length===0?<p className="text-sm text-muted-foreground">No approved or booked session attendees yet.</p>:<div className="space-y-3">
+        {bookingRows.map(row=>{
+          const awaitingBooking=row.kind==='approved_request'&&!row.bookingId;
+          const paid=['paid','partially_refunded','refunded'].includes(row.paymentStatus);
+          const paymentLabel=awaitingBooking?'Approved · booking not completed':row.paymentStatus==='pending'?'Payment pending':row.paymentStatus==='cash_due'?'Cash due':paid?'Paid':String(row.paymentStatus||row.bookingStatus||'').replaceAll('_',' ');
+          return <div key={row.key} className="rounded-xl border bg-secondary/20 p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2"><p className="font-black">{row.fullName}</p><Badge variant="outline" className={paid?'border-green-500/40 text-green-600':awaitingBooking||row.paymentStatus==='pending'?'border-amber-500/40 text-amber-700':''}>{paymentLabel}</Badge></div>
+                <p className="mt-1 text-sm text-muted-foreground">{row.email}{row.mobile?` · ${row.mobile}`:''}</p>
+                <p className="mt-2 text-sm font-semibold">{row.sessionDate?niceDate(row.sessionDate):'Session date pending'}{row.start?` · ${row.start}${row.end?`–${row.end}`:''}`:''}</p>
+                <p className="text-sm text-muted-foreground">{row.venueName||'Venue pending'}{row.amount!==null&&row.amount!==undefined?` · €${Number(row.amount||0).toFixed(2)}`:''}</p>
+                {row.kind==='approved_request'&&row.request?.approvedAt&&<p className="mt-1 text-xs text-muted-foreground">Approved {new Date(row.request.approvedAt).toLocaleString('en-IE')}</p>}
+                {row.kind==='booking'&&row.booking?.registeredAt&&<p className="mt-1 text-xs text-muted-foreground">Booking started {new Date(row.booking.registeredAt).toLocaleString('en-IE')}{row.booking?.paidAt?` · paid ${new Date(row.booking.paidAt).toLocaleString('en-IE')}`:''}</p>}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {row.kind==='approved_request'&&<>
+                  <Button size="sm" variant="outline" disabled={busy===`resend-${row.request.id}`} onClick={()=>approvedPrivateLink(row.request,{sendEmail:true})}>{busy===`resend-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend email</Button>
+                  <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>whatsappApproved(row.request)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
+                  <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>approvedPrivateLink(row.request,{copyOnly:true})}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy private link</Button>
+                </>}
+                {row.kind==='booking'&&<>
+                  <Button size="sm" variant="outline" onClick={()=>whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
+                  {row.sumupCheckoutUrl&&row.paymentStatus==='pending'&&<Button size="sm" variant="outline" onClick={()=>copy(row.sumupCheckoutUrl,'Payment link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy payment link</Button>}
+                  {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend confirmation</Button>}
+                  {row.paymentMethod==='sumup'&&!paid&&<Button size="sm" variant="outline" disabled={busy===`verify-${row.bookingId}`} onClick={()=>verifyPayment(row.bookingId)}>{busy===`verify-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
+                </>}
+              </div>
+            </div>
+          </div>;
+        })}
+      </div>}
+    </section>
+
     <section className="glass rounded-2xl p-5 sm:p-6 space-y-5">
       <div><h2 className="text-lg font-black">Create guest booking link</h2><p className="mt-1 text-xs text-muted-foreground">Choose the actual session date. RallyHub checks that it matches the weekday of the selected slot.</p></div>
       <div className="grid lg:grid-cols-2 gap-4">
