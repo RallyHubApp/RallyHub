@@ -50,6 +50,28 @@ async function loadConfig(base44:any,tenantId:string,clubId:string){
   return (await base44.asServiceRole.entities.ClubGuestJourneyConfig.filter({tenant_id:tenantId,club_id:clubId,active:true},'-updated_date',10))?.[0]||null;
 }
 
+async function approvalNotificationEmail(base44:any,club:any,sessionId:string){
+  try{
+    const links=await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:club.tenant_id,club_id:club.id,session_label:sessionId},'-created_at',50);
+    const recent=(links||[]).find((row:any)=>emailKey(row.notification_email||''));
+    if(recent?.notification_email)return emailKey(recent.notification_email);
+  }catch{}
+  return emailKey(club.public_contact_email||'');
+}
+
+async function sendPendingApprovalEmail(base44:any,club:any,row:any,selected:any){
+  const to=await approvalNotificationEmail(base44,club,String(row.preferred_session_key||selected?.id||''));
+  if(!to)return {sent:false,reason:'No club booking notification email is configured.'};
+  const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:club.tenant_id,clubId:club.id};
+  const manageUrl='https://rallyhub.ie/app/guest-bookings';
+  const subject=`Action required · ${club.name} guest session request · ${row.full_name}`;
+  const sessionText=`${selected?.day||''} ${selected?.start||''}${selected?.end?`–${selected.end}`:''}`.trim();
+  const textBody=`A new guest session request is waiting for approval in RallyHub.\n\nGuest: ${row.full_name}\nEmail: ${row.email}\nMobile: ${row.mobile}\nExperience: ${row.experience_level||''}\nSession: ${sessionText}\nVenue: ${selected?.venueName||row.preferred_venue_key||''}\n${row.home_club?`Home club: ${row.home_club}\n`:''}${row.dupr_id?`DUPR: ${row.dupr_id}\n`:''}${row.health_declaration_applies===true?'Health/medical details were supplied — review them securely inside RallyHub.\n':''}\nOpen Session Bookings to review and approve or decline:\n${manageUrl}\n\nRallyHub`;
+  const htmlBody=`<!doctype html><html><body style="margin:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fff;border:1px solid #d9e1ec;border-radius:16px;overflow:hidden;"><tr><td style="height:6px;background:${escapeHtml(club.primary_colour||'#078e48')};"></td></tr><tr><td style="padding:26px;"><div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#078e48;">Session Bookings</div><h1 style="margin:8px 0 16px;font-size:23px;">Guest request waiting for approval</h1><p style="margin:0 0 18px;line-height:1.6;color:#4b5563;">A new guest request needs your decision in RallyHub.</p><div style="padding:16px;border:1px solid #e1e7ef;border-radius:12px;background:#f8fafc;line-height:1.75;font-size:14px;"><strong>${escapeHtml(row.full_name)}</strong><br>${escapeHtml(row.email)} · ${escapeHtml(row.mobile)}<br>${escapeHtml(sessionText)}<br>${escapeHtml(selected?.venueName||row.preferred_venue_key||'')}${row.health_declaration_applies===true?'<br><strong style="color:#b45309;">Health/medical details supplied — review in RallyHub.</strong>':''}</div><div style="text-align:center;margin-top:22px;"><a href="${manageUrl}" style="display:inline-block;padding:13px 20px;border-radius:10px;background:#078e48;color:#fff;text-decoration:none;font-weight:800;">Review Session Booking</a></div></td></tr></table></td></tr></table></body></html>`;
+  await sendWithConfiguredEmailTransport(base44,scope,{to,subject,textBody,htmlBody});
+  return {sent:true,to};
+}
+
 function publicOptions(directory:any,config:any){
   const venues=(directory.venues||[]).map((v:any)=>({id:String(v.id),name:v.name||'',shortName:v.shortName||v.name||'',address:v.address||'',eircode:v.eircode||'',mapUrl:v.mapUrl||''}));
   const beginnerSet=new Set((config?.beginner_session_keys||[]).map(String));
@@ -140,6 +162,7 @@ Deno.serve(async(req)=>{
         preferred_venue_key:selected.venueId,preferred_session_key:selected.id,
         dupr_id:duprId,home_club:homeClub,submitted_at:new Date().toISOString(),admin_notes:`Requested ${selected.day} ${selected.start}${selected.end?'–'+selected.end:''} · ${selected.venueName}`,
       });
+      try{await sendPendingApprovalEmail(base44,club,row,selected)}catch(error){console.error('guest approval email failed',error?.message||error)}
       return Response.json({success:true,pending:true,requestToken:row.request_token,message:'Thanks. Your guest request has been sent to Clare Pickleball for approval. No payment has been taken. If approved, you will receive a private booking/payment link.'});
     }
 
@@ -150,6 +173,11 @@ Deno.serve(async(req)=>{
     if(!tenantId||!clubId)return Response.json({error:'Choose an active RallyHub club first.'},{status:400});
     const club=(await base44.asServiceRole.entities.Club.filter({id:clubId,tenant_id:tenantId},'-updated_date',5))?.[0];
     if(!club)return Response.json({error:'Active club not found.'},{status:404});
+
+    if(action==='admin_pending_count'){
+      const pending=await base44.asServiceRole.entities.GuestBookingRequest.filter({tenant_id:tenantId,club_id:clubId,status:'pending_approval'},'-submitted_at',200);
+      return Response.json({success:true,pendingCount:(pending||[]).length});
+    }
 
     if(action==='admin_list'){
       const requests=await base44.asServiceRole.entities.GuestBookingRequest.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',200);
