@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { requireConfiguredEmailTransport, sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
-const RUNTIME_VERSION='kotc-email-branding-2026-10-06-r13';
+const RUNTIME_VERSION='kotc-email-branding-2026-10-06-r14';
 const KOTC_BASIC_HEADER_TITLE='KING OF THE COURT';
 const KOTC_BASIC_HEADER_SUBTITLE='Your Personal Results';
 const APP_BASE_URL='https://rallyhub.ie';
@@ -112,6 +112,7 @@ Deno.serve(async req=>{try{
  }else{
    if(!sessionId)return Response.json({error:'sessionId required',runtimeVersion:RUNTIME_VERSION},{status:400});
    session=(await retry('host session read',()=>base44.asServiceRole.entities.KotcSession.filter({id:sessionId})))?.[0]||null;
+   if(!session){const recent=(await retry('host session fallback read',()=>base44.asServiceRole.entities.KotcSession.list('-created_date',100)))||[];session=recent.find((x:any)=>String(x.id)===sessionId)||null;}
  }
  if(!session)return Response.json({error:'Session not found',runtimeVersion:RUNTIME_VERSION},{status:404});
  let allowed=user.role==='admin';if(!allowed){const grants=await retry('host access read',()=>base44.asServiceRole.entities.KotcSessionAccess.filter({session_id:session.id,user_id:user.id,status:'active'}));allowed=(grants||[]).some((a:any)=>validAccess(a,session.tenant_id,session.id));}if(!allowed)return Response.json({error:'Primary session host access required',runtimeVersion:RUNTIME_VERSION},{status:403});
