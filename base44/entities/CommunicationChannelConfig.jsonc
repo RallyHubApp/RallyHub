@@ -1,0 +1,73 @@
+{
+  "name": "CommunicationChannelConfig",
+  "type": "object",
+  "properties": {
+    "owner_scope": {
+      "type": "string",
+      "enum": [
+        "platform",
+        "tenant"
+      ]
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "disabled",
+        "test",
+        "configured"
+      ]
+    },
+    "sender_identity": {
+      "type": "object"
+    },
+    "rate_limits": {
+      "type": "object"
+    },
+    "quiet_hours": {
+      "type": "object"
+    },
+    "health": {
+      "type": "object"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "owner_scope",
+    "channel",
+    "provider",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
