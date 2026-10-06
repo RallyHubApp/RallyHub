@@ -1,13 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { BellRing, CheckCircle2, Mail, MessageCircle, Share2, UserPlus2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { irelandCounties } from '@/data/directorySeed';
 import { trackSiteEvent } from '@/lib/site-analytics';
+import { DIRECTORY_CATEGORY_FALLBACK, loadDirectoryCategories } from '@/lib/directory-categories';
 
 const EMPTY={
-  firstName:'',email:'',mobile:'',county:'',clubChoice:'',otherClub:'',duprRating:'',emailOptIn:false,whatsappOptIn:false,website:''
+  firstName:'',email:'',mobile:'',county:'',clubChoice:'',otherClub:'',duprRating:'',emailOptIn:false,whatsappOptIn:false,topics:[],website:''
 };
-
 
 export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
   const initial=useMemo(()=>{
@@ -21,38 +21,48 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
     };
   },[]);
   const [form,setForm]=useState(initial);
+  const [categories,setCategories]=useState(DIRECTORY_CATEGORY_FALLBACK);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [done,setDone]=useState(null);
   const [signupOpen,setSignupOpen]=useState(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('join')==='1');
   const [shareDraft,setShareDraft]=useState(null);
 
+  useEffect(()=>{let active=true;loadDirectoryCategories().then(rows=>{if(active)setCategories(rows)});return()=>{active=false}},[]);
+
   const clubOptions=useMemo(()=>[...clubs]
-    .filter(c=>c?.name)
+    .filter(c=>c?.name && (c.listingType||'club')==='club')
     .sort((a,b)=>String(a.name).localeCompare(String(b.name))),[clubs]);
+
+  const notificationCategories=useMemo(()=>categories
+    .filter(c=>c.active!==false&&c.allowPlayerNotifications!==false)
+    .sort((a,b)=>(a.sortOrder||100)-(b.sortOrder||100)),[categories]);
 
   const set=(key,value)=>setForm(prev=>({...prev,[key]:value}));
   const selectedClub=form.clubChoice==='other' ? null : clubOptions.find(c=>c.slug===form.clubChoice);
   const clubName=form.clubChoice==='other'?form.otherClub.trim():(selectedClub?.name||'');
+  const toggleTopic=key=>set('topics',form.topics.includes(key)?form.topics.filter(x=>x!==key):[...form.topics,key]);
 
   const submit=async(e)=>{
     e.preventDefault();
     if(busy)return;
+    if(!form.topics.length){setError('Choose at least one type of pickleball update you want to receive.');return;}
     setBusy(true);setError('');
     try{
       const res=await base44.functions.invoke('directoryPlayerNetwork',{
         action:'public_subscribe',firstName:form.firstName,email:form.email,mobile:form.mobile,county:form.county,
-        clubName,clubSlug:selectedClub?.slug||'',duprRating:form.duprRating,emailOptIn:form.emailOptIn,whatsappOptIn:form.whatsappOptIn,website:form.website
+        clubName,clubSlug:selectedClub?.slug||'',duprRating:form.duprRating,emailOptIn:form.emailOptIn,whatsappOptIn:form.whatsappOptIn,
+        topics:form.topics,website:form.website
       });
       if(res.data?.error)throw new Error(res.data.error);
       setDone(res.data);
-      trackSiteEvent('player_updates_signup',{county:form.county,metadata:{club:clubName||'',emailOptIn:form.emailOptIn,whatsappOptIn:form.whatsappOptIn}});
+      trackSiteEvent('player_updates_signup',{county:form.county,metadata:{club:clubName||'',emailOptIn:form.emailOptIn,whatsappOptIn:form.whatsappOptIn,topics:form.topics}});
     }catch(err){setError(err?.response?.data?.error||err?.message||'Could not save your update preferences.');}
     finally{setBusy(false)}
   };
 
-  const playerWhatsApp=`Hi, I came across RallyHub and thought you might like it.\n\nIt has a free Irish Pickleball Directory where you can find clubs, venues and regular sessions around Ireland, and you can also sign up to be notified about upcoming tournaments, events, coaching and other pickleball opportunities.\n\nLooks really useful, especially as it grows.\n\nHave a look here:\nhttps://rallyhub.ie/directory?utm_source=whatsapp&utm_medium=referral&utm_campaign=player_share`;
-  const playerEmail=`Hi,\n\nI came across RallyHub and thought you might find it useful.\n\nIt has a free Irish Pickleball Directory where players can find clubs, venues and regular playing sessions around Ireland.\n\nYou can also sign up for occasional updates about upcoming tournaments, social events, coaching and other pickleball opportunities.\n\nIt looks like it could become a really useful way of keeping up with what’s happening around Irish pickleball.\n\nHave a look here:\n\nhttps://rallyhub.ie/directory?utm_source=email&utm_medium=referral&utm_campaign=player_share`;
+  const playerWhatsApp=`Hi, I came across RallyHub and thought you might like it.\n\nIt has a free Irish Pickleball Directory where you can find clubs, venues and regular sessions around Ireland, and you can also choose what you want to be notified about — tournaments, coaching, holidays, equipment and other worthwhile pickleball opportunities.\n\nHave a look here:\nhttps://rallyhub.ie/directory?utm_source=whatsapp&utm_medium=referral&utm_campaign=player_share`;
+  const playerEmail=`Hi,\n\nI came across RallyHub and thought you might find it useful.\n\nIt has a free Irish Pickleball Directory where players can find clubs, venues and regular playing sessions around Ireland. You can also choose exactly which types of pickleball opportunities you want RallyHub to notify you about.\n\nHave a look here:\n\nhttps://rallyhub.ie/directory?utm_source=email&utm_medium=referral&utm_campaign=player_share`;
   const clubWhatsApp=`Hi, I came across RallyHub’s new Irish Pickleball Directory and noticed our club isn’t on it yet.\n\nIt’s a free national directory for pickleball players to find clubs, venues and regular playing sessions around Ireland. Clubs can add or claim their listing for free and keep their own details up to date.\n\nI thought it might be worth getting our club listed too:\n\nhttps://rallyhub.ie/directory?utm_source=whatsapp&utm_medium=referral&utm_campaign=club_share\n\nHave a look when you get a chance.`;
   const clubEmail=`Hi,\n\nI came across RallyHub’s new Irish Pickleball Directory and noticed our club isn’t on it yet.\n\nIt’s a free national directory helping pickleball players find clubs, venues and regular playing sessions around Ireland. Clubs can add or claim their listing for free and then keep their own information up to date.\n\nI thought it would be worth getting our club listed too.\n\nhttps://rallyhub.ie/directory?utm_source=email&utm_medium=referral&utm_campaign=club_share\n\nHave a look when you get a chance.`;
 
@@ -64,19 +74,9 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
       subject:isEmail?(isClub?'Free listing for our club on the RallyHub Pickleball Directory':'Thought you might like RallyHub'):'',
       message:isClub?(isEmail?clubEmail:clubWhatsApp):(isEmail?playerEmail:playerWhatsApp)
     });
-    // The review panel sits below the two cards. Without moving the viewport it can look
-    // as though the share buttons did nothing, especially on mobile and smaller laptops.
-    window.setTimeout(()=>{
-      const panel=document.getElementById('directory-share-review');
-      if(!panel)return;
-      panel.scrollIntoView({behavior:'smooth',block:'start'});
-      panel.focus({preventScroll:true});
-    },0);
+    window.setTimeout(()=>{const panel=document.getElementById('directory-share-review');if(!panel)return;panel.scrollIntoView({behavior:'smooth',block:'start'});panel.focus({preventScroll:true});},0);
   };
-  const resetShare=()=>{
-    if(!shareDraft)return;
-    openShare(shareDraft.type,shareDraft.channel);
-  };
+  const resetShare=()=>{if(shareDraft)openShare(shareDraft.type,shareDraft.channel)};
   const sendShare=()=>{
     if(!shareDraft)return;
     trackSiteEvent(shareDraft.type==='club'?'share_club':'share_player',{metadata:{channel:shareDraft.channel,surface:'directory_growth_panel'}});
@@ -96,7 +96,7 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#52627d]">Never miss another tournament, event, coaching session or other worthwhile pickleball opportunity in Ireland. Get notified by RallyHub.</p>
             </div>
           </div>
-          {!done&&!signupOpen&&<div className="mt-auto pt-3"><button type="button" onClick={()=>setSignupOpen(true)} className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-[#078e48] px-4 text-xs font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f] sm:w-auto xl:w-full">Sign up for updates</button></div>}
+          {!done&&!signupOpen&&<div className="mt-auto pt-3"><button type="button" onClick={()=>setSignupOpen(true)} className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-[#078e48] px-4 text-xs font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f] sm:w-auto xl:w-full">Choose my updates</button></div>}
 
           {done ? <div className="mt-5 rounded-xl border border-[#b8dfc7] bg-[#eef9f3] p-5">
             <div className="flex items-center gap-2 font-bold text-[#067b3f]"><CheckCircle2 className="h-5 w-5"/> You're on the RallyHub player update list</div>
@@ -136,16 +136,27 @@ export default function DirectoryPlayerNetworkPanel({ clubs=[] }){
             </div>
 
             <div className="rounded-xl border border-[#dbe6e8] bg-[#fbfdfd] p-4">
+              <p className="text-sm font-extrabold text-[#07184c]">What would you like RallyHub to notify you about?</p>
+              <p className="mt-1 text-xs leading-5 text-[#66758b]">Choose only what interests you. Selecting tournaments does not subscribe you to holidays, equipment or other categories.</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {notificationCategories.map(cat=><label key={cat.key} className="flex cursor-pointer items-start gap-3 rounded-lg border border-[#dbe6e8] bg-white p-3 text-sm text-[#405174]">
+                  <input type="checkbox" checked={form.topics.includes(cat.key)} onChange={()=>toggleTopic(cat.key)} className="mt-0.5 h-4 w-4"/>
+                  <span><strong className="text-[#07184c]">{cat.pluralLabel||cat.label}</strong>{cat.commercialListing&&<span className="block text-[10px] text-[#78859a]">Optional commercial category</span>}</span>
+                </label>)}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[#dbe6e8] bg-[#fbfdfd] p-4">
               <p className="text-xs font-extrabold text-[#07184c]">How would you like RallyHub to contact you?</p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-[#dbe6e8] bg-white p-3 text-sm text-[#405174]"><input type="checkbox" checked={form.emailOptIn} onChange={e=>set('emailOptIn',e.target.checked)} className="mt-0.5 h-4 w-4"/><span><strong className="text-[#07184c]">Email me</strong> occasional RallyHub pickleball updates</span></label>
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-[#dbe6e8] bg-white p-3 text-sm text-[#405174]"><input type="checkbox" checked={form.whatsappOptIn} onChange={e=>set('whatsappOptIn',e.target.checked)} className="mt-0.5 h-4 w-4"/><span><strong className="text-[#07184c]">WhatsApp/SMS me</strong> occasional RallyHub pickleball updates</span></label>
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-[#dbe6e8] bg-white p-3 text-sm text-[#405174]"><input type="checkbox" checked={form.emailOptIn} onChange={e=>set('emailOptIn',e.target.checked)} className="mt-0.5 h-4 w-4"/><span><strong className="text-[#07184c]">Email me</strong> about the categories I selected</span></label>
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-[#dbe6e8] bg-white p-3 text-sm text-[#405174]"><input type="checkbox" checked={form.whatsappOptIn} onChange={e=>set('whatsappOptIn',e.target.checked)} className="mt-0.5 h-4 w-4"/><span><strong className="text-[#07184c]">WhatsApp/SMS me</strong> about the categories I selected</span></label>
               </div>
-              <p className="mt-3 text-[11px] leading-5 text-[#748196]">Choose at least one option. RallyHub will use these details only for relevant pickleball updates and service administration. We won't sell your information. You can change your preferences or unsubscribe at any time.</p>
+              <p className="mt-3 text-[11px] leading-5 text-[#748196]">Choose at least one contact method and at least one topic. RallyHub will only use these details for the categories you selected and service administration. You can change your choices or unsubscribe at any time.</p>
             </div>
             {error&&<div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
             <div className="flex flex-wrap items-center gap-3">
-              <button type="submit" disabled={busy} className="inline-flex h-11 items-center justify-center rounded-lg bg-[#078e48] px-5 text-sm font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f] disabled:opacity-60">{busy?'Saving…':'Join the update list'}</button>
+              <button type="submit" disabled={busy} className="inline-flex h-11 items-center justify-center rounded-lg bg-[#078e48] px-5 text-sm font-bold text-white shadow-[0_7px_17px_rgba(7,142,72,.18)] hover:bg-[#067b3f] disabled:opacity-60">{busy?'Saving…':'Save my update choices'}</button>
               <button type="button" onClick={()=>{setSignupOpen(false);setError('')}} className="h-11 px-2 text-sm font-bold text-[#66758b] hover:text-[#07184c]">Hide form</button>
             </div>
           </form> : null}
