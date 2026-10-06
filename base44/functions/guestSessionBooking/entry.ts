@@ -610,6 +610,7 @@ function safeSession(s:any){
     venueAddress:s.venue_address,eircode:s.venue_eircode,mapsUrl:s.google_maps_url,
     sessionLabel:s.session_label||'',capacity:s.capacity||null,feeAmount:Number(s.fee_amount||0),
     currency:s.currency||'EUR',paymentMethod:s.payment_method,
+    archivedAt:s.archived_at||'',archiveReason:s.archive_reason||'',
   };
 }
 async function clubBrand(base44:any,clubId:string){
@@ -961,7 +962,7 @@ Deno.serve(async(req)=>{
     const body=await req.json().catch(()=>({}));
     const action=clean(body.action||'public_get',40);
 
-    if(['admin_templates','admin_list','admin_create','admin_close','admin_send_invite','admin_create_magic_invite','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment','admin_resend_emails','admin_resend_host_email'].includes(action)){
+    if(['admin_templates','admin_list','admin_create','admin_close','admin_archive_session','admin_restore_session','admin_delete_session','admin_delete_booking','admin_send_invite','admin_create_magic_invite','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment','admin_resend_emails','admin_resend_host_email'].includes(action)){
       const user=await base44.auth.me();
       if(!user)return Response.json({error:'Unauthorized'},{status:401});
       if(user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
@@ -995,9 +996,13 @@ Deno.serve(async(req)=>{
       }
 
       if(action==='admin_list'){
-        const sessions=await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-session_date',100);
+        const sessions=await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-session_date',200);
         const rows=[];
-        for(const s of sessions||[]){
+        const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+        for(let s of sessions||[]){
+          if(!s.archived_at && String(s.session_date||'') < today){
+            try{s=await base44.asServiceRole.entities.GuestSessionLink.update(s.id,{active:false,archived_at:new Date().toISOString(),archived_by_user_id:'system',archive_reason:'Session date has passed'});}catch{}
+          }
           const host=await resolveSessionHostContact(base44,s);
           const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:s.id},'-registered_at',200);
           const bookingRows=[];
@@ -1018,6 +1023,41 @@ Deno.serve(async(req)=>{
           rows.push({...safeSession(s),notificationEmail:s.notification_email||'',hostName:host?.name||'',hostEmail:host?.email||'',hostMobile:host?.mobile||'',bookings:bookingRows});
         }
         return Response.json({success:true,sessions:rows,sumupConfigured});
+      }
+
+      if(action==='admin_archive_session'||action==='admin_restore_session'||action==='admin_delete_session'){
+        const sessionId=clean(body.sessionId,100);
+        const session=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:sessionId,tenant_id:tenantId,club_id:clubId},'-created_at',5))?.[0];
+        if(!session)return Response.json({error:'Session not found.'},{status:404});
+        const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:session.id},'-registered_at',500);
+        if(action==='admin_archive_session'){
+          const updated=await base44.asServiceRole.entities.GuestSessionLink.update(session.id,{active:false,archived_at:new Date().toISOString(),archived_by_user_id:user.id,archive_reason:clean(body.reason||'Archived by admin',240)});
+          return Response.json({success:true,session:safeSession(updated)});
+        }
+        if(action==='admin_restore_session'){
+          const updated=await base44.asServiceRole.entities.GuestSessionLink.update(session.id,{archived_at:null,archived_by_user_id:null,archive_reason:null,active:String(session.session_date||'')>=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())});
+          return Response.json({success:true,session:safeSession(updated)});
+        }
+        const protectedBooking=(bookings||[]).find((b:any)=>['paid','partially_refunded','refunded'].includes(String(b.payment_status||'')) || ['confirmed','cash_due'].includes(String(b.booking_status||'')));
+        if(protectedBooking)return Response.json({error:'This session has confirmed or financial booking history. Archive it instead of deleting it.'},{status:409});
+        for(const b of bookings||[]) await base44.asServiceRole.entities.GuestSessionBooking.delete(b.id);
+        const invites=await base44.asServiceRole.entities.AccessInviteToken.filter({session_link_id:session.id},'-created_at',500);
+        for(const i of invites||[]) await base44.asServiceRole.entities.AccessInviteToken.delete(i.id);
+        await base44.asServiceRole.entities.GuestSessionLink.delete(session.id);
+        return Response.json({success:true,deleted:true});
+      }
+
+      if(action==='admin_delete_booking'){
+        const bookingId=clean(body.bookingId,100);
+        const booking=(await base44.asServiceRole.entities.GuestSessionBooking.filter({id:bookingId,tenant_id:tenantId,club_id:clubId},'-registered_at',5))?.[0];
+        if(!booking)return Response.json({error:'Booking not found.'},{status:404});
+        if(['paid','partially_refunded','refunded'].includes(String(booking.payment_status||'')) || ['confirmed','cash_due'].includes(String(booking.booking_status||''))) return Response.json({error:'Confirmed or financial booking records cannot be deleted. Keep them for the session record.'},{status:409});
+        const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:booking.id},'-created_date',20);
+        const realPayment=(payments||[]).find((p:any)=>['paid','partially_refunded','refunded'].includes(String(p.payment_status||'')));
+        if(realPayment)return Response.json({error:'This booking has a financial record and cannot be deleted.'},{status:409});
+        for(const p of payments||[]) await base44.asServiceRole.entities.PaymentRecord.delete(p.id);
+        await base44.asServiceRole.entities.GuestSessionBooking.delete(booking.id);
+        return Response.json({success:true,deleted:true});
       }
 
       if(action==='admin_create'){
