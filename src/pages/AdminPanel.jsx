@@ -19,13 +19,14 @@ import MemberPortalPreview from '@/components/admin/MemberPortalPreview';
 import DirectoryAnalyticsDashboard from '@/components/admin/DirectoryAnalyticsDashboard';
 import DirectoryCategoryManager from '@/components/admin/DirectoryCategoryManager';
 import AnnouncementSettingsPanel from '@/components/admin/AnnouncementSettingsPanel';
+import ControlLibraryPanel from '@/components/admin/ControlLibraryPanel';
 import { directoryClubs } from '@/data/directorySeed';
 
 export default function AdminPanel() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const canAccessAdmin = user?.role === 'admin';
-  const allowedAdminTabs = ['approvals', 'preview', 'announcements', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'feedback', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
+  const allowedAdminTabs = ['approvals', 'preview', 'announcements', 'directory', 'directory-contacts', 'directory-players', 'directory-analytics', 'feedback', 'control-library', 'dupr', 'assets', 'users', 'players', 'matches', 'linking', 'invitations'];
   const requestedTab = searchParams.get('tab');
   const activeAdminTab = allowedAdminTabs.includes(requestedTab) ? requestedTab : 'approvals';
   const directoryFocus = searchParams.get('focus');
@@ -1721,6 +1722,7 @@ Brian`;
               <span className="ml-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{clubFeedbackRows.filter(row => row.status === 'new').length}</span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="control-library" className="text-xs gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Control Library</TabsTrigger>
           <TabsTrigger value="dupr" className="text-xs gap-1.5"><ShieldCheck className="w-3.5 h-3.5" /> DUPR UAT</TabsTrigger>
           <TabsTrigger value="assets" className="text-xs gap-1.5"><Upload className="w-3.5 h-3.5" /> Asset Uploader</TabsTrigger>
           <TabsTrigger value="users" className="text-xs gap-1.5"><Shield className="w-3.5 h-3.5" /> Users & Roles</TabsTrigger>
@@ -2886,7 +2888,12 @@ Brian`;
           </div>
         </TabsContent>
 
-        {/* ── ASSET UPLOADER TAB — RallyHub Super Admin only ── */}
+        {/* ── DEVELOPMENT & CONTROL LIBRARY — RallyHub Super Admin only ── */}
+        <TabsContent value="control-library" className="mt-4">
+          <ControlLibraryPanel />
+        </TabsContent>
+
+        {/* ── DUPR UAT TAB — RallyHub Super Admin only ── */}
         <TabsContent value="dupr" className="mt-4">
           <GlassCard className="p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
