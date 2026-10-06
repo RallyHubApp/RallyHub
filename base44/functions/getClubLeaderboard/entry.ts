@@ -34,30 +34,52 @@ Deno.serve(async (req) => {
     const clubId = String(user.active_club_id || '');
     if (!tenantId || !clubId) return Response.json({ error: 'No active RallyHub club context.' }, { status: 400 });
 
-    const [players, kotcAggregates, tournaments] = await Promise.all([
+    const [players, tournaments, kotcSessions, kotcParticipants, kotcMatches] = await Promise.all([
       base44.asServiceRole.entities.Player.filter({ tenant_id: tenantId, club_id: clubId }, 'full_name', 500),
-      base44.asServiceRole.entities.KotcPlayerAggregate.filter({ tenant_id: tenantId, club_id: clubId }, '-updated_at', 500),
       base44.asServiceRole.entities.Tournament.filter({ tenant_id: tenantId }, '-created_date', 500),
+      base44.asServiceRole.entities.KotcSession.filter({ tenant_id: tenantId, club_id: clubId }, '-created_date', 500),
+      base44.asServiceRole.entities.KotcSessionParticipant.filter({ tenant_id: tenantId, club_id: clubId }, 'display_name', 500),
+      base44.asServiceRole.entities.KotcMatch.filter({ tenant_id: tenantId, club_id: clubId, status: 'completed' }, '-created_date', 500),
     ]);
 
     const activePlayers = (players || []).filter((p:any) => String(p.status || 'Active').toLowerCase() === 'active');
     const byPlayer = new Map(activePlayers.map((p:any) => [String(p.id), p]));
     const stats:any = {};
 
-    // KOTC historical aggregate remains authoritative for KOTC history. Test/demo sessions
-    // are already excluded by the KOTC aggregate builder. New KOTC events can opt out via
-    // Tournament.counts_toward_leaderboard; legacy pre-flag KOTC history remains intact.
-    for (const a of (kotcAggregates || [])) {
-      const pid = String(a.player_id || '');
-      if (!byPlayer.has(pid) || Number(a.matches_played || 0) <= 0) continue;
-      const row = ensure(stats, pid);
-      row.wins += Number(a.wins || 0);
-      row.losses += Number(a.losses || 0);
-      row.matches_played += Number(a.matches_played || 0);
-      row.points_for += Number(a.points_for || 0);
-      row.points_against += Number(a.points_against || 0);
-      row.leaderboard_points += Number(a.wins || 0) * 2;
-      row.kotc_events = Number(a.sessions_played || 0);
+    // Universal Leaderboard v1.0: rebuild KOTC directly from genuine completed raw matches.
+    // Clare production baseline begins 17 Sep 2026. Demo/test/sandbox and opted-out events never count.
+    const tournamentById = new Map((tournaments || []).map((t:any) => [String(t.id), t]));
+    const validKotcSessions = (kotcSessions || []).filter((s:any) => {
+      const t:any = tournamentById.get(String(s.tournament_id || ''));
+      const eventDate = String(t?.start_date || s.scheduled_start || s.actual_first_round_start || s.created_date || '').slice(0,10);
+      return ['completed','finalised'].includes(String(s.status || '')) &&
+        s.demo_mode !== true &&
+        s.exclude_from_aggregates !== true &&
+        eventDate >= '2026-09-17' &&
+        t?.status === 'Completed' &&
+        t?.format === 'King of the Court' &&
+        t?.counts_toward_leaderboard === true &&
+        !/test|sandbox|demo/i.test(String(t?.name || '') + ' ' + String(t?.description || ''));
+    });
+    const validKotcIds = new Set(validKotcSessions.map((s:any) => String(s.id)));
+    const kpById = new Map((kotcParticipants || []).filter((p:any) =>
+      validKotcIds.has(String(p.session_id)) && p.player_id && (!p.participant_type || p.participant_type === 'member')
+    ).map((p:any) => [String(p.id), p]));
+    const kotcEventBySession = new Map(validKotcSessions.map((s:any) => [String(s.id), String(s.tournament_id)]));
+
+    for (const m of (kotcMatches || []).filter((m:any) => validKotcIds.has(String(m.session_id)))) {
+      const sides = [
+        { ids: m.team_a_participant_ids || [], result: m.winner_side === 'A' ? 'win' : 'loss', pf: m.team_a_score, pa: m.team_b_score },
+        { ids: m.team_b_participant_ids || [], result: m.winner_side === 'B' ? 'win' : 'loss', pf: m.team_b_score, pa: m.team_a_score },
+      ];
+      for (const side of sides) for (const participantId of side.ids) {
+        const p:any = kpById.get(String(participantId));
+        const pid = String(p?.player_id || '');
+        if (!pid || !byPlayer.has(pid)) continue;
+        const row = ensure(stats, pid);
+        row.events.add(kotcEventBySession.get(String(m.session_id)) || String(m.session_id));
+        addResult(row, side.result as any, side.pf, side.pa);
+      }
     }
 
     const eligible = (tournaments || []).filter((t:any) =>
@@ -108,7 +130,7 @@ Deno.serve(async (req) => {
       const challengeIds = new Set(challengeEvents.map((e:any) => String(e.id)));
       const cpById = new Map((clubParticipants || []).map((p:any) => [String(p.id), p]));
 
-      for (const m of (clubMatches || []).filter((m:any) => challengeIds.has(String(m.challenge_event_id)) && ['completed','draw','retired','forfeit'].includes(m.status))) {
+      for (const m of (clubMatches || []).filter((m:any) => challengeIds.has(String(m.challenge_event_id)) && m.is_showcase !== true && ['completed','draw','retired','forfeit'].includes(m.status))) {
         const sides = [
           { ids: m.club_a_participant_ids || [], result: m.winner === 'club_a' ? 'win' : m.winner === 'draw' ? 'draw' : 'loss', pf: m.score_a, pa: m.score_b },
           { ids: m.club_b_participant_ids || [], result: m.winner === 'club_b' ? 'win' : m.winner === 'draw' ? 'draw' : 'loss', pf: m.score_b, pa: m.score_a },
@@ -145,7 +167,7 @@ Deno.serve(async (req) => {
     const rows = Object.values(stats)
       .map((row:any) => {
         const p:any = byPlayer.get(String(row.player_id));
-        const eventsPlayed = Number(row.kotc_events || 0) + row.events.size;
+        const eventsPlayed = row.events.size;
         const diff = Number(row.points_for || 0) - Number(row.points_against || 0);
         return {
           player_id: row.player_id,
