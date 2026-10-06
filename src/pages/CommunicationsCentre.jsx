@@ -3,7 +3,7 @@ import {useAuth} from "@/lib/AuthContext";
 import {base44} from "@/api/base44Client";
 import {simulateCampaign} from "@/services/communications/simulator.js";
 import {LEGACY_APPROVED_TEMPLATES,legacyTemplateModules} from "@/services/communications/legacyApprovedTemplates.js";
-const tabs=["Overview","Compose","Audiences","Templates & Brand","Workflows","Polls & Feedback","Delivery","Consent","Analytics","Settings"];
+const tabs=["Overview","Compose","WhatsApp","Audiences","Templates & Brand","Workflows","Polls & Feedback","Delivery","Consent","Analytics","Settings"];
 const samplePeople=[{person_id:"p1",club:"clare",email:"player1@example.test"},{person_id:"p2",club:"clare",email:"player2@example.test"},{person_id:"p3",club:"galway",email:"player3@example.test"}];
 const starterWorkflows=[["membership-payment","Membership payment","Request → wait → check paid → remind → stop when paid"],["event-countdown","Event countdown","Registration → confirmation → pre-event reminder → results/follow-up"],["guest-session","Guest session journey","Request → approval → private invite → booking → host notification"]];
 const starterPolls=[["poll","Quick poll","Ask one or more choice questions"],["feedback","Feedback","Collect ratings and comments"],["suggestion","Suggestion box","Collect ideas or improvements"],["rsvp","RSVP / availability","Ask who can attend and when"]];
