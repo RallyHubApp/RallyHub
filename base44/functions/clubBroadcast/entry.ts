@@ -124,6 +124,32 @@ Deno.serve(async(req)=>{
       });
     }
 
+    if(action==='prepare_whatsapp'){
+      const title=clean(body.title,220),message=clean(body.message,8000),linkUrl=clean(body.linkUrl,1200);
+      if(!title||!message) return Response.json({error:'Title and message are required.'},{status:400});
+      const groupRows=await base44.asServiceRole.entities.ClubWhatsAppGroup.filter({tenant_id:tenantId,club_id:clubId,active:true},'sort_order',100);
+      const requestedGroup=clean(body.whatsappGroupKey,120);
+      const group=(groupRows||[]).find((g:any)=>String(g.group_key)===requestedGroup)||(groupRows||[]).find((g:any)=>g.is_default===true)||(groupRows||[])[0]||null;
+      return Response.json({success:true,whatsappText:whatsappText(title,message,linkUrl,club?.name||'Clare Pickleball'),whatsappGroupName:group?.display_name||'',whatsappGroupKey:group?.group_key||''});
+    }
+
+    if(action==='record_whatsapp_only'){
+      const title=clean(body.title,220),message=clean(body.message,8000),linkUrl=clean(body.linkUrl,1200);
+      if(!title||!message) return Response.json({error:'Title and message are required.'},{status:400});
+      const groupRows=await base44.asServiceRole.entities.ClubWhatsAppGroup.filter({tenant_id:tenantId,club_id:clubId,active:true},'sort_order',100);
+      const requestedGroup=clean(body.whatsappGroupKey,120);
+      const group=(groupRows||[]).find((g:any)=>String(g.group_key)===requestedGroup)||(groupRows||[]).find((g:any)=>g.is_default===true)||(groupRows||[])[0]||null;
+      const postedAt=nowIso();
+      const broadcast=await base44.asServiceRole.entities.ClubBroadcast.create({
+        tenant_id:tenantId,club_id:clubId,title,message,link_url:linkUrl||undefined,
+        audience_type:'all_active',audience_label:group?.display_name||'WhatsApp',eligible_member_count:0,linked_target_count:0,unlinked_count:0,target_count:0,
+        push_subscription_count:0,push_sent:0,push_failed:0,whatsapp_group_key:group?.group_key||'',whatsapp_group_name:group?.display_name||'',
+        whatsapp_status:'posted',whatsapp_posted_at:postedAt,whatsapp_posted_by_user_id:user.id,
+        created_by_user_id:user.id,created_by_name:user.full_name||user.display_name||user.email||'Admin',published_at:postedAt,status:'published'
+      });
+      return Response.json({success:true,broadcast:safeBroadcast(broadcast)});
+    }
+
     if(action==='publish'){
       const title=clean(body.title,220),message=clean(body.message,8000),linkUrl=clean(body.linkUrl,1200);
       if(!title||!message) return Response.json({error:'Title and message are required.'},{status:400});
