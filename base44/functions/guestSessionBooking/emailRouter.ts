@@ -99,9 +99,10 @@ function gmailRawEmail({
 export async function sendWithConfiguredEmailTransport(
   base44: any,
   scope: EmailScope,
-  message: { to: string; subject: string; textBody: string; htmlBody?: string | null },
+  message: { to: string; subject: string; textBody: string; htmlBody?: string | null; senderName?: string | null },
 ) {
   const config = await requireConfiguredEmailTransport(base44, scope);
+  const senderName = String(message.senderName || config.sender_name || 'RallyHub').trim();
 
   if (config.provider === 'gmail_connector') {
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('gmail');
@@ -116,7 +117,7 @@ export async function sendWithConfiguredEmailTransport(
         raw: gmailRawEmail({
           to: message.to,
           senderEmail: config.sender_email,
-          senderName: config.sender_name,
+          senderName,
           replyTo: config.reply_to,
           subject: message.subject,
           textBody: message.textBody,
@@ -144,7 +145,7 @@ export async function sendWithConfiguredEmailTransport(
         subject: message.subject,
         textBody: message.textBody,
         htmlBody: message.htmlBody || '',
-        senderName: config.sender_name,
+        senderName,
         replyTo: config.reply_to || config.sender_email,
       }),
     });
@@ -158,7 +159,7 @@ export async function sendWithConfiguredEmailTransport(
   if (config.provider === 'base44_core') {
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: message.to,
-      from_name: config.sender_name,
+      from_name: senderName,
       subject: message.subject,
       body: message.textBody,
     });
