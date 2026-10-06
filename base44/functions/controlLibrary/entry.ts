@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (user?.role !== "admin" || user?.kotc_role !== "super_admin") return Response.json({ error: "Forbidden: RallyHub Super Admin access required" }, { status: 403 });
+    if (!user || !(user.role === "admin" || user.kotc_role === "super_admin")) return Response.json({ error: "Forbidden: RallyHub Super Admin access required" }, { status: 403 });
     const body = await req.json().catch(() => ({}));
     if (body.action === "list") return Response.json({ documents: DOCUMENTS.map(({content, ...d}) => ({...d, size: content.length})), count: DOCUMENTS.length });
     if (body.action === "get") { const doc = DOCUMENTS.find(d => d.id === body.id); if (!doc) return Response.json({ error: "Document not found" }, { status: 404 }); return Response.json({ document: doc }); }
