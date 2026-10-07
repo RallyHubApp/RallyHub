@@ -62,7 +62,8 @@
         "sumup",
         "stripe",
         "square",
-        "cash"
+        "cash",
+        "none"
       ],
       "default": "sumup"
     },
