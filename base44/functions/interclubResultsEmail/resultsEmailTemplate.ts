@@ -32,11 +32,22 @@ function featureIcon(symbol:string,bg:string,fg:string){
   return `<table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td width="42" height="42" align="center" valign="middle" bgcolor="${bg}" style="width:42px;height:42px;background:${bg};border-radius:9px;font-family:Arial,Helvetica,sans-serif;font-size:24px;line-height:42px;font-weight:800;color:${fg}">${symbol}</td></tr></table>`;
 }
 
-export function interclubResultsHtml({event,name,url,origin,alertsUrl}:any){
+export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:any){
   const root=origin&&/^https?:\/\//i.test(origin)?String(origin).replace(/\/$/,''):'https://rallyhub.ie';
   const asset=(name:string)=>`${root}/email-templates/clare-interclub/${name}`;
+  const bodyAsset=(name:string)=>`${root}/email-templates/clare-pickleball-enriched/assets/interclub/${name}`;
   const directory=`${root}/directory`;
   const feedback=`${root}/contact`;
+  const photoGallery='https://drive.google.com/drive/folders/1ynGB1ER2ipB2p_q0LB-c7DteAFxtVYXf?usp=sharing';
+  const copy={
+    rallyhubHeading:esc(content?.rallyhubHeading||'More pickleball with RallyHub'),
+    rallyhubIntro:esc(content?.rallyhubIntro||'Get alerts for upcoming tournaments and events, and discover more places to play around Ireland.'),
+    alertsLabel:esc(content?.alertsLabel||'Never miss another pickleball tournament'),
+    directoryLabel:esc(content?.directoryLabel||'Explore the RallyHub Directory'),
+    feedbackLabel:esc(content?.feedbackLabel||'Send us your feedback'),
+    photosHeading:esc(content?.photosHeading||'Photos from today'),
+    photosText:esc(content?.photosText||'Open the shared photo folder to view photographs from the day.')
+  };
   const a=esc(event?.club_a_name||'Clare');
   const b=esc(event?.club_b_name||'Galway');
   const fn=esc(first(name));
@@ -94,10 +105,10 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl}:any){
   <tr><td style="padding:0;background:#fff">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed">
       <tr>
-        <td width="27%" align="left" valign="middle" style="width:27%;padding:0 2px 0 4px;background:#fff"><img class="header-logo" src="${asset('clare-logo-transparent.png')}" width="185" alt="Clare Pickleball logo" style="display:block;width:185px;max-width:100%;height:auto;border:0;margin:0 auto"></td>
-        <td width="43%" align="center" valign="middle" style="width:43%;padding:4px 0 3px;font-family:Arial,Helvetica,sans-serif;background:#fff">
-          <div class="header-title" style="font-size:39px;line-height:.89;letter-spacing:-1.2px;font-weight:900;color:#0755a8;text-transform:uppercase">${headerTitle}</div>
-          <div class="header-sub" style="margin-top:9px;font-size:14px;line-height:1;font-weight:900;letter-spacing:1.9px;color:#253c84">Your Personal Results</div>
+        <td width="24%" align="left" valign="middle" style="width:24%;padding:0 2px 0 4px;background:#fff"><img class="header-logo" src="${asset('clare-logo-transparent.png')}" width="165" alt="Clare Pickleball logo" style="display:block;width:165px;max-width:100%;height:auto;border:0;margin:0 auto"></td>
+        <td width="46%" align="center" valign="middle" style="width:46%;padding:7px 10px 5px 6px;font-family:Arial,Helvetica,sans-serif;background:#fff">
+          <div class="header-title" style="font-size:31px;line-height:.92;letter-spacing:-.7px;font-weight:900;color:#0755a8;text-transform:uppercase;text-align:center">${headerTitle}</div>
+          <div class="header-sub" style="margin-top:7px;font-size:12px;line-height:1;font-weight:700;letter-spacing:1.6px;color:#253c84;text-align:center">Your Personal Results</div>
         </td>
         <td width="30%" height="138" align="right" valign="top" style="width:30%;height:138px;padding:0;overflow:hidden;line-height:0;background:#fff"><img class="header-art" src="${asset('header-right-clean.png')}" width="180" height="138" alt="Pickleball" style="display:block;width:180px;max-width:none;height:138px;border:0;margin:0;object-fit:cover"></td>
       </tr>
@@ -113,13 +124,13 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl}:any){
   </td></tr>
 
   <tr><td align="center" style="padding:10px 25px 18px">
-    <table role="presentation" width="360" cellspacing="0" cellpadding="0" border="0" style="width:360px;max-width:100%;border-collapse:separate">
-      <tr><td bgcolor="#0755a8" style="background:#0755a8;border-radius:11px;box-shadow:0 6px 14px rgba(10,42,89,.15)">
+    <table role="presentation" width="236" cellspacing="0" cellpadding="0" border="0" style="width:236px;max-width:100%;border-collapse:separate">
+      <tr><td bgcolor="#0755a8" style="background:#0755a8;border-radius:8px;box-shadow:0 4px 10px rgba(7,85,168,.16)">
         <a href="${resultUrl}" target="_blank" style="display:block;text-decoration:none;color:#fff">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
-            <td width="62" align="center" valign="middle" style="width:62px;padding:11px 0"><div style="font-family:Arial,Helvetica,sans-serif;color:#ffd400;font-size:22px;line-height:22px;font-weight:900;letter-spacing:1px">▮▮▮</div></td>
-            <td valign="middle" style="padding:11px 8px;font-family:Arial,Helvetica,sans-serif;color:#fff;font-size:17px;line-height:20px;font-weight:800">View My Results</td>
-            <td width="34" align="center" valign="middle" style="width:34px;padding-right:9px;font-family:Arial,Helvetica,sans-serif;color:#fff;font-size:28px;line-height:28px;font-weight:300">›</td>
+            <td width="42" align="center" valign="middle" style="width:42px;padding:8px 0 8px 8px"><img src="${bodyAsset('results.png')}" width="24" alt="" style="display:block;width:24px;height:auto;border:0;margin:0 auto"></td>
+            <td valign="middle" style="padding:8px 4px;font-family:Arial,Helvetica,sans-serif;color:#fff;font-size:14px;line-height:17px;font-weight:800">View My Results</td>
+            <td width="26" align="center" valign="middle" style="width:26px;padding-right:7px;font-family:Arial,Helvetica,sans-serif;color:#fff;font-size:22px;line-height:22px;font-weight:300">›</td>
           </tr></table>
         </a>
       </td></tr>
@@ -129,7 +140,7 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl}:any){
   <tr><td style="padding:0 17px 10px">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#eef7ff" style="background:#eef7ff;border-radius:11px;border-collapse:separate">
       <tr>
-        <td width="64" valign="middle" align="center" style="width:64px;padding:13px 0 13px 10px">${featureIcon('★','#ffffff','#f2b800')}</td>
+        <td width="48" valign="middle" align="center" style="width:48px;padding:10px 0 10px 8px"><img src="${bodyAsset('trophy.png')}" width="30" alt="Trophy" style="display:block;width:30px;height:auto;border:0;margin:0 auto"></td>
         <td style="padding:13px 16px 13px 13px;font-family:Arial,Helvetica,sans-serif;color:#253c84">
           <div style="font-size:16px;line-height:1.2;font-weight:800;color:#0755a8;margin-bottom:4px">Looking forward to the return fixture</div>
           <div style="font-size:13px;line-height:1.45;font-weight:500">This is the start of what we hope will become a regular home-and-away Interclub fixture, with a perpetual trophy between ${a} and ${b}. The next meeting will be in Galway, and we’re already looking forward to playing you again.</div>
@@ -143,10 +154,10 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl}:any){
       <td class="stack-col" width="49%" valign="top" style="width:49%">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#eef7ff" style="background:#eef7ff;border-radius:11px;border-collapse:separate">
           <tr>
-            <td width="54" valign="top" align="center" style="width:54px;padding:14px 0 14px 8px">${featureIcon('●','#0755a8','#ffffff')}</td>
-            <td style="padding:13px 13px 14px 10px;font-family:Arial,Helvetica,sans-serif;color:#253c84">
-              <div style="font-size:15px;line-height:1.2;font-weight:800;color:#0755a8;margin-bottom:5px">Photos from today</div>
-              <div style="font-size:12px;line-height:1.45;font-weight:500">Photographs from the day will be shared via Clare Pickleball social media. We may share photographs we receive, and may also send a separate gallery link afterwards.</div>
+            <td width="42" valign="top" align="center" style="width:42px;padding:10px 0 10px 8px"><a href="${photoGallery}" target="_blank" style="display:block"><img src="${bodyAsset('camera.png')}" width="27" alt="Photos" style="display:block;width:27px;height:auto;border:0;margin:0 auto"></a></td>
+            <td style="padding:10px 11px 11px 8px;font-family:Arial,Helvetica,sans-serif;color:#253c84">
+              <div style="font-size:13px;line-height:16px;font-weight:800;color:#0755a8;margin-bottom:3px"><a href="${photoGallery}" target="_blank" style="color:#0755a8;text-decoration:none">${copy.photosHeading}</a></div>
+              <div style="font-size:10.5px;line-height:1.42;font-weight:500"><a href="${photoGallery}" target="_blank" style="color:#253c84;text-decoration:none">${copy.photosText}</a></div>
             </td>
           </tr>
         </table>
@@ -155,13 +166,13 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl}:any){
       <td class="stack-col" width="49%" valign="top" style="width:49%">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#eef7ff" style="background:#eef7ff;border-radius:11px;border-collapse:separate">
           <tr>
-            <td width="54" valign="top" align="center" style="width:54px;padding:14px 0 14px 8px">${featureIcon('R','#20a766','#ffffff')}</td>
-            <td style="padding:13px 13px 14px 10px;font-family:Arial,Helvetica,sans-serif;color:#253c84">
-              <div style="font-size:15px;line-height:1.2;font-weight:800;color:#0755a8;margin-bottom:5px">More pickleball with RallyHub</div>
-              <div style="font-size:12px;line-height:1.45;font-weight:500">Discover clubs, venues, sessions and events around Ireland, and keep up with the pickleball alerts that interest you.</div>
-              ${action(directory,'Explore the RallyHub Directory')}
-              ${action(alerts,'Get pickleball event alerts')}
-              ${action(feedback,'Send us your feedback')}
+            <td width="42" valign="top" align="center" style="width:42px;padding:10px 0 10px 8px"><img src="${bodyAsset('calendar.png')}" width="27" alt="More pickleball" style="display:block;width:27px;height:auto;border:0;margin:0 auto"></td>
+            <td style="padding:10px 10px 11px 8px;font-family:Arial,Helvetica,sans-serif;color:#253c84">
+              <div style="font-size:13px;line-height:16px;font-weight:800;color:#0755a8;margin-bottom:3px">${copy.rallyhubHeading}</div>
+              <div style="font-size:10.5px;line-height:1.42;font-weight:500">${copy.rallyhubIntro}</div>
+              ${action(alerts,copy.alertsLabel)}
+              ${action(directory,copy.directoryLabel)}
+              ${action(feedback,copy.feedbackLabel)}
             </td>
           </tr>
         </table>
