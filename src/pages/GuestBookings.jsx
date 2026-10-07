@@ -147,6 +147,21 @@ export default function GuestBookings(){
     finally{setBusy('')}
   };
 
+  const retractApproval=async(request)=>{
+    const reason=window.prompt(`Retract ${request.fullName}'s approval? Their existing private booking/payment link will stop working.\n\nReason for the audit record:`,'Session no longer available');
+    if(reason===null)return;
+    if(!reason.trim()){toast.error('Enter a reason for retracting the approval');return}
+    if(!window.confirm(`Retract the approval for ${request.fullName}?\n\nThis revokes the private invite and cancels any unpaid/incomplete booking. The request returns to Awaiting Approval so you can amend it and approve a different session.`))return;
+    setBusy(`retract-${request.id}`);
+    try{
+      const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_retract',requestId:request.id,reason:reason.trim()});
+      if(res.data?.error)throw new Error(res.data.error);
+      await Promise.all([qc.invalidateQueries({queryKey:['guest-access-requests']}),qc.invalidateQueries({queryKey:['guest-access-requests','pending-count']}),qc.invalidateQueries({queryKey:['guest-session-admin-list']})]);
+      toast.success('Approval retracted. The old private link is revoked and the request is back awaiting approval.');
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not retract approval')}
+    finally{setBusy('')}
+  };
+
   const approvedPrivateLink=async(request,{sendEmail=false,copyOnly=false}={})=>{
     setBusy(`${sendEmail?'resend':'link'}-${request.id}`);
     try{
@@ -415,6 +430,7 @@ export default function GuestBookings(){
                   <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>previewApprovedMessage(row.request,'email')}><Mail className="mr-1.5 h-3.5 w-3.5"/>Preview / resend email</Button>
                   <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>previewApprovedMessage(row.request,'whatsapp')}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>Preview WhatsApp</Button>
                   <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>approvedPrivateLink(row.request,{copyOnly:true})}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy private link</Button>
+                  <Button size="sm" variant="outline" className="text-destructive" disabled={busy===`retract-${row.request.id}`} onClick={()=>retractApproval(row.request)}>{busy===`retract-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Retract / amend</Button>
                 </>}
                 {row.kind==='approved_request'&&row.bookingId&&<>
                   <Button size="sm" variant="outline" onClick={()=>whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
