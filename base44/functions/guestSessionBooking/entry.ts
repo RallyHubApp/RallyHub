@@ -1561,7 +1561,9 @@ ${detailRow('Reason',reason)}
     const email=emailKey(body.email);
     const mobile=clean(body.mobile,50);
     const directRegistration=['none','cash'].includes(session.payment_method);
-    const invite=directRegistration?null:await inviteForSession(base44,session,body.inviteToken||'',email,mobile);
+    const suppliedInviteToken=clean(body.inviteToken||'',120);
+    const invite=suppliedInviteToken?await inviteForSession(base44,session,suppliedInviteToken,email,mobile):null;
+    if(suppliedInviteToken&&!invite)return Response.json({error:'This private invitation is invalid, expired, or does not match the email/mobile supplied.',approvalRequired:true},{status:403});
     if(!directRegistration&&!invite)return Response.json({error:'This guest booking requires club approval. Please request a guest place first, or use the private invitation link sent by Clare Pickleball.',approvalRequired:true},{status:403});
     const approvedRequest=invite?await guestRequestForInvite(base44,invite):null;
     const approvedIntakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
