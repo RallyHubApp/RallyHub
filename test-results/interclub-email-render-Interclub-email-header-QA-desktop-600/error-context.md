@@ -12,23 +12,68 @@
 # Error details
 
 ```
-Error: browserType.launch: Target page, context or browser has been closed
-Browser logs:
+Error: expect(locator).toHaveText(expected) failed
 
-<launching> /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-udaozw --remote-debugging-pipe --no-startup-window
-<launched> pid=8480
-[pid=8480][err] /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libglib-2.0.so.0: cannot open shared object file: No such file or directory
+Locator:  locator('.header-title').locator('span').first()
+Expected: "CLARE V GALWAY"
+Received: "Clare v Galway"
+Timeout:  3000ms
+
 Call log:
-  - <launching> /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-udaozw --remote-debugging-pipe --no-startup-window
-  - <launched> pid=8480
-  - [pid=8480][err] /root/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libglib-2.0.so.0: cannot open shared object file: No such file or directory
-  - [pid=8480] <gracefully close start>
-  - [pid=8480] <kill>
-  - [pid=8480] <will force kill>
-  - [pid=8480] exception while trying to kill process: Error: kill ESRCH
-  - [pid=8480] <process did exit: exitCode=127, signal=null>
-  - [pid=8480] starting temporary directories cleanup
-  - [pid=8480] finished temporary directories cleanup
-  - [pid=8480] <gracefully close end>
+  - Expect "toHaveText" locator('.header-title').locator('span').first() with timeout 3000ms
+  - waiting for locator('.header-title').locator('span').first()
+    10 × locator resolved to <span>Clare v Galway</span>
+       - unexpected value "Clare v Galway"
 
+```
+
+```yaml
+- text: Clare v Galway
+```
+
+# Test source
+
+```ts
+  1  | import {test,expect} from "@playwright/test";
+  2  | 
+  3  | const cases=[
+  4  |  {name:"desktop-600",width:600,height:900,minLogo:120},
+  5  |  {name:"mobile-390",width:390,height:900,minLogo:90},
+  6  |  {name:"mobile-320",width:320,height:900,minLogo:75}
+  7  | ];
+  8  | 
+  9  | for(const c of cases){
+  10 |  test(`Interclub email header QA ${c.name}`,async({page})=>{
+  11 |   await page.setViewportSize({width:c.width,height:c.height});
+  12 |   await page.goto("http://127.0.0.1:4173/email-qa/interclub.html",{waitUntil:"networkidle"});
+  13 |   const title=page.locator(".header-title");
+  14 |   const spans=title.locator("span");
+  15 |   await expect(spans).toHaveCount(2);
+> 16 |   await expect(spans.nth(0)).toHaveText("CLARE V GALWAY");
+     |                              ^ Error: expect(locator).toHaveText(expected) failed
+  17 |   await expect(spans.nth(1)).toHaveText("INTERCLUB");
+  18 | 
+  19 |   const metrics=await page.evaluate(()=>{
+  20 |    const q=s=>document.querySelector(s);
+  21 |    const box=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+  22 |    const logo=q(".header-logo"),art=q(".header-art"),title=q(".header-title"),rule=q(".header-lower-rule");
+  23 |    const lineBoxes=[...title.querySelectorAll("span")].map(box);
+  24 |    return {
+  25 |     logo:box(logo),art:box(art),title:box(title),rule:box(rule),lineBoxes,
+  26 |     titleClient:title.clientWidth,titleScroll:title.scrollWidth,
+  27 |     bodyScroll:document.documentElement.scrollWidth,
+  28 |     bodyClient:document.documentElement.clientWidth
+  29 |    };
+  30 |   });
+  31 | 
+  32 |   expect(metrics.logo.width).toBeGreaterThanOrEqual(c.minLogo);
+  33 |   expect(Math.abs(metrics.art.bottom-metrics.rule.top)).toBeLessThanOrEqual(1.5);
+  34 |   expect(metrics.art.height).toBeGreaterThanOrEqual(136);
+  35 |   expect(metrics.title.right).toBeLessThanOrEqual(metrics.art.left+1);
+  36 |   expect(metrics.lineBoxes[0].width).toBeLessThanOrEqual(metrics.titleClient+1);
+  37 |   expect(metrics.lineBoxes[1].width).toBeLessThanOrEqual(metrics.titleClient+1);
+  38 |   expect(metrics.bodyScroll).toBeLessThanOrEqual(metrics.bodyClient+1);
+  39 |   await page.screenshot({path:`test-results/interclub-email-${c.name}.png`,fullPage:true});
+  40 |  });
+  41 | }
 ```
