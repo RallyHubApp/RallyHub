@@ -12,5 +12,9 @@ for (const key of ["clare-logo","header-right-art","footer-top","contact-phone",
 assert.match(kotc,/enrichedBrandedEmailBodies\([^\n]+headerTitle:string,headerSubtitle:string/);
 assert.match(kotc,/escapeHtml\(headerTitle\|\|clubName\)/);
 assert.match(kotc,/KOTC_BASIC_HEADER_TITLE,KOTC_BASIC_HEADER_SUBTITLE/);
+assert.match(kotc,/function clareUtilityLinks\(/);
+assert.match(kotc,/View My Results/);
+assert.match(kotc,/width:424/);
+assert.match(kotc,/border-bottom:2px solid #f2cf33/);
 assert.match(standard,/tenant-wide shell, not a KOTC template/i);
 console.log("PASS clareEnrichedEmailShellGate: tenant shell dynamic, portable source present, manifest present, KOTC consumes dynamic header inputs");
