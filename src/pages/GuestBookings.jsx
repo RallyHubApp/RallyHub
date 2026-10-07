@@ -437,12 +437,14 @@ export default function GuestBookings(){
                   {row.sumupCheckoutUrl&&row.paymentStatus==='pending'&&<Button size="sm" variant="outline" onClick={()=>copy(row.sumupCheckoutUrl,'Payment link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy payment link</Button>}
                   {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend confirmation</Button>}
                   {row.paymentMethod==='sumup'&&!paid&&<Button size="sm" variant="outline" disabled={busy===`verify-${row.bookingId}`} onClick={()=>verifyPayment(row.bookingId)}>{busy===`verify-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
+                  {row.kind==='approved_request'&&!paid&&<Button size="sm" variant="outline" className="text-destructive" disabled={busy===`retract-${row.request.id}`} onClick={()=>retractApproval(row.request)}>{busy===`retract-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Retract / amend</Button>}
                 </>}
                 {row.kind==='booking'&&<>
                   <Button size="sm" variant="outline" onClick={()=>whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
                   {row.sumupCheckoutUrl&&row.paymentStatus==='pending'&&<Button size="sm" variant="outline" onClick={()=>copy(row.sumupCheckoutUrl,'Payment link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy payment link</Button>}
                   {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend confirmation</Button>}
                   {row.paymentMethod==='sumup'&&!paid&&<Button size="sm" variant="outline" disabled={busy===`verify-${row.bookingId}`} onClick={()=>verifyPayment(row.bookingId)}>{busy===`verify-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
+                  {row.kind==='approved_request'&&!paid&&<Button size="sm" variant="outline" className="text-destructive" disabled={busy===`retract-${row.request.id}`} onClick={()=>retractApproval(row.request)}>{busy===`retract-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Retract / amend</Button>}
                 </>}
               </div>
             </div>
