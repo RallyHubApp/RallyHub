@@ -706,7 +706,7 @@ function hostText(session:any,b:any){
   const pay=b.payment_method==='none'
     ? 'No payment required'
     : b.payment_method==='cash'
-      ? (b.payment_status==='paid'?'Cash €'+Number(b.amount).toFixed(2)+' paid':'€'+Number(b.amount).toFixed(2)+' cash due on arrival')
+      ? (b.payment_status==='paid'?'€'+Number(b.amount).toFixed(2)+' hall contribution paid in cash':'€'+Number(b.amount).toFixed(2)+' hall contribution payable in cash to the host')
       : '€'+Number(b.amount).toFixed(2)+' paid online';
   if(isMember){
     return `MEMBER BOOKING – ${session.venue_name}
@@ -776,7 +776,7 @@ async function sendConfirmations(base44:any,session:any,booking:any,force=false)
   const paymentLabel=booking.payment_method==='none'
     ? 'No payment required'
     : booking.payment_method==='cash'
-      ? (booking.payment_status==='paid'? `${amount} cash paid` : `${amount} cash on arrival`)
+      ? (booking.payment_status==='paid'? `${amount} hall contribution paid in cash` : `${amount} hall contribution payable in cash to the host`)
       : `${amount} paid online`;
 
   const isMember=booking.participant_type==='member';
@@ -828,7 +828,7 @@ ${isMember?'':`<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;
 
   const guestEligible=booking.email && (
     (booking.payment_method==='sumup' && ['paid','partially_refunded','refunded'].includes(booking.payment_status))
-    || (booking.payment_method==='cash' && booking.payment_status==='paid')
+    || (booking.payment_method==='cash' && ['cash_due','paid'].includes(booking.payment_status))
     || (booking.payment_method==='none' && booking.payment_status==='not_required')
   );
   if((force||!booking.guest_confirmation_sent_at) && guestEligible){
