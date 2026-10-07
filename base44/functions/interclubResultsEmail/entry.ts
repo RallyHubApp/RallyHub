@@ -9,6 +9,8 @@ const shortClub=(v:any)=>String(v??'').replace(/\s+Pickleball\s+Club$/i,'').repl
 const PHOTO_URL='https://drive.google.com/drive/folders/1ynGB1ER2ipB2p_q0LB-c7DteAFxtVYXf?usp=sharing';
 function editableUrl(v:any,fallback:string,allowPlayerToken=false){const raw=clean(v,1200);if(!raw)return fallback;if(allowPlayerToken&&raw==='{{PLAYER_ALERTS_URL}}')return raw;if(/^https?:\/\/[^\s]+$/i.test(raw))return raw;throw new Error('Enter a valid https:// link or choose one of the named destinations.');}
 function resultsContent(body:any,event:any){const c=body?.content||{},a=shortClub(event?.club_a_name||'Clare'),b=shortClub(event?.club_b_name||'Galway');return{
+ headerTitle:clean(c.headerTitle||`${a} v ${b}\nINTERCLUB`,60),
+ headerSubtitle:clean(c.headerSubtitle||'Your Personal Results',45),
  greeting:clean(c.greeting||'Hi {{FIRST_NAME}},',120),
  intro1:clean(c.intro1||`Thanks very much for taking part in the ${a} v ${b} Interclub. We hope you enjoyed the games and the chance to meet and play with people from both clubs.`,700),
  intro2:clean(c.intro2||'Your individual results are now available below. You can see your own games and scores, your overall performance, the final team result and both team podiums.',700),
