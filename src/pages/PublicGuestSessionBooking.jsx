@@ -211,7 +211,7 @@ export default function PublicGuestSessionBooking(){
         </div>
         <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs">
           <span className="rounded-full bg-primary/10 px-3 py-1.5 font-bold text-primary">{session.paymentMethod==='none'?'No payment required':`Guest fee €${Number(session.feeAmount||0).toFixed(2)}`}</span>
-          <span className="rounded-full bg-secondary px-3 py-1.5">{session.paymentMethod==='none'?'Registration + waiver only':session.paymentMethod==='cash'?'Cash on arrival':'Secure SumUp payment'}</span>
+          <span className="rounded-full bg-secondary px-3 py-1.5">{session.paymentMethod==='none'?'Registration + waiver only':session.paymentMethod==='cash'?`€${Number(session.feeAmount||0).toFixed(2)} hall contribution · cash to host`:'Secure SumUp payment'}</span>
           {data?.spotsRemaining!==null&&data?.spotsRemaining!==undefined&&<span className="rounded-full bg-secondary px-3 py-1.5">{data.spotsRemaining} places remaining</span>}
         </div>
         <p className="mt-4 text-xs text-muted-foreground">No RallyHub account is needed. This is a guest booking only and does not create club membership.</p>
@@ -293,9 +293,9 @@ export default function PublicGuestSessionBooking(){
           <p className="mt-1 text-xs text-muted-foreground">Your payment is processed securely by SumUp. RallyHub provides the booking system.</p>
         </div>}
         <Button type="submit" className="w-full min-h-12 text-base font-bold" disabled={submitting||checkingPayment||!form.photoVideoConsent||(!data?.guestIntakeCaptured&&(form.previousSports.length===0||typeof form.healthDeclarationApplies!=='boolean'||(form.healthDeclarationApplies&&!form.medicalNote.trim())))}>
-          {submitting?<><RefreshCw className="mr-2 h-4 w-4 animate-spin"/>Saving…</>:session.paymentMethod==='none'?'Confirm My Place':session.paymentMethod==='cash'?`Reserve Place · €${Number(session.feeAmount||0).toFixed(2)} Cash`:`Continue to SumUp · €${Number(session.feeAmount||0).toFixed(2)}`}
+          {submitting?<><RefreshCw className="mr-2 h-4 w-4 animate-spin"/>Saving…</>:session.paymentMethod==='none'?'Confirm My Place':session.paymentMethod==='cash'?`Confirm My Place · €${Number(session.feeAmount||0).toFixed(2)} Cash at Venue`:`Continue to SumUp · €${Number(session.feeAmount||0).toFixed(2)}`}
         </Button>
-        <p className="pb-8 text-center text-[11px] text-muted-foreground">{session.paymentMethod==='none'?'Your place is confirmed when this registration and waiver form is completed. No payment is required.':'Your place is confirmed after payment for online-payment sessions. For cash-on-arrival sessions, your place is reserved when this form is completed.'}</p>
+        <p className="pb-8 text-center text-[11px] text-muted-foreground">{session.paymentMethod==='none'?'Your place is confirmed when this registration and waiver form is completed. No payment is required.':'For cash-at-venue sessions, your place is confirmed when this form and waiver are completed. Please pay the hall contribution in cash to the host when you arrive.'}</p>
       </form>
     </div>
   </div>;
