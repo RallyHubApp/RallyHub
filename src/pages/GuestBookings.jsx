@@ -37,6 +37,7 @@ export default function GuestBookings(){
   const [expanded,setExpanded]=useState('');
   const [messagePreview,setMessagePreview]=useState(null);
   const [showArchived,setShowArchived]=useState(false);
+  const [approvalSelections,setApprovalSelections]=useState({});
 
   const {data:templateData={templates:[],sumupConfigured:false},isLoading:templatesLoading}=useQuery({
     queryKey:['guest-session-templates'],
@@ -121,11 +122,11 @@ export default function GuestBookings(){
   };
 
   const approveRequest=async(request)=>{
-    const date=window.prompt(`Approve ${request.fullName} for which ${request.day}?`,request.nextDate||'');
-    if(date===null)return;
+    const sessionId=approvalSelections[request.id]||request.sessionId||'';
+    if(!sessionId){toast.error('Choose the session you are offering');return}
     setBusy(`approve-${request.id}`);
     try{
-      const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_approve',requestId:request.id,sessionDate:date.trim()});
+      const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_approve',requestId:request.id,sessionId});
       if(res.data?.error)throw new Error(res.data.error);
       copy(res.data.magicInviteUrl,res.data.emailSent?'Guest approved – private link emailed and copied':'Guest approved – private link copied');
       await Promise.all([qc.invalidateQueries({queryKey:['guest-access-requests']}),qc.invalidateQueries({queryKey:['guest-access-requests','pending-count']}),qc.invalidateQueries({queryKey:['guest-session-admin-list']})]);
