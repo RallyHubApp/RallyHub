@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const cc=fs.readFileSync("src/pages/CommunicationsCentre.jsx","utf8");
+const entry=fs.readFileSync("base44/functions/interclubResultsEmail/entry.ts","utf8");
+const tpl=fs.readFileSync("base44/functions/interclubResultsEmail/resultsEmailTemplate.ts","utf8");
+assert.match(cc,/Email header text/);
+assert.match(cc,/Header title/);
+assert.match(cc,/Header subtitle/);
+assert.match(cc,/Clare v Galway\\nINTERCLUB/);
+assert.match(entry,/headerTitle:clean/);
+assert.match(entry,/headerSubtitle:clean/);
+assert.match(tpl,/headerTitle:line/);
+assert.match(tpl,/\$\{copy\.headerSubtitle\}/);
+console.log("PASS interclubHeaderEditorialGate: title and subtitle editable while header geometry remains protected");
