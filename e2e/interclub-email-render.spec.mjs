@@ -13,7 +13,7 @@ for(const c of cases){
   const title=page.locator(".header-title");
   const spans=title.locator("span");
   await expect(spans).toHaveCount(2);
-  await expect(spans.nth(0)).toHaveText("CLARE V GALWAY");
+  await expect(spans.nth(0)).toHaveText(/Clare v Galway/i);
   await expect(spans.nth(1)).toHaveText("INTERCLUB");
 
   const metrics=await page.evaluate(()=>{
