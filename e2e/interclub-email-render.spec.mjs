@@ -37,7 +37,7 @@ for(const c of cases){
   expect(Math.abs(m.artCell.width/shellWidth-.30)).toBeLessThan(.025);
 
   expect(m.logo.width/m.logoCell.width).toBeGreaterThan(.9);
-  expect(Math.abs((m.art.width/m.art.height)-(180/138))).toBeLessThan(.06);
+  expect(Math.abs((m.art.width/m.art.height)-(324/231))).toBeLessThan(.02);
   expect(Math.abs(m.art.bottom-m.rule.top)).toBeLessThanOrEqual(1.5);
   expect(m.title.left).toBeGreaterThanOrEqual(m.titleCell.left-1);
   expect(m.title.right).toBeLessThanOrEqual(m.titleCell.right+1);
