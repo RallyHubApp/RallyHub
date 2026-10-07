@@ -294,12 +294,13 @@ Deno.serve(async(req)=>{
 
     if(action==='admin_approve'){
       const id=clean(body.requestId,100);
-      const date=clean(body.sessionDate,20);
-      if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'Choose the approved session date.'},{status:400});
       const row=(await base44.asServiceRole.entities.GuestBookingRequest.filter({id,tenant_id:tenantId,club_id:clubId},'-submitted_at',5))?.[0];
       if(!row)return Response.json({error:'Guest request not found.'},{status:404});
       if(row.status!=='pending_approval')return Response.json({error:'This guest request has already been decided.'},{status:409});
-      const {session,venue}=await sessionFromDirectory(base44,club,row.preferred_session_key);
+      const approvedSessionKey=clean(body.sessionId||row.preferred_session_key,160);
+      const {session,venue}=await sessionFromDirectory(base44,club,approvedSessionKey);
+      const date=clean(body.sessionDate,20)||nextDateForDay(String(session.day||''),String(session.start||''));
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'RallyHub could not determine the next session date.'},{status:400});
       if(weekday(date)!==String(session.day||''))return Response.json({error:`That date is not a ${session.day}.`},{status:400});
       const payment=/cash/i.test(String(session.paymentMethod||''))?'cash':'sumup';
       const price=Number(session.price||0)||(payment==='cash'?5:5.5);
@@ -309,7 +310,7 @@ Deno.serve(async(req)=>{
       }
       const now=new Date();
       const invite=await base44.asServiceRole.entities.AccessInviteToken.create({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',token:inviteToken(),status:'active',session_link_id:guestSession.id,access_request_id:row.id,intended_email:row.email,intended_mobile:row.mobile||'',intended_name:row.full_name,expires_at:new Date(now.getTime()+7*24*60*60*1000).toISOString(),created_by_user_id:user.id,created_at:now.toISOString(),notes:`Approved guest request ${row.id} · bound to email and mobile where available`});
-      await base44.asServiceRole.entities.GuestBookingRequest.update(row.id,{status:'approved',approved_at:now.toISOString(),approved_session_link_id:guestSession.id,admin_notes:`Approved for ${date} · ${session.day} ${session.start}`});
+      await base44.asServiceRole.entities.GuestBookingRequest.update(row.id,{status:'approved',approved_at:now.toISOString(),approved_session_link_id:guestSession.id,preferred_session_key:String(session.id),preferred_venue_key:String(venue.id),admin_notes:`Approved for ${date} · ${session.day} ${session.start} · ${venue.name}`});
       const magicInviteUrl=`https://rallyhub.ie/book/${encodeURIComponent(guestSession.token)}?invite=${encodeURIComponent(invite.token)}`;
       let emailSent=false;
       try{await sendApprovedGuestInvite(base44,club,row,session,venue,date,magicInviteUrl);emailSent=true}catch(e){console.error('approved guest invitation email failed',e?.message||e)}
