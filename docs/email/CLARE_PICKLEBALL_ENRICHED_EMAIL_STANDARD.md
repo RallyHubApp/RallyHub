@@ -9,7 +9,7 @@
 
 ## 1. Architectural rule
 
-The Clare Pickleball Enriched Email is a **tenant-wide shell**, not a KOTC template.
+The Clare Pickleball Enriched Email is a tenant-wide shell, not a KOTC template.
 
 The shell consists of:
 1. fixed Clare Pickleball header structure;
