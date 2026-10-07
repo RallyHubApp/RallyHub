@@ -11,7 +11,7 @@ export function mergeTemplate(template,data={}){
 export function normaliseBrandKit(kit={}){
   return {
     name:kit.name||"RallyHub",
-    logo:kit.logos?.primary||"",
+    logo:kit.channel_overrides?.email?.header_style==="rallyhub-light"?"https://rallyhub.ie/assets/rallyhub-logo-transparent.png":(kit.logos?.primary||""),
     primary:kit.colours?.primary||"#17324D",
     secondary:kit.colours?.secondary||"#FFFFFF",
     accent:kit.colours?.accent||"#2F855A",
