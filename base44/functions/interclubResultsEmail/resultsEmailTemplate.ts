@@ -104,9 +104,9 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
     @media only screen and (max-width:600px){
       .email-shell{width:100%!important;max-width:100%!important}
       .email-pad{padding-left:18px!important;padding-right:18px!important}
-      .header-title{font-size:20px!important;line-height:1.02!important;letter-spacing:-.2px!important}
-      .header-sub{font-size:9px!important;margin-top:5px!important;letter-spacing:1px!important}
-      .header-logo{width:92px!important;max-width:100%!important}
+      .header-title{font-size:18px!important;line-height:1.02!important;letter-spacing:-.25px!important}
+      .header-sub{font-size:9px!important;margin-top:5px!important;letter-spacing:.9px!important}
+      .header-logo{width:84px!important;max-width:100%!important}
       .header-art{width:100%!important;max-width:100%!important;height:100px!important;object-fit:cover!important}
       .stack-col{display:block!important;width:100%!important}
       .stack-gap{display:block!important;height:10px!important;width:100%!important}
@@ -122,9 +122,9 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
   <tr><td style="padding:0;background:#fff">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed">
       <tr>
-        <td width="21%" align="left" valign="middle" style="width:21%;padding:0 2px 0 4px;background:#fff"><img class="header-logo" src="${asset('clare-logo-transparent.png')}" width="135" alt="Clare Pickleball logo" style="display:block;width:135px;max-width:100%;height:auto;border:0;margin:0 auto"></td>
-        <td width="54%" align="center" valign="middle" style="width:54%;padding:7px 5px 5px;font-family:Arial,Helvetica,sans-serif;background:#fff;overflow:hidden">
-          <div class="header-title" style="font-size:23px;line-height:1.02;letter-spacing:-.35px;font-weight:900;color:#0755a8;text-transform:uppercase;text-align:center;white-space:normal">${headerTitle}</div>
+        <td width="19%" align="left" valign="middle" style="width:19%;padding:0 2px 0 4px;background:#fff"><img class="header-logo" src="${asset('clare-logo-transparent.png')}" width="135" alt="Clare Pickleball logo" style="display:block;width:135px;max-width:100%;height:auto;border:0;margin:0 auto"></td>
+        <td width="56%" align="center" valign="middle" style="width:56%;padding:7px 4px 5px;font-family:Arial,Helvetica,sans-serif;background:#fff;overflow:hidden">
+          <div class="header-title" style="font-size:22px;line-height:1.02;letter-spacing:-.4px;font-weight:900;color:#0755a8;text-transform:uppercase;text-align:center;white-space:normal">${headerTitle}</div>
           <div class="header-sub" style="margin-top:6px;font-size:11px;line-height:1;font-weight:700;letter-spacing:1.3px;color:#253c84;text-align:center;white-space:nowrap">${copy.headerSubtitle}</div>
         </td>
         <td width="25%" height="126" align="right" valign="top" style="width:25%;height:126px;padding:0;overflow:hidden;line-height:0;background:#fff"><img class="header-art" src="${asset('header-right-clean.png')}" width="150" height="126" alt="Pickleball" style="display:block;width:150px;max-width:100%;height:126px;border:0;margin:0 0 0 auto;object-fit:cover"></td>
