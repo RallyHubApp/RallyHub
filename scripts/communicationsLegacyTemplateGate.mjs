@@ -6,6 +6,6 @@ assert.match(source,/Preview, test and live send must all use this file/);
 assert.match(source,/View My Results/);
 assert.match(source,/Looking forward to the return fixture/);
 assert.match(source,/Photos from today/);
-assert.match(source,/More pickleball with RallyHub/);
+assert.match(source,/More pickleball with RallyHub/);assert.match(source,/Never miss another pickleball tournament/);assert.match(source,/drive\.google\.com\/drive\/folders\/1ynGB1ER2ipB2p_q0LB-c7DteAFxtVYXf/);assert.match(source,/interclub\/camera\.png/);assert.match(source,/interclub\/calendar\.png/);
 assert.match(source,/utilityLinks\(resultUrl,root\)/);
 console.log("PASS communicationsLegacyTemplateGate: Interclub approved renderer retained under protected Clare enriched shell");
