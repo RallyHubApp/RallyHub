@@ -124,7 +124,8 @@
         "sumup",
         "stripe",
         "square",
-        "cash"
+        "cash",
+        "none"
       ]
     },
     "payment_status": {
@@ -136,7 +137,8 @@
         "failed",
         "expired",
         "partially_refunded",
-        "refunded"
+        "refunded",
+        "not_required"
       ],
       "default": "pending"
     },
