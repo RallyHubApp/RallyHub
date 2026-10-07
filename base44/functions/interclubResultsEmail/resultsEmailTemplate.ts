@@ -107,7 +107,7 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
       .header-title{font-size:13px!important;line-height:1.03!important;letter-spacing:-.1px!important}
       .header-sub{font-size:8px!important;margin-top:4px!important;letter-spacing:.7px!important}
       .header-logo{width:128px!important;max-width:100%!important}
-      .header-art{width:100%!important;max-width:none!important;height:112px!important;object-fit:cover!important}
+      .header-art{width:100%!important;max-width:none!important;height:138px!important;object-fit:cover!important}
       .stack-col{display:block!important;width:100%!important}
       .stack-gap{display:block!important;height:10px!important;width:100%!important}
     }
@@ -131,7 +131,7 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
       </tr>
     </table>
   </td></tr>
-  <tr><td style="height:6px;background:#0755a8;border-bottom:2px solid #f2cf33;font-size:0;line-height:0">&nbsp;</td></tr>
+  <tr><td class="header-lower-rule" style="height:6px;background:#0755a8;border-bottom:2px solid #f2cf33;font-size:0;line-height:0">&nbsp;</td></tr>
 
   <!-- INTERCLUB BODY -->
   <tr><td class="email-pad" style="padding:20px 25px 8px;font-family:Arial,Helvetica,sans-serif;color:#253c84;font-size:15px;line-height:1.5;font-weight:500">
