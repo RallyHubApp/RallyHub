@@ -146,7 +146,7 @@ export default function PublicGuestSessionBooking(){
       <div className="glass rounded-2xl p-6 sm:p-8 text-center">
         <RallyHubPublicBrand club={data?.clubBrand||CLARE_FALLBACK_BRAND} clubFirst pageLabel="Session Booking"/>
         <CheckCircle2 className="mx-auto mt-7 h-12 w-12 text-primary"/>
-        <h1 className="mt-4 text-2xl font-black">{done.type==='cash'?'Place reserved':'Booking confirmed'}</h1>
+        <h1 className="mt-4 text-2xl font-black">Booking confirmed</h1>
         <p className="mt-3 text-sm text-muted-foreground">{done.message||(done.booking?.participantType==='member'?'Your member session booking is confirmed.':'Your guest booking is confirmed.')}</p>
         <div className="mt-5 rounded-xl border border-primary/20 bg-primary/5 p-4 text-left text-sm">
           <p className="font-black">{niceDate(done.session?.sessionDate||session.sessionDate)} · {done.session?.startTime||session.startTime}</p>
@@ -157,7 +157,7 @@ export default function PublicGuestSessionBooking(){
             <MapPin className="h-4 w-4"/> View in Google Maps <ExternalLink className="h-3.5 w-3.5"/>
           </a>
         </div>
-        <p className="mt-5 text-xs text-muted-foreground">{done.type==='cash'?'The club organiser has been notified of your booking.':'A confirmation email has been sent.'} Cancellations made less than 24 hours before the session are non-refundable.</p>
+        <p className="mt-5 text-xs text-muted-foreground">A confirmation email has been sent and the session host/club organiser has been notified. Cancellations made less than 24 hours before the session are non-refundable.</p>
       </div>
     </div>
   </div>;
