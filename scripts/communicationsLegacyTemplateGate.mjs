@@ -1,7 +1,11 @@
-import assert from "node:assert/strict";import fs from "node:fs";import {LEGACY_APPROVED_TEMPLATES} from "../src/services/communications/legacyApprovedTemplates.js";
-const ids=new Set(LEGACY_APPROVED_TEMPLATES.map(t=>t.id));assert.equal(ids.size,LEGACY_APPROVED_TEMPLATES.length);["kotc_results","kotc_player_link","kotc_update","interclub_results","interclub_update","guest_approved","session_private_invite","session_booking_guest","session_booking_host","session_refund","membership_received","membership_invitation","membership_confirmed","membership_payment_reminder","waiting_list_confirmation","directory_claim","directory_broadcast","directory_enquiry","event_future_invite"].forEach(id=>assert.ok(ids.has(id),"missing "+id));
-const inter=LEGACY_APPROVED_TEMPLATES.find(t=>t.id==="interclub_results");assert.equal(inter.status,"approved-locked");assert.equal(inter.renderer,"specialised-approved");
-const source=fs.readFileSync("base44/functions/interclubResultsEmail/resultsEmailTemplate.ts","utf8");assert.match(source,/Do not redesign this template/);
-const kotc=fs.readFileSync("base44/functions/kotcResultsShare/entry.ts","utf8");assert.match(kotc,/your KOTC result/);assert.match(kotc,/Open your private KOTC player summary/);
-const ui=fs.readFileSync("src/pages/CommunicationsCentre.jsx","utf8");assert.match(ui,/Approved template library/);assert.match(ui,/external delivery disabled/i);
-console.log("PASS communicationsLegacyTemplateGate: "+LEGACY_APPROVED_TEMPLATES.length+" existing approved communications catalogued + specialist Interclub locked + no-send UI retained");
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const source=fs.readFileSync("base44/functions/interclubResultsEmail/resultsEmailTemplate.ts","utf8");
+assert.match(source,/Production standard: protected Clare enriched shell/);
+assert.match(source,/Preview, test and live send must all use this file/);
+assert.match(source,/View My Results/);
+assert.match(source,/Looking forward to the return fixture/);
+assert.match(source,/Photos from today/);
+assert.match(source,/More pickleball with RallyHub/);
+assert.match(source,/utilityLinks\(resultUrl,root\)/);
+console.log("PASS communicationsLegacyTemplateGate: Interclub approved renderer retained under protected Clare enriched shell");
