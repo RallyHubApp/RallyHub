@@ -1,6 +1,41 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
+const SPOND_API_BASE='https://api.spond.com/core/v1';
+async function spondLogin(){
+  const email=Deno.env.get('SPOND_EMAIL'),password=Deno.env.get('SPOND_PASSWORD');
+  if(!email||!password)return null;
+  const response=await fetch(`${SPOND_API_BASE}/auth2/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+  if(!response.ok)return null;
+  const data=await response.json();
+  return data.accessToken?.token||data.loginToken||data.token||null;
+}
+async function spondGet(path:string,token:string){
+  const response=await fetch(`${SPOND_API_BASE}${path}`,{headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'}});
+  if(!response.ok)throw new Error(`Spond API error ${response.status}`);
+  return response.json();
+}
+async function applySpondAvailability(base44:any,club:any,sessions:any[]){
+  try{
+    const token=await spondLogin();
+    if(!token)return sessions;
+    const bindings=await base44.asServiceRole.entities.SpondSessionBinding.filter({tenant_id:club.tenant_id,club_id:club.id,listing_slug:club.slug,active:true},'directory_session_key',100);
+    const byKey=new Map((bindings||[]).map((b:any)=>[String(b.directory_session_key||''),b]));
+    return await Promise.all(sessions.map(async(session:any)=>{
+      const binding=byKey.get(String(session.id));
+      if(!binding?.spond_event_id)return session;
+      try{
+        const event=await spondGet(`/sponds/${encodeURIComponent(String(binding.spond_event_id))}`,token);
+        const acceptedCount=Array.isArray(event?.responses?.acceptedIds)?event.responses.acceptedIds.length:0;
+        const waitingCount=(event?.responses?.waitinglistIds||event?.responses?.waitingListIds||[]).length||0;
+        const capacity=Number(event?.maxAccepted||event?.maxParticipants||session.capacity||0)||null;
+        const full=!!capacity&&acceptedCount>=capacity;
+        return {...session,capacity,acceptedCount,waitingCount,spondStatus:full?(waitingCount>0?'waiting_list':'full'):'available',full};
+      }catch{return session}
+    }));
+  }catch{return sessions}
+}
+
 function clean(v:any,max=250){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
 function emailKey(v:any){return clean(v,200).toLowerCase()}
 function mobileKey(v:any){return clean(v,50).replace(/[^0-9]/g,'')}
@@ -83,14 +118,18 @@ function publicOptions(directory:any,config:any){
   return {venues,sessions};
 }
 
-function nextDateForDay(day:string){
+function nextDateForDay(day:string,start='23:59'){
   const names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const target=names.indexOf(day);
-  if(target<0)return '';
-  const now=new Date();
-  const today=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate(),12));
-  let diff=(target-today.getUTCDay()+7)%7;
-  if(diff===0)diff=7;
+  const parts=new Intl.DateTimeFormat('en-IE',{timeZone:'Europe/Dublin',weekday:'long',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
+  const get=(type:string)=>parts.find(p=>p.type===type)?.value||'';
+  const target=names.indexOf(day),todayIndex=names.indexOf(get('weekday'));
+  if(target<0||todayIndex<0)return '';
+  let diff=(target-todayIndex+7)%7;
+  const nowMinutes=Number(get('hour')||0)*60+Number(get('minute')||0);
+  const [hh,mm]=String(start||'23:59').split(':').map(Number);
+  const startMinutes=(Number.isFinite(hh)?hh:23)*60+(Number.isFinite(mm)?mm:59);
+  if(diff===0&&nowMinutes>=startMinutes)diff=7;
+  const today=new Date(`${get('year')}-${get('month')}-${get('day')}T12:00:00Z`);
   today.setUTCDate(today.getUTCDate()+diff);
   return today.toISOString().slice(0,10);
 }
@@ -116,6 +155,7 @@ Deno.serve(async(req)=>{
       const [directory,config]=await Promise.all([loadDirectory(base44,clubSlug),loadConfig(base44,club.tenant_id,club.id)]);
       if(!config)return Response.json({error:'Guest requests are not currently enabled for this club.'},{status:404});
       const options=publicOptions(directory,config);
+      options.sessions=await applySpondAvailability(base44,club,options.sessions);
       return Response.json({success:true,club:{id:club.id,name:club.name,slug:club.slug,logo_url:club.logo_url||'',primary_colour:club.primary_colour||'',secondary_colour:club.secondary_colour||''},minimumAge:Number(config.minimum_age||18),adultsOnly:config.adults_only!==false,requireDuprForExperienced:config.require_dupr_for_experienced===true,requireHomeClubForExperienced:config.require_home_club_for_experienced===true,...options});
     }
 
@@ -125,6 +165,7 @@ Deno.serve(async(req)=>{
       const [directory,config]=await Promise.all([loadDirectory(base44,clubSlug),loadConfig(base44,club.tenant_id,club.id)]);
       if(!config)return Response.json({error:'Guest requests are not currently enabled for this club.'},{status:404});
       const options=publicOptions(directory,config);
+      options.sessions=await applySpondAvailability(base44,club,options.sessions);
       const fullName=clean(body.fullName,120);
       const email=emailKey(body.email);
       const mobile=clean(body.mobile,50);
@@ -146,6 +187,12 @@ Deno.serve(async(req)=>{
       if(!selected)return Response.json({error:'Please choose a current Clare Pickleball session.'},{status:400});
       if(experience==='beginner'&&!selected.beginnerEligible)return Response.json({error:'That session is not available to beginner guests. Please choose one of the beginner options shown.'},{status:400});
       if(experience==='experienced'&&!selected.experiencedEligible)return Response.json({error:'That session is not available for guest requests.'},{status:400});
+      if(selected.full){
+        const alternative=options.sessions.find((s:any)=>s.id!==selected.id&&s.venueId===selected.venueId&&s.day===selected.day&&!s.full&&((experience==='beginner'&&s.beginnerEligible)||(experience==='experienced'&&s.experiencedEligible)));
+        const status=selected.spondStatus==='waiting_list'?'full and Spond is taking a waiting list':'full';
+        const suggestion=alternative?` The ${alternative.start}${alternative.end?`–${alternative.end}`:''} session at ${alternative.venueName} is currently available.`:'';
+        return Response.json({error:`The ${selected.start}${selected.end?`–${selected.end}`:''} session at ${selected.venueName} is ${status}.${suggestion}`,code:'SESSION_FULL',alternativeSessionId:alternative?.id||''},{status:409});
+      }
       if(experience==='experienced'&&config.require_home_club_for_experienced===true&&!homeClub)return Response.json({error:'Please enter the club you normally play with.'},{status:400});
       if(experience==='experienced'&&config.require_dupr_for_experienced===true&&!duprId)return Response.json({error:'Please enter your DUPR details, or enter “No DUPR” if you do not have one.'},{status:400});
       if(experience==='beginner'&&!sports.length)return Response.json({error:'Please tell us whether you have previously played any of the listed sports. You can choose more than one, or choose “None of these”.'},{status:400});
@@ -194,7 +241,7 @@ Deno.serve(async(req)=>{
         const link=(sessionLinks||[]).find((x:any)=>String(x.id)===String(r.approved_session_link_id||''));
         const booking=(bookings||[]).find((b:any)=>String(b.session_link_id)===String(r.approved_session_link_id||'')&&(emailKey(b.email||'')===emailKey(r.email||'')||mobileKey(b.mobile||'')===mobileKey(r.mobile||'')));
         const invite=(invites||[]).find((i:any)=>String(i.access_request_id||'')===String(r.id)&&i.status==='active'&&(!i.expires_at||Date.parse(i.expires_at)>nowMs));
-        return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:link?.venue_name||s?.venueName||r.preferred_venue_key,day:link?.weekday||s?.day||'',start:link?.start_time||s?.start||'',end:link?.end_time||s?.end||'',nextDate:s?nextDateForDay(s.day):'',submittedAt:r.submitted_at,approvedAt:r.approved_at||'',approvedSessionLinkId:r.approved_session_link_id||'',approvedSessionDate:link?.session_date||'',privateInviteUrl:invite&&link?`https://rallyhub.ie/book/${encodeURIComponent(link.token)}?invite=${encodeURIComponent(invite.token)}`:'',inviteExpiresAt:invite?.expires_at||'',bookingId:booking?.id||'',bookingStatus:booking?.booking_status||'',paymentStatus:booking?.payment_status||'',amount:booking?.amount??link?.fee_amount??null,paymentMethod:booking?.payment_method||link?.payment_method||'',sumupCheckoutUrl:booking?.sumup_checkout_url||''};
+        return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:link?.venue_name||s?.venueName||r.preferred_venue_key,day:link?.weekday||s?.day||'',start:link?.start_time||s?.start||'',end:link?.end_time||s?.end||'',nextDate:s?nextDateForDay(s.day,s.start):'',submittedAt:r.submitted_at,approvedAt:r.approved_at||'',approvedSessionLinkId:r.approved_session_link_id||'',approvedSessionDate:link?.session_date||'',privateInviteUrl:invite&&link?`https://rallyhub.ie/book/${encodeURIComponent(link.token)}?invite=${encodeURIComponent(invite.token)}`:'',inviteExpiresAt:invite?.expires_at||'',bookingId:booking?.id||'',bookingStatus:booking?.booking_status||'',paymentStatus:booking?.payment_status||'',amount:booking?.amount??link?.fee_amount??null,paymentMethod:booking?.payment_method||link?.payment_method||'',sumupCheckoutUrl:booking?.sumup_checkout_url||''};
       })});
     }
 
