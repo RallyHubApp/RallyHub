@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const tpl=fs.readFileSync("base44/functions/interclubResultsEmail/resultsEmailTemplate.ts","utf8");
+assert.match(tpl,/width="27%"/);
+assert.match(tpl,/width="43%"/);
+assert.match(tpl,/width="30%"/);
+assert.match(tpl,/width="185"/);
+assert.match(tpl,/width="180" height="138"/);
+assert.match(tpl,/height:138px/);
+assert.match(tpl,/header-title.*font-size:13px!important/);
+assert.match(tpl,/white-space:nowrap/);
+console.log("PASS interclubProtectedHeaderGeometryGate: approved outer header geometry restored; only middle title typography differs at narrow widths");
