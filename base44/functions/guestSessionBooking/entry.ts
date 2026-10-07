@@ -225,11 +225,12 @@ async function memberDirectorySessions(base44:any,club:any){
   return (directory.sessions||[]).map((s:any)=>{
     const v=(directory.venues||[]).find((x:any)=>String(x.id)===String(s.venueId));
     if(!v)return null;
-    const payment=/cash/i.test(String(s.paymentMethod||''))?'cash':'sumup';
+    const rawPayment=String(s.paymentMethod||'').toLowerCase();
     const price=Number(s.price);
+    const payment=/none|free|no payment/.test(rawPayment)||price===0?'none':/cash/i.test(rawPayment)?'cash':'sumup';
     return {
       key:String(s.id),directorySessionId:String(s.id),venueKey:String(v.id),weekday:String(s.day||''),
-      start:String(s.start||''),end:String(s.end||''),fee:Number.isFinite(price)&&price>0?price:(payment==='cash'?5:5.5),
+      start:String(s.start||''),end:String(s.end||''),fee:payment==='none'?0:(Number.isFinite(price)&&price>0?price:(payment==='cash'?5:5.5)),
       payment,label:`${s.day||''} ${s.start||''}`.trim(),level:String(s.level||''),host:String(s.host||''),
       capacity:Number(s.capacity||0)||null,
       venueName:String(v.name||''),venueAddress:String(v.address||''),eircode:String(v.eircode||''),mapsUrl:String(v.mapUrl||''),
@@ -549,7 +550,7 @@ async function directoryTemplates(base44:any,tenantId:string,clubId:string){
       const price=Number(s.price);
       return {
         key:String(s.id),directorySessionId:String(s.id),venueKey:String(v.id),weekday:String(s.day||''),
-        start:String(s.start||''),end:String(s.end||''),fee:Number.isFinite(price)&&price>0?price:(payment==='cash'?5:5.5),
+        start:String(s.start||''),end:String(s.end||''),fee:payment==='none'?0:(Number.isFinite(price)&&price>0?price:(payment==='cash'?5:5.5)),
         payment,label:`${s.day||''} ${s.start||''}`.trim(),level:String(s.level||''),host:String(s.host||''),
         venueName:String(v.name||''),venueAddress:String(v.address||''),eircode:String(v.eircode||''),mapsUrl:String(v.mapUrl||''),
         clubContactEmail:emailKey(data?.contact?.email||club.public_contact_email||''),clubContactName:clean(data?.contact?.name||club.name,120),
@@ -701,9 +702,11 @@ function detailRow(label:string,value:any){
 }
 function hostText(session:any,b:any){
   const isMember=b.participant_type==='member';
-  const pay=b.payment_method==='cash'
-    ? (b.payment_status==='paid'?'Cash €'+Number(b.amount).toFixed(2)+' paid':'€'+Number(b.amount).toFixed(2)+' cash due on arrival')
-    : '€'+Number(b.amount).toFixed(2)+' paid online';
+  const pay=b.payment_method==='none'
+    ? 'No payment required'
+    : b.payment_method==='cash'
+      ? (b.payment_status==='paid'?'Cash €'+Number(b.amount).toFixed(2)+' paid':'€'+Number(b.amount).toFixed(2)+' cash due on arrival')
+      : '€'+Number(b.amount).toFixed(2)+' paid online';
   if(isMember){
     return `MEMBER BOOKING – ${session.venue_name}
 ${formatDate(session.session_date)} · ${session.start_time}${session.end_time?'–'+session.end_time:''}
@@ -769,9 +772,11 @@ async function sendConfirmations(base44:any,session:any,booking:any,force=false)
   const amount=money(booking.amount,booking.currency||'EUR');
   const dateLabel=formatDate(session.session_date);
   const timeLabel=`${session.start_time}${session.end_time?'–'+session.end_time:''}`;
-  const paymentLabel=booking.payment_method==='cash'
-    ? (booking.payment_status==='paid'? `${amount} cash paid` : `${amount} cash on arrival`)
-    : `${amount} paid online`;
+  const paymentLabel=booking.payment_method==='none'
+    ? 'No payment required'
+    : booking.payment_method==='cash'
+      ? (booking.payment_status==='paid'? `${amount} cash paid` : `${amount} cash on arrival`)
+      : `${amount} paid online`;
 
   const isMember=booking.participant_type==='member';
   if(force||!booking.notification_sent_at){
@@ -823,6 +828,7 @@ ${isMember?'':`<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;
   const guestEligible=booking.email && (
     (booking.payment_method==='sumup' && ['paid','partially_refunded','refunded'].includes(booking.payment_status))
     || (booking.payment_method==='cash' && booking.payment_status==='paid')
+    || (booking.payment_method==='none' && booking.payment_status==='not_required')
   );
   if((force||!booking.guest_confirmation_sent_at) && guestEligible){
     try{
@@ -1129,7 +1135,7 @@ Deno.serve(async(req)=>{
         const timeLabel=`${session.start_time}${session.end_time?'–'+session.end_time:''}`;
         const amount=money(session.fee_amount,session.currency||'EUR');
         const hello=recipientName?firstName(recipientName):'there';
-        const actionLabel=session.payment_method==='cash'?'Reserve your place':`Book & Pay ${amount}`;
+        const actionLabel=session.payment_method==='none'?'Confirm your place':session.payment_method==='cash'?'Reserve your place':`Book & Pay ${amount}`;
         const textBody=`Hi ${hello},
 
 You are invited to book a ${club.name} guest session.
@@ -1137,7 +1143,7 @@ You are invited to book a ${club.name} guest session.
 Date: ${dateLabel}
 Time: ${timeLabel}
 Venue: ${session.venue_name}
-Fee: ${amount}${session.payment_method==='cash'?' cash on arrival':' online payment'}
+Fee: ${session.payment_method==='none'?'No payment required':`${amount}${session.payment_method==='cash'?' cash on arrival':' online payment'}`}
 
 Complete your booking, waiver and payment here:
 ${bookingUrl}
@@ -1160,7 +1166,7 @@ ${detailRow('Date',dateLabel)}
 ${detailRow('Time',timeLabel)}
 ${detailRow('Venue',session.venue_name)}
 ${detailRow('Address',`${session.venue_address}, ${session.venue_eircode}`)}
-${detailRow('Fee',session.payment_method==='cash'?`${amount} cash on arrival`:`${amount} online`)}
+${detailRow('Fee',session.payment_method==='none'?'No payment required':session.payment_method==='cash'?`${amount} cash on arrival`:`${amount} online`)}
 </table>
 </div>
 <div style="text-align:center;margin:6px 0 24px;">
@@ -1499,7 +1505,8 @@ ${detailRow('Reason',reason)}
       const intakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
       const templates=await directoryTemplates(base44,session.tenant_id,session.club_id);
       const directoryTemplate=templates.find((t:any)=>String(t.key)===String(session.session_label)) || templates.find((t:any)=>t.venueName===session.venue_name&&t.weekday===session.weekday&&t.start===session.start_time);
-      return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',inviteName:invite?.intended_name||'',approvalRequired:!invite,
+      const directRegistration=session.payment_method==='none';
+      return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite||directRegistration,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',inviteName:invite?.intended_name||'',approvalRequired:!directRegistration&&!invite,
         guestIntakeCaptured:intakeCaptured,
         guestIntake:intakeCaptured?{previousSports:guestPreviousSports(approvedRequest.previous_sports),sportingBackgroundNote:approvedRequest.sporting_background_note||'',healthDeclarationApplies:approvedRequest.health_declaration_applies===true,medicalNote:approvedRequest.medical_note||''}:null,
         directorySessionId:directoryTemplate?.directorySessionId||directoryTemplate?.key||'',guestRequestUrl:brand?.slug?`/guest/${brand.slug}${directoryTemplate?.key?`?session=${encodeURIComponent(directoryTemplate.key)}`:''}`:''});
@@ -1545,9 +1552,10 @@ ${detailRow('Reason',reason)}
     const fullName=clean(body.fullName,120);
     const email=emailKey(body.email);
     const mobile=clean(body.mobile,50);
-    const invite=await inviteForSession(base44,session,body.inviteToken||'',email,mobile);
-    if(!invite)return Response.json({error:'This guest booking requires club approval. Please request a guest place first, or use the private invitation link sent by Clare Pickleball.',approvalRequired:true},{status:403});
-    const approvedRequest=await guestRequestForInvite(base44,invite);
+    const directRegistration=session.payment_method==='none';
+    const invite=directRegistration?null:await inviteForSession(base44,session,body.inviteToken||'',email,mobile);
+    if(!directRegistration&&!invite)return Response.json({error:'This guest booking requires club approval. Please request a guest place first, or use the private invitation link sent by Clare Pickleball.',approvalRequired:true},{status:403});
+    const approvedRequest=invite?await guestRequestForInvite(base44,invite):null;
     const approvedIntakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
     const mobileK=mobileKey(mobile);
     const emergencyName=clean(body.emergencyContactName,120);
@@ -1634,8 +1642,8 @@ ${detailRow('Reason',reason)}
     await ensureClubGuestRelationship(base44,session,person);
 
     const now=new Date().toISOString();
-    const initialStatus=session.payment_method==='cash'?'cash_due':'pending_payment';
-    const initialPayment=session.payment_method==='cash'?'cash_due':'pending';
+    const initialStatus=session.payment_method==='none'?'confirmed':session.payment_method==='cash'?'cash_due':'pending_payment';
+    const initialPayment=session.payment_method==='none'?'not_required':session.payment_method==='cash'?'cash_due':'pending';
     let booking=await base44.asServiceRole.entities.GuestSessionBooking.create({
       tenant_id:session.tenant_id,club_id:session.club_id,session_link_id:session.id,person_id:person.id,participant_type:'guest',
       full_name:fullName,email,email_key:email,mobile,mobile_key:mobileK,
@@ -1667,14 +1675,22 @@ ${detailRow('Reason',reason)}
       }catch(e){console.error('consent record failed',e?.message||e)}
     }
 
-    let paymentRecord=await base44.asServiceRole.entities.PaymentRecord.create({
-      tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,
-      purpose_type:'booking',purpose_id:booking.id,payment_type:'guest_session',
-      amount:Number(session.fee_amount||0),currency:session.currency||'EUR',
-      payment_method:session.payment_method,payment_status:'pending',provider:session.payment_method,amount_refunded:0,
-      source_system:'rallyhub_guest_session',source_row:booking.id,
-      notes:`${session.venue_name} · ${session.session_date} · ${session.start_time}`,
-    });
+    let paymentRecord:any=null;
+    if(session.payment_method!=='none'){
+      paymentRecord=await base44.asServiceRole.entities.PaymentRecord.create({
+        tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,
+        purpose_type:'booking',purpose_id:booking.id,payment_type:'guest_session',
+        amount:Number(session.fee_amount||0),currency:session.currency||'EUR',
+        payment_method:session.payment_method,payment_status:'pending',provider:session.payment_method,amount_refunded:0,
+        source_system:'rallyhub_guest_session',source_row:booking.id,
+        notes:`${session.venue_name} · ${session.session_date} · ${session.start_time}`,
+      });
+    }
+
+    if(session.payment_method==='none'){
+      booking=await sendConfirmations(base44,session,booking);
+      return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'confirmed',paymentStatus:'not_required',paymentUrl:'',message:'Your place is confirmed. No payment is required.'});
+    }
 
     if(session.payment_method==='cash'){
       booking=await sendConfirmations(base44,session,booking);
