@@ -125,7 +125,7 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
           <div class="header-title" style="font-size:25px;line-height:1.02;letter-spacing:-.45px;font-weight:900;color:#0755a8;text-transform:uppercase;text-align:center;white-space:normal">${headerTitle}</div>
           <div class="header-sub" style="margin-top:7px;font-size:12px;line-height:1;font-weight:700;letter-spacing:1.6px;color:#253c84;text-align:center;white-space:nowrap">${copy.headerSubtitle}</div>
         </td>
-        <td width="30%" height="138" align="right" valign="top" style="width:30%;height:138px;padding:0;overflow:hidden;line-height:0;background:#fff"><img class="header-art" src="${asset('header-right-clean.png')}" width="180" height="138" alt="Pickleball" style="display:block;width:180px;max-width:100%;height:138px;border:0;margin:0 0 0 auto;object-fit:cover"></td>
+        <td width="30%" align="right" valign="bottom" style="width:30%;padding:0;overflow:hidden;line-height:0;background:#fff"><img class="header-art" src="${asset('header-right-clean.png')}" width="180" alt="Pickleball" style="display:block;width:180px;max-width:100%;height:auto;border:0;margin:0 0 0 auto"></td>
       </tr>
     </table>
   </td></tr>
