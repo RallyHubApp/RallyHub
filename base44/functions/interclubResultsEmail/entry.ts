@@ -5,8 +5,29 @@ const clean=(v:any,max=4000)=>String(v??'').trim().slice(0,max); const now=()=>n
 function esc(v:any){return String(v??'').replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c));}
 function firstName(v:any){return clean(v,120).split(/\s+/)[0]||'Player';}
 function validEmail(v:any){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean(v,320).toLowerCase());}
-const DEFAULT_RESULTS_CONTENT={rallyhubHeading:'More pickleball with RallyHub',rallyhubIntro:'Get alerts for upcoming tournaments and events, and discover more places to play around Ireland.',alertsLabel:'Never miss another pickleball tournament',directoryLabel:'Explore the RallyHub Directory',feedbackLabel:'Send us your feedback',photosHeading:'Photos from today',photosText:'Open the shared photo folder to view photographs from the day.'};
-function resultsContent(body:any){const c=body?.content||{};return{rallyhubHeading:clean(c.rallyhubHeading||DEFAULT_RESULTS_CONTENT.rallyhubHeading,90),rallyhubIntro:clean(c.rallyhubIntro||DEFAULT_RESULTS_CONTENT.rallyhubIntro,240),alertsLabel:clean(c.alertsLabel||DEFAULT_RESULTS_CONTENT.alertsLabel,90),directoryLabel:clean(c.directoryLabel||DEFAULT_RESULTS_CONTENT.directoryLabel,90),feedbackLabel:clean(c.feedbackLabel||DEFAULT_RESULTS_CONTENT.feedbackLabel,90),photosHeading:clean(c.photosHeading||DEFAULT_RESULTS_CONTENT.photosHeading,90),photosText:clean(c.photosText||DEFAULT_RESULTS_CONTENT.photosText,220)};}
+const shortClub=(v:any)=>String(v??'').replace(/\s+Pickleball\s+Club$/i,'').replace(/\s+Pickleball$/i,'').replace(/\s+Club$/i,'').trim()||String(v??'').trim();
+const PHOTO_URL='https://drive.google.com/drive/folders/1ynGB1ER2ipB2p_q0LB-c7DteAFxtVYXf?usp=sharing';
+function editableUrl(v:any,fallback:string,allowPlayerToken=false){const raw=clean(v,1200);if(!raw)return fallback;if(allowPlayerToken&&raw==='{{PLAYER_ALERTS_URL}}')return raw;if(/^https?:\/\/[^\s]+$/i.test(raw))return raw;throw new Error('Enter a valid https:// link or choose one of the named destinations.');}
+function resultsContent(body:any,event:any){const c=body?.content||{},a=shortClub(event?.club_a_name||'Clare'),b=shortClub(event?.club_b_name||'Galway');return{
+ greeting:clean(c.greeting||'Hi {{FIRST_NAME}},',120),
+ intro1:clean(c.intro1||`Thanks very much for taking part in the ${a} v ${b} Interclub. We hope you enjoyed the games and the chance to meet and play with people from both clubs.`,700),
+ intro2:clean(c.intro2||'Your individual results are now available below. You can see your own games and scores, your overall performance, the final team result and both team podiums.',700),
+ resultsLabel:clean(c.resultsLabel||'View My Results',80),
+ returnHeading:clean(c.returnHeading||'Looking forward to the return fixture',120),
+ returnText:clean(c.returnText||`This is the start of what we hope will become a regular home-and-away Interclub fixture, with a perpetual trophy between ${a} and ${b}. The next meeting will be in Galway, and we’re already looking forward to playing you again.`,900),
+ photosHeading:clean(c.photosHeading||'Photos from today',120),
+ photosText:clean(c.photosText||'Open the shared photo folder to view photographs from the day.',500),
+ photosUrl:editableUrl(c.photosUrl,PHOTO_URL),
+ moreHeading:clean(c.moreHeading||'More pickleball with RallyHub',120),
+ moreText:clean(c.moreText||'Get alerts for upcoming tournaments and events, and discover more places to play around Ireland.',500),
+ button1Label:clean(c.button1Label||'Never miss another pickleball tournament',120),
+ button1Url:editableUrl(c.button1Url,'{{PLAYER_ALERTS_URL}}',true),
+ button2Label:clean(c.button2Label||'Explore the RallyHub Directory',120),
+ button2Url:editableUrl(c.button2Url,'https://rallyhub.ie/directory'),
+ button3Label:clean(c.button3Label||'Send us your feedback',120),
+ button3Url:editableUrl(c.button3Url,'https://rallyhub.ie/contact'),
+ closingText:clean(c.closingText||`Thanks again for being part of the day. We look forward to welcoming you back on court and to the next ${a} v ${b} meeting in Galway.`,700)
+};}
 function validGrant(a:any,tenantId:string){if(!a||a.status!=='active'||String(a.tenant_id||'')!==tenantId)return false;const t=Date.now();return !(a.starts_at&&Date.parse(a.starts_at)>t)&&!(a.ends_at&&Date.parse(a.ends_at)<t);}
 async function authorised(base44:any,user:any,event:any){if(user?.role==='admin')return true;const rows=await base44.asServiceRole.entities.TournamentUserAccess.filter({tournament_id:event.tournament_id,user_id:user.id,status:'active'});return (rows||[]).some((a:any)=>validGrant(a,String(event.tenant_id))&&['event_manager','event_host'].includes(a.role));}
 async function resultUrl(base44:any,event:any,p:any,source='system'){let rows=await base44.asServiceRole.entities.InterclubParticipantResultToken.filter({challenge_event_id:event.id,participant_id:p.id,status:'active'},'-created_at',5);let row=rows?.[0];if(!row)row=await base44.asServiceRole.entities.InterclubParticipantResultToken.create({tenant_id:event.tenant_id,club_id:event.host_club_id||undefined,challenge_event_id:event.id,participant_id:p.id,token:`ipr_${crypto.randomUUID().replaceAll('-','')}`,status:'active',source,created_at:now()});return `https://rallyhub.ie/interclub-results/${row.token}`;}
