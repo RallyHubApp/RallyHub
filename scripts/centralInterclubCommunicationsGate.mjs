@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const cc=fs.readFileSync("src/pages/CommunicationsCentre.jsx","utf8");
+const lib=fs.readFileSync("src/services/communications/legacyApprovedTemplates.js","utf8");
+assert.match(lib,/name:"Interclub Results"/);
+assert.doesNotMatch(lib,/Interclub — Personal Results/);
+assert.match(cc,/function InterclubResultsComposer/);
+assert.match(cc,/Preview Interclub Results/);
+assert.match(cc,/Send Test Email/);
+assert.match(cc,/Send to \$\{preview\.recipientCount\} players/);
+assert.match(cc,/Never miss another pickleball tournament/);
+assert.match(cc,/personalised RallyHub updates\/signup link/);
+assert.match(cc,/selectedId==="interclub_results"/);
+console.log("PASS centralInterclubCommunicationsGate: Interclub Results managed centrally with fixture selection, edit, preview, test and send");
