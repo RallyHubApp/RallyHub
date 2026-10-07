@@ -4,6 +4,7 @@ import {useAuth} from "@/lib/AuthContext";
 import {base44} from "@/api/base44Client";
 import {simulateCampaign} from "@/services/communications/simulator.js";
 import {LEGACY_APPROVED_TEMPLATES,legacyTemplateModules} from "@/services/communications/legacyApprovedTemplates.js";
+import {COMMUNICATION_PRESENTATION_STANDARDS,COMMUNICATIONS_CENTRE_RENDERING_PRINCIPLES} from "@/services/communications/presentationStandards.js";
 import {WorkflowPanel as WorkflowManager,PollPanel as PollManager,AudiencePanel,DeliveryPanel,ConsentPanel,AnalyticsPanel,SettingsPanel,BrandKitManager} from "@/components/communications/OperatorPanels.jsx";
 const tabs=["Overview","Compose","WhatsApp","Audiences","Templates & Brand","Workflows","Polls & Feedback","Delivery","Consent","Analytics","Settings"];
 const samplePeople=[{person_id:"p1",club:"clare",email:"player1@example.test"},{person_id:"p2",club:"clare",email:"player2@example.test"},{person_id:"p3",club:"galway",email:"player3@example.test"}];
