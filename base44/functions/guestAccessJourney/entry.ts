@@ -268,6 +268,22 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,magicInviteUrl,emailSent,expiresAt:invite.expires_at,sessionDate:sessionLink.session_date,session:{day:sessionLink.weekday,start:sessionLink.start_time,end:sessionLink.end_time,venueName:sessionLink.venue_name}});
     }
 
+    if(action==='admin_retract'){
+      const id=clean(body.requestId,100);
+      const reason=clean(body.reason||'Approval retracted by club.',500);
+      const row=(await base44.asServiceRole.entities.GuestBookingRequest.filter({id,tenant_id:tenantId,club_id:clubId},'-submitted_at',5))?.[0];
+      if(!row)return Response.json({error:'Guest request not found.'},{status:404});
+      if(row.status!=='approved')return Response.json({error:'Only an approved guest request can be retracted.'},{status:409});
+      const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({tenant_id:tenantId,club_id:clubId,session_link_id:row.approved_session_link_id},'-registered_at',250);
+      const booking=(bookings||[]).find((b:any)=>emailKey(b.email||'')===emailKey(row.email||'')||mobileKey(b.mobile||'')===mobileKey(row.mobile||''));
+      if(booking&&['paid','partially_refunded','refunded'].includes(String(booking.payment_status||'').toLowerCase()))return Response.json({error:'This booking has financial history. Refund/cancel the payment before retracting the approval.'},{status:409});
+      if(booking)await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{booking_status:'cancelled',cancelled_at:new Date().toISOString(),admin_notes:`Approval retracted: ${reason}`});
+      const invites=await base44.asServiceRole.entities.AccessInviteToken.filter({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',access_request_id:row.id},'-created_at',100);
+      for(const invite of (invites||[]))if(invite.status==='active')await base44.asServiceRole.entities.AccessInviteToken.update(invite.id,{status:'revoked',revoked_at:new Date().toISOString(),notes:`${invite.notes||''} · Retracted: ${reason}`.slice(0,1000)});
+      await base44.asServiceRole.entities.GuestBookingRequest.update(row.id,{status:'pending_approval',approved_session_link_id:'',approved_at:'',admin_notes:`Approval retracted ${new Date().toISOString()} · ${reason}`});
+      return Response.json({success:true,retracted:true,bookingCancelled:!!booking,invitesRevoked:(invites||[]).filter((i:any)=>i.status==='active').length});
+    }
+
     if(action==='admin_reject'){
       const id=clean(body.requestId,100);
       const row=(await base44.asServiceRole.entities.GuestBookingRequest.filter({id,tenant_id:tenantId,club_id:clubId},'-submitted_at',5))?.[0];
