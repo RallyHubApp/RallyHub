@@ -1478,7 +1478,7 @@ ${detailRow('Reason',reason)}
       }
       if(session.payment_method==='cash'){
         booking=await sendConfirmations(base44,session,booking);
-        return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'cash_due',paymentStatus:'cash_due',participantType:'member',paymentUrl:'',message:`Your place is reserved. Please bring €${Number(session.fee_amount||0).toFixed(2)} cash on arrival.`});
+        return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'cash_due',paymentStatus:'cash_due',participantType:'member',paymentUrl:'',message:`Your place is confirmed. Please bring €${Number(session.fee_amount||0).toFixed(2)} cash for the hall contribution and pay it to the host at the venue.`});
       }
       try{
         const checkout=await createProviderCheckout(base44,session,booking,req);
@@ -1705,7 +1705,7 @@ ${detailRow('Reason',reason)}
       return Response.json({
         success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),
         bookingStatus:'cash_due',paymentStatus:'cash_due',paymentUrl:'',
-        message:`Your place is reserved. Please bring €${Number(session.fee_amount||0).toFixed(2)} cash on arrival.`,
+        message:`Your place is confirmed. Please bring €${Number(session.fee_amount||0).toFixed(2)} cash for the hall contribution and pay it to the host at the venue.`,
       });
     }
 
