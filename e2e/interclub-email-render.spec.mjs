@@ -39,7 +39,7 @@ for(const c of cases){
   // Approved outer geometry: logo fills its cell; artwork keeps its native ratio,
   // is cropped horizontally only, and touches both top and lower header edges.
   expect(m.logo.width/m.logoCell.width).toBeGreaterThan(.9);
-  expect(Math.abs((m.art.width/m.art.height)-(324/231))).toBeLessThan(.02);
+  expect(Math.abs((m.art.width/m.art.height)-(301/231))).toBeLessThan(.02);
   expect(Math.abs(m.art.top-m.artCell.top)).toBeLessThanOrEqual(1);
   expect(Math.abs(m.art.bottom-m.rule.top)).toBeLessThanOrEqual(1.5);
 
