@@ -594,6 +594,15 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const [resultsEmailInfo, setResultsEmailInfo] = useState(null);
   const [resultsEmailBusy, setResultsEmailBusy] = useState(false);
   const [resultsEmailTest, setResultsEmailTest] = useState('brian.moore007@gmail.com');
+  const [resultsEmailContent, setResultsEmailContent] = useState({
+    rallyhubHeading:'More pickleball with RallyHub',
+    rallyhubIntro:'Get alerts for upcoming tournaments and events, and discover more places to play around Ireland.',
+    alertsLabel:'Never miss another pickleball tournament',
+    directoryLabel:'Explore the RallyHub Directory',
+    feedbackLabel:'Send us your feedback',
+    photosHeading:'Photos from today',
+    photosText:'Open the shared photo folder to view photographs from the day.'
+  });
   const [pressReleaseTitle, setPressReleaseTitle] = useState(CLARE_GALWAY_PRESS_HEADLINE);
   const [pressReleaseDraft, setPressReleaseDraft] = useState(CLARE_GALWAY_PRESS_RELEASE);
   const [pressReleaseTestEmail, setPressReleaseTestEmail] = useState('clarepb2025@gmail.com');
@@ -1981,24 +1990,24 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
   const loadResultsEmailPreview = async () => {
     if (!event?.id || resultsEmailBusy) return;
     setResultsEmailBusy(true);
-    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'preview',origin:window.location.origin}); if(res.data?.error)throw new Error(res.data.error); const approved=res.data.editableHtml||res.data.previewHtml||''; setResultsEmailInfo(res.data); setResultsEmailApprovedHtml(approved); setResultsEmailHtmlEdit(approved); setEmailPreviewKind('results'); setTournamentUpdatePreviewHtml(approved); setTournamentUpdatePreviewOpen(true); }
+    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'preview',origin:window.location.origin,content:resultsEmailContent}); if(res.data?.error)throw new Error(res.data.error); const approved=res.data.editableHtml||res.data.previewHtml||''; if(res.data?.content)setResultsEmailContent(res.data.content); setResultsEmailInfo(res.data); setResultsEmailApprovedHtml(approved); setResultsEmailHtmlEdit(approved); setEmailPreviewKind('results'); setTournamentUpdatePreviewHtml(approved); setTournamentUpdatePreviewOpen(true); }
     catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not load results email preview');}
     finally{setResultsEmailBusy(false);}
   };
   const sendResultsEmailTest = async () => {
     if (!event?.id || !resultsEmailTest.trim() || resultsEmailBusy) return;
     setResultsEmailBusy(true);
-    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'test',testEmail:resultsEmailTest.trim(),origin:window.location.origin,htmlOverride:resultsEmailHtmlEdit||undefined}); if(res.data?.error)throw new Error(res.data.error); toast.success(`Results test email sent to ${res.data.to}.`); }
+    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'test',testEmail:resultsEmailTest.trim(),origin:window.location.origin,htmlOverride:resultsEmailHtmlEdit||undefined,content:resultsEmailContent}); if(res.data?.error)throw new Error(res.data.error); toast.success(`Results test email sent to ${res.data.to}.`); }
     catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not send results test email');}
     finally{setResultsEmailBusy(false);}
   };
   const sendResultsEmails = async () => {
     if (!event?.id || resultsEmailBusy) return;
-    const info=resultsEmailInfo || (await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'status',origin:window.location.origin})).data;
+    const info=resultsEmailInfo || (await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'status',origin:window.location.origin,content:resultsEmailContent})).data;
     if(info?.error)return toast.error(info.error);
     if(!window.confirm(`Send the approved Your Results email to ${Number(info?.recipientCount||0)} participants? Players without an email address will not be sent anything.`))return;
     setResultsEmailBusy(true);
-    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'send',origin:window.location.origin,htmlOverride:resultsEmailHtmlEdit||undefined}); if(res.data?.error)throw new Error(res.data.error); setResultsEmailInfo(res.data); toast.success(`Your Results sent · ${res.data.sent}/${res.data.recipientCount}${res.data.failed?` · ${res.data.failed} failed`:''}.`); }
+    try { const res=await base44.functions.invoke('interclubResultsEmail',{eventId:event.id,action:'send',origin:window.location.origin,htmlOverride:resultsEmailHtmlEdit||undefined,content:resultsEmailContent}); if(res.data?.error)throw new Error(res.data.error); setResultsEmailInfo(res.data); toast.success(`Your Results sent · ${res.data.sent}/${res.data.recipientCount}${res.data.failed?` · ${res.data.failed} failed`:''}.`); }
     catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not send results emails');}
     finally{setResultsEmailBusy(false);}
   };
