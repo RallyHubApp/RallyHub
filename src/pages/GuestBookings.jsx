@@ -390,9 +390,9 @@ export default function GuestBookings(){
         <div className="flex items-center gap-2"><CalendarCheck className="h-6 w-6 text-primary"/><h1 className="text-2xl sm:text-3xl font-black">Session Bookings</h1></div>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">Manage member payment fallbacks and guest bookings. Existing members can verify against the membership database and pay directly; guests continue through the normal approval flow.</p>
       </div>
-      <Badge variant="outline" className={templateData.sumupConfigured?'border-green-500/40 text-green-600':'border-amber-500/40 text-amber-600'}>
+      <div className="flex flex-wrap gap-2"><a href="/app/communications?scope=tenant&source=session-bookings&template=guest_approved&returnTo=%2Fapp%2Fguest-bookings&label=Session%20Bookings"><Button size="sm" variant="outline">Open in Communications</Button></a><Badge variant="outline" className={templateData.sumupConfigured?'border-green-500/40 text-green-600':'border-amber-500/40 text-amber-600'}>
         {templateData.sumupConfigured?'SumUp connected':'SumUp setup required'}
-      </Badge>
+      </Badge></div>
     </div>
 
     {!templateData.sumupConfigured&&<div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
