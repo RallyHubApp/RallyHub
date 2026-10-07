@@ -133,9 +133,9 @@ export default function Tournaments() {
   return (
     <div className="space-y-6">
       <PageHeader title="Tournament Control Centre" description={`${tournaments.length} event${tournaments.length === 1 ? '' : 's'} · create, run and review competitions`}>
-        <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto" onClick={() => openCreateFor('')}>
+        <div className="flex flex-col sm:flex-row gap-2"><a href="/app/communications?scope=tenant&source=tournaments&returnTo=%2Fapp%2Ftournaments&label=Tournaments"><Button variant="outline" className="w-full sm:w-auto">Open in Communications</Button></a><Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto" onClick={() => openCreateFor('')}>
           <Plus className="w-4 h-4" /> Create Competition
-        </Button>
+        </Button></div>
       </PageHeader>
 
       <div className="glass rounded-2xl p-4 sm:p-5">
