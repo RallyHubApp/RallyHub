@@ -3553,6 +3553,7 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           <div className="flex items-center justify-start">
             <Button variant="outline" onClick={() => setTab('live')}><ArrowLeft className="w-4 h-4 mr-2" />Back to Live Event</Button>
           </div>
+          {hasManagePermission && <div className="print:hidden rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><p className="text-sm font-black">Results communications</p><p className="text-xs text-muted-foreground mt-1">Use the central Communications Centre for the current workflow and history. The legacy panel below remains temporarily during bedding-in.</p></div><a href={`/app/communications?scope=tenant&source=interclub&sourceId=${encodeURIComponent(event?.id||"")}&template=interclub_results&returnTo=${encodeURIComponent(`/app/tournaments/${tournament?.id||event?.tournament_id||""}`)}&label=${encodeURIComponent(`${event?.club_a_name||"Club A"} v ${event?.club_b_name||"Club B"}`)}`}><Button type="button">Open in Communications</Button></a></div>}
           {hasManagePermission && <div data-testid="cc-results-email" className="print:hidden rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3">
             <div>
               <p className="text-sm font-black">Email 1 · Your Results</p>
