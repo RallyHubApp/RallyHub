@@ -42,26 +42,29 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
   const defaultPhotoGallery='https://drive.google.com/drive/folders/1ynGB1ER2ipB2p_q0LB-c7DteAFxtVYXf?usp=sharing';
   const aRaw=String(event?.club_a_name||'Clare'),bRaw=String(event?.club_b_name||'Galway');
   const a=esc(shortClub(aRaw)),b=esc(shortClub(bRaw));
+  const fn=esc(first(name));
+  const line=(v:any)=>esc(v).replace(/\r?\n/g,'<br>');
+  const resolveUrl=(v:any,fallback:string)=>{const raw=String(v??'').trim();return esc(raw==='{{PLAYER_ALERTS_URL}}'?alertsUrl||fallback:raw||fallback)};
   const copy={
-    intro1:esc(content?.intro1||`Thanks very much for taking part in the ${shortClub(aRaw)} v ${shortClub(bRaw)} Interclub. We hope you enjoyed the games and the chance to meet and play with people from both clubs.`),
-    intro2:esc(content?.intro2||'Your individual results are now available below. You can see your own games and scores, your overall performance, the final team result and both team podiums.'),
+    greeting:line(content?.greeting||'Hi {{FIRST_NAME}},').replaceAll('{{FIRST_NAME}}',fn),
+    intro1:line(content?.intro1||`Thanks very much for taking part in the ${shortClub(aRaw)} v ${shortClub(bRaw)} Interclub. We hope you enjoyed the games and the chance to meet and play with people from both clubs.`),
+    intro2:line(content?.intro2||'Your individual results are now available below. You can see your own games and scores, your overall performance, the final team result and both team podiums.'),
     resultsLabel:esc(content?.resultsLabel||'View My Results'),
     returnHeading:esc(content?.returnHeading||'Looking forward to the return fixture'),
-    returnText:esc(content?.returnText||`This is the start of what we hope will become a regular home-and-away Interclub fixture, with a perpetual trophy between ${shortClub(aRaw)} and ${shortClub(bRaw)}. The next meeting will be in Galway, and we’re already looking forward to playing you again.`),
+    returnText:line(content?.returnText||`This is the start of what we hope will become a regular home-and-away Interclub fixture, with a perpetual trophy between ${shortClub(aRaw)} and ${shortClub(bRaw)}. The next meeting will be in Galway, and we’re already looking forward to playing you again.`),
     photosHeading:esc(content?.photosHeading||'Photos from today'),
-    photosText:esc(content?.photosText||'Open the shared photo folder to view photographs from the day.'),
-    photosUrl:esc(content?.photosUrl||defaultPhotoGallery),
+    photosText:line(content?.photosText||'Open the shared photo folder to view photographs from the day.'),
+    photosUrl:resolveUrl(content?.photosUrl,defaultPhotoGallery),
     moreHeading:esc(content?.moreHeading||'More pickleball with RallyHub'),
-    moreText:esc(content?.moreText||'Get alerts for upcoming tournaments and events, and discover more places to play around Ireland.'),
+    moreText:line(content?.moreText||'Get alerts for upcoming tournaments and events, and discover more places to play around Ireland.'),
     button1Label:esc(content?.button1Label||'Never miss another pickleball tournament'),
-    button1Url:esc(content?.button1Url||alertsUrl||directory),
+    button1Url:resolveUrl(content?.button1Url||'{{PLAYER_ALERTS_URL}}',directory),
     button2Label:esc(content?.button2Label||'Explore the RallyHub Directory'),
-    button2Url:esc(content?.button2Url||directory),
+    button2Url:resolveUrl(content?.button2Url,directory),
     button3Label:esc(content?.button3Label||'Send us your feedback'),
-    button3Url:esc(content?.button3Url||feedback),
-    closingText:esc(content?.closingText||`Thanks again for being part of the day. We look forward to welcoming you back on court and to the next ${shortClub(aRaw)} v ${shortClub(bRaw)} meeting in Galway.`)
+    button3Url:resolveUrl(content?.button3Url,feedback),
+    closingText:line(content?.closingText||`Thanks again for being part of the day. We look forward to welcoming you back on court and to the next ${shortClub(aRaw)} v ${shortClub(bRaw)} meeting in Galway.`)
   };
-  const fn=esc(first(name));
   const resultUrl=esc(url);
   const alerts=esc(alertsUrl||directory);
   const headerTitle=`${a} v ${b}<br>INTERCLUB`;
@@ -129,7 +132,7 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
 
   <!-- INTERCLUB BODY -->
   <tr><td class="email-pad" style="padding:20px 25px 8px;font-family:Arial,Helvetica,sans-serif;color:#253c84;font-size:15px;line-height:1.5;font-weight:500">
-    <p style="margin:0 0 10px">Hi ${fn},</p>
+    <p style="margin:0 0 10px">${copy.greeting}</p>
     <p style="margin:0 0 12px">${copy.intro1}</p>
     <p style="margin:0">${copy.intro2}</p>
   </td></tr>
