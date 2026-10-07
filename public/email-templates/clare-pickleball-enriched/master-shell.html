@@ -1,0 +1,54 @@
+<!--
+Clare Pickleball Enriched Email Shell v1.0
+Portable source. The shell is tenant-wide; BODY_HTML and header copy are dynamic.
+Do not hard-code KOTC, Interclub or another purpose into this file.
+-->
+<div style="margin:0;background:#f3f3f3;color:#253c84">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#f3f3f3;border-collapse:collapse">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-collapse:collapse">
+          <tr>
+            <td style="height:6px;background:#0755a8;border-bottom:2px solid #f2cf33;font-size:0;line-height:0">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:0;background:#ffffff">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed">
+                <tr>
+                  <td width="27%" align="center" valign="middle" style="width:27%;padding:0 2px 0 4px">
+                    <img src="{{ASSET_BASE}}clare-logo-transparent.png" width="185" alt="Clare Pickleball" style="display:block;width:185px;max-width:100%;height:auto;border:0;margin:0 auto">
+                  </td>
+                  <td width="43%" align="center" valign="middle" style="width:43%;padding:4px 0 3px;font-family:Arial,Helvetica,sans-serif">
+                    <div style="font-size:43px;line-height:.88;letter-spacing:-1.6px;font-weight:900;color:#0755a8;text-transform:uppercase">{{HEADER_TITLE}}</div>
+                    <div style="margin-top:10px;font-size:15px;line-height:1;font-weight:900;letter-spacing:2.1px;color:#253c84">{{HEADER_SUBTITLE}}</div>
+                  </td>
+                  <td width="30%" align="right" valign="top" style="width:30%;padding:0;overflow:hidden;line-height:0">
+                    <img src="{{ASSET_BASE}}header-right-clean.png" alt="Pickleball" style="display:block;width:102%;max-width:none;height:auto;border:0;margin:-3px -2% -3px 0">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="height:6px;background:#0755a8;border-bottom:2px solid #f2cf33;font-size:0;line-height:0">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:22px 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#253c84">
+              {{BODY_HTML}}
+            </td>
+          </tr>
+          <tr>
+            <td>
+              {{CLARE_CLICKABLE_FOOTER_HTML}}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 16px 10px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:14px;color:#253c84">
+              {{UTILITY_LINKS_HTML}}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
