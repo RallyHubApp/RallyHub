@@ -546,8 +546,9 @@ async function directoryTemplates(base44:any,tenantId:string,clubId:string){
     return sessions.filter((s:any)=>s?.guestEligible!==false).map((s:any)=>{
       const v=venues.find((x:any)=>String(x.id)===String(s.venueId));
       if(!v)return null;
-      const payment=/cash/i.test(String(s.paymentMethod||''))?'cash':'sumup';
+      const rawPayment=String(s.paymentMethod||'').toLowerCase();
       const price=Number(s.price);
+      const payment=/none|free|no payment/.test(rawPayment)||price===0?'none':/cash/i.test(rawPayment)?'cash':'sumup';
       return {
         key:String(s.id),directorySessionId:String(s.id),venueKey:String(v.id),weekday:String(s.day||''),
         start:String(s.start||''),end:String(s.end||''),fee:payment==='none'?0:(Number.isFinite(price)&&price>0?price:(payment==='cash'?5:5.5)),
@@ -1450,8 +1451,8 @@ ${detailRow('Reason',reason)}
       if(!bookingEmail)return Response.json({error:`Membership found, but there is no email address on the member record. Please contact ${club.name} so the club can update your details before taking payment.`,code:'MEMBER_EMAIL_MISSING'},{status:409});
       const bookingMobile=clean(person.mobile||'',50);
       const now=new Date().toISOString();
-      const initialStatus=session.payment_method==='cash'?'cash_due':'pending_payment';
-      const initialPayment=session.payment_method==='cash'?'cash_due':'pending';
+      const initialStatus=session.payment_method==='none'?'confirmed':session.payment_method==='cash'?'cash_due':'pending_payment';
+      const initialPayment=session.payment_method==='none'?'not_required':session.payment_method==='cash'?'cash_due':'pending';
       let booking=await base44.asServiceRole.entities.GuestSessionBooking.create({
         tenant_id:session.tenant_id,club_id:session.club_id,session_link_id:session.id,person_id:person.id,
         participant_type:'member',membership_id:membership.id,member_verification_method:resolved.verificationMethod,
@@ -1461,13 +1462,20 @@ ${detailRow('Reason',reason)}
         amount:Number(session.fee_amount||0),currency:session.currency||'EUR',registered_at:now,
         confirmation_code:confirmation(),source_system:'rallyhub_member_session',
       });
-      let paymentRecord=await base44.asServiceRole.entities.PaymentRecord.create({
-        tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,club_membership_id:membership.id,membership_season:membership.membership_season||'',
-        purpose_type:'booking',purpose_id:booking.id,payment_type:'member_session',
-        amount:Number(session.fee_amount||0),currency:session.currency||'EUR',payment_method:session.payment_method,payment_status:'pending',provider:session.payment_method,amount_refunded:0,
-        source_system:'rallyhub_member_session',source_row:booking.id,
-        notes:`${session.venue_name} · ${session.session_date} · ${session.start_time}`,
-      });
+      let paymentRecord:any=null;
+      if(session.payment_method!=='none'){
+        paymentRecord=await base44.asServiceRole.entities.PaymentRecord.create({
+          tenant_id:session.tenant_id,club_id:session.club_id,person_id:person.id,club_membership_id:membership.id,membership_season:membership.membership_season||'',
+          purpose_type:'booking',purpose_id:booking.id,payment_type:'member_session',
+          amount:Number(session.fee_amount||0),currency:session.currency||'EUR',payment_method:session.payment_method,payment_status:'pending',provider:session.payment_method,amount_refunded:0,
+          source_system:'rallyhub_member_session',source_row:booking.id,
+          notes:`${session.venue_name} · ${session.session_date} · ${session.start_time}`,
+        });
+      }
+      if(session.payment_method==='none'){
+        booking=await sendConfirmations(base44,session,booking);
+        return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'confirmed',paymentStatus:'not_required',participantType:'member',paymentUrl:'',message:'Your place is confirmed. No payment is required.'});
+      }
       if(session.payment_method==='cash'){
         booking=await sendConfirmations(base44,session,booking);
         return Response.json({success:true,alreadyBooked:false,bookingId:booking.id,session:safeSession(session),bookingStatus:'cash_due',paymentStatus:'cash_due',participantType:'member',paymentUrl:'',message:`Your place is reserved. Please bring €${Number(session.fee_amount||0).toFixed(2)} cash on arrival.`});
