@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "shell": "CP_Enriched_Email_Shell",
+  "canonicalBase": "/email-templates/clare-pickleball-enriched/assets/",
+  "compatibilityBase": "/email-templates/clare-interclub/",
+  "policy": "Resolve logical names through this manifest. Compatibility paths remain until canonical assets are physically migrated.",
+  "assets": {
+    "clare-logo": "clare-logo-transparent.png",
+    "header-right-art": "header-right-clean.png",
+    "footer-top": "footer-top.png",
+    "contact-left": "contact-left.png",
+    "contact-phone": "contact-phone.png",
+    "contact-email": "contact-email.png",
+    "contact-web": "contact-web.png",
+    "footer-mid": "footer-mid.png",
+    "social-left": "social-left.png",
+    "social-facebook": "social-facebook.png",
+    "social-instagram": "social-instagram.png",
+    "social-web": "social-web.png",
+    "social-gap": "social-gap.png",
+    "social-rallyhub": "social-rallyhub.png"
+  }
+}
