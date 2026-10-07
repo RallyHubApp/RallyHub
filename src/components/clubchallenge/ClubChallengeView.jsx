@@ -3552,7 +3552,33 @@ export default function ClubChallengeView({ tournament, queryClient, isAdmin }) 
           <div className="flex items-center justify-start">
             <Button variant="outline" onClick={() => setTab('live')}><ArrowLeft className="w-4 h-4 mr-2" />Back to Live Event</Button>
           </div>
-          {hasManagePermission && <div data-testid="cc-results-email" className="print:hidden rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3"><div><p className="text-sm font-black">Email 1 · Your Results</p><p className="mt-1 text-xs text-muted-foreground">Approved Clare v Galway HTML email with each player's private results link. Preview the exact HTML, send yourself a test, then send to all participants with an email address.</p></div>{resultsEmailInfo&&<div className="rounded-lg border bg-background p-3 text-xs"><strong>{Number(resultsEmailInfo.recipientCount||resultsEmailInfo.sent||0)} recipients ready.</strong>{resultsEmailInfo.missing?.length?` Missing email: ${resultsEmailInfo.missing.map(p=>p.name).join(', ')}.`:''}</div>}<div className="grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto_auto] md:items-end"><Button type="button" variant="outline" disabled={resultsEmailBusy} onClick={loadResultsEmailPreview}>{resultsEmailBusy?'Working…':'Preview HTML'}</Button><div><Label className="text-xs font-bold">Test email address</Label><input type="email" value={resultsEmailTest} onChange={e=>setResultsEmailTest(e.target.value)} aria-label="Results test email address" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"/></div><Button type="button" variant="outline" disabled={resultsEmailBusy||!resultsEmailTest.trim()} onClick={sendResultsEmailTest}>Send Test Email</Button><Button type="button" disabled={resultsEmailBusy} onClick={sendResultsEmails}>Send Your Results</Button></div><p className="text-[10px] text-muted-foreground">Nothing is sent from Preview or Test. The final Send confirmation shows the recipient count before delivery.</p></div>}
+          {hasManagePermission && <div data-testid="cc-results-email" className="print:hidden rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3">
+            <div>
+              <p className="text-sm font-black">Email 1 · Your Results</p>
+              <p className="mt-1 text-xs text-muted-foreground">The Clare design is locked. Edit the wording below, preview the exact email, send yourself a test, then send to participants.</p>
+            </div>
+            {resultsEmailInfo&&<div className="rounded-lg border bg-background p-3 text-xs"><strong>{Number(resultsEmailInfo.recipientCount||resultsEmailInfo.sent||0)} recipients ready.</strong>{resultsEmailInfo.missing?.length?` Missing email: ${resultsEmailInfo.missing.map(p=>p.name).join(', ')}.`:''}</div>}
+            <details className="rounded-lg border bg-background p-3" open>
+              <summary className="cursor-pointer text-xs font-black">Edit Interclub email wording</summary>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div><Label className="text-xs font-bold">Photos heading</Label><input value={resultsEmailContent.photosHeading} onChange={e=>setResultsEmailContent(c=>({...c,photosHeading:e.target.value}))} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"/></div>
+                <div><Label className="text-xs font-bold">Photos text</Label><input value={resultsEmailContent.photosText} onChange={e=>setResultsEmailContent(c=>({...c,photosText:e.target.value}))} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"/></div>
+                <div><Label className="text-xs font-bold">RallyHub card heading</Label><input value={resultsEmailContent.rallyhubHeading} onChange={e=>setResultsEmailContent(c=>({...c,rallyhubHeading:e.target.value}))} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"/></div>
+                <div><Label className="text-xs font-bold">RallyHub card intro</Label><input value={resultsEmailContent.rallyhubIntro} onChange={e=>setResultsEmailContent(c=>({...c,rallyhubIntro:e.target.value}))} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"/></div>
+                <div><Label className="text-xs font-bold">Tournament alerts button</Label><input value={resultsEmailContent.alertsLabel} onChange={e=>setResultsEmailContent(c=>({...c,alertsLabel:e.target.value}))} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"/><p className="mt-1 text-[10px] text-muted-foreground">Destination is protected: each player gets their own RallyHub updates/signup link.</p></div>
+                <div><Label className="text-xs font-bold">Directory button</Label><input value={resultsEmailContent.directoryLabel} onChange={e=>setResultsEmailContent(c=>({...c,directoryLabel:e.target.value}))} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"/></div>
+                <div><Label className="text-xs font-bold">Feedback button</Label><input value={resultsEmailContent.feedbackLabel} onChange={e=>setResultsEmailContent(c=>({...c,feedbackLabel:e.target.value}))} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"/></div>
+                <div className="rounded-md border border-dashed p-2 text-[10px] text-muted-foreground"><strong>Photo folder locked:</strong> the Photos card opens the approved Google Drive folder you supplied.</div>
+              </div>
+            </details>
+            <div className="grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_auto_auto] md:items-end">
+              <Button type="button" variant="outline" disabled={resultsEmailBusy} onClick={loadResultsEmailPreview}>{resultsEmailBusy?'Working…':'Preview HTML'}</Button>
+              <div><Label className="text-xs font-bold">Test email address</Label><input type="email" value={resultsEmailTest} onChange={e=>setResultsEmailTest(e.target.value)} aria-label="Results test email address" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"/></div>
+              <Button type="button" variant="outline" disabled={resultsEmailBusy||!resultsEmailTest.trim()} onClick={sendResultsEmailTest}>Send Test Email</Button>
+              <Button type="button" disabled={resultsEmailBusy} onClick={sendResultsEmails}>Send Your Results</Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">Preview uses these fields with real controlled links. Nothing is sent from Preview or Test. Final Send confirms the recipient count.</p>
+          </div>}
           {event?.pot_enabled && <div className="rounded-xl border border-border bg-card p-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
