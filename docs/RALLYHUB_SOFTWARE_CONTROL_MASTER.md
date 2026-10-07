@@ -236,6 +236,9 @@ The Master Testing Blueprint remains mandatory. In addition:
 - Production membership and proven live competition data are never disposable test fixtures.
 - Test harnesses must label TEST MODE and isolate synthetic data.
 - A build pass proves compilation only. It does not prove sporting correctness, performance, security or release readiness.
+- **LIVE-FUNCTION-001 — Backend worker deployment gate:** any new or changed public/backend function used by a live URL, email, QR code or player-facing workflow must pass the complete chain **source exists → function registration/manifest exists where required → production worker is deployed → live endpoint responds → a real production-format public link resolves the correct record/participant**. A local build, preview route, valid database token or generated email URL is not sufficient evidence of deployment.
+- **Interclub incident — 7 October 2026:** Clare v Galway private-results emails contained valid unique participant tokens and correct URLs, but `getInterclubParticipantResult` was not available as a live Base44 worker, causing the player-facing result page to fail despite valid data and a passing build. The worker was registered/deployed and the already-sent links then resolved without resend. This incident is a permanent regression case under LIVE-FUNCTION-001.
+- For any bulk communication containing personalised/public action links, pre-flight must exercise at least one real production-format link end-to-end after deployment and before bulk release; post-deploy verification must confirm the resolver is live and maps the token to the intended record without exposing another recipient's data.
 
 ## 10. Development/tool control
 
