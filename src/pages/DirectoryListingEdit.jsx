@@ -696,6 +696,7 @@ export default function DirectoryListingEdit() {
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
                     <Button type="button" variant="outline" className="gap-2" onClick={viewPublicListing} disabled={saving}><ExternalLink className="w-4 h-4" /> View public listing</Button>
+                    {user?.role === 'admin' && <a href={`/app/communications?scope=platform&source=directory&sourceId=${encodeURIComponent(slug)}&template=directory_claim&returnTo=${encodeURIComponent(`/directory/${slug}/edit`)}&label=${encodeURIComponent(form?.name||baseClub?.name||'Directory listing')}`}><Button type="button" variant="outline">Open in Communications</Button></a>}
                     {isClubListing && <Link to={`/directory/${slug}/events`}><Button type="button" variant="outline" className="gap-2" disabled={saving}><CalendarDays className="w-4 h-4" /> Manage events</Button></Link>}
                     {user?.role === 'admin' && !isClaimed && <>
                       {form?.contact?.phone && <Button type="button" className="gap-2" onClick={openWhatsAppClaimInvite} disabled={saving || inviting || dirty} title={dirty ? 'Save changes before opening WhatsApp' : undefined}>
