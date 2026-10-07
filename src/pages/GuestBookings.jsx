@@ -211,7 +211,7 @@ export default function GuestBookings(){
     if(!target){toast.error('No valid mobile number is saved for this booking');return}
     const first=String(row.fullName||'').split(/\s+/)[0]||'there';
     const when=`${row.sessionDate?niceDate(row.sessionDate):''}${row.start?` · ${row.start}${row.end?`–${row.end}`:''}`:''}`;
-    const paymentLine=row.paymentStatus==='paid'?'Payment confirmed':row.paymentStatus==='cash_due'?'Cash due on arrival':row.paymentStatus==='pending'?'Payment still pending':String(row.paymentStatus||'').replaceAll('_',' ');
+    const paymentLine=row.paymentStatus==='paid'?'Payment confirmed':row.paymentStatus==='cash_due'?'€5 hall contribution due to host':row.paymentStatus==='pending'?'Payment still pending':String(row.paymentStatus||'').replaceAll('_',' ');
     const action=row.sumupCheckoutUrl?`\n\nComplete payment here:\n${row.sumupCheckoutUrl}`:'';
     const msg=`Clare Pickleball session booking\n\nHi ${first},\n${when}\n${row.venueName||''}\n${paymentLine}${action}\n\nRallyHub`;
     window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
@@ -272,7 +272,7 @@ export default function GuestBookings(){
     try{
       const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_create_magic_invite',sessionId:session.id,recipientMobile:recipientMobile.trim(),recipientName:recipientName.trim()});
       if(res.data?.error)throw new Error(res.data.error);
-      const action=session.paymentMethod==='cash'?'Reserve your place':`Book & pay €${Number(session.feeAmount||0).toFixed(2)}`;
+      const action=session.paymentMethod==='cash'?`Confirm place · €${Number(session.feeAmount||0).toFixed(2)} cash at venue`:`Book & pay €${Number(session.feeAmount||0).toFixed(2)}`;
       const msg=`Clare Pickleball guest session\n${niceDate(session.sessionDate)} · ${session.startTime}\n${session.venueName}\n\n${action}:\n${res.data.magicInviteUrl}\n\nThis private link is tied to your mobile number.`;
       const target=whatsappNumber(recipientMobile);
       window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
@@ -414,7 +414,7 @@ export default function GuestBookings(){
         {bookingRows.map(row=>{
           const awaitingBooking=row.kind==='approved_request'&&!row.bookingId;
           const paid=['paid','partially_refunded','refunded'].includes(row.paymentStatus);
-          const paymentLabel=awaitingBooking?'Approved · booking not completed':row.paymentStatus==='pending'?'Payment pending':row.paymentStatus==='cash_due'?'Cash due':paid?'Paid':String(row.paymentStatus||row.bookingStatus||'').replaceAll('_',' ');
+          const paymentLabel=awaitingBooking?'Approved · booking not completed':row.paymentStatus==='pending'?'Payment pending':row.paymentStatus==='cash_due'?'Hall contribution due':paid?'Paid':String(row.paymentStatus||row.bookingStatus||'').replaceAll('_',' ');
           return <div key={row.key} className="rounded-xl border bg-secondary/20 p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
@@ -486,7 +486,7 @@ export default function GuestBookings(){
             <p className="font-black">{selected.venueName}</p>
             <p className="mt-1 text-muted-foreground">{selected.venueAddress}</p>
             <p className="text-muted-foreground">{selected.eircode}</p>
-            <p className="mt-2 font-semibold">{selected.weekday} · {selected.start}–{selected.end} · €{Number(feeAmount===''?selected.fee:feeAmount||0).toFixed(2)} · {selected.payment==='cash'?'cash on arrival':'SumUp'}</p>
+            <p className="mt-2 font-semibold">{selected.weekday} · {selected.start}–{selected.end} · €{Number(feeAmount===''?selected.fee:feeAmount||0).toFixed(2)} · {selected.payment==='cash'?'€5 hall contribution · cash to host':'SumUp'}</p>
           </div>
           <a href={selected.mapsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-primary"><MapPin className="h-4 w-4"/> Google Maps <ExternalLink className="h-3.5 w-3.5"/></a>
         </div>
@@ -513,7 +513,7 @@ export default function GuestBookings(){
               </div>
               <p className="mt-2 font-semibold">{s.venueName}</p>
               <p className="text-sm text-muted-foreground">{s.venueAddress}, {s.eircode}</p>
-              <p className="mt-1 text-xs text-muted-foreground">€{Number(s.feeAmount).toFixed(2)} · {s.paymentMethod==='cash'?'Cash on arrival':'SumUp online payment'}{s.capacity?` · Capacity ${s.capacity}`:''}</p>
+              <p className="mt-1 text-xs text-muted-foreground">€{Number(s.feeAmount).toFixed(2)} · {s.paymentMethod==='cash'?'Hall contribution · cash to host':'SumUp online payment'}{s.capacity?` · Capacity ${s.capacity}`:''}</p>
               {s.hostName&&<p className="mt-1 text-xs font-semibold text-muted-foreground">Host: {s.hostName}{s.hostEmail?` · ${s.hostEmail}`:''}{s.hostMobile?` · ${s.hostMobile}`:''}</p>}
             </div>
             <div className="flex flex-wrap gap-2">
