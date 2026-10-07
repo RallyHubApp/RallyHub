@@ -334,7 +334,7 @@ export default function FinanceSummary() {
 
   return <div className="space-y-6">
     <PageHeader title="Finance Summary" description="See whether each session, event, venue and month is making money or costing the club money.">
-      <Badge variant="outline" className="gap-1"><WalletCards className="h-3.5 w-3.5" />Finance Lite</Badge>
+      <div className="flex flex-wrap gap-2"><Badge variant="outline" className="gap-1"><WalletCards className="h-3.5 w-3.5" />Finance Lite</Badge><a href="/app/communications?scope=tenant&source=finance&returnTo=%2Fapp%2Ffinance&label=Finance"><Button size="sm" variant="outline">Open in Communications</Button></a></div>
     </PageHeader>
 
     <GlassCard className="p-4 space-y-4 border-primary/20">
