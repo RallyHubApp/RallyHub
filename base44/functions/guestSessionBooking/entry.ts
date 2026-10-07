@@ -1513,7 +1513,7 @@ ${detailRow('Reason',reason)}
       const intakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
       const templates=await directoryTemplates(base44,session.tenant_id,session.club_id);
       const directoryTemplate=templates.find((t:any)=>String(t.key)===String(session.session_label)) || templates.find((t:any)=>t.venueName===session.venue_name&&t.weekday===session.weekday&&t.start===session.start_time);
-      const directRegistration=session.payment_method==='none';
+      const directRegistration=['none','cash'].includes(session.payment_method);
       return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite||directRegistration,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',inviteName:invite?.intended_name||'',approvalRequired:!directRegistration&&!invite,
         guestIntakeCaptured:intakeCaptured,
         guestIntake:intakeCaptured?{previousSports:guestPreviousSports(approvedRequest.previous_sports),sportingBackgroundNote:approvedRequest.sporting_background_note||'',healthDeclarationApplies:approvedRequest.health_declaration_applies===true,medicalNote:approvedRequest.medical_note||''}:null,
@@ -1560,7 +1560,7 @@ ${detailRow('Reason',reason)}
     const fullName=clean(body.fullName,120);
     const email=emailKey(body.email);
     const mobile=clean(body.mobile,50);
-    const directRegistration=session.payment_method==='none';
+    const directRegistration=['none','cash'].includes(session.payment_method);
     const invite=directRegistration?null:await inviteForSession(base44,session,body.inviteToken||'',email,mobile);
     if(!directRegistration&&!invite)return Response.json({error:'This guest booking requires club approval. Please request a guest place first, or use the private invitation link sent by Clare Pickleball.',approvalRequired:true},{status:403});
     const approvedRequest=invite?await guestRequestForInvite(base44,invite):null;
