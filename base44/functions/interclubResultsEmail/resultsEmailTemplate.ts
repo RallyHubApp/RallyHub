@@ -5,6 +5,7 @@
 
 const esc=(v:any)=>String(v??'').replace(/[&<>"']/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c));
 const first=(v:any)=>String(v??'').trim().split(/\s+/)[0]||'Player';
+const shortClub=(v:any)=>String(v??'').replace(/\s+Pickleball\s+Club$/i,'').replace(/\s+Pickleball$/i,'').replace(/\s+Club$/i,'').trim()||String(v??'').trim();
 
 function utilityLinks(playerLink:string,root:string){
   const items=[
@@ -38,18 +39,28 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
   const bodyAsset=(name:string)=>`${root}/email-templates/clare-pickleball-enriched/assets/interclub/${name}`;
   const directory=`${root}/directory`;
   const feedback=`${root}/contact`;
-  const photoGallery='https://drive.google.com/drive/folders/1ynGB1ER2ipB2p_q0LB-c7DteAFxtVYXf?usp=sharing';
+  const defaultPhotoGallery='https://drive.google.com/drive/folders/1ynGB1ER2ipB2p_q0LB-c7DteAFxtVYXf?usp=sharing';
+  const aRaw=String(event?.club_a_name||'Clare'),bRaw=String(event?.club_b_name||'Galway');
+  const a=esc(shortClub(aRaw)),b=esc(shortClub(bRaw));
   const copy={
-    rallyhubHeading:esc(content?.rallyhubHeading||'More pickleball with RallyHub'),
-    rallyhubIntro:esc(content?.rallyhubIntro||'Get alerts for upcoming tournaments and events, and discover more places to play around Ireland.'),
-    alertsLabel:esc(content?.alertsLabel||'Never miss another pickleball tournament'),
-    directoryLabel:esc(content?.directoryLabel||'Explore the RallyHub Directory'),
-    feedbackLabel:esc(content?.feedbackLabel||'Send us your feedback'),
+    intro1:esc(content?.intro1||`Thanks very much for taking part in the ${shortClub(aRaw)} v ${shortClub(bRaw)} Interclub. We hope you enjoyed the games and the chance to meet and play with people from both clubs.`),
+    intro2:esc(content?.intro2||'Your individual results are now available below. You can see your own games and scores, your overall performance, the final team result and both team podiums.'),
+    resultsLabel:esc(content?.resultsLabel||'View My Results'),
+    returnHeading:esc(content?.returnHeading||'Looking forward to the return fixture'),
+    returnText:esc(content?.returnText||`This is the start of what we hope will become a regular home-and-away Interclub fixture, with a perpetual trophy between ${shortClub(aRaw)} and ${shortClub(bRaw)}. The next meeting will be in Galway, and we’re already looking forward to playing you again.`),
     photosHeading:esc(content?.photosHeading||'Photos from today'),
-    photosText:esc(content?.photosText||'Open the shared photo folder to view photographs from the day.')
+    photosText:esc(content?.photosText||'Open the shared photo folder to view photographs from the day.'),
+    photosUrl:esc(content?.photosUrl||defaultPhotoGallery),
+    moreHeading:esc(content?.moreHeading||'More pickleball with RallyHub'),
+    moreText:esc(content?.moreText||'Get alerts for upcoming tournaments and events, and discover more places to play around Ireland.'),
+    button1Label:esc(content?.button1Label||'Never miss another pickleball tournament'),
+    button1Url:esc(content?.button1Url||alertsUrl||directory),
+    button2Label:esc(content?.button2Label||'Explore the RallyHub Directory'),
+    button2Url:esc(content?.button2Url||directory),
+    button3Label:esc(content?.button3Label||'Send us your feedback'),
+    button3Url:esc(content?.button3Url||feedback),
+    closingText:esc(content?.closingText||`Thanks again for being part of the day. We look forward to welcoming you back on court and to the next ${shortClub(aRaw)} v ${shortClub(bRaw)} meeting in Galway.`)
   };
-  const a=esc(event?.club_a_name||'Clare');
-  const b=esc(event?.club_b_name||'Galway');
   const fn=esc(first(name));
   const resultUrl=esc(url);
   const alerts=esc(alertsUrl||directory);
@@ -119,8 +130,8 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
   <!-- INTERCLUB BODY -->
   <tr><td class="email-pad" style="padding:20px 25px 8px;font-family:Arial,Helvetica,sans-serif;color:#253c84;font-size:15px;line-height:1.5;font-weight:500">
     <p style="margin:0 0 10px">Hi ${fn},</p>
-    <p style="margin:0 0 12px">Thanks very much for taking part in the <strong>${a} v ${b} Interclub</strong>. We hope you enjoyed the games and the chance to meet and play with people from both clubs.</p>
-    <p style="margin:0">Your individual results are now available below. You can see your own games and scores, your overall performance, the final team result and both team podiums.</p>
+    <p style="margin:0 0 12px">${copy.intro1}</p>
+    <p style="margin:0">${copy.intro2}</p>
   </td></tr>
 
   <tr><td align="center" style="padding:10px 25px 18px">
@@ -129,7 +140,7 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
         <a href="${resultUrl}" target="_blank" style="display:block;text-decoration:none;color:#fff">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
             <td width="42" align="center" valign="middle" style="width:42px;padding:8px 0 8px 8px"><img src="${bodyAsset('results.png')}" width="24" alt="" style="display:block;width:24px;height:auto;border:0;margin:0 auto"></td>
-            <td valign="middle" style="padding:8px 4px;font-family:Arial,Helvetica,sans-serif;color:#fff;font-size:14px;line-height:17px;font-weight:800">View My Results</td>
+            <td valign="middle" style="padding:8px 4px;font-family:Arial,Helvetica,sans-serif;color:#fff;font-size:14px;line-height:17px;font-weight:800">${copy.resultsLabel}</td>
             <td width="26" align="center" valign="middle" style="width:26px;padding-right:7px;font-family:Arial,Helvetica,sans-serif;color:#fff;font-size:22px;line-height:22px;font-weight:300">›</td>
           </tr></table>
         </a>
@@ -142,8 +153,8 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
       <tr>
         <td width="48" valign="middle" align="center" style="width:48px;padding:10px 0 10px 8px"><img src="${bodyAsset('trophy.png')}" width="30" alt="Trophy" style="display:block;width:30px;height:auto;border:0;margin:0 auto"></td>
         <td style="padding:13px 16px 13px 13px;font-family:Arial,Helvetica,sans-serif;color:#253c84">
-          <div style="font-size:16px;line-height:1.2;font-weight:800;color:#0755a8;margin-bottom:4px">Looking forward to the return fixture</div>
-          <div style="font-size:13px;line-height:1.45;font-weight:500">This is the start of what we hope will become a regular home-and-away Interclub fixture, with a perpetual trophy between ${a} and ${b}. The next meeting will be in Galway, and we’re already looking forward to playing you again.</div>
+          <div style="font-size:16px;line-height:1.2;font-weight:800;color:#0755a8;margin-bottom:4px">${copy.returnHeading}</div>
+          <div style="font-size:13px;line-height:1.45;font-weight:500">${copy.returnText}</div>
         </td>
       </tr>
     </table>
@@ -154,10 +165,10 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
       <td class="stack-col" width="49%" valign="top" style="width:49%">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#eef7ff" style="background:#eef7ff;border-radius:11px;border-collapse:separate">
           <tr>
-            <td width="42" valign="top" align="center" style="width:42px;padding:10px 0 10px 8px"><a href="${photoGallery}" target="_blank" style="display:block"><img src="${bodyAsset('camera.png')}" width="27" alt="Photos" style="display:block;width:27px;height:auto;border:0;margin:0 auto"></a></td>
+            <td width="42" valign="top" align="center" style="width:42px;padding:10px 0 10px 8px"><a href="${copy.photosUrl}" target="_blank" style="display:block"><img src="${bodyAsset('camera.png')}" width="27" alt="Photos" style="display:block;width:27px;height:auto;border:0;margin:0 auto"></a></td>
             <td style="padding:10px 11px 11px 8px;font-family:Arial,Helvetica,sans-serif;color:#253c84">
-              <div style="font-size:13px;line-height:16px;font-weight:800;color:#0755a8;margin-bottom:3px"><a href="${photoGallery}" target="_blank" style="color:#0755a8;text-decoration:none">${copy.photosHeading}</a></div>
-              <div style="font-size:10.5px;line-height:1.42;font-weight:500"><a href="${photoGallery}" target="_blank" style="color:#253c84;text-decoration:none">${copy.photosText}</a></div>
+              <div style="font-size:13px;line-height:16px;font-weight:800;color:#0755a8;margin-bottom:3px"><a href="${copy.photosUrl}" target="_blank" style="color:#0755a8;text-decoration:none">${copy.photosHeading}</a></div>
+              <div style="font-size:10.5px;line-height:1.42;font-weight:500"><a href="${copy.photosUrl}" target="_blank" style="color:#253c84;text-decoration:none">${copy.photosText}</a></div>
             </td>
           </tr>
         </table>
@@ -168,11 +179,11 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
           <tr>
             <td width="42" valign="top" align="center" style="width:42px;padding:10px 0 10px 8px"><img src="${bodyAsset('calendar.png')}" width="27" alt="More pickleball" style="display:block;width:27px;height:auto;border:0;margin:0 auto"></td>
             <td style="padding:10px 10px 11px 8px;font-family:Arial,Helvetica,sans-serif;color:#253c84">
-              <div style="font-size:13px;line-height:16px;font-weight:800;color:#0755a8;margin-bottom:3px">${copy.rallyhubHeading}</div>
-              <div style="font-size:10.5px;line-height:1.42;font-weight:500">${copy.rallyhubIntro}</div>
-              ${action(alerts,copy.alertsLabel)}
-              ${action(directory,copy.directoryLabel)}
-              ${action(feedback,copy.feedbackLabel)}
+              <div style="font-size:13px;line-height:16px;font-weight:800;color:#0755a8;margin-bottom:3px">${copy.moreHeading}</div>
+              <div style="font-size:10.5px;line-height:1.42;font-weight:500">${copy.moreText}</div>
+              ${action(copy.button1Url,copy.button1Label)}
+              ${action(copy.button2Url,copy.button2Label)}
+              ${action(copy.button3Url,copy.button3Label)}
             </td>
           </tr>
         </table>
@@ -181,7 +192,7 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
   </td></tr>
 
   <tr><td class="email-pad" style="padding:3px 25px 19px;font-family:Arial,Helvetica,sans-serif;color:#253c84;font-size:14px;line-height:1.48;font-weight:500">
-    Thanks again for being part of the day. We look forward to welcoming you back on court and to the next ${a} v ${b} meeting in Galway.
+    ${copy.closingText}
   </td></tr>
 
   <!-- APPROVED CLARE FOOTER -->
