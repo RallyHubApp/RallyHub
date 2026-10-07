@@ -204,11 +204,11 @@ Looking forward to the return fixture
 We hope this becomes a regular home-and-away fixture between ${a} and ${b}.
 
 Photos from today
-Photographs from the day will be shared via Clare Pickleball social media and may also be shared by gallery link.
+View photographs from the day: https://drive.google.com/drive/folders/1ynGB1ER2ipB2p_q0LB-c7DteAFxtVYXf?usp=sharing
 
 More pickleball with RallyHub
+Never miss another pickleball tournament: ${alertsUrl||'https://rallyhub.ie/directory'}
 Explore the RallyHub Directory: https://rallyhub.ie/directory
-Get pickleball event alerts: ${alertsUrl||'https://rallyhub.ie/directory'}
 Send us feedback: https://rallyhub.ie/contact
 
 Thanks again for being part of the day.
