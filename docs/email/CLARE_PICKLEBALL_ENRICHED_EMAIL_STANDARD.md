@@ -1,6 +1,8 @@
 # Clare Pickleball Enriched Email Shell — Control Standard
 
-**Version:** 1.1  
+**Control Standard Version:** 1.1  
+**Approved Design Version:** **Clare Pickleball Enriched Design v1.0**  
+**Design status:** APPROVED / LOCKED / PRODUCTION SOURCE OF TRUTH  
 **Status:** APPROVED / PROTECTED PRODUCTION STANDARD  
 **Owner scope:** Clare Pickleball tenant  
 **Applies to:** KOTC, Interclub, Membership, Events, Newsletters, Results, General club communications  
