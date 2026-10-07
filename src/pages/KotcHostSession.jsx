@@ -33,7 +33,7 @@ export default function KotcHostSession(){
         <h1 className="font-bold text-sm sm:text-base truncate">{session.name}</h1>
         <p className="text-[10px] text-muted-foreground truncate">Restricted to this KOTC session only · {user?.full_name||user?.email||'Host'}</p>
       </div>
-      <Button variant="outline" size="sm" onClick={()=>logout()}><LogOut className="w-4 h-4 mr-1"/>Sign out</Button>
+      <div className="flex gap-2">{user?.role==="admin"&&<a href={`/app/communications?scope=tenant&source=kotc&sourceId=${encodeURIComponent(session.id)}&template=kotc_results&returnTo=${encodeURIComponent(`/kotc-host/${session.id}`)}&label=${encodeURIComponent(session.name||"KOTC")}`}><Button variant="outline" size="sm">Communications</Button></a>}<Button variant="outline" size="sm" onClick={()=>logout()}><LogOut className="w-4 h-4 mr-1"/>Sign out</Button></div>
     </header>
     <main className="p-3 sm:p-4 max-w-5xl mx-auto">
       <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} sessionId={session.id}/>
