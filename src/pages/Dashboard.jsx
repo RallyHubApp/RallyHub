@@ -2,7 +2,7 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Users, Trophy, Crown, ArrowRight, Plus, Upload, BellRing } from 'lucide-react';
+import { Users, Trophy, Crown, ArrowRight, Plus, Upload, BellRing, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
@@ -91,6 +91,18 @@ export default function Dashboard() {
     refetchOnWindowFocus: true
   });
 
+  const { data: pendingSessionBookingCount = 0 } = useQuery({
+    queryKey: ['guest-access-requests','pending-count', currentUser?.active_tenant_id, currentUser?.active_club_id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('guestAccessJourney', { action: 'admin_pending_count' });
+      if (res.data?.error) throw new Error(res.data.error);
+      return Number(res.data?.pendingCount || 0);
+    },
+    enabled: !!currentUser && (currentUser?.role === 'admin' || currentUser?.active_club_role === 'club_admin'),
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true
+  });
+
   const activeTournaments = tournaments.filter(t => t.status === 'In Progress' || t.status === 'Registration Open');
   const topPlayers = (clubLeaderboard.rows || []).slice(0, 5);
 
@@ -111,8 +123,30 @@ export default function Dashboard() {
         </Link>
       </PageHeader>
 
-      {((currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0)) || pendingMembershipApplicationCount > 0) && (
+      {((currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0)) || pendingMembershipApplicationCount > 0 || pendingSessionBookingCount > 0) && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {pendingSessionBookingCount > 0 && (
+            <Link
+              to="/app/guest-bookings"
+              className="block rounded-xl border border-violet-400/40 bg-violet-500/10 p-4 hover:bg-violet-500/15 transition-colors"
+              aria-label={`Review ${pendingSessionBookingCount} pending session booking requests`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-violet-400/20 flex items-center justify-center shrink-0">
+                  <CalendarCheck className="w-5 h-5 text-violet-300" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-foreground">Session Bookings</p>
+                  <p className="text-sm text-muted-foreground">{pendingSessionBookingCount} {pendingSessionBookingCount === 1 ? 'request needs' : 'requests need'} your attention.</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="min-w-7 h-7 px-2 rounded-full bg-violet-400 text-black text-sm font-black flex items-center justify-center">{pendingSessionBookingCount}</span>
+                  <ArrowRight className="w-4 h-4 text-violet-300" />
+                </div>
+              </div>
+            </Link>
+          )}
+
           {pendingMembershipApprovalCount > 0 && (
             <Link
               to="/app/admin?tab=approvals"
