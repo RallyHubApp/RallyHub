@@ -118,7 +118,7 @@ function publicOptions(directory:any,config:any){
   return {venues,sessions};
 }
 
-function nextDateForDay(day:string,start='23:59'){
+function nextDateForDay(day:string,start='23:59',end=''){
   const names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const parts=new Intl.DateTimeFormat('en-IE',{timeZone:'Europe/Dublin',weekday:'long',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
   const get=(type:string)=>parts.find(p=>p.type===type)?.value||'';
@@ -126,9 +126,11 @@ function nextDateForDay(day:string,start='23:59'){
   if(target<0||todayIndex<0)return '';
   let diff=(target-todayIndex+7)%7;
   const nowMinutes=Number(get('hour')||0)*60+Number(get('minute')||0);
-  const [hh,mm]=String(start||'23:59').split(':').map(Number);
-  const startMinutes=(Number.isFinite(hh)?hh:23)*60+(Number.isFinite(mm)?mm:59);
-  if(diff===0&&nowMinutes>=startMinutes)diff=7;
+  const [sh,sm]=String(start||'23:59').split(':').map(Number);
+  const startMinutes=(Number.isFinite(sh)?sh:23)*60+(Number.isFinite(sm)?sm:59);
+  const [eh,em]=String(end||'').split(':').map(Number);
+  const endMinutes=Number.isFinite(eh)&&Number.isFinite(em)?eh*60+em:startMinutes;
+  if(diff===0&&nowMinutes>=endMinutes)diff=7;
   const today=new Date(`${get('year')}-${get('month')}-${get('day')}T12:00:00Z`);
   today.setUTCDate(today.getUTCDate()+diff);
   return today.toISOString().slice(0,10);
@@ -241,7 +243,7 @@ Deno.serve(async(req)=>{
         const link=(sessionLinks||[]).find((x:any)=>String(x.id)===String(r.approved_session_link_id||''));
         const booking=(bookings||[]).find((b:any)=>String(b.session_link_id)===String(r.approved_session_link_id||'')&&(emailKey(b.email||'')===emailKey(r.email||'')||mobileKey(b.mobile||'')===mobileKey(r.mobile||'')));
         const invite=(invites||[]).find((i:any)=>String(i.access_request_id||'')===String(r.id)&&i.status==='active'&&(!i.expires_at||Date.parse(i.expires_at)>nowMs));
-        return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:link?.venue_name||s?.venueName||r.preferred_venue_key,day:link?.weekday||s?.day||'',start:link?.start_time||s?.start||'',end:link?.end_time||s?.end||'',nextDate:s?nextDateForDay(s.day,s.start):'',submittedAt:r.submitted_at,approvedAt:r.approved_at||'',approvedSessionLinkId:r.approved_session_link_id||'',approvedSessionDate:link?.session_date||'',privateInviteUrl:invite&&link?`https://rallyhub.ie/book/${encodeURIComponent(link.token)}?invite=${encodeURIComponent(invite.token)}`:'',inviteExpiresAt:invite?.expires_at||'',bookingId:booking?.id||'',bookingStatus:booking?.booking_status||'',paymentStatus:booking?.payment_status||'',amount:booking?.amount??link?.fee_amount??null,paymentMethod:booking?.payment_method||link?.payment_method||'',sumupCheckoutUrl:booking?.sumup_checkout_url||''};
+        return {id:r.id,status:r.status,fullName:r.full_name,email:r.email,mobile:r.mobile,experienceLevel:r.experience_level,previousSports:r.previous_sports||[],sportingBackgroundNote:r.sporting_background_note||'',healthDeclarationApplies:r.health_declaration_applies===true,medicalNote:r.medical_note||'',duprId:r.dupr_id||'',homeClub:r.home_club||'',sessionId:r.preferred_session_key,venueName:link?.venue_name||s?.venueName||r.preferred_venue_key,day:link?.weekday||s?.day||'',start:link?.start_time||s?.start||'',end:link?.end_time||s?.end||'',nextDate:s?nextDateForDay(s.day,s.start,s.end):'',submittedAt:r.submitted_at,approvedAt:r.approved_at||'',approvedSessionLinkId:r.approved_session_link_id||'',approvedSessionDate:link?.session_date||'',privateInviteUrl:invite&&link?`https://rallyhub.ie/book/${encodeURIComponent(link.token)}?invite=${encodeURIComponent(invite.token)}`:'',inviteExpiresAt:invite?.expires_at||'',bookingId:booking?.id||'',bookingStatus:booking?.booking_status||'',paymentStatus:booking?.payment_status||'',amount:booking?.amount??link?.fee_amount??null,paymentMethod:booking?.payment_method||link?.payment_method||'',sumupCheckoutUrl:booking?.sumup_checkout_url||''};
       })});
     }
 
@@ -299,7 +301,7 @@ Deno.serve(async(req)=>{
       if(row.status!=='pending_approval')return Response.json({error:'This guest request has already been decided.'},{status:409});
       const approvedSessionKey=clean(body.sessionId||row.preferred_session_key,160);
       const {session,venue}=await sessionFromDirectory(base44,club,approvedSessionKey);
-      const date=clean(body.sessionDate,20)||nextDateForDay(String(session.day||''),String(session.start||''));
+      const date=clean(body.sessionDate,20)||nextDateForDay(String(session.day||''),String(session.start||''),String(session.end||''));
       if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'RallyHub could not determine the next session date.'},{status:400});
       if(weekday(date)!==String(session.day||''))return Response.json({error:`That date is not a ${session.day}.`},{status:400});
       const payment=/cash/i.test(String(session.paymentMethod||''))?'cash':'sumup';
