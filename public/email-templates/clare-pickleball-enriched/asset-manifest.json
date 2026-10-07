@@ -1,5 +1,8 @@
 {
   "version": "1.0",
+  "designName": "Clare Pickleball Enriched Design",
+  "designVersion": "1.0",
+  "status": "approved-locked",
   "shell": "CP_Enriched_Email_Shell",
   "canonicalBase": "/email-templates/clare-pickleball-enriched/assets/",
   "compatibilityBase": "/email-templates/clare-interclub/",
