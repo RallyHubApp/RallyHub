@@ -186,7 +186,7 @@ export default function GuestBookings(){
     const first=String(request.fullName||'').split(/\s+/)[0]||'there';
     const sessionDate=data.sessionDate?niceDate(data.sessionDate):request.approvedSessionDate?niceDate(request.approvedSessionDate):'';
     const time=request.start?`${request.start}${request.end?`–${request.end}`:''}`:'';
-    const fee=request.amount!==null&&request.amount!==undefined?`€${Number(request.amount||0).toFixed(2)} ${request.paymentMethod==='cash'?'cash on arrival':'online'}`:'';
+    const fee=request.amount!==null&&request.amount!==undefined?`€${Number(request.amount||0).toFixed(2)} ${request.paymentMethod==='cash'?'hall contribution · cash to host':'online'}`:'';
     const whatsapp=`Clare Pickleball session booking\n\nHi ${first}, your guest request has been reviewed and approved.\n\n${sessionDate}${time?` · ${time}`:''}\n${request.venueName||''}${fee?`\n${fee}`:''}\n\nComplete your booking/payment using your private link:\n${data.magicInviteUrl}\n\nThis link is for you only. Please don't share it.\n\nHope you enjoy the session.\n\nYours in sport,\nBrian Moore\nChairperson, Clare Pickleball`;
     const emailSubject=`Clare Pickleball · Guest request approved · ${sessionDate}${request.start?` ${request.start}`:''}`;
     const emailBody=`Hi ${first},\n\nYour guest request has been reviewed and approved.\n\nDate: ${sessionDate}\nTime: ${time}\nVenue: ${request.venueName||''}${fee?`\nFee: ${fee}`:''}\n\nComplete your waiver, Code of Conduct and booking/payment using your private link:\n${data.magicInviteUrl}\n\nThis link is for you only. Please don't share it.\n\nHope you enjoy the session.\n\nYours in sport,\nBrian Moore\nChairperson, Clare Pickleball\n\nPowered by RallyHub`;
