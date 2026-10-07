@@ -15,6 +15,8 @@ export default function CommunicationsCentre(){
  const [interclubTestEmail,setInterclubTestEmail]=useState(user?.email||"");
  const [interclubSaved,setInterclubSaved]=useState([]),[interclubTemplates,setInterclubTemplates]=useState([]),[interclubSaveBusy,setInterclubSaveBusy]=useState(""),[interclubActiveDraftId,setInterclubActiveDraftId]=useState("");
  const [interclubContent,setInterclubContent]=useState({
+  headerTitle:"Clare v Galway\nINTERCLUB",
+  headerSubtitle:"Your Personal Results",
   greeting:"Hi {{FIRST_NAME}},",
   intro1:"Thanks very much for taking part in the Clare v Galway Interclub. We hope you enjoyed the games and the chance to meet and play with people from both clubs.",
   intro2:"Your individual results are now available below. You can see your own games and scores, your overall performance, the final team result and both team podiums.",
@@ -113,6 +115,8 @@ function InterclubResultsComposer({selected,loadTemplate,events,eventId,setEvent
     <button type="button" onClick={loadEvents} disabled={!!busy} className="rounded-lg border bg-white px-4 py-2 text-sm font-semibold">{busy==="events"?"Loading…":"Refresh fixtures"}</button>
    </div>
    {error&&<div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>}
+
+   <div className="rounded-xl border bg-white p-4 space-y-4"><div><h3 className="font-bold">Email header text</h3><p className="text-xs text-muted-foreground mt-1">The Clare header design stays locked; only the title and subtitle text are editable. Use a line break in the title where you want the second line to begin.</p></div><label className="block text-sm font-semibold">Header title<textarea maxLength={60} className="mt-1 w-full border rounded-lg p-2 min-h-16" value={content.headerTitle||""} onChange={e=>set("headerTitle",e.target.value)}/><span className="block mt-1 text-[10px] text-muted-foreground">Keep this short so it remains balanced between the Clare logo and right-hand artwork.</span></label><label className="block text-sm font-semibold">Header subtitle<input maxLength={45} className="mt-1 w-full border rounded-lg p-2" value={content.headerSubtitle||""} onChange={e=>set("headerSubtitle",e.target.value)}/></label></div>
 
    <div className="rounded-xl border bg-white p-4 space-y-4">
     <div><h3 className="font-bold">Message introduction</h3><p className="text-xs text-muted-foreground mt-1">Use <b>{"{{FIRST_NAME}}"}</b> to keep the greeting personalised.</p></div>
