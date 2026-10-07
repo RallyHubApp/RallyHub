@@ -13,7 +13,26 @@ export default function CommunicationsCentre(){
  const [savedDrafts,setSavedDrafts]=useState([]),[draftBusy,setDraftBusy]=useState(""),[kotcEditMode,setKotcEditMode]=useState("html");
  const [interclubEvents,setInterclubEvents]=useState([]),[interclubEventId,setInterclubEventId]=useState(""),[interclubPreview,setInterclubPreview]=useState(null),[interclubBusy,setInterclubBusy]=useState(""),[interclubError,setInterclubError]=useState("");
  const [interclubTestEmail,setInterclubTestEmail]=useState(user?.email||"");
- const [interclubContent,setInterclubContent]=useState({rallyhubHeading:"More pickleball with RallyHub",rallyhubIntro:"Get alerts for upcoming tournaments and events, and discover more places to play around Ireland.",alertsLabel:"Never miss another pickleball tournament",directoryLabel:"Explore the RallyHub Directory",feedbackLabel:"Send us your feedback",photosHeading:"Photos from today",photosText:"Open the shared photo folder to view photographs from the day."});
+ const [interclubContent,setInterclubContent]=useState({
+  greeting:"Hi {{FIRST_NAME}},",
+  intro1:"Thanks very much for taking part in the Clare v Galway Interclub. We hope you enjoyed the games and the chance to meet and play with people from both clubs.",
+  intro2:"Your individual results are now available below. You can see your own games and scores, your overall performance, the final team result and both team podiums.",
+  resultsLabel:"View My Results",
+  returnHeading:"Looking forward to the return fixture",
+  returnText:"This is the start of what we hope will become a regular home-and-away Interclub fixture, with a perpetual trophy between Clare and Galway. The next meeting will be in Galway, and we’re already looking forward to playing you again.",
+  photosHeading:"Photos from today",
+  photosText:"Open the shared photo folder to view photographs from the day.",
+  photosUrl:"https://drive.google.com/drive/folders/1ynGB1ER2ipB2p_q0LB-c7DteAFxtVYXf?usp=sharing",
+  moreHeading:"More pickleball with RallyHub",
+  moreText:"Get alerts for upcoming tournaments and events, and discover more places to play around Ireland.",
+  button1Label:"Never miss another pickleball tournament",
+  button1Url:"{{PLAYER_ALERTS_URL}}",
+  button2Label:"Explore the RallyHub Directory",
+  button2Url:"https://rallyhub.ie/directory",
+  button3Label:"Send us your feedback",
+  button3Url:"https://rallyhub.ie/contact",
+  closingText:"Thanks again for being part of the day. We look forward to welcoming you back on court and to the next Clare v Galway meeting in Galway."
+ });
  const loadSavedDrafts=async()=>{try{const rows=await base44.entities.CommunicationMessage.filter({tenant_id:user.active_tenant_id,status:"draft"},'-updated_date',50);setSavedDrafts((rows||[]).filter(x=>x.metadata?.editor_saved===true));}catch{}};
  useEffect(()=>{if(user?.active_tenant_id)loadSavedDrafts()},[user?.active_tenant_id]);
  const saveKotcDraft=async(saveAs=false,scope="both")=>{if(selectedId!=="kotc_results"||!kotcSessionId)return;setDraftBusy(scope);try{let name=saveAs?window.prompt("Name this saved version",subject||"KOTC results draft"):null;if(saveAs&&!name)return;const existing=!saveAs?savedDrafts.find(x=>x.metadata?.session_id===kotcSessionId):null;const priorPlain=existing?.plain_text_body||plain;const priorHtml=existing?.html_body||richBodyHtml||"";const data={tenant_id:user.active_tenant_id,channel:"email",subject,plain_text_body:scope==="html"?priorPlain:plain,html_body:scope==="plain"?priorHtml:(richBodyHtml||""),status:"draft",metadata:{editor_saved:true,session_id:kotcSessionId,presentation:kotcPresentation,draft_name:name||existing?.metadata?.draft_name||subject||"KOTC results draft",saved_scope:scope,separate_html_plain:true}};if(existing)await base44.entities.CommunicationMessage.update(existing.id,data);else await base44.entities.CommunicationMessage.create(data);await loadSavedDrafts();alert(scope==="html"?"HTML version saved.":scope==="plain"?"Plain-text version saved.":saveAs?"Both versions saved as a new version.":"Both versions saved.");}catch(e){alert(e?.message||"Could not save draft.")}finally{setDraftBusy("")}};
