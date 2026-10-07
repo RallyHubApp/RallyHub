@@ -36,9 +36,14 @@ for(const c of cases){
   expect(Math.abs(m.titleCell.width/shellWidth-.46)).toBeLessThan(.025);
   expect(Math.abs(m.artCell.width/shellWidth-.30)).toBeLessThan(.025);
 
+  // Approved outer geometry: logo fills its cell; artwork keeps its native ratio,
+  // is cropped horizontally only, and touches both top and lower header edges.
   expect(m.logo.width/m.logoCell.width).toBeGreaterThan(.9);
   expect(Math.abs((m.art.width/m.art.height)-(324/231))).toBeLessThan(.02);
+  expect(Math.abs(m.art.top-m.artCell.top)).toBeLessThanOrEqual(1);
   expect(Math.abs(m.art.bottom-m.rule.top)).toBeLessThanOrEqual(1.5);
+
+  // Dynamic centre text must never bleed into either approved sibling.
   expect(m.title.left).toBeGreaterThanOrEqual(m.titleCell.left-1);
   expect(m.title.right).toBeLessThanOrEqual(m.titleCell.right+1);
   expect(m.lineBoxes[0].width).toBeLessThanOrEqual(m.titleCell.width-4);
