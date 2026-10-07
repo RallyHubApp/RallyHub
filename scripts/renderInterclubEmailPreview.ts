@@ -1,4 +1,4 @@
-import { interclubResultsHtml } from "./base44/functions/interclubResultsEmail/resultsEmailTemplate.ts";
+import { interclubResultsHtml } from "../base44/functions/interclubResultsEmail/resultsEmailTemplate.ts";
 const html=interclubResultsHtml({
   event:{club_a_name:"Clare",club_b_name:"Galway"},
   name:"Brian Moore",
