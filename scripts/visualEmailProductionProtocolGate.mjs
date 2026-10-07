@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const standard=fs.readFileSync("docs/email/CLARE_PICKLEBALL_ENRICHED_EMAIL_STANDARD.md","utf8");
+const scm=fs.readFileSync("docs/RALLYHUB_SOFTWARE_CONTROL_MASTER.md","utf8");
+const control=fs.readFileSync("base44/functions/controlLibrary/entry.ts","utf8");
+for (const rule of ["EMAIL-VISUAL-001","EMAIL-VISUAL-004","EMAIL-VISUAL-008","Mandatory execution prompt","RallyHub Visual Email Production Protocol","If a previous approved implementation exists, recovery beats recreation"]) assert.ok(standard.includes(rule),`Missing ${rule}`);
+assert.ok(scm.includes("11.3 Visual Email Production Protocol — PROTECTED"));
+assert.ok(scm.includes("rendered production HTML is the visual approval source of truth"));
+assert.ok(control.includes("CLARE_PICKLEBALL_ENRICHED_EMAIL_STANDARD"));
+assert.ok(control.includes("RallyHub Visual Email Production Protocol"));
+assert.ok(control.includes("EMAIL-VISUAL-001"));
+console.log("PASS visualEmailProductionProtocolGate: protected methodology + execution prompt + Control Library mirror present");
