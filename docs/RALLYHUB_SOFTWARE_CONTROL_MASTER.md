@@ -309,6 +309,28 @@ Phase-1 gate covers tenant scope, marketing permission, suppression, dedupe, ide
 12. Campaign optimisation/analytics/AI and additional channel adapters.
 13. Full migration/duplicate-code cleanup only after each module passes regression.
 
+### 11.3 Visual Email Production Protocol — PROTECTED
+
+The mandatory visual-email production standard is `docs/email/CLARE_PICKLEBALL_ENRICHED_EMAIL_STANDARD.md`.
+
+Protected controls:
+
+- the actual rendered production HTML is the visual approval source of truth; a separate AI/mock-up image is never treated as the implementation preview;
+- approved tenant shells and visual assets are recovered/reused before anything is recreated;
+- visual design/refinement occurs in portable production-style email HTML before live renderer integration;
+- Base44 is the host/data-binding/send layer, not the primary visual design workshop;
+- approved shell elements are design-locked and changes must be surgical;
+- the Clare enriched shell is tenant-wide: fixed header structure + dynamic title/subtitle + dynamic body + protected clickable footer + optional utility links;
+- the approved Clare footer is a shared protected component across KOTC, Interclub, Membership, Events, newsletters and other Clare communications;
+- no approved footer/header asset may be flattened, redrawn, re-sliced or replaced merely to simplify a preview;
+- rendering seams are corrected with email-safe layout/background/alignment rules, not by altering approved artwork;
+- all approval candidates use real/representative working bindings; placeholder `href="#"`, broken assets and dead actions are release blockers;
+- the agent/developer performs visual self-QA before user review;
+- once approved, the exact HTML is versioned/checkpointed and integrated without restyling;
+- the reusable execution prompt in the Clare Email Standard is mandatory whenever AI is asked to create, modify, repair or migrate enriched email design.
+
+For non-Clare tenants, the same production methodology applies while tenant-specific assets, colours, typography, footer and contact/social bindings come from that tenant's BrandKit/component pack. Clare-specific identity must never leak into shared platform code.
+
 ## 12. Module register
 
 | Module | Current control status | Primary next control work |
