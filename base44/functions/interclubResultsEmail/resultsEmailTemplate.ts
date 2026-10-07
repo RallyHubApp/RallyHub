@@ -46,7 +46,7 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
   const line=(v:any)=>esc(v).replace(/\r?\n/g,'<br>');
   const resolveUrl=(v:any,fallback:string)=>{const raw=String(v??'').trim();return esc(raw==='{{PLAYER_ALERTS_URL}}'?alertsUrl||fallback:raw||fallback)};
   const copy={
-    headerTitle:line(content?.headerTitle||`${shortClub(aRaw)} v ${shortClub(bRaw)}\nINTERCLUB`),
+    headerTitleRaw:String(content?.headerTitle||`${shortClub(aRaw)} v ${shortClub(bRaw)}\nINTERCLUB`).trim(),
     headerSubtitle:esc(content?.headerSubtitle||'Your Personal Results'),
     greeting:line(content?.greeting||'Hi {{FIRST_NAME}},').replaceAll('{{FIRST_NAME}}',fn),
     intro1:line(content?.intro1||`Thanks very much for taking part in the ${shortClub(aRaw)} v ${shortClub(bRaw)} Interclub. We hope you enjoyed the games and the chance to meet and play with people from both clubs.`),
@@ -69,7 +69,8 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
   };
   const resultUrl=esc(url);
   const alerts=esc(alertsUrl||directory);
-  const headerTitle=copy.headerTitle;
+  const headerTitleLines=copy.headerTitleRaw.split(/\r?\n/).filter(Boolean).slice(0,2);
+  const headerTitle=`${headerTitleLines.map((x:string)=>`<span style="display:block;white-space:nowrap">${esc(x)}</span>`).join('')}`;
 
   const clickableFooter=`
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;font-size:0;line-height:0">
@@ -103,7 +104,7 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
     @media only screen and (max-width:600px){
       .email-shell{width:100%!important;max-width:100%!important}
       .email-pad{padding-left:18px!important;padding-right:18px!important}
-      .header-title{font-size:27px!important;line-height:.9!important}
+      .header-title{font-size:23px!important;line-height:1.02!important}
       .header-sub{font-size:11px!important;margin-top:5px!important}
       .header-logo{width:128px!important}
       .header-art{width:100%!important;max-width:none!important;height:112px!important;object-fit:cover!important}
@@ -123,7 +124,7 @@ export function interclubResultsHtml({event,name,url,origin,alertsUrl,content}:a
       <tr>
         <td width="24%" align="left" valign="middle" style="width:24%;padding:0 2px 0 4px;background:#fff"><img class="header-logo" src="${asset('clare-logo-transparent.png')}" width="165" alt="Clare Pickleball logo" style="display:block;width:165px;max-width:100%;height:auto;border:0;margin:0 auto"></td>
         <td width="46%" align="center" valign="middle" style="width:46%;padding:7px 10px 5px 6px;font-family:Arial,Helvetica,sans-serif;background:#fff">
-          <div class="header-title" style="font-size:31px;line-height:.92;letter-spacing:-.7px;font-weight:900;color:#0755a8;text-transform:uppercase;text-align:center">${headerTitle}</div>
+          <div class="header-title" style="font-size:25px;line-height:1.02;letter-spacing:-.45px;font-weight:900;color:#0755a8;text-transform:uppercase;text-align:center;white-space:normal">${headerTitle}</div>
           <div class="header-sub" style="margin-top:7px;font-size:12px;line-height:1;font-weight:700;letter-spacing:1.6px;color:#253c84;text-align:center">${copy.headerSubtitle}</div>
         </td>
         <td width="30%" height="138" align="right" valign="top" style="width:30%;height:138px;padding:0;overflow:hidden;line-height:0;background:#fff"><img class="header-art" src="${asset('header-right-clean.png')}" width="180" height="138" alt="Pickleball" style="display:block;width:180px;max-width:none;height:138px;border:0;margin:0;object-fit:cover"></td>
