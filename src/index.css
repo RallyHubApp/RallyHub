@@ -155,6 +155,21 @@
 
 /* Mobile usability: avoid iOS form zoom and keep primary touch targets comfortable. */
 @media (max-width: 640px) {
+  .app-mobile-viewport,
+  .app-mobile-viewport > *,
+  .app-mobile-viewport section,
+  .app-mobile-viewport article {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .app-mobile-viewport img,
+  .app-mobile-viewport video,
+  .app-mobile-viewport canvas,
+  .app-mobile-viewport iframe {
+    max-width: 100%;
+  }
+
   input:not([type="checkbox"]):not([type="radio"]),
   textarea,
   select {
