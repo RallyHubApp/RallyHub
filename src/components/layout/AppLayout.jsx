@@ -94,7 +94,7 @@ export default function AppLayout() {
           </div>
         </header>
 
-        <main className={`w-full min-w-0 max-w-full p-3 sm:p-4 lg:p-6 overflow-x-hidden ${isMemberExperience ? 'pb-24 lg:pb-6' : ''}`}>
+        <main className={`app-mobile-viewport w-full min-w-0 max-w-full p-3 sm:p-4 lg:p-6 overflow-x-hidden ${isMemberExperience ? 'pb-24 lg:pb-6' : ''}`}>
           <Outlet />
         </main>
       </div>
