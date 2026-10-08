@@ -15,25 +15,48 @@ async function spondGet(path:string,token:string){
   if(!response.ok)throw new Error(`Spond API error ${response.status}`);
   return response.json();
 }
+// Resolve a saved weekly session binding to one unambiguous current Spond occurrence.
+// A series/event ID alone is not evidence that a particular week's event exists.
 async function applySpondAvailability(base44:any,club:any,sessions:any[]){
+  const bindings=await base44.asServiceRole.entities.SpondSessionBinding.filter({tenant_id:club.tenant_id,club_id:club.id,listing_slug:club.slug,active:true},'directory_session_key',100);
+  const byKey=new Map((bindings||[]).map((b:any)=>[String(b.directory_session_key||''),b]));
+  if(!sessions.some((s:any)=>byKey.has(String(s.id))))return sessions;
   try{
     const token=await spondLogin();
-    if(!token)return sessions;
-    const bindings=await base44.asServiceRole.entities.SpondSessionBinding.filter({tenant_id:club.tenant_id,club_id:club.id,listing_slug:club.slug,active:true},'directory_session_key',100);
-    const byKey=new Map((bindings||[]).map((b:any)=>[String(b.directory_session_key||''),b]));
-    return await Promise.all(sessions.map(async(session:any)=>{
-      const binding=byKey.get(String(session.id));
-      if(!binding?.spond_event_id)return session;
+    if(!token)return sessions.map((s:any)=>byKey.has(String(s.id))?{...s,spondStatus:'unverified'}:s);
+    const groups=new Map();
+    const now=new Date();
+    const from=new Date(now.getTime()-86400000).toISOString();
+    const to=new Date(now.getTime()+15*86400000).toISOString();
+    return await Promise.all(sessions.map(async(s:any)=>{
+      const binding=byKey.get(String(s.id));
+      if(!binding)return s;
       try{
-        const event=await spondGet(`/sponds/${encodeURIComponent(String(binding.spond_event_id))}`,token);
+        const gid=String(binding.spond_group_id||'');
+        if(!groups.has(gid)){
+          const q=new URLSearchParams({groupId:gid,minStartTimestamp:from,maxStartTimestamp:to,max:'200',scheduled:'true',includeComments:'false',includeHidden:'false',addProfileInfo:'false'});
+          groups.set(gid,spondGet(`/sponds?${q.toString()}`,token));
+        }
+        const events=await groups.get(gid);
+        const targetDate=nextDateForDay(s.day,s.start,s.end);
+        const startTime=(v:any)=>new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Dublin',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(v));
+        const localDate=(v:any)=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(v));
+        const matches=(Array.isArray(events)?events:[]).filter((e:any)=>{
+          const start=e.startTimestamp||e._resolvedStartTimestamp;
+          if(!start||!Number.isFinite(Date.parse(start)))return false;
+          return localDate(start)===targetDate && startTime(start)===s.start &&
+            (String(e.id)===String(binding.spond_event_id)||String(e.heading||'').trim().toLowerCase()===String(binding.spond_heading||'').trim().toLowerCase());
+        });
+        if(matches.length!==1)return {...s,spondStatus:matches.length?'ambiguous':'unpublished'};
+        const event=await spondGet(`/sponds/${encodeURIComponent(String(matches[0].id))}`,token);
         const acceptedCount=Array.isArray(event?.responses?.acceptedIds)?event.responses.acceptedIds.length:0;
         const waitingCount=(event?.responses?.waitinglistIds||event?.responses?.waitingListIds||[]).length||0;
-        const capacity=Number(event?.maxAccepted||event?.maxParticipants||session.capacity||0)||null;
+        const capacity=Number(event?.maxAccepted||event?.maxParticipants||s.capacity||0)||null;
         const full=!!capacity&&acceptedCount>=capacity;
-        return {...session,capacity,acceptedCount,waitingCount,spondStatus:full?(waitingCount>0?'waiting_list':'full'):'available',full};
-      }catch{return session}
+        return {...s,capacity,acceptedCount,waitingCount,spondEventId:String(matches[0].id),spondStatus:full?(waitingCount?'waiting_list':'full'):'available',full};
+      }catch{return {...s,spondStatus:'unverified'}}
     }));
-  }catch{return sessions}
+  }catch{return sessions.map((s:any)=>byKey.has(String(s.id))?{...s,spondStatus:'unverified'}:s)}
 }
 
 function clean(v:any,max=250){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
@@ -223,6 +246,34 @@ Deno.serve(async(req)=>{
     const club=(await base44.asServiceRole.entities.Club.filter({id:clubId,tenant_id:tenantId},'-updated_date',5))?.[0];
     if(!club)return Response.json({error:'Active club not found.'},{status:404});
 
+    if(action==='admin_spond_bindings'){
+      const directory=await loadDirectory(base44,club.slug);
+      const options=publicOptions(directory,await loadConfig(base44,tenantId,clubId));
+      const sessions=options.sessions.filter((s:any)=>/ennis\s*diamond/i.test(s.venueName)&&['19:00','20:00'].includes(s.start));
+      const bindings=await base44.asServiceRole.entities.SpondSessionBinding.filter({tenant_id:tenantId,club_id:clubId,listing_slug:club.slug},'directory_session_key',100);
+      return Response.json({success:true,listingSlug:club.slug,sessions,bindings:(bindings||[]).filter((b:any)=>sessions.some((s:any)=>s.id===b.directory_session_key))});
+    }
+    if(action==='admin_spond_bind'){
+      const directory=await loadDirectory(base44,club.slug);
+      const options=publicOptions(directory,await loadConfig(base44,tenantId,clubId));
+      const session=options.sessions.find((s:any)=>s.id===clean(body.sessionId,150));
+      if(!session||!/ennis\s*diamond/i.test(session.venueName)||!['19:00','20:00'].includes(session.start))return Response.json({error:'Only Ennis Diamond 7 pm and 8 pm can be linked in this pilot.'},{status:400});
+      const groupId=clean(body.groupId,150),eventId=clean(body.eventId,150);
+      if(!groupId||!eventId)return Response.json({error:'Select the Spond group and event first.'},{status:400});
+      const token=await spondLogin();
+      if(!token)return Response.json({error:'Server-side Spond connection unavailable. Configure the authorised account before saving.'},{status:503});
+      const q=new URLSearchParams({groupId,minStartTimestamp:new Date(Date.now()-86400000).toISOString(),maxStartTimestamp:new Date(Date.now()+60*86400000).toISOString(),max:'500',scheduled:'true'});
+      const events=await spondGet(`/sponds?${q.toString()}`,token);
+      const event=(Array.isArray(events)?events:[]).find((e:any)=>String(e.id)===eventId);
+      if(!event||!event.startTimestamp)return Response.json({error:'Selected event is not accessible from the connected Spond group.'},{status:409});
+      const localTime=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Dublin',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(event.startTimestamp));
+      const localDay=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Dublin',weekday:'long'}).format(new Date(event.startTimestamp));
+      if(localTime!==session.start||localDay!==session.day)return Response.json({error:'Selected Spond event does not match this RallyHub session weekday and time.'},{status:409});
+      const existing=await base44.asServiceRole.entities.SpondSessionBinding.filter({tenant_id:tenantId,club_id:clubId,listing_slug:club.slug,directory_session_key:session.id},'-created_date',10);
+      const payload={tenant_id:tenantId,club_id:clubId,listing_slug:club.slug,directory_session_key:session.id,spond_group_id:groupId,spond_event_id:eventId,spond_heading:clean(event.heading,200),active:true,last_verified_at:new Date().toISOString(),notes:'Ennis Diamond pilot; recurring weekday/time and event heading must match uniquely.'};
+      const saved=existing?.[0]?await base44.asServiceRole.entities.SpondSessionBinding.update(existing[0].id,payload):await base44.asServiceRole.entities.SpondSessionBinding.create(payload);
+      return Response.json({success:true,binding:saved});
+    }
     if(action==='admin_pending_count'){
       const pending=await base44.asServiceRole.entities.GuestBookingRequest.filter({tenant_id:tenantId,club_id:clubId,status:'pending_approval'},'-submitted_at',200);
       return Response.json({success:true,pendingCount:(pending||[]).length});

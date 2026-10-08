@@ -22,6 +22,7 @@
       "type": "string",
       "description": "Stable Spond event/series id from the Spond event URL"
     },
+    "spond_heading": {"type":"string", "description":"Exact Spond event heading for unambiguous recurring occurrence matching"},
     "active": {
       "type": "boolean",
       "default": true
