@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.29';
 import { directoryVerificationIndex } from './contactIndex.ts';
 import { geocodeDirectoryVenue } from './geocode.ts';
+import { emailSignatureBlockHtml, emailUtilityMenuHtml } from './emailBrandBlocks.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
 function normaliseEmail(value = '') {
@@ -171,24 +172,24 @@ function textToBrandedHtml(value = '', primaryUrl = '') {
 }
 
 function rallyHubEmailSignatureHtml() {
-  return `<div style="margin-top:26px;padding-top:20px;border-top:1px solid #e2e8f0;">
-    <p style="margin:0 0 7px;font-size:15px;line-height:1.5;color:#334155;">Yours in sport,</p>
-    <p style="margin:0;font-size:20px;font-weight:800;color:${RALLYHUB_NAVY};">Brian Moore</p>
-    <p style="margin:3px 0 0;font-size:13px;font-weight:700;color:${RALLYHUB_GREEN};">Founder, RallyHub</p>
-    <p style="margin:8px 0 0;font-size:12px;line-height:1.8;color:#64748b;"><a href="tel:+353878100333" style="color:${RALLYHUB_NAVY};text-decoration:none;font-weight:700;">087 810 0333</a> · <a href="https://wa.me/353878100333" style="color:${RALLYHUB_GREEN};text-decoration:none;font-weight:700;">WhatsApp</a><br><a href="mailto:rallyhubapp@gmail.com" style="color:${RALLYHUB_NAVY};text-decoration:none;">rallyhubapp@gmail.com</a> · <a href="https://rallyhub.ie/" style="color:${RALLYHUB_GREEN};text-decoration:none;font-weight:700;">RallyHub.ie</a></p>
-  </div>`;
+  return emailSignatureBlockHtml({
+    contact:{signoff:'Yours in sport,',name:'Brian Moore',role:'Founder',organisation:'RallyHub',phone_whatsapp:'087 810 0333',phone_href:'tel:+353878100333',whatsapp_href:'https://wa.me/353878100333',email:'rallyhubapp@gmail.com',email_href:'mailto:rallyhubapp@gmail.com',website:'https://rallyhub.ie/',website_label:'RallyHub.ie'},
+    primary:RALLYHUB_NAVY,
+    secondary:RALLYHUB_GREEN,
+  });
 }
 
 function rallyHubEmailUtilityMenuHtml() {
-  return `<div style="padding:14px 24px;border-top:1px solid #e7eeec;background:#ffffff;text-align:center;font-size:11px;line-height:1.7;color:#64748b;">
-    <a href="https://rallyhub.ie/directory/help" style="color:${RALLYHUB_NAVY};font-weight:700;text-decoration:none;">Help Centre</a>
-    <span style="color:#cbd5e1;padding:0 7px;">·</span>
-    <a href="mailto:rallyhubapp@gmail.com" style="color:${RALLYHUB_NAVY};font-weight:700;text-decoration:none;">Contact</a>
-    <span style="color:#cbd5e1;padding:0 7px;">·</span>
-    <a href="https://rallyhub.ie/directory" style="color:${RALLYHUB_NAVY};font-weight:700;text-decoration:none;">Directory</a>
-    <span style="color:#cbd5e1;padding:0 7px;">·</span>
-    <a href="https://rallyhub.ie/" style="color:${RALLYHUB_GREEN};font-weight:800;text-decoration:none;">RallyHub</a>
-  </div>`;
+  return emailUtilityMenuHtml({
+    primary:RALLYHUB_NAVY,
+    secondary:RALLYHUB_GREEN,
+    links:[
+      {label:'Help Centre',url:'https://rallyhub.ie/directory/help'},
+      {label:'Contact',url:'mailto:rallyhubapp@gmail.com'},
+      {label:'Directory',url:'https://rallyhub.ie/directory'},
+      {label:'RallyHub',url:'https://rallyhub.ie/',accent:true},
+    ],
+  });
 }
 
 function rallyHubEmailShell({ title = '', preheader = '', content = '', actionUrl = '', actionLabel = '', footerNote = 'RallyHub Directory' }:any) {
