@@ -59,6 +59,8 @@ async function applySpondAvailability(base44:any,club:any,sessions:any[]){
   }catch{return sessions.map((s:any)=>byKey.has(String(s.id))?{...s,spondStatus:'unverified'}:s)}
 }
 
+const PRIORITY_WINDOWS=[{match:/ennistymon/i,day:0,hour:19,minute:0},{match:/corofin/i,day:0,hour:17,minute:0},{match:/shannon/i,day:6,hour:19,minute:0},{match:/clarecastle/i,day:1,hour:10,minute:30}];
+function priorityOpening(session:any,date:string){const rule=PRIORITY_WINDOWS.find(r=>r.match.test(String(session.venueName||'')));if(!rule)return null;const target=new Date(`${date}T12:00:00Z`);const sessionDay=target.getUTCDay();const daysBack=(sessionDay-rule.day+7)%7;const published=new Date(target.getTime()-daysBack*86400000);const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Dublin',timeZoneName:'shortOffset'}).formatToParts(published);const tz=parts.find(p=>p.type==='timeZoneName')?.value||'GMT';const offset=tz.includes('+1')?1:0;const publishUtc=Date.UTC(published.getUTCFullYear(),published.getUTCMonth(),published.getUTCDate(),rule.hour-offset,rule.minute);return new Date(publishUtc+86400000)}
 function clean(v:any,max=250){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
 function emailKey(v:any){return clean(v,200).toLowerCase()}
 function mobileKey(v:any){return clean(v,50).replace(/[^0-9]/g,'')}
@@ -355,6 +357,11 @@ Deno.serve(async(req)=>{
       const date=clean(body.sessionDate,20)||nextDateForDay(String(session.day||''),String(session.start||''),String(session.end||''));
       if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'RallyHub could not determine the next session date.'},{status:400});
       if(weekday(date)!==String(session.day||''))return Response.json({error:`That date is not a ${session.day}.`},{status:400});
+      const allocationOpens=priorityOpening(session,date);
+      if(!allocationOpens)return Response.json({error:'Guest allocation schedule has not been configured for this venue.'},{status:409});
+      if(Date.now()<allocationOpens.getTime())return Response.json({error:`Members have priority. Guest allocation opens ${allocationOpens.toLocaleString('en-IE',{timeZone:'Europe/Dublin',weekday:'long',hour:'2-digit',minute:'2-digit'})}.`},{status:409});
+      const checked=await applySpondAvailability(base44,club,[session]);
+      if(checked[0]?.spondStatus!=='available')return Response.json({error:'Guest approval is blocked until the current Spond event has been verified and a place is available.'},{status:409});
       const payment=/cash/i.test(String(session.paymentMethod||''))?'cash':'sumup';
       const price=Number(session.price||0)||(payment==='cash'?5:5.5);
       let guestSession=(await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId,session_date:date,start_time:String(session.start||''),venue_key:String(venue.id),active:true},'-created_at',10))?.[0];
