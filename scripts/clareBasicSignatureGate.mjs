@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+const src=fs.readFileSync('base44/functions/kotcResultsShare/entry.ts','utf8');
+const must=(ok,msg)=>{if(!ok){console.error('FAIL clareBasicSignatureGate:',msg);process.exit(1)}};
+must(src.includes("/assets/brian-moore-profile.png"),'Clare basic signature must reuse Brian portrait asset');
+must(src.includes("isClareBrian"),'portrait must remain Clare/Brian scoped, not global');
+must(src.includes("background:#f8fafc;border:1px solid #dbe5f1;border-radius:12px"),'signature card treatment missing');
+must(src.includes("box-shadow:0 0 0 3px #ffffff,0 0 0 4px"),'portrait accent ring missing');
+must(src.includes("width:34px;height:3px"),'Clare yellow accent rule missing');
+must(!src.includes("const icon=(glyph:string)=>sb.show_icons"),'old oversized generic icon signature still present');
+console.log('PASS clareBasicSignatureGate: simple Clare signature is portrait-led, compact, branded and tenant-scoped');
