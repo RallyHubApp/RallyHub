@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const css=fs.readFileSync('src/index.css','utf8');
+const layout=fs.readFileSync('src/components/layout/AppLayout.jsx','utf8');
+const kotc=fs.readFileSync('src/components/kotc/KotcV2SessionView.jsx','utf8');
+const must=(ok,msg)=>{if(!ok){console.error('FAIL mobileViewportRegressionGate:',msg);process.exit(1)}};
+must(layout.includes('app-mobile-viewport'),'AppLayout must keep the mobile viewport containment class');
+must(css.includes('.app-mobile-viewport > *'),'global mobile child containment missing');
+must(css.includes('.app-mobile-viewport iframe'),'mobile embedded content containment missing');
+must(kotc.includes('flex flex-col sm:flex-row sm:items-center sm:justify-between'),'KOTC live header must stack on phones');
+must(kotc.includes('grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex'),'KOTC live controls must use a two-column phone layout');
+console.log('PASS mobileViewportRegressionGate: app shell and KOTC host view remain phone-width safe');
