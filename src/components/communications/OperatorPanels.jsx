@@ -126,7 +126,7 @@ export function BrandKitManager(){
    const utility_footer={enabled_default:!!form.utilityEnabled,links:{website:!!form.utilityWebsite,directory:!!form.utilityDirectory,events:!!form.utilityEvents,feedback:!!form.utilityFeedback,facebook:!!form.utilityFacebook,instagram:!!form.utilityInstagram}};
    const channel_overrides={...(selected.channel_overrides||{}),email:{...oldEmail,signature_block,utility_footer}};
    await base44.entities.CommunicationBrandKit.update(selected.id,{name:form.name,version:form.version,colours,typography,contact,channel_overrides,published_at:now()});
-   setSaved("Saved. The reusable Signature and Utility Footer defaults are updated.");setSaveState("saved");await load();setTimeout(()=>setSaveState("idle"),2500);
+   setSaved("Saved. The reusable Signature and Utility Footer defaults are updated.");setSaveState("saved");window.dispatchEvent(new CustomEvent("communications:brand-kit-saved",{detail:{brandKitId:selected.id}}));await load();setTimeout(()=>setSaveState("idle"),2500);
   }catch(e){setSaveState("error");setError(e?.message||"Could not save brand kit.")}
  };
  const css=s=>({fontWeight:s?.bold?800:400,fontStyle:s?.italic?"italic":"normal",textDecoration:s?.underline?"underline":"none",fontSize:Number(s?.size||13),color:s?.color||form.text,textAlign:s?.align||"left",textShadow:s?.shadow?"0 1px 2px rgba(15,23,42,.22)":"none"});
