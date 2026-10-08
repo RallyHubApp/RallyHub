@@ -260,8 +260,8 @@ Deno.serve(async(req)=>{
       if(!session||!/ennis\s*diamond/i.test(session.venueName)||!['19:00','20:00'].includes(session.start))return Response.json({error:'Only Ennis Diamond 7 pm and 8 pm can be linked in this pilot.'},{status:400});
       const groupId=clean(body.groupId,150),eventId=clean(body.eventId,150);
       if(!groupId||!eventId)return Response.json({error:'Select the Spond group and event first.'},{status:400});
-      const token=await spondLogin();
-      if(!token)return Response.json({error:'Server-side Spond connection unavailable. Configure the authorised account before saving.'},{status:503});
+      const token=clean(body.spondToken,5000)||await spondLogin();
+      if(!token)return Response.json({error:'Spond login required. Connect the authorised account first.'},{status:503});
       const q=new URLSearchParams({groupId,minStartTimestamp:new Date(Date.now()-86400000).toISOString(),maxStartTimestamp:new Date(Date.now()+60*86400000).toISOString(),max:'500',scheduled:'true'});
       const events=await spondGet(`/sponds?${q.toString()}`,token);
       const event=(Array.isArray(events)?events:[]).find((e:any)=>String(e.id)===eventId);
