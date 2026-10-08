@@ -82,13 +82,25 @@ export function BrandKitManager(){
  const load=async()=>{try{setKits(await base44.entities.CommunicationBrandKit.filter({status:"active"},'-published_at',50)||[])}catch(e){setError(e?.message||"Could not load brand kits.")}};
  useEffect(()=>{load()},[user?.active_tenant_id,user?.active_club_id]);
  const visible=kits.filter(k=>k.owner_scope==="platform"||String(k.tenant_id||"")===String(user.active_tenant_id||""));
+ const baseStyle=(over={})=>({bold:false,italic:false,underline:false,size:13,color:"",align:"left",shadow:false,...over});
  const choose=k=>{
-  const sb=k.channel_overrides?.email?.signature_block||{},uf=k.channel_overrides?.email?.utility_footer||{};
+  const sb=k.channel_overrides?.email?.signature_block||{},uf=k.channel_overrides?.email?.utility_footer||{},styles=sb.styles||{};
   setSelected(k);setSaved("");setForm({
    name:k.name||"",version:k.version||"1.0",primary:k.colours?.primary||"#2667F2",secondary:k.colours?.secondary||"#FACC15",text:k.colours?.text||"#172033",
    bodyFont:k.typography?.body_font||"Arial, Helvetica, sans-serif",h1:k.typography?.h1_size_px||24,h2:k.typography?.h2_size_px||20,h3:k.typography?.h3_size_px||17,body:k.typography?.body_size_px||16,
    signoff:k.contact?.signoff||"Yours in sport,",contactName:k.contact?.name||"Brian Moore",role:k.contact?.role||"",organisation:k.contact?.organisation||"",phone:k.contact?.phone_whatsapp||"",email:k.contact?.email||"",website:k.contact?.website||"",
+   whatsappLabel:sb.whatsapp_label??"WhatsApp",websiteLabel:sb.website_label||"",emailLabel:sb.email_label||"",
    signatureNameBold:sb.name_bold!==false,signatureUseBrandColour:sb.use_brand_colour!==false,signatureShowIcons:sb.show_icons!==false,signaturePhone:sb.show_phone!==false,signatureEmail:sb.show_email!==false,signatureWebsite:sb.show_website!==false,signatureCta:sb.cta_enabled===true,signatureCtaLabel:sb.cta_label||"Contact us",signatureCtaUrl:sb.cta_url||"",
+   signatureStyles:{
+    signoff:baseStyle(styles.signoff||{size:14,color:"#475569"}),
+    name:baseStyle(styles.name||{bold:true,size:20,color:k.colours?.primary||"#2667F2"}),
+    role:baseStyle(styles.role||{bold:true,size:13,color:k.colours?.secondary||"#FACC15"}),
+    organisation:baseStyle(styles.organisation||{bold:true,size:13,color:"#475569"}),
+    phone:baseStyle(styles.phone||{bold:true,size:12,color:k.colours?.primary||"#2667F2"}),
+    email:baseStyle(styles.email||{size:12,color:k.colours?.primary||"#2667F2"}),
+    website:baseStyle(styles.website||{bold:true,size:12,color:k.colours?.primary||"#2667F2"}),
+    cta:baseStyle(styles.cta||{bold:true,size:13,color:"#ffffff",align:"left"})
+   },
    utilityEnabled:uf.enabled_default===true,utilityWebsite:uf.links?.website!==false,utilityDirectory:uf.links?.directory===true,utilityEvents:uf.links?.events===true,utilityFeedback:uf.links?.feedback===true,utilityFacebook:uf.links?.facebook===true,utilityInstagram:uf.links?.instagram===true
   })
  };
@@ -96,6 +108,7 @@ export function BrandKitManager(){
   const handler=()=>{const tenant=visible.find(k=>k.owner_scope==="tenant"&&(String(k.club_id||"")===String(user.active_club_id||"")||String(k.tenant_id||"")===String(user.active_tenant_id||"")));if(tenant){choose(tenant);setTimeout(()=>document.getElementById("communication-brand-builder")?.scrollIntoView({behavior:"smooth",block:"start"}),20)}};
   window.addEventListener("communications:edit-basic-brand",handler);return()=>window.removeEventListener("communications:edit-basic-brand",handler)
  },[kits,user?.active_club_id,user?.active_tenant_id]);
+ const setStyle=(part,key,value)=>setForm(f=>({...f,signatureStyles:{...f.signatureStyles,[part]:{...f.signatureStyles[part],[key]:value}}}));
  const save=async()=>{
   if(!selected?.id)return;
   setError("");setSaved("");
@@ -104,27 +117,44 @@ export function BrandKitManager(){
    const typography={...(selected.typography||{}),body_font:form.bodyFont,heading_font:form.bodyFont,h1_size_px:Number(form.h1),h2_size_px:Number(form.h2),h3_size_px:Number(form.h3),body_size_px:Number(form.body)};
    const contact=selected.owner_scope==="tenant"?{...(selected.contact||{}),signoff:form.signoff,name:form.contactName,role:form.role,organisation:form.organisation,phone_whatsapp:form.phone,email:form.email,website:form.website}:selected.contact;
    const oldEmail=selected.channel_overrides?.email||{};
-   const signature_block={name_bold:!!form.signatureNameBold,use_brand_colour:!!form.signatureUseBrandColour,show_icons:!!form.signatureShowIcons,show_phone:!!form.signaturePhone,show_email:!!form.signatureEmail,show_website:!!form.signatureWebsite,cta_enabled:!!form.signatureCta,cta_label:form.signatureCtaLabel||"",cta_url:form.signatureCtaUrl||""};
+   const signature_block={
+    name_bold:!!form.signatureNameBold,use_brand_colour:!!form.signatureUseBrandColour,show_icons:!!form.signatureShowIcons,
+    show_phone:!!form.signaturePhone,show_email:!!form.signatureEmail,show_website:!!form.signatureWebsite,
+    whatsapp_label:form.whatsappLabel||"",email_label:form.emailLabel||"",website_label:form.websiteLabel||"",
+    cta_enabled:!!form.signatureCta,cta_label:form.signatureCtaLabel||"",cta_url:form.signatureCtaUrl||"",styles:form.signatureStyles
+   };
    const utility_footer={enabled_default:!!form.utilityEnabled,links:{website:!!form.utilityWebsite,directory:!!form.utilityDirectory,events:!!form.utilityEvents,feedback:!!form.utilityFeedback,facebook:!!form.utilityFacebook,instagram:!!form.utilityInstagram}};
    const channel_overrides={...(selected.channel_overrides||{}),email:{...oldEmail,signature_block,utility_footer}};
    await base44.entities.CommunicationBrandKit.update(selected.id,{name:form.name,version:form.version,colours,typography,contact,channel_overrides,published_at:now()});
-   setSaved("Saved. These blocks are now the reusable tenant defaults.");await load();
+   setSaved("Saved. The reusable Signature and Utility Footer defaults are updated.");await load();
   }catch(e){setError(e?.message||"Could not save brand kit.")}
  };
+ const css=s=>({fontWeight:s?.bold?800:400,fontStyle:s?.italic?"italic":"normal",textDecoration:s?.underline?"underline":"none",fontSize:Number(s?.size||13),color:s?.color||form.text,textAlign:s?.align||"left",textShadow:s?.shadow?"0 1px 2px rgba(15,23,42,.22)":"none"});
  const icon=(glyph)=>form.signatureShowIcons?<span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black text-white" style={{background:form.primary}}>{glyph}</span>:null;
- const sigPreview=selected?.owner_scope==="tenant"&&form?<div className="rounded-xl border bg-white p-5 shadow-sm">
-  <div className="text-sm text-slate-600">{form.signoff}</div>
-  <div className={"mt-1 text-xl "+(form.signatureNameBold?"font-black":"font-semibold")} style={{color:form.signatureUseBrandColour?form.primary:form.text}}>{form.contactName||"Brian Moore"}</div>
-  <div className="mt-1 text-sm font-bold" style={{color:form.secondary}}>{form.role||"Chairperson"}</div>
-  <div className="text-sm font-semibold text-slate-600">{form.organisation||"Clare Pickleball"}</div>
-  <div className="mt-4 space-y-2 text-sm">
-   {form.signaturePhone&&form.phone&&<div className="flex items-center gap-2">{icon("☎")}<span className="font-semibold">{form.phone}</span><span className="text-slate-300">·</span><span className="font-bold" style={{color:form.secondary}}>WhatsApp</span></div>}
-   {form.signatureEmail&&form.email&&<div className="flex items-center gap-2">{icon("✉")}<span>{form.email}</span></div>}
-   {form.signatureWebsite&&form.website&&<div className="flex items-center gap-2">{icon("↗")}<span className="font-semibold">{String(form.website).replace(/^https?:\/\//,"").replace(/\/$/,"")}</span></div>}
+ const alignClass=a=>a==="center"?"justify-center":a==="right"?"justify-end":"justify-start";
+ const sigPreview=selected?.owner_scope==="tenant"&&form?<div className="rounded-xl border bg-white p-5 shadow-sm" style={{fontFamily:form.bodyFont}}>
+  <div style={css(form.signatureStyles.signoff)}>{form.signoff}</div>
+  <div className="mt-1" style={css(form.signatureStyles.name)}>{form.contactName||"Brian Moore"}</div>
+  {form.role&&<div className="mt-1" style={css(form.signatureStyles.role)}>{form.role}</div>}
+  {form.organisation&&<div style={css(form.signatureStyles.organisation)}>{form.organisation}</div>}
+  <div className="mt-4 space-y-2">
+   {form.signaturePhone&&form.phone&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.phone?.align)} style={css(form.signatureStyles.phone)}>{icon("☎")}<span>{form.phone}</span>{form.whatsappLabel&&<><span className="text-slate-300">·</span><span>{form.whatsappLabel}</span></>}</div>}
+   {form.signatureEmail&&form.email&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.email?.align)} style={css(form.signatureStyles.email)}>{icon("✉")}<span>{form.emailLabel||form.email}</span></div>}
+   {form.signatureWebsite&&form.website&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.website?.align)} style={css(form.signatureStyles.website)}>{icon("↗")}<span>{form.websiteLabel||String(form.website).replace(/^https?:\/\//,"").replace(/\/$/,"")}</span></div>}
   </div>
-  {form.signatureCta&&<div className="mt-4"><span className="inline-block rounded-lg px-4 py-2 text-sm font-bold text-white" style={{background:form.primary}}>{form.signatureCtaLabel||"Contact us"}</span></div>}
+  {form.signatureCta&&<div className={"mt-4 flex "+alignClass(form.signatureStyles.cta?.align)}><span className="inline-block rounded-lg px-4 py-2" style={{...css(form.signatureStyles.cta),background:form.primary}}>{form.signatureCtaLabel||"Contact us"}</span></div>}
  </div>:null;
  const check=(key,label)=><label className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm"><input type="checkbox" checked={!!form[key]} onChange={e=>setForm({...form,[key]:e.target.checked})}/>{label}</label>;
+ const toolbar=(part)=>{const st=form.signatureStyles[part]||baseStyle();return <div className="flex flex-wrap items-center gap-1 rounded-lg border bg-white p-2">
+  <button type="button" title="Bold" onClick={()=>setStyle(part,"bold",!st.bold)} className={"h-8 min-w-8 rounded border font-black "+(st.bold?"bg-slate-900 text-white":"bg-white")}>B</button>
+  <button type="button" title="Italic" onClick={()=>setStyle(part,"italic",!st.italic)} className={"h-8 min-w-8 rounded border italic "+(st.italic?"bg-slate-900 text-white":"bg-white")}>I</button>
+  <button type="button" title="Underline" onClick={()=>setStyle(part,"underline",!st.underline)} className={"h-8 min-w-8 rounded border underline "+(st.underline?"bg-slate-900 text-white":"bg-white")}>U</button>
+  <label className="text-[10px] font-bold text-slate-500 ml-1">Size <select className="ml-1 h-8 rounded border bg-white px-1 text-xs" value={st.size||13} onChange={e=>setStyle(part,"size",Number(e.target.value))}>{[10,11,12,13,14,16,18,20,22,24].map(n=><option key={n} value={n}>{n}px</option>)}</select></label>
+  <label className="text-[10px] font-bold text-slate-500 ml-1">Colour <input type="color" className="ml-1 h-8 w-9 rounded border p-0" value={st.color||form.text} onChange={e=>setStyle(part,"color",e.target.value)}/></label>
+  <select title="Alignment" className="h-8 rounded border bg-white px-2 text-xs" value={st.align||"left"} onChange={e=>setStyle(part,"align",e.target.value)}><option value="left">Left</option><option value="center">Centre</option><option value="right">Right</option></select>
+  <button type="button" title="Subtle text shadow" onClick={()=>setStyle(part,"shadow",!st.shadow)} className={"h-8 rounded border px-2 text-xs "+(st.shadow?"bg-slate-900 text-white":"bg-white")}>Shadow</button>
+ </div>};
+ const editorRow=(title,part,content)=><div className="rounded-lg border bg-white p-3"><div className="text-xs font-black uppercase tracking-wide text-slate-500 mb-2">{title}</div>{content}<div className="mt-2">{toolbar(part)}</div></div>;
  return <div id="communication-brand-builder" className="space-y-4">
   <div className={box}><h2 className="text-xl font-bold">Brand kits & reusable email blocks</h2><p className="text-sm text-muted-foreground mt-1">Design each block once here. Individual communications can then include or omit the saved Signature and Utility Footer without rebuilding them.</p></div>
   {error&&<div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>}
@@ -136,17 +166,23 @@ export function BrandKitManager(){
     <div className="grid md:grid-cols-2 gap-3"><label className="text-sm">Kit name<input className={input} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><label className="text-sm">Version<input className={input} value={form.version} onChange={e=>setForm({...form,version:e.target.value})}/></label></div>
     <div className="grid md:grid-cols-3 gap-3">{[["Primary","primary"],["Secondary","secondary"],["Text","text"]].map(([label,key])=><label key={key} className="text-sm">{label}<div className="flex gap-2 mt-1"><input type="color" value={form[key]} onChange={e=>setForm({...form,[key]:e.target.value})}/><input className="flex-1 rounded-lg border p-2" value={form[key]} onChange={e=>setForm({...form,[key]:e.target.value})}/></div></label>)}</div>
     {selected.owner_scope==="tenant"&&<div className="rounded-xl border bg-slate-50 p-4 space-y-4">
-     <div><h3 className="font-bold text-lg">Signature block</h3><p className="text-xs text-muted-foreground mt-1">This is a reusable HTML block. Save it once, then switch it on or off per communication.</p></div>
-     <div className="grid xl:grid-cols-2 gap-5">
+     <div><h3 className="font-bold text-lg">Signature block</h3><p className="text-xs text-muted-foreground mt-1">Every text element is editable. Use the formatting bar under each element; the saved block can then be switched on or off in a communication.</p></div>
+     <div className="grid xl:grid-cols-[minmax(0,1fr)_420px] gap-5">
       <div className="space-y-3">
-       <div className="grid md:grid-cols-2 gap-2"><label className="text-xs font-bold">Sign-off<input className={input} value={form.signoff} onChange={e=>setForm({...form,signoff:e.target.value})}/></label><label className="text-xs font-bold">Name<input className={input} value={form.contactName} onChange={e=>setForm({...form,contactName:e.target.value})}/></label><label className="text-xs font-bold">Title<input className={input} value={form.role} onChange={e=>setForm({...form,role:e.target.value})}/></label><label className="text-xs font-bold">Organisation<input className={input} value={form.organisation} onChange={e=>setForm({...form,organisation:e.target.value})}/></label><label className="text-xs font-bold">Phone / WhatsApp<input className={input} value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></label><label className="text-xs font-bold">Email<input className={input} value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></label><label className="text-xs font-bold md:col-span-2">Website<input className={input} value={form.website} onChange={e=>setForm({...form,website:e.target.value})}/></label></div>
-       <div className="grid sm:grid-cols-2 gap-2">{check("signatureNameBold","Bold name")}{check("signatureUseBrandColour","Use brand colour")}{check("signatureShowIcons","Show contact icons")}{check("signaturePhone","Phone + WhatsApp row")}{check("signatureEmail","Email row")}{check("signatureWebsite","Website row")}{check("signatureCta","Add CTA button")}</div>
-       {form.signatureCta&&<div className="grid md:grid-cols-2 gap-2"><label className="text-xs font-bold">CTA label<input className={input} value={form.signatureCtaLabel} onChange={e=>setForm({...form,signatureCtaLabel:e.target.value})}/></label><label className="text-xs font-bold">CTA link<input className={input} value={form.signatureCtaUrl} onChange={e=>setForm({...form,signatureCtaUrl:e.target.value})}/></label></div>}
+       {editorRow("Sign-off","signoff",<input className="w-full rounded-lg border p-2 text-sm" value={form.signoff} onChange={e=>setForm({...form,signoff:e.target.value})}/>)}
+       {editorRow("Name","name",<input className="w-full rounded-lg border p-2 text-sm" value={form.contactName} onChange={e=>setForm({...form,contactName:e.target.value})}/>)}
+       {editorRow("Title","role",<input className="w-full rounded-lg border p-2 text-sm" value={form.role} onChange={e=>setForm({...form,role:e.target.value})}/>)}
+       {editorRow("Organisation","organisation",<input className="w-full rounded-lg border p-2 text-sm" value={form.organisation} onChange={e=>setForm({...form,organisation:e.target.value})}/>)}
+       <div className="rounded-lg border bg-white p-3"><div className="flex items-center justify-between gap-3"><div className="text-xs font-black uppercase tracking-wide text-slate-500">Phone / WhatsApp row</div><label className="text-xs font-semibold"><input type="checkbox" checked={!!form.signaturePhone} onChange={e=>setForm({...form,signaturePhone:e.target.checked})}/> Include</label></div><div className="grid md:grid-cols-2 gap-2 mt-2"><label className="text-xs font-bold">Phone<input className={input} value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></label><label className="text-xs font-bold">Text after phone <span className="font-normal text-slate-500">(blank = nothing)</span><input className={input} value={form.whatsappLabel} onChange={e=>setForm({...form,whatsappLabel:e.target.value})} placeholder="WhatsApp"/></label></div><div className="mt-2">{toolbar("phone")}</div></div>
+       <div className="rounded-lg border bg-white p-3"><div className="flex items-center justify-between gap-3"><div className="text-xs font-black uppercase tracking-wide text-slate-500">Email row</div><label className="text-xs font-semibold"><input type="checkbox" checked={!!form.signatureEmail} onChange={e=>setForm({...form,signatureEmail:e.target.checked})}/> Include</label></div><div className="grid md:grid-cols-2 gap-2 mt-2"><label className="text-xs font-bold">Email address<input className={input} value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></label><label className="text-xs font-bold">Display text <span className="font-normal text-slate-500">(blank = email)</span><input className={input} value={form.emailLabel} onChange={e=>setForm({...form,emailLabel:e.target.value})}/></label></div><div className="mt-2">{toolbar("email")}</div></div>
+       <div className="rounded-lg border bg-white p-3"><div className="flex items-center justify-between gap-3"><div className="text-xs font-black uppercase tracking-wide text-slate-500">Website row</div><label className="text-xs font-semibold"><input type="checkbox" checked={!!form.signatureWebsite} onChange={e=>setForm({...form,signatureWebsite:e.target.checked})}/> Include</label></div><div className="grid md:grid-cols-2 gap-2 mt-2"><label className="text-xs font-bold">Website URL<input className={input} value={form.website} onChange={e=>setForm({...form,website:e.target.value})}/></label><label className="text-xs font-bold">Display text<input className={input} value={form.websiteLabel} onChange={e=>setForm({...form,websiteLabel:e.target.value})} placeholder="ClarePickleball.ie"/></label></div><div className="mt-2">{toolbar("website")}</div></div>
+       <div className="grid sm:grid-cols-2 gap-2">{check("signatureShowIcons","Show contact icons")}{check("signatureCta","Add CTA button")}</div>
+       {form.signatureCta&&<div className="rounded-lg border bg-white p-3"><div className="text-xs font-black uppercase tracking-wide text-slate-500">CTA button</div><div className="grid md:grid-cols-2 gap-2 mt-2"><label className="text-xs font-bold">Button text<input className={input} value={form.signatureCtaLabel} onChange={e=>setForm({...form,signatureCtaLabel:e.target.value})}/></label><label className="text-xs font-bold">Button link<input className={input} value={form.signatureCtaUrl} onChange={e=>setForm({...form,signatureCtaUrl:e.target.value})}/></label></div><div className="mt-2">{toolbar("cta")}</div></div>}
       </div>
-      <div><div className="text-xs font-black uppercase tracking-wide text-muted-foreground mb-2">Live signature preview</div>{sigPreview}</div>
+      <div className="xl:sticky xl:top-4 self-start"><div className="text-xs font-black uppercase tracking-wide text-muted-foreground mb-2">Live signature preview</div>{sigPreview}<p className="mt-2 text-[11px] text-muted-foreground">Preview uses email-safe formatting. Shadow is deliberately subtle because email-client support varies.</p></div>
      </div>
     </div>}
-    {selected.owner_scope==="tenant"&&<div className="rounded-xl border bg-slate-50 p-4 space-y-3"><div><h3 className="font-bold text-lg">Utility footer</h3><p className="text-xs text-muted-foreground mt-1">A separate optional block that sits above the existing Powered by RallyHub treatment.</p></div><div className="grid sm:grid-cols-3 gap-2">{check("utilityWebsite","Website")}{check("utilityDirectory","RallyHub Directory")}{check("utilityEvents","Events")}{check("utilityFeedback","Feedback")}{check("utilityFacebook","Facebook")}{check("utilityInstagram","Instagram")}</div><label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={!!form.utilityEnabled} onChange={e=>setForm({...form,utilityEnabled:e.target.checked})}/>Default this utility footer ON for new basic communications</label></div>}
+    {selected.owner_scope==="tenant"&&<div className="rounded-xl border bg-slate-50 p-4 space-y-3"><div><h3 className="font-bold text-lg">Utility footer</h3><p className="text-xs text-muted-foreground mt-1">A separate optional block that sits above the existing Powered by RallyHub treatment. Its individual labels/styling can be edited next.</p></div><div className="grid sm:grid-cols-3 gap-2">{check("utilityWebsite","Website")}{check("utilityDirectory","RallyHub Directory")}{check("utilityEvents","Events")}{check("utilityFeedback","Feedback")}{check("utilityFacebook","Facebook")}{check("utilityInstagram","Instagram")}</div><label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={!!form.utilityEnabled} onChange={e=>setForm({...form,utilityEnabled:e.target.checked})}/>Default this utility footer ON for new basic communications</label></div>}
     <div className="flex gap-2"><button className="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-semibold" onClick={save}>Save reusable blocks</button><button className={btn} onClick={()=>{setForm(null);setSelected(null);setSaved("")}}>Cancel</button></div>
    </div>:<div className="min-h-64 flex items-center justify-center text-center text-sm text-muted-foreground">Choose a brand kit, or click <b className="mx-1">Clare Pickleball Basic</b> below, to edit its reusable blocks.</div>}</div>
   </div>
