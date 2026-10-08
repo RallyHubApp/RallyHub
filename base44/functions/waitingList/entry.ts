@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
+import { emailSignatureBlockHtml, emailUtilityMenuHtml } from './emailBrandBlocks.ts';
 
 const clean=(v:any,max=500)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,max);
 const raw=(v:any,max=4000)=>String(v??'').trim().slice(0,max);
@@ -69,18 +70,12 @@ const UTILITY_LINKS:any={
   facebook:{label:'Facebook',url:'https://www.facebook.com/ClarePickleball/'},
   instagram:{label:'Instagram',url:'https://www.instagram.com/clarepickleball/'},
 };
-function signatureBlockHtml(){
-  return `<div style="margin-top:24px;padding-top:18px;border-top:1px solid #dbe5f1;font-size:14px;line-height:1.65;color:#172033;">Yours in sport,<br><strong>Brian Moore</strong><br>Chairperson, Clare Pickleball<br><a href="tel:+353878100333" style="color:#0755a8;text-decoration:none;">087 810 0333</a> · <a href="https://wa.me/353878100333" style="color:#078e48;text-decoration:none;font-weight:700;">WhatsApp</a><br><a href="mailto:clarepb2025@gmail.com" style="color:#0755a8;text-decoration:none;">clarepb2025@gmail.com</a> · <a href="https://clarepickleball.ie/" style="color:#0755a8;text-decoration:none;">ClarePickleball.ie</a></div>`;
-}
-function utilityMenuHtml(keys:any[]=[]){
-  const items=(keys||[]).map((key:any)=>UTILITY_LINKS[String(key)]).filter(Boolean);
-  if(!items.length)return '';
-  return `<div style="padding:14px 20px;border-top:1px solid #e4e9f1;text-align:center;font-size:12px;line-height:1.8;color:#667085;">${items.map((item:any)=>`<a href="${escapeHtml(item.url)}" target="_blank" style="color:#0755a8;text-decoration:none;font-weight:700;margin:0 7px;">${escapeHtml(item.label)}</a>`).join('<span style="color:#b0b8c4">·</span>')}</div>`;
-}
 function emailShell(club:any,headline:string,content:string,options:any={}){
   const logo=club?.logoUrl?`<img src="${escapeHtml(club.logoUrl)}" alt="${escapeHtml(club.name)} logo" width="72" height="72" style="display:block;margin:0 auto 12px;object-fit:contain;border-radius:12px;">`:'';
-  const signature=options.signature===true?signatureBlockHtml():'';
-  const utility=options.utility===true?utilityMenuHtml(options.utilityLinks||[]):'';
+  const contact=options.contact||{signoff:'Yours in sport,',name:'Brian Moore',role:'Chairperson',organisation:'Clare Pickleball',phone_whatsapp:'087 810 0333',phone_href:'tel:+353878100333',whatsapp_href:'https://wa.me/353878100333',email:'clarepb2025@gmail.com',email_href:'mailto:clarepb2025@gmail.com',website:'https://clarepickleball.ie/',website_label:'ClarePickleball.ie'};
+  const signature=options.signature===true?emailSignatureBlockHtml({contact,primary:club?.primaryColour||'#2667f2',secondary:club?.secondaryColour||'#facc15'}):'';
+  const utilityLinks=(options.utilityLinks||[]).map((key:any)=>UTILITY_LINKS[String(key)]).filter(Boolean);
+  const utility=options.utility===true?emailUtilityMenuHtml({links:utilityLinks,primary:club?.primaryColour||'#2667f2',secondary:club?.secondaryColour||'#facc15'}):'';
   return `<!doctype html><html><body style="margin:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 12px;background:#f4f7fb"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border:1px solid #d9e1ec;border-radius:18px;overflow:hidden"><tr><td style="height:6px;background:${escapeHtml(club?.primaryColour||'#2563eb')};border-bottom:3px solid ${escapeHtml(club?.secondaryColour||'#facc15')}"></td></tr><tr><td style="padding:26px 28px 18px;text-align:center">${logo}<div style="font-size:25px;font-weight:800">${escapeHtml(club?.name||'Club')}</div><div style="margin-top:5px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b7280">Waiting List</div></td></tr><tr><td style="padding:0 28px 28px"><h1 style="margin:0 0 18px;font-size:23px">${escapeHtml(headline)}</h1>${content}${signature}</td></tr>${utility?'<tr><td>'+utility+'</td></tr>':''}<tr><td style="padding:16px 20px;background:#f7f9fc;border-top:1px solid #e4e9f1"><div style="text-align:center;line-height:1.3"><a href="https://rallyhub.ie/" target="_blank" style="display:inline-table;text-decoration:none;color:#081342"><span style="display:table-cell;vertical-align:middle;padding-right:7px"><img src="https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png" alt="RallyHub" width="28" height="28" style="display:block;width:28px;height:28px;object-fit:contain;border:0"></span><span style="display:table-cell;vertical-align:middle;text-align:left"><span style="display:block;font-size:10px;color:#7b8494">Powered by</span><span style="display:block;font-size:17px;font-weight:900;letter-spacing:-.4px;color:#081342">Rally<span style="color:#078e48">Hub</span></span></span></a></div></td></tr></table></td></tr></table></body></html>`;
 }
 async function sendConfirmation(base44:any,config:any,club:any,sport:string,entry:any){
