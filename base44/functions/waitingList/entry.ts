@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { emailSignatureBlockHtml, emailUtilityMenuHtml } from './emailBrandBlocks.ts';
+// Shared email block styling; tenant colours/contact details are supplied by the active brand context.
 
 const clean=(v:any,max=500)=>String(v??'').trim().replace(/\s+/g,' ').slice(0,max);
 const raw=(v:any,max=4000)=>String(v??'').trim().slice(0,max);
