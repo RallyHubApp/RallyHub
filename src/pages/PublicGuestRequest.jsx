@@ -126,24 +126,27 @@ export default function PublicGuestRequest(){
     <header className="glass rounded-2xl p-6 text-center">
       <RallyHubPublicBrand club={data.club} clubFirst pageLabel="Session Booking"/>
       <h1 className="mt-5 text-2xl sm:text-3xl font-black">Book or request a session</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Choose the type of guest visit you are requesting. Both options follow the club’s guest approval process.</p>
+      <p className="mt-2 text-sm text-muted-foreground">Choose a guest visit, an experienced-player visit, or pay for an additional session as an existing member.</p>
     </header>
 
-    {!journey&&<section className="grid gap-3 sm:grid-cols-2">
+    {!journey&&<section className="grid gap-3 sm:grid-cols-3">
       <button type="button" onClick={()=>chooseGuestType('beginner')} className="glass rounded-2xl p-5 text-left hover:border-primary/50 border border-transparent transition-colors">
         <UserCheck className="h-6 w-6 text-primary"/><h2 className="mt-3 text-lg font-black">I’m a guest</h2><p className="mt-1 text-sm text-muted-foreground">I’m new to pickleball or learning the basics. Request a guest place, subject to club approval.</p>
       </button>
       <button type="button" onClick={()=>chooseGuestType('experienced')} className="glass rounded-2xl p-5 text-left hover:border-primary/50 border border-transparent transition-colors">
         <Users className="h-6 w-6 text-primary"/><h2 className="mt-3 text-lg font-black">I’m an experienced player</h2><p className="mt-1 text-sm text-muted-foreground">I already play pickleball. Request a guest place at an experienced session, subject to club approval.</p>
       </button>
+      <button type="button" onClick={()=>switchJourney('member')} className="glass rounded-2xl p-5 text-left hover:border-primary/50 border border-transparent transition-colors">
+        <UserCheck className="h-6 w-6 text-primary"/><h2 className="mt-3 text-lg font-black">I’m an existing member</h2><p className="mt-1 text-sm text-muted-foreground">Verify my membership to pay for an additional or unpaid session.</p>
+      </button>
     </section>}
 
     {error&&<div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
       <p>{error}</p>
-      {false&&journey==='member'&&/No membership record found/i.test(error)&&<Button type="button" variant="outline" size="sm" className="mt-3" onClick={()=>switchJourney('guest')}>Continue as a guest</Button>}
+      {journey==='member'&&/No membership record found/i.test(error)&&<Button type="button" variant="outline" size="sm" className="mt-3" onClick={()=>switchJourney('guest')}>Continue as a guest</Button>}
     </div>}
 
-    {false&&journey==='member'&&<form onSubmit={memberVerified?submitMember:checkMembership} className="space-y-5">
+    {journey==='member'&&<form onSubmit={memberVerified?submitMember:checkMembership} className="space-y-5">
       <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-black">Existing member</h2><p className="mt-1 text-xs text-muted-foreground">Enter any one or more of the details held by the club. RallyHub checks name, email and mobile against the membership database.</p></div><Button type="button" variant="ghost" size="sm" onClick={()=>switchJourney('')}>Change</Button></div>
         <div><Label htmlFor="memberFullName">Full name</Label><Input id="memberFullName" className="mt-1.5" value={memberForm.fullName} onChange={e=>{setMember('fullName',e.target.value);setMemberVerified(null)}} autoComplete="name"/></div>
