@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+const src=fs.readFileSync('base44/functions/kotcResultsShare/entry.ts','utf8');
+const must=(ok,msg)=>{if(!ok){console.error('FAIL clareBasicUtilityLayoutGate:',msg);process.exit(1)}};
+const start=src.indexOf('function basicUtilityBlock');
+const end=src.indexOf('function basicBrandedEmailBodies', start);
+const block=src.slice(start,end);
+must(!block.includes("['ClarePickleball.ie'"),'ClarePickleball.ie must not be duplicated in Clare basic utility menu');
+must(block.includes("const line2:any[]=[['RallyHub Directory'"),'second line must begin with RallyHub Directory');
+must(block.includes("['Events',`${root}/events`]"),'Events must be on the second line');
+must(block.includes('<div style="margin-top:2px">${render(line2)}</div>'),'second utility line missing');
+must(block.includes("['Facebook','https://www.facebook.com/ClarePickleball/']"),'Facebook link changed unexpectedly');
+console.log('PASS clareBasicUtilityLayoutGate: duplicate website removed and RallyHub links sit on a clean second line');
