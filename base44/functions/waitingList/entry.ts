@@ -108,6 +108,13 @@ Deno.serve(async(req)=>{
       const config=await configForClub(base44,tenantId,clubId);
       if(!config)return Response.json({error:'Waiting list is not configured for this club.'},{status:404});
       const [club,sport]=await Promise.all([clubBrand(base44,clubId,tenantId),sportName(base44,config.target_sport_id)]);
+      if(action==='admin_preview_email'){
+        const signature=body.signature!==false;
+        const utility=body.utility===true;
+        const utilityLinks=Array.isArray(body.utilityLinks)?body.utilityLinks.map((x:any)=>clean(x,40)).slice(0,12):[];
+        const html=emailShell(club,"You're on the waiting list, John",`<p style="font-size:15px;line-height:1.65;color:#374151">Thanks for joining the <strong>${escapeHtml(club.name)} waiting list</strong>.</p><p style="font-size:15px;line-height:1.65;color:#374151">We will contact you as soon as a suitable place becomes available.</p><p style="font-size:13px;line-height:1.6;color:#6b7280"><strong>This is not club membership.</strong></p>`,{signature,utility,utilityLinks});
+        return Response.json({success:true,html,signature,utility,utilityLinks});
+      }
       if(action==='admin_count'||action==='admin_list'){
         const all=await base44.asServiceRole.entities.WaitingListEntry.filter({tenant_id:tenantId,club_id:clubId},'first_joined_at',500);
         const active=(all||[]).filter((x:any)=>x.active!==false&&!['removed','declined','completed_course'].includes(String(x.status||'')));
