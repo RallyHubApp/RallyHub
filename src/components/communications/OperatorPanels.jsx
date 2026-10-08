@@ -78,14 +78,14 @@ export function SettingsPanel(){
 
 export function BrandKitManager(){
  const {user}=useAuth();
- const [kits,setKits]=useState([]),[selected,setSelected]=useState(null),[form,setForm]=useState(null),[error,setError]=useState(""),[saved,setSaved]=useState("");
+ const [kits,setKits]=useState([]),[selected,setSelected]=useState(null),[form,setForm]=useState(null),[error,setError]=useState(""),[saved,setSaved]=useState(""),[saveState,setSaveState]=useState("idle");
  const load=async()=>{try{setKits(await base44.entities.CommunicationBrandKit.filter({status:"active"},'-published_at',50)||[])}catch(e){setError(e?.message||"Could not load brand kits.")}};
  useEffect(()=>{load()},[user?.active_tenant_id,user?.active_club_id]);
  const visible=kits.filter(k=>k.owner_scope==="platform"||String(k.tenant_id||"")===String(user.active_tenant_id||""));
  const baseStyle=(over={})=>({bold:false,italic:false,underline:false,size:13,color:"",align:"left",shadow:false,...over});
  const choose=k=>{
   const sb=k.channel_overrides?.email?.signature_block||{},uf=k.channel_overrides?.email?.utility_footer||{},styles=sb.styles||{};
-  setSelected(k);setSaved("");setForm({
+  setSelected(k);setSaved("");setSaveState("idle");setForm({
    name:k.name||"",version:k.version||"1.0",primary:k.colours?.primary||"#2667F2",secondary:k.colours?.secondary||"#FACC15",text:k.colours?.text||"#172033",
    bodyFont:k.typography?.body_font||"Arial, Helvetica, sans-serif",h1:k.typography?.h1_size_px||24,h2:k.typography?.h2_size_px||20,h3:k.typography?.h3_size_px||17,body:k.typography?.body_size_px||16,
    signoff:k.contact?.signoff||"Yours in sport,",contactName:k.contact?.name||"Brian Moore",role:k.contact?.role||"",organisation:k.contact?.organisation||"",phone:k.contact?.phone_whatsapp||"",email:k.contact?.email||"",website:k.contact?.website||"",
@@ -111,7 +111,7 @@ export function BrandKitManager(){
  const setStyle=(part,key,value)=>setForm(f=>({...f,signatureStyles:{...f.signatureStyles,[part]:{...f.signatureStyles[part],[key]:value}}}));
  const save=async()=>{
   if(!selected?.id)return;
-  setError("");setSaved("");
+  setError("");setSaved("");setSaveState("saving");
   try{
    const colours={...(selected.colours||{}),primary:form.primary,secondary:form.secondary,text:form.text};
    const typography={...(selected.typography||{}),body_font:form.bodyFont,heading_font:form.bodyFont,h1_size_px:Number(form.h1),h2_size_px:Number(form.h2),h3_size_px:Number(form.h3),body_size_px:Number(form.body)};
@@ -126,8 +126,8 @@ export function BrandKitManager(){
    const utility_footer={enabled_default:!!form.utilityEnabled,links:{website:!!form.utilityWebsite,directory:!!form.utilityDirectory,events:!!form.utilityEvents,feedback:!!form.utilityFeedback,facebook:!!form.utilityFacebook,instagram:!!form.utilityInstagram}};
    const channel_overrides={...(selected.channel_overrides||{}),email:{...oldEmail,signature_block,utility_footer}};
    await base44.entities.CommunicationBrandKit.update(selected.id,{name:form.name,version:form.version,colours,typography,contact,channel_overrides,published_at:now()});
-   setSaved("Saved. The reusable Signature and Utility Footer defaults are updated.");await load();
-  }catch(e){setError(e?.message||"Could not save brand kit.")}
+   setSaved("Saved. The reusable Signature and Utility Footer defaults are updated.");setSaveState("saved");await load();setTimeout(()=>setSaveState("idle"),2500);
+  }catch(e){setSaveState("error");setError(e?.message||"Could not save brand kit.")}
  };
  const css=s=>({fontWeight:s?.bold?800:400,fontStyle:s?.italic?"italic":"normal",textDecoration:s?.underline?"underline":"none",fontSize:Number(s?.size||13),color:s?.color||form.text,textAlign:s?.align||"left",textShadow:s?.shadow?"0 1px 2px rgba(15,23,42,.22)":"none"});
  const icon=(glyph)=>form.signatureShowIcons?<span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black text-white" style={{background:form.primary}}>{glyph}</span>:null;
@@ -183,7 +183,7 @@ export function BrandKitManager(){
      </div>
     </div>}
     {selected.owner_scope==="tenant"&&<div className="rounded-xl border bg-slate-50 p-4 space-y-3"><div><h3 className="font-bold text-lg">Utility footer</h3><p className="text-xs text-muted-foreground mt-1">A separate optional block that sits above the existing Powered by RallyHub treatment. Its individual labels/styling can be edited next.</p></div><div className="grid sm:grid-cols-3 gap-2">{check("utilityWebsite","Website")}{check("utilityDirectory","RallyHub Directory")}{check("utilityEvents","Events")}{check("utilityFeedback","Feedback")}{check("utilityFacebook","Facebook")}{check("utilityInstagram","Instagram")}</div><label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={!!form.utilityEnabled} onChange={e=>setForm({...form,utilityEnabled:e.target.checked})}/>Default this utility footer ON for new basic communications</label></div>}
-    <div className="flex gap-2"><button className="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-semibold" onClick={save}>Save reusable blocks</button><button className={btn} onClick={()=>{setForm(null);setSelected(null);setSaved("")}}>Cancel</button></div>
+    <div className="flex flex-wrap items-center gap-2"><button disabled={saveState==="saving"} className={"rounded-lg px-4 py-2 text-sm font-semibold transition "+(saveState==="saved"?"bg-emerald-600 text-white":saveState==="error"?"bg-red-700 text-white":"bg-slate-900 text-white")+" disabled:opacity-70"} onClick={save}>{saveState==="saving"?"Saving…":saveState==="saved"?"✓ Saved":saveState==="error"?"Save failed — retry":"Save reusable blocks"}</button><button className={btn} onClick={()=>{setForm(null);setSelected(null);setSaved("");setSaveState("idle")}}>Cancel</button>{saveState==="saving"&&<span className="text-xs font-semibold text-slate-600">Saving your reusable blocks…</span>}{saveState==="saved"&&<span className="text-xs font-bold text-emerald-700">Saved successfully.</span>}{saveState==="error"&&<span className="text-xs font-bold text-red-700">Could not save. Check the message above and retry.</span>}</div>
    </div>:<div className="min-h-64 flex items-center justify-center text-center text-sm text-muted-foreground">Choose a brand kit, or click <b className="mx-1">Clare Pickleball Basic</b> below, to edit its reusable blocks.</div>}</div>
   </div>
  </div>
