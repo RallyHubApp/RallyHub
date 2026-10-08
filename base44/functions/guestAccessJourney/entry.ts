@@ -257,7 +257,7 @@ Deno.serve(async(req)=>{
       const directory=await loadDirectory(base44,club.slug);
       const options=publicOptions(directory,await loadConfig(base44,tenantId,clubId));
       const session=options.sessions.find((s:any)=>s.id===clean(body.sessionId,150));
-      if(!session||!/ennis\s*diamond/i.test(session.venueName)||!['19:00','20:00'].includes(session.start))return Response.json({error:'Only Ennis Diamond 7 pm and 8 pm can be linked in this pilot.'},{status:400});
+      if(!session||!/ennis\s*diamond/i.test(session.venueName)||!['19:00','20:00'].includes(session.start))return Response.json({error:'Only Ennistymon 7 pm and 8 pm can be linked in this pilot.'},{status:400});
       const groupId=clean(body.groupId,150),eventId=clean(body.eventId,150);
       if(!groupId||!eventId)return Response.json({error:'Select the Spond group and event first.'},{status:400});
       const token=clean(body.spondToken,5000)||await spondLogin();
@@ -270,7 +270,7 @@ Deno.serve(async(req)=>{
       const localDay=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Dublin',weekday:'long'}).format(new Date(event.startTimestamp));
       if(localTime!==session.start||localDay!==session.day)return Response.json({error:'Selected Spond event does not match this RallyHub session weekday and time.'},{status:409});
       const existing=await base44.asServiceRole.entities.SpondSessionBinding.filter({tenant_id:tenantId,club_id:clubId,listing_slug:club.slug,directory_session_key:session.id},'-created_date',10);
-      const payload={tenant_id:tenantId,club_id:clubId,listing_slug:club.slug,directory_session_key:session.id,spond_group_id:groupId,spond_event_id:eventId,spond_heading:clean(event.heading,200),active:true,last_verified_at:new Date().toISOString(),notes:'Ennis Diamond pilot; recurring weekday/time and event heading must match uniquely.'};
+      const payload={tenant_id:tenantId,club_id:clubId,listing_slug:club.slug,directory_session_key:session.id,spond_group_id:groupId,spond_event_id:eventId,spond_heading:clean(event.heading,200),active:true,last_verified_at:new Date().toISOString(),notes:'Ennistymon pilot; recurring weekday/time and event heading must match uniquely.'};
       const saved=existing?.[0]?await base44.asServiceRole.entities.SpondSessionBinding.update(existing[0].id,payload):await base44.asServiceRole.entities.SpondSessionBinding.create(payload);
       return Response.json({success:true,binding:saved});
     }
