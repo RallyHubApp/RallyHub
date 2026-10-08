@@ -1,3 +1,4 @@
+import EnnisDiamondSpondPilot from '@/components/spond/EnnisDiamondSpondPilot';
 import React, { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -394,6 +395,8 @@ export default function GuestBookings(){
         {templateData.sumupConfigured?'SumUp connected':'SumUp setup required'}
       </Badge></div>
     </div>
+
+    {user?.role==='admin'&&<EnnisDiamondSpondPilot/>}
 
     {!templateData.sumupConfigured&&<div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
       <strong>SumUp is not connected to RallyHub yet.</strong> You can create and test cash/waiver flows now. Doora Barefield and Ennistymon payment links will become live when the SumUp API key and merchant code are added to the backend.
