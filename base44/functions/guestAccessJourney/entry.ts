@@ -249,7 +249,7 @@ Deno.serve(async(req)=>{
     if(action==='admin_spond_bindings'){
       const directory=await loadDirectory(base44,club.slug);
       const options=publicOptions(directory,await loadConfig(base44,tenantId,clubId));
-      const sessions=options.sessions.filter((s:any)=>/ennis\s*diamond/i.test(s.venueName)&&['19:00','20:00'].includes(s.start));
+      const sessions=options.sessions.filter((s:any)=>/ennistymon/i.test(s.venueName)&&['19:00','20:00'].includes(s.start));
       const bindings=await base44.asServiceRole.entities.SpondSessionBinding.filter({tenant_id:tenantId,club_id:clubId,listing_slug:club.slug},'directory_session_key',100);
       return Response.json({success:true,listingSlug:club.slug,sessions,bindings:(bindings||[]).filter((b:any)=>sessions.some((s:any)=>s.id===b.directory_session_key))});
     }
@@ -257,7 +257,7 @@ Deno.serve(async(req)=>{
       const directory=await loadDirectory(base44,club.slug);
       const options=publicOptions(directory,await loadConfig(base44,tenantId,clubId));
       const session=options.sessions.find((s:any)=>s.id===clean(body.sessionId,150));
-      if(!session||!/ennis\s*diamond/i.test(session.venueName)||!['19:00','20:00'].includes(session.start))return Response.json({error:'Only Ennistymon 7 pm and 8 pm can be linked in this pilot.'},{status:400});
+      if(!session||!/ennistymon/i.test(session.venueName)||!['19:00','20:00'].includes(session.start))return Response.json({error:'Only Ennistymon 7 pm and 8 pm can be linked in this pilot.'},{status:400});
       const groupId=clean(body.groupId,150),eventId=clean(body.eventId,150);
       if(!groupId||!eventId)return Response.json({error:'Select the Spond group and event first.'},{status:400});
       const token=clean(body.spondToken,5000)||await spondLogin();
