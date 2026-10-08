@@ -35,6 +35,8 @@ export function normaliseBrandKit(kit={}){
     poweredByPlain:kit.compliance_footer?.powered_by_plain||"",
     headerStyle:kit.channel_overrides?.email?.header_style||"",
     contact:kit.contact||null,
+    signatureBlock:kit.channel_overrides?.email?.signature_block||{},
+    utilityFooter:kit.channel_overrides?.email?.utility_footer||{},
   };
 }
 export function renderEmail({brandKit,subjectTemplate,htmlTemplate,plainTextTemplate,data={}}){
@@ -54,7 +56,7 @@ export function renderEmail({brandKit,subjectTemplate,htmlTemplate,plainTextTemp
   }
   const isTenantBasic=brand.headerStyle==="clare-light";
   const header=isTenantBasic?`<tr><td style="background:#ffffff;padding:22px 24px 14px;text-align:center">${brand.logo?`<img src="${brand.logo}" alt="Clare Pickleball" width="118" style="display:block;width:118px;max-width:100%;height:auto;margin:0 auto;border:0">`:""}</td></tr>`:`<tr><td style="background:${brand.primary};padding:20px;text-align:center">${brand.logo?`<img src="${brand.logo}" alt="${brand.name}" style="max-height:72px;max-width:220px">`:`<strong style="color:${brand.secondary};font-family:${brand.headingFont};font-size:${brand.h1Size}px;font-weight:${brand.h1Weight}">${brand.name}</strong>`}</td></tr>`;
-  const tenantSignature=isTenantBasic&&brand.contact?`<tr><td style="padding:0 28px 20px"><div style="border-top:1px solid #dbe5f1;padding-top:18px;font-size:14px;line-height:1.6;color:${brand.text}">${brand.contact.signoff||"Yours in sport,"}<br><strong>${brand.contact.name||""}</strong><br>${brand.contact.role||""}${brand.contact.organisation?` · ${brand.contact.organisation}`:""}${brand.contact.phone_href?`<br><a href="${brand.contact.phone_href}" style="color:#0755a8;text-decoration:none">${brand.contact.phone_whatsapp||""}</a>`:""}${brand.contact.whatsapp_href?` · <a href="${brand.contact.whatsapp_href}" style="color:#078e48;text-decoration:none;font-weight:700">WhatsApp</a>`:""}${brand.contact.email_href?`<br><a href="${brand.contact.email_href}" style="color:#0755a8;text-decoration:none">${brand.contact.email||""}</a>`:""}${brand.contact.website?` · <a href="${brand.contact.website}" style="color:#0755a8;text-decoration:none">ClarePickleball.ie</a>`:""}</div></td></tr>`:"";
+  const tenantSignature="";
   const tenantPoweredFooter=brand.headerStyle!=="rallyhub-light"&&brand.poweredByHtml?`<tr><td style="padding:16px 20px;background:#f7f9fc;border-top:1px solid #e4e9f1">${brand.poweredByHtml}</td></tr>`:"";
   const shellStyle=isTenantBasic?`max-width:${brand.maxWidth}px;background:#fff;border:2px solid #0755a8;border-radius:14px;overflow:hidden`:`max-width:${brand.maxWidth}px;background:#fff`;
   const brandAccent=isTenantBasic?`<tr><td style="height:5px;background:#0755a8;border-bottom:3px solid #f2cf33;font-size:0;line-height:0">&nbsp;</td></tr>`:"";
