@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, CalendarDays, ChevronDown, Clock3, List, Map as MapIcon, MapPin, Search, SlidersHorizontal, Star, UserRound } from 'lucide-react';
@@ -70,6 +70,8 @@ function EventMap({events}){
 
 export default function Events(){
   const navigate=useNavigate();
+  const [subscriptionMessage,setSubscriptionMessage]=useState('');
+  useEffect(()=>{const params=new URLSearchParams(window.location.search),action=params.get('subscription'),token=params.get('token');if(!token||!['confirm','unsubscribe'].includes(action))return;let active=true;base44.functions.invoke('eventSubscriptions',{action,token}).then(r=>{if(active)setSubscriptionMessage(r.data?.error|| (action==='confirm'?'Your RallyHub event updates are confirmed.':'You have been unsubscribed from RallyHub event emails.'));}).catch(()=>{if(active)setSubscriptionMessage('We could not process this link. Please try again.');});return()=>{active=false};},[]);
   const {isAuthenticated}=useAuth();
   const [query,setQuery]=useState('');
   const [status,setStatus]=useState('all');
@@ -127,7 +129,7 @@ export default function Events(){
   const selectClass="h-11 w-full rounded-lg border border-[#cfdcdf] bg-white px-3 text-[12px] font-semibold text-[#17325f] outline-none focus:border-[#078e48]";
   return <>
     <Seo title="Pickleball Events, Tournaments & Coaching | RallyHub" description="Find upcoming pickleball tournaments, interclubs, leagues, social events, coaching and camps across Ireland and beyond." path="/events" robots="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"/>
-    <div className="min-h-screen bg-white text-[#07184c]"><PublicSiteHeader/><main>
+    <div className="min-h-screen bg-white text-[#07184c]"><PublicSiteHeader/>{subscriptionMessage&&<div role="status" className="mx-auto max-w-4xl rounded-lg bg-[#e7f7ef] p-4 text-center font-semibold">{subscriptionMessage}</div>}<main>
       <section className="relative overflow-hidden bg-[#f4fbfc]">
         <div className="mx-auto grid max-w-[1380px] lg:grid-cols-[53%_47%]">
           <div className="relative z-10 flex min-h-[330px] items-center px-5 py-9 sm:px-7 lg:min-h-[360px] lg:px-10 xl:px-12">

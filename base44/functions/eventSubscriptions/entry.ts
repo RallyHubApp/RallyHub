@@ -19,7 +19,7 @@ Deno.serve(async(req)=>{
    const record=existing[0];
    if(record) await entity.update(record.id,data);else await entity.create(data);
    const url=`${base}?subscription=confirm&token=${encodeURIComponent(confirm)}`;
-   try{await sendWithConfiguredEmailTransport(b,{scopeType:'platform',purpose:'directory'},{to:email,senderName:'RallyHub Events',subject:'Confirm your RallyHub event updates',textBody:`Confirm your RallyHub event updates by opening:\n${url}\n\nIf you did not request this, ignore this email.`});}
+   try{await sendWithConfiguredEmailTransport(b,{scopeType:'platform',purpose:'directory'},{to:email,senderName:'RallyHub Events',subject:'Confirm your RallyHub event updates',textBody:`Confirm your RallyHub event updates by opening:\n${url}\n\nIf you did not request this, ignore this email.\n\nTo unsubscribe at any time: ${base}?subscription=unsubscribe&token=${encodeURIComponent(unsubscribe)}`});}
    catch(e){return Response.json({error:'Confirmation email could not be sent. Please try again later.'},{status:503});}
    return Response.json({success:true,pending:true});
   }
