@@ -369,6 +369,8 @@ Deno.serve(async(req)=>{
       const row=(await base44.asServiceRole.entities.GuestBookingRequest.filter({id,tenant_id:tenantId,club_id:clubId},'-submitted_at',5))?.[0];
       if(!row)return Response.json({error:'Guest request not found.'},{status:404});
       if(row.status!=='pending_approval')return Response.json({error:'This guest request has already been decided.'},{status:409});
+      const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName:row.full_name,email:row.email,mobile:row.mobile});
+      if(restriction!=='clear')return clubRestrictionResponse(restriction);
       const approvedSessionKey=clean(body.sessionId||row.preferred_session_key,160);
       const {session,venue}=await sessionFromDirectory(base44,club,approvedSessionKey);
       const date=clean(body.sessionDate,20)||nextDateForDay(String(session.day||''),String(session.start||''),String(session.end||''));
