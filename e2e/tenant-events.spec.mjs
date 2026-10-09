@@ -109,3 +109,16 @@ test.describe('tenant Events mobile',()=>{
     await noHorizontalOverflow(page);
   });
 });
+
+test('event artwork: automatically import a verified original without manual uploader',async({page})=>{
+ const model=await installBackend(page);
+ const source='https://base44.app/api/apps/'+APP_ID+'/files/mp/public/poster.webp';
+ const stored='https://base44.app/api/apps/'+APP_ID+'/files/mp/public/verified-poster.webp';
+ await page.route('**/api/apps/**/functions/eventPosterIngest',route=>json(route,{success:true,originalUrl:stored,sourceUrl:source,width:1510,height:1042,bytes:177208,sha256:'test-digest',reviewRequired:false}));
+ await page.goto('/app/events');
+ await expect(page.getByRole('heading',{name:'Events',exact:true})).toBeVisible();
+ await page.getByLabel('Original poster URL').fill(source);
+ await page.getByRole('button',{name:'Import original automatically'}).click();
+ await expect(page.getByAltText('Event poster preview')).toHaveAttribute('src',stored);
+ await expect(page.getByAltText('Event card crop preview')).toHaveAttribute('src',stored);
+});
