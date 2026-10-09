@@ -122,3 +122,14 @@ test('event artwork: automatically import a verified original without manual upl
  await expect(page.getByAltText('Event poster preview')).toHaveAttribute('src',stored);
  await expect(page.getByAltText('Event card crop preview')).toHaveAttribute('src',stored);
 });
+
+test('event page URL discovers matching poster before verified import',async({page})=>{
+ await installBackend(page);
+ const poster='https://pickleballireland.ie/wp-content/uploads/2026/10/Sqaure.webp';
+ await page.route('**/api/apps/**/functions/eventPosterDiscover',route=>json(route,{success:true,reviewRequired:false,selected:{imageUrl:poster,eventName:'Munster Open 2027',origin:'event-jsonld',score:150}}));
+ await page.goto('/app/events');
+ await page.getByLabel('Event name').fill('Munster Open 2027');
+ await page.getByLabel('Event webpage URL').fill('https://pickleballireland.ie/events/');
+ await page.getByRole('button',{name:'Find event poster'}).click();
+ await expect(page.getByLabel('Original poster URL')).toHaveValue(poster);
+});
