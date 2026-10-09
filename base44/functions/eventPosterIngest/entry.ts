@@ -27,6 +27,14 @@ Deno.serve(async req=>{
   const file=new File([bytes],`event-poster-${digest.slice(0,16)}.${info.format}`,{type:`image/${info.format}`});
   const result=await b.asServiceRole.integrations.Core.UploadFile({file});
   if(!result?.file_url)throw new Error('Storage did not return a poster URL');
+  // Verify stored bytes independently; a storage provider may re-encode the image.
+  const storedUrl=new URL(result.file_url);
+  if(storedUrl.protocol!=='https:'||!['base44.app','www.base44.app'].includes(storedUrl.hostname))throw new Error('Storage URL not trusted for verification');
+  const storedResponse=await fetch(storedUrl.toString(),{redirect:'error',signal:AbortSignal.timeout(15000)});
+  if(!storedResponse.ok)throw new Error('Stored poster could not be read back');
+  const storedBytes=new Uint8Array(await storedResponse.arrayBuffer());
+  const storedHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',storedBytes))).map(v=>v.toString(16).padStart(2,'0')).join('');
+  if(storedHash!==digest)throw new Error('Stored poster differs from source; manual review required');
   return Response.json({success:true,originalUrl:result.file_url,sourceUrl:url.toString(),sha256:digest,bytes:bytes.length,...info,reviewRequired:false});
  }catch(e){console.error('poster intake',e);return Response.json({error:'Poster ingestion failed: '+String(e?.message||'unknown')},{status:422});}
 });

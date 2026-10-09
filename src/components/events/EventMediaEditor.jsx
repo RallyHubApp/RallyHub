@@ -10,6 +10,7 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
   const [preview, setPreview] = useState(value);
   const [draggingCard, setDraggingCard] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [posterSourceUrl,setPosterSourceUrl]=useState('');
   const [x, setX] = useState(Number(position?.x ?? 50));
   const [y, setY] = useState(Number(position?.y ?? 50));
   const [zoom, setZoom] = useState(Number(position?.zoom ?? 1));
@@ -42,6 +43,18 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
     } catch(e) { setPreview(value); toast.error(e.message || 'Poster upload failed'); }
     finally { setUploading(false); }
   };
+  const importSource=async()=>{
+    if(!posterSourceUrl.trim())return;
+    setUploading(true);
+    try{
+      const response=await base44.functions.invoke('eventPosterIngest',{sourceUrl:posterSourceUrl.trim()});
+      const result=response.data||{};
+      if(!result.success)throw new Error(result.error||'Poster needs manual review');
+      setPreview(result.originalUrl);setX(50);setY(50);setZoom(1);setCardX(50);setCardY(50);setCardZoom(1);
+      onChange?.({url:result.originalUrl,x:50,y:50,zoom:1,cardX:50,cardY:50,cardZoom:1,originalUrl:result.originalUrl,sourceType:'verified-source'});
+      toast.success(`Original poster verified (${result.width} × ${result.height})`);
+    }catch(e){toast.error(e?.message||'Automatic poster import failed')}finally{setUploading(false)}
+  };
   const reset=()=>{setX(50);setY(50);setZoom(1);setCardX(50);setCardY(50);setCardZoom(1);emit(preview,50,50,1,50,50,1)};
   const remove=()=>{setPreview('');setX(50);setY(50);setZoom(1);setCardX(50);setCardY(50);setCardZoom(1);onChange?.({url:'',x:50,y:50,zoom:1,cardX:50,cardY:50,cardZoom:1,originalUrl:'',sourceType:''})};
   const clamp=value=>Math.max(0,Math.min(100,value));
@@ -72,6 +85,7 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
 
   return <div className="rounded-xl border p-4 space-y-5">
     <div><p className="text-sm font-bold">Event poster / artwork</p><p className="mt-1 text-xs text-muted-foreground">Upload once. RallyHub keeps the full poster and lets you make a separate wide crop for public event cards. JPG, PNG, WEBP or PDF · up to 20 MB.</p></div>
+    <div className="flex flex-col gap-2 sm:flex-row"><input aria-label="Original poster URL" type="url" value={posterSourceUrl} onChange={e=>setPosterSourceUrl(e.target.value)} placeholder="Paste an original poster image URL" className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"/><button type="button" disabled={uploading||!posterSourceUrl.trim()} onClick={importSource} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">Import original automatically</button></div><p className="text-xs text-muted-foreground">Approved source domains only. RallyHub checks dimensions and verifies stored image bytes. Unverified images require manual review.</p>
     <div className="grid gap-5 lg:grid-cols-[minmax(0,.75fr)_minmax(0,1.25fr)]">
       <div><div className="mb-2 flex items-center justify-between"><p className="text-xs font-bold">Full artwork</p><span className="text-[10px] text-muted-foreground">Event detail page</span></div><div className="relative mx-auto flex min-h-[260px] w-full max-w-[420px] items-center justify-center overflow-hidden rounded-xl border bg-secondary/30">
         {preview ? <img src={preview} alt="Event poster preview" className="block max-h-[480px] w-full object-contain" style={{objectPosition:`${x}% ${y}%`,transform:`scale(${zoom})`,transformOrigin:`${x}% ${y}%`}}/> : <div className="flex min-h-[360px] w-full flex-col items-center justify-center text-muted-foreground"><FileImage className="h-8 w-8"/><span className="mt-2 text-xs">Poster / artwork preview</span></div>}
