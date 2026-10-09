@@ -223,10 +223,32 @@ export default function DirectoryListingEdit() {
   const [showEnhancements, setShowEnhancements] = useState(false);
   const [error, setError] = useState('');
   const [validation, setValidation] = useState([]);
+  const [editorMode, setEditorMode] = useState('choose');
+  const [guidedStep, setGuidedStep] = useState(0);
   const returnTo = useMemo(() => `/directory/${slug}/edit`, [slug]);
   const dirty = !!form && !!baseline && JSON.stringify(form) !== baseline;
   const publicListingUrl = useMemo(() => `/directory/${slug}`, [slug]);
   const isClaimed = access?.listing?.verificationStatus === 'verified';
+  const guidedSections = [
+    { id: 'basics', label: 'Club details' },
+    { id: 'contact', label: 'Contact information' },
+    ...(String(form?.listingType || baseClub?.listingType || 'club') === 'club' ? [
+      { id: 'venues', label: 'Playing venues' }, { id: 'sessions', label: 'Weekly sessions' },
+      { id: 'events', label: 'Events and review' },
+    ] : [{ id: 'events', label: 'Review listing' }]),
+  ];
+  const advanceGuided = async () => {
+    if (saving) return;
+    if (dirty) {
+      if (!validate()) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+      await save();
+      // The existing save operation controls validation, permissions and persistence.
+      // The user must explicitly continue after confirmation, avoiding navigation on failed saves.
+      return;
+    }
+    if (guidedStep < guidedSections.length - 1) setGuidedStep(value => value + 1);
+    else viewPublicListing();
+  };
 
   useEffect(() => {
     let active = true;
@@ -732,6 +754,24 @@ export default function DirectoryListingEdit() {
                 {validation.length > 0 && <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm"><p className="font-semibold text-amber-700 dark:text-amber-200">Please fix these before saving:</p><ul className="mt-2 list-disc pl-5 space-y-1 text-muted-foreground">{validation.map(item => <li key={item}>{item}</li>)}</ul></div>}
               </section>
 
+              <section className="glass rounded-2xl p-5 sm:p-6 space-y-3" data-testid="directory-editor-mode">
+                <h2 className="font-bold text-lg">How would you like to update your listing?</h2>
+                <p className="text-sm text-muted-foreground">Both options update the same listing. Switch at any time.</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant={editorMode === 'guided' ? 'default' : 'outline'} onClick={() => { setEditorMode('guided'); setGuidedStep(0); }}>Guided setup</Button>
+                  <Button type="button" variant={editorMode === 'direct' ? 'default' : 'outline'} onClick={() => setEditorMode('direct')}>Edit directly</Button>
+                </div>
+                {editorMode === 'guided' && <div className="space-y-3" data-testid="directory-guided-progress">
+                  <p className="text-sm font-semibold">Step {guidedStep + 1} of {guidedSections.length}: {guidedSections[guidedStep]?.label}</p>
+                  <div className="flex gap-1" aria-label="Setup progress">{guidedSections.map((section, index) => <div key={section.id} className={`h-2 flex-1 rounded-full ${index <= guidedStep ? 'bg-primary' : 'bg-border'}`} />)}</div>
+                  <p className="text-xs text-muted-foreground">Review the section below, then save your changes before continuing. You can return to earlier steps.</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" disabled={guidedStep === 0 || saving} onClick={() => setGuidedStep(value => Math.max(0, value - 1))}>Previous</Button>
+                    <Button type="button" disabled={saving} onClick={advanceGuided}>{dirty ? 'Save this step' : guidedStep === guidedSections.length - 1 ? 'View public listing' : 'Continue'}</Button>
+                    {guidedSections[guidedStep]?.id === 'events' && isClubListing && <Link to={`/directory/${slug}/events`}><Button type="button" variant="outline">Manage events</Button></Link>}
+                  </div>
+                </div>}
+              </section>
               <section className="rounded-2xl border border-primary/25 bg-primary/10 p-5 sm:p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div>
@@ -747,7 +787,7 @@ export default function DirectoryListingEdit() {
               {isClaimed && <RallyHubClubPreviewLock listingSlug={slug} clubName={form?.name || baseClub?.name || 'this club'} />}
               {isClaimed && <ClubFeedbackPanel listingSlug={slug} clubName={form?.name || baseClub?.name || 'this club'} />}
 
-              <section id="basics" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
+              <section id="basics" style={{ display: editorMode === 'guided' && guidedSections[guidedStep]?.id !== 'basics' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><Info className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club information' : 'Public listing information'}</h2></div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2 sm:col-span-2"><Label>{isClubListing ? 'Club name' : 'Business / listing name'}</Label><Input value={form.name || ''} onChange={e => setField('name', e.target.value)} maxLength={220} placeholder={isClubListing ? 'e.g. Dalkey Pickleball Club' : 'Public listing name'} /><p className="text-xs text-muted-foreground">This changes the public heading only. The RallyHub listing link stays the same.</p></div>
@@ -838,7 +878,7 @@ export default function DirectoryListingEdit() {
                 </div>
               </section>
 
-              <section id="contact" className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
+              <section id="contact" style={{ display: editorMode === 'guided' && guidedSections[guidedStep]?.id !== 'contact' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-5 scroll-mt-24">
                 <div className="flex items-center gap-2"><UserRound className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">{isClubListing ? 'Public club contact' : 'Public listing contact'}</h2></div>
                 <p className="text-sm text-muted-foreground">These details are separate from the private verified owner/editor identity held by RallyHub. Use whatever public contact label is appropriate.</p>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -864,7 +904,7 @@ export default function DirectoryListingEdit() {
 
               {isClubListing && <>
 
-              <section id="venues" className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
+              <section id="venues" style={{ display: editorMode === 'guided' && guidedSections[guidedStep]?.id !== 'venues' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
                 <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Venues</h2></div><p className="text-sm text-muted-foreground mt-1">Add every regular place where the club plays.</p></div><Button variant="outline" size="sm" onClick={addVenue} className="gap-1"><Plus className="w-4 h-4" /> Add venue</Button></div>
                 {(form.venues || []).length === 0 && <div className="rounded-xl border border-dashed border-border p-6 text-center"><MapPin className="w-6 h-6 mx-auto text-muted-foreground" /><p className="text-sm text-muted-foreground mt-2">No venues added yet.</p><Button variant="outline" size="sm" onClick={addVenue} className="mt-3">Add first venue</Button></div>}
                 {(form.venues || []).map((venue, index) => (
@@ -900,7 +940,7 @@ export default function DirectoryListingEdit() {
                 ))}
               </section>
 
-              <section id="sessions" className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
+              <section id="sessions" style={{ display: editorMode === 'guided' && guidedSections[guidedStep]?.id !== 'sessions' ? 'none' : undefined }} className="glass rounded-2xl p-6 space-y-4 scroll-mt-24">
                 <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><CalendarDays className="w-5 h-5 text-primary" /><h2 className="text-xl font-bold">Weekly sessions</h2></div><p className="text-sm text-muted-foreground mt-1">Each session here repeats weekly. Add a blank session for something new, or duplicate only when you deliberately want to copy an existing session.</p></div><Button type="button" variant="outline" size="sm" onClick={addSession} disabled={!form.venues?.length} className="gap-1" data-testid="directory-add-session"><Plus className="w-4 h-4" /> Add blank weekly session</Button></div>
                 {sessionNotice && <div aria-live="polite" data-testid="directory-session-notice" className="rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm text-primary">{sessionNotice}</div>}
                 {!form.venues?.length && <div className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">Add a venue before adding weekly sessions.</div>}
