@@ -31,7 +31,6 @@ export default function PublicEventDetail(){
   const {isAuthenticated,user}=useAuth();
   const {data:event,isLoading,error}=useQuery({queryKey:['public-event-detail',slug],queryFn:async()=>{const res=await base44.functions.invoke('publicEvents',{action:'detail',slug});if(res.data?.error)throw new Error(res.data.error);return res.data?.event||null},enabled:!!slug,staleTime:60000,refetchOnWindowFocus:true});
   const {data:editAccess}=useQuery({queryKey:['event-edit-access',event?.id,user?.id],queryFn:async()=>{const r=await base44.functions.invoke('eventEditAccess',{eventId:event.id});return r.data||{}},enabled:!!isAuthenticated&&!!event?.id&&!!user?.id,staleTime:60000});
-  const {data:editAccess}=useQuery({queryKey:['event-edit-access',event?.id,user?.id],queryFn:async()=>{const r=await base44.functions.invoke('eventEditAccess',{eventId:event.id});return r.data},enabled:!!isAuthenticated&&!!event?.id&&!!user?.id,staleTime:30000});
   const {data:savedRows=[]}=useQuery({queryKey:['event-saved-state',event?.id,user?.id],queryFn:()=>base44.entities.EventSavedItem.filter({user_id:user.id,tournament_id:event.id},'-updated_date',2),enabled:!!isAuthenticated&&!!event?.id&&!!user?.id,staleTime:30000});
 
   if(isLoading)return <div className="min-h-screen bg-white"><PublicSiteHeader/><main className="mx-auto max-w-[1180px] px-5 py-20 text-center text-sm text-[#52627d]">Loading event…</main><PublicSiteFooter/></div>;
