@@ -14,6 +14,10 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   const navigate = useNavigate();
   const [shareOpen,setShareOpen]=useState(false);
   const [calendarOpen,setCalendarOpen]=useState(false);
+  const [subscribeEmail,setSubscribeEmail]=useState(user?.email||'');
+  const [subscribeConsent,setSubscribeConsent]=useState(false);
+  const [subscribeBusy,setSubscribeBusy]=useState(false);
+  const [subscribeResult,setSubscribeResult]=useState('');
   const [qrOpen,setQrOpen]=useState(false);
   const [interestOpen,setInterestOpen]=useState(false);
   const [interestEmail,setInterestEmail]=useState(user?.email||'');
@@ -31,6 +35,10 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   const canClubShare=!!user?.active_club_id&&!!user?.active_tenant_id&&(user?.role==='admin'||user?.active_club_role==='club_admin');
   useEffect(()=>setSaved(!!initiallySaved),[initiallySaved]);
 
+  const subscribe=async()=>{
+    if(!subscribeConsent)return toast.error('Please agree to event updates');
+    try{setSubscribeBusy(true);const response=await base44.functions.invoke('eventSubscriptions',{action:'subscribe',email:subscribeEmail,consent:true,eventId:event.id,website:''});if(response.data?.error)throw new Error(response.data.error);setSubscribeResult(response.data?.alreadySubscribed?'You are already subscribed.':'Check your email to confirm your subscription.');}catch(e){toast.error(e?.message||'Could not request subscription')}finally{setSubscribeBusy(false)}
+  };
   const signIn=()=>navigate(`/login?returnTo=${encodeURIComponent(path)}`);
   const saveEvent=async(remindOpen=false)=>{
     if(!isAuthenticated)return signIn();
@@ -89,11 +97,13 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
     </Dialog>
 
     <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
-      <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Add to calendar</DialogTitle><DialogDescription>Keep this event with the rest of your plans.</DialogDescription></DialogHeader>
+      <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Add to calendar</DialogTitle><DialogDescription>Add this event, or follow all RallyHub events so new dates appear automatically.</DialogDescription></DialogHeader>
         <div className="grid gap-2">
           <Button variant="outline" className="justify-start" onClick={()=>{downloadEventCalendar(event,url);setCalendarOpen(false);toast.success('Calendar file downloaded')}}>Apple / iCal (.ics)</Button>
           <Button variant="outline" className="justify-start" onClick={()=>window.open(googleCalendarUrl(event,url),'_blank','noopener,noreferrer')}>Google Calendar</Button>
           <Button variant="outline" className="justify-start" onClick={()=>window.open(outlookCalendarUrl(event,url),'_blank','noopener,noreferrer')}>Outlook Calendar</Button>
+          <a className="rounded-md border px-4 py-3 text-sm font-semibold hover:bg-muted" href={`webcal://${window.location.host}/api/apps/6a01dc00702b7dd2a2978c28/functions/eventsCalendarFeed`}>Subscribe to the live RallyHub Events calendar</a>
+          <div className="mt-2 border-t pt-4 space-y-3"><p className="text-sm font-bold">Never miss an event</p><input aria-label="Email for event updates" type="email" value={subscribeEmail} onChange={e=>setSubscribeEmail(e.target.value)} placeholder="Email address" className="h-11 w-full rounded-md border px-3"/><label className="flex items-start gap-2 text-xs"><input aria-label="Consent to event emails" type="checkbox" checked={subscribeConsent} onChange={e=>setSubscribeConsent(e.target.checked)}/>Email me about upcoming RallyHub events and important updates. I can unsubscribe at any time.</label>{subscribeResult?<p role="status" className="text-sm text-green-700">{subscribeResult}</p>:<Button disabled={!subscribeConsent||!subscribeEmail.includes('@')||subscribeBusy} onClick={subscribe}>{subscribeBusy?'Sending…':'Get event updates'}</Button>}</div>
         </div>
       </DialogContent>
     </Dialog>
