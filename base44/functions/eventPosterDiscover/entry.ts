@@ -31,7 +31,7 @@ function discover(html:string,pageUrl:string,eventName:string){
   const largest=set?.split(',').map(x=>{const p=x.trim().split(/\s+/);return {url:p[0],width:parseInt(p[1])||0}}).sort((a,b)=>b.width-a.width)[0]?.url;
   if(largest||src)add(largest||src!,alt,pageUrl,'labelled-image',35);
  }
- const distinct=[...new Map(candidates.sort((a,b)=>b.score-a.score).map(c=>[c.imageUrl,c])).values()];
+ const unique=new Map<string,typeof candidates[number]>();for(const candidate of candidates.sort((a,b)=>b.score-a.score)){if(!unique.has(candidate.imageUrl))unique.set(candidate.imageUrl,candidate)}const distinct=[...unique.values()];
  const best=distinct[0];return {success:!!best,reviewRequired:!best||best.score<120,sourcePage:pageUrl,selected:best||null,candidates:distinct.slice(0,8)};
 }
 Deno.serve(async req=>{
