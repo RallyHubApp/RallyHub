@@ -323,6 +323,8 @@ Deno.serve(async(req)=>{
       const row=(await base44.asServiceRole.entities.GuestBookingRequest.filter({id,tenant_id:tenantId,club_id:clubId},'-submitted_at',5))?.[0];
       if(!row)return Response.json({error:'Guest request not found.'},{status:404});
       if(row.status!=='approved')return Response.json({error:'This guest request is not currently approved.'},{status:409});
+      const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName:row.full_name,email:row.email,mobile:row.mobile});
+      if(restriction!=='clear')return clubRestrictionResponse(restriction);
       const sessionLink=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:row.approved_session_link_id,tenant_id:tenantId,club_id:clubId},'-created_at',5))?.[0];
       if(!sessionLink)return Response.json({error:'The approved session link is unavailable.'},{status:404});
       const currentInvites=await base44.asServiceRole.entities.AccessInviteToken.filter({tenant_id:tenantId,club_id:clubId,purpose:'guest_booking',access_request_id:row.id},'-created_at',20);
