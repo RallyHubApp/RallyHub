@@ -1386,6 +1386,8 @@ ${detailRow('Reason',reason)}
       const clubSlug=clean(body.clubSlug,120);
       const club=(await base44.asServiceRole.entities.Club.filter({slug:clubSlug,status:'active'},'-updated_date',5))?.[0];
       if(!club)return Response.json({error:'Club booking is unavailable.'},{status:404});
+      const restriction=await clubRestrictionCheck(base44,club.tenant_id,club.id,{fullName:body.fullName,email:body.email,mobile:body.mobile});
+      if(restriction!=='clear')return clubRestrictionResponse(restriction);
       const resolved=await resolveActiveMember(base44,club,{fullName:body.fullName,email:body.email,mobile:body.mobile});
       if(!resolved.match){
         return Response.json({error:resolved.error,code:resolved.code,memberFound:false},{status:resolved.code==='MEMBERSHIP_MATCH_AMBIGUOUS'?409:404});
