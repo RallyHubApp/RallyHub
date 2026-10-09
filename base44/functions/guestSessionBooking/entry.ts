@@ -1128,6 +1128,8 @@ Deno.serve(async(req)=>{
         const session=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:sessionId,tenant_id:tenantId,club_id:clubId}))?.[0];
         if(!session)return Response.json({error:'Guest session not found.'},{status:404});
         if(!session.active)return Response.json({error:'This booking link is closed.'},{status:409});
+        const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName:recipientName,email:recipientEmail});
+        if(restriction!=='clear')return clubRestrictionResponse(restriction);
         const invite=await createInvite(base44,session,user,recipientEmail,recipientName);
         const club=(await clubBrand(base44,clubId))||{
           name:'Clare Pickleball',
