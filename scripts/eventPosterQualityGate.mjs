@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+const source=fs.readFileSync('base44/functions/eventPosterIngest/entry.ts','utf8');
+const start=source.indexOf('function inspect('),end=source.indexOf('\nDeno.serve(',start);
+assert(start>=0&&end>start,'Parser must be present');
+const stripped=source.slice(start,end).replace('bytes:Uint8Array,type:string','bytes,type').replace('let width=0,height=0,format=\'\'','let width=0,height=0,format=\'\'');
+const inspect=new Function(`${stripped}; return inspect;`)();
+const filename='/tmp/munster-reference.webp';
+assert(fs.existsSync(filename),'Download reference image first');
+const bytes=fs.readFileSync(filename);
+const result=inspect(bytes,'image/webp');
+assert.deepEqual(result,{format:'webp',width:1510,height:1042,qualityWarning:false});
+assert.equal(createHash('sha256').update(bytes).digest('hex'),'12740fe0996f33357d8a48b0ad94c5256d08ce2d4c45b0eb0b88afa226fc5002');
+assert.throws(()=>inspect(Buffer.from('not an image'),'image/webp'),/dimensions cannot be verified/);
+const small=Buffer.from(bytes);small[24]=0;small[25]=0;small[26]=0;small[27]=0;small[28]=0;small[29]=0;
+assert.equal(inspect(small,'image/webp').qualityWarning,true);
+console.log('PASS: real Munster poster dimensions, format, hash, corrupt image rejection, low resolution warning');
