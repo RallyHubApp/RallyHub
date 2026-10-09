@@ -485,6 +485,14 @@ Deno.serve(async (req) => {
       if(ids.some((id:string)=>!byId.has(id)))return Response.json({error:'One or more players are not in this session.'},{status:404});
       const round=(await base44.asServiceRole.entities.KotcRound.filter({id:session.current_round_id,session_id:session.id}))?.[0]||null;
       const effectiveRound=round&&['started','completed'].includes(round.status)?Number(session.current_round_number||1)+1:Math.max(1,Number(session.current_round_number||1));
+      // A proposed round is immutable until the host explicitly replaces its affected slots.
+      // Reject changes that would strand an unavailable player in the published proposal.
+      if(round?.status==='proposed'){
+        const slots=await withRateLimitRetry('bulk roster proposed slots',()=>base44.asServiceRole.entities.KotcRoundSlot.filter({round_id:round.id,session_id:session.id}));
+        const assigned=new Set((slots||[]).map((s:any)=>String(s.participant_id)));
+        const conflicts=changes.filter((c:any)=>c.statusAction!=='back_available'&&assigned.has(String(c.participantId)));
+        if(conflicts.length)return Response.json({error:'One or more departing players are assigned to the proposed round. Replace those court slots first; no roster statuses were changed.',requiresCourtSubstitution:true,participantIds:conflicts.map((c:any)=>String(c.participantId))},{status:409});
+      }
       const applied:any[]=[];
       for(const change of changes){
         const participant=byId.get(String(change.participantId));
@@ -495,6 +503,7 @@ Deno.serve(async (req) => {
         };
         await withRateLimitRetry('bulk roster update',()=>base44.asServiceRole.entities.KotcSessionParticipant.update(participant.id,update));
         applied.push({participantId:participant.id,previousStatus:participant.status,status:update.status});
+        try{await withRateLimitRetry('bulk roster participation event',()=>base44.asServiceRole.entities.KotcParticipationEvent.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:participant.id,round_id:round?.id,round_number:effectiveRound,event_type:action==='back_available'?'returned_available':action,effective_from_round:effectiveRound,fairness_credit:false,reason:String(body.reason||'Host batch roster change'),command_id:commandId,recorded_by_user_id:user.id,occurred_at:nowIso()}));}catch(error){console.warn('KOTC bulk participation event unavailable',String(error));}
       }
       session=await withRateLimitRetry('bulk roster session revision',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId}));
       try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_bulk_roster_change',entity_type:'KotcSession',entity_id:session.id,scope_type:'KotcSession',scope_id:session.id,after_state:JSON.stringify(applied),reason:String(body.reason||'Host batch roster update')});}catch(error){console.warn('KOTC bulk roster audit unavailable',String(error));}
