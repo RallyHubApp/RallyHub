@@ -476,6 +476,8 @@ Deno.serve(async(req)=>{
         if(recipientEmail&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipientEmail))return Response.json({error:'Enter a valid applicant email address.'},{status:400});
         if(recipientMobile&&phoneDigits(recipientMobile).length<8)return Response.json({error:'Enter a valid applicant mobile/WhatsApp number.'},{status:400});
         if(!recipientEmail&&!phoneDigits(recipientMobile))return Response.json({error:'Enter either the applicant email address or mobile/WhatsApp number. Private membership invitations must be tied to the intended person.'},{status:400});
+        const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName:recipientName,email:recipientEmail,mobile:recipientMobile});
+        if(restriction!=='clear')return clubRestrictionResponse(restriction);
         const invite=await createMembershipInvite(base44,config,user,recipientEmail,recipientName,'',recipientMobile);
         const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
         let emailSent=false;
