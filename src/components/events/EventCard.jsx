@@ -17,7 +17,7 @@ export default function EventCard({ event, onRegister }) {
     <article className="overflow-hidden rounded-[16px] border border-[#dbe6e8] bg-white shadow-[0_8px_24px_rgba(8,24,77,.06)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(8,24,77,.10)]">
       <Link to={eventPath(event)} className="relative block aspect-[16/7] overflow-hidden bg-[#eef5f2]">
         {image ? (
-          <img src={image} alt={`${event.name} event artwork`} className="h-full w-full object-cover" style={{objectPosition:`${x}% ${y}%`,transform:`scale(${zoom})`,transformOrigin:`${x}% ${y}%`}} />
+          <img src={image} alt={`${event.name} event artwork`} className="h-full w-full object-contain" style={{objectPosition:`${x}% ${y}%`,transform:`scale(${zoom})`,transformOrigin:`${x}% ${y}%`}} />
         ) : (
           <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,#073b57_0%,#078e48_100%)] px-6 text-center text-white">
             <div><CalendarDays className="mx-auto h-8 w-8"/><p className="mt-3 text-xl font-black leading-tight">{event.name}</p></div>

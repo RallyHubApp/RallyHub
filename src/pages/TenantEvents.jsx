@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, CheckCircle2, Eye, Loader2, MapPin, Plus, Save, Trash2, Users, X } from 'lucide-react';
@@ -39,11 +40,18 @@ function EventPreview({draft,mode,onClose,hostName}){
 
 export default function TenantEvents({directoryListingSlug=''}){
   const directoryMode=!!directoryListingSlug;
+  const [searchParams,setSearchParams]=useSearchParams();
+  const requestedEdit=searchParams.get('edit')||'';
+  const requestedHost=searchParams.get('host')||'';
+  const openedEdit=useRef('');
   const freshBlank=()=>directoryMode?{...blank,member:false,public:true}:({...blank});
   const qc=useQueryClient();
   const [draft,setDraft]=useState(freshBlank);
   const [preview,setPreview]=useState(null);
   const [editingId,setEditingId]=useState(null);
+  const deepLinkLoaded=useRef(false);
+  const deepLinkId=!directoryMode?new URLSearchParams(window.location.search).get('editEvent'):null;
+  const {data:deepLinkEvent}=useQuery({queryKey:['event-editor-deep-link',deepLinkId],queryFn:async()=>{const rows=await base44.entities.Tournament.filter({id:deepLinkId},'-created_date',1);return rows?.[0]||null},enabled:!!deepLinkId});
   const [showOlder,setShowOlder]=useState(false);
   const [adminHostClubId,setAdminHostClubId]=useState('');
   const [saveState,setSaveState]=useState('');
@@ -75,6 +83,9 @@ export default function TenantEvents({directoryListingSlug=''}){
   const removeEvent=async(e)=>{try{if(!window.confirm(`Delete “${e.name}”? This cannot be undone.`))return;if(directoryMode){const res=await base44.functions.invoke('directoryEvents',{action:'delete',listingSlug:directoryListingSlug,eventId:e.id});if(res.data?.error)throw new Error(res.data.error);await qc.invalidateQueries({queryKey:['directory-event-context',directoryListingSlug]})}else{const linkedInterclub=await base44.entities.ClubChallengeEvent.filter({tournament_id:e.id},'-updated_date',1).catch(()=>[]);if(linkedInterclub.length){toast.error('This calendar item is the live RallyHub Interclub competition. Archive it from the Interclub control centre instead so its teams, registrations and results remain connected.');return}await base44.entities.Tournament.delete(e.id);await qc.invalidateQueries({queryKey:['tenant-events']})}if(editingId===e.id)resetEditor();toast.success('Event deleted')}catch(err){toast.error(err?.message||'Could not delete event')}};
   const editEvent=e=>{if(!directoryMode&&isAdmin&&e.host_club_id)setAdminHostClubId(e.host_club_id);setEditingId(e.id);setDraft({...freshBlank(),name:e.name||'',category:e.event_category||'other',date:e.start_date||'',endDate:e.end_date||e.start_date||'',start:e.event_start_time||'',end:e.event_end_time||'',venue_id:e.venue_id||'',location:e.location||'',county:e.event_county||'',country:e.event_country||'Ireland',setting:e.event_indoor_outdoor||'',summary:e.event_public_summary||'',description:e.description||'',internal:directoryMode?'':(e.event_internal_info||''),contact:e.event_contact||'',contactPhone:e.event_contact_phone||'',phoneHiddenUntil:dateTimeLocal(e.event_contact_phone_hidden_until),phoneKeepPrivate:!!e.event_contact_phone_keep_private,statusOverride:e.event_status_override||'',registrationMode:e.event_registration_mode||(e.event_registration_url?'external':'none'),registration:e.event_registration_url||'',regOpen:dateTimeLocal(e.event_registration_open_at),regClose:dateTimeLocal(e.event_registration_close_at),feeText:e.event_fee_text||'',capacity:e.event_capacity??'',waitlist:!!e.event_waitlist_enabled,levels:e.event_levels||[],ageGroups:e.event_age_groups||[],disciplines:e.event_disciplines||[],eligibility:e.event_eligibility||'',playerInfo:e.event_player_info||'',feesCancellation:e.event_fees_cancellation||'',schedule:e.event_schedule||[],sourceUrl:e.event_source_url||'',mapUrl:e.event_map_url||'',latitude:e.event_latitude??'',longitude:e.event_longitude??'',image:e.event_image_url||'',imageX:Number(e.event_image_position_x??50),imageY:Number(e.event_image_position_y??50),imageZoom:Number(e.event_image_zoom??1),cardX:Number(e.event_card_position_x??50),cardY:Number(e.event_card_position_y??50),cardZoom:Number(e.event_card_zoom??1),imageOriginal:e.event_image_original_url||e.event_image_url||'',imageSourceType:e.event_image_source_type||'',member:directoryMode?false:!!e.event_member_visible,public:!!e.event_public_visible,featured:directoryMode?false:!!e.event_featured_member,featuredPublic:!!e.event_featured_public,verifiedOrganiser:!!e.event_verified_organiser});setPreview(null);setSaveState('');window.scrollTo({top:0,behavior:'smooth'})};
 
+  useEffect(()=>{if(!directoryMode&&isAdmin&&requestedEdit&&requestedHost&&adminClubs.length&&adminHostClubId!==requestedHost&&adminClubs.some(c=>c.id===requestedHost))setAdminHostClubId(requestedHost)},[directoryMode,isAdmin,requestedEdit,requestedHost,adminClubs,adminHostClubId]);
+  useEffect(()=>{if(!requestedEdit||openedEdit.current===requestedEdit)return;const target=events.find(e=>e.id===requestedEdit);if(!target)return;openedEdit.current=requestedEdit;editEvent(target);},[requestedEdit,events]);
+
   const save=useMutation({mutationFn:async(mode)=>{
     if(!draft.name||!draft.date)throw new Error('Event name and start date are required.');
     if(!effectiveTenantId||!effectiveHostClubId)throw new Error('Choose the event host / organisation first.');
@@ -96,6 +107,7 @@ export default function TenantEvents({directoryListingSlug=''}){
     return {result,id:editingId||result?.id||result?.data?.id,mode,audienceLabel};
   },onMutate:mode=>{const audienceLabel=directoryMode?'RallyHub public Events':[draft.member?'members':null,draft.public?'public Events':null].filter(Boolean).join(' + ');setSaveState(mode==='draft'?'Saving draft…':`${editingId?'Saving changes and updating':'Publishing to'} ${audienceLabel}…`)},onSuccess:async(data)=>{if(directoryMode)await qc.invalidateQueries({queryKey:['directory-event-context',directoryListingSlug]});else await qc.invalidateQueries({queryKey:['tenant-events']});if(data?.id)setEditingId(data.id);const done=data.mode==='draft'?'Draft saved ✓':`${editingId?'Changes saved and updated':'Published to'} ${data.audienceLabel} ✓`;setSaveState(done);toast.success(done.replace(' ✓',''));setPreview(null)},onError:e=>{setSaveState('Could not save');toast.error(e.message||'Could not save event')}});
 
+  useEffect(()=>{if(!deepLinkEvent||deepLinkLoaded.current||!user)return;const permitted=isAdmin||(user.active_club_role==='club_admin'&&user.active_club_id===deepLinkEvent.host_club_id&&user.active_tenant_id===deepLinkEvent.tenant_id);if(permitted){deepLinkLoaded.current=true;editEvent(deepLinkEvent)}},[deepLinkEvent,user,isAdmin]);
   const removeScheduleItem=index=>setDraft(d=>({...d,schedule:d.schedule.filter((_,i)=>i!==index)}));
   const updateSchedule=(index,key,value)=>setDraft(d=>({...d,schedule:d.schedule.map((row,i)=>i===index?{...row,[key]:value}:row)}));
   const unshare=async eventId=>{try{const payload={action:'unshare_from_club',eventId};if(isAdmin){payload.clubId=effectiveHostClubId;payload.tenantId=effectiveTenantId}const res=await base44.functions.invoke('eventEngagement',payload);if(res.data?.error)throw new Error(res.data.error);await qc.invalidateQueries({queryKey:['club-shared-public-events']});toast.success('Removed from your club calendar')}catch(e){toast.error(e?.message||'Could not remove shared event')}};

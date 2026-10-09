@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, MapPin, MessageCircle, ShieldCheck, Ticket, UsersRound } from 'lucide-react';
+import { Pencil, ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, MapPin, MessageCircle, ShieldCheck, Ticket, UsersRound } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import Seo from '@/components/public/Seo';
@@ -30,6 +30,8 @@ export default function PublicEventDetail(){
   const {slug}=useParams();
   const {isAuthenticated,user}=useAuth();
   const {data:event,isLoading,error}=useQuery({queryKey:['public-event-detail',slug],queryFn:async()=>{const res=await base44.functions.invoke('publicEvents',{action:'detail',slug});if(res.data?.error)throw new Error(res.data.error);return res.data?.event||null},enabled:!!slug,staleTime:60000,refetchOnWindowFocus:true});
+  const {data:editAccess}=useQuery({queryKey:['event-edit-access',event?.id,user?.id],queryFn:async()=>{const r=await base44.functions.invoke('eventEditAccess',{eventId:event.id});return r.data||{}},enabled:!!isAuthenticated&&!!event?.id&&!!user?.id,staleTime:60000});
+  const {data:editAccess}=useQuery({queryKey:['event-edit-access',event?.id,user?.id],queryFn:async()=>{const r=await base44.functions.invoke('eventEditAccess',{eventId:event.id});return r.data},enabled:!!isAuthenticated&&!!event?.id&&!!user?.id,staleTime:30000});
   const {data:savedRows=[]}=useQuery({queryKey:['event-saved-state',event?.id,user?.id],queryFn:()=>base44.entities.EventSavedItem.filter({user_id:user.id,tournament_id:event.id},'-updated_date',2),enabled:!!isAuthenticated&&!!event?.id&&!!user?.id,staleTime:30000});
 
   if(isLoading)return <div className="min-h-screen bg-white"><PublicSiteHeader/><main className="mx-auto max-w-[1180px] px-5 py-20 text-center text-sm text-[#52627d]">Loading event…</main><PublicSiteFooter/></div>;
@@ -39,7 +41,7 @@ export default function PublicEventDetail(){
   const whatsAppRegistration=isWhatsAppRegistration(event);
   const typeLabel=EVENT_TYPES.find(([key])=>key===event.event_category)?.[1]||event.event_category||'Event';
   const tags=eventTags(event,8);
-  const fullPoster=event.event_image_url;
+  const fullPoster=event.event_image_original_url||event.event_image_url;
   const originalPoster=event.event_image_original_url||event.event_image_url;
   const updated=event.updated_date?new Date(event.updated_date):null;
   const canonical=`https://rallyhub.ie/events/${event.event_slug}`;
@@ -51,11 +53,11 @@ export default function PublicEventDetail(){
   return <>
     <Seo title={`${event.name} | RallyHub Events`} description={event.event_public_summary||event.description||`Event information for ${event.name}.`} path={`/events/${event.event_slug}`} robots="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"/>
     <div className="min-h-screen bg-[#f7fafb] text-[#07184c]"><PublicSiteHeader/><main className="mx-auto max-w-[1380px] px-5 pb-12 pt-5 sm:px-7 lg:px-10 xl:px-12">
-      <Link to="/events" className="inline-flex min-h-10 items-center gap-2 text-sm font-bold text-[#17325f] hover:text-[#078e48]"><ArrowLeft className="h-4 w-4"/>Back to Events</Link>
+      <div className="flex flex-wrap items-center justify-between gap-2"><Link to="/events" className="inline-flex min-h-10 items-center gap-2 text-sm font-bold text-[#17325f] hover:text-[#078e48]"><ArrowLeft className="h-4 w-4"/>Back to Events</Link>{editAccess?.canEdit&&editAccess?.editUrl&&<Link to={editAccess.editUrl} data-testid="private-event-edit" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#dbe6e8] bg-white px-3 text-xs font-bold text-[#17325f] hover:border-[#078e48]"><Pencil className="h-3.5 w-3.5"/>Edit event</Link>}</div>
 
       <section className="mt-2 grid gap-5 lg:grid-cols-[38%_62%]">
         <div className="overflow-hidden rounded-2xl border border-[#dbe6e8] bg-white shadow-[0_8px_24px_rgba(8,24,77,.06)]">
-          {fullPoster?<div className="relative flex min-h-[260px] max-h-[760px] items-center justify-center overflow-hidden bg-[#eef4f5]"><img src={fullPoster} alt={`${event.name} poster`} className="block max-h-[760px] w-full object-contain" style={{objectPosition:`${Number(event.event_image_position_x??50)}% ${Number(event.event_image_position_y??50)}%`,transform:`scale(${Number(event.event_image_zoom??1)})`,transformOrigin:`${Number(event.event_image_position_x??50)}% ${Number(event.event_image_position_y??50)}%`}}/>{isFull&&<div className="pointer-events-none absolute inset-x-[-12%] top-[44%] -rotate-6 bg-[#b42318]/95 py-3 text-center text-2xl font-black tracking-[.16em] text-white shadow-xl sm:text-3xl">EVENT FULL</div>}</div>:<div className="relative flex min-h-[420px] items-center justify-center bg-[linear-gradient(135deg,#073b57,#078e48)] p-8 text-center text-white"><div><CalendarDays className="mx-auto h-12 w-12"/><p className="mt-4 text-3xl font-black">{event.name}</p></div>{isFull&&<div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 bg-[#b42318]/95 py-3 text-center text-2xl font-black tracking-[.16em] text-white">EVENT FULL</div>}</div>}
+          {fullPoster?<div className="relative flex min-h-[260px] max-h-[760px] items-center justify-center overflow-hidden bg-[#eef4f5]"><img src={fullPoster} alt={`${event.name} poster`} className="block max-h-[760px] w-full object-contain" style={{objectPosition:'center',height:'auto',maxHeight:'760px'}}/>{isFull&&<div className="pointer-events-none absolute inset-x-[-12%] top-[44%] -rotate-6 bg-[#b42318]/95 py-3 text-center text-2xl font-black tracking-[.16em] text-white shadow-xl sm:text-3xl">EVENT FULL</div>}</div>:<div className="relative flex min-h-[420px] items-center justify-center bg-[linear-gradient(135deg,#073b57,#078e48)] p-8 text-center text-white"><div><CalendarDays className="mx-auto h-12 w-12"/><p className="mt-4 text-3xl font-black">{event.name}</p></div>{isFull&&<div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 bg-[#b42318]/95 py-3 text-center text-2xl font-black tracking-[.16em] text-white">EVENT FULL</div>}</div>}
           {originalPoster&&<a href={originalPoster} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center justify-center gap-2 border-t border-[#dbe6e8] text-sm font-bold text-[#17325f] hover:bg-[#f8fbfc]"><ExternalLink className="h-4 w-4"/>View original poster</a>}
         </div>
 
