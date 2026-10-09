@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -1909,6 +1909,10 @@ Brian`;
         {/* ── DIRECTORY CLAIMS TAB ── */}
         <TabsContent value="directory" className="mt-4">
           <div className="flex flex-col gap-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4" data-testid="directory-events-editor-entry">
+              <div><p className="text-sm font-bold">Directory Events & poster management</p><p className="text-xs text-muted-foreground">Open the Events editor to discover posters from organiser websites, verify original artwork and manage published events.</p></div>
+              <Link to="/app/events" className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90">Open Events editor</Link>
+            </div>
             <div className="glass rounded-lg p-3 flex items-start gap-2 order-0">
               <UserCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <p className="text-xs text-muted-foreground">
