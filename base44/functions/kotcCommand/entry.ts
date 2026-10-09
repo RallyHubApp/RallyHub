@@ -459,9 +459,9 @@ Deno.serve(async (req) => {
       if(!slot||!incoming)return Response.json({error:'Substitution participants or court slot not found.'},{status:404});
       if((slots||[]).some((s:any)=>String(s.participant_id)===incomingId))return Response.json({error:'Replacement is already assigned to a court.'},{status:409});
       if(!['present','registered','confirmed'].includes(incoming.status)||incoming.scheduled_departure_at&&Date.parse(incoming.scheduled_departure_at)<=Date.now())return Response.json({error:'Replacement is not currently available.'},{status:409});
-      if((locks||[]).some((l:any)=>[String(l.participant1_id),String(l.participant2_id)].includes(outgoingId)&&l.pair_source==='host_selected'))return Response.json({error:'A fixed host-selected partnership cannot be split by a single-player substitution.'},{status:409});
+      if((locks||[]).some((l:any)=>[String(l.participant1_id),String(l.participant2_id)].includes(outgoingId)))return Response.json({error:'A locked partnership cannot be split by a single-player substitution. Unlock the pair or adjust the proposed round first.'},{status:409});
       const match=(matches||[]).find((m:any)=>Number(m.ladder_court_rank)===Number(slot.ladder_court_rank));
-      if(!match||match.status!=='scheduled'||match.team_a_score!=null||match.team_b_score!=null)return Response.json({error:'This court has already begun scoring.'},{status:409});
+      if(!match||match.status!=='scheduled'||match.team_a_score!=null||match.team_b_score!=null||match.scoring_lock_owner)return Response.json({error:'This court is not available for substitution because scoring has started or is claimed.'},{status:409});
       const side=slot.team_side==='A'?'team_a_participant_ids':'team_b_participant_ids';
       const original=[...(match[side]||[])].map(String);
       if(!original.includes(outgoingId))return Response.json({error:'Court assignments are out of sync. Refresh before substituting.'},{status:409});
