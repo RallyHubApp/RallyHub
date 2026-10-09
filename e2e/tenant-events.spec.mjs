@@ -158,3 +158,16 @@ test('authenticated directory live-verification control checks both functions wi
  await page.getByRole('button',{name:'Run live poster verification'}).click();await expect(page.getByRole('status')).toContainText('PASS: Storage verified');
  expect(model.writes).toHaveLength(0);
 });
+
+test('directory event finder offers selectable event list and enables verification',async({page})=>{
+ await installBackend(page);
+ const poster='https://pickleballireland.ie/wp-content/uploads/2026/10/Sqaure.webp';
+ await page.route('**/api/apps/**/functions/directoryEvents',route=>json(route,{success:true,canManage:true,role:'owner',listing:{slug:'test-club',name:'Test Club'},host:{id:'club-clare',name:'Test Club'},tenant:{id:'tenant-clare'},events:[],venues:[]}));
+ await page.route('**/api/apps/**/functions/eventPosterDiscover',route=>json(route,{success:true,events:[{name:'Munster Open 2027',eventUrl:'https://pickleballireland.ie/event/munster-open-2027/',imageUrl:poster},{name:'European Open 2026',eventUrl:'https://pickleballireland.ie/event/european-open-2026/',imageUrl:poster}]}));
+ await page.goto('/directory/test-club/events');
+ await page.getByRole('button',{name:'Find events on this website'}).click();
+ await expect(page.getByLabel('Select discovered event')).toBeVisible();
+ await page.getByLabel('Filter discovered events').fill('Munster');
+ await page.getByLabel('Select discovered event').selectOption('https://pickleballireland.ie/event/munster-open-2027/');
+ await expect(page.getByRole('button',{name:'Run live poster verification'})).toBeEnabled();
+});
