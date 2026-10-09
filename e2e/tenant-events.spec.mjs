@@ -188,3 +188,12 @@ test('super admin discovery approval queue shows pending event and routes approv
  await page.getByTestId('event-discovery-queue').getByRole('button',{name:'Hold'}).click();
  await expect.poll(()=>decisions.some(x=>x.action==='decide'&&x.decision==='held'&&x.id==='proposal-1')).toBeTruthy();
 });
+
+test('super admin event deep link opens existing event directly for artwork correction',async({page})=>{
+ const model=await installBackend(page);
+ model.events.push({id:'munster-event',name:'Munster Open 2027',tenant_id:'tenant-pbi',host_club_id:'club-pbi',start_date:'2027-02-13',end_date:'2027-02-14',event_public_visible:true,event_publish_status:'published',event_image_url:'https://example.org/munster.png',event_image_zoom:1.4,event_category:'tournament',event_registration_mode:'none'});
+ await page.goto('/app/events?edit=munster-event&host=club-pbi');
+ await expect(page.getByText('Editing: Munster Open 2027')).toBeVisible();
+ await expect(page.getByLabel('Event name')).toHaveValue('Munster Open 2027');
+ await expect(page.locator('select').filter({has:page.locator('option[value="club-pbi"]')})).toHaveValue('club-pbi');
+});
