@@ -57,6 +57,7 @@ export function registrationState(event, now = new Date()) {
   const hasRegistration = mode !== 'none';
   const invitationOnly = (event?.event_tags || []).some(tag => String(tag || '').trim().toLowerCase() === 'invitation only');
   const override = String(event?.event_status_override || '').trim().toLowerCase();
+  if (override === 'save_the_date') return { key:'save_the_date', label:'Save the date', detail:'Registration has not been announced. Check back for updates from the organiser.', tone:'blue', actionable:false };
   if (override === 'full') return { key:'full', label:'EVENT FULL', detail:'This event is now full. No places are available for this event.', tone:'red', actionable:false, futureInvitation:invitationOnly };
   if (override === 'cancelled') return { key:'cancelled', label:'Event cancelled', detail:'This event has been cancelled.', tone:'red', actionable:false };
   if (override === 'postponed') return { key:'postponed', label:'Event postponed', detail:'This event has been postponed. Check the organiser information for updates.', tone:'amber', actionable:false };

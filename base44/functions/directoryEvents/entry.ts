@@ -114,7 +114,7 @@ function eventPayload(body:any) {
   out.location = clean(out.location, 400);
   out.event_contact = clean(out.event_contact, 300);
   out.event_contact_phone = clean(out.event_contact_phone, 120);
-  out.event_status_override = ['full','cancelled','postponed'].includes(clean(out.event_status_override,40)) ? clean(out.event_status_override,40) : '';
+  out.event_status_override = ['save_the_date','full','cancelled','postponed'].includes(clean(out.event_status_override,40)) ? clean(out.event_status_override,40) : '';
   out.event_contact_phone_keep_private = out.event_contact_phone_keep_private === true;
   out.event_contact_phone_hidden_until = out.event_contact_phone_hidden_until || null;
   out.event_registration_url = clean(out.event_registration_url, 1000);
