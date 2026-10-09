@@ -12,6 +12,7 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
   const [uploading, setUploading] = useState(false);
   const [posterSourceUrl,setPosterSourceUrl]=useState('');
   const [eventPageUrl,setEventPageUrl]=useState('');
+  const [verification,setVerification]=useState(null);
   const [x, setX] = useState(Number(position?.x ?? 50));
   const [y, setY] = useState(Number(position?.y ?? 50));
   const [zoom, setZoom] = useState(Number(position?.zoom ?? 1));
@@ -43,6 +44,22 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
       toast.success('Poster uploaded — now check the event-card crop');
     } catch(e) { setPreview(value); toast.error(e.message || 'Poster upload failed'); }
     finally { setUploading(false); }
+  };
+  const verifyFromEventPage=async()=>{
+    if(!eventPageUrl.trim()||!eventName.trim())return toast.error('Enter an event name and webpage URL');
+    setUploading(true);setVerification(null);
+    try{
+      const discovered=(await base44.functions.invoke('eventPosterDiscover',{eventUrl:eventPageUrl.trim(),eventName:eventName.trim(),listingSlug})).data||{};
+      if(!discovered.selected?.imageUrl)throw new Error(discovered.error||'No matching poster found');
+      setPosterSourceUrl(discovered.selected.imageUrl);
+      if(discovered.reviewRequired){setVerification({passed:false,message:'Poster match needs review; nothing imported.'});return toast.warning('Poster match needs review before import');}
+      const imported=(await base44.functions.invoke('eventPosterIngest',{sourceUrl:discovered.selected.imageUrl,listingSlug})).data||{};
+      if(!imported.success||!imported.sha256||!imported.originalUrl)throw new Error(imported.error||'Storage verification failed');
+      setVerification({passed:true,message:`Storage verified: ${imported.width} × ${imported.height}, SHA-256 ${imported.sha256}`});
+      // Do not modify the event or publish artwork during a verification test.
+      toast.success('Live poster discovery and storage read-back verified. Existing event artwork unchanged.');
+    }catch(e){setVerification({passed:false,message:e?.message||'Verification failed'});toast.error(e?.message||'Live poster verification failed')}
+    finally{setUploading(false)}
   };
   const discoverPoster=async()=>{
     if(!eventPageUrl.trim()||!eventName.trim())return toast.error('Enter an event name and webpage URL');
@@ -99,6 +116,8 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
   return <div className="rounded-xl border p-4 space-y-5">
     <div><p className="text-sm font-bold">Event poster / artwork</p><p className="mt-1 text-xs text-muted-foreground">Upload once. RallyHub keeps the full poster and lets you make a separate wide crop for public event cards. JPG, PNG, WEBP or PDF · up to 20 MB.</p></div>
     <div className="flex flex-col gap-2 sm:flex-row"><input aria-label="Event webpage URL" type="url" value={eventPageUrl} onChange={e=>setEventPageUrl(e.target.value)} placeholder="Paste event webpage URL to find its poster" className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"/><button type="button" disabled={uploading||!eventPageUrl.trim()||!eventName.trim()} onClick={discoverPoster} className="rounded-md border px-4 py-2 text-sm font-semibold disabled:opacity-50">Find event poster</button></div>
+    <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={uploading||!eventPageUrl.trim()||!eventName.trim()} onClick={verifyFromEventPage} className="rounded-md border border-primary px-4 py-2 text-sm font-semibold disabled:opacity-50">Run live poster verification</button><span className="text-xs text-muted-foreground">Checks discovery, real upload and SHA-256 read-back without changing the event.</span></div>
+    {verification&&<p role="status" className={`break-all text-xs ${verification.passed?'text-green-700':'text-red-700'}`}>{verification.passed?'PASS: ':'NOT VERIFIED: '}{verification.message}</p>}
     <div className="flex flex-col gap-2 sm:flex-row"><input aria-label="Original poster URL" type="url" value={posterSourceUrl} onChange={e=>setPosterSourceUrl(e.target.value)} placeholder="Paste an original poster image URL" className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"/><button type="button" disabled={uploading||!posterSourceUrl.trim()} onClick={importSource} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">Import original automatically</button></div><p className="text-xs text-muted-foreground">Approved source domains only. RallyHub checks dimensions and verifies stored image bytes. Unverified images require manual review.</p>
     <div className="grid gap-5 lg:grid-cols-[minmax(0,.75fr)_minmax(0,1.25fr)]">
       <div><div className="mb-2 flex items-center justify-between"><p className="text-xs font-bold">Full artwork</p><span className="text-[10px] text-muted-foreground">Event detail page</span></div><div className="relative mx-auto flex min-h-[260px] w-full max-w-[420px] items-center justify-center overflow-hidden rounded-xl border bg-secondary/30">
