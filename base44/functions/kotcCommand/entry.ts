@@ -441,6 +441,37 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_participant_status_changed',entity_type:'KotcSessionParticipant',entity_id:participant.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({status:participant.status,availability_effective_from_round:participant.availability_effective_from_round,available_again_from_round:participant.available_again_from_round}),after_state:JSON.stringify(update),reason});
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
       result={success:true,session,participant:updated,effectiveRound};
+    } else if (commandType === 'replace_proposed_player') {
+      // Surgical one-slot substitution: preserve all other courts, teams and player links.
+      const round=(await withRateLimitRetry('substitution round',()=>base44.asServiceRole.entities.KotcRound.filter({id:body.roundId||session.current_round_id,session_id:session.id})))?.[0];
+      if(!round||round.status!=='proposed')return Response.json({error:'Only an unstarted proposed round can be substituted.'},{status:409});
+      if(Number(body.expectedProposalRevision)!==Number(round.proposal_revision||1))return Response.json({error:'The draw has changed. Refresh before substituting.',conflict:true,currentProposalRevision:Number(round.proposal_revision||1)},{status:409});
+      const outgoingId=String(body.outgoingParticipantId||''),incomingId=String(body.incomingParticipantId||'');
+      if(!outgoingId||!incomingId||outgoingId===incomingId)return Response.json({error:'Choose two different participants.'},{status:400});
+      const [participants,slots,matches,locks]=await Promise.all([
+        base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}),
+        base44.asServiceRole.entities.KotcRoundSlot.filter({round_id:round.id,session_id:session.id}),
+        base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id}),
+        base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'})
+      ]);
+      const incoming=(participants||[]).find((p:any)=>String(p.id)===incomingId);
+      const slot=(slots||[]).find((s:any)=>String(s.participant_id)===outgoingId);
+      if(!slot||!incoming)return Response.json({error:'Substitution participants or court slot not found.'},{status:404});
+      if((slots||[]).some((s:any)=>String(s.participant_id)===incomingId))return Response.json({error:'Replacement is already assigned to a court.'},{status:409});
+      if(!['present','registered','confirmed'].includes(incoming.status)||incoming.scheduled_departure_at&&Date.parse(incoming.scheduled_departure_at)<=Date.now())return Response.json({error:'Replacement is not currently available.'},{status:409});
+      if((locks||[]).some((l:any)=>[String(l.participant1_id),String(l.participant2_id)].includes(outgoingId)&&l.pair_source==='host_selected'))return Response.json({error:'A fixed host-selected partnership cannot be split by a single-player substitution.'},{status:409});
+      const match=(matches||[]).find((m:any)=>Number(m.ladder_court_rank)===Number(slot.ladder_court_rank));
+      if(!match||match.status!=='scheduled'||match.team_a_score!=null||match.team_b_score!=null)return Response.json({error:'This court has already begun scoring.'},{status:409});
+      const side=slot.team_side==='A'?'team_a_participant_ids':'team_b_participant_ids';
+      const original=[...(match[side]||[])].map(String);
+      if(!original.includes(outgoingId))return Response.json({error:'Court assignments are out of sync. Refresh before substituting.'},{status:409});
+      const replacement=original.map((id:string)=>id===outgoingId?incomingId:id);
+      await withRateLimitRetry('substitute match',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{[side]:replacement,revision:Number(match.revision||0)+1,command_id:commandId}));
+      await withRateLimitRetry('substitute slot',()=>base44.asServiceRole.entities.KotcRoundSlot.update(slot.id,{participant_id:incomingId,assignment_type:'host_substitution',replacement_for_participant_id:outgoingId,assignment_revision:Number(slot.assignment_revision||1)+1}));
+      const updatedRound=await withRateLimitRetry('substitution proposal revision',()=>base44.asServiceRole.entities.KotcRound.update(round.id,{proposal_revision:Number(round.proposal_revision||1)+1}));
+      session=await withRateLimitRetry('substitution session revision',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId}));
+      try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_surgical_substitution',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({slotId:slot.id,participantId:outgoingId}),after_state:JSON.stringify({slotId:slot.id,participantId:incomingId}),reason:String(body.reason||'Host replaced unavailable player')});}catch(error){console.warn('KOTC substitution audit unavailable',String(error));}
+      result={success:true,session,round:updatedRound,substitution:{outgoingParticipantId:outgoingId,incomingParticipantId:incomingId,courtRank:slot.ladder_court_rank},otherCourtsPreserved:true};
     } else if (commandType === 'bulk_roster_change') {
       // Single host command: record several departures without regenerating a published draw.
       const changes=Array.isArray(body.changes)?body.changes:[];
