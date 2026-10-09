@@ -392,7 +392,8 @@ test('18-player mobile host journey: setup → controls → rounds → podium', 
   // The host must be able to get the scoring/public links from the live Round screen
   // without navigating backwards through the app.
   await page.getByTestId('kotc-quick-links').click();
-  await expect(page.getByText('Session Links & Access')).toBeVisible();
+  await expect(page.getByTestId('kotc-session-menu-panel')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Player Link, Broadcasts & Access/ })).toBeVisible();
   await page.getByTestId('kotc-session-menu').click();
 
   // Mobile back/forward-cache recovery: returning to the host page must force a fresh
