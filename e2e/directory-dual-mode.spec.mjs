@@ -38,3 +38,68 @@ test('directory guided and direct modes share editor without losing changes', as
  await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 1 of 5');
  expect(saves).toBe(0);
 });
+
+test('guided save persists through existing backend and reloads saved value', async ({page}) => {
+ const user={id:'editor-test',email:'editor@example.test',full_name:'Editor',role:'admin',approval_status:'approved'};
+ let savedProfile=null, saveCalls=0;
+ await page.route('**/api/apps/**',async route=>{
+  const path=new URL(route.request().url()).pathname;
+  const reply=(data,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)});
+  if(path.includes('/public-settings/'))return reply({id:APP_ID,public_settings:{}});
+  if(path.endsWith('/entities/User/me'))return reply(user);
+  if(path.includes('/analytics/'))return reply({});
+  const marker=`/api/apps/${APP_ID}/functions/`;
+  if(path.includes(marker)){
+   const name=path.split(marker)[1].split('/')[0];let body={};try{body=route.request().postDataJSON()||{}}catch{}
+   if(name==='securityContext')return reply({success:true,context:null});
+   if(name==='directoryClaim')return reply({success:true,hasAccess:true,status:'verified'});
+   if(name==='directoryListingProfile'){
+    if(body.action==='save'){saveCalls++;savedProfile=body.profile;return reply({success:true,profile:savedProfile,id:'test-profile'})}
+    if(body.action==='private_get')return reply({success:true,profile:savedProfile,base:null});
+    return reply({success:true,profile:null,base:null});
+   }
+  }
+  return reply({success:true});
+ });
+ await page.goto('/directory/clare-pickleball/edit?access_token=e2e');
+ await expect(page.getByTestId('directory-editor-mode')).toBeVisible();
+ await page.getByRole('button',{name:'Guided setup'}).click();
+ const nameField=page.locator('#basics input').first();
+ await nameField.fill('Clare Pickleball Sandbox Persistence Test');
+ await page.getByRole('button',{name:'Save this step'}).click();
+ await expect(page.getByText('Saved successfully.')).toBeVisible();
+ expect(saveCalls).toBe(1);
+ expect(savedProfile.name).toBe('Clare Pickleball Sandbox Persistence Test');
+ await page.getByRole('button',{name:'Continue',exact:true}).click();
+ await expect(page.getByTestId('directory-guided-progress')).toContainText('Step 2 of 5');
+ await page.reload();
+ await expect(page.locator('#basics input').first()).toHaveValue('Clare Pickleball Sandbox Persistence Test');
+ expect(saveCalls).toBe(1);
+});
+
+test('unverified directory visitor cannot access either editor path or send a save',async({page})=>{
+ let saveCalls=0;
+ await page.route('**/api/apps/**',async route=>{
+  const path=new URL(route.request().url()).pathname;
+  const reply=(data,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)});
+  if(path.includes('/public-settings/'))return reply({id:APP_ID,public_settings:{}});
+  if(path.endsWith('/entities/User/me'))return reply({id:'unverified-e2e',email:'guest@example.test',full_name:'Guest',role:'user',approval_status:'approved'});
+  if(path.includes('/analytics/'))return reply({});
+  const marker=`/api/apps/${APP_ID}/functions/`;
+  if(path.includes(marker)){
+   const name=path.split(marker)[1].split('/')[0];let body={};try{body=route.request().postDataJSON()||{}}catch{}
+   if(name==='securityContext')return reply({success:true,context:null});
+   if(name==='directoryClaim')return reply({success:true,hasAccess:false,status:'unclaimed'});
+   if(name==='directoryListingProfile'){
+    if(body.action==='save'){saveCalls++;return reply({error:'Verified directory editor access required'},403)}
+    if(body.action==='private_get')return reply({error:'Directory editor access required'},403);
+    return reply({success:true,profile:null,base:null});
+   }
+  }
+  return reply({success:true});
+ });
+ await page.goto('/directory/clare-pickleball/edit?access_token=e2e');
+ await expect(page.getByRole('heading',{name:'Verification required'})).toBeVisible();
+ await expect(page.getByTestId('directory-editor-mode')).toHaveCount(0);
+ expect(saveCalls).toBe(0);
+});
