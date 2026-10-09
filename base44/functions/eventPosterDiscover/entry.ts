@@ -52,6 +52,16 @@ const url=safeUrl(String(body.eventUrl||''),'https://pickleballireland.ie/');
   if(!response.ok)return Response.json({error:'Event page unavailable'},{status:422});
   if(Number(response.headers.get('content-length')||0)>2_000_000)return Response.json({error:'Event page too large'},{status:413});
   const html=await response.text();if(html.length>2_000_000)return Response.json({error:'Event page too large'},{status:413});
-  const result=discover(html,url,name);if(body.action==='list')return Response.json({success:true,events:result.candidates.filter(c=>c.origin==='event-jsonld').map(c=>({name:c.eventName,eventUrl:c.eventUrl,imageUrl:c.imageUrl})).slice(0,30)});return Response.json(result);
+  const result=discover(html,url,name);if(body.action==='list'){
+    const discovered=result.candidates.filter(c=>c.origin==='event-jsonld').slice(0,30);
+    const existing=await b.asServiceRole.entities.Tournament.list('-created_date',500);
+    const normalizeUrl=(v:string)=>{try{const u=new URL(v);return u.hostname.toLowerCase().replace(/^www\./,'')+u.pathname.replace(/\/$/,'').toLowerCase()}catch{return ''}};
+    const events=discovered.map(c=>{
+      const match=existing.find((t:any)=>normalizeUrl(t.event_source_url)&&normalizeUrl(t.event_source_url)===normalizeUrl(c.eventUrl))
+        ||existing.find((t:any)=>clean(t.name||'')===clean(c.eventName));
+      return {name:c.eventName,eventUrl:c.eventUrl,imageUrl:c.imageUrl,exists:!!match,existingId:match?.id||null,existingName:match?.name||null};
+    });
+    return Response.json({success:true,events});
+   }return Response.json(result);
  }catch(e){console.error('event poster discovery',e);return Response.json({error:'Event poster discovery failed'},{status:422})}
 });
