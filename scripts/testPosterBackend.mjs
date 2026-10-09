@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import ts from 'typescript';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
+const source=fs.readFileSync('base44/functions/eventPosterIngest/entry.ts','utf8').replace(/^import .*\n/,'');
+const js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText;
+const realFetch=globalThis.fetch;
+const original='https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/df2ca3fb0_Munster-Open-2027.webp';
+const image=fs.readFileSync('/tmp/munster-reference.webp');
+let handler,stored,uploads=0,corrupt=false,identity='admin';
+const mockFetch=async(url,opts)=>{
+ if(String(url)===original)return new Response(image,{status:200,headers:{'Content-Type':'image/webp','Content-Length':String(image.length)}});
+ if(String(url)==='https://base44.app/verified-storage.webp')return new Response(corrupt?new Uint8Array([1,2,3]):stored,{status:200});
+ throw Error('Unexpected fetch '+url);
+};
+const client={auth:{me:async()=>({role:identity})},asServiceRole:{integrations:{Core:{UploadFile:async({file})=>{uploads++;stored=new Uint8Array(await file.arrayBuffer());return {file_url:'https://base44.app/verified-storage.webp'};}}}}};
+const context={createClientFromRequest:()=>client,Deno:{serve:fn=>{handler=fn}},fetch:mockFetch,Response,Request,URL,File,DataView,Uint8Array,TextEncoder,AbortSignal,crypto:webcrypto,console};
+vm.runInNewContext(js,context,{filename:'eventPosterIngest.ts'});
+const run=async(sourceUrl)=>{const response=await handler(new Request('https://test.local',{method:'POST',body:JSON.stringify({sourceUrl})}));return {status:response.status,data:await response.json()};};
+let r=await run(original);assert.equal(r.status,200,JSON.stringify(r));assert.equal(r.data.success,true);assert.equal(r.data.width,1510);assert.equal(r.data.height,1042);assert.equal(r.data.bytes,177208);assert.equal(Buffer.compare(image,stored),0);console.log('PASS actual function: original image uploaded and byte-for-byte readback');
+corrupt=true;r=await run(original);assert.equal(r.status,422);assert.match(r.data.error,/differs from source/);console.log('PASS actual function: corrupted stored file rejected');
+corrupt=false;const before=uploads;r=await run('https://example.com/malicious.webp');assert.equal(r.status,400);assert.equal(uploads,before);console.log('PASS actual function: unapproved domain rejected');
+identity='user';r=await run(original);assert.equal(r.status,403);assert.equal(uploads,before);console.log('PASS actual function: non-admin rejected');
