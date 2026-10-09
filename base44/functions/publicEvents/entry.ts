@@ -61,7 +61,8 @@ Deno.serve(async (req) => {
         event_public_visible: true,
         event_publish_status: 'published',
       }, 'start_date', 500));
-      const visible = (rows || []).filter((event:any) => event.status !== 'Archived');
+      const today = new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+      const visible = (rows || []).filter((event:any) => event.status !== 'Archived' && String(event.end_date || event.start_date || '') >= today);
       const hostMap = await loadHosts(base44, visible);
       return Response.json({
         success: true,

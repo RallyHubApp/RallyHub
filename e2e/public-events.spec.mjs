@@ -33,7 +33,7 @@ async function installPublicBackend(page,{listFailures=0}={}){
       if(name==='publicEvents'){
         if(body.action==='detail'){const found=[event,second,opening,eyva,eyvaFull].find(e=>e.event_slug===body.slug);return found?json(route,{success:true,event:found}):json(route,{error:'Public event not found'},404)}
         if(remainingListFailures>0){remainingListFailures--;return json(route,{error:'Temporary events service error'},500)}
-        return json(route,{success:true,events:[second,event,opening,eyva]});
+        return json(route,{success:true,events:[event,opening,eyva]});
       }
       if(name==='eventEngagement')return json(route,{success:true,saved:{id:'saved-1'},share:{id:'share-1'},items:[]});
       if(name==='eventInterest')return json(route,{success:true});
@@ -57,7 +57,7 @@ test('public Events desktop: discover, filter, open detail, save, calendar and c
   await expect(page.getByRole('heading',{name:'Kukri Irish Nationals 2026'})).toBeVisible();
   await expect(page.getByText('Open for booking').first()).toBeVisible();
   await expect(page.getByText(/Closes in \d+ days/).first()).toBeVisible();
-  await expect(page.getByText('Clare v Galway Interclub')).toBeVisible();
+  await expect(page.getByText('Clare v Galway Interclub')).toHaveCount(0);
   await expect(page.getByText("Eyva's Invitational Series – Autumn Classic 2026")).toBeVisible();
   await expect(page.getByText('Invitation only').first()).toBeVisible();
   await page.getByRole('button',{name:'Invitation only'}).click();
