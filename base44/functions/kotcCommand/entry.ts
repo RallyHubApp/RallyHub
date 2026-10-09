@@ -248,7 +248,7 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'}),
       ]);
       const slots=(slotRows||[]).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank)||String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number));
-      const eligible=new Set((participants||[]).filter((p:any)=>['registered','confirmed','present','leaving_early'].includes(p.status)).map((p:any)=>String(p.id)));
+      const eligible=new Set((participants||[]).filter((p:any)=>['registered','confirmed','present','leaving_early'].includes(p.status)&&!(p.scheduled_departure_at&&Date.parse(p.scheduled_departure_at)<=Date.now())).map((p:any)=>String(p.id)));
       const requested=body.slotParticipantIds||{};const nextIds=slots.map((s:any)=>String(requested[s.id]||s.participant_id));const expected=Number(round.active_court_count||0)*4;
       if(slots.length!==expected||nextIds.length!==expected)return Response.json({error:`Round not ready: expected ${expected} court positions.`},{status:409});
       if(new Set(nextIds).size!==nextIds.length)return Response.json({error:'Round not ready: a player appears more than once.'},{status:409});
@@ -350,7 +350,8 @@ Deno.serve(async (req) => {
       const activeLocks=(fixedPairs||[]).filter((p:any)=>p.pair_source==='host_selected');
       const nextNumber=Number(currentRound.round_number)+1;
       const eligible = participants.filter((p:any)=>{
-        if(['injured','left','no_show','withdrawn','replaced'].includes(p.status)) return false;
+        if(['injured','left','no_show','withdrawn','replaced','late_not_arrived'].includes(p.status)) return false;
+        if(p.scheduled_departure_at&&Date.parse(p.scheduled_departure_at)<=Date.now()) return false;
         const effective=Number(p.availability_effective_from_round||0);
         const availableAgain=Number(p.available_again_from_round||0);
         if(['temporarily_unavailable','voluntary_rest'].includes(p.status)) return availableAgain>0 && nextNumber>=availableAgain;
@@ -426,23 +427,29 @@ Deno.serve(async (req) => {
       if(action==='voluntary_rest'){update.status='voluntary_rest';update.availability_effective_from_round=effectiveRound;update.available_again_from_round=effectiveRound+1;eventType='voluntary_rest';reason=reason||'Host marked one-round voluntary rest';}
       else if(action==='temporarily_unavailable'){update.status='temporarily_unavailable';update.availability_effective_from_round=effectiveRound;update.available_again_from_round=body.availableAgainFromRound?Number(body.availableAgainFromRound):undefined;eventType='temporary_absence';reason=reason||'Host marked temporarily unavailable';}
       else if(action==='injured'){update.status='injured';update.availability_effective_from_round=effectiveRound;eventType='injury';reason=reason||'Host marked injured';}
+      else if(action==='late_not_arrived'){update.status='late_not_arrived';update.availability_effective_from_round=effectiveRound;eventType='late_not_arrived';reason=reason||'Host marked late/not arrived';}
+      else if(action==='no_show'){update.status='no_show';update.availability_effective_from_round=effectiveRound;eventType='no_show';reason=reason||'Host marked no-show';}
+      else if(action==='scheduled_departure'){const raw=String(body.departureTime||'').trim();if(!/^\d{2}:\d{2}$/.test(raw))return Response.json({error:'Choose a valid departure time.'},{status:400});const [hh,mm]=raw.split(':').map(Number);const scheduled=new Date();scheduled.setHours(hh,mm,0,0);if(scheduled.getTime()<Date.now()-60*60*1000)scheduled.setDate(scheduled.getDate()+1);update.status='present';update.scheduled_departure_at=scheduled.toISOString();eventType='leaving_early';reason=reason||`Host scheduled departure at ${raw}`;}
       else if(action==='leaving_early'){update.status='leaving_early';update.availability_effective_from_round=effectiveRound;update.left_after_round=Math.max(0,effectiveRound-1);eventType='leaving_early';reason=reason||'Host marked leaving early';}
-      else if(action==='back_available'){update.status='present';update.availability_effective_from_round=undefined;update.available_again_from_round=undefined;update.left_after_round=undefined;eventType='returned_available';reason=reason||'Host returned player to available';}
+      else if(action==='back_available'){update.status='present';update.availability_effective_from_round=null;update.available_again_from_round=null;update.left_after_round=null;update.scheduled_departure_at=null;eventType='returned_available';reason=reason||'Host returned player to available';}
       else return Response.json({error:'Unknown participant status action.'},{status:400});
       const updated=await base44.asServiceRole.entities.KotcSessionParticipant.update(participant.id,update);
-      // If play has not started yet, an availability change must be reflected in the proposed
-      // courts before START. Never leave an unavailable player silently assigned to a proposal.
-      // The host is forced to regenerate/adjust rather than discovering the problem after Start.
-      if(round?.status==='proposed' && ['injured','leaving_early','temporarily_unavailable','voluntary_rest'].includes(action)){
-        const proposedSlots=await base44.asServiceRole.entities.KotcRoundSlot.filter({round_id:round.id,session_id:session.id});
-        if((proposedSlots||[]).some((s:any)=>String(s.participant_id)===String(participant.id))){
-          await base44.asServiceRole.entities.KotcRound.update(round.id,{proposal_revision:Number(round.proposal_revision||1)+1});
-        }
-      }
+      // Pre-start roster changes must never auto-redraw or silently rewrite the published draw.
+      // The host replaces an unavailable court player with a bench player in the same visible slot,
+      // then saves/starts that exact adjusted proposal.
       await base44.asServiceRole.entities.KotcParticipationEvent.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:participant.id,round_id:round?.id,round_number:effectiveRound,event_type:eventType,effective_from_round:effectiveRound,effective_to_round:action==='voluntary_rest'?effectiveRound:undefined,fairness_credit:false,reason,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now});
       await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_participant_status_changed',entity_type:'KotcSessionParticipant',entity_id:participant.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({status:participant.status,availability_effective_from_round:participant.availability_effective_from_round,available_again_from_round:participant.available_again_from_round}),after_state:JSON.stringify(update),reason});
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
       result={success:true,session,participant:updated,effectiveRound};
+    } else if (commandType === 'restore_participant_status') {
+      const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({id:body.participantId,session_id:session.id});
+      const participant=participants?.[0]; if(!participant)return Response.json({error:'Participant not found.'},{status:404});
+      const allowedStatuses=['registered','confirmed','present','late_not_arrived','temporarily_unavailable','voluntary_rest','injured','leaving_early','left','no_show','withdrawn','replaced'];
+      const restoreStatus=String(body.restoreStatus||'present');if(!allowedStatuses.includes(restoreStatus))return Response.json({error:'Cannot restore that participant status.'},{status:400});
+      const restored=await base44.asServiceRole.entities.KotcSessionParticipant.update(participant.id,{status:restoreStatus,availability_effective_from_round:body.restoreAvailabilityEffectiveFromRound??null,available_again_from_round:body.restoreAvailableAgainFromRound??null,left_after_round:body.restoreLeftAfterRound??null,scheduled_departure_at:body.restoreScheduledDepartureAt??null});
+      await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_participant_status_restored',entity_type:'KotcSessionParticipant',entity_id:participant.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({status:participant.status,availability_effective_from_round:participant.availability_effective_from_round,available_again_from_round:participant.available_again_from_round,left_after_round:participant.left_after_round,scheduled_departure_at:participant.scheduled_departure_at}),after_state:JSON.stringify({status:restoreStatus}),reason:String(body.reason||'Host undo roster change').trim()});
+      session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
+      result={success:true,session,participant:restored};
     } else if (commandType === 'adjust_proposed_round') {
       const rounds = await base44.asServiceRole.entities.KotcRound.filter({ id:body.roundId, session_id:session.id });
       const round = rounds?.[0];

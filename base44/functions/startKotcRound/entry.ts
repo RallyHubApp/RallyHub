@@ -29,7 +29,7 @@ Deno.serve(async(req)=>{try{
  const slots=(await retry('slots read',()=>base44.asServiceRole.entities.KotcRoundSlot.filter({round_id:round.id,session_id:session.id}))).sort((a:any,b:any)=>Number(a.ladder_court_rank)-Number(b.ladder_court_rank)||String(a.team_side).localeCompare(String(b.team_side))||Number(a.slot_number)-Number(b.slot_number));
  const participants=await retry('participants read',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));
  const lockRows=await retry('locks read',()=>base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'}));
- const eligible=new Set((participants||[]).filter((p:any)=>['registered','confirmed','present','leaving_early'].includes(p.status)).map((p:any)=>String(p.id)));
+ const eligible=new Set((participants||[]).filter((p:any)=>['registered','confirmed','present','leaving_early'].includes(p.status)&&!(p.scheduled_departure_at&&Date.parse(p.scheduled_departure_at)<=Date.now())).map((p:any)=>String(p.id)));
  const requested=body.slotParticipantIds||{};const nextIds=slots.map((s:any)=>String(requested[s.id]||s.participant_id));const expected=Number(round.active_court_count||0)*4;
  if(slots.length!==expected||nextIds.length!==expected)return Response.json({error:`Round not ready: expected ${expected} court positions.`,runtimeVersion:RUNTIME_VERSION},{status:409});
  if(new Set(nextIds).size!==nextIds.length)return Response.json({error:'Round not ready: a player appears more than once.',runtimeVersion:RUNTIME_VERSION},{status:409});

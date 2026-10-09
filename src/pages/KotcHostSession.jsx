@@ -27,15 +27,15 @@ export default function KotcHostSession(){
   const tournament={id:session.tournament_id,name:session.name,format:'King of the Court',status:session.status==='ready'?'In Progress':'In Progress',player_ids:players.map(p=>p.id)};
 
   return <div className="min-h-screen bg-background">
-    <header className="sticky top-0 z-40 glass-strong border-b border-border px-3 sm:px-4 py-3 flex items-center justify-between gap-3">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary"/><p className="text-xs uppercase tracking-wider text-primary font-semibold">Session Host Mode</p></div>
-        <h1 className="font-bold text-sm sm:text-base truncate">{session.name}</h1>
-        <p className="text-[10px] text-muted-foreground truncate">Restricted to this KOTC session only · {user?.full_name||user?.email||'Host'}</p>
-      </div>
-      <div className="flex gap-2">{user?.role==="admin"&&<a href={`/app/communications?scope=tenant&source=kotc&sourceId=${encodeURIComponent(session.id)}&template=kotc_results&returnTo=${encodeURIComponent(`/kotc-host/${session.id}`)}&label=${encodeURIComponent(session.name||"KOTC")}`}><Button variant="outline" size="sm">Communications</Button></a>}<Button variant="outline" size="sm" onClick={()=>logout()}><LogOut className="w-4 h-4 mr-1"/>Sign out</Button></div>
-    </header>
-    <main className="p-3 sm:p-4 max-w-5xl mx-auto">
+  <header className="sticky top-0 z-40 glass-strong border-b border-border px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="min-w-0 w-full sm:w-auto">
+      <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary shrink-0"/><p className="text-xs uppercase tracking-wider text-primary font-semibold">Session Host Mode</p></div>
+      <h1 className="font-bold text-sm sm:text-base truncate">{session.name}</h1>
+      <p className="text-[10px] text-muted-foreground truncate">Restricted to this KOTC session only · {user?.full_name||user?.email||'Host'}</p>
+    </div>
+    <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:justify-end">{user?.role==="admin"&&<a className="min-w-0" href={`/app/communications?scope=tenant&source=kotc&sourceId=${encodeURIComponent(session.id)}&template=kotc_results&returnTo=${encodeURIComponent(`/kotc-host/${session.id}`)}&label=${encodeURIComponent(session.name||"KOTC")}`}><Button className="w-full min-h-11 sm:min-h-9" variant="outline" size="sm">Communications</Button></a>}<Button className="min-h-11 sm:min-h-9" variant="outline" size="sm" onClick={()=>logout()}><LogOut className="w-4 h-4 mr-1"/>Sign out</Button></div>
+  </header>
+  <main className="p-3 sm:p-4 max-w-5xl mx-auto">
       <KotcV2SessionView tournament={tournament} players={players} queryClient={queryClient} sessionId={session.id}/>
     </main>
   </div>;
