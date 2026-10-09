@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, CheckCircle2, Eye, Loader2, MapPin, Plus, Save, Trash2, Users, X } from 'lucide-react';
 import EventMediaEditor from '@/components/events/EventMediaEditor';
+import EventDiscoveryQueue from '@/components/events/EventDiscoveryQueue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PageHeader from '@/components/shared/PageHeader';
@@ -103,6 +104,7 @@ export default function TenantEvents({directoryListingSlug=''}){
   if(directoryMode&&directoryError)return <div className="p-6 text-sm text-destructive">{directoryError.message||'Could not load event manager.'}</div>;
   if(!canManage)return <div className="p-6">You do not have permission to manage events.</div>;
   return <div className="space-y-6"><PageHeader title={directoryMode?`Events · ${directoryContext?.listing?.name||'Directory club'}`:'Events'} description={directoryMode?'Create and maintain public RallyHub events here. The editor is the same one clubs use inside RallyHub Club, so there is nothing new to relearn later.':'Create once. Use the same event for members, RallyHub public Events and club sharing.'}/>
+    {!directoryMode&&isAdmin&&<EventDiscoveryQueue hostClubId={effectiveHostClubId} tenantId={effectiveTenantId}/>}
     <div className="flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-bold">The same seven-step event editor everywhere</p><p className="mt-1 text-xs text-muted-foreground">Basics → Artwork → Registration → Who is it for? → Event information → Audience → Preview & publish.</p></div><a href="/events/quick-start" className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-background px-4 text-sm font-bold text-primary hover:bg-primary/5">Events Quick Start Guide</a></div>
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 p-4" data-testid="poster-verification-shortcut"><div><p className="text-sm font-bold">Test automatic event poster discovery</p><p className="text-xs text-muted-foreground">Go directly to Step 2 · Artwork to check a poster from an organiser's event webpage.</p></div><button type="button" onClick={()=>{document.getElementById('event-poster-verification')?.scrollIntoView({behavior:'smooth',block:'start'});document.getElementById('event-poster-webpage-url')?.focus({preventScroll:true})}} className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Open poster verification ↓</button></div>
     <div className="grid gap-6 2xl:grid-cols-[1.18fr_.82fr]">
