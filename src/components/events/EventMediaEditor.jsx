@@ -48,7 +48,7 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
     if(!eventPageUrl.trim()||!eventName.trim())return toast.error('Enter an event name and webpage URL');
     setUploading(true);
     try{
-      const response=await base44.functions.invoke('eventPosterDiscover',{eventUrl:eventPageUrl.trim(),eventName:eventName.trim()});
+      const response=await base44.functions.invoke('eventPosterDiscover',{eventUrl:eventPageUrl.trim(),eventName:eventName.trim(),listingSlug});
       const result=response.data||{};
       if(!result.selected?.imageUrl)throw new Error(result.error||'No matching poster found');
       setPosterSourceUrl(result.selected.imageUrl);
@@ -60,7 +60,7 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
     if(!posterSourceUrl.trim())return;
     setUploading(true);
     try{
-      const response=await base44.functions.invoke('eventPosterIngest',{sourceUrl:posterSourceUrl.trim()});
+      const response=await base44.functions.invoke('eventPosterIngest',{sourceUrl:posterSourceUrl.trim(),listingSlug});
       const result=response.data||{};
       if(!result.success)throw new Error(result.error||'Poster needs manual review');
       setPreview(result.originalUrl);setX(50);setY(50);setZoom(1);setCardX(50);setCardY(50);setCardZoom(1);

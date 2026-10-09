@@ -36,8 +36,16 @@ function discover(html:string,pageUrl:string,eventName:string){
 }
 Deno.serve(async req=>{
  try{
-  const b=createClientFromRequest(req),user=await b.auth.me();if(user?.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
-  const body=await req.json().catch(()=>({}));const url=safeUrl(String(body.eventUrl||''),'https://pickleballireland.ie/');
+  const b=createClientFromRequest(req),user=await b.auth.me();
+  const body=await req.json().catch(()=>({}));
+  if(!user)return Response.json({error:'Authentication required'},{status:401});
+  if(user.role!=='admin'){
+   const slug=String(body.listingSlug||'').trim();
+   if(!slug||slug.length>180)return Response.json({error:'Directory listing access required'},{status:403});
+   const rows=await b.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:slug,user_id:user.id,status:'active'},'-granted_at',10);
+   if(!rows?.length)return Response.json({error:'Directory listing access required'},{status:403});
+  }
+const url=safeUrl(String(body.eventUrl||''),'https://pickleballireland.ie/');
   if(!url)return Response.json({error:'Event page domain not approved'},{status:400});
   const name=String(body.eventName||'').trim();if(name.length<5||name.length>160)return Response.json({error:'Provide the event name for accurate matching'},{status:400});
   const response=await fetch(url,{redirect:'error',signal:AbortSignal.timeout(15000)});

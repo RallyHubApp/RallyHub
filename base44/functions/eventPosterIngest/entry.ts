@@ -14,8 +14,16 @@ function inspect(bytes:Uint8Array,type:string){
 }
 Deno.serve(async req=>{
  try{
-  const b=createClientFromRequest(req),user=await b.auth.me();if(user?.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
-  const body=await req.json().catch(()=>({})),url=new URL(String(body.sourceUrl||''));
+  const b=createClientFromRequest(req),user=await b.auth.me();
+  const body=await req.json().catch(()=>({}));
+  if(!user)return Response.json({error:'Authentication required'},{status:401});
+  if(user.role!=='admin'){
+   const slug=String(body.listingSlug||'').trim();
+   if(!slug||slug.length>180)return Response.json({error:'Directory listing access required'},{status:403});
+   const rows=await b.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:slug,user_id:user.id,status:'active'},'-granted_at',10);
+   if(!rows?.length)return Response.json({error:'Directory listing access required'},{status:403});
+  }
+  const url=new URL(String(body.sourceUrl||''));
   if(url.protocol!=='https:'||!hosts.has(url.hostname)||url.username||url.password)return Response.json({error:'Source domain not approved'},{status:400});
   const response=await fetch(url.toString(),{redirect:'error',signal:AbortSignal.timeout(15000)});
   if(!response.ok)return Response.json({error:'Source poster unavailable'},{status:422});
