@@ -441,6 +441,33 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_participant_status_changed',entity_type:'KotcSessionParticipant',entity_id:participant.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({status:participant.status,availability_effective_from_round:participant.availability_effective_from_round,available_again_from_round:participant.available_again_from_round}),after_state:JSON.stringify(update),reason});
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
       result={success:true,session,participant:updated,effectiveRound};
+    } else if (commandType === 'bulk_roster_change') {
+      // Single host command: record several departures without regenerating a published draw.
+      const changes=Array.isArray(body.changes)?body.changes:[];
+      if(!changes.length||changes.length>32)return Response.json({error:'Provide 1 to 32 roster changes.'},{status:400});
+      const ids=changes.map((c:any)=>String(c.participantId||''));
+      if(ids.some((id:string)=>!id)||new Set(ids).size!==ids.length)return Response.json({error:'Each player must appear once.'},{status:400});
+      const permitted=new Set(['injured','no_show','leaving_early','late_not_arrived','back_available']);
+      if(changes.some((c:any)=>!permitted.has(String(c.statusAction||''))))return Response.json({error:'Unsupported bulk roster action.'},{status:400});
+      const participants=await withRateLimitRetry('bulk roster participants',()=>base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}));
+      const byId=new Map((participants||[]).map((p:any)=>[String(p.id),p]));
+      if(ids.some((id:string)=>!byId.has(id)))return Response.json({error:'One or more players are not in this session.'},{status:404});
+      const round=(await base44.asServiceRole.entities.KotcRound.filter({id:session.current_round_id,session_id:session.id}))?.[0]||null;
+      const effectiveRound=round&&['started','completed'].includes(round.status)?Number(session.current_round_number||1)+1:Math.max(1,Number(session.current_round_number||1));
+      const applied:any[]=[];
+      for(const change of changes){
+        const participant=byId.get(String(change.participantId));
+        const action=String(change.statusAction);
+        const update:any=action==='back_available'?{status:'present',availability_effective_from_round:null,available_again_from_round:null,left_after_round:null,scheduled_departure_at:null}:{
+          status:action,availability_effective_from_round:effectiveRound,
+          ...(action==='leaving_early'?{left_after_round:Math.max(0,effectiveRound-1)}:{})
+        };
+        await withRateLimitRetry('bulk roster update',()=>base44.asServiceRole.entities.KotcSessionParticipant.update(participant.id,update));
+        applied.push({participantId:participant.id,previousStatus:participant.status,status:update.status});
+      }
+      session=await withRateLimitRetry('bulk roster session revision',()=>base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId}));
+      try{await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_bulk_roster_change',entity_type:'KotcSession',entity_id:session.id,scope_type:'KotcSession',scope_id:session.id,after_state:JSON.stringify(applied),reason:String(body.reason||'Host batch roster update')});}catch(error){console.warn('KOTC bulk roster audit unavailable',String(error));}
+      result={success:true,session,changes:applied,effectiveRound,drawPreserved:true,requiresCourtSubstitution:!!round&&['proposed','started'].includes(round.status)};
     } else if (commandType === 'restore_participant_status') {
       const participants=await base44.asServiceRole.entities.KotcSessionParticipant.filter({id:body.participantId,session_id:session.id});
       const participant=participants?.[0]; if(!participant)return Response.json({error:'Participant not found.'},{status:404});
