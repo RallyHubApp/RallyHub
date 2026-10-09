@@ -10,7 +10,7 @@ export default function EventCard({ event, onRegister }) {
   const x = Number(event.event_card_position_x ?? event.event_image_position_x ?? 50);
   const y = Number(event.event_card_position_y ?? event.event_image_position_y ?? 50);
   const zoom = Number(event.event_card_zoom ?? event.event_image_zoom ?? 1);
-  const canRegister = state.actionable && event.event_registration_mode !== 'none' && (event.event_registration_url || event.event_registration_mode === 'contact' || event.event_registration_mode === 'rallyhub');
+  const canRegister = state.actionable && (event.event_registration_url || event.event_source_url || (event.event_registration_mode !== 'none' && ['contact','rallyhub'].includes(event.event_registration_mode)));
   const actionLabel = registrationActionLabel(event,state);
 
   return (

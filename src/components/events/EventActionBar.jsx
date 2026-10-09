@@ -31,6 +31,8 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
   const invitationOnly=state.key==='invite_only';
   const futureInvitation=state.key==='full'&&state.futureInvitation===true;
   const path=eventPath(event);
+  const fallbackInfoUrl=(()=>{try{const u=new URL(event.event_source_url||'');return u.protocol==='https:'?u.toString():''}catch{return ''}})();
+  const bookingDestination=event.event_registration_url||fallbackInfoUrl;
   const url=useMemo(()=>typeof window!=='undefined'?`${window.location.origin}${path}`:`https://rallyhub.ie${path}`,[path]);
   const canClubShare=!!user?.active_club_id&&!!user?.active_tenant_id&&(user?.role==='admin'||user?.active_club_role==='club_admin');
   useEffect(()=>setSaved(!!initiallySaved),[initiallySaved]);
@@ -75,16 +77,16 @@ export default function EventActionBar({ event, compact = false, initiallySaved 
     if(state.key==='opening_soon')return saveEvent(true);
     if(!state.actionable)return;
     if(event.event_registration_mode==='contact'&&event.event_contact){const subject=state.key==='invite_only'?`Invitation request: ${event.name}`:`Event enquiry: ${event.name}`;const body=state.key==='invite_only'?`Hi,\n\nI would like to be considered for an invitation to ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`:`Hi,\n\nI have a question about ${event.name}.\n\nRallyHub event: ${url}\n\nThank you.`;window.location.href=`mailto:${event.event_contact}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;return}
-    if(event.event_registration_url){
+    if(bookingDestination){
       if(whatsAppRegistration)toast.success('Opening WhatsApp — send the message to complete your registration');
-      window.open(event.event_registration_url,'_blank','noopener,noreferrer');
-    }
+      window.open(bookingDestination,'_blank','noopener,noreferrer');
+    }else toast.info('Booking information is not available yet. Check back for organiser updates.');
   };
 
   return <>
     <div className={`flex flex-wrap gap-2 ${compact?'':'w-full'}`}>
       {futureInvitation&&<Button onClick={()=>setInterestOpen(true)} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]"><Mail className="mr-2 h-4 w-4"/>Request a future invitation</Button>}
-      {(state.actionable||state.key==='opening_soon')&&<Button onClick={openRegistration} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]" disabled={busy==='remind'}>{state.key==='opening_soon'?<><Bell className="mr-2 h-4 w-4"/>{busy==='remind'?'Saving…':'Remind me'}</>:invitationOnly?<><Mail className="mr-2 h-4 w-4"/>Request invitation</>:whatsAppRegistration?<><MessageCircle className="mr-2 h-4 w-4"/>WhatsApp to register</>:<><ExternalLink className="mr-2 h-4 w-4"/>Register / Book</>}</Button>}
+      {(state.actionable||state.key==='opening_soon')&&<Button onClick={openRegistration} className="min-h-11 bg-[#078e48] text-white hover:bg-[#067b3f]" disabled={busy==='remind'}>{state.key==='opening_soon'?<><Bell className="mr-2 h-4 w-4"/>{busy==='remind'?'Saving…':'Remind me'}</>:invitationOnly?<><Mail className="mr-2 h-4 w-4"/>Request invitation</>:whatsAppRegistration?<><MessageCircle className="mr-2 h-4 w-4"/>WhatsApp to register</>:<><ExternalLink className="mr-2 h-4 w-4"/>{!event.event_registration_url&&fallbackInfoUrl?'Event information':'Register / Book'}</>}</Button>}
       <Button variant="outline" className="min-h-11" onClick={saved?unsave:()=>saveEvent(false)} disabled={busy==='save'}>{saved?<BookmarkCheck className="mr-2 h-4 w-4 text-[#078e48]"/>:<Bookmark className="mr-2 h-4 w-4"/>}{busy==='save'?'Saving…':saved?'Saved':'Save event'}</Button>
       <Button variant="outline" className="min-h-11" onClick={()=>setCalendarOpen(true)}><CalendarPlus className="mr-2 h-4 w-4"/>Add to calendar</Button>
       <Button variant="outline" className="min-h-11" onClick={()=>setShareOpen(true)}><Share2 className="mr-2 h-4 w-4"/>Share</Button>
