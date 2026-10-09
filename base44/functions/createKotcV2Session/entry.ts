@@ -65,8 +65,13 @@ Deno.serve(async(req)=>{try{
  // Seed rank 1 denotes the strongest player; place weaker groups nearer Court 1 so
  // stronger players must progress by winning. Within equal ranks use a stable draw tie-break.
  if(firstPhase?.mode!=='fixed'&&drawMethod==='strict')courtIds.sort((a:string,b:string)=>Number(rankingRank[b]||playerIds.indexOf(b)+1)-Number(rankingRank[a]||playerIds.indexOf(a)+1)||stableHash(`${seed}|initial-court|${a}`)-stableHash(`${seed}|initial-court|${b}`));
- // Balanced and pure-random modes use the explicitly submitted host draw order.
- // Never silently overwrite the balanced spread or a host-adjusted ranking.
+ // Balanced keeps the host's four-player court groups and 1+4 versus 2+3 partnerships,
+ // but reverses the GROUP order so the strongest seed is not automatically on Court 1.
+ // Pure random keeps the submitted random draw; fixed partnerships remain untouched.
+ if(firstPhase?.mode!=='fixed'&&drawMethod==='balanced'){
+   const groups=Array.from({length:courts},(_:any,i:number)=>courtIds.slice(i*4,i*4+4));
+   courtIds.splice(0,courtIds.length,...groups.reverse().flat());
+ }
  const round=await retry('round1 create',()=>base44.asServiceRole.entities.KotcRound.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,round_number:1,status:'proposed',proposal_revision:1,active_court_count:courts,bench_count:requestedBench.length,generated_by_command_id:'create-session',engine_input_hash:String(stableHash(`${seed}|${playerIds.join('|')}|${requestedBench.join('|')}|${partnershipMode}`))}));
  let roundCourts:any[]=[];
  if(firstPhase?.mode==='fixed'){
