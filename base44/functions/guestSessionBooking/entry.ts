@@ -1521,9 +1521,7 @@ ${detailRow('Reason',reason)}
       const intakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
       const templates=await directoryTemplates(base44,session.tenant_id,session.club_id);
       const directoryTemplate=templates.find((t:any)=>String(t.key)===String(session.session_label)) || templates.find((t:any)=>t.venueName===session.venue_name&&t.weekday===session.weekday&&t.start===session.start_time);
-      const restriction=await clubRestrictionCheck(base44,session.tenant_id,session.club_id,{fullName,email,mobile});
-    if(restriction!=='clear')return clubRestrictionResponse(restriction);
-    const directRegistration=['none','cash'].includes(session.payment_method);
+      const directRegistration=['none','cash'].includes(session.payment_method);
       return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite||directRegistration,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',inviteName:invite?.intended_name||'',approvalRequired:!directRegistration&&!invite,
         guestIntakeCaptured:intakeCaptured,
         guestIntake:intakeCaptured?{previousSports:guestPreviousSports(approvedRequest.previous_sports),sportingBackgroundNote:approvedRequest.sporting_background_note||'',healthDeclarationApplies:approvedRequest.health_declaration_applies===true,medicalNote:approvedRequest.medical_note||''}:null,
