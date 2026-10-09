@@ -488,6 +488,8 @@ Deno.serve(async(req)=>{
         const request=await first(base44,'ClubAccessRequest',{id:requestId,tenant_id:tenantId,club_id:clubId,request_type:'membership_application'});
         if(!request)return Response.json({error:'Membership request not found.'},{status:404});
         if(request.status!=='pending_approval')return Response.json({error:'This membership request has already been decided.'},{status:409});
+        const restriction=await clubRestrictionCheck(base44,tenantId,clubId,{fullName:request.full_name,email:request.email,mobile:request.mobile});
+        if(restriction!=='clear')return clubRestrictionResponse(restriction);
         const invite=await createMembershipInvite(base44,config,user,request.email,request.full_name,request.id,request.mobile||'');
         await base44.asServiceRole.entities.ClubAccessRequest.update(request.id,{status:'approved',approved_at:new Date().toISOString(),approved_by_user_id:user.id,invite_token_id:invite.id});
         const magicInviteUrl=`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}?invite=${encodeURIComponent(invite.token)}`;
