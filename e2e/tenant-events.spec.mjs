@@ -148,3 +148,13 @@ test('claimed directory event editor discovers and imports original artwork',asy
  await page.getByRole('button',{name:'Import original automatically'}).click();
  await expect(page.getByAltText('Event poster preview')).toHaveAttribute('src',image);
 });
+
+test('authenticated directory live-verification control checks both functions without saving event',async({page})=>{
+ const model=await installBackend(page);const poster='https://pickleballireland.ie/wp-content/uploads/2026/10/Sqaure.webp';
+ await page.route('**/api/apps/**/functions/directoryEvents',route=>json(route,{success:true,canManage:true,role:'owner',listing:{slug:'test-club',name:'Test Club'},host:{id:'club-clare',name:'Test Club'},tenant:{id:'tenant-clare'},events:[],venues:[]}));
+ await page.route('**/api/apps/**/functions/eventPosterDiscover',route=>json(route,{success:true,reviewRequired:false,selected:{imageUrl:poster,eventName:'Munster Open 2027',score:150}}));
+ await page.route('**/api/apps/**/functions/eventPosterIngest',route=>json(route,{success:true,originalUrl:'https://base44.app/verified.webp',width:1254,height:900,sha256:'a'.repeat(64)}));
+ await page.goto('/directory/test-club/events');await page.getByLabel('Event name').fill('Munster Open 2027');await page.getByLabel('Event webpage URL').fill('https://pickleballireland.ie/events/');
+ await page.getByRole('button',{name:'Run live poster verification'}).click();await expect(page.getByRole('status')).toContainText('PASS: Storage verified');
+ expect(model.writes).toHaveLength(0);
+});
