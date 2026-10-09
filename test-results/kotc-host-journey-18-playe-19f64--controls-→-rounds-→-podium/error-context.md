@@ -12,182 +12,200 @@
 # Error details
 
 ```
-Error: create_ack_ms should be <= 250ms but was 1236ms
+Error: expect(locator).toBeVisible() failed
 
-expect(received).toBeLessThanOrEqual(expected)
+Locator: getByText('Session Links & Access')
+Expected: visible
+Timeout: 3000ms
+Error: element(s) not found
 
-Expected: <= 250
-Received:    1236
+Call log:
+  - Expect "toBeVisible" getByText('Session Links & Access') with timeout 3000ms
+  - waiting for getByText('Session Links & Access')
+
 ```
 
-# Page snapshot
-
 ```yaml
-- main [ref=e3]:
-  - generic [ref=e4]:
-    - generic [ref=e5]:
-      - generic [ref=e6]:
-        - paragraph [ref=e7]: Round 1 — ROUND READY
-        - paragraph [ref=e8]: 4 courts · 2 bench
-      - generic [ref=e9]:
-        - button "Roster" [ref=e10] [cursor=pointer]
-        - button "Leaderboard" [ref=e11] [cursor=pointer]
-        - button "Links" [ref=e12] [cursor=pointer]
-        - button "Menu" [ref=e13] [cursor=pointer]
-    - generic [ref=e14]:
-      - paragraph [ref=e15]: What happens next
-      - paragraph [ref=e16]: Round 1 ready
-      - paragraph [ref=e17]: "Next: check the 4 court assignments and bench, then Start Round 1."
-    - generic [ref=e18]:
-      - paragraph [ref=e19]: ROUND 1 HAS NOT STARTED
-      - paragraph [ref=e20]: Call the court assignments below, make any host changes, then press START ROUND. The timer is not running and score entry is hidden until you start.
-    - generic [ref=e21]:
-      - generic [ref=e22]:
-        - paragraph [ref=e23]: Bench This Round
-        - generic [ref=e24]:
-          - button "Player 17" [ref=e25] [cursor=pointer]
-          - button "Player 18" [ref=e26] [cursor=pointer]
-        - paragraph [ref=e27]: Tap a court player, then a bench player, to swap them.
-      - generic [ref=e28]:
-        - generic [ref=e29]:
-          - heading "Host Round Editor" [level=4] [ref=e30]
-          - paragraph [ref=e31]: Tap two players to swap them, or drag a whole court by its handle to move that four-player group to another court rank.
-        - generic [ref=e32]:
-          - generic [ref=e33]:
-            - generic [ref=e34]:
-              - generic [ref=e35]: Court 1
-              - button "Move whole Court 1" [ref=e39] [cursor=pointer]: Move court
-            - generic [ref=e47]:
-              - generic [ref=e48]:
-                - paragraph [ref=e49]: Team A
-                - button "Lock pair" [ref=e50] [cursor=pointer]
-              - generic [ref=e51]:
-                - button "Player 01" [ref=e52] [cursor=pointer]
-                - button "Player 08" [ref=e61] [cursor=pointer]
-            - generic [ref=e70]:
-              - generic [ref=e71]:
-                - paragraph [ref=e72]: Team B
-                - button "Lock pair" [ref=e73] [cursor=pointer]
-              - generic [ref=e74]:
-                - button "Player 09" [ref=e75] [cursor=pointer]
-                - button "Player 16" [ref=e84] [cursor=pointer]
-          - generic [ref=e93]:
-            - generic [ref=e94]:
-              - generic [ref=e95]: Court 2
-              - button "Move whole Court 2" [ref=e97] [cursor=pointer]: Move court
-            - generic [ref=e105]:
-              - generic [ref=e106]:
-                - paragraph [ref=e107]: Team A
-                - button "Lock pair" [ref=e108] [cursor=pointer]
-              - generic [ref=e109]:
-                - button "Player 02" [ref=e110] [cursor=pointer]
-                - button "Player 07" [ref=e119] [cursor=pointer]
-            - generic [ref=e128]:
-              - generic [ref=e129]:
-                - paragraph [ref=e130]: Team B
-                - button "Lock pair" [ref=e131] [cursor=pointer]
-              - generic [ref=e132]:
-                - button "Player 10" [ref=e133] [cursor=pointer]
-                - button "Player 15" [ref=e142] [cursor=pointer]
-          - generic [ref=e151]:
-            - generic [ref=e152]:
-              - generic [ref=e153]: Court 3
-              - button "Move whole Court 3" [ref=e155] [cursor=pointer]: Move court
-            - generic [ref=e163]:
-              - generic [ref=e164]:
-                - paragraph [ref=e165]: Team A
-                - button "Lock pair" [ref=e166] [cursor=pointer]
-              - generic [ref=e167]:
-                - button "Player 03" [ref=e168] [cursor=pointer]
-                - button "Player 06" [ref=e177] [cursor=pointer]
-            - generic [ref=e186]:
-              - generic [ref=e187]:
-                - paragraph [ref=e188]: Team B
-                - button "Lock pair" [ref=e189] [cursor=pointer]
-              - generic [ref=e190]:
-                - button "Player 11" [ref=e191] [cursor=pointer]
-                - button "Player 14" [ref=e200] [cursor=pointer]
-          - generic [ref=e209]:
-            - generic [ref=e210]:
-              - generic [ref=e211]: Court 4
-              - button "Move whole Court 4" [ref=e213] [cursor=pointer]: Move court
-            - generic [ref=e221]:
-              - generic [ref=e222]:
-                - paragraph [ref=e223]: Team A
-                - button "Lock pair" [ref=e224] [cursor=pointer]
-              - generic [ref=e225]:
-                - button "Player 04" [ref=e226] [cursor=pointer]
-                - button "Player 05" [ref=e235] [cursor=pointer]
-            - generic [ref=e244]:
-              - generic [ref=e245]:
-                - paragraph [ref=e246]: Team B
-                - button "Lock pair" [ref=e247] [cursor=pointer]
-              - generic [ref=e248]:
-                - button "Player 12" [ref=e249] [cursor=pointer]
-                - button "Player 13" [ref=e258] [cursor=pointer]
-        - generic [ref=e267]:
-          - generic [ref=e268]:
-            - paragraph [ref=e269]: Round setup is saved
-            - paragraph [ref=e270]: You can leave this screen and return without losing the court layout.
-          - button "Saved ✓" [disabled]
-      - generic [ref=e271]:
-        - generic [ref=e272]:
-          - paragraph [ref=e273]: Pre-Round Check
-          - paragraph [ref=e274]: Confirm the round time and hall sound before players begin.
-        - generic [ref=e275]:
-          - generic [ref=e276]:
-            - generic [ref=e281]:
-              - paragraph [ref=e282]: Round timer
-              - paragraph [ref=e283]: Adjust now if tonight needs a shorter or longer round.
-            - generic [ref=e284]: 08:00
-          - generic [ref=e285]:
-            - button "− 1 min" [ref=e286] [cursor=pointer]
-            - button "+ 1 min" [ref=e287] [cursor=pointer]
-        - generic [ref=e289]:
-          - generic [ref=e290]:
-            - paragraph [ref=e291]: Audio & announcements check
-            - paragraph [ref=e292]: "Current KOTC announcement: “5, 4, 3, 2, 1. Hand in your scores.” No other automatic round warnings."
-          - button "Test Full Announcement" [ref=e293] [cursor=pointer]
-        - button "START ROUND 1" [ref=e294] [cursor=pointer]
-      - button "Back to Setup" [ref=e295] [cursor=pointer]
-      - button "Restore Original Draw" [ref=e296] [cursor=pointer]
+- main:
+  - paragraph: Round 1 — ROUND READY
+  - paragraph: 4 courts · 2 bench
+  - button "Roster":
+    - img
+    - text: Roster
+  - button "Leaderboard":
+    - img
+    - text: Leaderboard
+  - button "Links":
+    - img
+    - text: Links
+  - button "Menu":
+    - img
+    - text: Menu
+  - paragraph: What happens next
+  - paragraph: Round 1 ready
+  - paragraph: "Next: check the 4 court assignments and bench, then Start Round 1."
+  - paragraph: Session tools
+  - paragraph: Use these only when something changes during play.
+  - button "Round History":
+    - img
+    - text: Round History
+  - button "Roster":
+    - img
+    - text: Roster
+  - button "Timer":
+    - img
+    - text: Timer
+  - button "Contacts":
+    - img
+    - text: Contacts
+  - paragraph: Sharing & access
+  - paragraph: Live view, player scoring and delegated host access all stay session-specific.
+  - button "Player Link, Broadcasts & Access One KOTC Player Link evolves from sign-up through live rounds, scoring and final results.":
+    - img
+    - paragraph: Player Link, Broadcasts & Access
+    - paragraph: One KOTC Player Link evolves from sign-up through live rounds, scoring and final results.
+    - img
+  - paragraph: Session control
+  - paragraph: Pause if play stops. Finish only when tonight’s session is over.
+  - button "Finish Session":
+    - img
+    - text: Finish Session
+  - group: Emergency / cancel session
+  - paragraph: ROUND 1 HAS NOT STARTED
+  - paragraph: Call the court assignments below, make any host changes, then press START ROUND. The timer is not running and score entry is hidden until you start.
+  - paragraph: Bench This Round
+  - button "Player 17"
+  - button "Player 18"
+  - paragraph: Tap a court player, then a bench player, to swap them.
+  - heading "Host Round Editor" [level=4]
+  - paragraph: Tap two players to swap them, or drag a whole court by its handle to move that four-player group to another court rank.
+  - img
+  - text: Court 1
+  - button "Move whole Court 1":
+    - img
+    - text: Move court
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 01":
+    - img
+    - text: Player 01
+  - button "Player 08":
+    - img
+    - text: Player 08
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 09":
+    - img
+    - text: Player 09
+  - button "Player 16":
+    - img
+    - text: Player 16
+  - text: Court 2
+  - button "Move whole Court 2":
+    - img
+    - text: Move court
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 02":
+    - img
+    - text: Player 02
+  - button "Player 07":
+    - img
+    - text: Player 07
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 10":
+    - img
+    - text: Player 10
+  - button "Player 15":
+    - img
+    - text: Player 15
+  - text: Court 3
+  - button "Move whole Court 3":
+    - img
+    - text: Move court
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 03":
+    - img
+    - text: Player 03
+  - button "Player 06":
+    - img
+    - text: Player 06
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 11":
+    - img
+    - text: Player 11
+  - button "Player 14":
+    - img
+    - text: Player 14
+  - text: Court 4
+  - button "Move whole Court 4":
+    - img
+    - text: Move court
+  - paragraph: Team A
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 04":
+    - img
+    - text: Player 04
+  - button "Player 05":
+    - img
+    - text: Player 05
+  - paragraph: Team B
+  - button "Lock pair":
+    - img
+    - text: Lock pair
+  - button "Player 12":
+    - img
+    - text: Player 12
+  - button "Player 13":
+    - img
+    - text: Player 13
+  - paragraph: Round setup is saved
+  - paragraph: You can leave this screen and return without losing the court layout.
+  - button "Saved ✓" [disabled]
+  - paragraph: Pre-Round Check
+  - paragraph: Confirm the round time and hall sound before players begin.
+  - img
+  - paragraph: Round timer
+  - paragraph: Adjust now if tonight needs a shorter or longer round.
+  - text: 08:00
+  - button "− 1 min"
+  - button "+ 1 min"
+  - paragraph: Audio & announcements check
+  - paragraph: "Current KOTC announcement: “5, 4, 3, 2, 1. Hand in your scores.” No other automatic round warnings."
+  - button "Test Full Announcement":
+    - img
+    - text: Test Full Announcement
+  - button "START ROUND 1":
+    - img
+    - text: START ROUND 1
+  - button "Back to Setup":
+    - img
+    - text: Back to Setup
+  - button "Restore Original Draw":
+    - img
+    - text: Restore Original Draw
 ```
 
 # Test source
 
 ```ts
-  263 |         match.revision += 1;
-  264 |         return { success: true, match, correction };
-  265 |       }
-  266 | 
-  267 |       if (name === 'prepareKotcNextRound' || body.commandType === 'generate_next_round') {
-  268 |         await sleep(500);
-  269 |         const prior = currentRound();
-  270 |         prior.status = 'completed';
-  271 |         prior.completed_at = new Date().toISOString();
-  272 |         const priorActive = new Set(currentSlots().map(slot => slot.participant_id));
-  273 |         const priorBench = model.participants.filter(p => ['present', 'registered', 'confirmed', 'leaving_early'].includes(p.status) && !priorActive.has(p.id)).map(p => p.id);
-  274 |         const next = makeRound(Number(prior.round_number) + 1, priorBench.slice().reverse());
-  275 |         model.session.revision += 1;
-  276 |         return { success: true, session: model.session, round: next, slots:model.slots.filter(s=>s.round_id===next.id), matches:model.matches.filter(m=>m.round_id===next.id), participants:model.participants, runtimeVersion:'kotc-2026-09-10-r6' };
-  277 |       }
-  278 | 
-  279 |       if (body.commandType === 'set_participant_status') {
-  280 |         await sleep(300);
-  281 |         const participant = model.participants.find(p => p.id === body.participantId);
-  282 |         if (body.statusAction === 'voluntary_rest') {
-  283 |           participant.status = 'voluntary_rest';
-  284 |           participant.availability_effective_from_round = Number(model.session.current_round_number) + 1;
-  285 |           participant.available_again_from_round = Number(model.session.current_round_number) + 2;
-  286 |         } else if (body.statusAction === 'back_available') {
-  287 |           participant.status = 'present';
-  288 |           participant.availability_effective_from_round = null;
-  289 |           participant.available_again_from_round = null;
-  290 |         }
-  291 |         model.session.revision += 1;
-  292 |         return { success: true, session: model.session, participant };
-  293 |       }
-  294 | 
   295 |       if (body.commandType === 'pause_session' || body.commandType === 'resume_session') {
   296 |         await sleep(200);
   297 |         model.session.status = body.commandType === 'pause_session' ? 'paused' : 'in_progress';
@@ -256,8 +274,7 @@ Received:    1236
   360 | 
   361 | function metric(report, name, value, max) {
   362 |   report[name] = value;
-> 363 |   expect(value, `${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);
-      |                                                                     ^ Error: create_ack_ms should be <= 250ms but was 1236ms
+  363 |   expect(value, `${name} should be <= ${max}ms but was ${value}ms`).toBeLessThanOrEqual(max);
   364 | }
   365 | 
   366 | test.use({ viewport: { width: 390, height: 844 } });
@@ -289,7 +306,8 @@ Received:    1236
   392 |   // The host must be able to get the scoring/public links from the live Round screen
   393 |   // without navigating backwards through the app.
   394 |   await page.getByTestId('kotc-quick-links').click();
-  395 |   await expect(page.getByText('Session Links & Access')).toBeVisible();
+> 395 |   await expect(page.getByText('Session Links & Access')).toBeVisible();
+      |                                                          ^ Error: expect(locator).toBeVisible() failed
   396 |   await page.getByTestId('kotc-session-menu').click();
   397 | 
   398 |   // Mobile back/forward-cache recovery: returning to the host page must force a fresh
@@ -358,4 +376,36 @@ Received:    1236
   461 |   const undo = page.getByTestId('kotc-undo-start');
   462 |   await undo.scrollIntoViewIfNeeded();
   463 |   started = Date.now();
+  464 |   await undo.evaluate(element => element.click());
+  465 |   await expect(undo).toContainText('Returning to Round Setup…');
+  466 |   await expect(undo).toHaveAttribute('aria-busy', 'true');
+  467 |   metric(report, 'undo_ack_ms', Date.now() - started, 250);
+  468 |   await sleep(350);
+  469 |   await expect(undo).toContainText('Returning to Round Setup…');
+  470 |   await expect(undo).toBeDisabled();
+  471 |   await expect(page.getByTestId('kotc-round-editor')).toBeVisible({ timeout: 1600 });
+  472 |   metric(report, 'undo_to_editor_ms', Date.now() - started, 1500);
+  473 |   expect(model.timer?.running).toBe(false);
+  474 |   expect(model.timer?.remainingSeconds).toBe(480);
+  475 | 
+  476 |   // Start again and complete Round 1.
+  477 |   started = Date.now();
+  478 |   await page.getByTestId('kotc-start-round').click();
+  479 |   await expect(page.getByText('Round 1 — LIVE')).toBeVisible({ timeout: 1800 });
+  480 |   metric(report, 'restart_to_live_ms', Date.now() - started, 1500);
+  481 |   await dismissTimerFullscreen(page);
+  482 |   // Host-only sessions remain fast: ordinary score entry does not create scorer-lease traffic.
+  483 |   // Collaborative first-claim-wins locking is covered separately by the host + two scorer robot.
+  484 |   const claimsBefore=model.calls.filter(c=>c.body?.commandType==='host_claim_score').length;
+  485 |   await page.getByTestId('kotc-score-1-a').focus();
+  486 |   expect(model.calls.filter(c=>c.body?.commandType==='host_claim_score').length).toBe(claimsBefore);
+  487 |   report.round1_score_save_ms = await scoreCurrentRound(page, 4, 11);
+  488 |   for (const ms of report.round1_score_save_ms) expect(ms).toBeLessThanOrEqual(1200);
+  489 | 
+  490 |   await expect(page.getByText('All scores saved for Round 1')).toBeVisible({ timeout: 1800 });
+  491 |   expect(model.rounds.find(r => r.round_number === 1)?.status).toBe('started');
+  492 |   started = Date.now();
+  493 |   await page.getByTestId('kotc-prepare-next-round').click();
+  494 |   await expect(page.getByTestId('kotc-start-round')).toContainText('START ROUND 2', { timeout: 2200 });
+  495 |   metric(report, 'round1_review_to_round2_editor_ms', Date.now() - started, 2200);
 ```
