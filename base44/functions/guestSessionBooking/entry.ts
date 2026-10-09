@@ -1,4 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+async function clubRestrictionCheck(base44:any,tenantId:any,clubId:any,identity:any){const rows=await base44.asServiceRole.entities.ClubAccessRestriction.filter({tenant_id:String(tenantId),club_id:String(clubId),status:'active'},'-created_date',200);const email=String(identity.email||'').trim().toLowerCase(),phone=String(identity.mobile||'').replace(/\D/g,''),name=String(identity.fullName||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();let review=false;for(const r of rows||[]){const re=String(r.email_key||'').toLowerCase(),rp=String(r.mobile_key||'').replace(/\D/g,''),rn=String(r.full_name||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();if((email&&re===email)||(phone.length>=9&&rp.length>=9&&phone.slice(-9)===rp.slice(-9)))return 'deny';if(name&&rn===name)review=true;}return review?'review':'clear';}
+function clubRestrictionResponse(v:string){return Response.json({error:v==='deny'?'This registration cannot be accepted. Contact the club.':'This registration needs club review. Contact the club.'},{status:v==='deny'?403:409});}
+
 import { createCheckout, retrievePayment, refundPayment, providerConfigured, verifyProviderConnection, type ProviderAccount } from './payments.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 import { findUniqueSpondPersonRow } from './spondIdentityMatch.js';
@@ -1512,7 +1515,9 @@ ${detailRow('Reason',reason)}
       const intakeCaptured=!!approvedRequest&&guestPreviousSports(approvedRequest.previous_sports).length>0&&typeof approvedRequest.health_declaration_applies==='boolean';
       const templates=await directoryTemplates(base44,session.tenant_id,session.club_id);
       const directoryTemplate=templates.find((t:any)=>String(t.key)===String(session.session_label)) || templates.find((t:any)=>t.venueName===session.venue_name&&t.weekday===session.weekday&&t.start===session.start_time);
-      const directRegistration=['none','cash'].includes(session.payment_method);
+      const restriction=await clubRestrictionCheck(base44,session.tenant_id,session.club_id,{fullName,email,mobile});
+    if(restriction!=='clear')return clubRestrictionResponse(restriction);
+    const directRegistration=['none','cash'].includes(session.payment_method);
       return Response.json({success:true,session:safeSession(session),clubBrand:brand,legal:await legal(base44,session),spotsRemaining:remaining,inviteApproved:!!invite||directRegistration,inviteEmail:invite?.intended_email||'',inviteMobile:invite?.intended_mobile||'',inviteName:invite?.intended_name||'',approvalRequired:!directRegistration&&!invite,
         guestIntakeCaptured:intakeCaptured,
         guestIntake:intakeCaptured?{previousSports:guestPreviousSports(approvedRequest.previous_sports),sportingBackgroundNote:approvedRequest.sporting_background_note||'',healthDeclarationApplies:approvedRequest.health_declaration_applies===true,medicalNote:approvedRequest.medical_note||''}:null,
@@ -1559,6 +1564,8 @@ ${detailRow('Reason',reason)}
     const fullName=clean(body.fullName,120);
     const email=emailKey(body.email);
     const mobile=clean(body.mobile,50);
+    const restriction=await clubRestrictionCheck(base44,session.tenant_id,session.club_id,{fullName,email,mobile});
+    if(restriction!=='clear')return clubRestrictionResponse(restriction);
     const directRegistration=['none','cash'].includes(session.payment_method);
     const suppliedInviteToken=clean(body.inviteToken||'',120);
     const invite=suppliedInviteToken?await inviteForSession(base44,session,suppliedInviteToken,email,mobile):null;
