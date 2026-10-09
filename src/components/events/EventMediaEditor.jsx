@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { CheckCircle2, FileImage, Loader2, RotateCcw, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function EventMediaEditor({ value = '', position = null, cardPosition = null, onChange, listingSlug = '' }) {
+export default function EventMediaEditor({ value = '', position = null, cardPosition = null, onChange, listingSlug = '', eventName = '' }) {
   const inputRef = useRef(null);
   const cardCropRef = useRef(null);
   const cardDragRef = useRef(null);
@@ -11,6 +11,7 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
   const [draggingCard, setDraggingCard] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [posterSourceUrl,setPosterSourceUrl]=useState('');
+  const [eventPageUrl,setEventPageUrl]=useState('');
   const [x, setX] = useState(Number(position?.x ?? 50));
   const [y, setY] = useState(Number(position?.y ?? 50));
   const [zoom, setZoom] = useState(Number(position?.zoom ?? 1));
@@ -42,6 +43,18 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
       toast.success('Poster uploaded — now check the event-card crop');
     } catch(e) { setPreview(value); toast.error(e.message || 'Poster upload failed'); }
     finally { setUploading(false); }
+  };
+  const discoverPoster=async()=>{
+    if(!eventPageUrl.trim()||!eventName.trim())return toast.error('Enter an event name and webpage URL');
+    setUploading(true);
+    try{
+      const response=await base44.functions.invoke('eventPosterDiscover',{eventUrl:eventPageUrl.trim(),eventName:eventName.trim()});
+      const result=response.data||{};
+      if(!result.selected?.imageUrl)throw new Error(result.error||'No matching poster found');
+      setPosterSourceUrl(result.selected.imageUrl);
+      if(result.reviewRequired)toast.warning('Possible poster found. Review before importing.');
+      else toast.success('Matching original poster found. Select Import original automatically to verify and save it.');
+    }catch(e){toast.error(e?.message||'Poster discovery failed')}finally{setUploading(false)}
   };
   const importSource=async()=>{
     if(!posterSourceUrl.trim())return;
@@ -85,6 +98,7 @@ export default function EventMediaEditor({ value = '', position = null, cardPosi
 
   return <div className="rounded-xl border p-4 space-y-5">
     <div><p className="text-sm font-bold">Event poster / artwork</p><p className="mt-1 text-xs text-muted-foreground">Upload once. RallyHub keeps the full poster and lets you make a separate wide crop for public event cards. JPG, PNG, WEBP or PDF · up to 20 MB.</p></div>
+    <div className="flex flex-col gap-2 sm:flex-row"><input aria-label="Event webpage URL" type="url" value={eventPageUrl} onChange={e=>setEventPageUrl(e.target.value)} placeholder="Paste event webpage URL to find its poster" className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"/><button type="button" disabled={uploading||!eventPageUrl.trim()||!eventName.trim()} onClick={discoverPoster} className="rounded-md border px-4 py-2 text-sm font-semibold disabled:opacity-50">Find event poster</button></div>
     <div className="flex flex-col gap-2 sm:flex-row"><input aria-label="Original poster URL" type="url" value={posterSourceUrl} onChange={e=>setPosterSourceUrl(e.target.value)} placeholder="Paste an original poster image URL" className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"/><button type="button" disabled={uploading||!posterSourceUrl.trim()} onClick={importSource} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">Import original automatically</button></div><p className="text-xs text-muted-foreground">Approved source domains only. RallyHub checks dimensions and verifies stored image bytes. Unverified images require manual review.</p>
     <div className="grid gap-5 lg:grid-cols-[minmax(0,.75fr)_minmax(0,1.25fr)]">
       <div><div className="mb-2 flex items-center justify-between"><p className="text-xs font-bold">Full artwork</p><span className="text-[10px] text-muted-foreground">Event detail page</span></div><div className="relative mx-auto flex min-h-[260px] w-full max-w-[420px] items-center justify-center overflow-hidden rounded-xl border bg-secondary/30">
