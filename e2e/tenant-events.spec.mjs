@@ -173,17 +173,18 @@ test('directory event finder offers selectable event list and enables verificati
 });
 
 test('super admin discovery approval queue shows pending event and routes approval to backend',async({page})=>{
- const model=await installBackend(page);
+ await installBackend(page);
+ const decisions=[];
  const candidate={id:'proposal-1',name:'Verified Invitational 2027',start_date:'2027-04-12',location:'Galway',organiser:'Example Club',source_url:'https://example.org/event',status:'pending',duplicateEventId:null};
  await page.route(`**/api/apps/${APP_ID}/functions/eventDiscoveryApproval`,async route=>{
   const body=route.request().postDataJSON()||{};
   if(body.action==='list')return json(route,{success:true,candidates:[candidate]});
-  if(body.action==='decide')return json(route,{success:true,publishedEventId:'published-1'});
+  if(body.action==='decide'){decisions.push(body);return json(route,{success:true,publishedEventId:'published-1'});}
   return json(route,{error:'Unexpected action'},400);
  });
  await page.goto('/app/events');
  await expect(page.getByTestId('event-discovery-queue')).toBeVisible();
  await expect(page.getByText('Verified Invitational 2027')).toBeVisible();
  await page.getByTestId('event-discovery-queue').getByRole('button',{name:'Hold'}).click();
- await expect.poll(()=>model.functions.some(x=>x.name==='eventDiscoveryApproval'&&x.body.action==='decide'&&x.body.decision==='held'&&x.body.id==='proposal-1')).toBeTruthy();
+ await expect.poll(()=>decisions.some(x=>x.action==='decide'&&x.decision==='held'&&x.id==='proposal-1')).toBeTruthy();
 });
