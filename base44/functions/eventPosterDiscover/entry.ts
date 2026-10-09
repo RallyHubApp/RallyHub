@@ -32,7 +32,7 @@ function discover(html:string,pageUrl:string,eventName:string){
   if(largest||src)add(largest||src!,alt,pageUrl,'labelled-image',35);
  }
  const unique=new Map<string,typeof candidates[number]>();for(const candidate of candidates.sort((a,b)=>b.score-a.score)){if(!unique.has(candidate.imageUrl))unique.set(candidate.imageUrl,candidate)}const distinct=[...unique.values()];
- const best=distinct[0];return {success:!!best,reviewRequired:!best||best.score<120,sourcePage:pageUrl,selected:best||null,candidates:distinct.slice(0,8)};
+ const best=distinct[0];return {success:!!best,reviewRequired:!best||best.score<120,sourcePage:pageUrl,selected:best||null,candidates:distinct.slice(0,40)};
 }
 Deno.serve(async req=>{
  try{
@@ -47,11 +47,11 @@ Deno.serve(async req=>{
   }
 const url=safeUrl(String(body.eventUrl||''),'https://pickleballireland.ie/');
   if(!url)return Response.json({error:'Event page domain not approved'},{status:400});
-  const name=String(body.eventName||'').trim();if(name.length<5||name.length>160)return Response.json({error:'Provide the event name for accurate matching'},{status:400});
+  const name=String(body.eventName||'').trim();if(name.length>160)return Response.json({error:'Event name too long'},{status:400});
   const response=await fetch(url,{redirect:'error',signal:AbortSignal.timeout(15000)});
   if(!response.ok)return Response.json({error:'Event page unavailable'},{status:422});
   if(Number(response.headers.get('content-length')||0)>2_000_000)return Response.json({error:'Event page too large'},{status:413});
   const html=await response.text();if(html.length>2_000_000)return Response.json({error:'Event page too large'},{status:413});
-  return Response.json(discover(html,url,name));
+  const result=discover(html,url,name);if(body.action==='list')return Response.json({success:true,events:result.candidates.filter(c=>c.origin==='event-jsonld').map(c=>({name:c.eventName,eventUrl:c.eventUrl,imageUrl:c.imageUrl})).slice(0,30)});return Response.json(result);
  }catch(e){console.error('event poster discovery',e);return Response.json({error:'Event poster discovery failed'},{status:422})}
 });
