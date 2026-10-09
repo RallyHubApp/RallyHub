@@ -14,282 +14,226 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByRole('link', { name: 'RallyHub home' })
+Locator: getByText('Clare v Galway Interclub')
 Expected: visible
-Error: strict mode violation: getByRole('link', { name: 'RallyHub home' }) resolved to 2 elements:
-    1) <a href="/" aria-label="RallyHub home" data-dynamic-content="true" class="flex items-center gap-2.5" data-source-location="src/components/public/PublicSiteHeader.jsx:27:8">…</a> aka getByRole('banner').getByRole('link', { name: 'RallyHub home' })
-    2) <a href="/" class="shrink-0" aria-label="RallyHub home" data-dynamic-content="true" data-source-location="src/components/public/PublicCopyrightFooter.jsx:19:10">…</a> aka getByRole('contentinfo', { name: 'RallyHub footer' }).getByRole('link', { name: 'RallyHub home' })
+Timeout: 3000ms
+Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByRole('link', { name: 'RallyHub home' }) with timeout 3000ms
-  - waiting for getByRole('link', { name: 'RallyHub home' })
+  - Expect "toBeVisible" getByText('Clare v Galway Interclub') with timeout 3000ms
+  - waiting for getByText('Clare v Galway Interclub')
 
 ```
 
-# Page snapshot
-
 ```yaml
-- generic [ref=e2]:
-  - generic [ref=e3]:
-    - banner [ref=e4]:
-      - generic [ref=e5]:
-        - link "RallyHub home" [ref=e6] [cursor=pointer]:
-          - /url: /
-          - img "RallyHub" [ref=e7]
-          - generic [ref=e8]:
-            - generic [ref=e9]: RallyHub
-            - generic [ref=e10]: PLAY • CONNECT • BELONG
-        - navigation "Main navigation" [ref=e11]:
-          - link "Home" [ref=e12] [cursor=pointer]:
-            - /url: /
-          - link "Directory" [ref=e13] [cursor=pointer]:
-            - /url: /directory
-          - link "Clubs" [ref=e14] [cursor=pointer]:
-            - /url: /directory
-          - link "Events" [ref=e15] [cursor=pointer]:
-            - /url: /events
-          - link "About" [ref=e16] [cursor=pointer]:
-            - /url: /about
-        - generic [ref=e17]:
-          - link "Search" [ref=e18] [cursor=pointer]:
-            - /url: /directory
-          - link [ref=e22] [cursor=pointer]:
-            - /url: /app
-            - button "Open RallyHub" [ref=e23]
-          - link [ref=e24] [cursor=pointer]:
-            - /url: /directory/add
-            - button "Get Started" [ref=e25]
-    - main [ref=e26]:
-      - generic [ref=e28]:
-        - generic [ref=e30]:
-          - paragraph [ref=e31]: RallyHub Events
-          - heading "Find your next event" [level=1] [ref=e32]
-          - paragraph [ref=e33]: Tournaments, interclubs, leagues, coaching and social events — built around the information players actually need.
-          - generic [ref=e34]:
-            - textbox "Search events by name, location, host or keyword…" [ref=e38]
-            - button "Search" [ref=e39] [cursor=pointer]
-        - img "Pickleball competition" [ref=e41]
-      - generic [ref=e44]:
-        - generic [ref=e45]:
-          - button "All upcoming" [ref=e46] [cursor=pointer]
-          - button "Open for booking" [ref=e47] [cursor=pointer]
-          - button "Invitation only" [ref=e48] [cursor=pointer]
-          - button "Opening soon" [ref=e49] [cursor=pointer]
-          - button "Closing soon" [ref=e50] [cursor=pointer]
-          - button "Registration closed" [ref=e51] [cursor=pointer]
-        - generic [ref=e52]:
-          - generic [ref=e53]:
-            - text: Event type
-            - combobox "Event type" [ref=e54]:
-              - option "All" [selected]
-              - option "Tournament"
-              - option "Interclub"
-              - option "League"
-              - option "Social"
-              - option "Coaching / Clinic"
-              - option "Camp"
-              - option "Open Day"
-              - option "Exhibition"
-              - option "Other"
-          - generic [ref=e55]:
-            - text: Month
-            - combobox "Month" [ref=e56]:
-              - option "All" [selected]
-              - option "Oct 2026"
-              - option "Nov 2026"
-              - option "Dec 2026"
-          - generic [ref=e57]:
-            - text: County / region
-            - combobox "County / region" [ref=e58]:
-              - option "All" [selected]
-              - option "Dublin"
-              - option "Lisburn"
-          - generic [ref=e59]:
-            - text: Country
-            - combobox "Country" [ref=e60]:
-              - option "All" [selected]
-              - option "Ireland"
-              - option "Northern Ireland"
-          - generic [ref=e61]:
-            - text: Host
-            - combobox "Host" [ref=e62]:
-              - option "All" [selected]
-              - option "Eyva's Invitational Series"
-              - option "Pickleball Ireland"
-          - generic [ref=e63]:
-            - text: Playing level
-            - combobox "Playing level" [ref=e64]:
-              - option "All" [selected]
-              - option "3.0-"
-              - option "3.5-"
-              - option "Competition"
-          - generic [ref=e65]:
-            - text: Age group
-            - combobox "Age group" [ref=e66]:
-              - option "All" [selected]
-              - option "18+"
-              - option "50+"
-              - option "60+"
-              - option "70+"
-          - generic [ref=e67]:
-            - text: Discipline
-            - combobox "Discipline" [ref=e68]:
-              - option "All" [selected]
-              - option "Gender Doubles"
-              - option "Mixed Doubles"
-              - option "Singles"
-          - generic [ref=e69]:
-            - text: Indoor / Outdoor
-            - combobox "Indoor / Outdoor" [ref=e70]:
-              - option "All" [selected]
-              - option "Indoor"
-              - option "Outdoor"
-              - option "Mixed"
-      - generic [ref=e71]:
-        - generic [ref=e73]:
-          - link [ref=e74] [cursor=pointer]:
-            - /url: /events/kukri-irish-nationals-2026
-            - img "Kukri Irish Nationals 2026 artwork" [ref=e75]
-            - generic [ref=e76]: Featured Event
-          - generic [ref=e79]:
-            - generic [ref=e80]:
-              - generic [ref=e81]: Open for booking
-              - generic [ref=e82]: VERIFIED ORGANISER
-            - heading "Kukri Irish Nationals 2026" [level=2] [ref=e83]
-            - paragraph [ref=e84]: 19 – 22 Nov 2026
-            - paragraph [ref=e87]: Lagan Valley LeisurePlex, Lisburn
-            - paragraph [ref=e91]: Closes in 33 days · 10 Nov 2026
-            - paragraph [ref=e95]: Four days of national pickleball competition.
-            - generic [ref=e96]:
-              - generic [ref=e97]: Hosted by
-              - generic [ref=e98]: Pickleball Ireland
-            - generic [ref=e99]:
-              - generic [ref=e100]: Tournament
-              - generic [ref=e101]: Indoor
-              - generic [ref=e102]: Competition
-              - generic [ref=e103]: 18+
-            - generic [ref=e104]:
-              - link "View event" [ref=e105] [cursor=pointer]:
-                - /url: /events/kukri-irish-nationals-2026
-              - button "Register / Book" [ref=e106] [cursor=pointer]
-        - generic [ref=e107]:
-          - generic [ref=e108]:
-            - heading "All Events (3)" [level=2] [ref=e109]:
-              - text: All Events
-              - generic [ref=e110]: (3)
-            - paragraph [ref=e111]: One event record, kept up to date by the organiser and shared wherever players need it.
-          - generic [ref=e112]:
-            - link "My Events" [ref=e113] [cursor=pointer]:
-              - /url: /events/my
-            - combobox [ref=e117]:
-              - option "Date (soonest first)" [selected]
-              - option "Registration closing soon"
-              - option "Recently added"
-            - generic [ref=e118]:
-              - button "List" [ref=e119] [cursor=pointer]
-              - button "Map" [ref=e121] [cursor=pointer]
-        - generic [ref=e125]:
-          - article [ref=e126]:
-            - link "Eyva's Invitational Series – Autumn Classic 2026 event artwork Invitation only" [ref=e127] [cursor=pointer]:
-              - /url: /events/eyva-autumn-classic-2026
-              - img "Eyva's Invitational Series – Autumn Classic 2026 event artwork" [ref=e128]
-              - generic [ref=e129]: Invitation only
-            - generic [ref=e130]:
-              - link [ref=e131] [cursor=pointer]:
-                - /url: /events/eyva-autumn-classic-2026
-                - heading "Eyva's Invitational Series – Autumn Classic 2026" [level=2] [ref=e132]
-              - generic [ref=e133]:
-                - paragraph [ref=e134]:
-                  - generic [ref=e137]: 17 Oct 2026 · 09:30
-                - paragraph [ref=e138]:
-                  - generic [ref=e142]: The Dome, Our Lady's School, Terenure, Dublin 6, Dublin
-              - generic [ref=e143]:
-                - generic [ref=e144]: Hosted by
-                - generic [ref=e145]: Eyva's Invitational Series
-                - generic [ref=e146]: VERIFIED
-              - generic [ref=e147]:
-                - generic [ref=e148]: Tournament
-                - generic [ref=e149]: Indoor
-                - generic [ref=e150]: 3.0-
-              - generic [ref=e151]:
-                - link "View event" [ref=e152] [cursor=pointer]:
-                  - /url: /events/eyva-autumn-classic-2026
-                - button "Request invitation" [ref=e153] [cursor=pointer]
-          - article [ref=e154]:
-            - link "Opening Soon Test event artwork Opens 1 Jan" [ref=e155] [cursor=pointer]:
-              - /url: /events/opening-soon-test
-              - img "Opening Soon Test event artwork" [ref=e156]
-              - generic [ref=e157]: Opens 1 Jan
-            - generic [ref=e158]:
-              - link [ref=e159] [cursor=pointer]:
-                - /url: /events/opening-soon-test
-                - heading "Opening Soon Test" [level=2] [ref=e160]
-              - generic [ref=e161]:
-                - paragraph [ref=e162]:
-                  - generic [ref=e165]: 1 Dec 2026 · 09:30
-                - paragraph [ref=e166]:
-                  - generic [ref=e170]: Lagan Valley LeisurePlex, Lisburn
-                - paragraph [ref=e171]:
-                  - generic [ref=e175]: Registration opens 1 Jan 2099
-              - generic [ref=e176]:
-                - generic [ref=e177]: Hosted by
-                - generic [ref=e178]: Pickleball Ireland
-                - generic [ref=e179]: VERIFIED
-              - generic [ref=e180]:
-                - generic [ref=e181]: Tournament
-                - generic [ref=e182]: Indoor
-                - generic [ref=e183]: Competition
-              - generic [ref=e184]:
-                - link "View event" [ref=e185] [cursor=pointer]:
-                  - /url: /events/opening-soon-test
-                - link "Remind me" [ref=e186] [cursor=pointer]:
-                  - /url: /events/opening-soon-test
-        - generic [ref=e187]:
-          - generic [ref=e191]:
-            - paragraph [ref=e192]: Adding or updating an event?
-            - paragraph [ref=e193]: Use the RallyHub Events Quick Start Guide for the seven-step editor, artwork, registration and publishing.
-          - link "View Quick Start Guide" [ref=e194] [cursor=pointer]:
-            - /url: /events/quick-start
-    - generic [ref=e197]:
-      - img "Pickleball players enjoying time together on court" [ref=e199]
-      - generic [ref=e201]:
-        - generic [ref=e202]:
-          - generic [ref=e208]: People
-          - generic [ref=e209]: Build connections
-        - generic [ref=e210]:
-          - generic [ref=e214]: Places
-          - generic [ref=e215]: Find your club
-        - generic [ref=e216]:
-          - generic [ref=e219]: Sessions
-          - generic [ref=e220]: Play more
-        - generic [ref=e221]:
-          - generic [ref=e228]: Community
-          - generic [ref=e229]: Belong together
-    - contentinfo "RallyHub footer" [ref=e230]:
-      - generic [ref=e231]:
-        - generic [ref=e232]:
-          - link "RallyHub home" [ref=e233] [cursor=pointer]:
-            - /url: /
-            - img "RallyHub · Play Connect Belong" [ref=e234]
-          - navigation "Footer navigation" [ref=e235]:
-            - link "Directory" [ref=e236] [cursor=pointer]:
-              - /url: /directory
-            - link "Events" [ref=e237] [cursor=pointer]:
-              - /url: /events
-            - link "Club Guide" [ref=e238] [cursor=pointer]:
-              - /url: /directory/help
-            - link "About" [ref=e239] [cursor=pointer]:
-              - /url: /about
-            - link "Contact" [ref=e240] [cursor=pointer]:
-              - /url: /contact
-        - generic [ref=e241]: © 2026 RallyHub All rights reserved.
-  - generic [ref=e243]:
-    - generic [ref=e244]:
-      - paragraph [ref=e245]: Help us improve RallyHub
-      - paragraph [ref=e246]: We use optional analytics to understand which clubs, venues and Directory features people find useful. Analytics only starts if you allow it. We do not use this for advertising profiles.
-    - generic [ref=e247]:
-      - button "Necessary only" [ref=e248] [cursor=pointer]
-      - button "Allow analytics" [ref=e249] [cursor=pointer]
+- banner:
+  - link "RallyHub home":
+    - /url: /
+    - img "RallyHub"
+    - text: RallyHub PLAY • CONNECT • BELONG
+  - navigation "Main navigation":
+    - link "Home":
+      - /url: /
+    - link "Directory":
+      - /url: /directory
+    - link "Clubs":
+      - /url: /directory
+    - link "Events":
+      - /url: /events
+    - link "About":
+      - /url: /about
+  - link "Search":
+    - /url: /directory
+    - img
+  - link "Open RallyHub":
+    - /url: /app
+    - button "Open RallyHub"
+  - link "Get Started":
+    - /url: /directory/add
+    - button "Get Started"
+- main:
+  - paragraph: RallyHub Events
+  - heading "Find your next event" [level=1]
+  - paragraph: Tournaments, interclubs, leagues, coaching and social events — built around the information players actually need.
+  - img
+  - textbox "Search events by name, location, host or keyword…"
+  - button "Search"
+  - img "Pickleball competition"
+  - button "All upcoming"
+  - button "Open for booking"
+  - button "Invitation only"
+  - button "Opening soon"
+  - button "Closing soon"
+  - button "Registration closed"
+  - text: Event type
+  - combobox "Event type":
+    - option "All" [selected]
+    - option "Tournament"
+    - option "Interclub"
+    - option "League"
+    - option "Social"
+    - option "Coaching / Clinic"
+    - option "Camp"
+    - option "Open Day"
+    - option "Exhibition"
+    - option "Other"
+  - text: Month
+  - combobox "Month":
+    - option "All" [selected]
+    - option "Oct 2026"
+    - option "Nov 2026"
+    - option "Dec 2026"
+  - text: County / region
+  - combobox "County / region":
+    - option "All" [selected]
+    - option "Dublin"
+    - option "Lisburn"
+  - text: Country
+  - combobox "Country":
+    - option "All" [selected]
+    - option "Ireland"
+    - option "Northern Ireland"
+  - text: Host
+  - combobox "Host":
+    - option "All" [selected]
+    - option "Eyva's Invitational Series"
+    - option "Pickleball Ireland"
+  - text: Playing level
+  - combobox "Playing level":
+    - option "All" [selected]
+    - option "3.0-"
+    - option "3.5-"
+    - option "Competition"
+  - text: Age group
+  - combobox "Age group":
+    - option "All" [selected]
+    - option "18+"
+    - option "50+"
+    - option "60+"
+    - option "70+"
+  - text: Discipline
+  - combobox "Discipline":
+    - option "All" [selected]
+    - option "Gender Doubles"
+    - option "Mixed Doubles"
+    - option "Singles"
+  - text: Indoor / Outdoor
+  - combobox "Indoor / Outdoor":
+    - option "All" [selected]
+    - option "Indoor"
+    - option "Outdoor"
+    - option "Mixed"
+  - link "Kukri Irish Nationals 2026 artwork Featured Event":
+    - /url: /events/kukri-irish-nationals-2026
+    - img "Kukri Irish Nationals 2026 artwork"
+    - img
+    - text: Featured Event
+  - text: Open for booking VERIFIED ORGANISER
+  - heading "Kukri Irish Nationals 2026" [level=2]
+  - paragraph:
+    - img
+    - text: 19 – 22 Nov 2026
+  - paragraph:
+    - img
+    - text: Lagan Valley LeisurePlex, Lisburn
+  - paragraph:
+    - img
+    - text: Closes in 33 days · 10 Nov 2026
+  - paragraph: Four days of national pickleball competition.
+  - text: Hosted by Pickleball Ireland Tournament Indoor Competition 18+
+  - link "View event":
+    - /url: /events/kukri-irish-nationals-2026
+  - button "Register / Book"
+  - heading "All Events (3)" [level=2]
+  - paragraph: One event record, kept up to date by the organiser and shared wherever players need it.
+  - link "My Events":
+    - /url: /events/my
+    - img
+    - text: My Events
+  - combobox:
+    - option "Date (soonest first)" [selected]
+    - option "Registration closing soon"
+    - option "Recently added"
+  - button "List":
+    - img
+    - text: List
+  - button "Map":
+    - img
+    - text: Map
+  - article:
+    - link "Eyva's Invitational Series – Autumn Classic 2026 event artwork Invitation only":
+      - /url: /events/eyva-autumn-classic-2026
+      - img "Eyva's Invitational Series – Autumn Classic 2026 event artwork"
+      - text: Invitation only
+    - link "Eyva's Invitational Series – Autumn Classic 2026":
+      - /url: /events/eyva-autumn-classic-2026
+      - heading "Eyva's Invitational Series – Autumn Classic 2026" [level=2]
+    - paragraph:
+      - img
+      - text: 17 Oct 2026 · 09:30
+    - paragraph:
+      - img
+      - text: The Dome, Our Lady's School, Terenure, Dublin 6, Dublin
+    - text: Hosted by Eyva's Invitational Series VERIFIED Tournament Indoor 3.0-
+    - link "View event":
+      - /url: /events/eyva-autumn-classic-2026
+    - button "Request invitation"
+  - article:
+    - link "Opening Soon Test event artwork Opens 1 Jan":
+      - /url: /events/opening-soon-test
+      - img "Opening Soon Test event artwork"
+      - text: Opens 1 Jan
+    - link "Opening Soon Test":
+      - /url: /events/opening-soon-test
+      - heading "Opening Soon Test" [level=2]
+    - paragraph:
+      - img
+      - text: 1 Dec 2026 · 09:30
+    - paragraph:
+      - img
+      - text: Lagan Valley LeisurePlex, Lisburn
+    - paragraph:
+      - img
+      - text: Registration opens 1 Jan 2099
+    - text: Hosted by Pickleball Ireland VERIFIED Tournament Indoor Competition
+    - link "View event":
+      - /url: /events/opening-soon-test
+    - link "Remind me":
+      - /url: /events/opening-soon-test
+  - img
+  - paragraph: Adding or updating an event?
+  - paragraph: Use the RallyHub Events Quick Start Guide for the seven-step editor, artwork, registration and publishing.
+  - link "View Quick Start Guide":
+    - /url: /events/quick-start
+- img "Pickleball players enjoying time together on court"
+- img
+- text: People Build connections
+- img
+- text: Places Find your club
+- img
+- text: Sessions Play more
+- img
+- text: Community Belong together
+- contentinfo "RallyHub footer":
+  - link "RallyHub home":
+    - /url: /
+    - img "RallyHub · Play Connect Belong"
+  - navigation "Footer navigation":
+    - link "Directory":
+      - /url: /directory
+    - link "Events":
+      - /url: /events
+    - link "Club Guide":
+      - /url: /directory/help
+    - link "About":
+      - /url: /about
+    - link "Contact":
+      - /url: /contact
+  - text: © 2026 RallyHub All rights reserved.
+- paragraph: Help us improve RallyHub
+- paragraph: We use optional analytics to understand which clubs, venues and Directory features people find useful. Analytics only starts if you allow it. We do not use this for advertising profiles.
+- button "Necessary only"
+- button "Allow analytics"
 ```
 
 # Test source
@@ -348,14 +292,14 @@ Call log:
   51  |   const calls=await installPublicBackend(page);
   52  |   await page.goto('/events');
   53  |   await expect(page.getByRole('heading',{name:/Find your next event/i})).toBeVisible();
-> 54  |   await expect(page.getByRole('link',{name:'RallyHub home'})).toBeVisible();
-      |                                                               ^ Error: expect(locator).toBeVisible() failed
-  55  |   await expect(page.getByRole('link',{name:'Events',exact:true})).toBeVisible();
+  54  |   await expect(page.getByRole('banner').getByRole('link',{name:'RallyHub home'})).toBeVisible();
+  55  |   await expect(page.getByRole('banner').getByRole('link',{name:'Events',exact:true})).toBeVisible();
   56  |   await expect(page.getByText('© 2026 RallyHub All rights reserved.')).toBeVisible();
   57  |   await expect(page.getByRole('heading',{name:'Kukri Irish Nationals 2026'})).toBeVisible();
   58  |   await expect(page.getByText('Open for booking').first()).toBeVisible();
   59  |   await expect(page.getByText(/Closes in \d+ days/).first()).toBeVisible();
-  60  |   await expect(page.getByText('Clare v Galway Interclub')).toBeVisible();
+> 60  |   await expect(page.getByText('Clare v Galway Interclub')).toBeVisible();
+      |                                                            ^ Error: expect(locator).toBeVisible() failed
   61  |   await expect(page.getByText("Eyva's Invitational Series – Autumn Classic 2026")).toBeVisible();
   62  |   await expect(page.getByText('Invitation only').first()).toBeVisible();
   63  |   await page.getByRole('button',{name:'Invitation only'}).click();
@@ -426,7 +370,7 @@ Call log:
   128 |     await page.goto('/events');
   129 |     await expect(page.getByRole('button',{name:'Menu'})).toBeVisible();
   130 |     await page.getByRole('button',{name:'Menu'}).click();
-  131 |     await expect(page.getByRole('link',{name:'Events',exact:true})).toBeVisible();
+  131 |     await expect(page.getByRole('banner').getByRole('link',{name:'Events',exact:true})).toBeVisible();
   132 |     await page.getByRole('button',{name:'Menu'}).click();
   133 |     await expect(page.getByText('More filters')).toBeVisible();
   134 |     await page.getByText('More filters').click();
