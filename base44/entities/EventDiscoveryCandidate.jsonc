@@ -1,0 +1,21 @@
+{
+  "name": "EventDiscoveryCandidate",
+  "type": "object",
+  "properties": {
+    "name": {"type":"string"},
+    "start_date": {"type":"string"},
+    "end_date": {"type":"string"},
+    "location": {"type":"string"},
+    "country": {"type":"string"},
+    "organiser": {"type":"string"},
+    "source_url": {"type":"string"},
+    "poster_url": {"type":"string"},
+    "category": {"type":"string"},
+    "status": {"type":"string", "enum":["pending","held","rejected","approved","duplicate"]},
+    "matched_event_id": {"type":"string"},
+    "published_event_id": {"type":"string"},
+    "decision_by": {"type":"string"},
+    "decision_at": {"type":"string"},
+    "notes": {"type":"string"}
+  }
+}
