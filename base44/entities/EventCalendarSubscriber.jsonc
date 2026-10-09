@@ -1,0 +1,9 @@
+{
+  "name":"EventCalendarSubscriber","type":"object",
+  "properties":{
+    "email":{"type":"string"},"status":{"type":"string","enum":["pending","active","unsubscribed"]},
+    "confirmation_token":{"type":"string"},"unsubscribe_token":{"type":"string"},
+    "consent_version":{"type":"string"},"consent_at":{"type":"string"},"confirmed_at":{"type":"string"},"unsubscribed_at":{"type":"string"},
+    "source_event_id":{"type":"string"},"topics":{"type":"array","items":{"type":"string"}}
+  },"required":["email","status"],"rls":{"read":{"user_condition":{"role":"admin"}},"create":{"user_condition":{"role":"admin"}},"update":{"user_condition":{"role":"admin"}},"delete":{"user_condition":{"role":"admin"}}}
+}
