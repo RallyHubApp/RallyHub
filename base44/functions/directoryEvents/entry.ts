@@ -164,8 +164,9 @@ Deno.serve(async (req) => {
       const candidates = await base44.asServiceRole.entities.Tournament.list('-created_date', 1000);
       const duplicate = (candidates||[]).find((row:any) => {
         if (row.id === existing?.id || row.status === 'Archived') return false;
-        const sameSource = urlKey(incoming.event_source_url) && urlKey(incoming.event_source_url) === urlKey(row.event_source_url);
-        const sameEvent = normal(row.name) === normal(incoming.name)
+        const sourceKey=urlKey(incoming.event_source_url);
+        const sameSource = sourceKey && !sourceKey.endsWith('/events') && sourceKey === urlKey(row.event_source_url);
+        const sameEvent = !!incoming.start_date && normal(row.name) === normal(incoming.name)
           && String(row.start_date||'').slice(0,10) === String(incoming.start_date||'').slice(0,10)
           && normal(row.location||row.event_county) === normal(incoming.location||incoming.event_county);
         return sameSource || sameEvent;
