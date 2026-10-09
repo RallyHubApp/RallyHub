@@ -1,4 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
+async function clubRestrictionCheck(base44:any,tenantId:any,clubId:any,identity:any){const rows=await base44.asServiceRole.entities.ClubAccessRestriction.filter({tenant_id:String(tenantId),club_id:String(clubId),status:'active'},'-created_date',200);const email=String(identity.email||'').trim().toLowerCase(),phone=String(identity.mobile||'').replace(/\D/g,''),name=String(identity.fullName||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();let review=false;for(const r of rows||[]){const re=String(r.email_key||'').toLowerCase(),rp=String(r.mobile_key||'').replace(/\D/g,''),rn=String(r.full_name||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();if((email&&re===email)||(phone.length>=9&&rp.length>=9&&phone.slice(-9)===rp.slice(-9)))return 'deny';if(name&&rn===name)review=true;}return review?'review':'clear';}
+function clubRestrictionResponse(v:string){return Response.json({error:v==='deny'?'This registration cannot be accepted. Contact the club.':'This registration needs club review. Contact the club.'},{status:v==='deny'?403:409});}
+
 import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
 
@@ -654,6 +657,8 @@ Deno.serve(async(req)=>{
     const postalCode=clean(body.postalCode,40);
     const email=emailKey(body.email);
     const mobile=clean(body.mobile,80);
+    const restriction=await clubRestrictionCheck(base44,config.tenant_id,config.club_id,{fullName,email,mobile});
+    if(restriction!=='clear')return clubRestrictionResponse(restriction);
     const dob=clean(body.dateOfBirth,20);
     const emergencyName=clean(body.emergencyContactName,160);
     const emergencyRelationship=clean(body.emergencyContactRelationship,100);
