@@ -87,7 +87,7 @@ export default function Landing() {
       url: SITE_URL,
       logo: LOGO_URL,
       email: 'rallyhubapp@gmail.com',
-      description: 'RallyHub connects pickleball players with clubs, venues, sessions and events across Ireland, while providing club and competition management tools including scoring, leaderboards, tournament brackets and court coordination.'
+      description: 'RallyHub helps players find clubs, venues and events across Ireland and beyond.'
     },
     {
       '@context': 'https://schema.org',
@@ -220,46 +220,6 @@ export default function Landing() {
           <section className="bg-white">
             <div className="mx-auto grid max-w-[1380px] gap-3 px-5 py-5 sm:grid-cols-2 sm:px-7 lg:grid-cols-4 lg:px-10 xl:px-12">
               {features.map(feature => <FeatureCard key={feature.title} {...feature}/>)}
-            </div>
-          </section>
-
-
-          {/* Additive competition message: preserve directory discovery, hero and community journey. */}
-          <section aria-labelledby="competition-heading" className="bg-[#071b32] text-white">
-            <div className="mx-auto max-w-[1380px] px-5 py-10 sm:px-7 lg:px-10 lg:py-14 xl:px-12">
-              <p className="text-xs font-extrabold uppercase tracking-[.18em] text-[#b8e85c]">The RallyHub competition platform</p>
-              <h2 id="competition-heading" className="mt-3 max-w-4xl text-3xl font-black leading-tight tracking-tight sm:text-4xl">
-                Built for competition. <span className="text-[#b8e85c]">Built for your club.</span>
-              </h2>
-              <p className="mt-4 max-w-3xl text-sm leading-relaxed text-white/85 sm:text-base">
-                Alongside the all-Ireland pickleball directory, RallyHub helps clubs and organisers run better playing experiences — from sessions and court allocations to tournament draws, live scoring and player progress.
-              </p>
-              <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                {[
-                  [BarChart3, 'Live leaderboards', 'Follow scores, results and competition standings.'],
-                  [Trophy, 'Automated brackets', 'Organise tournament draws and match progression.'],
-                  [Users, 'Rating integration', 'DUPR integration is in development and testing.'],
-                  [MapPin, 'Court management', 'Coordinate court assignments, matches and rotations.'],
-                  [CalendarDays, 'Real-time updates', 'Keep players and organisers informed as play progresses.'],
-                ].map(([Icon, title, copy]) => (
-                  <article key={title} className="rounded-xl border border-white/20 bg-white/[.06] p-4">
-                    <Icon aria-hidden="true" className="h-7 w-7 text-[#b8e85c]" />
-                    <h3 className="mt-3 text-sm font-extrabold">{title}</h3>
-                    <p className="mt-2 text-xs leading-relaxed text-white/75">{copy}</p>
-                  </article>
-                ))}
-              </div>
-              <p className="mt-7 text-center text-sm font-extrabold tracking-wide text-[#b8e85c] sm:text-base">
-                Better tournaments. Happier players. Stronger community.
-              </p>
-              <p className="mt-2 text-center text-xs font-medium text-white/75">
-                Play more. Connect deeper. Belong together.
-              </p>
-              <div className="mt-6 flex justify-center gap-3">
-                <Link to="/about" className="inline-flex items-center gap-2 rounded-lg bg-[#b8e85c] px-5 py-3 text-sm font-bold text-[#071b32] hover:bg-[#d0f58b]">
-                  Discover RallyHub's features <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
             </div>
           </section>
 
