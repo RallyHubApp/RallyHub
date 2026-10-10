@@ -1,6 +1,6 @@
 # RallyHub
 
-RallyHub is an Ireland-focused pickleball discovery and club-management platform. Public RallyHub pages help players find pickleball clubs, venues, weekly sessions, events, tournaments, coaching opportunities and ways to contact clubs across the island of Ireland.
+RallyHub is an Ireland-focused pickleball directory, events discovery and club-management platform. Its public website is currently pickleball-first; support for other sports is a future direction, not a claim about today's public offering. Public RallyHub pages help players find pickleball clubs, venues, weekly sessions, events, tournaments, coaching opportunities and ways to contact clubs across the island of Ireland.
 
 Canonical site: https://rallyhub.ie/
 
