@@ -77,6 +77,7 @@ function FeatureCard({ icon: Icon, title, description, action, to }) {
 export default function Landing() {
   const { isAuthenticated, isLoadingAuth } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [footerImageReady, setFooterImageReady] = useState(false);
   const loginTarget = isAuthenticated ? '/app' : '/login?returnTo=%2F';
 
   const structuredData = [
@@ -226,7 +227,7 @@ export default function Landing() {
             </div>
           </section>
 
-          <section className="relative bg-white">
+          <section className={`relative bg-white transition-opacity duration-200 ${footerImageReady ? "opacity-100" : "opacity-0"}`}>
             <div className="mx-auto max-w-[1380px] px-0">
               <div className="relative hidden aspect-[6.15/1] overflow-hidden md:block">
                 <div className="h-full w-[43.5%]">
@@ -234,6 +235,8 @@ export default function Landing() {
                     src={FOOTER_PHOTO}
                     loading="lazy"
                     decoding="async"
+                    onLoad={() => setFooterImageReady(true)}
+                    onError={() => setFooterImageReady(true)}
                     alt="Pickleball players enjoying time together on court"
                     className="h-full w-full object-cover object-center"
                   />
@@ -261,6 +264,8 @@ export default function Landing() {
                   src={FOOTER_PHOTO}
                   loading="lazy"
                   decoding="async"
+                  onLoad={() => setFooterImageReady(true)}
+                  onError={() => setFooterImageReady(true)}
                   alt="Pickleball players enjoying time together on court"
                   className="block h-[210px] w-full object-cover object-center sm:h-[250px]"
                 />
