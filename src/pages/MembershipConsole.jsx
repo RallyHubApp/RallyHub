@@ -465,7 +465,8 @@ export default function MembershipConsole() {
   }
 
   const openMember = row => {
-    setPersonId(row.person_id);
+    if (!row?.person_id) return toast.error('Member record has no valid ID');
+    setPersonId(String(row.person_id));
     setDetailOpen(true);
   };
 
@@ -1216,7 +1217,7 @@ export default function MembershipConsole() {
             <div className="flex flex-col xl:flex-row xl:items-center gap-3">
               <div className="relative flex-1 min-w-[240px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input className="pl-9" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, email, mobile, membership ID or rating ID…" />
+                <Input type="search" aria-label="Search membership records" className="pl-9 min-h-11 touch-manipulation" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, email, mobile, membership ID or rating ID…" />
               </div>
               <div className="flex flex-wrap gap-2">
                 <Select value={filters.membershipStatus} onValueChange={value => setFilters(f => ({ ...f, membershipStatus: value }))}>
@@ -1323,14 +1324,15 @@ export default function MembershipConsole() {
                         <TableCell><Checkbox checked={selected.has(row.person_id)} onCheckedChange={() => toggleSelected(row.person_id)} /></TableCell>
                         {activeFields.map(field => (
                           <TableCell key={field.key} className={field.key === 'full_name' ? 'font-semibold whitespace-nowrap' : 'text-xs whitespace-nowrap'}>
-                            {field.key === 'membership_status' ? <Badge variant="outline">{label(row.membership_status)}</Badge> :
+                            {field.key === 'full_name' ? <button type="button" className="text-left text-primary hover:underline min-h-10 touch-manipulation" onClick={() => openMember(row)}>{cellValue(row, field.key, currency)}</button> :
+                              field.key === 'membership_status' ? <Badge variant="outline">{label(row.membership_status)}</Badge> :
                               field.key === 'payment_status' ? <Badge variant="outline">{label(row.payment_status)}</Badge> :
                               field.key === 'linked' ? (row.linked ? <Badge className="bg-primary/15 text-primary">Linked</Badge> : <Badge variant="outline">Not linked</Badge>) :
                               field.key === 'quality_count' ? (row.quality_count ? <Badge className="bg-amber-500/15 text-amber-700">{row.quality_count} issue{row.quality_count === 1 ? '' : 's'}</Badge> : <Badge variant="outline" className="text-green-700">Complete</Badge>) :
                               cellValue(row, field.key, currency)}
                           </TableCell>
                         ))}
-                        <TableCell className="text-right"><Button size="sm" variant="ghost" onClick={() => openMember(row)}>View</Button></TableCell>
+                        <TableCell className="text-right"><Button type="button" size="sm" variant="outline" className="min-h-10 touch-manipulation" onClick={() => openMember(row)}>View</Button></TableCell>
                       </TableRow>
                     ))}
                 </TableBody>
