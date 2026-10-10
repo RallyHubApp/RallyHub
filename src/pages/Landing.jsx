@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/AuthContext';
 import Seo, { SITE_URL } from '@/components/public/Seo';
-import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
+import rallyHubLogoApprovedUrl from '@/assets/rallyhub-logo-approved.webp';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 const HERO_PHOTO = '/assets/rallyhub-home-hero.webp';
@@ -227,68 +227,43 @@ export default function Landing() {
             </div>
           </section>
 
-          <section className={`relative bg-white transition-opacity duration-200 ${footerImageReady ? "opacity-100" : "opacity-0"}`}>
-            <div className="mx-auto max-w-[1380px] px-0">
-              <div className="relative hidden aspect-[6.15/1] overflow-hidden md:block">
-                <div className="h-full w-[43.5%]">
-                  <img
-                    src={FOOTER_PHOTO}
-                    loading="lazy"
-                    decoding="async"
-                    onLoad={() => setFooterImageReady(true)}
-                    onError={() => setFooterImageReady(true)}
-                    alt="Pickleball players enjoying time together on court"
-                    className="h-full w-full object-cover object-center"
-                  />
-                </div>
-                <div className="absolute inset-y-0 right-0 w-[58.5%] rounded-tl-[54px] bg-[#053c56]">
-                  <div className="grid h-full grid-cols-4 items-center text-center text-white">
-                    {[
-                      [Users,'People','Build connections'],
-                      [MapPin,'Places','Find your club'],
-                      [CalendarDays,'Sessions','Play more'],
-                      [Trophy,'Community','Belong together'],
-                    ].map(([Icon,title,copy])=>(
-                      <div key={title} className="px-2">
-                        <Icon className="mx-auto h-6 w-6"/>
-                        <div className="mt-1 text-[13px] font-bold">{title}</div>
-                        <div className="text-[10px] text-white/75">{copy}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="overflow-hidden md:hidden">
+          <footer
+            aria-label="RallyHub homepage footer"
+            className={footerImageReady
+              ? "bg-[#053c56] text-white opacity-100 transition-opacity duration-200"
+              : "bg-[#053c56] text-white opacity-0 transition-opacity duration-200"}
+          >
+            <div className="mx-auto flex max-w-[1380px] flex-col md:min-h-[188px] md:flex-row">
+              <div className="h-[118px] w-full overflow-hidden sm:h-[145px] md:h-auto md:w-[38%] md:shrink-0">
                 <img
                   src={FOOTER_PHOTO}
-                  loading="lazy"
+                  loading="eager"
                   decoding="async"
                   onLoad={() => setFooterImageReady(true)}
                   onError={() => setFooterImageReady(true)}
                   alt="Pickleball players enjoying time together on court"
-                  className="block h-[210px] w-full object-cover object-center sm:h-[250px]"
+                  className="h-full w-full object-cover object-center"
                 />
-                <div className="relative -mt-9 rounded-tl-[48px] bg-[#053c56] pt-9 text-white">
-                  <div className="grid grid-cols-2 text-center sm:grid-cols-4">
-                    {[
-                      [Users,'People','Build connections'],
-                      [MapPin,'Places','Find your club'],
-                      [CalendarDays,'Sessions','Play more'],
-                      [Trophy,'Community','Belong together'],
-                    ].map(([Icon,title,copy])=>(
-                      <div key={title} className="px-3 py-5 sm:px-2 sm:py-6">
-                        <Icon className="mx-auto h-6 w-6"/>
-                        <div className="mt-1 text-[13px] font-bold">{title}</div>
-                        <div className="text-[10px] text-white/75">{copy}</div>
-                      </div>
-                    ))}
-                  </div>
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col justify-between px-5 py-4 sm:px-7 md:px-9 md:py-5 lg:px-12">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                  <Link to="/" aria-label="RallyHub home" className="w-fit shrink-0">
+                    <img src={rallyHubLogoApprovedUrl} alt="RallyHub · Play Connect Belong" className="h-10 w-auto object-contain" />
+                  </Link>
+                  <nav aria-label="Footer navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] font-semibold text-white/90">
+                    <Link to="/directory" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Directory</Link>
+                    <Link to="/events" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Events</Link>
+                    <Link to="/directory/help" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Club Guide</Link>
+                    <Link to="/about" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">About</Link>
+                    <Link to="/contact" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Contact</Link>
+                  </nav>
+                </div>
+                <div className="mt-4 border-t border-white/15 pt-3 text-[11px] text-white/70">
+                  © 2026 RallyHub. All rights reserved.
                 </div>
               </div>
             </div>
-          </section>
-          <PublicCopyrightFooter />
+          </footer>
         </main>
       </div>
     </>
