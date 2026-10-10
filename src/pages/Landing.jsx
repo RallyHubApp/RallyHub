@@ -13,9 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/AuthContext';
 import Seo, { SITE_URL } from '@/components/public/Seo';
-import rallyHubLogoApprovedUrl from '@/assets/rallyhub-logo-approved.webp';
+import { RALLYHUB_BRAND } from '@/lib/rallyhubBrand';
 
-const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 const HERO_PHOTO = '/assets/rallyhub-home-hero.webp';
 const FOOTER_PHOTO = '/assets/rallyhub-home-footer-pickleball.webp';
 
@@ -112,15 +111,7 @@ export default function Landing() {
         <header className="relative z-50 border-b border-[#e7edef] bg-white">
           <div className="mx-auto flex h-[72px] max-w-[1380px] items-center justify-between px-4 sm:px-6 lg:px-10 xl:px-12">
             <Link to="/" className="flex items-center gap-2.5">
-              <img src={LOGO_URL} alt="RallyHub" className="h-[48px] w-[48px] object-contain sm:h-[52px] sm:w-[52px]" />
-              <div>
-                <div className="text-[1.7rem] font-black leading-[.88] tracking-[-.045em] text-[#081342] sm:text-[2rem]">
-                  Rally<span className="text-[#078e48]">Hub</span>
-                </div>
-                <div className="mt-1.5 text-[7px] font-bold tracking-[.3em] text-[#0c1e53] sm:text-[8px]">
-                  PLAY <span className="text-[#0b914a]">•</span> CONNECT <span className="text-[#0b914a]">•</span> BELONG
-                </div>
-              </div>
+              <img src={RALLYHUB_BRAND.withSignature} alt="RallyHub — Play Connect Belong" className="h-[56px] w-[205px] object-contain sm:w-[225px]" />
             </Link>
 
             <nav className="hidden items-center gap-[27px] text-[12px] font-semibold text-[#0d2258] lg:flex">
@@ -231,7 +222,7 @@ export default function Landing() {
               ? "bg-[#053c56] text-white opacity-100 transition-opacity duration-200"
               : "bg-[#053c56] text-white opacity-0 transition-opacity duration-200"}
           >
-            <div className="mx-auto flex max-w-[1380px] flex-col md:min-h-[188px] md:flex-row">
+            <div className="mx-auto flex max-w-[1380px] flex-col px-5 sm:px-7 md:min-h-[188px] md:flex-row lg:px-10 xl:px-12">
               <div className="h-[118px] w-full overflow-hidden sm:h-[145px] md:h-auto md:w-[38%] md:shrink-0">
                 <img
                   src={FOOTER_PHOTO}
@@ -246,7 +237,7 @@ export default function Landing() {
               <div className="flex min-w-0 flex-1 flex-col justify-between px-5 py-4 sm:px-7 md:px-9 md:py-5 lg:px-12">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                   <Link to="/" aria-label="RallyHub home" className="w-fit shrink-0">
-                    <img src={rallyHubLogoApprovedUrl} alt="RallyHub · Play Connect Belong" className="h-10 w-auto object-contain" />
+                    <img src={RALLYHUB_BRAND.reversedWithSignature} alt="RallyHub · Play Connect Belong" className="h-[72px] w-[220px] max-w-full object-contain sm:w-[245px]" />
                   </Link>
                   <nav aria-label="Footer navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] font-semibold text-white/90">
                     <Link to="/directory" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Directory</Link>

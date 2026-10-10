@@ -1,3 +1,4 @@
+import { RALLYHUB_BRAND } from '@/lib/rallyhubBrand';
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -21,11 +22,7 @@ export default function PublicDirectoryHeader() {
     <header className="sticky top-0 z-[1001] border-b border-[#e7edef] bg-white/95 backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-[1380px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10 xl:px-12">
         <Link to="/" className="flex shrink-0 items-center gap-2.5">
-          <img src={LOGO_URL} alt="RallyHub" className="h-[48px] w-[48px] object-contain sm:h-[52px] sm:w-[52px]" />
-          <div>
-            <div className="text-[1.7rem] font-black leading-[.88] tracking-[-.045em] text-[#081342] sm:text-[2rem]">
-              Rally<span className="text-[#078e48]">Hub</span>
-            </div>
+          <img src={RALLYHUB_BRAND.withSignature} alt="RallyHub — Play Connect Belong" className="h-[56px] w-[205px] object-contain sm:w-[225px]" />
             <div className="mt-1.5 text-[7px] font-bold tracking-[.3em] text-[#0c1e53] sm:text-[8px]">
               PLAY <span className="text-[#0b914a]">•</span> CONNECT <span className="text-[#0b914a]">•</span> BELONG
             </div>
