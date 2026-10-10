@@ -14,10 +14,26 @@ function inspect(bytes:Uint8Array){
  throw Error('Unsupported or unrecognised file signature');
 }
 const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
+// Optional machine-to-machine staging credential. This never grants publish rights.
+async function validTransferKey(req:Request){
+ const configured=Deno.env.get('RALLYHUB_ASSET_TRANSFER_SECRET')||'';
+ const header=req.headers.get('authorization')||'';
+ const candidate=header.startsWith('Bearer ')?header.slice(7):'';
+ if(configured.length<32||candidate.length!==configured.length)return false;
+ const encoder=new TextEncoder();
+ const a=await crypto.subtle.digest('SHA-256',encoder.encode(candidate));
+ const b=await crypto.subtle.digest('SHA-256',encoder.encode(configured));
+ const aa=new Uint8Array(a),bb=new Uint8Array(b);let diff=0;
+ for(let i=0;i<aa.length;i++)diff|=aa[i]^bb[i];
+ return diff===0;
+}
 Deno.serve(async req=>{
  try{
   if(req.method!=='POST')return fail('POST required',405);
-  const sdk=createClientFromRequest(req),user=await sdk.auth.me();if(!user)return fail('Authentication required',401);
+  const serviceAuthenticated=await validTransferKey(req);
+  const sdk=createClientFromRequest(req);
+  let user:any=null;
+  if(!serviceAuthenticated){try{user=await sdk.auth.me()}catch(_){return fail('Authentication required',401)}if(!user)return fail('Authentication required',401);}
   const contentType=req.headers.get('content-type')||'';
   let body:any={},bytes:Uint8Array,source='direct';
   if(contentType.includes('multipart/form-data')){
@@ -36,10 +52,10 @@ Deno.serve(async req=>{
     bytes=new Uint8Array(await response.arrayBuffer());source='https';
    }else return fail('Provide file, dataBase64 or approved sourceUrl');
   }
-  const scope=String(body.scope||'platform');if(!['platform','tenant','directory'].includes(scope))return fail('Invalid asset scope');
+  const scope=String(body.scope||'platform');if(!['platform','tenant','directory'].includes(scope))return fail('Invalid asset scope');if(serviceAuthenticated&&scope!=='platform')return fail('Service key restricted to platform staging',403);if(serviceAuthenticated&&!/^[0-9a-f]{64}$/i.test(String(body.expectedSha256||'')))return fail('Service transfers require approved SHA-256',422);
   const tenantId=String(body.tenantId||'').trim(),listingSlug=String(body.listingSlug||'').trim();
   if(scope==='tenant'&&!tenantId||scope==='directory'&&!listingSlug)return fail('Scope identifier required');
-  if(user.role!=='admin'){
+  if(!serviceAuthenticated&&user.role!=='admin'){
    if(scope==='platform')return fail('Platform assets require administrator',403);
    if(scope==='tenant'){
     const access=await sdk.asServiceRole.entities.TenantUserAccess.filter({tenant_id:tenantId,user_id:user.id,status:'active'},'-created_date',5);
