@@ -7,7 +7,7 @@ export const RALLYHUB_BRAND = Object.freeze({
   reversed: '/assets/brand/rallyhub-horizontal-dark.png',
   withSignature: '/assets/brand/rallyhub-signature-light.png',
   reversedWithSignature: '/assets/brand/rallyhub-signature-dark.png',
-  footerFlatSignature: '/assets/brand/rallyhub-signature-dark-flat.svg',
+  footerFlatSignature: '/assets/brand/rallyhub-signature-dark-approved-source.png',
   compact: '/assets/brand/rallyhub-compact-light.png',
   icon: '/assets/brand/rallyhub-icon-light.png',
   iconDark: '/assets/brand/rallyhub-icon-dark.png',
