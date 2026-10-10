@@ -184,6 +184,7 @@ export default function Landing() {
                     <span className="block text-[#0a5e5b]">Run Pickleball.</span>
                   </h1>
                   <p className="mt-3 text-[12px] font-bold uppercase tracking-[.08em] text-[#0a5e5b] sm:text-[13px]">Ireland's Pickleball Directory &amp; Club Management Platform</p>
+                  <p className="mt-2 text-[13px] font-extrabold leading-snug text-[#07184c] sm:text-[15px]">Better Tournaments. Happier Players. Stronger Community.</p>
                   <p className="mt-4 max-w-[88%] text-[14px] font-medium leading-[1.5] text-[#172b5c] sm:max-w-[570px] sm:text-[16px]">
                     Find pickleball clubs, venues, sessions and events across Ireland. RallyHub also helps clubs manage memberships, organise activities and run competitions.
                   </p>
