@@ -6,6 +6,6 @@ Use the original source at /assets/rallyhub-logo-transparent.png, retain approve
 
 All production filenames and URLs are listed in manifest.json. Import the constants from src/lib/rallyhubBrand.js. Do not alter tenant-owned club logos or signed-off event print packs. The concept image is not a production logo asset.
 
-Revised footer lockup (flat SVG, no shadow, enlarged paddle): `rallyhub-signature-dark-flat.svg` — use on the navy homepage footer.
+Revised footer lockup (flat PNG, original approved paddle, no shadow): `rallyhub-signature-dark-approved-source.png` — use on the navy homepage footer.
 
 The footer must use `rallyhub-signature-dark-approved-source.png`, which contains the actual approved paddle extracted from the original RallyHub source. The earlier hand-drawn SVG is superseded and must not be used.
