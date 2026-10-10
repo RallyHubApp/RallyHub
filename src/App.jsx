@@ -11,7 +11,7 @@ import { base44 } from '@/api/base44Client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import SiteAnalytics from '@/components/public/SiteAnalytics';
 
-import AppLayout from '@/components/layout/AppLayout';
+const AppLayout = lazy(() => import('@/components/layout/AppLayout'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Players = lazy(() => import('@/pages/Players'));
 const PlayerProfile = lazy(() => import('@/pages/PlayerProfile'));
