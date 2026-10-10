@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createClient } from '@base44/sdk';
+import { rallyhubShareForPath } from '../src/lib/rallyhubShare.js';
 
 const root=process.cwd();
 const dist=path.join(root,'dist');
@@ -36,14 +37,17 @@ const venuePath=(club,venue)=>`/pickleball-venues/${encodeURIComponent(club.slug
 
 function inject(route,{title,description,body,schema=[]}){
   const canonical=`${site}${route==='/'?'':route}`;
+  const approvedShare = rallyhubShareForPath(route);
+  const sharedTitle = approvedShare?.title || title;
+  const sharedDescription = approvedShare?.description || description;
   let html=template
     .replace(/<title>[\s\S]*?<\/title>/i,`<title>${esc(title)}</title>`)
     .replace(/<meta name="description"[^>]*>/i,`<meta name="description" content="${esc(description)}" />`)
-    .replace(/<meta property="og:title"[^>]*>/i,`<meta property="og:title" content="${esc(title)}" />`)
-    .replace(/<meta property="og:description"[^>]*>/i,`<meta property="og:description" content="${esc(description)}" />`)
+    .replace(/<meta property="og:title"[^>]*>/i,`<meta property="og:title" content="${esc(sharedTitle)}" />`)
+    .replace(/<meta property="og:description"[^>]*>/i,`<meta property="og:description" content="${esc(sharedDescription)}" />`)
     .replace(/<meta property="og:url"[^>]*>/i,`<meta property="og:url" content="${esc(canonical)}" />`)
-    .replace(/<meta name="twitter:title"[^>]*>/i,`<meta name="twitter:title" content="${esc(title)}" />`)
-    .replace(/<meta name="twitter:description"[^>]*>/i,`<meta name="twitter:description" content="${esc(description)}" />`)
+    .replace(/<meta name="twitter:title"[^>]*>/i,`<meta name="twitter:title" content="${esc(sharedTitle)}" />`)
+    .replace(/<meta name="twitter:description"[^>]*>/i,`<meta name="twitter:description" content="${esc(sharedDescription)}" />`)
     .replace('</head>',`    <link rel="canonical" href="${esc(canonical)}" />\n    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />\n${schema.filter(Boolean).map(item=>`    <script type="application/ld+json">${json(item)}</script>`).join('\n')}\n  </head>`)
     .replace('<div id="root"></div>',`<div id="root"><main data-rallyhub-prerendered="true" style="max-width:1100px;margin:40px auto;padding:0 20px;font-family:Arial,sans-serif;color:#07184c;line-height:1.55">${body}</main></div>`);
   const target=route==='/'?path.join(dist,'index.html'):path.join(dist,...route.split('/').filter(Boolean),'index.html');
@@ -118,5 +122,23 @@ inject('/events',{
   schema:[{'@context':'https://schema.org','@type':'CollectionPage',name:'RallyHub Pickleball Events Ireland',url:`${site}/events`,description:'Irish pickleball events, tournaments, competitions, social events and coaching opportunities.'}],
   body:'<h1>Pickleball events and tournaments in Ireland</h1><p>RallyHub Events is being developed as a national place to discover pickleball tournaments, social events, competitions, coaching and other playing opportunities around Ireland.</p><p><a href="/directory">Find pickleball clubs and venues in Ireland</a></p>'
 });
+
+// Pages used in directory invitations must have correct metadata in the *HTTP HTML*.
+// Crawlers for WhatsApp and email previews do not execute React effects.
+const publicSupportPages = [
+  ['/directory/help', 'RallyHub Directory Club Guide & Help', 'Claim and manage your free pickleball club listing on RallyHub.', 'How to claim your RallyHub directory listing', 'See how to claim a listing, manage club information and share places and times to play.'],
+  ['/directory/quick-start', 'RallyHub Directory Quick Start Guide', 'A simple guide to claiming and managing your directory listing.', 'RallyHub Directory Quick Start', 'Claim your directory listing and update club details.'],
+  ['/directory/story', 'RallyHub Directory Explained', 'How RallyHub connects clubs with more players.', 'Get discovered on RallyHub', 'Put your club on the map and help players find you.'],
+  ['/directory/add', 'Add Your Pickleball Club | RallyHub', 'Add or update a pickleball listing across Ireland.', 'Add a pickleball club or venue', 'Share your club, venue or playing sessions on RallyHub.'],
+  ['/about', 'About RallyHub | Irish Pickleball Community', 'The RallyHub story and its mission to connect players, clubs and events.', 'About RallyHub', 'Learn about the people and ideas behind RallyHub.'],
+  ['/contact', 'Contact RallyHub | Questions and Support', 'Contact RallyHub about clubs, directory listings, events or feedback.', 'Contact RallyHub', 'Get in touch with the RallyHub team.'],
+];
+for (const [route,title,description,heading,body] of publicSupportPages) {
+  inject(route,{
+    title,description,
+    schema:[{'@context':'https://schema.org','@type':'WebPage',name:title,url:`${site}${route}`,description}],
+    body:`<nav><a href="/directory">Directory</a></nav><h1>${esc(heading)}</h1><p>${esc(body)}</p><p><a href="${esc(route)}">Open ${esc(heading)} on RallyHub</a></p>`,
+  });
+}
 
 console.log(`Pre-rendered SEO HTML for ${directoryClubs.length} clubs, ${counties.length} counties and ${directoryClubs.reduce((n,c)=>n+(c.venues?.length||0),0)} venues.`);

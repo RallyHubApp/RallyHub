@@ -1,3 +1,4 @@
+import { rallyhubShareForPath } from '@/lib/rallyhubShare';
 import { useEffect } from 'react';
 
 const SITE_URL = 'https://rallyhub.ie';
@@ -39,19 +40,22 @@ export default function Seo({
 }) {
   useEffect(() => {
     const canonical = absoluteUrl(path);
+    const approvedShare = rallyhubShareForPath(path);
+    const ogTitle = approvedShare?.title || socialTitle;
+    const ogDescription = approvedShare?.description || socialDescription;
     const schemas = Array.isArray(structuredData) ? structuredData.filter(Boolean) : [structuredData].filter(Boolean);
 
     document.title = title;
     ensureMeta('meta[name="description"]', { name: 'description', content: description });
     ensureMeta('meta[name="robots"]', { name: 'robots', content: robots });
-    ensureMeta('meta[property="og:title"]', { property: 'og:title', content: socialTitle });
-    ensureMeta('meta[property="og:description"]', { property: 'og:description', content: socialDescription });
+    ensureMeta('meta[property="og:title"]', { property: 'og:title', content: ogTitle });
+    ensureMeta('meta[property="og:description"]', { property: 'og:description', content: ogDescription });
     ensureMeta('meta[property="og:url"]', { property: 'og:url', content: canonical });
     ensureMeta('meta[property="og:type"]', { property: 'og:type', content: type });
     ensureMeta('meta[property="og:image"]', { property: 'og:image', content: image });
     ensureMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
-    ensureMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: socialTitle });
-    ensureMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: socialDescription });
+    ensureMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: ogTitle });
+    ensureMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: ogDescription });
     ensureMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: image });
     ensureCanonical(canonical);
 
