@@ -23,16 +23,29 @@ Deno.serve(async req=>{
    const rows=await b.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:slug,user_id:user.id,status:'active'},'-granted_at',10);
    if(!rows?.length)return Response.json({error:'Directory listing access required'},{status:403});
   }
-  const url=new URL(String(body.sourceUrl||''));
-  if(url.protocol!=='https:'||!hosts.has(url.hostname)||url.username||url.password)return Response.json({error:'Source domain not approved'},{status:400});
-  const response=await fetch(url.toString(),{redirect:'error',signal:AbortSignal.timeout(15000)});
-  if(!response.ok)return Response.json({error:'Source poster unavailable'},{status:422});
-  const length=Number(response.headers.get('content-length')||0);if(length>12_000_000)return Response.json({error:'Poster exceeds 12MB'},{status:413});
-  const bytes=new Uint8Array(await response.arrayBuffer());if(bytes.length>12_000_000)return Response.json({error:'Poster exceeds 12MB'},{status:413});
-  const info=inspect(bytes,response.headers.get('content-type')||'');
-  if(info.qualityWarning)return Response.json({success:false,reviewRequired:true,sourceUrl:url.toString(),...info,error:'Source resolution is too low for automatic publishing'},{status:422});
+  // The same verified ingestion path accepts admin-supplied approved bytes as well as trusted poster URLs.
+  const direct=typeof body.dataBase64==='string';
+  if(direct&&user.role!=='admin')return Response.json({error:'Admin required for approved artwork transfer'},{status:403});
+  let bytes:Uint8Array;let sourceUrl='';
+  if(direct){
+   if(body.dataBase64.length>16_000_000||!/^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(body.dataBase64))return Response.json({error:'Invalid encoded artwork'},{status:400});
+   bytes=Uint8Array.from(atob(body.dataBase64),c=>c.charCodeAt(0));
+  }else{
+   const url=new URL(String(body.sourceUrl||''));
+   if(url.protocol!=='https:'||!hosts.has(url.hostname)||url.username||url.password)return Response.json({error:'Source domain not approved'},{status:400});
+   const response=await fetch(url.toString(),{redirect:'error',signal:AbortSignal.timeout(15000)});
+   if(!response.ok)return Response.json({error:'Source poster unavailable'},{status:422});
+   const length=Number(response.headers.get('content-length')||0);if(length>12_000_000)return Response.json({error:'Poster exceeds 12MB'},{status:413});
+   bytes=new Uint8Array(await response.arrayBuffer());sourceUrl=url.toString();
+  }
+  if(bytes.length>12_000_000)return Response.json({error:'Artwork exceeds 12MB'},{status:413});
+  const info=inspect(bytes,'');
+  if(direct&&(info.format!=='png'||bytes[25]!==6))return Response.json({error:'Approved logos must be transparent PNGs'},{status:422});
+
+  if(!direct&&info.qualityWarning)return Response.json({success:false,reviewRequired:true,sourceUrl,...info,error:'Source resolution is too low for automatic publishing'},{status:422});
   const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(v=>v.toString(16).padStart(2,'0')).join('');
-  const file=new File([bytes],`event-poster-${digest.slice(0,16)}.${info.format}`,{type:`image/${info.format}`});
+  if(direct&&(!/^[a-f0-9]{64}$/.test(String(body.expectedSha256||''))||digest!==body.expectedSha256))return Response.json({error:'Approval checksum mismatch'},{status:422});
+  const file=new File([bytes],`${direct?'approved-logo':'event-poster'}-${digest.slice(0,16)}.${info.format}`,{type:`image/${info.format}`});
   const result=await b.asServiceRole.integrations.Core.UploadFile({file});
   if(!result?.file_url)throw new Error('Storage did not return a poster URL');
   // Verify stored bytes independently; a storage provider may re-encode the image.
@@ -43,6 +56,6 @@ Deno.serve(async req=>{
   const storedBytes=new Uint8Array(await storedResponse.arrayBuffer());
   const storedHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',storedBytes))).map(v=>v.toString(16).padStart(2,'0')).join('');
   if(storedHash!==digest)throw new Error('Stored poster differs from source; manual review required');
-  return Response.json({success:true,originalUrl:result.file_url,sourceUrl:url.toString(),sha256:digest,bytes:bytes.length,...info,reviewRequired:false});
+  return Response.json({success:true,originalUrl:result.file_url,sourceUrl,sha256:digest,readbackVerified:true,bytes:bytes.length,...info,reviewRequired:false});
  }catch(e){console.error('poster intake',e);return Response.json({error:'Poster ingestion failed: '+String(e?.message||'unknown')},{status:422});}
 });
