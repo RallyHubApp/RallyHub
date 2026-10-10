@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -11,79 +12,79 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import SiteAnalytics from '@/components/public/SiteAnalytics';
 
 import AppLayout from '@/components/layout/AppLayout';
-import Dashboard from '@/pages/Dashboard';
-import Players from '@/pages/Players';
-import PlayerProfile from '@/pages/PlayerProfile';
-import Tournaments from '@/pages/Tournaments';
-import TenantEvents from '@/pages/TenantEvents';
-import TournamentDetail from '@/pages/TournamentDetail';
-import MatchCenter from '@/pages/MatchCenter';
-import Leaderboard from '@/pages/Leaderboard';
-import Analytics from '@/pages/Analytics';
-import MyProfile from '@/pages/MyProfile';
-import AdminPanel from '@/pages/AdminPanel';
-import PublicRegister from '@/pages/PublicRegister';
-import PublicTournament from '@/pages/PublicTournament';
-import Landing from '@/pages/Landing';
-import About from '@/pages/About';
-import Contact from '@/pages/Contact';
-import Events from '@/pages/Events';
-import PublicEventDetail from '@/pages/PublicEventDetail';
-import MyEvents from '@/pages/MyEvents';
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Players = lazy(() => import('@/pages/Players'));
+const PlayerProfile = lazy(() => import('@/pages/PlayerProfile'));
+const Tournaments = lazy(() => import('@/pages/Tournaments'));
+const TenantEvents = lazy(() => import('@/pages/TenantEvents'));
+const TournamentDetail = lazy(() => import('@/pages/TournamentDetail'));
+const MatchCenter = lazy(() => import('@/pages/MatchCenter'));
+const Leaderboard = lazy(() => import('@/pages/Leaderboard'));
+const Analytics = lazy(() => import('@/pages/Analytics'));
+const MyProfile = lazy(() => import('@/pages/MyProfile'));
+const AdminPanel = lazy(() => import('@/pages/AdminPanel'));
+const PublicRegister = lazy(() => import('@/pages/PublicRegister'));
+const PublicTournament = lazy(() => import('@/pages/PublicTournament'));
+const Landing = lazy(() => import('@/pages/Landing'));
+const About = lazy(() => import('@/pages/About'));
+const Contact = lazy(() => import('@/pages/Contact'));
+const Events = lazy(() => import('@/pages/Events'));
+const PublicEventDetail = lazy(() => import('@/pages/PublicEventDetail'));
+const MyEvents = lazy(() => import('@/pages/MyEvents'));
 import PendingApprovalScreen from '@/components/PendingApprovalScreen';
 import AndroidInstallPrompt from '@/components/AndroidInstallPrompt';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
-import PublicClubChallengeDisplay from '@/pages/PublicClubChallengeDisplay';
-import PublicInterclubParticipantResult from '@/pages/PublicInterclubParticipantResult';
-import PublicClubChallengeVote from '@/pages/PublicClubChallengeVote';
-import PublicClubChallengeShowcaseScorer from '@/pages/PublicClubChallengeShowcaseScorer';
-import PublicInterclubRegistration from '@/pages/PublicInterclubRegistration';
-import PublicInterclubTeamManager from '@/pages/PublicInterclubTeamManager';
-import PublicInterclubCommittee from '@/pages/PublicInterclubCommittee';
-import PublicGuestSessionBooking from '@/pages/PublicGuestSessionBooking';
-import PublicGuestRequest from '@/pages/PublicGuestRequest';
-import KotcHostSession from '@/pages/KotcHostSession';
-import PublicKotcResults from '@/pages/PublicKotcResults';
-import PublicKotcScorer from '@/pages/PublicKotcScorer';
-import PublicKotcParticipantResult from '@/pages/PublicKotcParticipantResult';
-import PublicPlayerLinkGuide from '@/pages/PublicPlayerLinkGuide';
-import PublicDirectory from '@/pages/PublicDirectory';
-import PublicClubProfile from '@/pages/PublicClubProfile';
-import PublicVenueProfile from '@/pages/PublicVenueProfile';
-import DirectoryClaim from '@/pages/DirectoryClaim';
-import AddDirectoryClub from '@/pages/AddDirectoryClub';
-import CountyDirectory from '@/pages/CountyDirectory';
-import DirectoryListingEdit from '@/pages/DirectoryListingEdit';
-import DirectoryEvents from '@/pages/DirectoryEvents';
-import EventQuickStart from '@/pages/EventQuickStart';
-import DirectoryHelp from '@/pages/DirectoryHelp';
-import DirectoryStory from '@/pages/DirectoryStory';
-import DirectoryQuickStart from '@/pages/DirectoryQuickStart';
-import DirectoryPlayerUpdates from '@/pages/DirectoryPlayerUpdates';
-import TestClubEntry from '@/pages/TestClubEntry';
-import GuestBookings from '@/pages/GuestBookings';
-import MembershipConsole from '@/pages/MembershipConsole';
-import PublicMembershipApplication from '@/pages/PublicMembershipApplication';
-import PublicWaitingList from '@/pages/PublicWaitingList';
-import PublicClubPolicies from '@/pages/PublicClubPolicies';
-import WaitingList from '@/pages/WaitingList';
-import MemberPlay from '@/pages/MemberPlay';
-import MemberVenues from '@/pages/MemberVenues';
-import MemberLearn from '@/pages/MemberLearn';
-import ManageLearn from '@/pages/ManageLearn';
-import FinanceSummary from '@/pages/FinanceSummary';
-import MemberShop from '@/pages/MemberShop';
-import MemberMessages from '@/pages/MemberMessages';
-import MemberForecast from '@/pages/MemberForecast';
-import TrialApply from '@/pages/TrialApply';
-import TrialActivate from '@/pages/TrialActivate';
-import TrialPortal from '@/pages/TrialPortal';
-import TrialAdmin from '@/pages/TrialAdmin';
-import ProtectedContactActionPreview from '@/pages/ProtectedContactActionPreview';
-import CommunicationsCentre from '@/pages/CommunicationsCentre';
+const Login = lazy(() => import('@/pages/Login'));
+const Register = lazy(() => import('@/pages/Register'));
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+const PublicClubChallengeDisplay = lazy(() => import('@/pages/PublicClubChallengeDisplay'));
+const PublicInterclubParticipantResult = lazy(() => import('@/pages/PublicInterclubParticipantResult'));
+const PublicClubChallengeVote = lazy(() => import('@/pages/PublicClubChallengeVote'));
+const PublicClubChallengeShowcaseScorer = lazy(() => import('@/pages/PublicClubChallengeShowcaseScorer'));
+const PublicInterclubRegistration = lazy(() => import('@/pages/PublicInterclubRegistration'));
+const PublicInterclubTeamManager = lazy(() => import('@/pages/PublicInterclubTeamManager'));
+const PublicInterclubCommittee = lazy(() => import('@/pages/PublicInterclubCommittee'));
+const PublicGuestSessionBooking = lazy(() => import('@/pages/PublicGuestSessionBooking'));
+const PublicGuestRequest = lazy(() => import('@/pages/PublicGuestRequest'));
+const KotcHostSession = lazy(() => import('@/pages/KotcHostSession'));
+const PublicKotcResults = lazy(() => import('@/pages/PublicKotcResults'));
+const PublicKotcScorer = lazy(() => import('@/pages/PublicKotcScorer'));
+const PublicKotcParticipantResult = lazy(() => import('@/pages/PublicKotcParticipantResult'));
+const PublicPlayerLinkGuide = lazy(() => import('@/pages/PublicPlayerLinkGuide'));
+const PublicDirectory = lazy(() => import('@/pages/PublicDirectory'));
+const PublicClubProfile = lazy(() => import('@/pages/PublicClubProfile'));
+const PublicVenueProfile = lazy(() => import('@/pages/PublicVenueProfile'));
+const DirectoryClaim = lazy(() => import('@/pages/DirectoryClaim'));
+const AddDirectoryClub = lazy(() => import('@/pages/AddDirectoryClub'));
+const CountyDirectory = lazy(() => import('@/pages/CountyDirectory'));
+const DirectoryListingEdit = lazy(() => import('@/pages/DirectoryListingEdit'));
+const DirectoryEvents = lazy(() => import('@/pages/DirectoryEvents'));
+const EventQuickStart = lazy(() => import('@/pages/EventQuickStart'));
+const DirectoryHelp = lazy(() => import('@/pages/DirectoryHelp'));
+const DirectoryStory = lazy(() => import('@/pages/DirectoryStory'));
+const DirectoryQuickStart = lazy(() => import('@/pages/DirectoryQuickStart'));
+const DirectoryPlayerUpdates = lazy(() => import('@/pages/DirectoryPlayerUpdates'));
+const TestClubEntry = lazy(() => import('@/pages/TestClubEntry'));
+const GuestBookings = lazy(() => import('@/pages/GuestBookings'));
+const MembershipConsole = lazy(() => import('@/pages/MembershipConsole'));
+const PublicMembershipApplication = lazy(() => import('@/pages/PublicMembershipApplication'));
+const PublicWaitingList = lazy(() => import('@/pages/PublicWaitingList'));
+const PublicClubPolicies = lazy(() => import('@/pages/PublicClubPolicies'));
+const WaitingList = lazy(() => import('@/pages/WaitingList'));
+const MemberPlay = lazy(() => import('@/pages/MemberPlay'));
+const MemberVenues = lazy(() => import('@/pages/MemberVenues'));
+const MemberLearn = lazy(() => import('@/pages/MemberLearn'));
+const ManageLearn = lazy(() => import('@/pages/ManageLearn'));
+const FinanceSummary = lazy(() => import('@/pages/FinanceSummary'));
+const MemberShop = lazy(() => import('@/pages/MemberShop'));
+const MemberMessages = lazy(() => import('@/pages/MemberMessages'));
+const MemberForecast = lazy(() => import('@/pages/MemberForecast'));
+const TrialApply = lazy(() => import('@/pages/TrialApply'));
+const TrialActivate = lazy(() => import('@/pages/TrialActivate'));
+const TrialPortal = lazy(() => import('@/pages/TrialPortal'));
+const TrialAdmin = lazy(() => import('@/pages/TrialAdmin'));
+const ProtectedContactActionPreview = lazy(() => import('@/pages/ProtectedContactActionPreview'));
+const CommunicationsCentre = lazy(() => import('@/pages/CommunicationsCentre'));
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -250,6 +251,7 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
+          <Suspense fallback={<LoadingScreen />}>
           <Routes>
             {/* Auth routes */}
             <Route path="/login" element={<Login />} />
@@ -326,6 +328,7 @@ function App() {
           </Routes>
           <SiteAnalytics />
           <RouteAwareCopyrightFooter />
+          </Suspense>
           <RouteAwareAppearanceControl />
         </Router>
         <Toaster />
