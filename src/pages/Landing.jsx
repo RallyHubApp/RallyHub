@@ -230,6 +230,8 @@ export default function Landing() {
                 <div className="h-full w-[43.5%]">
                   <img
                     src={FOOTER_PHOTO}
+                    loading="lazy"
+                    decoding="async"
                     alt="Pickleball players enjoying time together on court"
                     className="h-full w-full object-cover object-center"
                   />
@@ -255,6 +257,8 @@ export default function Landing() {
               <div className="overflow-hidden md:hidden">
                 <img
                   src={FOOTER_PHOTO}
+                  loading="lazy"
+                  decoding="async"
                   alt="Pickleball players enjoying time together on court"
                   className="block h-[210px] w-full object-cover object-center sm:h-[250px]"
                 />
