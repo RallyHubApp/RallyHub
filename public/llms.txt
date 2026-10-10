@@ -34,7 +34,7 @@ The RallyHub Directory supports all 32 counties of Ireland: Antrim, Armagh, Carl
 
 RallyHub serves players and clubs in two connected ways: its public, all-Ireland pickleball directory helps people discover clubs, venues, weekly sessions and events; its sports management platform helps clubs and organisers run competitions and coordinate playing activities. These offerings complement rather than replace one another.
 
-RallyHub competition capabilities include live leaderboards, tournament draws and brackets, scoring, court allocation and player rotation, and real-time event updates. DUPR rating integration is in development and testing and should not be described as universally live or available. RallyHub's preferred main marketing tagline is "Better Tournaments. Happier Players. Stronger Community." The compact "PLAY • CONNECT • BELONG" brand signature remains beneath the RallyHub logo. The older long-form phrase "Play More. Connect Deeper. Belong Together." is retired as the main marketing tagline.
+RallyHub competition capabilities include live leaderboards, tournament draws and brackets, scoring, court allocation and player rotation, and real-time event updates. DUPR rating integration is in development and testing and should not be described as universally live or available. RallyHub's preferred main marketing tagline is "Better Tournaments. Happier Players. Stronger Community." The compact "PLAY • CONNECT • BELONG" brand signature remains beneath the RallyHub logo. Approved RallyHub social sharing uses "Your Next Game Starts Here." Brand green is #078e48.
 
 ## Key subjects
 

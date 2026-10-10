@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarDays, CheckCircle2, Clock3, Info, ListChecks, MapPin, RefreshCw, Trophy, Users, WifiOff } from 'lucide-react';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
 import RallyHubPublicBrand from '@/components/branding/RallyHubPublicBrand';
-const RALLYHUB_LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const RALLYHUB_LOGO_URL = '/assets/brand/rallyhub-icon-light.png';
 
 function score(matches, event) {
   let a=0,b=0;

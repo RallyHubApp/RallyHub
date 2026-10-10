@@ -31,7 +31,7 @@ import {
   scoreFromMatchRecords,
 } from '@/lib/clubChallengeWorkflow.js';
 
-const RALLYHUB_LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const RALLYHUB_LOGO_URL = '/assets/brand/rallyhub-icon-light.png';
 const CLARE_GALWAY_PRESS_HEADLINE = 'Clare Pickleball Make History with First Inter-Club Victory Over Galway';
 const CLARE_GALWAY_PRESS_RELEASE = `Clare Pickleball Club marked another milestone in its rapid growth at the weekend, defeating Galway Pickleball Club 64–32 in the clubs’ first ever inter-club challenge.
 

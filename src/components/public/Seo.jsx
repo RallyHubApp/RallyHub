@@ -2,7 +2,7 @@ import { rallyhubShareForPath } from '@/lib/rallyhubShare';
 import { useEffect } from 'react';
 
 const SITE_URL = 'https://rallyhub.ie';
-const DEFAULT_IMAGE = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/c350ab512_IMG_3007.png';
+const DEFAULT_IMAGE = 'https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png';
 
 function ensureMeta(selector, attrs) {
   const existing = [...document.head.querySelectorAll(selector)];

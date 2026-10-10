@@ -121,7 +121,7 @@ function recentCount(rows:any[] = [], hours = 24) {
   }).length;
 }
 
-const RALLYHUB_EMAIL_LOGO = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const RALLYHUB_EMAIL_LOGO = 'https://rallyhub.ie/assets/brand/rallyhub-signature-light.png';
 const RALLYHUB_NAVY = '#07184c';
 const RALLYHUB_GREEN = '#078e48';
 
