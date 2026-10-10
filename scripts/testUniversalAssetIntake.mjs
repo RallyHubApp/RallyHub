@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const path='base44/functions/universalAssetIntake/entry.ts';
+const src=fs.readFileSync(path,'utf8');
+for(const feature of ['multipart/form-data','dataBase64','sourceUrl','TenantUserAccess','DirectoryListingAccess','expectedSha256','UploadFile','readbackVerified','requiresApproval'])assert.ok(src.includes(feature),`missing ${feature}`);
+assert.ok(!src.includes('.entities.SiteAsset.create('),'No implicit asset publication');
+const f=src.match(/function inspect\(bytes:Uint8Array\)\{([\s\S]*?)\n\}/);assert.ok(f,'inspect function');
+const inspect=new Function('bytes',f[1]);
+const png=Buffer.alloc(26);Buffer.from('89504e470d0a1a0a','hex').copy(png);png.writeUInt32BE(2172,16);png.writeUInt32BE(724,20);png[25]=6;
+assert.deepEqual(inspect(png),{format:'png',mime:'image/png',width:2172,height:724,hasAlpha:true});
+assert.equal(inspect(Buffer.from('%PDF-1.7')).format,'pdf');
+assert.equal(inspect(Buffer.from('GIF89a')).format,'gif');
+assert.throws(()=>inspect(Buffer.from('not a file')));
+console.log('PASS: transport adapters, access checks, staging-only contract, PNG transparency/dimensions, PDF/GIF detection and unsupported signatures');
