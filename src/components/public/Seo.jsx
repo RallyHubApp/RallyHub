@@ -29,6 +29,8 @@ export function absoluteUrl(path = '/') {
 export default function Seo({
   title,
   description,
+  socialTitle = title,
+  socialDescription = description,
   path = '/',
   image = DEFAULT_IMAGE,
   type = 'website',
@@ -42,14 +44,14 @@ export default function Seo({
     document.title = title;
     ensureMeta('meta[name="description"]', { name: 'description', content: description });
     ensureMeta('meta[name="robots"]', { name: 'robots', content: robots });
-    ensureMeta('meta[property="og:title"]', { property: 'og:title', content: title });
-    ensureMeta('meta[property="og:description"]', { property: 'og:description', content: description });
+    ensureMeta('meta[property="og:title"]', { property: 'og:title', content: socialTitle });
+    ensureMeta('meta[property="og:description"]', { property: 'og:description', content: socialDescription });
     ensureMeta('meta[property="og:url"]', { property: 'og:url', content: canonical });
     ensureMeta('meta[property="og:type"]', { property: 'og:type', content: type });
     ensureMeta('meta[property="og:image"]', { property: 'og:image', content: image });
     ensureMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
-    ensureMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: title });
-    ensureMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: description });
+    ensureMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: socialTitle });
+    ensureMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: socialDescription });
     ensureMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: image });
     ensureCanonical(canonical);
 
@@ -65,7 +67,7 @@ export default function Seo({
     return () => {
       document.head.querySelectorAll('script[data-rallyhub-seo="jsonld"]').forEach(node => node.remove());
     };
-  }, [title, description, path, image, type, robots, structuredData]);
+  }, [title, description, socialTitle, socialDescription, path, image, type, robots, structuredData]);
 
   return null;
 }
