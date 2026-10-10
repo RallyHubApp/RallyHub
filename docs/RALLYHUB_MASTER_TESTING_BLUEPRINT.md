@@ -926,6 +926,18 @@ This sequence also applies to ChatGPT itself. The protocol is designed specifica
 
 ## 23. Living-document and versioning rule
 
+### 23.1 Independent CI, documentation alignment and AI Builder restriction — 10 October 2026
+
+These additions extend existing testing levels, sandbox isolation and release gates; they do not establish a separate testing authority.
+
+**Independent execution.** GitHub Actions should run manually at first, with read-only repository permissions and no production deployments or data writes. Each clean runner installs locked Node dependencies and Playwright-managed Chromium, then executes existing QA control-pack checks, typecheck/build and relevant browser/fixture tests. Record exact revision, environment, commands, pass/fail/skipped/blocked results and screenshots/traces. The ChatGPT/Base44 sandbox is useful for diagnosis but ephemeral. A separate Base44 UAT app with synthetic data and sandboxed integrations must be verified before any integration test writes. Passing CI does not prove the same revision is deployed to Base44.
+
+**AI Builder prohibition.** Do not use or indirectly invoke Base44 AI Builder for RallyHub. Only the explicit super-admin instruction "Use the Base44 AI Builder" authorises it for the named task; "continue", "fix it", "go ahead" and "use Base44" do not. If authorised backend methods are insufficient, report the blocker instead of switching.
+
+**One documentation authority.** This Master Testing Blueprint governs testing, while the Software Control Master governs protected behaviour and change approval. The canonical user-facing Word master in the RallyHub project documentation must be reconciled with this repository mirror. The Documentation Control Centre should reference the master and mirror, not a competing protocol. Every release record should identify change ID, module/tenant, baseline/commit, Base44 checkpoint, runner evidence, approvals, rollback and post-deploy verification.
+
+
+
 This blueprint is continuously improved.
 
 - **v1.0** captures the Testing approach summary plus KOTC, Club Challenge, Base44, code-health and September 2026 collaborative-scoring lessons.
