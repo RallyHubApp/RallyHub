@@ -103,6 +103,8 @@ export default function Landing() {
       <Seo
         title="Pickleball Clubs, Events & Club Management | RallyHub Ireland"
         description="Find pickleball clubs, venues, sessions and events across Ireland. RallyHub also helps clubs manage memberships, organise activities and run competitions."
+        socialTitle="RallyHub | Your Next Game Starts Here."
+        socialDescription="Discover where to play, find your next event and connect with Ireland's growing pickleball community. Running a club? Get discovered, grow your membership and deliver better tournaments."
         path="/"
         structuredData={structuredData}
       />
@@ -186,7 +188,7 @@ export default function Landing() {
                   <p className="mt-3 text-[12px] font-bold uppercase tracking-[.08em] text-[#0a5e5b] sm:text-[13px]">Ireland's Pickleball Directory &amp; Club Management Platform</p>
                   <p className="mt-2 text-[13px] font-extrabold leading-snug text-[#07184c] sm:text-[15px]">Better Tournaments. Happier Players. Stronger Community.</p>
                   <p className="mt-4 max-w-[88%] text-[14px] font-medium leading-[1.5] text-[#172b5c] sm:max-w-[570px] sm:text-[16px]">
-                    Find pickleball clubs, venues, sessions and events across Ireland. RallyHub also helps clubs manage memberships, organise activities and run competitions.
+                    Discover where to play, find your next event and connect with Ireland's growing pickleball community. Running a club? Get discovered, grow your membership and deliver better tournaments.
                   </p>
                   <div className="mt-5 flex max-w-[94%] flex-col gap-2.5 sm:mt-6 sm:max-w-none sm:flex-row">
                     <Link to="/directory">
