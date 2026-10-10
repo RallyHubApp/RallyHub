@@ -1,7 +1,7 @@
 {
   "name": "RallyHub",
   "short_name": "RallyHub",
-  "description": "Pickleball & Padel Tournament Management",
+  "description": "Ireland's Pickleball Directory, Events & Club Management",
   "start_url": "/app",
   "display": "standalone",
   "background_color": "#080d12",
