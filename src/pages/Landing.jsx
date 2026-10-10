@@ -101,8 +101,8 @@ export default function Landing() {
   return (
     <>
       <Seo
-        title="RallyHub | Play More. Connect Deeper. Belong Together."
-        description="RallyHub helps players find clubs, venues and events across Ireland and beyond — for every sport, at every level."
+        title="Pickleball Clubs, Events & Club Management | RallyHub Ireland"
+        description="Find pickleball clubs, venues, sessions and events across Ireland. RallyHub also helps clubs manage memberships, organise activities and run competitions."
         path="/"
         structuredData={structuredData}
       />
@@ -179,12 +179,13 @@ export default function Landing() {
               <div className="relative z-20 flex min-h-[370px] items-start px-5 pb-8 pt-7 sm:min-h-[430px] sm:items-center sm:px-7 sm:py-10 lg:min-h-0 lg:px-10 lg:py-12 xl:px-12">
                 <div className="max-w-[620px]">
                   <h1 className="max-w-[92%] text-[2.35rem] font-black leading-[.98] tracking-[-.047em] text-[#061545] min-[380px]:text-[2.55rem] sm:max-w-[620px] sm:text-[3.65rem] lg:text-[4.2rem] xl:text-[4.45rem]">
-                    Play More
-                    <span className="block">Connect <span className="text-[#078e48]">Deeper</span></span>
-                    <span className="block text-[#0a5e5b]">Belong Together</span>
+                    Find Pickleball.
+                    <span className="block">Play <span className="text-[#078e48]">Pickleball.</span></span>
+                    <span className="block text-[#0a5e5b]">Run Pickleball.</span>
                   </h1>
+                  <p className="mt-3 text-[12px] font-bold uppercase tracking-[.08em] text-[#0a5e5b] sm:text-[13px]">Ireland's Pickleball Directory &amp; Club Management Platform</p>
                   <p className="mt-4 max-w-[88%] text-[14px] font-medium leading-[1.5] text-[#172b5c] sm:max-w-[570px] sm:text-[16px]">
-                    RallyHub helps players find clubs, venues and events across Ireland and beyond — for every sport, at every level.
+                    Find pickleball clubs, venues, sessions and events across Ireland. RallyHub also helps clubs manage memberships, organise activities and run competitions.
                   </p>
                   <div className="mt-5 flex max-w-[94%] flex-col gap-2.5 sm:mt-6 sm:max-w-none sm:flex-row">
                     <Link to="/directory">
