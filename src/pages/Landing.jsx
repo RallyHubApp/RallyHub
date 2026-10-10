@@ -102,7 +102,7 @@ export default function Landing() {
     <>
       <Seo
         title="Pickleball Clubs, Events & Club Management | RallyHub Ireland"
-        description="Find pickleball clubs, venues, sessions and events across Ireland. RallyHub also helps clubs manage memberships, organise activities and run competitions."
+        description="Find pickleball clubs, venues, sessions and events across Ireland. Discover where to play and connect with players. Run a club? Get discovered, grow membership and deliver better tournaments."
         socialTitle="RallyHub | Your Next Game Starts Here."
         socialDescription="Discover where to play, find your next event and connect with Ireland's growing pickleball community. Running a club? Get discovered, grow your membership and deliver better tournaments."
         path="/"
