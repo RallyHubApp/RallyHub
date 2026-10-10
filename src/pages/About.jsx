@@ -40,7 +40,7 @@ function Header(){
 }
 
 export default function About(){
- return <><Seo title="About RallyHub | Built Around Sport. Built Around People." description="RallyHub connects players, clubs, organisers and competitions — built from real club experience in Ireland and designed to grow." path="/about"/>
+ return <><Seo title="About RallyHub | Pickleball Directory & Club Management Ireland" description="Learn how RallyHub helps people find pickleball clubs and events across Ireland, while supporting club memberships, sessions and competitions." path="/about"/>
  <div className="min-h-screen bg-white font-sans text-[#07184c]"><Header/><main>
   <section className="bg-white"><div className="mx-auto grid max-w-[1024px] md:grid-cols-[42%_58%]">
    <div className="flex min-h-[382px] items-center px-[39px] py-8"><div><div className="inline-flex rounded-full bg-[#e6f5ec] px-[12px] py-[6px] text-[10px] font-black tracking-[.08em] text-[#078e48]">PICKLEBALL FIRST • BUILT IN IRELAND</div>
