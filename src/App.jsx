@@ -25,7 +25,7 @@ const MyProfile = lazy(() => import('@/pages/MyProfile'));
 const AdminPanel = lazy(() => import('@/pages/AdminPanel'));
 const PublicRegister = lazy(() => import('@/pages/PublicRegister'));
 const PublicTournament = lazy(() => import('@/pages/PublicTournament'));
-const Landing = lazy(() => import('@/pages/Landing'));
+import Landing from '@/pages/Landing';
 const About = lazy(() => import('@/pages/About'));
 const Contact = lazy(() => import('@/pages/Contact'));
 const Events = lazy(() => import('@/pages/Events'));
