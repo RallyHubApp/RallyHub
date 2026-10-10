@@ -1,0 +1,63 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
+
+// Standalone, transport-neutral intake. Never attaches or publishes assets automatically.
+const MAX_BYTES=12_000_000;
+const trustedHosts=new Set(['pickleballireland.ie','www.pickleballireland.ie','pickledsports.ie','www.pickledsports.ie','base44.app','www.base44.app']);
+const hex=async (bytes:Uint8Array)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(x=>x.toString(16).padStart(2,'0')).join('');
+function inspect(bytes:Uint8Array){
+ const b=bytes, v=new DataView(b.buffer,b.byteOffset,b.byteLength);
+ if(b.length>=26&&b[0]===137&&b[1]===80&&b[2]===78&&b[3]===71&&b[4]===13&&b[5]===10&&b[6]===26&&b[7]===10){const width=v.getUint32(16),height=v.getUint32(20);if(width<1||height<1||width>20000||height>20000)throw Error('Invalid PNG dimensions');return {format:'png',mime:'image/png',width,height,hasAlpha:[4,6].includes(b[25])};}
+ if(b.length>=4&&b[0]===37&&b[1]===80&&b[2]===68&&b[3]===70)return {format:'pdf',mime:'application/pdf'};
+ if(b.length>=12&&String.fromCharCode(...b.slice(0,4))==='RIFF'&&String.fromCharCode(...b.slice(8,12))==='WEBP')return {format:'webp',mime:'image/webp'};
+ if(b.length>=4&&b[0]===255&&b[1]===216&&b[2]===255)return {format:'jpeg',mime:'image/jpeg'};
+ if(b.length>=6&&['GIF87a','GIF89a'].includes(String.fromCharCode(...b.slice(0,6))))return {format:'gif',mime:'image/gif'};
+ throw Error('Unsupported or unrecognised file signature');
+}
+const fail=(message:string,status=400)=>Response.json({success:false,error:message},{status});
+Deno.serve(async req=>{
+ try{
+  if(req.method!=='POST')return fail('POST required',405);
+  const sdk=createClientFromRequest(req),user=await sdk.auth.me();if(!user)return fail('Authentication required',401);
+  const contentType=req.headers.get('content-type')||'';
+  let body:any={},bytes:Uint8Array,source='direct';
+  if(contentType.includes('multipart/form-data')){
+   const form=await req.formData();const file=form.get('file');if(!(file instanceof File))return fail('File required');
+   if(file.size>MAX_BYTES)return fail('File too large',413);
+   bytes=new Uint8Array(await file.arrayBuffer());body={scope:form.get('scope'),tenantId:form.get('tenantId'),listingSlug:form.get('listingSlug'),expectedSha256:form.get('expectedSha256'),name:form.get('name')||file.name};
+  }else{
+   body=await req.json().catch(()=>null);if(!body||typeof body!=='object')return fail('Invalid JSON');
+   if(typeof body.dataBase64==='string'){
+    const data=body.dataBase64;if(data.length>Math.ceil(MAX_BYTES/3)*4+4||!/^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(data))return fail('Invalid base64 payload',413);
+    bytes=Uint8Array.from(atob(data),c=>c.charCodeAt(0));
+   }else if(typeof body.sourceUrl==='string'){
+    const url=new URL(body.sourceUrl);if(url.protocol!=='https:'||!trustedHosts.has(url.hostname)||url.username||url.password||url.port)return fail('Untrusted source URL');
+    const response=await fetch(url.toString(),{redirect:'error',signal:AbortSignal.timeout(15000)});if(!response.ok)return fail('Source unavailable',422);
+    const size=Number(response.headers.get('content-length')||0);if(size>MAX_BYTES)return fail('Source too large',413);
+    bytes=new Uint8Array(await response.arrayBuffer());source='https';
+   }else return fail('Provide file, dataBase64 or approved sourceUrl');
+  }
+  const scope=String(body.scope||'platform');if(!['platform','tenant','directory'].includes(scope))return fail('Invalid asset scope');
+  const tenantId=String(body.tenantId||'').trim(),listingSlug=String(body.listingSlug||'').trim();
+  if(scope==='tenant'&&!tenantId||scope==='directory'&&!listingSlug)return fail('Scope identifier required');
+  if(user.role!=='admin'){
+   if(scope==='platform')return fail('Platform assets require administrator',403);
+   if(scope==='tenant'){
+    const access=await sdk.asServiceRole.entities.TenantUserAccess.filter({tenant_id:tenantId,user_id:user.id,status:'active'},'-created_date',5);
+    if(!access?.some((x:any)=>['owner','admin'].includes(x.role)))return fail('Tenant access denied',403);
+   }else{
+    const access=await sdk.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:listingSlug,user_id:user.id,status:'active'},'-granted_at',5);
+    if(!access?.length)return fail('Directory access denied',403);
+   }
+  }
+  if(bytes.length===0||bytes.length>MAX_BYTES)return fail('Invalid file size',413);
+  const info=inspect(bytes),digest=await hex(bytes),expected=String(body.expectedSha256||'').toLowerCase();
+  if(expected&&(!/^[0-9a-f]{64}$/.test(expected)||digest!==expected))return fail('Approval checksum mismatch',422);
+  // No file is assigned to a tenant, event or public page here. Caller receives a staged URL.
+  const file=new File([bytes],`rallyhub-${digest.slice(0,20)}.${info.format}`,{type:info.mime});
+  const uploaded=await sdk.asServiceRole.integrations.Core.UploadFile({file});if(!uploaded?.file_url)throw Error('Storage did not return URL');
+  const url=new URL(uploaded.file_url);if(url.protocol!=='https:'||!['base44.app','www.base44.app'].includes(url.hostname))throw Error('Storage readback domain not trusted');
+  const read=await fetch(url.toString(),{redirect:'error',signal:AbortSignal.timeout(15000)});if(!read.ok)throw Error('Storage readback failed');
+  const stored=new Uint8Array(await read.arrayBuffer());if(await hex(stored)!==digest)throw Error('Stored file checksum mismatch');
+  return Response.json({success:true,status:'staged',scope,tenantId:scope==='tenant'?tenantId:undefined,listingSlug:scope==='directory'?listingSlug:undefined,source,sha256:digest,readbackVerified:true,fileUrl:uploaded.file_url,bytes:bytes.length,...info,requiresApproval:true});
+ }catch(e){console.error('universalAssetIntake',e);return fail('Asset intake failed: '+String((e as Error).message||e),422)}
+});
