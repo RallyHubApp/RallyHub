@@ -5,10 +5,8 @@ import {
   BarChart3,
   CalendarDays,
   ChevronRight,
-  MapPin,
   Menu,
   Search,
-  Trophy,
   Users,
   X,
 } from 'lucide-react';
