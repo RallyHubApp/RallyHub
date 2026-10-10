@@ -47,7 +47,7 @@ Deno.serve(async req=>{
     bytes=Uint8Array.from(atob(data),c=>c.charCodeAt(0));
    }else if(typeof body.sourceUrl==='string'){
     const url=new URL(body.sourceUrl);if(url.protocol!=='https:'||!trustedHosts.has(url.hostname)||url.username||url.password||url.port)return fail('Untrusted source URL');
-    const response=await fetch(url.toString(),{redirect:'error',signal:AbortSignal.timeout(15000)});if(!response.ok)return fail('Source unavailable',422);
+    const response=await fetch(url.toString(),{redirect:'manual',signal:AbortSignal.timeout(15000)});if(!response.ok)return fail('Source unavailable',422);
     const size=Number(response.headers.get('content-length')||0);if(size>MAX_BYTES)return fail('Source too large',413);
     bytes=new Uint8Array(await response.arrayBuffer());source='https';
    }else return fail('Provide file, dataBase64 or approved sourceUrl');
@@ -72,7 +72,7 @@ Deno.serve(async req=>{
   const file=new File([bytes],`rallyhub-${digest.slice(0,20)}.${info.format}`,{type:info.mime});
   const uploaded=await sdk.asServiceRole.integrations.Core.UploadFile({file});if(!uploaded?.file_url)throw Error('Storage did not return URL');
   const url=new URL(uploaded.file_url);if(url.protocol!=='https:'||!['base44.app','www.base44.app'].includes(url.hostname))throw Error('Storage readback domain not trusted');
-  const read=await fetch(url.toString(),{redirect:'error',signal:AbortSignal.timeout(15000)});if(!read.ok)throw Error('Storage readback failed');
+  const read=await fetch(url.toString(),{redirect:'manual',signal:AbortSignal.timeout(15000)});if(!read.ok)throw Error('Storage readback failed');
   const stored=new Uint8Array(await read.arrayBuffer());if(await hex(stored)!==digest)throw Error('Stored file checksum mismatch');
   return Response.json({success:true,status:'staged',scope,tenantId:scope==='tenant'?tenantId:undefined,listingSlug:scope==='directory'?listingSlug:undefined,source,sha256:digest,readbackVerified:true,fileUrl:uploaded.file_url,bytes:bytes.length,...info,requiresApproval:true});
  }catch(e){console.error('universalAssetIntake',e);return fail('Asset intake failed: '+String((e as Error).message||e),422)}
