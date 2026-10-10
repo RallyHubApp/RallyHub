@@ -222,8 +222,8 @@ export default function Landing() {
               ? "bg-[#053c56] text-white opacity-100 transition-opacity duration-200"
               : "bg-[#053c56] text-white opacity-0 transition-opacity duration-200"}
           >
-            <div className="mx-auto flex max-w-[1380px] flex-col px-5 sm:px-7 md:min-h-[188px] md:flex-row lg:px-10 xl:px-12">
-              <div className="h-[118px] w-full overflow-hidden sm:h-[145px] md:h-auto md:w-[38%] md:shrink-0">
+            <div className="mx-auto flex max-w-[1380px] flex-col px-5 sm:px-7 md:h-[188px] md:flex-row lg:px-10 xl:px-12">
+              <div className="h-[118px] w-full overflow-hidden sm:h-[145px] md:h-full md:w-[38%] md:shrink-0">
                 <img
                   src={FOOTER_PHOTO}
                   loading="eager"
@@ -234,10 +234,10 @@ export default function Landing() {
                   className="h-full w-full object-cover object-center"
                 />
               </div>
-              <div className="flex min-w-0 flex-1 flex-col justify-between px-5 py-4 sm:px-7 md:px-9 md:py-5 lg:px-12">
+              <div className="flex min-w-0 flex-1 flex-col justify-between px-5 py-4 sm:px-7 md:h-full md:px-8 md:py-5 lg:px-10">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                   <Link to="/" aria-label="RallyHub home" className="w-fit shrink-0">
-                    <img src={RALLYHUB_BRAND.reversedWithSignature} alt="RallyHub · Play Connect Belong" className="h-[72px] w-[220px] max-w-full object-contain sm:w-[245px]" />
+                    <img src="/assets/brand/rallyhub-signature-dark-flat.svg" alt="RallyHub · Play Connect Belong" className="h-[78px] w-[300px] max-w-full object-contain shadow-none drop-shadow-none [filter:none]" />
                   </Link>
                   <nav aria-label="Footer navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] font-semibold text-white/90">
                     <Link to="/directory" className="rounded-sm hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Directory</Link>
