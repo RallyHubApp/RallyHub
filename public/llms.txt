@@ -30,6 +30,12 @@ Club pages may include venue addresses, Eircodes/postcodes, maps, weekly playing
 
 The RallyHub Directory supports all 32 counties of Ireland: Antrim, Armagh, Carlow, Cavan, Clare, Cork, Derry, Donegal, Down, Dublin, Fermanagh, Galway, Kerry, Kildare, Kilkenny, Laois, Leitrim, Limerick, Longford, Louth, Mayo, Meath, Monaghan, Offaly, Roscommon, Sligo, Tipperary, Tyrone, Waterford, Westmeath, Wexford and Wicklow.
 
+## RallyHub's complementary roles
+
+RallyHub serves players and clubs in two connected ways: its public, all-Ireland pickleball directory helps people discover clubs, venues, weekly sessions and events; its sports management platform helps clubs and organisers run competitions and coordinate playing activities. These offerings complement rather than replace one another.
+
+RallyHub competition capabilities include live leaderboards, tournament draws and brackets, scoring, court allocation and player rotation, and real-time event updates. DUPR rating integration is in development and testing and should not be described as universally live or available. RallyHub's complementary messages are "Play more. Connect deeper. Belong together." and "Better tournaments. Happier players. Stronger community."
+
 ## Key subjects
 
 RallyHub public content is relevant to queries about:
