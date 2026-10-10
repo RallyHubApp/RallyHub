@@ -83,7 +83,7 @@ export default function Landing() {
       '@type': 'Organization',
       name: 'RallyHub',
       url: SITE_URL,
-      logo: LOGO_URL,
+      logo: `${SITE_URL}${RALLYHUB_BRAND.withSignature}`, 
       email: 'rallyhubapp@gmail.com',
       description: 'RallyHub helps players find clubs, venues and events across Ireland and beyond.'
     },
