@@ -27,10 +27,6 @@ export default function PublicSiteHeader() {
       <div className="mx-auto flex h-[72px] max-w-[1380px] items-center justify-between px-4 sm:px-6 lg:px-10 xl:px-12">
         <Link to="/" className="flex items-center gap-2.5" aria-label="RallyHub home">
           <img src={RALLYHUB_BRAND.withSignature} alt="RallyHub — Play Connect Belong" className="h-[56px] w-[205px] object-contain sm:w-[225px]" />
-            <div className="mt-1.5 text-[7px] font-bold tracking-[.3em] text-[#0c1e53] sm:text-[8px]">
-              PLAY <span className="text-[#0b914a]">•</span> CONNECT <span className="text-[#0b914a]">•</span> BELONG
-            </div>
-          </div>
         </Link>
 
         <nav className="hidden items-center gap-[27px] text-[12px] font-semibold text-[#0d2258] lg:flex" aria-label="Main navigation">
