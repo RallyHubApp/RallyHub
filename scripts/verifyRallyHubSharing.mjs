@@ -15,7 +15,7 @@ const paths = {
 };
 const attributes = tag => {
   const result={};
-  for (const [,key,value] of tag.matchAll(/([\w:-]+)\s*=\s*["']([^"']*)["']/g)) result[key]=value;
+  for (const [,key,,value] of tag.matchAll(/([\w:-]+)\s*=\s*["'](.*?)\\2/g)) result[key]=value;
   return result;
 };
 const meta=(html,kind,key)=>{
