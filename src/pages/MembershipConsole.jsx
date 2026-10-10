@@ -225,14 +225,15 @@ export default function MembershipConsole() {
     refetchOnWindowFocus: true
   });
 
-  const { data: detail = null, isLoading: detailLoading, refetch: refetchDetail } = useQuery({
+  const { data: detail = null, isLoading: detailLoading, error: detailError, refetch: refetchDetail } = useQuery({
     queryKey: ['membership-console-detail', personId, user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
-      const response = await base44.functions.invoke('membershipRecord', { action: 'admin_detail', personId });
+      const response = await Promise.race([base44.functions.invoke('membershipRecord', { action: 'admin_detail', personId }), new Promise((_, reject) => setTimeout(() => reject(new Error('Member record request timed out')), 15000))]);
       if (response.data?.error) throw new Error(response.data.error);
       return response.data?.record || null;
     },
-    enabled: canManage && !!personId
+    enabled: canManage && !!personId && detailOpen,
+    retry: false
   });
 
   useEffect(() => {
@@ -1345,7 +1346,7 @@ export default function MembershipConsole() {
       <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
         <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
           <SheetHeader><SheetTitle>{detail?.person?.full_name || 'Member record'}</SheetTitle><SheetDescription>{detail?.membership?.member_id || 'No membership ID'} · {meta.club?.name || 'Club membership'}</SheetDescription></SheetHeader>
-          {detailLoading ? <p className="mt-6 text-sm text-muted-foreground">Loading complete record…</p> : detail ? (
+          {detailLoading ? <p className="mt-6 text-sm text-muted-foreground">Loading complete record…</p> : detailError ? <div className="mt-6 space-y-3" role="alert"><p className="text-sm text-destructive">{detailError.message || "Could not load member record"}</p><Button variant="outline" onClick={() => refetchDetail()}>Retry loading</Button></div> : detail ? (
             <div className="mt-5 space-y-4">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">{label(detail.membership?.membership_status)}</Badge>
