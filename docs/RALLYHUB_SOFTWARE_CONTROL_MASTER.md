@@ -6,6 +6,8 @@
 **Owner:** RallyHub  
 **Relationship to testing:** `docs/RALLYHUB_MASTER_TESTING_BLUEPRINT.md` defines how RallyHub is tested. This SCM defines what is approved/protected and what must not regress.
 
+**Universal media pipeline control (11 Oct 2026):** `docs/RALLYHUB_UNIVERSAL_MEDIA_PIPELINE_CONTROL_2026-10-11.md` is the canonical handover for the code-driven ChatGPT/Drive/Python/Node-to-Base44 asset transfer investigation, exact sender code, existing receiver path, verified 2/2 receipts, restricted storage redirect fix and pending one-approval automation. Staging was verified; direct ChatGPT automation and permanent sender patch remain pending. No publishing or live asset assignment is authorised by this record.
+
 ## 1. Permanent control rule
 
 RallyHub is a commercial multi-tenant sporting platform. A feature is not accepted merely because a new request works. Every change must preserve all previously signed-off behaviour unless an explicit approved change says otherwise.
