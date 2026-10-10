@@ -1,0 +1,19 @@
+{
+  "status": "approved",
+  "assets": [
+    {
+      "path": "assets/brand/master-review/rallyhub-master-01-horizontal.png",
+      "sha256": "01e270433a8c031c8286cdb8926ef23114cd85330166243dcbd80c9226060be6",
+      "width": 2172,
+      "height": 724,
+      "transparent": true
+    },
+    {
+      "path": "assets/brand/master-review/rallyhub-master-02-reversed.png",
+      "sha256": "1fa08c810cc2f349fd528907caf4710440e50985b19646c07f0301fce5ca2fd2",
+      "width": 2172,
+      "height": 724,
+      "transparent": true
+    }
+  ]
+}
