@@ -4,7 +4,7 @@ import { BarChart3, CalendarDays, ChevronRight, MapPin, Menu, Monitor, Rocket, T
 import Seo from '@/components/public/Seo';
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 
-const LOGO='https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const LOGO='/assets/brand/rallyhub-icon-light.png';
 const CARD='/assets/about/';
 // About page imagery is locked to the signed-off About artwork, not the Home page imagery.
 const APPROVED_MASTER='/assets/about-locked/about-master-approved.png?v=20260921-locked';

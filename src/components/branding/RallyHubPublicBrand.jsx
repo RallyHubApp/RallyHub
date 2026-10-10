@@ -1,6 +1,6 @@
 import React from 'react';
 
-const RALLYHUB_MARK_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const RALLYHUB_MARK_URL = '/assets/brand/rallyhub-icon-light.png';
 
 function ClubChip({ club }) {
   if (!club?.name && !club?.logo_url) return null;

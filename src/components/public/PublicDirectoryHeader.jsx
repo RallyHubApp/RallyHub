@@ -6,7 +6,6 @@ import { ChevronRight, Menu, Search, X } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { AppearanceQuickButton } from '@/components/appearance/AppearanceControls';
 
-const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
 
 export default function PublicDirectoryHeader() {
   const location = useLocation();

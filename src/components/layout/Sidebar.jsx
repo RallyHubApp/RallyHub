@@ -13,7 +13,7 @@ import { base44 } from '@/api/base44Client';
 import useKotcRole from '@/hooks/useKotcRole';
 import useMemberMessageUnread from '@/hooks/useMemberMessageUnread';
 
-const LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+const LOGO_URL = '/assets/brand/rallyhub-icon-light.png';
 
 const navItems = [
   { path: '/app', label: 'Dashboard', icon: LayoutDashboard },

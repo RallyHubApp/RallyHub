@@ -5,7 +5,7 @@ import { ChevronRight, Menu, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/AuthContext';
 
-export const RALLYHUB_LOGO_URL = 'https://media.base44.com/images/public/6a01dc00702b7dd2a2978c28/2041005ec_logo_fixed.png';
+export const RALLYHUB_LOGO_URL = RALLYHUB_BRAND.icon;
 
 const navItems = [
   ['Home','/'],
