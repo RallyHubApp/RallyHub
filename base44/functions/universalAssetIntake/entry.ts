@@ -72,7 +72,8 @@ Deno.serve(async req=>{
   const file=new File([bytes],`rallyhub-${digest.slice(0,20)}.${info.format}`,{type:info.mime});
   const uploaded=await sdk.asServiceRole.integrations.Core.UploadFile({file});if(!uploaded?.file_url)throw Error('Storage did not return URL');
   const url=new URL(uploaded.file_url);if(url.protocol!=='https:'||!['base44.app','www.base44.app'].includes(url.hostname))throw Error('Storage readback domain not trusted');
-  const read=await fetch(url.toString(),{redirect:'manual',signal:AbortSignal.timeout(15000)});if(!read.ok)throw Error('Storage readback failed');
+  const read=await fetch(url.toString(),{redirect:'follow',signal:AbortSignal.timeout(15000)});if(!read.ok)throw Error(`Storage readback failed (HTTP ${read.status})`);
+  if(new URL(read.url).protocol!=='https:')throw Error('Storage readback used an insecure redirect');
   const stored=new Uint8Array(await read.arrayBuffer());if(await hex(stored)!==digest)throw Error('Stored file checksum mismatch');
   return Response.json({success:true,status:'staged',scope,tenantId:scope==='tenant'?tenantId:undefined,listingSlug:scope==='directory'?listingSlug:undefined,source,sha256:digest,readbackVerified:true,fileUrl:uploaded.file_url,bytes:bytes.length,...info,requiresApproval:true});
  }catch(e){console.error('universalAssetIntake',e);return fail('Asset intake failed: '+String((e as Error).message||e),422)}
