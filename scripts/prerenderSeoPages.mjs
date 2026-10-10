@@ -1,12 +1,34 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { createClient } from '@base44/sdk';
 
 const root=process.cwd();
 const dist=path.join(root,'dist');
 const site='https://rallyhub.ie';
 const template=fs.readFileSync(path.join(dist,'index.html'),'utf8');
-const { directoryClubs=[] }=await import(pathToFileURL(path.join(root,'src/data/directorySeed.js')).href);
+const { directoryClubs:seedClubs=[] }=await import(pathToFileURL(path.join(root,'src/data/directorySeed.js')).href);
+
+// Keep search-engine HTML aligned with the public directory and sitemap.
+const base44=createClient({appId:'6a01dc00702b7dd2a2978c28'});
+const response=await base44.functions.invoke('directoryListingProfile',{action:'public_list'});
+if(response?.data?.error) throw new Error(`Public directory unavailable: ${response.data.error}`);
+const publicState=response?.data?.listings;
+if(!publicState || typeof publicState!=='object' || Array.isArray(publicState)) throw new Error('Public directory feed is missing');
+const seedSlugs=new Set(seedClubs.map(club=>club.slug));
+const directoryClubs=[
+  ...seedClubs.map(club=>{
+    const profile=publicState[club.slug]?.profile;
+    return profile?{...club,...profile,slug:club.slug,venues:Array.isArray(profile.venues)?profile.venues:club.venues}:club;
+  }),
+  ...Object.entries(publicState)
+    .filter(([slug,state])=>!seedSlugs.has(slug) && state?.base)
+    .map(([slug,state])=>({
+      ...state.base,...(state.profile||{}),slug,
+      venues:Array.isArray(state.profile?.venues)?state.profile.venues:(state.base.venues||[]),
+      sessions:Array.isArray(state.profile?.sessions)?state.profile.sessions:(state.base.sessions||[]),
+    })),
+];
 const countySlug=county=>String(county||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const esc=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const json=value=>JSON.stringify(value).replace(/</g,'\\u003c');
