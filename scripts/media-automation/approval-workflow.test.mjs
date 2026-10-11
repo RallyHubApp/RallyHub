@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {FileReceiptStore} from './receipt-store.mjs';
+import {processApprovedArtifact} from './approval-workflow.mjs';
+import {sha256} from './verified-sender.mjs';
+const bytes=Buffer.from('isolated synthetic bytes');
+const digest=sha256(bytes);
+const approval={status:'approved',id:'approval-001',artifactId:'artifact-001',sha256:digest,scope:'platform',name:'fixture.png'};
+const response={success:true,status:'staged',readbackVerified:true,sha256:digest,bytes:bytes.length,fileUrl:'https://base44.app/fixture.png'};
+const ok=(body)=>new Response(body,{status:200});
+async function harness(fn){const dir=await mkdtemp(join(tmpdir(),'rallyhub-receipts-'));try{await fn(new FileReceiptStore(dir));}finally{await rm(dir,{recursive:true,force:true});}}
+test('approval-bound transfer creates durable receipt',()=>harness(async store=>{const result=await processApprovedArtifact({approval,receiptStore:store,artifactProvider:{getBytes:async()=>bytes},tokenProvider:{getToken:async()=> 's'.repeat(32)},fetchImpl:async(u,o)=>o.method==='POST'?ok(JSON.stringify(response)):ok(bytes)});assert.equal(result.independentReadbackVerified,true);assert.deepEqual(await store.find({approvalId:approval.id,sha256:digest}),result);}));
+test('second run reuses verified receipt without token or network',()=>harness(async store=>{await store.save({approvalId:approval.id,sha256:digest,independentReadbackVerified:true});const result=await processApprovedArtifact({approval,receiptStore:store,artifactProvider:{getBytes:async()=>{throw Error('fetch must not run')}},tokenProvider:{getToken:async()=>{throw Error('token must not run')}}});assert.equal(result.reusedExisting,true);}));
+test('rejects absent approval',()=>harness(async store=>{await assert.rejects(processApprovedArtifact({approval:{...approval,status:'draft'},receiptStore:store}),/approval required/);}));
+test('rejects altered source bytes',()=>harness(async store=>{await assert.rejects(processApprovedArtifact({approval,receiptStore:store,artifactProvider:{getBytes:async()=>Buffer.from('wrong')},tokenProvider:{getToken:async()=> 's'.repeat(32)}}),/digest/);}));
+test('rejects missing provider',()=>harness(async store=>{await assert.rejects(processApprovedArtifact({approval,receiptStore:store}),/providers required/);}));
+test('concurrent transfer is locked',()=>harness(async store=>{let release;const waiting=new Promise(r=>release=r);let entered;const started=new Promise(r=>entered=r);const first=store.withLock({approvalId:approval.id,sha256:digest},async()=>{entered();await waiting;});await started;await assert.rejects(store.withLock({approvalId:approval.id,sha256:digest},async()=>{}),/already in progress/);release();await first;}));
+test('lock released after error',()=>harness(async store=>{await assert.rejects(store.withLock({approvalId:approval.id,sha256:digest},async()=>{throw Error('fail');}),/fail/);await store.withLock({approvalId:approval.id,sha256:digest},async()=>{});}));
