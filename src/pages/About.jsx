@@ -6,7 +6,7 @@ import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 
 const LOGO='/assets/brand/rallyhub-icon-light.png';
 const CARD='/assets/about/';
-// About page imagery is locked to the signed-off About artwork, not the Home page imagery.
+// About hero and closing banner retain their existing approved artwork.
 const APPROVED_MASTER='/assets/about-locked/about-master-approved.png?v=20260921-locked';
 const APPROVED_HERO='/assets/about/about-hero-approved.png?v=20260922-finalcrop';
 
@@ -57,8 +57,8 @@ export default function About(){
   </div></section>
 
   <section className="mx-auto grid max-w-[1024px] gap-[28px] px-[30px] pb-[19px] md:grid-cols-[47%_53%]">
-   <div className="relative h-[295px] overflow-hidden rounded-[5px] bg-[#e9eef0]"><img loading="lazy" decoding="async" src="/assets/rallyhub-founders-original.png?v=20260921-locked" alt="Conall and Brian Moore" className="absolute inset-0 h-full w-full object-cover object-top [image-rendering:auto]"/><div className="absolute bottom-0 left-[10px] rounded-t-[5px] bg-[#075287] px-[12px] py-[8px] text-white"><div className="text-[11px] font-bold">Conall and Brian Moore</div><div className="text-[9px]">Founders, RallyHub</div></div></div>
-   <div className="flex flex-col justify-center"><div className="text-[9px] font-black tracking-[.1em] text-[#078e48]">OUR STORY</div><h2 className="mt-[5px] text-[25px] font-black leading-tight tracking-[-.03em]">From our court to a bigger community</h2><p className="mt-[9px] text-[12px] leading-[1.45] text-[#2e4570]">RallyHub grew from our own experience in Clare Pickleball — the joy of playing, the challenge of organising, and the brilliant people we’ve met along the way. Conall and Brian created RallyHub to make it easier for clubs, players and organisers to connect, play and grow — not just in Clare, but across Ireland and beyond.</p>
+   <div className="relative h-[295px] overflow-hidden rounded-[5px] bg-[#e9eef0]"><img loading="lazy" decoding="async" src="/assets/rallyhub-home-footer-pickleball.webp" alt="Pickleball players enjoying a session together" className="absolute inset-0 h-full w-full object-cover object-center"/><div className="absolute bottom-0 left-[10px] rounded-t-[5px] bg-[#075287] px-[12px] py-[8px] text-white"><div className="text-[11px] font-bold">Built for players and clubs</div><div className="text-[9px]">RallyHub community</div></div></div>
+   <div className="flex flex-col justify-center"><div className="text-[9px] font-black tracking-[.1em] text-[#078e48]">OUR STORY</div><h2 className="mt-[5px] text-[25px] font-black leading-tight tracking-[-.03em]">From our court to a bigger community</h2><p className="mt-[9px] text-[12px] leading-[1.45] text-[#2e4570]">RallyHub grew from our own experience in Clare Pickleball — the joy of playing, the challenge of organising, and the brilliant people we’ve met along the way. Brian and his son created RallyHub to make it easier for clubs, players and organisers to connect, play and grow — not just in Clare, but across Ireland and beyond.</p>
     <div className="mt-[12px] rounded-[6px] bg-[#edf8f4] px-[15px] py-[11px] text-[11px] italic leading-[1.45] text-[#24416c]"><span className="mr-2 text-[25px] font-black leading-none text-[#08a158]">“</span>Pickleball has given us so much — great games, great people and a real sense of community. RallyHub is our way of giving something back and helping the sport grow.<div className="mt-[5px] ml-[34px] font-bold not-italic text-[#07184c]">Brian Moore</div><div className="ml-[34px] mt-[3px] h-[2px] w-[36px] bg-[#08a158]"/></div>
    </div>
   </section>
