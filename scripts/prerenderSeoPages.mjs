@@ -47,7 +47,7 @@ function fitTitle(title) {
   const budget = 60 - suffix.length;
   const candidate = first.slice(0, budget);
   const cut = candidate.lastIndexOf(' ');
-  return `${cut > Math.floor(budget * 0.7) ? candidate.slice(0, cut) : candidate.trimEnd()}${suffix}`;
+  return `${(cut > Math.floor(budget * 0.7) ? candidate.slice(0, cut) : candidate).replace(/[\s,;:–—-]+$/, '')}${suffix}`;
 }
 function fitDescription(description) {
   if (description.length <= 160) return description;

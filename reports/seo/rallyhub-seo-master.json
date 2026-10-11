@@ -1,6 +1,6 @@
 {
   "source": "npm run build / dist prerendered metadata",
-  "generated_at": "2026-10-11T12:16:39.286Z",
+  "generated_at": "2026-10-11T12:17:35.203Z",
   "rows": [
     {
       "route": "/",
@@ -1405,10 +1405,10 @@
     {
       "route": "/pickleball-venues/athboy-pickleball/athboy-convent-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/athboy-pickleball/athboy-convent-community-centre",
-      "title": "Pickleball at Athboy Convent Community centre, | RallyHub",
+      "title": "Pickleball at Athboy Convent Community centre | RallyHub",
       "description": "Athboy Convent Community centre is a pickleball venue used by Athboy Pickleball in County Meath. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "title_length": 57,
+      "title_length": 56,
       "description_length": 125,
       "review": "READY"
     },
@@ -1445,10 +1445,10 @@
     {
       "route": "/pickleball-venues/belfast-pickleball-club/strathearn-school-188-belmont-rd",
       "url": "https://rallyhub.ie/pickleball-venues/belfast-pickleball-club/strathearn-school-188-belmont-rd",
-      "title": "Pickleball at Strathearn School 188 Belmont Rd, | RallyHub",
+      "title": "Pickleball at Strathearn School 188 Belmont Rd | RallyHub",
       "description": "Strathearn School 188 Belmont Rd is a pickleball venue used by Belfast Pickleball Club in County Antrim. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "title_length": 58,
+      "title_length": 57,
       "description_length": 133,
       "review": "READY"
     },
@@ -1545,10 +1545,10 @@
     {
       "route": "/pickleball-venues/carrickmacross-pickleball-club/carrickmacross",
       "url": "https://rallyhub.ie/pickleball-venues/carrickmacross-pickleball-club/carrickmacross",
-      "title": "Pickleball at @ Magheracloone Community Center, | RallyHub",
+      "title": "Pickleball at @ Magheracloone Community Center | RallyHub",
       "description": "@ Magheracloone Community Center is a pickleball venue used by Carrickmacross Pickleball Club in County Monaghan. View 1 listed weekly session, times and...",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "title_length": 58,
+      "title_length": 57,
       "description_length": 156,
       "review": "READY"
     },
@@ -2275,10 +2275,10 @@
     {
       "route": "/pickleball-venues/mostrim-pickleball/st-mary-s-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/mostrim-pickleball/st-mary-s-community-centre",
-      "title": "Pickleball at St.Mary's Community Centre, | RallyHub",
+      "title": "Pickleball at St.Mary's Community Centre | RallyHub",
       "description": "St.Mary's Community Centre is a pickleball venue used by Mostrim Pickleball in County Longford. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "title_length": 52,
+      "title_length": 51,
       "description_length": 124,
       "review": "READY"
     },
@@ -2295,10 +2295,10 @@
     {
       "route": "/pickleball-venues/multyfarnham-pickleball-club/multyfarnham-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/multyfarnham-pickleball-club/multyfarnham-community-centre",
-      "title": "Pickleball at Multyfarnham Community Centre, | RallyHub",
+      "title": "Pickleball at Multyfarnham Community Centre | RallyHub",
       "description": "Multyfarnham Community Centre is a pickleball venue used by Multyfarnham Pickleball Club in County Westmeath. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "title_length": 55,
+      "title_length": 54,
       "description_length": 138,
       "review": "READY"
     },
@@ -2315,10 +2315,10 @@
     {
       "route": "/pickleball-venues/newbridge-community-pickleball/venue-ryston-scoil-na-naomh-uilig",
       "url": "https://rallyhub.ie/pickleball-venues/newbridge-community-pickleball/venue-ryston-scoil-na-naomh-uilig",
-      "title": "Pickleball at Ryston & Scoil Na Naomh Uilig, | RallyHub",
+      "title": "Pickleball at Ryston & Scoil Na Naomh Uilig | RallyHub",
       "description": "Ryston & Scoil Na Naomh Uilig is a pickleball venue used by NEWBRIDGE COMMUNITY PICKLEBALL in County Kildare. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "title_length": 55,
+      "title_length": 54,
       "description_length": 138,
       "review": "READY"
     },
@@ -2425,20 +2425,20 @@
     {
       "route": "/pickleball-venues/portmarnock-pickleball/venue-portmarnock-community-school",
       "url": "https://rallyhub.ie/pickleball-venues/portmarnock-pickleball/venue-portmarnock-community-school",
-      "title": "Pickleball at Portmarnock Community School, | RallyHub",
+      "title": "Pickleball at Portmarnock Community School | RallyHub",
       "description": "Portmarnock Community School is a pickleball venue used by Portmarnock Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "title_length": 54,
+      "title_length": 53,
       "description_length": 128,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/rathdrum-pickleball/avodale-gaa-club-rathdrum",
       "url": "https://rallyhub.ie/pickleball-venues/rathdrum-pickleball/avodale-gaa-club-rathdrum",
-      "title": "Pickleball at Avodale GAA Club (Rathdrum), | RallyHub",
+      "title": "Pickleball at Avodale GAA Club (Rathdrum) | RallyHub",
       "description": "Avodale GAA Club (Rathdrum) is a pickleball venue used by Rathdrum Pickleball in County Wicklow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "title_length": 53,
+      "title_length": 52,
       "description_length": 125,
       "review": "READY"
     },
@@ -2555,10 +2555,10 @@
     {
       "route": "/pickleball-venues/terenure-pickleball-club/the-dome",
       "url": "https://rallyhub.ie/pickleball-venues/terenure-pickleball-club/the-dome",
-      "title": "Pickleball at Our Lady’s School Sports Dome, | RallyHub",
+      "title": "Pickleball at Our Lady’s School Sports Dome | RallyHub",
       "description": "Our Lady’s School Sports Dome is a pickleball venue used by Terenure Pickleball Club in County Dublin. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "title_length": 55,
+      "title_length": 54,
       "description_length": 156,
       "review": "READY"
     },
@@ -2575,10 +2575,10 @@
     {
       "route": "/pickleball-venues/vamos-pickleball/spond-1789724715716-1",
       "url": "https://rallyhub.ie/pickleball-venues/vamos-pickleball/spond-1789724715716-1",
-      "title": "Pickleball at Coláiste Bhaile Chláir - | RallyHub",
+      "title": "Pickleball at Coláiste Bhaile Chláir | RallyHub",
       "description": "Coláiste Bhaile Chláir - Claregalway College is a pickleball venue used by VAMOS Pickleball in County Galway. View 3 listed weekly sessions, times and club...",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "title_length": 49,
+      "title_length": 47,
       "description_length": 158,
       "review": "READY"
     },
