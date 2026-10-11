@@ -5,7 +5,7 @@ export const RALLYHUB_BRAND = Object.freeze({
   footerNavy: '#053c56',
   primary: '/assets/brand/rallyhub-horizontal-light.png',
   reversed: '/assets/brand/rallyhub-horizontal-dark.png',
-  withSignature: '/assets/brand/rallyhub-signature-light.png',
+  withSignature: 'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/20e8db3c5_rallyhub-e443ae9a5d8fc1784785.png',
   reversedWithSignature: '/assets/brand/rallyhub-signature-dark.png',
   footerFlatSignature: '/assets/brand/rallyhub-signature-dark.png',
   compact: '/assets/brand/rallyhub-compact-light.png',
