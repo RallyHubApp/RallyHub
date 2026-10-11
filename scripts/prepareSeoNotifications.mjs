@@ -1,7 +1,6 @@
 // Read-only by default. Creates a validated IndexNow submission preview from
 // the generated public sitemap. Never submits without --submit and credentials.
 import fs from 'node:fs';
-import { pathToFileURL } from 'node:url';
 const domain='rallyhub.ie';
 const sitemap=fs.readFileSync('public/directory-sitemap.xml','utf8');
 const urls=[...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map(x=>x[1].replace(/&amp;/g,'&'));
@@ -17,6 +16,7 @@ if(selected.length>10000)throw new Error('IndexNow allows max 10000 URLs per req
 const key=process.env.INDEXNOW_KEY;
 const payload={host:domain,key:key||'[KEY_NOT_CONFIGURED]',urlList:selected};
 if(!submit){console.log(JSON.stringify({mode:'DRY_RUN',sitemapTotal:urls.length,selectedCount:selected.length,prioritySample:selected.slice(0,10),keyConfigured:Boolean(key),message:'No submission performed. After key is hosted and verified, pass --submit with a verified INDEXNOW_KEY and a list of changed sitemap URLs.'},null,2));process.exit(0)}
+if(!positional.length)throw new Error('Provide explicitly approved changed sitemap URLs for --submit; refusing to bulk-submit by default');
 if(!key||!/^[a-zA-Z0-9-]{8,128}$/.test(key))throw new Error('Set a valid INDEXNOW_KEY before submission');
 const keyUrl=`https://${domain}/${key}.txt`;
 const response=await fetch(keyUrl,{signal:AbortSignal.timeout(10000)});
