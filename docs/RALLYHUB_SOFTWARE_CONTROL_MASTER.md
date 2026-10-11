@@ -6,7 +6,7 @@
 **Owner:** RallyHub  
 **Relationship to testing:** `docs/RALLYHUB_MASTER_TESTING_BLUEPRINT.md` defines how RallyHub is tested. This SCM defines what is approved/protected and what must not regress.
 
-**Universal media pipeline control (11 Oct 2026):** `docs/RALLYHUB_UNIVERSAL_MEDIA_PIPELINE_CONTROL_2026-10-11.md` is the canonical handover for the code-driven ChatGPT/Drive/Python/Node-to-Base44 asset transfer investigation, exact sender code, existing receiver path, verified 2/2 receipts, restricted storage redirect fix and pending one-approval automation. Staging was verified; direct ChatGPT automation and permanent sender patch remain pending. No publishing or live asset assignment is authorised by this record.
+**Universal media pipeline control (11 Oct 2026):** `docs/RALLYHUB_UNIVERSAL_MEDIA_PIPELINE_CONTROL_2026-10-11.md` is the canonical handover for the code-driven ChatGPT/Drive/Python/Node-to-Base44 asset transfer investigation, exact sender code, existing receiver path, verified 2/2 receipts, restricted storage redirect fix and pending one-approval automation. `docs/RALLYHUB_CHATGPT_TRANSPORT_INTEGRATION_REPORT.md` records the controlled Base44 Builder attempt: existing receiver/sender architecture remains valid, but no supported ChatGPT approval/artifact original-byte interface was established, so no new integration, live upload, publication or asset replacement was performed. Staging was verified historically; direct ChatGPT automation remains blocked pending a documented transferable artifact/file-reference interface or separately approved trusted worker/fallback path. No publishing or live asset assignment is authorised by this record.
 
 ## 1. Permanent control rule
 
@@ -355,6 +355,12 @@ For non-Clare tenants, the same production methodology applies while tenant-spec
 | Communications Engine | Standalone dormant module complete / protected | Controlled caller adapters only after explicit activation approval |
 
 ## 13. Change log
+
+### 11 October 2026 — ChatGPT transport integration report
+
+- Added `docs/RALLYHUB_CHATGPT_TRANSPORT_INTEGRATION_REPORT.md` after a controlled one-time Base44 Builder investigation of ChatGPT-to-RallyHub artwork transfer automation.
+- Confirmed existing RallyHub receiver, sender, approval workflow and receipt-store architecture remain the correct staging path once original approved bytes are available.
+- Confirmed no supported ChatGPT approval/artifact original-byte interface was available in this attempt; no new integration code, deployment, production upload, live record change or artwork replacement was performed.
 
 ### 6 October 2026 — SCM v1.5
 

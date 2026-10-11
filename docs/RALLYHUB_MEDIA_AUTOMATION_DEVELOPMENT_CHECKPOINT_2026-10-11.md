@@ -28,3 +28,12 @@
 
 ## Next implementation decision
 Determine an authorised tool/connector that can deliver original ChatGPT attachment bytes into an execution environment with secret management and outbound HTTPS. Do not assume a chat attachment ID is an externally fetchable URL or that the sender can access Windows credentials. Implement an approval-bound durable job record and atomic idempotency before unattended live use.
+
+## Controlled Base44 Builder attempt checkpoint — 11 October 2026
+
+- One-time Builder authorisation was used only to inspect the existing receiver, media automation scripts, manual asset uploader, directory logo upload flow and event poster ingestion flow.
+- No supported ChatGPT approval event, ChatGPT artifact API, mounted original-byte interface, or transferable file reference was established inside the available Builder environment.
+- No receiver/sender code was changed because the missing piece is an upstream supported producer for original approved bytes, not another RallyHub receiver.
+- JavaScript test execution was blocked by the available shell policy in this environment; syntax checks passed for the media automation modules and tests, while the historical isolated 34/34 test pass remains prior evidence and was not rerun here.
+- New report: `docs/RALLYHUB_CHATGPT_TRANSPORT_INTEGRATION_REPORT.md`.
+- Status remains: ChatGPT-native one-approval automation **BLOCKED / NOT VERIFIED**. No live upload, production record mutation, deployment, publication or artwork replacement was performed.
