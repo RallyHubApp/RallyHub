@@ -1,15 +1,15 @@
 {
   "source": "npm run build / dist prerendered metadata",
-  "generated_at": "2026-10-11T09:02:30.815Z",
+  "generated_at": "2026-10-11T12:15:32.441Z",
   "rows": [
     {
       "route": "/",
       "url": "https://rallyhub.ie",
-      "title": "RallyHub | Your Next Game Starts Here.",
-      "description": "Discover where to play, find your next event and connect with Ireland's growing pickleball community. Running a club? Get discovered, grow your membership and deliver better tournaments.",
+      "title": "RallyHub | Your Next Game Starts Here",
+      "description": "Find pickleball clubs, sessions and events across Ireland. RallyHub connects players, helps clubs grow and makes it easier to discover your next game.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "description_length": 186,
-      "review": "REVIEW_LENGTH"
+      "description_length": 150,
+      "review": "READY"
     },
     {
       "route": "/about",
