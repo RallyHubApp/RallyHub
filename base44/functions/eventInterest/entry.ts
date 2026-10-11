@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
-import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
+import { sendWithConfiguredEmailTransport } from '../../shared/emailTransport.ts';
 
 const clean=(value:any,max=500)=>String(value??'').trim().slice(0,max);
 const validEmail=(value:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);

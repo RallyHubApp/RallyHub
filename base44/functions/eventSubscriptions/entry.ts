@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
-import { sendWithConfiguredEmailTransport } from '../eventInterest/emailRouter.ts';
+import { sendWithConfiguredEmailTransport } from '../../shared/emailTransport.ts';
 const emailOK=(v:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 const token=()=>crypto.randomUUID()+crypto.randomUUID();
 const base='https://rallyhub.ie/events';
