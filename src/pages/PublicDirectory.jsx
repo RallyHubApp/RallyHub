@@ -500,7 +500,7 @@ export default function PublicDirectory() {
 
                           <div className="mt-4 flex flex-col justify-between gap-3 border-t border-[#e6edef] pt-3 sm:flex-row sm:items-center">
                             <div className="flex flex-wrap gap-2">
-                              {club.venues.filter(venue => venue.shortName || venue.name).slice(0,4).map(venue => <span key={venue.id} className="rounded-full bg-[#f3f7f7] px-2.5 py-1 text-[10px] font-medium text-[#506078]">{venue.shortName || venue.name}</span>)}
+                              {club.venues.filter(venue => venue.shortName || venue.name).slice(0,club.slug === 'clare-pickleball' ? 5 : 4).map(venue => club.slug === 'clare-pickleball' ? <Link key={venue.id} to={`/pickleball-venues/${encodeURIComponent(club.slug)}/${encodeURIComponent(venue.id)}`} className="rounded-full border border-[#bbdfca] bg-[#f3f9f5] px-2.5 py-1 text-[11px] font-semibold text-[#087443] hover:bg-[#e4f4e9]">Clare Pickleball — {venue.id === 'doora-barefield' ? 'Ennis' : (venue.shortName || venue.name)}</Link> : <span key={venue.id} className="rounded-full bg-[#f3f7f7] px-2.5 py-1 text-[10px] font-medium text-[#506078]">{venue.shortName || venue.name}</span>)}
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                               <button type="button" onClick={() => shareClub(club)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#cfdbdf] bg-white px-3 text-[11px] font-bold text-[#07184c] transition hover:bg-[#f7faf9]" aria-label={`Share ${club.name}`}>
