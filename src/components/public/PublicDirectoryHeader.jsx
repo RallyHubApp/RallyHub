@@ -1,4 +1,3 @@
-import { RALLYHUB_BRAND } from '@/lib/rallyhubBrand';
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,7 @@ export default function PublicDirectoryHeader() {
     <header className="sticky top-0 z-[1001] border-b border-[#e7edef] bg-white/95 backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-[1380px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10 xl:px-12">
         <Link to="/" className="flex shrink-0 items-center gap-2.5">
-          <img src={RALLYHUB_BRAND.withSignature} alt="RallyHub — Play Connect Belong" className="h-[56px] w-[205px] object-contain sm:w-[225px]" />
+          <img src="https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/20e8db3c5_rallyhub-e443ae9a5d8fc1784785.png" alt="RallyHub — Play Connect Belong" className="h-[56px] w-[205px] object-contain sm:w-[225px]" />
         </Link>
 
         <nav className="hidden items-center gap-[27px] text-[12px] font-semibold text-[#0d2258] lg:flex">
