@@ -99,10 +99,10 @@ export default function Landing() {
   return (
     <>
       <Seo
-        title="Pickleball Clubs, Events & Club Management | RallyHub Ireland"
-        description="Find pickleball clubs, venues, sessions and events across Ireland. Discover where to play and connect with players. Run a club? Get discovered, grow membership and deliver better tournaments."
-        socialTitle="RallyHub | Your Next Game Starts Here."
-        socialDescription="Discover where to play, find your next event and connect with Ireland's growing pickleball community. Running a club? Get discovered, grow your membership and deliver better tournaments."
+        title="RallyHub | Your Next Game Starts Here"
+        description="Find pickleball clubs, sessions and events across Ireland. RallyHub connects players, helps clubs grow and makes it easier to discover your next game."
+        socialTitle="RallyHub | Your Next Game Starts Here"
+        socialDescription="Find pickleball clubs, sessions and events across Ireland. RallyHub connects players, helps clubs grow and makes it easier to discover your next game."
         path="/"
         structuredData={structuredData}
       />
