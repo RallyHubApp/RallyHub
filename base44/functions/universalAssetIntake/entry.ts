@@ -2,6 +2,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
 
 // Standalone, transport-neutral intake. Never attaches or publishes assets automatically.
 const MAX_BYTES=12_000_000;
+// Embedded release marker: reports the code actually executing, not repository state.
+const RELEASE_ID='asset-intake-receipts-v2-20261011';
+const RELEASE_SCHEMA=2;
 const trustedHosts=new Set(['pickleballireland.ie','www.pickleballireland.ie','pickledsports.ie','www.pickledsports.ie','base44.app','www.base44.app']);
 const hex=async (bytes:Uint8Array)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(x=>x.toString(16).padStart(2,'0')).join('');
 function inspect(bytes:Uint8Array){
@@ -29,7 +32,13 @@ async function validTransferKey(req:Request){
 }
 Deno.serve(async req=>{
  try{
+  if(req.method==='GET'){
+   // No credential, storage access, or mutations; useful for deployed-version checks.
+   return Response.json({service:'universalAssetIntake',releaseId:RELEASE_ID,receiptSchema:RELEASE_SCHEMA,stagingOnly:true},{headers:{'cache-control':'no-store'}});
+  }
   if(req.method!=='POST')return fail('POST required',405);
+  const expectedRelease=req.headers.get('x-rallyhub-expected-release');
+  if(!expectedRelease||expectedRelease!==RELEASE_ID)return Response.json({success:false,error:'Backend release mismatch',runningRelease:RELEASE_ID},{status:409,headers:{'cache-control':'no-store'}});
   const serviceAuthenticated=await validTransferKey(req);
   const sdk=createClientFromRequest(req);
   let user:any=null;
@@ -85,6 +94,6 @@ Deno.serve(async req=>{
    await sdk.asServiceRole.entities.AssetIntakeReceipt.update(receipt.id,{status:'verification_failed',verification_error:String((error as Error).message||error).slice(0,500)});
    return Response.json({success:false,status:'verification_failed',receiptId:receipt.id,fileUrl:uploaded.file_url,sha256:digest,uploadedAt,error:'Storage verification failed'},{status:422});
   }
-  return Response.json({success:true,status:'staged',receiptId:receipt.id,uploadedAt,originalFilename:originalName,scope,tenantId:scope==='tenant'?tenantId:undefined,listingSlug:scope==='directory'?listingSlug:undefined,source,sha256:digest,readbackVerified:true,fileUrl:uploaded.file_url,bytes:bytes.length,...info,requiresApproval:true});
+  return Response.json({success:true,status:'staged',releaseId:RELEASE_ID,receiptSchema:RELEASE_SCHEMA,receiptId:receipt.id,uploadedAt,originalFilename:originalName,scope,tenantId:scope==='tenant'?tenantId:undefined,listingSlug:scope==='directory'?listingSlug:undefined,source,sha256:digest,readbackVerified:true,fileUrl:uploaded.file_url,bytes:bytes.length,...info,requiresApproval:true});
  }catch(e){console.error('universalAssetIntake',e);return fail('Asset intake failed: '+String((e as Error).message||e),422)}
 });
