@@ -36,13 +36,13 @@ const rows = files.map(file => {
   const title=tag(html,'property','og:title');
   const description=tag(html,'property','og:description');
   const image=tag(html,'property','og:image');
-  return {route,url:'https://rallyhub.ie'+(route==='/'?'':route),title,description,image,description_length:description.length,review:description.length>160?'REVIEW_LENGTH':'READY'};
+  return {route,url:'https://rallyhub.ie'+(route==='/'?'':route),title,description,image,title_length:title.length,description_length:description.length,review:title.length>60?'REVIEW_TITLE_LENGTH':description.length>160?'REVIEW_DESCRIPTION_LENGTH':'READY'};
 }).sort((a,b)=>a.route.localeCompare(b.route));
 const missing=rows.filter(r=>!r.title||!r.description||!r.image);
 const duplicate=rows.filter((r,i)=>rows.findIndex(other=>other.route===r.route)!==i);
 if(missing.length||duplicate.length) throw new Error('Missing metadata: '+missing.length+'; duplicate routes: '+duplicate.length);
 const quote = value => '"'+String(value??'').replace(/"/g,'""')+'"';
-const cols=['route','url','title','description','image','description_length','review'];
+const cols=['route','url','title','description','image','title_length','description_length','review'];
 const csv=[cols.map(quote).join(','),...rows.map(row=>cols.map(k=>quote(row[k])).join(','))].join('\n')+'\n';
 fs.mkdirSync(out,{recursive:true});
 fs.writeFileSync(path.join(out,'rallyhub-seo-master.csv'),csv);

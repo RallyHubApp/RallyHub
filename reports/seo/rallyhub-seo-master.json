@@ -1,6 +1,6 @@
 {
   "source": "npm run build / dist prerendered metadata",
-  "generated_at": "2026-10-11T12:15:32.441Z",
+  "generated_at": "2026-10-11T12:16:39.286Z",
   "rows": [
     {
       "route": "/",
@@ -8,6 +8,7 @@
       "title": "RallyHub | Your Next Game Starts Here",
       "description": "Find pickleball clubs, sessions and events across Ireland. RallyHub connects players, helps clubs grow and makes it easier to discover your next game.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 37,
       "description_length": 150,
       "review": "READY"
     },
@@ -17,6 +18,7 @@
       "title": "Meet RallyHub | Bringing Pickleball People Together",
       "description": "Discover the story behind RallyHub and how we help players find their game and clubs create stronger communities.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 51,
       "description_length": 113,
       "review": "READY"
     },
@@ -26,6 +28,7 @@
       "title": "Get in Touch with RallyHub",
       "description": "Have a question, club update or idea? Contact RallyHub and help us build a better experience for Ireland’s pickleball community.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 26,
       "description_length": 128,
       "review": "READY"
     },
@@ -35,6 +38,7 @@
       "title": "Find Your Pickleball Club in Ireland | RallyHub",
       "description": "Find your place to play. Explore pickleball clubs, venues and sessions across Ireland — and connect with your local community on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 138,
       "review": "READY"
     },
@@ -44,6 +48,7 @@
       "title": "ABC Pickleball Club | Pickleball in Armagh | RallyHub",
       "description": "ABC Pickleball Club pickleball club in County Armagh. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 124,
       "review": "READY"
     },
@@ -53,6 +58,7 @@
       "title": "Achill Pickleball | Pickleball in Mayo | RallyHub",
       "description": "Achill Pickleball pickleball club in County Mayo. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 49,
       "description_length": 120,
       "review": "READY"
     },
@@ -62,6 +68,7 @@
       "title": "Put Your Pickleball Club on the Map | RallyHub",
       "description": "Add or update your free pickleball club listing. Help players discover your club, find sessions and get involved.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 113,
       "review": "READY"
     },
@@ -71,15 +78,17 @@
       "title": "Annascaul Picklers | Pickleball in Kerry | RallyHub",
       "description": "Annascaul Picklers pickleball club in County Kerry. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 51,
       "description_length": 122,
       "review": "READY"
     },
     {
       "route": "/directory/ards-blair-mayne-pickleball-club",
       "url": "https://rallyhub.ie/directory/ards-blair-mayne-pickleball-club",
-      "title": "Ards Blair Mayne Pickleball Club | Pickleball in Down | RallyHub",
+      "title": "Ards Blair Mayne Pickleball Club | RallyHub",
       "description": "Ards Blair Mayne Pickleball Club pickleball club in County Down. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 135,
       "review": "READY"
     },
@@ -89,6 +98,7 @@
       "title": "Ashbourne Pickleball Club | Pickleball in Meath | RallyHub",
       "description": "Ashbourne Pickleball Club pickleball club in County Meath. Find 4 venues, 4 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 58,
       "description_length": 149,
       "review": "READY"
     },
@@ -98,6 +108,7 @@
       "title": "Athboy Pickleball | Pickleball in Meath | RallyHub",
       "description": "Athboy Pickleball pickleball club in County Meath. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 121,
       "review": "READY"
     },
@@ -107,15 +118,17 @@
       "title": "Balbriggan Pickleball | Pickleball in Dublin | RallyHub",
       "description": "Balbriggan Pickleball pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 55,
       "description_length": 126,
       "review": "READY"
     },
     {
       "route": "/directory/ballinamore-pickleball-club",
       "url": "https://rallyhub.ie/directory/ballinamore-pickleball-club",
-      "title": "Ballinamore Pickleball Club | Pickleball in Leitrim | RallyHub",
+      "title": "Ballinamore Pickleball Club | RallyHub",
       "description": "Ballinamore Pickleball Club pickleball club in County Leitrim. Find 0 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 38,
       "description_length": 134,
       "review": "READY"
     },
@@ -125,6 +138,7 @@
       "title": "Ballyfermot Pickleballers | Pickleball in Dublin | RallyHub",
       "description": "Ballyfermot Pickleballers pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 130,
       "review": "READY"
     },
@@ -134,6 +148,7 @@
       "title": "Bayside Pickleball Club | Pickleball in Dublin | RallyHub",
       "description": "Bayside Pickleball Club pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 128,
       "review": "READY"
     },
@@ -143,6 +158,7 @@
       "title": "Belfast Pickleball Club | Pickleball in Antrim | RallyHub",
       "description": "Belfast Pickleball Club pickleball club in County Antrim. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 128,
       "review": "READY"
     },
@@ -152,6 +168,7 @@
       "title": "Belmayne Pickleball | Pickleball in Dublin | RallyHub",
       "description": "Belmayne Pickleball pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 124,
       "review": "READY"
     },
@@ -161,6 +178,7 @@
       "title": "Better Pickleball Club | Pickleball in Antrim | RallyHub",
       "description": "Better Pickleball Club pickleball club in County Antrim. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 127,
       "review": "READY"
     },
@@ -170,15 +188,17 @@
       "title": "Blackrock Pickleball | Pickleball in Dublin | RallyHub",
       "description": "Blackrock Pickleball pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 125,
       "review": "READY"
     },
     {
       "route": "/directory/blessington-pickleball-club",
       "url": "https://rallyhub.ie/directory/blessington-pickleball-club",
-      "title": "Blessington Pickleball Club | Pickleball in Wicklow | RallyHub",
+      "title": "Blessington Pickleball Club | RallyHub",
       "description": "Blessington Pickleball Club pickleball club in County Wicklow. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 38,
       "description_length": 133,
       "review": "READY"
     },
@@ -188,6 +208,7 @@
       "title": "Bluestack Pickleball Club | Pickleball in Donegal | RallyHub",
       "description": "Bluestack Pickleball Club pickleball club in County Donegal. Find 2 venues, 2 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 151,
       "review": "READY"
     },
@@ -197,6 +218,7 @@
       "title": "Breffni Pickleball Club | Pickleball in Cavan | RallyHub",
       "description": "Breffni Pickleball Club pickleball club in County Cavan. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 127,
       "review": "READY"
     },
@@ -206,24 +228,27 @@
       "title": "Carlingford Pickleball Club | Pickleball in Louth | RallyHub",
       "description": "Carlingford Pickleball Club pickleball club in County Louth. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 131,
       "review": "READY"
     },
     {
       "route": "/directory/carlow-tullow-pickleball-club",
       "url": "https://rallyhub.ie/directory/carlow-tullow-pickleball-club",
-      "title": "Carlow/Tullow Pickleball Club | Pickleball in Carlow | RallyHub",
+      "title": "Carlow/Tullow Pickleball Club | RallyHub",
       "description": "Carlow/Tullow Pickleball Club pickleball club in County Carlow. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 134,
       "review": "READY"
     },
     {
       "route": "/directory/carrickmacross-pickleball-club",
       "url": "https://rallyhub.ie/directory/carrickmacross-pickleball-club",
-      "title": "Carrickmacross Pickleball Club | Pickleball in Monaghan | RallyHub",
+      "title": "Carrickmacross Pickleball Club | RallyHub",
       "description": "Carrickmacross Pickleball Club pickleball club in County Monaghan. Find 1 venue, 1 weekly session, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 155,
       "review": "READY"
     },
@@ -233,6 +258,7 @@
       "title": "Castlerahan Pickleball Club | Pickleball in Cavan | RallyHub",
       "description": "Castlerahan Pickleball Club pickleball club in County Cavan. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 131,
       "review": "READY"
     },
@@ -242,6 +268,7 @@
       "title": "Clare Pickleball | Pickleball in Clare | RallyHub",
       "description": "Clare Pickleball pickleball club in County Clare. Find 5 venues, 9 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 49,
       "description_length": 140,
       "review": "READY"
     },
@@ -251,6 +278,7 @@
       "title": "Clonakilty Pickleball Club | Pickleball in Cork | RallyHub",
       "description": "Clonakilty Pickleball Club pickleball club in County Cork. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 58,
       "description_length": 129,
       "review": "READY"
     },
@@ -260,6 +288,7 @@
       "title": "Cobh Pickleball | Pickleball in Cork | RallyHub",
       "description": "Cobh Pickleball pickleball club in County Cork. Find 1 venue, 3 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 137,
       "review": "READY"
     },
@@ -269,6 +298,7 @@
       "title": "Coillte Pickleball Club | Pickleball in Mayo | RallyHub",
       "description": "Coillte Pickleball Club pickleball club in County Mayo. Find 0 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 55,
       "description_length": 127,
       "review": "READY"
     },
@@ -278,6 +308,7 @@
       "title": "Connemara Pickleball Club | Pickleball in Galway | RallyHub",
       "description": "Connemara Pickleball Club pickleball club in County Galway. Find 2 venues, 3 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 150,
       "review": "READY"
     },
@@ -287,6 +318,7 @@
       "title": "Cork Pickleballers | Pickleball in Cork | RallyHub",
       "description": "Cork Pickleballers pickleball club in County Cork. Find 2 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 122,
       "review": "READY"
     },
@@ -296,6 +328,7 @@
       "title": "Cumann Pickleball A Chorráin | Pickleball in Mayo | RallyHub",
       "description": "Cumann Pickleball A Chorráin pickleball club in County Mayo. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 131,
       "review": "READY"
     },
@@ -305,6 +338,7 @@
       "title": "Dalkey Pickleball Club | Pickleball in Dublin | RallyHub",
       "description": "Dalkey Pickleball Club pickleball club in County Dublin. Find 0 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 128,
       "review": "READY"
     },
@@ -314,6 +348,7 @@
       "title": "Déise Pickleball | Pickleball in Waterford | RallyHub",
       "description": "Déise Pickleball pickleball club in County Waterford. Find 2 venues, 3 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 144,
       "review": "READY"
     },
@@ -323,6 +358,7 @@
       "title": "Drogheda Pickleball | Pickleball in Louth | RallyHub",
       "description": "Drogheda Pickleball pickleball club in County Louth. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 52,
       "description_length": 123,
       "review": "READY"
     },
@@ -332,6 +368,7 @@
       "title": "Dublin 15 Pickleball | Pickleball in Dublin | RallyHub",
       "description": "Dublin 15 Pickleball pickleball club in County Dublin. Find 7 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 126,
       "review": "READY"
     },
@@ -341,6 +378,7 @@
       "title": "Dublin 7 Pickleball Club | Pickleball in Dublin | RallyHub",
       "description": "Dublin 7 Pickleball Club pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 58,
       "description_length": 129,
       "review": "READY"
     },
@@ -350,6 +388,7 @@
       "title": "Duhallow Pickleball | Pickleball in Cork | RallyHub",
       "description": "Duhallow Pickleball pickleball club in County Cork. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 51,
       "description_length": 122,
       "review": "READY"
     },
@@ -359,6 +398,7 @@
       "title": "East Cavan Pickleball Club | Pickleball in Cavan | RallyHub",
       "description": "East Cavan Pickleball Club pickleball club in County Cavan. Find 4 venues, 4 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 150,
       "review": "READY"
     },
@@ -368,6 +408,7 @@
       "title": "East Cork Pickleball | Pickleball in Cork | RallyHub",
       "description": "East Cork Pickleball pickleball club in County Cork. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 52,
       "description_length": 123,
       "review": "READY"
     },
@@ -377,6 +418,7 @@
       "title": "East Meath Pickleball Club | Pickleball in Meath | RallyHub",
       "description": "East Meath Pickleball Club pickleball club in County Meath. Find 2 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 131,
       "review": "READY"
     },
@@ -386,6 +428,7 @@
       "title": "Edenderry Pickleball Club | Pickleball in Offaly | RallyHub",
       "description": "Edenderry Pickleball Club pickleball club in County Offaly. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 130,
       "review": "READY"
     },
@@ -395,6 +438,7 @@
       "title": "Eyva's Invitational Series | Pickleball in Dublin | RallyHub",
       "description": "Eyva's Invitational Series pickleball club in County Dublin. Find 0 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 132,
       "review": "READY"
     },
@@ -404,6 +448,7 @@
       "title": "ezPICKLEBALL | Pickleball in Dublin | RallyHub",
       "description": "ezPICKLEBALL pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 117,
       "review": "READY"
     },
@@ -413,15 +458,17 @@
       "title": "Fenside Pickleball | Pickleball in Kilkenny | RallyHub",
       "description": "Fenside Pickleball pickleball club in County Kilkenny. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 125,
       "review": "READY"
     },
     {
       "route": "/directory/galway-county-pickleball",
       "url": "https://rallyhub.ie/directory/galway-county-pickleball",
-      "title": "Galway County Pickleball Club | Pickleball in Galway | RallyHub",
+      "title": "Galway County Pickleball Club | RallyHub",
       "description": "Galway County Pickleball Club pickleball club in County Galway. Find 5 venues, 9 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 154,
       "review": "READY"
     },
@@ -431,6 +478,7 @@
       "title": "Galway Pickleball | Pickleball in Galway | RallyHub",
       "description": "Galway Pickleball pickleball club in County Galway. Find 11 venues, 34 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 51,
       "description_length": 144,
       "review": "READY"
     },
@@ -440,6 +488,7 @@
       "title": "Get Your Club on the Map | RallyHub Directory Help",
       "description": "Your free club listing is ready to manage. Find out how to claim your listing, update playing details and help more pickleball players discover your club.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 154,
       "review": "READY"
     },
@@ -449,6 +498,7 @@
       "title": "Hook Pickleball | Pickleball in Wexford | RallyHub",
       "description": "Hook Pickleball pickleball club in County Wexford. Find 2 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 122,
       "review": "READY"
     },
@@ -458,15 +508,17 @@
       "title": "Iveragh Pickleball Club | Pickleball in Kerry | RallyHub",
       "description": "Iveragh Pickleball Club pickleball club in County Kerry. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 127,
       "review": "READY"
     },
     {
       "route": "/directory/kilcullen-pickleball-panthers",
       "url": "https://rallyhub.ie/directory/kilcullen-pickleball-panthers",
-      "title": "Kilcullen Pickleball Panthers | Pickleball in Kildare | RallyHub",
+      "title": "Kilcullen Pickleball Panthers | RallyHub",
       "description": "Kilcullen Pickleball Panthers pickleball club in County Kildare. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 135,
       "review": "READY"
     },
@@ -476,6 +528,7 @@
       "title": "Kildare Pickleball Assoc. | Pickleball in Kildare | RallyHub",
       "description": "Kildare Pickleball Assoc. pickleball club in County Kildare. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 131,
       "review": "READY"
     },
@@ -485,15 +538,17 @@
       "title": "Killarney Pickleball Club | Pickleball in Kerry | RallyHub",
       "description": "Killarney Pickleball Club pickleball club in County Kerry. Find 1 venue, 4 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 58,
       "description_length": 148,
       "review": "READY"
     },
     {
       "route": "/directory/killeshandra-pickleball-club",
       "url": "https://rallyhub.ie/directory/killeshandra-pickleball-club",
-      "title": "Killeshandra Pickleball Club | Pickleball in Cavan | RallyHub",
+      "title": "Killeshandra Pickleball Club | RallyHub",
       "description": "Killeshandra Pickleball Club pickleball club in County Cavan. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 39,
       "description_length": 132,
       "review": "READY"
     },
@@ -503,6 +558,7 @@
       "title": "Kingdom Pickleball Club | Pickleball in Kerry | RallyHub",
       "description": "Kingdom Pickleball Club pickleball club in County Kerry. Find 4 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 128,
       "review": "READY"
     },
@@ -512,6 +568,7 @@
       "title": "Kinsale Pickleball | Pickleball in Cork | RallyHub",
       "description": "Kinsale Pickleball pickleball club in County Cork. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 121,
       "review": "READY"
     },
@@ -521,6 +578,7 @@
       "title": "Kinvara Pickleball | Pickleball in Galway | RallyHub",
       "description": "Kinvara Pickleball pickleball club in County Galway. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 52,
       "description_length": 123,
       "review": "READY"
     },
@@ -530,6 +588,7 @@
       "title": "Lecanvey Pickleball Club | Pickleball in Mayo | RallyHub",
       "description": "Lecanvey Pickleball Club pickleball club in County Mayo. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 127,
       "review": "READY"
     },
@@ -539,6 +598,7 @@
       "title": "Leeside Pickleball | Pickleball in Cork | RallyHub",
       "description": "Leeside Pickleball pickleball club in County Cork. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 121,
       "review": "READY"
     },
@@ -548,6 +608,7 @@
       "title": "Limerick City Pickleball | Pickleball in Limerick | RallyHub",
       "description": "Limerick City Pickleball pickleball club in County Limerick. Find 2 venues, 2 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 151,
       "review": "READY"
     },
@@ -557,6 +618,7 @@
       "title": "Lisburn Pickleball Club | Pickleball in Antrim | RallyHub",
       "description": "Lisburn Pickleball Club pickleball club in County Antrim. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 128,
       "review": "READY"
     },
@@ -566,15 +628,17 @@
       "title": "Midleton Pickleball | Pickleball in Cork | RallyHub",
       "description": "Midleton Pickleball pickleball club in County Cork. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 51,
       "description_length": 122,
       "review": "READY"
     },
     {
       "route": "/directory/milltown-emper-moyvore-pickleball-club",
       "url": "https://rallyhub.ie/directory/milltown-emper-moyvore-pickleball-club",
-      "title": "Milltown Emper Moyvore Pickleball Club | Pickleball in Westmeath | RallyHub",
+      "title": "Milltown Emper Moyvore Pickleball Club | RallyHub",
       "description": "Milltown Emper Moyvore Pickleball Club pickleball club in County Westmeath. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 49,
       "description_length": 146,
       "review": "READY"
     },
@@ -584,6 +648,7 @@
       "title": "Moate Pickleball Club | Pickleball in Westmeath | RallyHub",
       "description": "Moate Pickleball Club pickleball club in County Westmeath. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 58,
       "description_length": 129,
       "review": "READY"
     },
@@ -593,6 +658,7 @@
       "title": "Mostrim Pickleball | Pickleball in Longford | RallyHub",
       "description": "Mostrim Pickleball pickleball club in County Longford. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 125,
       "review": "READY"
     },
@@ -602,15 +668,17 @@
       "title": "Mullahoran Pickleball Club | Pickleball in Cavan | RallyHub",
       "description": "Mullahoran Pickleball Club pickleball club in County Cavan. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 130,
       "review": "READY"
     },
     {
       "route": "/directory/multyfarnham-pickleball-club",
       "url": "https://rallyhub.ie/directory/multyfarnham-pickleball-club",
-      "title": "Multyfarnham Pickleball Club | Pickleball in Westmeath | RallyHub",
+      "title": "Multyfarnham Pickleball Club | RallyHub",
       "description": "Multyfarnham Pickleball Club pickleball club in County Westmeath. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 39,
       "description_length": 136,
       "review": "READY"
     },
@@ -620,15 +688,17 @@
       "title": "Naas Pickleball | Pickleball in Kildare | RallyHub",
       "description": "Naas Pickleball pickleball club in County Kildare. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 121,
       "review": "READY"
     },
     {
       "route": "/directory/newbridge-community-pickleball",
       "url": "https://rallyhub.ie/directory/newbridge-community-pickleball",
-      "title": "NEWBRIDGE COMMUNITY PICKLEBALL | Pickleball in Kildare | RallyHub",
+      "title": "NEWBRIDGE COMMUNITY PICKLEBALL | RallyHub",
       "description": "NEWBRIDGE COMMUNITY PICKLEBALL pickleball club in County Kildare. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 136,
       "review": "READY"
     },
@@ -638,6 +708,7 @@
       "title": "Newbridge Pickleball Club | Pickleball in Kildare | RallyHub",
       "description": "Newbridge Pickleball Club pickleball club in County Kildare. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 131,
       "review": "READY"
     },
@@ -647,15 +718,17 @@
       "title": "Newport Pickleball | Pickleball in Mayo | RallyHub",
       "description": "Newport Pickleball pickleball club in County Mayo. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 121,
       "review": "READY"
     },
     {
       "route": "/directory/north-kildare-pickleball-club",
       "url": "https://rallyhub.ie/directory/north-kildare-pickleball-club",
-      "title": "North Kildare Pickleball Club | Pickleball in Kildare | RallyHub",
+      "title": "North Kildare Pickleball Club | RallyHub",
       "description": "North Kildare Pickleball Club pickleball club in County Kildare. Find 0 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 136,
       "review": "READY"
     },
@@ -665,6 +738,7 @@
       "title": "North Star Pickleball Club | Pickleball in Dublin | RallyHub",
       "description": "North Star Pickleball Club pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 131,
       "review": "READY"
     },
@@ -674,6 +748,7 @@
       "title": "Oriel Pickleball Dundalk | Pickleball in Louth | RallyHub",
       "description": "Oriel Pickleball Dundalk pickleball club in County Louth. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 128,
       "review": "READY"
     },
@@ -683,6 +758,7 @@
       "title": "Pickleball Arklow | Pickleball in Wicklow | RallyHub",
       "description": "Pickleball Arklow pickleball club in County Wicklow. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 52,
       "description_length": 123,
       "review": "READY"
     },
@@ -692,6 +768,7 @@
       "title": "Pickleball Iorrais | Pickleball in Mayo | RallyHub",
       "description": "Pickleball Iorrais pickleball club in County Mayo. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 121,
       "review": "READY"
     },
@@ -701,6 +778,7 @@
       "title": "Pickleball Ireland | Pickleball in Dublin | RallyHub",
       "description": "Pickleball Ireland pickleball club in County Dublin. Find 0 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 52,
       "description_length": 124,
       "review": "READY"
     },
@@ -710,6 +788,7 @@
       "title": "Pickleball South Dublin | Pickleball in Dublin | RallyHub",
       "description": "Pickleball South Dublin pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 128,
       "review": "READY"
     },
@@ -719,6 +798,7 @@
       "title": "Pickleball Wexford | Pickleball in Wexford | RallyHub",
       "description": "Pickleball Wexford pickleball club in County Wexford. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 124,
       "review": "READY"
     },
@@ -728,6 +808,7 @@
       "title": "PicklePub Club | Pickleball in Dublin | RallyHub",
       "description": "PicklePub Club pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 48,
       "description_length": 119,
       "review": "READY"
     },
@@ -737,6 +818,7 @@
       "title": "Portarlington Pickleball | Pickleball in Laois | RallyHub",
       "description": "Portarlington Pickleball pickleball club in County Laois. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 128,
       "review": "READY"
     },
@@ -746,6 +828,7 @@
       "title": "Portmarnock Pickleball | Pickleball in Dublin | RallyHub",
       "description": "Portmarnock Pickleball pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 127,
       "review": "READY"
     },
@@ -755,6 +838,7 @@
       "title": "Get Started with Your Club Listing | RallyHub",
       "description": "Follow the RallyHub Directory quick-start guide to claim your club listing, add sessions and help more players find you.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 45,
       "description_length": 120,
       "review": "READY"
     },
@@ -764,6 +848,7 @@
       "title": "Rathdrum Pickleball | Pickleball in Wicklow | RallyHub",
       "description": "Rathdrum Pickleball pickleball club in County Wicklow. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 125,
       "review": "READY"
     },
@@ -773,15 +858,17 @@
       "title": "Rebel Pickleball | Pickleball in Cork | RallyHub",
       "description": "Rebel Pickleball pickleball club in County Cork. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 48,
       "description_length": 119,
       "review": "READY"
     },
     {
       "route": "/directory/roundwood-pickleball-group",
       "url": "https://rallyhub.ie/directory/roundwood-pickleball-group",
-      "title": "Roundwood Pickleball Group | Pickleball in Wicklow | RallyHub",
+      "title": "Roundwood Pickleball Group | RallyHub",
       "description": "Roundwood Pickleball Group pickleball club in County Wicklow. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 37,
       "description_length": 132,
       "review": "READY"
     },
@@ -791,6 +878,7 @@
       "title": "Sandyford Pickleball Club | Pickleball in Dublin | RallyHub",
       "description": "Sandyford Pickleball Club pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 130,
       "review": "READY"
     },
@@ -800,6 +888,7 @@
       "title": "SHANKILL TENNIS CLUB | Pickleball in Dublin | RallyHub",
       "description": "SHANKILL TENNIS CLUB pickleball club in County Dublin. Find 0 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 126,
       "review": "READY"
     },
@@ -809,15 +898,17 @@
       "title": "Sligo Pickleball Club | Pickleball in Sligo | RallyHub",
       "description": "Sligo Pickleball Club pickleball club in County Sligo. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 125,
       "review": "READY"
     },
     {
       "route": "/directory/sligo-tennis-pickleball-club",
       "url": "https://rallyhub.ie/directory/sligo-tennis-pickleball-club",
-      "title": "Sligo Tennis Pickleball Club | Pickleball in Sligo | RallyHub",
+      "title": "Sligo Tennis Pickleball Club | RallyHub",
       "description": "Sligo Tennis Pickleball Club pickleball club in County Sligo. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 39,
       "description_length": 132,
       "review": "READY"
     },
@@ -827,6 +918,7 @@
       "title": "South Kildare Pickleball | Pickleball in Kildare | RallyHub",
       "description": "South Kildare Pickleball pickleball club in County Kildare. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 130,
       "review": "READY"
     },
@@ -836,6 +928,7 @@
       "title": "Southside Pickleball Club | Pickleball in Dublin | RallyHub",
       "description": "Southside Pickleball Club pickleball club in County Dublin. Find 3 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 131,
       "review": "READY"
     },
@@ -845,6 +938,7 @@
       "title": "Sports Lab Pickleball | Pickleball in Armagh | RallyHub",
       "description": "Sports Lab Pickleball pickleball club in County Armagh. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 55,
       "description_length": 126,
       "review": "READY"
     },
@@ -854,6 +948,7 @@
       "title": "Stepaside Pickleball | Pickleball in Dublin | RallyHub",
       "description": "Stepaside Pickleball pickleball club in County Dublin. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 125,
       "review": "READY"
     },
@@ -863,6 +958,7 @@
       "title": "Help More Players Find Your Club | RallyHub",
       "description": "Discover how RallyHub connects pickleball players with local clubs, venues and sessions across Ireland.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 103,
       "review": "READY"
     },
@@ -872,6 +968,7 @@
       "title": "Terenure Pickleball Club | Pickleball in Dublin | RallyHub",
       "description": "Terenure Pickleball Club pickleball club in County Dublin. Find 1 venue, 1 weekly session, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 58,
       "description_length": 147,
       "review": "READY"
     },
@@ -881,6 +978,7 @@
       "title": "Tourmakeady Pickleball Club | Pickleball in Mayo | RallyHub",
       "description": "Tourmakeady Pickleball Club pickleball club in County Mayo. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 130,
       "review": "READY"
     },
@@ -890,24 +988,27 @@
       "title": "VAMOS Pickleball | Pickleball in Galway | RallyHub",
       "description": "VAMOS Pickleball pickleball club in County Galway. Find 3 venues, 5 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 141,
       "review": "READY"
     },
     {
       "route": "/directory/wallace-park-pickleball-club",
       "url": "https://rallyhub.ie/directory/wallace-park-pickleball-club",
-      "title": "Wallace Park Pickleball Club | Pickleball in Antrim | RallyHub",
+      "title": "Wallace Park Pickleball Club | RallyHub",
       "description": "Wallace Park Pickleball Club pickleball club in County Antrim. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 39,
       "description_length": 133,
       "review": "READY"
     },
     {
       "route": "/directory/west-connemara-pickleball-club",
       "url": "https://rallyhub.ie/directory/west-connemara-pickleball-club",
-      "title": "West Connemara Pickleball Club | Pickleball in Galway | RallyHub",
+      "title": "West Connemara Pickleball Club | RallyHub",
       "description": "West Connemara Pickleball Club pickleball club in County Galway. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 135,
       "review": "READY"
     },
@@ -917,6 +1018,7 @@
       "title": "West Cork Pickleball Club | Pickleball in Cork | RallyHub",
       "description": "West Cork Pickleball Club pickleball club in County Cork. Find 3 venues, 4 weekly sessions, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 148,
       "review": "READY"
     },
@@ -926,6 +1028,7 @@
       "title": "Westport Pickleball Club | Pickleball in Mayo | RallyHub",
       "description": "Westport Pickleball Club pickleball club in County Mayo. Find 1 venue, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 127,
       "review": "READY"
     },
@@ -935,6 +1038,7 @@
       "title": "Wicklow Pickleball | Pickleball in Wicklow | RallyHub",
       "description": "Wicklow Pickleball pickleball club in County Wicklow. Find 6 venues, maps, playing times and contact information on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 125,
       "review": "READY"
     },
@@ -944,6 +1048,7 @@
       "title": "Discover Your Next Pickleball Event | RallyHub",
       "description": "Find pickleball events, competitions, tournaments and coaching opportunities across Ireland. Your next game starts here.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 120,
       "review": "READY"
     },
@@ -953,6 +1058,7 @@
       "title": "Pickleball Clubs in Antrim | RallyHub Ireland",
       "description": "Find 4 pickleball clubs and 4 venues in County Antrim. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 45,
       "description_length": 119,
       "review": "READY"
     },
@@ -962,6 +1068,7 @@
       "title": "Pickleball Clubs in Armagh | RallyHub Ireland",
       "description": "Find 2 pickleball clubs and 2 venues in County Armagh. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 45,
       "description_length": 119,
       "review": "READY"
     },
@@ -971,6 +1078,7 @@
       "title": "Pickleball Clubs in Carlow | RallyHub Ireland",
       "description": "Find 1 pickleball club and 1 venue in County Carlow. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 45,
       "description_length": 117,
       "review": "READY"
     },
@@ -980,6 +1088,7 @@
       "title": "Pickleball Clubs in Cavan | RallyHub Ireland",
       "description": "Find 5 pickleball clubs and 8 venues in County Cavan. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 118,
       "review": "READY"
     },
@@ -989,6 +1098,7 @@
       "title": "Pickleball Clubs in Clare | RallyHub Ireland",
       "description": "Find 1 pickleball club and 5 venues in County Clare. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 117,
       "review": "READY"
     },
@@ -998,6 +1108,7 @@
       "title": "Pickleball Clubs in Cork | RallyHub Ireland",
       "description": "Find 10 pickleball clubs and 13 venues in County Cork. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 119,
       "review": "READY"
     },
@@ -1007,6 +1118,7 @@
       "title": "Pickleball Clubs in Donegal | RallyHub Ireland",
       "description": "Find 1 pickleball club and 2 venues in County Donegal. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 119,
       "review": "READY"
     },
@@ -1016,6 +1128,7 @@
       "title": "Pickleball Clubs in Down | RallyHub Ireland",
       "description": "Find 1 pickleball club and 1 venue in County Down. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 115,
       "review": "READY"
     },
@@ -1025,6 +1138,7 @@
       "title": "Pickleball Clubs in Dublin | RallyHub Ireland",
       "description": "Find 20 pickleball clubs and 24 venues in County Dublin. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 45,
       "description_length": 121,
       "review": "READY"
     },
@@ -1034,6 +1148,7 @@
       "title": "Pickleball Clubs in Galway | RallyHub Ireland",
       "description": "Find 6 pickleball clubs and 23 venues in County Galway. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 45,
       "description_length": 120,
       "review": "READY"
     },
@@ -1043,6 +1158,7 @@
       "title": "Pickleball Clubs in Kerry | RallyHub Ireland",
       "description": "Find 4 pickleball clubs and 7 venues in County Kerry. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 118,
       "review": "READY"
     },
@@ -1052,6 +1168,7 @@
       "title": "Pickleball Clubs in Kildare | RallyHub Ireland",
       "description": "Find 7 pickleball clubs and 6 venues in County Kildare. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 120,
       "review": "READY"
     },
@@ -1061,6 +1178,7 @@
       "title": "Pickleball Clubs in Kilkenny | RallyHub Ireland",
       "description": "Find 1 pickleball club and 1 venue in County Kilkenny. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 119,
       "review": "READY"
     },
@@ -1070,6 +1188,7 @@
       "title": "Pickleball Clubs in Laois | RallyHub Ireland",
       "description": "Find 1 pickleball club and 1 venue in County Laois. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 116,
       "review": "READY"
     },
@@ -1079,6 +1198,7 @@
       "title": "Pickleball Clubs in Leitrim | RallyHub Ireland",
       "description": "Find 1 pickleball club and 0 venues in County Leitrim. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 119,
       "review": "READY"
     },
@@ -1088,6 +1208,7 @@
       "title": "Pickleball Clubs in Limerick | RallyHub Ireland",
       "description": "Find 1 pickleball club and 2 venues in County Limerick. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 120,
       "review": "READY"
     },
@@ -1097,6 +1218,7 @@
       "title": "Pickleball Clubs in Longford | RallyHub Ireland",
       "description": "Find 1 pickleball club and 1 venue in County Longford. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 119,
       "review": "READY"
     },
@@ -1106,6 +1228,7 @@
       "title": "Pickleball Clubs in Louth | RallyHub Ireland",
       "description": "Find 3 pickleball clubs and 3 venues in County Louth. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 118,
       "review": "READY"
     },
@@ -1115,6 +1238,7 @@
       "title": "Pickleball Clubs in Mayo | RallyHub Ireland",
       "description": "Find 8 pickleball clubs and 7 venues in County Mayo. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 117,
       "review": "READY"
     },
@@ -1124,6 +1248,7 @@
       "title": "Pickleball Clubs in Meath | RallyHub Ireland",
       "description": "Find 3 pickleball clubs and 7 venues in County Meath. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 118,
       "review": "READY"
     },
@@ -1133,6 +1258,7 @@
       "title": "Pickleball Clubs in Monaghan | RallyHub Ireland",
       "description": "Find 1 pickleball club and 1 venue in County Monaghan. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 119,
       "review": "READY"
     },
@@ -1142,6 +1268,7 @@
       "title": "Pickleball Clubs in Offaly | RallyHub Ireland",
       "description": "Find 1 pickleball club and 1 venue in County Offaly. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 45,
       "description_length": 117,
       "review": "READY"
     },
@@ -1151,6 +1278,7 @@
       "title": "Pickleball Clubs in Sligo | RallyHub Ireland",
       "description": "Find 2 pickleball clubs and 2 venues in County Sligo. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 118,
       "review": "READY"
     },
@@ -1160,6 +1288,7 @@
       "title": "Pickleball Clubs in Waterford | RallyHub Ireland",
       "description": "Find 1 pickleball club and 2 venues in County Waterford. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 48,
       "description_length": 121,
       "review": "READY"
     },
@@ -1169,6 +1298,7 @@
       "title": "Pickleball Clubs in Westmeath | RallyHub Ireland",
       "description": "Find 3 pickleball clubs and 3 venues in County Westmeath. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 48,
       "description_length": 122,
       "review": "READY"
     },
@@ -1178,6 +1308,7 @@
       "title": "Pickleball Clubs in Wexford | RallyHub Ireland",
       "description": "Find 2 pickleball clubs and 3 venues in County Wexford. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 120,
       "review": "READY"
     },
@@ -1187,222 +1318,247 @@
       "title": "Pickleball Clubs in Wicklow | RallyHub Ireland",
       "description": "Find 5 pickleball clubs and 10 venues in County Wicklow. View weekly sessions, maps and club contact details on RallyHub.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 121,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/abc-pickleball-club/1-lake-rd",
       "url": "https://rallyhub.ie/pickleball-venues/abc-pickleball-club/1-lake-rd",
-      "title": "Pickleball at 1 Lake Rd, Armagh | ABC Pickleball Club | RallyHub",
+      "title": "Pickleball at 1 Lake Rd, Armagh | RallyHub",
       "description": "1 Lake Rd is a pickleball venue used by ABC Pickleball Club in County Armagh. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 42,
       "description_length": 106,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/achill-pickleball/the-boreen-cashel-achill-island-county-mayo-f28yk80",
       "url": "https://rallyhub.ie/pickleball-venues/achill-pickleball/the-boreen-cashel-achill-island-county-mayo-f28yk80",
-      "title": "Pickleball at The Boreen Cashel Achill Island Coun, Mayo | Achill Pickleball | RallyHub",
+      "title": "Pickleball at The Boreen Cashel Achill Island | RallyHub",
       "description": "The Boreen Cashel Achill Island Coun is a pickleball venue used by Achill Pickleball in County Mayo. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 129,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/annascaul-picklers/farranacarriga-annascaul-county-kerry",
       "url": "https://rallyhub.ie/pickleball-venues/annascaul-picklers/farranacarriga-annascaul-county-kerry",
-      "title": "Pickleball at FARRANACARRIGA Annascaul County Kerr, Kerry | Annascaul Picklers | RallyHub",
+      "title": "Pickleball at FARRANACARRIGA Annascaul County | RallyHub",
       "description": "FARRANACARRIGA Annascaul County Kerr is a pickleball venue used by Annascaul Picklers in County Kerry. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 131,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/ards-blair-mayne-pickleball-club/ards-blair-mayne-wellbeing-and-leisure-complex",
       "url": "https://rallyhub.ie/pickleball-venues/ards-blair-mayne-pickleball-club/ards-blair-mayne-wellbeing-and-leisure-complex",
-      "title": "Pickleball at Ards Blair Mayne Wellbeing and Leisu, Down | Ards Blair Mayne Pickleball Club | RallyHub",
+      "title": "Pickleball at Ards Blair Mayne Wellbeing and | RallyHub",
       "description": "Ards Blair Mayne Wellbeing and Leisu is a pickleball venue used by Ards Blair Mayne Pickleball Club in County Down. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 55,
       "description_length": 144,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/ashbourne-pickleball/spond-1790010213550-3",
       "url": "https://rallyhub.ie/pickleball-venues/ashbourne-pickleball/spond-1790010213550-3",
-      "title": "Pickleball at ACS, Meath | Ashbourne Pickleball Club | RallyHub",
+      "title": "Pickleball at ACS, Meath | RallyHub",
       "description": "ACS is a pickleball venue used by Ashbourne Pickleball Club in County Meath. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 35,
       "description_length": 130,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/ashbourne-pickleball/spond-1790010213550-4",
       "url": "https://rallyhub.ie/pickleball-venues/ashbourne-pickleball/spond-1790010213550-4",
-      "title": "Pickleball at CC, Meath | Ashbourne Pickleball Club | RallyHub",
+      "title": "Pickleball at CC, Meath | RallyHub",
       "description": "CC is a pickleball venue used by Ashbourne Pickleball Club in County Meath. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 34,
       "description_length": 129,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/ashbourne-pickleball/spond-1790010213550-5",
       "url": "https://rallyhub.ie/pickleball-venues/ashbourne-pickleball/spond-1790010213550-5",
-      "title": "Pickleball at Spond venue, Meath | Ashbourne Pickleball Club | RallyHub",
+      "title": "Pickleball at Spond venue, Meath | RallyHub",
       "description": "Spond venue is a pickleball venue used by Ashbourne Pickleball Club in County Meath. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 138,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/ashbourne-pickleball/spond-1790010213550-6",
       "url": "https://rallyhub.ie/pickleball-venues/ashbourne-pickleball/spond-1790010213550-6",
-      "title": "Pickleball at Rolestown National School, Meath | Ashbourne Pickleball Club | RallyHub",
+      "title": "Pickleball at Rolestown National School, Meath | RallyHub",
       "description": "Rolestown National School is a pickleball venue used by Ashbourne Pickleball Club in County Meath. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 152,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/athboy-pickleball/athboy-convent-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/athboy-pickleball/athboy-convent-community-centre",
-      "title": "Pickleball at Athboy Convent Community centre, Meath | Athboy Pickleball | RallyHub",
+      "title": "Pickleball at Athboy Convent Community centre, | RallyHub",
       "description": "Athboy Convent Community centre is a pickleball venue used by Athboy Pickleball in County Meath. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 125,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/balbriggan-pickleball/flemington-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/balbriggan-pickleball/flemington-community-centre",
-      "title": "Pickleball at Flemington Community Centre, Dublin | Balbriggan Pickleball | RallyHub",
+      "title": "Pickleball at Flemington Community Centre, Dublin | RallyHub",
       "description": "Flemington Community Centre is a pickleball venue used by Balbriggan Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 126,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/ballyfermot-pickleballers/ballyfermot-main-street",
       "url": "https://rallyhub.ie/pickleball-venues/ballyfermot-pickleballers/ballyfermot-main-street",
-      "title": "Pickleball at Ballyfermot Main Street, Dublin | Ballyfermot Pickleballers | RallyHub",
+      "title": "Pickleball at Ballyfermot Main Street, Dublin | RallyHub",
       "description": "Ballyfermot Main Street is a pickleball venue used by Ballyfermot Pickleballers in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 126,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/bayside-pickleball-club/bayside-junior-school",
       "url": "https://rallyhub.ie/pickleball-venues/bayside-pickleball-club/bayside-junior-school",
-      "title": "Pickleball at Bayside Junior School, Dublin | Bayside Pickleball Club | RallyHub",
+      "title": "Pickleball at Bayside Junior School, Dublin | RallyHub",
       "description": "Bayside Junior School is a pickleball venue used by Bayside Pickleball Club in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 122,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/belfast-pickleball-club/strathearn-school-188-belmont-rd",
       "url": "https://rallyhub.ie/pickleball-venues/belfast-pickleball-club/strathearn-school-188-belmont-rd",
-      "title": "Pickleball at Strathearn School 188 Belmont Rd, Antrim | Belfast Pickleball Club | RallyHub",
+      "title": "Pickleball at Strathearn School 188 Belmont Rd, | RallyHub",
       "description": "Strathearn School 188 Belmont Rd is a pickleball venue used by Belfast Pickleball Club in County Antrim. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 58,
       "description_length": 133,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/belmayne-pickleball/belmayne-main-street",
       "url": "https://rallyhub.ie/pickleball-venues/belmayne-pickleball/belmayne-main-street",
-      "title": "Pickleball at Belmayne main street, Dublin | Belmayne Pickleball | RallyHub",
+      "title": "Pickleball at Belmayne main street, Dublin | RallyHub",
       "description": "Belmayne main street is a pickleball venue used by Belmayne Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 117,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/better-pickleball-club/castlereagh",
       "url": "https://rallyhub.ie/pickleball-venues/better-pickleball-club/castlereagh",
-      "title": "Pickleball at Castlereagh, Antrim | Better Pickleball Club | RallyHub",
+      "title": "Pickleball at Castlereagh, Antrim | RallyHub",
       "description": "Castlereagh is a pickleball venue used by Better Pickleball Club in County Antrim. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 111,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/blackrock-pickleball/cabinteely-community-school",
       "url": "https://rallyhub.ie/pickleball-venues/blackrock-pickleball/cabinteely-community-school",
-      "title": "Pickleball at Cabinteely Community School, Dublin | Blackrock Pickleball | RallyHub",
+      "title": "Pickleball at Cabinteely Community School, Dublin | RallyHub",
       "description": "Cabinteely Community School is a pickleball venue used by Blackrock Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 125,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/blessington-pickleball-club/blessington-demesne",
       "url": "https://rallyhub.ie/pickleball-venues/blessington-pickleball-club/blessington-demesne",
-      "title": "Pickleball at Blessington Demesne, Wicklow | Blessington Pickleball Club | RallyHub",
+      "title": "Pickleball at Blessington Demesne, Wicklow | RallyHub",
       "description": "Blessington Demesne is a pickleball venue used by Blessington Pickleball Club in County Wicklow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 125,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/bluestack-pickleball-club/st-john-bosco-centre-donegal-town",
       "url": "https://rallyhub.ie/pickleball-venues/bluestack-pickleball-club/st-john-bosco-centre-donegal-town",
-      "title": "Pickleball at The Bosco, Donegal | Bluestack Pickleball Club | RallyHub",
+      "title": "Pickleball at The Bosco, Donegal | RallyHub",
       "description": "The Bosco is a pickleball venue used by Bluestack Pickleball Club in County Donegal. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 139,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/bluestack-pickleball-club/venue-1790255907503-2",
       "url": "https://rallyhub.ie/pickleball-venues/bluestack-pickleball-club/venue-1790255907503-2",
-      "title": "Pickleball at Pettigo, Donegal | Bluestack Pickleball Club | RallyHub",
+      "title": "Pickleball at Pettigo, Donegal | RallyHub",
       "description": "Pettigo is a pickleball venue used by Bluestack Pickleball Club in County Donegal. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 111,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/breffni-pickleball-club/cavan-sports-complex",
       "url": "https://rallyhub.ie/pickleball-venues/breffni-pickleball-club/cavan-sports-complex",
-      "title": "Pickleball at Cavan Sports Complex, Cavan | Breffni Pickleball Club | RallyHub",
+      "title": "Pickleball at Cavan Sports Complex, Cavan | RallyHub",
       "description": "Cavan Sports Complex is a pickleball venue used by Breffni Pickleball Club in County Cavan. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 52,
       "description_length": 120,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/carlingford-pickleball-club/foy-center",
       "url": "https://rallyhub.ie/pickleball-venues/carlingford-pickleball-club/foy-center",
-      "title": "Pickleball at Foy Center, Louth | Carlingford Pickleball Club | RallyHub",
+      "title": "Pickleball at Foy Center, Louth | RallyHub",
       "description": "Foy Center is a pickleball venue used by Carlingford Pickleball Club in County Louth. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 42,
       "description_length": 114,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/carlow-tullow-pickleball-club/tullowphelim",
       "url": "https://rallyhub.ie/pickleball-venues/carlow-tullow-pickleball-club/tullowphelim",
-      "title": "Pickleball at Tullowphelim, Carlow | Carlow/Tullow Pickleball Club | RallyHub",
+      "title": "Pickleball at Tullowphelim, Carlow | RallyHub",
       "description": "Tullowphelim is a pickleball venue used by Carlow/Tullow Pickleball Club in County Carlow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 45,
       "description_length": 119,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/carrickmacross-pickleball-club/carrickmacross",
       "url": "https://rallyhub.ie/pickleball-venues/carrickmacross-pickleball-club/carrickmacross",
-      "title": "Pickleball at @ Magheracloone Community Center, Monaghan | Carrickmacross Pickleball Club | RallyHub",
-      "description": "@ Magheracloone Community Center is a pickleball venue used by Carrickmacross Pickleball Club in County Monaghan. View 1 listed weekly session, times and club details.",
+      "title": "Pickleball at @ Magheracloone Community Center, | RallyHub",
+      "description": "@ Magheracloone Community Center is a pickleball venue used by Carrickmacross Pickleball Club in County Monaghan. View 1 listed weekly session, times and...",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "description_length": 167,
-      "review": "REVIEW_LENGTH"
+      "title_length": 58,
+      "description_length": 156,
+      "review": "READY"
     },
     {
       "route": "/pickleball-venues/castlerahan-pickleball-club/a82-y4t2",
       "url": "https://rallyhub.ie/pickleball-venues/castlerahan-pickleball-club/a82-y4t2",
-      "title": "Pickleball at A82 Y4T2, Cavan | Castlerahan Pickleball Club | RallyHub",
+      "title": "Pickleball at A82 Y4T2, Cavan | RallyHub",
       "description": "A82 Y4T2 is a pickleball venue used by Castlerahan Pickleball Club in County Cavan. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 112,
       "review": "READY"
     },
@@ -1412,24 +1568,27 @@
       "title": "Pickleball at Corofin, Clare | Clare Pickleball | RallyHub",
       "description": "Corofin is a pickleball venue used by Clare Pickleball in County Clare. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 58,
       "description_length": 125,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/clare-pickleball/doora-barefield",
       "url": "https://rallyhub.ie/pickleball-venues/clare-pickleball/doora-barefield",
-      "title": "Pickleball at Doora Barefield, Clare | Clare Pickleball | RallyHub",
+      "title": "Pickleball at Doora Barefield, Clare | RallyHub",
       "description": "Doora Barefield is a pickleball venue used by Clare Pickleball in County Clare. View 4 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 134,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/clare-pickleball/ennistymon",
       "url": "https://rallyhub.ie/pickleball-venues/clare-pickleball/ennistymon",
-      "title": "Pickleball at Ennistymon, Clare | Clare Pickleball | RallyHub",
+      "title": "Pickleball at Ennistymon, Clare | RallyHub",
       "description": "Ennistymon is a pickleball venue used by Clare Pickleball in County Clare. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 42,
       "description_length": 129,
       "review": "READY"
     },
@@ -1439,60 +1598,67 @@
       "title": "Pickleball at Shannon, Clare | Clare Pickleball | RallyHub",
       "description": "Shannon is a pickleball venue used by Clare Pickleball in County Clare. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 58,
       "description_length": 125,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/clare-pickleball/venue-1790596825367-4",
       "url": "https://rallyhub.ie/pickleball-venues/clare-pickleball/venue-1790596825367-4",
-      "title": "Pickleball at Clarecastle, Clare | Clare Pickleball | RallyHub",
+      "title": "Pickleball at Clarecastle, Clare | RallyHub",
       "description": "Clarecastle is a pickleball venue used by Clare Pickleball in County Clare. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 129,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/clonakilty-pickleball-club/clonakilty",
       "url": "https://rallyhub.ie/pickleball-venues/clonakilty-pickleball-club/clonakilty",
-      "title": "Pickleball at Clonakilty, Cork | Clonakilty Pickleball Club | RallyHub",
+      "title": "Pickleball at Clonakilty, Cork | RallyHub",
       "description": "Clonakilty is a pickleball venue used by Clonakilty Pickleball Club in County Cork. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 112,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/cobh-pickleball/great-island-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/cobh-pickleball/great-island-community-centre",
-      "title": "Pickleball at Great Island Community Centre, Cork | Cobh Pickleball | RallyHub",
+      "title": "Pickleball at Great Island Community Centre, Cork | RallyHub",
       "description": "Great Island Community Centre is a pickleball venue used by Cobh Pickleball in County Cork. View 3 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 146,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/connemara-pickleball-club/carrowroe-south",
       "url": "https://rallyhub.ie/pickleball-venues/connemara-pickleball-club/carrowroe-south",
-      "title": "Pickleball at Carraroe, Galway | Connemara Pickleball Club | RallyHub",
+      "title": "Pickleball at Carraroe, Galway | RallyHub",
       "description": "Carraroe is a pickleball venue used by Connemara Pickleball Club in County Galway. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 136,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/connemara-pickleball-club/maumeen",
       "url": "https://rallyhub.ie/pickleball-venues/connemara-pickleball-club/maumeen",
-      "title": "Pickleball at Maumeen, Galway | Connemara Pickleball Club | RallyHub",
+      "title": "Pickleball at Maumeen, Galway | RallyHub",
       "description": "Maumeen is a pickleball venue used by Connemara Pickleball Club in County Galway. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 136,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/cork-pickleballers/ballyanly",
       "url": "https://rallyhub.ie/pickleball-venues/cork-pickleballers/ballyanly",
-      "title": "Pickleball at Ballyanly, Cork | Cork Pickleballers | RallyHub",
+      "title": "Pickleball at Ballyanly, Cork | RallyHub",
       "description": "Ballyanly is a pickleball venue used by Cork Pickleballers in County Cork. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 103,
       "review": "READY"
     },
@@ -1502,258 +1668,287 @@
       "title": "Pickleball at Cork, Cork | Cork Pickleballers | RallyHub",
       "description": "Cork is a pickleball venue used by Cork Pickleballers in County Cork. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 98,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/cumann-pickleball-a-chorrain/glor-na-dtonn",
       "url": "https://rallyhub.ie/pickleball-venues/cumann-pickleball-a-chorrain/glor-na-dtonn",
-      "title": "Pickleball at Glor na Dtonn, Mayo | Cumann Pickleball A Chorráin | RallyHub",
+      "title": "Pickleball at Glor na Dtonn, Mayo | RallyHub",
       "description": "Glor na Dtonn is a pickleball venue used by Cumann Pickleball A Chorráin in County Mayo. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 117,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/deise-pickleball/kilmacthomas",
       "url": "https://rallyhub.ie/pickleball-venues/deise-pickleball/kilmacthomas",
-      "title": "Pickleball at Kilmacthomas, Waterford | Déise Pickleball | RallyHub",
+      "title": "Pickleball at Kilmacthomas, Waterford | RallyHub",
       "description": "Kilmacthomas is a pickleball venue used by Déise Pickleball in County Waterford. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 48,
       "description_length": 135,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/deise-pickleball/venue-1790160244496-2",
       "url": "https://rallyhub.ie/pickleball-venues/deise-pickleball/venue-1790160244496-2",
-      "title": "Pickleball at Dungarvan, Waterford | Déise Pickleball | RallyHub",
+      "title": "Pickleball at Dungarvan, Waterford | RallyHub",
       "description": "Dungarvan is a pickleball venue used by Déise Pickleball in County Waterford. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 45,
       "description_length": 131,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/drogheda-pickleball/o-raghallaighs-gfc",
       "url": "https://rallyhub.ie/pickleball-venues/drogheda-pickleball/o-raghallaighs-gfc",
-      "title": "Pickleball at O'Raghallaighs GFC, Louth | Drogheda Pickleball | RallyHub",
+      "title": "Pickleball at O'Raghallaighs GFC, Louth | RallyHub",
       "description": "O'Raghallaighs GFC is a pickleball venue used by Drogheda Pickleball in County Louth. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 114,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/dublin-15-pickleball/castaheany",
       "url": "https://rallyhub.ie/pickleball-venues/dublin-15-pickleball/castaheany",
-      "title": "Pickleball at Castaheany, Dublin | Dublin 15 Pickleball | RallyHub",
+      "title": "Pickleball at Castaheany, Dublin | RallyHub",
       "description": "Castaheany is a pickleball venue used by Dublin 15 Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 108,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/dublin-15-pickleball/coolmine",
       "url": "https://rallyhub.ie/pickleball-venues/dublin-15-pickleball/coolmine",
-      "title": "Pickleball at Coolmine, Dublin | Dublin 15 Pickleball | RallyHub",
+      "title": "Pickleball at Coolmine, Dublin | RallyHub",
       "description": "Coolmine is a pickleball venue used by Dublin 15 Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 106,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/dublin-15-pickleball/coolmine-4",
       "url": "https://rallyhub.ie/pickleball-venues/dublin-15-pickleball/coolmine-4",
-      "title": "Pickleball at Coolmine, Dublin | Dublin 15 Pickleball | RallyHub",
+      "title": "Pickleball at Coolmine, Dublin | RallyHub",
       "description": "Coolmine is a pickleball venue used by Dublin 15 Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 106,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/dublin-15-pickleball/corduff",
       "url": "https://rallyhub.ie/pickleball-venues/dublin-15-pickleball/corduff",
-      "title": "Pickleball at Corduff, Dublin | Dublin 15 Pickleball | RallyHub",
+      "title": "Pickleball at Corduff, Dublin | RallyHub",
       "description": "Corduff is a pickleball venue used by Dublin 15 Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 105,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/dublin-15-pickleball/deanestown",
       "url": "https://rallyhub.ie/pickleball-venues/dublin-15-pickleball/deanestown",
-      "title": "Pickleball at Deanestown, Dublin | Dublin 15 Pickleball | RallyHub",
+      "title": "Pickleball at Deanestown, Dublin | RallyHub",
       "description": "Deanestown is a pickleball venue used by Dublin 15 Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 108,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/dublin-15-pickleball/hartstown",
       "url": "https://rallyhub.ie/pickleball-venues/dublin-15-pickleball/hartstown",
-      "title": "Pickleball at Hartstown, Dublin | Dublin 15 Pickleball | RallyHub",
+      "title": "Pickleball at Hartstown, Dublin | RallyHub",
       "description": "Hartstown is a pickleball venue used by Dublin 15 Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 42,
       "description_length": 107,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/dublin-15-pickleball/hollywoodrath",
       "url": "https://rallyhub.ie/pickleball-venues/dublin-15-pickleball/hollywoodrath",
-      "title": "Pickleball at Hollywoodrath, Dublin | Dublin 15 Pickleball | RallyHub",
+      "title": "Pickleball at Hollywoodrath, Dublin | RallyHub",
       "description": "Hollywoodrath is a pickleball venue used by Dublin 15 Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 111,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/dublin-7-pickleball-club/2-locations-1st-is-parkside-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/dublin-7-pickleball-club/2-locations-1st-is-parkside-community-centre",
-      "title": "Pickleball at 2 Locations: 1st is Parkside Communi, Dublin | Dublin 7 Pickleball Club | RallyHub",
+      "title": "Pickleball at 2 Locations: 1st is Parkside | RallyHub",
       "description": "2 Locations: 1st is Parkside Communi is a pickleball venue used by Dublin 7 Pickleball Club in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 138,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/duhallow-pickleball/kilbrin-kanturk",
       "url": "https://rallyhub.ie/pickleball-venues/duhallow-pickleball/kilbrin-kanturk",
-      "title": "Pickleball at Kilbrin/Kanturk, Cork | Duhallow Pickleball | RallyHub",
+      "title": "Pickleball at Kilbrin/Kanturk, Cork | RallyHub",
       "description": "Kilbrin/Kanturk is a pickleball venue used by Duhallow Pickleball in County Cork. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 110,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/east-cavan-pickleball/beagh-glebe",
       "url": "https://rallyhub.ie/pickleball-venues/east-cavan-pickleball/beagh-glebe",
-      "title": "Pickleball at Killinkere Leisure Centre, Cavan | East Cavan Pickleball Club | RallyHub",
+      "title": "Pickleball at Killinkere Leisure Centre, Cavan | RallyHub",
       "description": "Killinkere Leisure Centre is a pickleball venue used by East Cavan Pickleball Club in County Cavan. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 153,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/east-cavan-pickleball/rosehill",
       "url": "https://rallyhub.ie/pickleball-venues/east-cavan-pickleball/rosehill",
-      "title": "Pickleball at Mullagh Sports Centre, Cavan | East Cavan Pickleball Club | RallyHub",
+      "title": "Pickleball at Mullagh Sports Centre, Cavan | RallyHub",
       "description": "Mullagh Sports Centre is a pickleball venue used by East Cavan Pickleball Club in County Cavan. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 149,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/east-cavan-pickleball/venue-1791283363935-3",
       "url": "https://rallyhub.ie/pickleball-venues/east-cavan-pickleball/venue-1791283363935-3",
-      "title": "Pickleball at Kingscourt Community Centre, Cavan | East Cavan Pickleball Club | RallyHub",
+      "title": "Pickleball at Kingscourt Community Centre, Cavan | RallyHub",
       "description": "Kingscourt Community Centre is a pickleball venue used by East Cavan Pickleball Club in County Cavan. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 155,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/east-cavan-pickleball/venue-1791283546813-4",
       "url": "https://rallyhub.ie/pickleball-venues/east-cavan-pickleball/venue-1791283546813-4",
-      "title": "Pickleball at Oldcastle Show Hall, Cavan | East Cavan Pickleball Club | RallyHub",
+      "title": "Pickleball at Oldcastle Show Hall, Cavan | RallyHub",
       "description": "Oldcastle Show Hall is a pickleball venue used by East Cavan Pickleball Club in County Cavan. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 51,
       "description_length": 147,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/east-cork-pickleball/townparks",
       "url": "https://rallyhub.ie/pickleball-venues/east-cork-pickleball/townparks",
-      "title": "Pickleball at Townparks, Cork | East Cork Pickleball | RallyHub",
+      "title": "Pickleball at Townparks, Cork | RallyHub",
       "description": "Townparks is a pickleball venue used by East Cork Pickleball in County Cork. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 105,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/east-meath-pickleball-club/dunboyne-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/east-meath-pickleball-club/dunboyne-community-centre",
-      "title": "Pickleball at Dunboyne Community Centre, Meath | East Meath Pickleball Club | RallyHub",
+      "title": "Pickleball at Dunboyne Community Centre, Meath | RallyHub",
       "description": "Dunboyne Community Centre is a pickleball venue used by East Meath Pickleball Club in County Meath. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 128,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/east-meath-pickleball-club/dunshaughlin",
       "url": "https://rallyhub.ie/pickleball-venues/east-meath-pickleball-club/dunshaughlin",
-      "title": "Pickleball at Dunshaughlin, Meath | East Meath Pickleball Club | RallyHub",
+      "title": "Pickleball at Dunshaughlin, Meath | RallyHub",
       "description": "Dunshaughlin is a pickleball venue used by East Meath Pickleball Club in County Meath. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 115,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/edenderry-pickleball-club/school-ln",
       "url": "https://rallyhub.ie/pickleball-venues/edenderry-pickleball-club/school-ln",
-      "title": "Pickleball at School Ln, Offaly | Edenderry Pickleball Club | RallyHub",
+      "title": "Pickleball at School Ln, Offaly | RallyHub",
       "description": "School Ln is a pickleball venue used by Edenderry Pickleball Club in County Offaly. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 42,
       "description_length": 112,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/ezpickleball/ezcourthire-dome",
       "url": "https://rallyhub.ie/pickleball-venues/ezpickleball/ezcourthire-dome",
-      "title": "Pickleball at ezCOURTHIRE Dome, Dublin | ezPICKLEBALL | RallyHub",
+      "title": "Pickleball at ezCOURTHIRE Dome, Dublin | RallyHub",
       "description": "ezCOURTHIRE Dome is a pickleball venue used by ezPICKLEBALL in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 49,
       "description_length": 106,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/fenside-pickleball/newpark-lower",
       "url": "https://rallyhub.ie/pickleball-venues/fenside-pickleball/newpark-lower",
-      "title": "Pickleball at Newpark Lower, Kilkenny | Fenside Pickleball | RallyHub",
+      "title": "Pickleball at Newpark Lower, Kilkenny | RallyHub",
       "description": "Newpark Lower is a pickleball venue used by Fenside Pickleball in County Kilkenny. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 48,
       "description_length": 111,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/galway-county-pickleball/eyrecourt",
       "url": "https://rallyhub.ie/pickleball-venues/galway-county-pickleball/eyrecourt",
-      "title": "Pickleball at Eyrecourt, Galway | Galway County Pickleball Club | RallyHub",
+      "title": "Pickleball at Eyrecourt, Galway | RallyHub",
       "description": "Eyrecourt is a pickleball venue used by Galway County Pickleball Club in County Galway. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 42,
       "description_length": 141,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/galway-county-pickleball/gort",
       "url": "https://rallyhub.ie/pickleball-venues/galway-county-pickleball/gort",
-      "title": "Pickleball at Gort, Galway | Galway County Pickleball Club | RallyHub",
+      "title": "Pickleball at Gort, Galway | RallyHub",
       "description": "Gort is a pickleball venue used by Galway County Pickleball Club in County Galway. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 37,
       "description_length": 111,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/galway-county-pickleball/kilcornan",
       "url": "https://rallyhub.ie/pickleball-venues/galway-county-pickleball/kilcornan",
-      "title": "Pickleball at Kilcornan, Galway | Galway County Pickleball Club | RallyHub",
+      "title": "Pickleball at Kilcornan, Galway | RallyHub",
       "description": "Kilcornan is a pickleball venue used by Galway County Pickleball Club in County Galway. View 5 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 42,
       "description_length": 142,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/galway-county-pickleball/loughrea",
       "url": "https://rallyhub.ie/pickleball-venues/galway-county-pickleball/loughrea",
-      "title": "Pickleball at Loughrea, Galway | Galway County Pickleball Club | RallyHub",
+      "title": "Pickleball at Loughrea, Galway | RallyHub",
       "description": "Loughrea is a pickleball venue used by Galway County Pickleball Club in County Galway. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 141,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/galway-county-pickleball/maree",
       "url": "https://rallyhub.ie/pickleball-venues/galway-county-pickleball/maree",
-      "title": "Pickleball at Maree, Galway | Galway County Pickleball Club | RallyHub",
+      "title": "Pickleball at Maree, Galway | RallyHub",
       "description": "Maree is a pickleball venue used by Galway County Pickleball Club in County Galway. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 38,
       "description_length": 137,
       "review": "READY"
     },
@@ -1763,6 +1958,7 @@
       "title": "Pickleball at Árus, Galway | Galway Pickleball | RallyHub",
       "description": "Árus is a pickleball venue used by Galway Pickleball in County Galway. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 125,
       "review": "READY"
     },
@@ -1772,15 +1968,17 @@
       "title": "Pickleball at Dome, Galway | Galway Pickleball | RallyHub",
       "description": "Dome is a pickleball venue used by Galway Pickleball in County Galway. View 5 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 125,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/galway-pickleball/knocknacarra",
       "url": "https://rallyhub.ie/pickleball-venues/galway-pickleball/knocknacarra",
-      "title": "Pickleball at Knocknacarra, Galway | Galway Pickleball | RallyHub",
+      "title": "Pickleball at Knocknacarra, Galway | RallyHub",
       "description": "Knocknacarra is a pickleball venue used by Galway Pickleball in County Galway. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 45,
       "description_length": 133,
       "review": "READY"
     },
@@ -1790,6 +1988,7 @@
       "title": "Pickleball at Maree, Galway | Galway Pickleball | RallyHub",
       "description": "Maree is a pickleball venue used by Galway Pickleball in County Galway. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 58,
       "description_length": 126,
       "review": "READY"
     },
@@ -1799,24 +1998,27 @@
       "title": "Pickleball at Mervue, Galway | Galway Pickleball | RallyHub",
       "description": "Mervue is a pickleball venue used by Galway Pickleball in County Galway. View 6 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 127,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/galway-pickleball/oranmore",
       "url": "https://rallyhub.ie/pickleball-venues/galway-pickleball/oranmore",
-      "title": "Pickleball at Oranmore, Galway | Galway Pickleball | RallyHub",
+      "title": "Pickleball at Oranmore, Galway | RallyHub",
       "description": "Oranmore is a pickleball venue used by Galway Pickleball in County Galway. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 129,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/galway-pickleball/oughterard",
       "url": "https://rallyhub.ie/pickleball-venues/galway-pickleball/oughterard",
-      "title": "Pickleball at Oughterard, Galway | Galway Pickleball | RallyHub",
+      "title": "Pickleball at Oughterard, Galway | RallyHub",
       "description": "Oughterard is a pickleball venue used by Galway Pickleball in County Galway. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 131,
       "review": "READY"
     },
@@ -1826,33 +2028,37 @@
       "title": "Pickleball at Renmore, Galway | Galway Pickleball | RallyHub",
       "description": "Renmore is a pickleball venue used by Galway Pickleball in County Galway. View 5 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 128,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/galway-pickleball/spond-1790414526562-10",
       "url": "https://rallyhub.ie/pickleball-venues/galway-pickleball/spond-1790414526562-10",
-      "title": "Pickleball at Spond venue, Galway | Galway Pickleball | RallyHub",
+      "title": "Pickleball at Spond venue, Galway | RallyHub",
       "description": "Spond venue is a pickleball venue used by Galway Pickleball in County Galway. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 132,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/galway-pickleball/spond-1790414526562-11",
       "url": "https://rallyhub.ie/pickleball-venues/galway-pickleball/spond-1790414526562-11",
-      "title": "Pickleball at Oughterard Community Centre, Galway | Galway Pickleball | RallyHub",
+      "title": "Pickleball at Oughterard Community Centre, Galway | RallyHub",
       "description": "Oughterard Community Centre is a pickleball venue used by Galway Pickleball in County Galway. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 148,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/galway-pickleball/westside",
       "url": "https://rallyhub.ie/pickleball-venues/galway-pickleball/westside",
-      "title": "Pickleball at Westside, Galway | Galway Pickleball | RallyHub",
+      "title": "Pickleball at Westside, Galway | RallyHub",
       "description": "Westside is a pickleball venue used by Galway Pickleball in County Galway. View 4 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 129,
       "review": "READY"
     },
@@ -1862,96 +2068,107 @@
       "title": "Pickleball at Fethard, Wexford | Hook Pickleball | RallyHub",
       "description": "Fethard is a pickleball venue used by Hook Pickleball in County Wexford. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 101,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/hook-pickleball/ramsgrange",
       "url": "https://rallyhub.ie/pickleball-venues/hook-pickleball/ramsgrange",
-      "title": "Pickleball at Ramsgrange, Wexford | Hook Pickleball | RallyHub",
+      "title": "Pickleball at Ramsgrange, Wexford | RallyHub",
       "description": "Ramsgrange is a pickleball venue used by Hook Pickleball in County Wexford. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 104,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/iveragh-pickleball-club/foilmore",
       "url": "https://rallyhub.ie/pickleball-venues/iveragh-pickleball-club/foilmore",
-      "title": "Pickleball at Foilmore, Kerry | Iveragh Pickleball Club | RallyHub",
+      "title": "Pickleball at Foilmore, Kerry | RallyHub",
       "description": "Foilmore is a pickleball venue used by Iveragh Pickleball Club in County Kerry. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 108,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/kilcullen-pickleball-panthers/kilcullen-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/kilcullen-pickleball-panthers/kilcullen-community-centre",
-      "title": "Pickleball at Kilcullen Community Centre, Kildare | Kilcullen Pickleball Panthers | RallyHub",
+      "title": "Pickleball at Kilcullen Community Centre, Kildare | RallyHub",
       "description": "Kilcullen Community Centre is a pickleball venue used by Kilcullen Pickleball Panthers in County Kildare. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 60,
       "description_length": 134,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/kildare-pickleball-assoc/rosetown",
       "url": "https://rallyhub.ie/pickleball-venues/kildare-pickleball-assoc/rosetown",
-      "title": "Pickleball at Rosetown, Kildare | Kildare Pickleball Assoc. | RallyHub",
+      "title": "Pickleball at Rosetown, Kildare | RallyHub",
       "description": "Rosetown is a pickleball venue used by Kildare Pickleball Assoc. in County Kildare. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 42,
       "description_length": 112,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/killarney-pickleball-club/park",
       "url": "https://rallyhub.ie/pickleball-venues/killarney-pickleball-club/park",
-      "title": "Pickleball at Aura, Kerry | Killarney Pickleball Club | RallyHub",
+      "title": "Pickleball at Aura, Kerry | RallyHub",
       "description": "Aura is a pickleball venue used by Killarney Pickleball Club in County Kerry. View 4 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 36,
       "description_length": 132,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/killeshandra-pickleball-club/portaliff-or-townparks",
       "url": "https://rallyhub.ie/pickleball-venues/killeshandra-pickleball-club/portaliff-or-townparks",
-      "title": "Pickleball at Portaliff Or Townparks, Cavan | Killeshandra Pickleball Club | RallyHub",
+      "title": "Pickleball at Portaliff Or Townparks, Cavan | RallyHub",
       "description": "Portaliff Or Townparks is a pickleball venue used by Killeshandra Pickleball Club in County Cavan. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 127,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/kingdom-pickleball-club/ballinknockane",
       "url": "https://rallyhub.ie/pickleball-venues/kingdom-pickleball-club/ballinknockane",
-      "title": "Pickleball at Ballinknockane, Kerry | Kingdom Pickleball Club | RallyHub",
+      "title": "Pickleball at Ballinknockane, Kerry | RallyHub",
       "description": "Ballinknockane is a pickleball venue used by Kingdom Pickleball Club in County Kerry. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 114,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/kingdom-pickleball-club/burnham-east",
       "url": "https://rallyhub.ie/pickleball-venues/kingdom-pickleball-club/burnham-east",
-      "title": "Pickleball at Burnham East, Kerry | Kingdom Pickleball Club | RallyHub",
+      "title": "Pickleball at Burnham East, Kerry | RallyHub",
       "description": "Burnham East is a pickleball venue used by Kingdom Pickleball Club in County Kerry. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 112,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/kingdom-pickleball-club/cumann-iosaef",
       "url": "https://rallyhub.ie/pickleball-venues/kingdom-pickleball-club/cumann-iosaef",
-      "title": "Pickleball at Cumann Iosaef, Kerry | Kingdom Pickleball Club | RallyHub",
+      "title": "Pickleball at Cumann Iosaef, Kerry | RallyHub",
       "description": "Cumann Iosaef is a pickleball venue used by Kingdom Pickleball Club in County Kerry. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 45,
       "description_length": 113,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/kingdom-pickleball-club/listowel",
       "url": "https://rallyhub.ie/pickleball-venues/kingdom-pickleball-club/listowel",
-      "title": "Pickleball at Listowel, Kerry | Kingdom Pickleball Club | RallyHub",
+      "title": "Pickleball at Listowel, Kerry | RallyHub",
       "description": "Listowel is a pickleball venue used by Kingdom Pickleball Club in County Kerry. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 108,
       "review": "READY"
     },
@@ -1961,204 +2178,227 @@
       "title": "Pickleball at Cappagh, Cork | Kinsale Pickleball | RallyHub",
       "description": "Cappagh is a pickleball venue used by Kinsale Pickleball in County Cork. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 101,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/kinvara-pickleball/kinvara-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/kinvara-pickleball/kinvara-community-centre",
-      "title": "Pickleball at Kinvara Community Centre, Galway | Kinvara Pickleball | RallyHub",
+      "title": "Pickleball at Kinvara Community Centre, Galway | RallyHub",
       "description": "Kinvara Community Centre is a pickleball venue used by Kinvara Pickleball in County Galway. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 57,
       "description_length": 120,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/lecanvey-pickleball-club/lecanvey-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/lecanvey-pickleball-club/lecanvey-community-centre",
-      "title": "Pickleball at Lecanvey community centre, Mayo | Lecanvey Pickleball Club | RallyHub",
+      "title": "Pickleball at Lecanvey community centre, Mayo | RallyHub",
       "description": "Lecanvey community centre is a pickleball venue used by Lecanvey Pickleball Club in County Mayo. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 125,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/leeside-pickleball/bishopstown",
       "url": "https://rallyhub.ie/pickleball-venues/leeside-pickleball/bishopstown",
-      "title": "Pickleball at Bishopstown, Cork | Leeside Pickleball | RallyHub",
+      "title": "Pickleball at Bishopstown, Cork | RallyHub",
       "description": "Bishopstown is a pickleball venue used by Leeside Pickleball in County Cork. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 42,
       "description_length": 105,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/limerick-city-pickleball/st-munchins",
       "url": "https://rallyhub.ie/pickleball-venues/limerick-city-pickleball/st-munchins",
-      "title": "Pickleball at St. Munchin’s, Limerick | Limerick City Pickleball | RallyHub",
+      "title": "Pickleball at St. Munchin’s, Limerick | RallyHub",
       "description": "St. Munchin’s is a pickleball venue used by Limerick City Pickleball in County Limerick. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 48,
       "description_length": 142,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/limerick-city-pickleball/ul-arena",
       "url": "https://rallyhub.ie/pickleball-venues/limerick-city-pickleball/ul-arena",
-      "title": "Pickleball at UL Arena, Limerick | Limerick City Pickleball | RallyHub",
+      "title": "Pickleball at UL Arena, Limerick | RallyHub",
       "description": "UL Arena is a pickleball venue used by Limerick City Pickleball in County Limerick. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 137,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/lisburn-pickleball-club/lisburn-leisure-centre",
       "url": "https://rallyhub.ie/pickleball-venues/lisburn-pickleball-club/lisburn-leisure-centre",
-      "title": "Pickleball at Lisburn Leisure Centre, Antrim | Lisburn Pickleball Club | RallyHub",
+      "title": "Pickleball at Lisburn Leisure Centre, Antrim | RallyHub",
       "description": "Lisburn Leisure Centre is a pickleball venue used by Lisburn Pickleball Club in County Antrim. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 55,
       "description_length": 123,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/midleton-pickleball/midleton-college",
       "url": "https://rallyhub.ie/pickleball-venues/midleton-pickleball/midleton-college",
-      "title": "Pickleball at Midleton College, Cork | Midleton Pickleball | RallyHub",
+      "title": "Pickleball at Midleton College, Cork | RallyHub",
       "description": "Midleton College is a pickleball venue used by Midleton Pickleball in County Cork. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 111,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/milltown-emper-moyvore-pickleball-club/rathconrath",
       "url": "https://rallyhub.ie/pickleball-venues/milltown-emper-moyvore-pickleball-club/rathconrath",
-      "title": "Pickleball at Rathconrath, Westmeath | Milltown Emper Moyvore Pickleball Club | RallyHub",
+      "title": "Pickleball at Rathconrath, Westmeath | RallyHub",
       "description": "Rathconrath is a pickleball venue used by Milltown Emper Moyvore Pickleball Club in County Westmeath. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 130,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/moate-pickleball-club/moategranoge",
       "url": "https://rallyhub.ie/pickleball-venues/moate-pickleball-club/moategranoge",
-      "title": "Pickleball at Moategranoge, Westmeath | Moate Pickleball Club | RallyHub",
+      "title": "Pickleball at Moategranoge, Westmeath | RallyHub",
       "description": "Moategranoge is a pickleball venue used by Moate Pickleball Club in County Westmeath. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 48,
       "description_length": 114,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/mostrim-pickleball/st-mary-s-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/mostrim-pickleball/st-mary-s-community-centre",
-      "title": "Pickleball at St.Mary's Community Centre, Longford | Mostrim Pickleball | RallyHub",
+      "title": "Pickleball at St.Mary's Community Centre, | RallyHub",
       "description": "St.Mary's Community Centre is a pickleball venue used by Mostrim Pickleball in County Longford. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 52,
       "description_length": 124,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/mullahoran-pickleball-club/mullahoran-gfc",
       "url": "https://rallyhub.ie/pickleball-venues/mullahoran-pickleball-club/mullahoran-gfc",
-      "title": "Pickleball at Mullahoran GFC, Cavan | Mullahoran Pickleball Club | RallyHub",
+      "title": "Pickleball at Mullahoran GFC, Cavan | RallyHub",
       "description": "Mullahoran GFC is a pickleball venue used by Mullahoran Pickleball Club in County Cavan. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 117,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/multyfarnham-pickleball-club/multyfarnham-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/multyfarnham-pickleball-club/multyfarnham-community-centre",
-      "title": "Pickleball at Multyfarnham Community Centre, Westmeath | Multyfarnham Pickleball Club | RallyHub",
+      "title": "Pickleball at Multyfarnham Community Centre, | RallyHub",
       "description": "Multyfarnham Community Centre is a pickleball venue used by Multyfarnham Pickleball Club in County Westmeath. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 55,
       "description_length": 138,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/naas-pickleball/meanscoil-iognaid-ris",
       "url": "https://rallyhub.ie/pickleball-venues/naas-pickleball/meanscoil-iognaid-ris",
-      "title": "Pickleball at Meanscoil Iognaid Ris, Kildare | Naas Pickleball | RallyHub",
+      "title": "Pickleball at Meanscoil Iognaid Ris, Kildare | RallyHub",
       "description": "Meanscoil Iognaid Ris is a pickleball venue used by Naas Pickleball in County Kildare. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 55,
       "description_length": 115,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/newbridge-community-pickleball/venue-ryston-scoil-na-naomh-uilig",
       "url": "https://rallyhub.ie/pickleball-venues/newbridge-community-pickleball/venue-ryston-scoil-na-naomh-uilig",
-      "title": "Pickleball at Ryston & Scoil Na Naomh Uilig, Kildare | NEWBRIDGE COMMUNITY PICKLEBALL | RallyHub",
+      "title": "Pickleball at Ryston & Scoil Na Naomh Uilig, | RallyHub",
       "description": "Ryston & Scoil Na Naomh Uilig is a pickleball venue used by NEWBRIDGE COMMUNITY PICKLEBALL in County Kildare. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 55,
       "description_length": 138,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/newbridge-pickleball-club/venue-ryston-kleisure-and-scoil-na-naomh-uilig",
       "url": "https://rallyhub.ie/pickleball-venues/newbridge-pickleball-club/venue-ryston-kleisure-and-scoil-na-naomh-uilig",
-      "title": "Pickleball at Ryston, KLeisure and Scoil Na Naomh Uilig, Kildare | Newbridge Pickleball Club | RallyHub",
+      "title": "Pickleball at Ryston, KLeisure and Scoil Na | RallyHub",
       "description": "Ryston, KLeisure and Scoil Na Naomh Uilig is a pickleball venue used by Newbridge Pickleball Club in County Kildare. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 145,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/newport-pickleball/burrishoole-community-centre",
       "url": "https://rallyhub.ie/pickleball-venues/newport-pickleball/burrishoole-community-centre",
-      "title": "Pickleball at Burrishoole Community Centre, Mayo | Newport Pickleball | RallyHub",
+      "title": "Pickleball at Burrishoole Community Centre, Mayo | RallyHub",
       "description": "Burrishoole Community Centre is a pickleball venue used by Newport Pickleball in County Mayo. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 59,
       "description_length": 122,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/north-star-pickleball-club/two-locations-pslc",
       "url": "https://rallyhub.ie/pickleball-venues/north-star-pickleball-club/two-locations-pslc",
-      "title": "Pickleball at Two Locations - PSLC, Dublin | North Star Pickleball Club | RallyHub",
+      "title": "Pickleball at Two Locations - PSLC, Dublin | RallyHub",
       "description": "Two Locations - PSLC is a pickleball venue used by North Star Pickleball Club in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 124,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/oriel-pickleball-dundalk/venue-dundalk-sports-centre",
       "url": "https://rallyhub.ie/pickleball-venues/oriel-pickleball-dundalk/venue-dundalk-sports-centre",
-      "title": "Pickleball at Dundalk Sports Centre, Louth | Oriel Pickleball Dundalk | RallyHub",
+      "title": "Pickleball at Dundalk Sports Centre, Louth | RallyHub",
       "description": "Dundalk Sports Centre is a pickleball venue used by Oriel Pickleball Dundalk in County Louth. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 122,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/pickleball-arklow/coral-leisure-arklow",
       "url": "https://rallyhub.ie/pickleball-venues/pickleball-arklow/coral-leisure-arklow",
-      "title": "Pickleball at Coral Leisure Arklow, Wicklow | Pickleball Arklow | RallyHub",
+      "title": "Pickleball at Coral Leisure Arklow, Wicklow | RallyHub",
       "description": "Coral Leisure Arklow is a pickleball venue used by Pickleball Arklow in County Wicklow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 116,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/pickleball-iorrais/belmullet-sports-complex",
       "url": "https://rallyhub.ie/pickleball-venues/pickleball-iorrais/belmullet-sports-complex",
-      "title": "Pickleball at Belmullet Sports Complex, Mayo | Pickleball Iorrais | RallyHub",
+      "title": "Pickleball at Belmullet Sports Complex, Mayo | RallyHub",
       "description": "Belmullet Sports Complex is a pickleball venue used by Pickleball Iorrais in County Mayo. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 55,
       "description_length": 118,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/pickleball-south-dublin/newpark-sports-centre",
       "url": "https://rallyhub.ie/pickleball-venues/pickleball-south-dublin/newpark-sports-centre",
-      "title": "Pickleball at Newpark Sports Centre, Dublin | Pickleball South Dublin | RallyHub",
+      "title": "Pickleball at Newpark Sports Centre, Dublin | RallyHub",
       "description": "Newpark Sports Centre is a pickleball venue used by Pickleball South Dublin in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 122,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/pickleball-wexford/wexford-town",
       "url": "https://rallyhub.ie/pickleball-venues/pickleball-wexford/wexford-town",
-      "title": "Pickleball at Wexford Town, Wexford | Pickleball Wexford | RallyHub",
+      "title": "Pickleball at Wexford Town, Wexford | RallyHub",
       "description": "Wexford Town is a pickleball venue used by Pickleball Wexford in County Wexford. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 109,
       "review": "READY"
     },
@@ -2168,285 +2408,317 @@
       "title": "Pickleball at Dublin, Dublin | PicklePub Club | RallyHub",
       "description": "Dublin is a pickleball venue used by PicklePub Club in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 98,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/portarlington-pickleball/cooltederry",
       "url": "https://rallyhub.ie/pickleball-venues/portarlington-pickleball/cooltederry",
-      "title": "Pickleball at Cooltederry, Laois | Portarlington Pickleball | RallyHub",
+      "title": "Pickleball at Cooltederry, Laois | RallyHub",
       "description": "Cooltederry is a pickleball venue used by Portarlington Pickleball in County Laois. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 112,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/portmarnock-pickleball/venue-portmarnock-community-school",
       "url": "https://rallyhub.ie/pickleball-venues/portmarnock-pickleball/venue-portmarnock-community-school",
-      "title": "Pickleball at Portmarnock Community School, Dublin | Portmarnock Pickleball | RallyHub",
+      "title": "Pickleball at Portmarnock Community School, | RallyHub",
       "description": "Portmarnock Community School is a pickleball venue used by Portmarnock Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 128,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/rathdrum-pickleball/avodale-gaa-club-rathdrum",
       "url": "https://rallyhub.ie/pickleball-venues/rathdrum-pickleball/avodale-gaa-club-rathdrum",
-      "title": "Pickleball at Avodale GAA Club (Rathdrum), Wicklow | Rathdrum Pickleball | RallyHub",
+      "title": "Pickleball at Avodale GAA Club (Rathdrum), | RallyHub",
       "description": "Avodale GAA Club (Rathdrum) is a pickleball venue used by Rathdrum Pickleball in County Wicklow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 125,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/rebel-pickleball/scoil-mhuire-gan-smal",
       "url": "https://rallyhub.ie/pickleball-venues/rebel-pickleball/scoil-mhuire-gan-smal",
-      "title": "Pickleball at Scoil Mhuire gan Smál, Cork | Rebel Pickleball | RallyHub",
+      "title": "Pickleball at Scoil Mhuire gan Smál, Cork | RallyHub",
       "description": "Scoil Mhuire gan Smál is a pickleball venue used by Rebel Pickleball in County Cork. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 52,
       "description_length": 113,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/roundwood-pickleball-group/an-tochar-g-a-a-club-aras-an-tochar-togher-more-roundwood-co-wicklow",
       "url": "https://rallyhub.ie/pickleball-venues/roundwood-pickleball-group/an-tochar-g-a-a-club-aras-an-tochar-togher-more-roundwood-co-wicklow",
-      "title": "Pickleball at AN TOCHAR G.A.A. CLUB ARÁS AN TOCHAR, Wicklow | Roundwood Pickleball Group | RallyHub",
+      "title": "Pickleball at AN TOCHAR G.A.A. CLUB ARÁS AN | RallyHub",
       "description": "AN TOCHAR G.A.A. CLUB ARÁS AN TOCHAR is a pickleball venue used by Roundwood Pickleball Group in County Wicklow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 141,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/sandyford-pickleball-club/st-benildus-college-kilmacud-rd-upper",
       "url": "https://rallyhub.ie/pickleball-venues/sandyford-pickleball-club/st-benildus-college-kilmacud-rd-upper",
-      "title": "Pickleball at St Benildus College Kilmacud Rd Uppe, Dublin | Sandyford Pickleball Club | RallyHub",
+      "title": "Pickleball at St Benildus College Kilmacud Rd | RallyHub",
       "description": "St Benildus College Kilmacud Rd Uppe is a pickleball venue used by Sandyford Pickleball Club in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 56,
       "description_length": 139,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/sligo-pickleball-club/shannon-eighter",
       "url": "https://rallyhub.ie/pickleball-venues/sligo-pickleball-club/shannon-eighter",
-      "title": "Pickleball at Shannon Eighter, Sligo | Sligo Pickleball Club | RallyHub",
+      "title": "Pickleball at Shannon Eighter, Sligo | RallyHub",
       "description": "Shannon Eighter is a pickleball venue used by Sligo Pickleball Club in County Sligo. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 113,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/sligo-tennis-pickleball-club/sligo-lawn-tennis-club",
       "url": "https://rallyhub.ie/pickleball-venues/sligo-tennis-pickleball-club/sligo-lawn-tennis-club",
-      "title": "Pickleball at Sligo Lawn Tennis Club, Sligo | Sligo Tennis Pickleball Club | RallyHub",
+      "title": "Pickleball at Sligo Lawn Tennis Club, Sligo | RallyHub",
       "description": "Sligo Lawn Tennis Club is a pickleball venue used by Sligo Tennis Pickleball Club in County Sligo. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 54,
       "description_length": 127,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/south-kildare-pickleball/crockanure-glebe",
       "url": "https://rallyhub.ie/pickleball-venues/south-kildare-pickleball/crockanure-glebe",
-      "title": "Pickleball at Crockanure Glebe, Kildare | South Kildare Pickleball | RallyHub",
+      "title": "Pickleball at Crockanure Glebe, Kildare | RallyHub",
       "description": "Crockanure Glebe is a pickleball venue used by South Kildare Pickleball in County Kildare. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 119,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/southside-pickleball-club/blackthorn",
       "url": "https://rallyhub.ie/pickleball-venues/southside-pickleball-club/blackthorn",
-      "title": "Pickleball at Blackthorn, Dublin | Southside Pickleball Club | RallyHub",
+      "title": "Pickleball at Blackthorn, Dublin | RallyHub",
       "description": "Blackthorn is a pickleball venue used by Southside Pickleball Club in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 113,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/southside-pickleball-club/kilmacud-east",
       "url": "https://rallyhub.ie/pickleball-venues/southside-pickleball-club/kilmacud-east",
-      "title": "Pickleball at Kilmacud East, Dublin | Southside Pickleball Club | RallyHub",
+      "title": "Pickleball at Kilmacud East, Dublin | RallyHub",
       "description": "Kilmacud East is a pickleball venue used by Southside Pickleball Club in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 116,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/southside-pickleball-club/kilmacud-east-3",
       "url": "https://rallyhub.ie/pickleball-venues/southside-pickleball-club/kilmacud-east-3",
-      "title": "Pickleball at Kilmacud East, Dublin | Southside Pickleball Club | RallyHub",
+      "title": "Pickleball at Kilmacud East, Dublin | RallyHub",
       "description": "Kilmacud East is a pickleball venue used by Southside Pickleball Club in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 46,
       "description_length": 116,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/sports-lab-pickleball/sports-lab",
       "url": "https://rallyhub.ie/pickleball-venues/sports-lab-pickleball/sports-lab",
-      "title": "Pickleball at Sports Lab, Armagh | Sports Lab Pickleball | RallyHub",
+      "title": "Pickleball at Sports Lab, Armagh | RallyHub",
       "description": "Sports Lab is a pickleball venue used by Sports Lab Pickleball in County Armagh. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 109,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/stepaside-pickleball/murphystown",
       "url": "https://rallyhub.ie/pickleball-venues/stepaside-pickleball/murphystown",
-      "title": "Pickleball at Murphystown, Dublin | Stepaside Pickleball | RallyHub",
+      "title": "Pickleball at Murphystown, Dublin | RallyHub",
       "description": "Murphystown is a pickleball venue used by Stepaside Pickleball in County Dublin. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 109,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/terenure-pickleball-club/the-dome",
       "url": "https://rallyhub.ie/pickleball-venues/terenure-pickleball-club/the-dome",
-      "title": "Pickleball at Our Lady’s School Sports Dome, Dublin | Terenure Pickleball Club | RallyHub",
+      "title": "Pickleball at Our Lady’s School Sports Dome, | RallyHub",
       "description": "Our Lady’s School Sports Dome is a pickleball venue used by Terenure Pickleball Club in County Dublin. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 55,
       "description_length": 156,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/tourmakeady-pickleball-club/tourmkeady",
       "url": "https://rallyhub.ie/pickleball-venues/tourmakeady-pickleball-club/tourmkeady",
-      "title": "Pickleball at Tourmkeady, Mayo | Tourmakeady Pickleball Club | RallyHub",
+      "title": "Pickleball at Tourmkeady, Mayo | RallyHub",
       "description": "Tourmkeady is a pickleball venue used by Tourmakeady Pickleball Club in County Mayo. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 113,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/vamos-pickleball/spond-1789724715716-1",
       "url": "https://rallyhub.ie/pickleball-venues/vamos-pickleball/spond-1789724715716-1",
-      "title": "Pickleball at Coláiste Bhaile Chláir - Claregalway College, Galway | VAMOS Pickleball | RallyHub",
-      "description": "Coláiste Bhaile Chláir - Claregalway College is a pickleball venue used by VAMOS Pickleball in County Galway. View 3 listed weekly sessions, times and club details.",
+      "title": "Pickleball at Coláiste Bhaile Chláir - | RallyHub",
+      "description": "Coláiste Bhaile Chláir - Claregalway College is a pickleball venue used by VAMOS Pickleball in County Galway. View 3 listed weekly sessions, times and club...",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
-      "description_length": 164,
-      "review": "REVIEW_LENGTH"
+      "title_length": 49,
+      "description_length": 158,
+      "review": "READY"
     },
     {
       "route": "/pickleball-venues/vamos-pickleball/spond-1789724715716-2",
       "url": "https://rallyhub.ie/pickleball-venues/vamos-pickleball/spond-1789724715716-2",
-      "title": "Pickleball at Spond venue, Galway | VAMOS Pickleball | RallyHub",
+      "title": "Pickleball at Spond venue, Galway | RallyHub",
       "description": "Spond venue is a pickleball venue used by VAMOS Pickleball in County Galway. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 130,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/vamos-pickleball/spond-1789724715716-3",
       "url": "https://rallyhub.ie/pickleball-venues/vamos-pickleball/spond-1789724715716-3",
-      "title": "Pickleball at Ballybane Community Resource Centre, Galway | VAMOS Pickleball | RallyHub",
+      "title": "Pickleball at Ballybane Community Resource | RallyHub",
       "description": "Ballybane Community Resource Centre is a pickleball venue used by VAMOS Pickleball in County Galway. View 1 listed weekly session, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 154,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/wallace-park-pickleball-club/wallace-park-lisburn",
       "url": "https://rallyhub.ie/pickleball-venues/wallace-park-pickleball-club/wallace-park-lisburn",
-      "title": "Pickleball at Wallace Park Lisburn, Antrim | Wallace Park Pickleball Club | RallyHub",
+      "title": "Pickleball at Wallace Park Lisburn, Antrim | RallyHub",
       "description": "Wallace Park Lisburn is a pickleball venue used by Wallace Park Pickleball Club in County Antrim. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 126,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/west-connemara-pickleball-club/ardbear",
       "url": "https://rallyhub.ie/pickleball-venues/west-connemara-pickleball-club/ardbear",
-      "title": "Pickleball at Ardbear, Galway | West Connemara Pickleball Club | RallyHub",
+      "title": "Pickleball at Ardbear, Galway | RallyHub",
       "description": "Ardbear is a pickleball venue used by West Connemara Pickleball Club in County Galway. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 40,
       "description_length": 115,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/west-cork-pickleball-club/ballinacarriga-community-hall",
       "url": "https://rallyhub.ie/pickleball-venues/west-cork-pickleball-club/ballinacarriga-community-hall",
-      "title": "Pickleball at Ballinacarriga Hall, Cork | West Cork Pickleball Club | RallyHub",
+      "title": "Pickleball at Ballinacarriga Hall, Cork | RallyHub",
       "description": "Ballinacarriga Hall is a pickleball venue used by West Cork Pickleball Club in County Cork. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 50,
       "description_length": 146,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/west-cork-pickleball-club/venue-1790445273424-2",
       "url": "https://rallyhub.ie/pickleball-venues/west-cork-pickleball-club/venue-1790445273424-2",
-      "title": "Pickleball at Bantry Picklball, Cork | West Cork Pickleball Club | RallyHub",
+      "title": "Pickleball at Bantry Picklball, Cork | RallyHub",
       "description": "Bantry Picklball is a pickleball venue used by West Cork Pickleball Club in County Cork. View 2 listed weekly sessions, times and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 143,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/west-cork-pickleball-club/venue-1790445275736-3",
       "url": "https://rallyhub.ie/pickleball-venues/west-cork-pickleball-club/venue-1790445275736-3",
-      "title": "Pickleball at Glengarriff Pickleball, Cork | West Cork Pickleball Club | RallyHub",
+      "title": "Pickleball at Glengarriff Pickleball, Cork | RallyHub",
       "description": "Glengarriff Pickleball is a pickleball venue used by West Cork Pickleball Club in County Cork. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 53,
       "description_length": 123,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/westport-pickleball-club/rice-college-gym",
       "url": "https://rallyhub.ie/pickleball-venues/westport-pickleball-club/rice-college-gym",
-      "title": "Pickleball at Rice College Gym, Mayo | Westport Pickleball Club | RallyHub",
+      "title": "Pickleball at Rice College Gym, Mayo | RallyHub",
       "description": "Rice College Gym is a pickleball venue used by Westport Pickleball Club in County Mayo. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 47,
       "description_length": 116,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/wicklow-pickleball/blackditch",
       "url": "https://rallyhub.ie/pickleball-venues/wicklow-pickleball/blackditch",
-      "title": "Pickleball at Blackditch, Wicklow | Wicklow Pickleball | RallyHub",
+      "title": "Pickleball at Blackditch, Wicklow | RallyHub",
       "description": "Blackditch is a pickleball venue used by Wicklow Pickleball in County Wicklow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 44,
       "description_length": 107,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/wicklow-pickleball/bollarney-north",
       "url": "https://rallyhub.ie/pickleball-venues/wicklow-pickleball/bollarney-north",
-      "title": "Pickleball at Bollarney North, Wicklow | Wicklow Pickleball | RallyHub",
+      "title": "Pickleball at Bollarney North, Wicklow | RallyHub",
       "description": "Bollarney North is a pickleball venue used by Wicklow Pickleball in County Wicklow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 49,
       "description_length": 112,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/wicklow-pickleball/corballis-upper",
       "url": "https://rallyhub.ie/pickleball-venues/wicklow-pickleball/corballis-upper",
-      "title": "Pickleball at Corballis Upper, Wicklow | Wicklow Pickleball | RallyHub",
+      "title": "Pickleball at Corballis Upper, Wicklow | RallyHub",
       "description": "Corballis Upper is a pickleball venue used by Wicklow Pickleball in County Wicklow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 49,
       "description_length": 112,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/wicklow-pickleball/ferrybank",
       "url": "https://rallyhub.ie/pickleball-venues/wicklow-pickleball/ferrybank",
-      "title": "Pickleball at Ferrybank, Wicklow | Wicklow Pickleball | RallyHub",
+      "title": "Pickleball at Ferrybank, Wicklow | RallyHub",
       "description": "Ferrybank is a pickleball venue used by Wicklow Pickleball in County Wicklow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 106,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/wicklow-pickleball/lugduff",
       "url": "https://rallyhub.ie/pickleball-venues/wicklow-pickleball/lugduff",
-      "title": "Pickleball at Lugduff, Wicklow | Wicklow Pickleball | RallyHub",
+      "title": "Pickleball at Lugduff, Wicklow | RallyHub",
       "description": "Lugduff is a pickleball venue used by Wicklow Pickleball in County Wicklow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 41,
       "description_length": 104,
       "review": "READY"
     },
     {
       "route": "/pickleball-venues/wicklow-pickleball/roundwood",
       "url": "https://rallyhub.ie/pickleball-venues/wicklow-pickleball/roundwood",
-      "title": "Pickleball at Roundwood, Wicklow | Wicklow Pickleball | RallyHub",
+      "title": "Pickleball at Roundwood, Wicklow | RallyHub",
       "description": "Roundwood is a pickleball venue used by Wicklow Pickleball in County Wicklow. View venue and club details.",
       "image": "https://rallyhub.ie/assets/brand/rallyhub-horizontal-light.png",
+      "title_length": 43,
       "description_length": 106,
       "review": "READY"
     }

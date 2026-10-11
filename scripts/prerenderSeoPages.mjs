@@ -35,7 +35,28 @@ const esc=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 const json=value=>JSON.stringify(value).replace(/</g,'\\u003c');
 const venuePath=(club,venue)=>`/pickleball-venues/${encodeURIComponent(club.slug)}/${encodeURIComponent(venue.id)}`;
 
+// Keep generated SEO titles readable while respecting the 60-character dashboard limit.
+// For long club/venue titles remove secondary clauses first; retain the RallyHub suffix.
+function fitTitle(title) {
+  if (title.length <= 60) return title;
+  const parts = title.split(' | ');
+  const compact = parts.length > 2 ? `${parts[0]} | RallyHub` : title;
+  if (compact.length <= 60) return compact;
+  const suffix = ' | RallyHub';
+  const first = compact.endsWith(suffix) ? compact.slice(0, -suffix.length) : compact;
+  const budget = 60 - suffix.length;
+  const candidate = first.slice(0, budget);
+  const cut = candidate.lastIndexOf(' ');
+  return `${cut > Math.floor(budget * 0.7) ? candidate.slice(0, cut) : candidate.trimEnd()}${suffix}`;
+}
+function fitDescription(description) {
+  if (description.length <= 160) return description;
+  const candidate = description.slice(0, 157);
+  return `${candidate.slice(0, candidate.lastIndexOf(' ')).replace(/[.,;: ]+$/, '')}...`;
+}
 function inject(route,{title,description,body,schema=[]}){
+  title = fitTitle(title);
+  description = fitDescription(description);
   const canonical=`${site}${route==='/'?'':route}`;
   const approvedShare = rallyhubShareForPath(route);
   const sharedTitle = approvedShare?.title || title;
