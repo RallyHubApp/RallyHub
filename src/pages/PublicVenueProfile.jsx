@@ -66,8 +66,9 @@ export default function PublicVenueProfile() {
   const indoorLabel = venue.indoor === true ? 'indoor' : venue.indoor === false ? 'outdoor' : '';
   const courtText = venue.courts ? `${venue.courts} pickleball court${Number(venue.courts) === 1 ? '' : 's'}` : 'pickleball venue';
   const addressText = [venue.address, venue.eircode].filter(Boolean).join(', ');
-  const titlePlace = venue.shortName || venue.name;
-  const description = `${titlePlace} is a ${indoorLabel ? `${indoorLabel} ` : ''}${courtText} used by ${club.name} in County ${club.county}.${sessions.length ? ` View ${sessions.length} listed weekly session${sessions.length === 1 ? '' : 's'}, times and club contact details.` : ' View venue and club contact details.'}`;
+  const isClarePilot = club.slug === 'clare-pickleball';
+  const titlePlace = isClarePilot ? `${club.name} — ${venue.id === 'doora-barefield' ? 'Ennis' : (venue.shortName || venue.name)}` : (venue.shortName || venue.name);
+  const description = isClarePilot ? `${titlePlace} holds pickleball sessions at ${venue.name}, ${[venue.address,venue.eircode].filter(Boolean).join(', ')}. View weekly sessions and guest information.` : `${titlePlace} is a ${indoorLabel ? `${indoorLabel} ` : ''}${courtText} used by ${club.name} in County ${club.county}.${sessions.length ? ` View ${sessions.length} listed weekly session${sessions.length === 1 ? '' : 's'}, times and club contact details.` : ' View venue and club contact details.'}`;
   const canonicalPath = venuePath(club.slug, venue.id);
 
   const venueSchema = {
@@ -103,7 +104,7 @@ export default function PublicVenueProfile() {
       { '@type': 'ListItem', position: 2, name: 'Pickleball Club Directory', item: `${SITE_URL}/directory` },
       { '@type': 'ListItem', position: 3, name: `Pickleball in ${club.county}`, item: `${SITE_URL}/pickleball-clubs/${countySlug(club.county)}` },
       { '@type': 'ListItem', position: 4, name: club.name, item: `${SITE_URL}/directory/${club.slug}` },
-      { '@type': 'ListItem', position: 5, name: venue.name, item: `${SITE_URL}${canonicalPath}` },
+      { '@type': 'ListItem', position: 5, name: titlePlace, item: `${SITE_URL}${canonicalPath}` },
     ]
   };
 
@@ -149,8 +150,9 @@ export default function PublicVenueProfile() {
         <section className="rounded-3xl border border-border bg-card p-6 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-primary">Pickleball venue · County {club.county}</p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-5xl">{venue.name}</h1>
+              <p className="text-xs font-bold uppercase tracking-wider text-primary">{isClarePilot ? 'Clare Pickleball playing location' : `Pickleball venue · County ${club.county}`}</p>
+              <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-5xl">{isClarePilot ? titlePlace : venue.name}</h1>
+              {isClarePilot && <p className="mt-2 text-base font-semibold text-foreground">{venue.name}</p>}
               <p className="mt-3 max-w-3xl text-base leading-7 text-muted-foreground">{description}</p>
             </div>
             <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary">{venue.indoor === true ? 'Indoor' : venue.indoor === false ? 'Outdoor' : 'Pickleball venue'}</span>
