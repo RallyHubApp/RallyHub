@@ -523,14 +523,15 @@ export default function PublicClubProfile() {
             <section className="glass rounded-2xl p-5 sm:p-6">
               <div className="flex items-center gap-2 mb-5">
                 <MapPin className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-bold">Club venues</h2>
+                <h2 className="text-xl font-bold">{club.slug === 'clare-pickleball' ? 'Clare Pickleball playing locations' : 'Club venues'}</h2>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 {club.venues.map(venue => (
                   <article key={venue.id} className="rounded-xl border border-border bg-background/40 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="font-semibold"><Link to={venuePath(club.slug, venue.id)} className="hover:text-primary hover:underline">{venue.name}</Link></h3>
+                        <h3 className="font-semibold"><Link to={venuePath(club.slug, venue.id)} className="hover:text-primary hover:underline">{club.slug === 'clare-pickleball' ? `Clare Pickleball — ${venue.id === 'doora-barefield' ? 'Ennis' : (venue.shortName || venue.name)}` : venue.name}</Link></h3>
+                        {club.slug === 'clare-pickleball' && <p className="mt-1 text-sm font-medium">{venue.name}</p>}
                         <p className="text-sm text-muted-foreground mt-1">{venue.address}{venue.eircode ? ` · ${venue.eircode}` : ''}</p>
                       </div>
                       <span className="rounded-full bg-accent/10 text-accent px-2 py-1 text-[10px] font-semibold">{venue.indoor === true ? 'INDOOR' : venue.indoor === false ? 'OUTDOOR' : 'VENUE'}</span>
