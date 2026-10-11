@@ -22,6 +22,32 @@ function ensureCanonical(href) {
   existing.slice(1).forEach(extra => extra.remove());
 }
 
+// Base44 can use this metadata when its crawler prerender completes. Keep the
+// runtime titles consistent with our build-time 60/160-character SEO rules.
+export function seoTitle(value) {
+  const title = String(value || '').trim();
+  if (title.length <= 60) return title;
+  const suffix = ' | RallyHub';
+  const segments = title.split(' | ');
+  const compact = segments.length > 2 ? `${segments[0]}${suffix}` : title;
+  if (compact.length <= 60) return compact;
+  const first = compact.endsWith(suffix) ? compact.slice(0, -suffix.length) : compact;
+  const budget = 60 - suffix.length;
+  const candidate = first.slice(0, budget);
+  const lastSpace = candidate.lastIndexOf(' ');
+  const visible = (lastSpace > Math.floor(budget * 0.7) ? candidate.slice(0, lastSpace) : candidate)
+    .replace(/[\s,;:–—-]+$/, '');
+  return `${visible}${suffix}`;
+}
+
+export function seoDescription(value) {
+  const description = String(value || '').trim();
+  if (description.length <= 160) return description;
+  const candidate = description.slice(0, 157);
+  const lastSpace = candidate.lastIndexOf(' ');
+  return `${(lastSpace > 115 ? candidate.slice(0, lastSpace) : candidate).replace(/[.,;: ]+$/, '')}...`;
+}
+
 export function absoluteUrl(path = '/') {
   if (/^https?:\/\//i.test(path)) return path;
   return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;
@@ -41,22 +67,24 @@ export default function Seo({
   useEffect(() => {
     const canonical = absoluteUrl(path);
     const approvedShare = rallyhubShareForPath(path);
-    const ogTitle = approvedShare?.title || socialTitle;
-    const ogDescription = approvedShare?.description || socialDescription;
+    const readableTitle = seoTitle(title);
+    const readableDescription = seoDescription(description);
+    const ogTitle = seoTitle(approvedShare?.title || socialTitle || title);
+    const ogDescription = seoDescription(approvedShare?.description || socialDescription || description);
     const schemas = Array.isArray(structuredData) ? structuredData.filter(Boolean) : [structuredData].filter(Boolean);
 
-    document.title = title;
-    ensureMeta('meta[name="description"]', { name: 'description', content: description });
+    document.title = readableTitle;
+    ensureMeta('meta[name="description"]', { name: 'description', content: readableDescription });
     ensureMeta('meta[name="robots"]', { name: 'robots', content: robots });
     ensureMeta('meta[property="og:title"]', { property: 'og:title', content: ogTitle });
     ensureMeta('meta[property="og:description"]', { property: 'og:description', content: ogDescription });
     ensureMeta('meta[property="og:url"]', { property: 'og:url', content: canonical });
     ensureMeta('meta[property="og:type"]', { property: 'og:type', content: type });
-    ensureMeta('meta[property="og:image"]', { property: 'og:image', content: image });
+    ensureMeta('meta[property="og:image"]', { property: 'og:image', content: image || DEFAULT_IMAGE });
     ensureMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
     ensureMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: ogTitle });
     ensureMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: ogDescription });
-    ensureMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: image });
+    ensureMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: image || DEFAULT_IMAGE });
     ensureCanonical(canonical);
 
     document.head.querySelectorAll('script[data-rallyhub-seo="jsonld"]').forEach(node => node.remove());
