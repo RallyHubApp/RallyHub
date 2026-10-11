@@ -1,0 +1,77 @@
+{
+  "name": "AssetIntakeReceipt",
+  "type": "object",
+  "properties": {
+    "approval_id": {
+      "type": "string"
+    },
+    "original_filename": {
+      "type": "string"
+    },
+    "stored_filename": {
+      "type": "string"
+    },
+    "sha256": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "uploaded",
+        "verified",
+        "verification_failed"
+      ]
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "bytes": {
+      "type": "number"
+    },
+    "uploaded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "verification_error": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "original_filename",
+    "sha256",
+    "scope",
+    "status",
+    "file_url",
+    "bytes",
+    "uploaded_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

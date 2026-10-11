@@ -39,7 +39,7 @@ Deno.serve(async req=>{
   if(contentType.includes('multipart/form-data')){
    const form=await req.formData();const file=form.get('file');if(!(file instanceof File))return fail('File required');
    if(file.size>MAX_BYTES)return fail('File too large',413);
-   bytes=new Uint8Array(await file.arrayBuffer());body={scope:form.get('scope'),tenantId:form.get('tenantId'),listingSlug:form.get('listingSlug'),expectedSha256:form.get('expectedSha256'),name:form.get('name')||file.name};
+   bytes=new Uint8Array(await file.arrayBuffer());body={scope:form.get('scope'),tenantId:form.get('tenantId'),listingSlug:form.get('listingSlug'),expectedSha256:form.get('expectedSha256'),approvalId:form.get('approvalId'),name:form.get('name')||file.name};
   }else{
    body=await req.json().catch(()=>null);if(!body||typeof body!=='object')return fail('Invalid JSON');
    if(typeof body.dataBase64==='string'){
@@ -68,13 +68,23 @@ Deno.serve(async req=>{
   if(bytes.length===0||bytes.length>MAX_BYTES)return fail('Invalid file size',413);
   const info=inspect(bytes),digest=await hex(bytes),expected=String(body.expectedSha256||'').toLowerCase();
   if(expected&&(!/^[0-9a-f]{64}$/.test(expected)||digest!==expected))return fail('Approval checksum mismatch',422);
-  // No file is assigned to a tenant, event or public page here. Caller receives a staged URL.
-  const file=new File([bytes],`rallyhub-${digest.slice(0,20)}.${info.format}`,{type:info.mime});
+  // Staging only: never attach or publish. Record a receipt before independent readback.
+  const originalName=String(body.name||'unnamed').slice(0,240),approvalId=String(body.approvalId||'').slice(0,160);
+  const storedName=`rallyhub-${digest.slice(0,20)}.${info.format}`;
+  const file=new File([bytes],storedName,{type:info.mime});
   const uploaded=await sdk.asServiceRole.integrations.Core.UploadFile({file});if(!uploaded?.file_url)throw Error('Storage did not return URL');
-  const url=new URL(uploaded.file_url);if(url.protocol!=='https:'||!['base44.app','www.base44.app'].includes(url.hostname))throw Error('Storage readback domain not trusted');
-  const read=await fetch(url.toString(),{redirect:'follow',signal:AbortSignal.timeout(15000)});if(!read.ok)throw Error(`Storage readback failed (HTTP ${read.status})`);
-  if(new URL(read.url).protocol!=='https:')throw Error('Storage readback used an insecure redirect');
-  const stored=new Uint8Array(await read.arrayBuffer());if(await hex(stored)!==digest)throw Error('Stored file checksum mismatch');
-  return Response.json({success:true,status:'staged',scope,tenantId:scope==='tenant'?tenantId:undefined,listingSlug:scope==='directory'?listingSlug:undefined,source,sha256:digest,readbackVerified:true,fileUrl:uploaded.file_url,bytes:bytes.length,...info,requiresApproval:true});
+  const uploadedAt=new Date().toISOString();
+  const receipt=await sdk.asServiceRole.entities.AssetIntakeReceipt.create({approval_id:approvalId,original_filename:originalName,stored_filename:storedName,sha256:digest,scope,status:'uploaded',file_url:uploaded.file_url,bytes:bytes.length,uploaded_at:uploadedAt});
+  try {
+   const url=new URL(uploaded.file_url);if(url.protocol!=='https:'||!['base44.app','www.base44.app'].includes(url.hostname))throw Error('Storage readback domain not trusted');
+   const read=await fetch(url.toString(),{redirect:'follow',signal:AbortSignal.timeout(15000)});if(!read.ok)throw Error(`Storage readback failed (HTTP ${read.status})`);
+   const finalUrl=new URL(read.url);if(finalUrl.protocol!=='https:'||!['base44.app','www.base44.app','media.base44.com'].includes(finalUrl.hostname))throw Error('Storage readback redirected to an untrusted host');
+   const stored=new Uint8Array(await read.arrayBuffer());if(await hex(stored)!==digest)throw Error('Stored file checksum mismatch');
+   await sdk.asServiceRole.entities.AssetIntakeReceipt.update(receipt.id,{status:'verified',verified_at:new Date().toISOString()});
+  } catch(error) {
+   await sdk.asServiceRole.entities.AssetIntakeReceipt.update(receipt.id,{status:'verification_failed',verification_error:String((error as Error).message||error).slice(0,500)});
+   return Response.json({success:false,status:'verification_failed',receiptId:receipt.id,fileUrl:uploaded.file_url,sha256:digest,uploadedAt,error:'Storage verification failed'},{status:422});
+  }
+  return Response.json({success:true,status:'staged',receiptId:receipt.id,uploadedAt,originalFilename:originalName,scope,tenantId:scope==='tenant'?tenantId:undefined,listingSlug:scope==='directory'?listingSlug:undefined,source,sha256:digest,readbackVerified:true,fileUrl:uploaded.file_url,bytes:bytes.length,...info,requiresApproval:true});
  }catch(e){console.error('universalAssetIntake',e);return fail('Asset intake failed: '+String((e as Error).message||e),422)}
 });
