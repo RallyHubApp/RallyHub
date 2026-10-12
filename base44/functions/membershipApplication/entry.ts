@@ -434,7 +434,9 @@ Deno.serve(async(req)=>{
         const apps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300);
         const liveApps=(apps||[]).filter((app:any)=>app.status!=='withdrawn'&&!String(app.source_system||'').includes('membership_qa'));
         const actionable=liveApps.filter((app:any)=>['submitted','pending_payment','payment_failed'].includes(String(app.status||''))&&app.payment_status!=='paid');
-        return Response.json({success:true,pendingCount:actionable.length,total:liveApps.length});
+        const requests=await base44.asServiceRole.entities.ClubAccessRequest.filter({tenant_id:tenantId,club_id:clubId,request_type:'membership_application',status:'pending_approval'},'-submitted_at',300);
+        const approvalCount=(requests||[]).length;
+        return Response.json({success:true,pendingCount:actionable.length,approvalCount,paymentFollowUpCount:actionable.length,total:liveApps.length});
       }
 
       if(action==='admin_list'){
