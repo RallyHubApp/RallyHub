@@ -317,7 +317,10 @@ Deno.serve(async (req) => {
       if (!isCorrection && RESOLVED.has(match.status)) return Response.json({ error:'Match already resolved; use correction.' }, { status:409 });
       if (isCorrection) {
         const hostOwner=`host:${user.id}`;const activeOwner=String(match.scoring_lock_owner||'');const activeLock=!!(activeOwner&&match.scoring_lock_expires_at&&Date.parse(match.scoring_lock_expires_at)>Date.now());
-        if(!activeLock||activeOwner!==hostOwner)return Response.json({error:'This saved score is being corrected elsewhere or your correction lock expired. Refresh before trying again.',locked:true},{status:423});
+        if(activeLock&&activeOwner!==hostOwner)return Response.json({error:'Another scorer is editing this court. Wait until their edit is saved or cancelled, then try again.',locked:true},{status:423});
+        // An expired host correction lease must not block a valid host save. Reclaim
+        // only when no other active owner exists; never override a live scorer.
+        if(!activeLock||activeOwner!==hostOwner){const leaseNow=nowIso();await withRateLimitRetry('reclaim expired host correction lease',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{scoring_lock_owner:hostOwner,scoring_lock_acquired_at:leaseNow,scoring_lock_expires_at:new Date(Date.now()+90*1000).toISOString()}));const verified=(await withRateLimitRetry('verify correction lease',()=>base44.asServiceRole.entities.KotcMatch.filter({id:match.id,session_id:session.id})))?.[0];if(String(verified?.scoring_lock_owner||'')!==hostOwner||Date.parse(verified?.scoring_lock_expires_at||'')<=Date.now())return Response.json({error:'Court correction control changed. Please retry.',locked:true},{status:423});}
       }
       if (isCorrection && !String(body.reason || '').trim()) return Response.json({ error:'A correction reason is required.' }, { status:400 });
       const score:any = validateFinalScore(body, session);
