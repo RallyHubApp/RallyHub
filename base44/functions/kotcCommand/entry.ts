@@ -437,6 +437,35 @@ Deno.serve(async (req) => {
       else if(action==='leaving_early'){update.status='leaving_early';update.availability_effective_from_round=effectiveRound;update.left_after_round=Math.max(0,effectiveRound-1);eventType='leaving_early';reason=reason||'Host marked leaving early';}
       else if(action==='back_available'){update.status='present';update.availability_effective_from_round=null;update.available_again_from_round=null;update.left_after_round=null;update.scheduled_departure_at=null;eventType='returned_available';reason=reason||'Host returned player to available';}
       else return Response.json({error:'Unknown participant status action.'},{status:400});
+      // Pre-start departure: replace only the affected slot with an available bench player.
+      // Never regenerate the draw or change unrelated courts. If no bench player is
+      // available, keep the removal and tell the host a court still needs attention.
+      let automaticSubstitution:any=null;
+      if(['remove_from_roster','injured','no_show','leaving_early'].includes(action)&&round?.status==='proposed'){
+        const [roundSlots,roster,roundMatches,pairLocks]=await Promise.all([
+          base44.asServiceRole.entities.KotcRoundSlot.filter({round_id:round.id,session_id:session.id}),
+          base44.asServiceRole.entities.KotcSessionParticipant.filter({session_id:session.id}),
+          base44.asServiceRole.entities.KotcMatch.filter({round_id:round.id,session_id:session.id}),
+          base44.asServiceRole.entities.KotcFixedPair.filter({session_id:session.id,status:'active'})
+        ]);
+        const affected=(roundSlots||[]).find((slot:any)=>String(slot.participant_id)===String(participant.id));
+        if(affected){
+          const assigned=new Set((roundSlots||[]).map((slot:any)=>String(slot.participant_id)));
+          const bench=(roster||[]).filter((p:any)=>!assigned.has(String(p.id))&&String(p.id)!==String(participant.id)&&['present','registered','confirmed'].includes(p.status)&&!(p.scheduled_departure_at&&Date.parse(p.scheduled_departure_at)<=Date.now())).sort((a:any,b:any)=>String(a.id).localeCompare(String(b.id)));
+          const locked=(pairLocks||[]).some((lock:any)=>[String(lock.participant1_id),String(lock.participant2_id)].includes(String(participant.id)));
+          const match=(roundMatches||[]).find((m:any)=>Number(m.ladder_court_rank)===Number(affected.ladder_court_rank));
+          if(bench.length&&!locked&&match?.status==='scheduled'&&match.team_a_score==null&&match.team_b_score==null&&!match.scoring_lock_owner){
+            const incoming=bench[0];const side=affected.team_side==='A'?'team_a_participant_ids':'team_b_participant_ids';const oldIds=[...(match[side]||[])].map(String);
+            if(oldIds.includes(String(participant.id))){
+              await withRateLimitRetry('automatic bench match substitution',()=>base44.asServiceRole.entities.KotcMatch.update(match.id,{[side]:oldIds.map((id:string)=>id===String(participant.id)?String(incoming.id):id),revision:Number(match.revision||0)+1,command_id:commandId}));
+              await withRateLimitRetry('automatic bench slot substitution',()=>base44.asServiceRole.entities.KotcRoundSlot.update(affected.id,{participant_id:incoming.id,assignment_type:'manual_override',replacement_for_participant_id:participant.id,assignment_revision:Number(affected.assignment_revision||1)+1}));
+              await withRateLimitRetry('automatic bench proposal revision',()=>base44.asServiceRole.entities.KotcRound.update(round.id,{proposal_revision:Number(round.proposal_revision||1)+1}));
+              automaticSubstitution={outgoingParticipantId:participant.id,incomingParticipantId:incoming.id,incomingName:incoming.display_name,courtRank:affected.ladder_court_rank};
+              await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_automatic_bench_substitution',entity_type:'KotcRound',entity_id:round.id,scope_type:'KotcSession',scope_id:session.id,after_state:JSON.stringify(automaticSubstitution),reason:'Host removed unavailable player before round started'});
+            }
+          }
+        }
+      }
       const updated=await base44.asServiceRole.entities.KotcSessionParticipant.update(participant.id,update);
       // Pre-start roster changes must never auto-redraw or silently rewrite the published draw.
       // The host replaces an unavailable court player with a bench player in the same visible slot,
@@ -444,7 +473,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.KotcParticipationEvent.create({tenant_id:session.tenant_id,club_id:session.club_id,session_id:session.id,participant_id:participant.id,round_id:round?.id,round_number:effectiveRound,event_type:eventType,effective_from_round:effectiveRound,effective_to_round:action==='voluntary_rest'?effectiveRound:undefined,fairness_credit:false,reason,command_id:commandId,recorded_by_user_id:user.id,occurred_at:now});
       await base44.asServiceRole.entities.AuditLog.create({tenant_id:session.tenant_id,club_id:session.club_id,user_id:user.id,action:'kotc_participant_status_changed',entity_type:'KotcSessionParticipant',entity_id:participant.id,scope_type:'KotcSession',scope_id:session.id,before_state:JSON.stringify({status:participant.status,availability_effective_from_round:participant.availability_effective_from_round,available_again_from_round:participant.available_again_from_round}),after_state:JSON.stringify(update),reason});
       session=await base44.asServiceRole.entities.KotcSession.update(session.id,{revision:currentSessionRevision+1,last_command_id:commandId});
-      result={success:true,session,participant:updated,effectiveRound};
+      result={success:true,session,participant:updated,effectiveRound,automaticSubstitution};
     } else if (commandType === 'replace_proposed_player') {
       // Surgical one-slot substitution: preserve all other courts, teams and player links.
       const round=(await withRateLimitRetry('substitution round',()=>base44.asServiceRole.entities.KotcRound.filter({id:body.roundId||session.current_round_id,session_id:session.id})))?.[0];
