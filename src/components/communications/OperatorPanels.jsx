@@ -132,14 +132,14 @@ export function BrandKitManager(){
  const css=s=>({fontWeight:s?.bold?800:400,fontStyle:s?.italic?"italic":"normal",textDecoration:s?.underline?"underline":"none",fontSize:Number(s?.size||13),color:s?.color||form.text,textAlign:s?.align||"left",textShadow:s?.shadow?"0 1px 2px rgba(15,23,42,.22)":"none"});
  const icon=(glyph)=>form.signatureShowIcons?<span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black text-white" style={{background:form.primary}}>{glyph}</span>:null;
  const alignClass=a=>a==="center"?"justify-center":a==="right"?"justify-end":"justify-start";
- const sigPreview=selected?.owner_scope==="tenant"&&form?<div className="rounded-xl border bg-white p-5 shadow-sm" style={{fontFamily:form.bodyFont}}>
+ const sigPreview=selected?.owner_scope==="tenant"&&form?<div className="rounded-xl border bg-[#f8fafc] p-5 shadow-sm" style={{fontFamily:form.bodyFont,borderLeft:`4px solid ${form.secondary}`}}>
   <div style={css(form.signatureStyles.signoff)}>{form.signoff}</div>
   <div className="mt-1" style={css(form.signatureStyles.name)}>{form.contactName||"Brian Moore"}</div>
   {form.role&&<div className="mt-1" style={css(form.signatureStyles.role)}>{form.role}</div>}
   {form.organisation&&<div style={css(form.signatureStyles.organisation)}>{form.organisation}</div>}
   <div className="mt-4 space-y-2">
-   {form.signaturePhone&&form.phone&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.phone?.align)} style={css(form.signatureStyles.phone)}>{icon("☎")}<span>{form.phone}</span>{form.whatsappLabel&&<><span className="text-slate-300">·</span><span>{form.whatsappLabel}</span></>}</div>}
-   {form.signatureEmail&&form.email&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.email?.align)} style={css(form.signatureStyles.email)}>{icon("✉")}<span>{form.emailLabel||form.email}</span></div>}
+   {form.signaturePhone&&form.phone&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.phone?.align)} style={css(form.signatureStyles.phone)}>{icon("☎")}<span>Phone / WhatsApp: <a href={`tel:${String(form.phone).replace(/\D/g,"").replace(/^0/,"+353")}`} className="underline">{form.phone}</a></span></div>}
+   {form.signatureEmail&&form.email&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.email?.align)} style={css(form.signatureStyles.email)}>{icon("✉")}<a href={`mailto:${form.email}`} className="underline">{form.emailLabel||form.email}</a></div>}
    {form.signatureWebsite&&form.website&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.website?.align)} style={css(form.signatureStyles.website)}>{icon("↗")}<span>{form.websiteLabel||String(form.website).replace(/^https?:\/\//,"").replace(/\/$/,"")}</span></div>}
   </div>
   {form.signatureCta&&<div className={"mt-4 flex "+alignClass(form.signatureStyles.cta?.align)}><span className="inline-block rounded-lg px-4 py-2" style={{...css(form.signatureStyles.cta),background:form.primary}}>{form.signatureCtaLabel||"Contact us"}</span></div>}
