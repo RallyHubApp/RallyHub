@@ -67,17 +67,20 @@ export default function Dashboard() {
     refetchOnWindowFocus: true
   });
 
-  const { data: pendingMembershipApplicationCount = 0 } = useQuery({
+  const { data: membershipAttention = { approvalCount: 0, paymentFollowUpCount: 0 } } = useQuery({
     queryKey: ['membership-application-attention-count', currentUser?.active_tenant_id, currentUser?.active_club_id],
     queryFn: async () => {
       const res = await base44.functions.invoke('membershipApplication', { action: 'admin_count' });
       if (res.data?.error) throw new Error(res.data.error);
-      return Number(res.data?.pendingCount || 0);
+      return { approvalCount: Number(res.data?.approvalCount || 0), paymentFollowUpCount: Number(res.data?.paymentFollowUpCount ?? res.data?.pendingCount ?? 0) };
     },
     enabled: !!currentUser && (currentUser?.role === 'admin' || currentUser?.active_club_role === 'club_admin'),
     refetchInterval: 60_000,
     refetchOnWindowFocus: true
   });
+
+  const pendingMembershipApplicationCount = membershipAttention.paymentFollowUpCount;
+  const pendingMembershipDecisionCount = membershipAttention.approvalCount;
 
   const { data: pendingDirectoryApprovalCount = 0 } = useQuery({
     queryKey: ['pending-directory-approval-count'],
@@ -123,7 +126,7 @@ export default function Dashboard() {
         </Link>
       </PageHeader>
 
-      {((currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0)) || pendingMembershipApplicationCount > 0 || pendingSessionBookingCount > 0) && (
+      {((currentUser?.role === 'admin' && (pendingMembershipApprovalCount > 0 || pendingDirectoryApprovalCount > 0)) || pendingMembershipApplicationCount > 0 || pendingMembershipDecisionCount > 0 || pendingSessionBookingCount > 0) && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {pendingSessionBookingCount > 0 && (
             <Link
@@ -165,6 +168,19 @@ export default function Dashboard() {
                   <span className="min-w-7 h-7 px-2 rounded-full bg-amber-400 text-black text-sm font-black flex items-center justify-center">{pendingMembershipApprovalCount}</span>
                   <ArrowRight className="w-4 h-4 text-amber-300" />
                 </div>
+              </div>
+            </Link>
+          )}
+
+          {pendingMembershipDecisionCount > 0 && (
+            <Link to="/app/membership#membership-applications" className="block rounded-xl border border-amber-400/40 bg-amber-500/10 p-4 hover:bg-amber-500/15 transition-colors" aria-label={`Review ${pendingMembershipDecisionCount} pending club membership approvals`}>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-foreground">Membership Approvals</p>
+                  <p className="text-sm text-muted-foreground">{pendingMembershipDecisionCount} {pendingMembershipDecisionCount === 1 ? 'new member awaits' : 'new members await'} your decision.</p>
+                </div>
+                <span className="min-w-7 h-7 px-2 rounded-full bg-amber-400 text-black text-sm font-black flex items-center justify-center">{pendingMembershipDecisionCount}</span>
+                <ArrowRight className="w-4 h-4 text-amber-300" />
               </div>
             </Link>
           )}
