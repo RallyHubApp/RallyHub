@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -104,6 +104,7 @@ export default function MembershipConsole() {
   const canManage = user?.role === 'admin' || user?.active_club_role === 'club_admin';
 
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [sortField, setSortField] = useState('full_name');
   const [sortDirection, setSortDirection] = useState('asc');
@@ -401,7 +402,7 @@ export default function MembershipConsole() {
   };
 
   const rows = useMemo(() => {
-    const needle = search.trim().toLowerCase();
+    const needle = deferredSearch.trim().toLowerCase();
     const result = (listData.rows || []).filter(row => {
       if (needle && ![
         row.full_name, row.email, row.mobile, row.member_id, row.external_rating_id, row.primary_sport,
@@ -450,7 +451,7 @@ export default function MembershipConsole() {
       return sortDirection === 'desc' ? -comparison : comparison;
     });
     return result;
-  }, [listData.rows, search, filters, sortField, sortDirection, meta.fieldCatalog]);
+  }, [listData.rows, deferredSearch, filters, sortField, sortDirection, meta.fieldCatalog]);
 
   const exportRows = useMemo(() => selected.size ? rows.filter(row => selected.has(row.person_id)) : rows, [rows, selected]);
 
@@ -1038,10 +1039,11 @@ export default function MembershipConsole() {
         </div>
       </PageHeader>
 
-      {(metaLoading || listLoading) ? (
+      {metaLoading ? (
         <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">Loading membership console…</div>
       ) : (
         <>
+          {listLoading && <p role="status" className="text-xs text-muted-foreground">Member records are loading; membership approvals remain available.</p>}
           <section className="glass rounded-xl p-4 sm:p-5 border-l-4 border-l-green-500">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
               <div className="min-w-0">
