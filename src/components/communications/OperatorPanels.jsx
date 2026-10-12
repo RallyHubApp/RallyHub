@@ -140,7 +140,7 @@ export function BrandKitManager(){
   <div className="mt-4 space-y-2">
    {form.signaturePhone&&form.phone&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.phone?.align)} style={css(form.signatureStyles.phone)}>{icon("☎")}<span>Phone / WhatsApp: <a href={`tel:${String(form.phone).replace(/\D/g,"").replace(/^0/,"+353")}`} className="underline">{form.phone}</a></span></div>}
    {form.signatureEmail&&form.email&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.email?.align)} style={css(form.signatureStyles.email)}>{icon("✉")}<a href={`mailto:${form.email}`} className="underline">{form.emailLabel||form.email}</a></div>}
-   {form.signatureWebsite&&form.website&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.website?.align)} style={css(form.signatureStyles.website)}>{icon("↗")}<span>{form.websiteLabel||String(form.website).replace(/^https?:\/\//,"").replace(/\/$/,"")}</span></div>}
+   {form.signatureWebsite&&form.website&&<div className={"flex items-center gap-2 "+alignClass(form.signatureStyles.website?.align)} style={css(form.signatureStyles.website)}>{icon("↗")}<a href={form.website} target="_blank" rel="noreferrer" className="underline">{form.websiteLabel||String(form.website).replace(/^https?:\/\//,"").replace(/\/$/,"")}</a></div>}
   </div>
   {form.signatureCta&&<div className={"mt-4 flex "+alignClass(form.signatureStyles.cta?.align)}><span className="inline-block rounded-lg px-4 py-2" style={{...css(form.signatureStyles.cta),background:form.primary}}>{form.signatureCtaLabel||"Contact us"}</span></div>}
  </div>:null;
