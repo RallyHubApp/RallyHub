@@ -971,6 +971,77 @@ Deno.serve(async(req)=>{
     const body=await req.json().catch(()=>({}));
     const action=clean(body.action||'public_get',40);
 
+    if(action==='change_offer_get'||action==='change_offer_reply'){
+      const raw=clean(body.token,150);
+      if(!/^gco_[a-f0-9]{64}$/.test(raw))return Response.json({error:'Invalid offer link.'},{status:400});
+      const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const offer=(await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({token_hash:digest},'-created_at',2))?.[0];
+      if(!offer)return Response.json({error:'Offer not found.'},{status:404});
+      const source=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:offer.source_session_id,tenant_id:offer.tenant_id,club_id:offer.club_id}))?.[0];
+      const target=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:offer.target_session_id,tenant_id:offer.tenant_id,club_id:offer.club_id}))?.[0];
+      const booking=(await base44.asServiceRole.entities.GuestSessionBooking.filter({id:offer.booking_id,tenant_id:offer.tenant_id,club_id:offer.club_id}))?.[0];
+      if(!source||!target||!booking)return Response.json({error:'Offer booking no longer available.'},{status:404});
+      const expired=Date.parse(offer.expires_at)<Date.now();
+      const status=expired&&offer.status==='pending'?'expired':offer.status;
+      if(action==='change_offer_get')return Response.json({success:true,status,guestName:clean(booking.full_name,120),source:safeSession(source),target:safeSession(target)});
+      if(status!=='pending')return Response.json({error:'This offer is no longer awaiting a response.',status},{status:409});
+      if(!['accept','decline'].includes(String(body.decision)))return Response.json({error:'Choose accept or decline.'},{status:400});
+      if(body.decision==='decline'){
+        await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{status:'declined',responded_at:new Date().toISOString()});
+        return Response.json({success:true,status:'declined'});
+      }
+      if(booking.session_link_id!==source.id)return Response.json({error:'Booking has already changed. Contact the organiser.'},{status:409});
+      if(!target.active||target.archived_at||Date.parse(target.session_date+'T23:59:59Z')<Date.now())return Response.json({error:'The proposed session is no longer available.'},{status:409});
+      if(booking.payment_method!==target.payment_method||Math.abs(Number(booking.amount)-Number(target.fee_amount))>0.001)return Response.json({error:'This change needs an organiser payment review.'},{status:409});
+      const existing=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:target.id},'-registered_at',500);
+      const occupied=existing.filter((b:any)=>b.booking_status!=='cancelled').length;
+      if(Number(target.capacity)>0&&occupied>=Number(target.capacity))return Response.json({error:'This session is now full. Contact the organiser.'},{status:409});
+      if(existing.some((b:any)=>b.id!==booking.id&&emailKey(b.email)===emailKey(booking.email)&&b.booking_status!=='cancelled'))return Response.json({error:'You already have a booking in this session.'},{status:409});
+      await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{session_link_id:target.id});
+      await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{status:'accepted',responded_at:new Date().toISOString()});
+      return Response.json({success:true,status:'accepted',target:safeSession(target)});
+    }
+
+    if(action==='admin_change_offer'){
+      const user=await base44.auth.me();
+      if(!user||user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
+      const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100);
+      if(!tenantId||!clubId)return Response.json({error:'Select a club.'},{status:400});
+      const booking=(await base44.asServiceRole.entities.GuestSessionBooking.filter({id:clean(body.bookingId,100),tenant_id:tenantId,club_id:clubId}))?.[0];
+      if(!booking||booking.booking_status==='cancelled')return Response.json({error:'Active booking not found.'},{status:404});
+      const source=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:booking.session_link_id,tenant_id:tenantId,club_id:clubId}))?.[0];
+      if(!source)return Response.json({error:'Original session not found.'},{status:404});
+      const templates=await directoryTemplates(base44,tenantId,clubId);
+      const template=templates.find((t:any)=>t.key===clean(body.templateKey,100));
+      const date=clean(body.sessionDate,20);
+      if(!template||!/^\d{4}-\d{2}-\d{2}$/.test(date)||weekday(date)!==template.weekday)return Response.json({error:'Select a valid session slot and matching date.'},{status:400});
+      if(Date.parse(date+'T23:59:59Z')<Date.now())return Response.json({error:'Select a future date.'},{status:400});
+      if(template.payment!==booking.payment_method||Math.abs(Number(template.fee)-Number(booking.amount))>0.001)return Response.json({error:'The new session has a different fee or payment method. Manual payment review is required.'},{status:409});
+      let target=(await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId,session_date:date,session_label:template.key},'-created_at',10))?.find((x:any)=>x.active&&!x.archived_at);
+      if(!target){
+        target=await base44.asServiceRole.entities.GuestSessionLink.create({tenant_id:tenantId,club_id:clubId,token:token(),active:true,session_date:date,weekday:template.weekday,start_time:template.start,end_time:template.end,venue_key:template.venueKey,venue_name:template.venueName,venue_address:template.venueAddress,venue_eircode:template.eircode,google_maps_url:template.mapsUrl,session_label:template.key,fee_amount:template.fee,currency:'EUR',payment_method:template.payment,created_at:new Date().toISOString(),created_by_user_id:user.id});
+      }
+      if(source.id===target.id)return Response.json({error:'Choose a different session.'},{status:400});
+      const current=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:target.id},'-registered_at',500);
+      if(Number(target.capacity)>0&&current.filter((b:any)=>b.booking_status!=='cancelled').length>=Number(target.capacity))return Response.json({error:'The proposed session is full.'},{status:409});
+      const old=await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({booking_id:booking.id,status:'pending'},'-created_at',30);
+      for(const o of old)await base44.asServiceRole.entities.GuestBookingChangeOffer.update(o.id,{status:'superseded'});
+      const raw='gco_'+Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const expires=new Date(Math.min(Date.now()+7*86400000,Date.parse(date+'T23:59:59Z'))).toISOString();
+      const label=target.venue_name+' · '+target.session_date+' · '+target.start_time+'–'+target.end_time;
+      const offer=await base44.asServiceRole.entities.GuestBookingChangeOffer.create({tenant_id:tenantId,club_id:clubId,booking_id:booking.id,source_session_id:source.id,target_session_id:target.id,token_hash:digest,status:'pending',expires_at:expires,created_at:new Date().toISOString(),created_by_user_id:user.id,guest_email:emailKey(booking.email),email_sent:false,target_label:label});
+      const url='https://rallyhub.ie/booking-change/'+raw;
+      let emailSent=false;
+      try{
+        const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId,clubId};
+        await sendWithConfiguredEmailTransport(base44,scope,{to:booking.email,senderName:'Clare Pickleball',subject:'Please confirm your alternative pickleball session',textBody:'Hi '+clean(booking.full_name,120)+',\n\nWe can offer you a different session: '+label+'.\n\nPlease confirm whether you are attending using your private link:\n'+url+'\n\nYour original booking remains unchanged until you accept.\n\nClare Pickleball · Powered by RallyHub',htmlBody:'<p>Hi '+clean(booking.full_name,120)+',</p><p>We can offer you a different session:</p><p><strong>'+label+'</strong></p><p><a href="'+url+'">Yes, I’m attending / Respond to offer</a></p><p>Your original booking remains unchanged until you accept.</p><p>Clare Pickleball · Powered by RallyHub</p>'});
+        emailSent=true;
+      }catch(e){console.error('Change offer email failed',e?.message||e);}
+      if(emailSent)await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{email_sent:true});
+      return Response.json({success:true,emailSent,offerStatus:'pending',offerUrl:url,target:safeSession(target)});
+    }
+
     if(['admin_templates','admin_list','admin_create','admin_close','admin_archive_session','admin_restore_session','admin_delete_session','admin_delete_booking','admin_send_invite','admin_create_magic_invite','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment','admin_resend_emails','admin_resend_host_email'].includes(action)){
       const user=await base44.auth.me();
       if(!user)return Response.json({error:'Unauthorized'},{status:401});
