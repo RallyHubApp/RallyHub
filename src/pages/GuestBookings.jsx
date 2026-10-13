@@ -132,7 +132,7 @@ export default function GuestBookings(){
       const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_approve',requestId:request.id,sessionId});
       if(res.data?.error)throw new Error(res.data.error);
       if(res.data?.success!==true)throw new Error('Approval was not confirmed by the server. Check the request before retrying.');
-      const message=res.data.emailSent?'Approved. Private booking link emailed to the guest.':'Approved, but email delivery failed. Send the private link manually.';
+      const message=res.data.emailSent?'Approved — confirmation email sent.':'Approved, but confirmation email was not sent. Use the private link or resend the email.';
       setApprovalFeedback(previous=>({...previous,[request.id]:{type:'success',message}}));
       if(res.data.magicInviteUrl)copy(res.data.magicInviteUrl,'Private guest booking link copied');
       toast.success(message);
