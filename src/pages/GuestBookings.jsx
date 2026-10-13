@@ -113,22 +113,6 @@ export default function GuestBookings(){
     const message=`Hi ${first},\n\nA reminder of your proposed Clare Pickleball session:\n${offer.targetLabel||'Alternative session'}\n\nYour original payment is recorded. No further payment is required.\n\nPlease accept or decline using your private response link:\n{{confirmation_link}}\n\nYours in sport,\nBrian Moore\nChairperson, Clare Pickleball`;
     setMessagePreview({channel,request:{fullName:row.fullName,email:row.email,mobile:row.mobile},bookingId:row.bookingId,kind:'alternative_reminder',subject:'Clare Pickleball · Alternative session reminder',message});
   };
-  const legacyRemindAlternative=async(row,channel='whatsapp')=>{
-    if(!row.bookingId)return;
-    setBusy(`offer-reminder-${row.bookingId}`);
-    // Open a window synchronously so browsers do not block WhatsApp after the API request.
-    const popup=channel==='whatsapp'?window.open('about:blank','_blank'):null;
-    try{
-      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_offer_reminder',bookingId:row.bookingId,channel});
-      if(res.data?.error||!res.data?.success)throw new Error(res.data?.error||'Could not prepare alternative reminder');
-      if(channel==='email'){toast.success('Alternative offer reminder emailed.');return;}
-      const mobile=whatsappNumber(row.mobile);
-      if(!mobile){popup?.close();await copy(res.data.offerUrl,'Private alternative response link copied');return;}
-      const link='https://wa.me/'+mobile+'?text='+encodeURIComponent(res.data.message);
-      if(popup){popup.location.href=link;}else{await copy(res.data.message,'WhatsApp reminder copied');toast.info('WhatsApp popup blocked. Reminder copied.');}
-    }catch(e){popup?.close();toast.error(e?.response?.data?.error||e?.message||'Could not prepare alternative reminder');}
-    finally{setBusy('');}
-  };
   const offerWhatsApp=(row,url)=>{
     const target=whatsappNumber(row.mobile);
     if(!target){navigator.clipboard?.writeText(url);toast.info('No mobile number saved. Copy the private offer link instead.');return}
