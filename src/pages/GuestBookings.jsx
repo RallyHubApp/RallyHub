@@ -39,6 +39,8 @@ export default function GuestBookings(){
   const [messagePreview,setMessagePreview]=useState(null);
   const [showArchived,setShowArchived]=useState(false);
   const [showPastAttendees,setShowPastAttendees]=useState(false);
+  const [attendeeCentre,setAttendeeCentre]=useState('all');
+  const [attendeeTime,setAttendeeTime]=useState('all');
   const [recentOfferLinks,setRecentOfferLinks]=useState({});
   const [approvalSelections,setApprovalSelections]=useState({});
   const [approvalFeedback,setApprovalFeedback]=useState({});
@@ -97,8 +99,13 @@ export default function GuestBookings(){
   },[approvedRequests,sessions]);
 
   const todayIreland=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  const pastBookingRows=bookingRows.filter(row=>row.sessionDate&&row.sessionDate<todayIreland());
-  const visibleBookingRows=bookingRows.filter(row=>showPastAttendees?row.sessionDate&&row.sessionDate<todayIreland():!(row.sessionDate&&row.sessionDate<todayIreland()));
+  const offerFor=row=>listData.changeOffers?.[row.bookingId]||null;
+  const isPendingOffer=row=>offerFor(row)?.status==='pending';
+  const pastBookingRows=bookingRows.filter(row=>row.sessionDate&&row.sessionDate<todayIreland()&&!isPendingOffer(row));
+  const currentBookingRows=bookingRows.filter(row=>!(row.sessionDate&&row.sessionDate<todayIreland())||isPendingOffer(row));
+  const centreOptions=[...new Set(bookingRows.map(row=>row.venueName).filter(Boolean))].sort();
+  const timeOptions=[...new Set(bookingRows.filter(row=>attendeeCentre==='all'||row.venueName===attendeeCentre).map(row=>row.start).filter(Boolean))].sort();
+  const visibleBookingRows=(showPastAttendees?pastBookingRows:currentBookingRows).filter(row=>(attendeeCentre==='all'||row.venueName===attendeeCentre)&&(attendeeTime==='all'||row.start===attendeeTime));
   const offerWhatsApp=(row,url)=>{
     const target=whatsappNumber(row.mobile);
     if(!target){navigator.clipboard?.writeText(url);toast.info('No mobile number saved. Copy the private offer link instead.');return}
@@ -467,8 +474,9 @@ export default function GuestBookings(){
     <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div><h2 className="text-lg font-black">Session attendees & payment status</h2><p className="mt-1 text-xs text-muted-foreground">One working list for approved guests, people awaiting payment and completed bookings. Use this if somebody says they did not receive their booking email.</p></div>
-        <div className="flex gap-2"><Button size="sm" variant={!showPastAttendees?"default":"outline"} onClick={()=>setShowPastAttendees(false)}>Current ({bookingRows.length-pastBookingRows.length})</Button><Button size="sm" variant={showPastAttendees?"default":"outline"} onClick={()=>setShowPastAttendees(true)}>Past / archived ({pastBookingRows.length})</Button></div>
+        <div className="flex gap-2"><Button size="sm" variant={!showPastAttendees?"default":"outline"} onClick={()=>setShowPastAttendees(false)}>Current ({currentBookingRows.length})</Button><Button size="sm" variant={showPastAttendees?"default":"outline"} onClick={()=>setShowPastAttendees(true)}>Past / archived ({pastBookingRows.length})</Button></div>
       </div>
+      <div className="flex flex-wrap gap-2"><label className="text-sm">Centre <select aria-label="Filter attendees by centre" className="ml-2 rounded border p-2" value={attendeeCentre} onChange={e=>{setAttendeeCentre(e.target.value);setAttendeeTime('all')}}><option value="all">All centres</option>{centreOptions.map(v=><option key={v} value={v}>{v}</option>)}</select></label><label className="text-sm">Time <select aria-label="Filter attendees by time" className="ml-2 rounded border p-2" value={attendeeTime} onChange={e=>setAttendeeTime(e.target.value)}><option value="all">All times</option>{timeOptions.map(v=><option key={v} value={v}>{v}</option>)}</select></label><span className="self-center text-xs text-muted-foreground">{visibleBookingRows.length} attendees shown</span></div>
       {visibleBookingRows.length===0?<p className="text-sm text-muted-foreground">No bookings in this view.</p>:<div className="space-y-3">
         {visibleBookingRows.map(row=>{
           const awaitingBooking=row.kind==='approved_request'&&!row.bookingId;
@@ -477,7 +485,7 @@ export default function GuestBookings(){
           return <div key={row.key} className="rounded-xl border bg-secondary/20 p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2"><p className="font-black">{row.fullName}</p><Badge variant="outline" className={paid?'border-green-500/40 text-green-600':awaitingBooking||row.paymentStatus==='pending'?'border-amber-500/40 text-amber-700':''}>{paymentLabel}</Badge></div>
+                <div className="flex flex-wrap items-center gap-2"><p className="font-black">{row.fullName}</p><Badge variant="outline" className={paid?'border-green-500/40 text-green-600':awaitingBooking||row.paymentStatus==='pending'?'border-amber-500/40 text-amber-700':''}>{paymentLabel}</Badge>{offerFor(row)&&<Badge variant="outline" className={offerFor(row).status==='accepted'?'border-green-500/40 text-green-700':'border-amber-500/40 text-amber-700'}>Alternative {offerFor(row).status}{offerFor(row).targetLabel?' · '+offerFor(row).targetLabel:''}</Badge>}</div>
                 <p className="mt-1 text-sm text-muted-foreground">{row.email}{row.mobile?` · ${row.mobile}`:''}</p>
                 <p className="mt-2 text-sm font-semibold">{row.sessionDate?niceDate(row.sessionDate):'Session date pending'}{row.start?` · ${row.start}${row.end?`–${row.end}`:''}`:''}</p>
                 <p className="text-sm text-muted-foreground">{row.venueName||'Venue pending'}{row.amount!==null&&row.amount!==undefined?` · €${Number(row.amount||0).toFixed(2)}`:''}</p>
@@ -493,16 +501,16 @@ export default function GuestBookings(){
                   <Button size="sm" variant="outline" className="text-destructive" disabled={busy===`retract-${row.request.id}`} onClick={()=>retractApproval(row.request)}>{busy===`retract-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Retract / amend</Button>
                 </>}
                 {row.kind==='approved_request'&&row.bookingId&&<>
-                  <Button size="sm" variant="outline" onClick={()=>recentOfferLinks[row.bookingId]?offerWhatsApp(row,recentOfferLinks[row.bookingId]):whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>{recentOfferLinks[row.bookingId]?"WhatsApp offer":"WhatsApp"}</Button>
+                  <Button size="sm" variant="outline" onClick={()=>isPendingOffer(row)?(recentOfferLinks[row.bookingId]?offerWhatsApp(row,recentOfferLinks[row.bookingId]):toast.info('Alternative offer is pending. The private response link cannot be recovered; create a replacement offer to generate a new link.')):whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>{isPendingOffer(row)?'WhatsApp offer reminder':'WhatsApp'}</Button>
                   {row.sumupCheckoutUrl&&row.paymentStatus==='pending'&&<Button size="sm" variant="outline" onClick={()=>copy(row.sumupCheckoutUrl,'Payment link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy payment link</Button>}
-                  {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend confirmation</Button>}
+                  {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>isPendingOffer(row)?toast.info('Alternative offer pending: original confirmation cannot be resent. Create a replacement offer to send a fresh response link.'):resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}{isPendingOffer(row)?'Resend alternative offer':'Resend confirmation'}</Button>}
                   {row.paymentMethod==='sumup'&&!paid&&<Button size="sm" variant="outline" disabled={busy===`verify-${row.bookingId}`} onClick={()=>verifyPayment(row.bookingId)}>{busy===`verify-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
                   {row.kind==='approved_request'&&!paid&&<Button size="sm" variant="outline" className="text-destructive" disabled={busy===`retract-${row.request.id}`} onClick={()=>retractApproval(row.request)}>{busy===`retract-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Retract / amend</Button>}
                 </>}
                 {row.kind==='booking'&&<>
-                  <Button size="sm" variant="outline" onClick={()=>recentOfferLinks[row.bookingId]?offerWhatsApp(row,recentOfferLinks[row.bookingId]):whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>{recentOfferLinks[row.bookingId]?"WhatsApp offer":"WhatsApp"}</Button>
+                  <Button size="sm" variant="outline" onClick={()=>isPendingOffer(row)?(recentOfferLinks[row.bookingId]?offerWhatsApp(row,recentOfferLinks[row.bookingId]):toast.info('Alternative offer is pending. The private response link cannot be recovered; create a replacement offer to generate a new link.')):whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>{isPendingOffer(row)?'WhatsApp offer reminder':'WhatsApp'}</Button>
                   {row.sumupCheckoutUrl&&row.paymentStatus==='pending'&&<Button size="sm" variant="outline" onClick={()=>copy(row.sumupCheckoutUrl,'Payment link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy payment link</Button>}
-                  {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend confirmation</Button>}
+                  {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>isPendingOffer(row)?toast.info('Alternative offer pending: original confirmation cannot be resent. Create a replacement offer to send a fresh response link.'):resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}{isPendingOffer(row)?'Resend alternative offer':'Resend confirmation'}</Button>}
                   {row.paymentMethod==='sumup'&&!paid&&<Button size="sm" variant="outline" disabled={busy===`verify-${row.bookingId}`} onClick={()=>verifyPayment(row.bookingId)}>{busy===`verify-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
                   {row.kind==='approved_request'&&!paid&&<Button size="sm" variant="outline" className="text-destructive" disabled={busy===`retract-${row.request.id}`} onClick={()=>retractApproval(row.request)}>{busy===`retract-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Retract / amend</Button>}
                 </>}
