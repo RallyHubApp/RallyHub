@@ -754,8 +754,9 @@ async function sendHostBookingEmail(base44:any,scope:any,club:any,session:any,bo
   const timeLabel=`${session.start_time}${session.end_time?'–'+session.end_time:''}`;
   const hostFirst=firstName(host.name||'');
   const textBody=`Hi ${hostFirst},\n\nA ${isMember?'member':'guest'} has booked your ${club.name} session.\n\n${summary}\n\nThis notification was generated automatically by RallyHub.\n\n${club.name}\nPowered by RallyHub`;
+  const brandKit=await tenantEmailBrandKit(base44,session.tenant_id,session.club_id);
   const htmlBody=emailShell({
-    club,
+    club,brandKit,
     headline:`New ${isMember?'member':'guest'} booking for your session`,
     preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
     content:`
