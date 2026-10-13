@@ -378,7 +378,7 @@ Deno.serve(async(req)=>{
       const date=clean(body.sessionDate,20)||nextDateForDay(String(session.day||''),String(session.start||''),String(session.end||''));
       if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return Response.json({error:'RallyHub could not determine the next session date.'},{status:400});
       if(weekday(date)!==String(session.day||''))return Response.json({error:`That date is not a ${session.day}.`},{status:400});
-      const allocationOpens=priorityOpening(session,date);
+      const allocationOpens=priorityOpening({...session,venueName:venue.name},date);
       if(!allocationOpens)return Response.json({error:'Guest allocation schedule has not been configured for this venue.'},{status:409});
       if(Date.now()<allocationOpens.getTime())return Response.json({error:`Members have priority. Guest allocation opens ${allocationOpens.toLocaleString('en-IE',{timeZone:'Europe/Dublin',weekday:'long',hour:'2-digit',minute:'2-digit'})}.`},{status:409});
       const checked=await applySpondAvailability(base44,club,[session]);
