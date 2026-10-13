@@ -631,6 +631,10 @@ async function clubBrand(base44:any,clubId:string){
     };
   }catch{return null}
 }
+async function tenantEmailBrandKit(base44:any,tenantId:string,clubId:string){
+  const rows=await base44.asServiceRole.entities.CommunicationBrandKit.filter({tenant_id:tenantId,owner_scope:'tenant',status:'active'},'-updated_date',30);
+  return (rows||[]).find((k:any)=>!k.club_id||String(k.club_id)===String(clubId))||null;
+}
 async function activeClubLegalDocument(base44:any,tenantId:string,clubId:string,documentType:string){
   const rows=await base44.asServiceRole.entities.ClubLegalDocument.filter({tenant_id:tenantId,club_id:clubId,document_type:documentType,active:true},'-effective_from',20);
   const doc=(rows||[])[0];
@@ -675,11 +679,17 @@ function firstName(value:any){
 function money(value:any,currency='EUR'){
   try{return new Intl.NumberFormat('en-IE',{style:'currency',currency}).format(Number(value||0))}catch{return `€${Number(value||0).toFixed(2)}`}
 }
-function emailShell({club,headline,preheader,content}:any){
+function emailShell({club,headline,preheader,content,brandKit}:any){
   const name=escapeHtml(club?.name||'Clare Pickleball');
   const logo=escapeHtml(club?.logo_url||'');
-  const primary=escapeHtml(club?.primary_colour||'#2667f2');
-  const secondary=escapeHtml(club?.secondary_colour||'#facc15');
+  const primary=escapeHtml(brandKit?.colours?.primary||club?.primary_colour||'#2667f2');
+  const secondary=escapeHtml(brandKit?.colours?.secondary||club?.secondary_colour||'#facc15');
+  const contact=brandKit?.contact||{};
+  const signatureConfig=brandKit?.channel_overrides?.email?.signature_block||{};
+  const style=(part:string,fallback:string)=>{const v=signatureConfig.styles?.[part]||{};return 'font-size:'+Number(v.size||13)+'px;font-weight:'+(v.bold?'800':'400')+';color:'+escapeHtml(v.color||fallback)+';text-align:'+(['left','right','center'].includes(v.align)?v.align:'left')};
+  const signature=brandKit&&contact.name&&signatureConfig.enabled_default!==false?'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #dbe5f1;border-radius:12px;background:#f8fafc"><tr><td width="5" style="background:'+secondary+';width:5px">&nbsp;</td><td style="padding:16px 18px"><div style="'+style('signoff','#64748b')+'">'+escapeHtml(contact.signoff||'Yours in sport,')+'</div><div style="'+style('name',primary)+';margin-top:5px">'+escapeHtml(contact.name)+'</div><div style="'+style('role','#172033')+'">'+escapeHtml(contact.role||'')+'</div><div style="'+style('organisation',primary)+'">'+escapeHtml(contact.organisation||'')+'</div>'+(signatureConfig.show_phone===false?'':'<div>'+escapeHtml(contact.phone_whatsapp||'')+'</div>')+(signatureConfig.show_email===false?'':'<div>'+escapeHtml(contact.email||'')+'</div>')+(signatureConfig.show_website===false?'':'<div>'+escapeHtml(contact.website||'')+'</div>')+'</td></tr></table>':'<div>Yours in sport,<br><strong>Brian Moore</strong><br>Chairperson, Clare Pickleball</div>';
+  const approvedPowered=String(brandKit?.compliance_footer?.powered_by_html||'').trim();
+  const powered=approvedPowered||'<a href="https://rallyhub.ie/" style="display:inline-block"><img src="https://rallyhub.ie/assets/brand/rallyhub-signature-light.png" alt="Powered by RallyHub" width="160" style="max-width:160px;height:auto;border:0"></a>';
   return `<!doctype html>
 <html><body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader||headline||'')}</div>
@@ -695,8 +705,8 @@ ${logo?`<img src="${logo}" alt="${name} logo" width="72" height="72" style="disp
 <h1 style="margin:0 0 18px;font-size:23px;line-height:1.25;color:#10182b;">${escapeHtml(headline)}</h1>
 ${content}
 </td></tr>
-<tr><td style="padding:0 28px 22px;"><div style="border-top:1px solid #dbe5f1;padding-top:18px;font-size:14px;line-height:1.65;color:#172033;">Yours in sport,<br><strong>Brian Moore</strong><br>Chairperson, Clare Pickleball<br><a href="tel:+353878100333" style="color:#0755a8;text-decoration:none;">087 810 0333</a> · <a href="https://wa.me/353878100333" style="color:#078e48;text-decoration:none;font-weight:700;">WhatsApp</a><br><a href="mailto:clarepb2025@gmail.com" style="color:#0755a8;text-decoration:none;">clarepb2025@gmail.com</a> · <a href="https://clarepickleball.ie/" style="color:#0755a8;text-decoration:none;">ClarePickleball.ie</a></div></td></tr>
-<tr><td style="padding:16px 20px;background:#f7f9fc;border-top:1px solid #e4e9f1;text-align:center;"><a href="https://rallyhub.ie/" target="_blank" style="display:inline-table;text-decoration:none;color:#081342;"><span style="display:table-cell;vertical-align:middle;padding-right:7px;"><img src="https://rallyhub.ie/assets/brand/rallyhub-icon-light.png" alt="RallyHub" width="28" height="28" style="display:block;width:28px;height:28px;object-fit:contain;border:0;"></span><span style="display:table-cell;vertical-align:middle;text-align:left;"><span style="display:block;font-size:10px;color:#7b8494;">Powered by</span><span style="display:block;font-size:17px;font-weight:900;letter-spacing:-.4px;color:#081342;">Rally<span style="color:#078e48;">Hub</span></span></span></a></td></tr>
+<tr><td style="padding:0 28px 22px;"><div style="border-top:1px solid #dbe5f1;padding-top:18px;">${signature}</div></td></tr>
+<tr><td style="padding:16px 20px;background:#f7f9fc;border-top:1px solid #e4e9f1;text-align:center;">${powered}</td></tr>
 </table>
 </td></tr></table></body></html>`;
 }
@@ -977,13 +987,14 @@ Deno.serve(async(req)=>{
       const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100);
       if(!tenantId||!clubId)return Response.json({error:'Select a tenant and club.'},{status:400});
       const club=await clubBrand(base44,clubId);
+      const brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
       if(!club||club.slug!=='clare-pickleball')return Response.json({error:'Clare Pickleball club branding unavailable.'},{status:409});
       const sample={guest_name:'Sample Guest',session_details:'Ennistymon Community Centre · Wednesday 14 October · 19:00–20:00',confirmation_link:'https://rallyhub.ie/booking-change/SAMPLE-LINK-NOT-ACTIVE'};
       const merge=(v:string)=>String(v||'').replace(/{{(guest_name|session_details|confirmation_link)}}/g,(_m:string,key:string)=>(sample as any)[key]||'');
       const bodyTemplate=String(body.messageBody||'');
       if(!bodyTemplate.includes('{{confirmation_link}}'))return Response.json({error:'The message must include the confirmation link.'},{status:400});
       const htmlMessage=bodyTemplate.split('{{confirmation_link}}').map((part:string)=>escapeHtml(merge(part)).replace(/\n/g,'<br>')).join('<br><a href="'+escapeHtml(sample.confirmation_link)+'" style="display:inline-block;margin:10px 0;background:#081342;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">Yes, I’m attending / Respond to offer</a><br>');
-      return Response.json({success:true,subject:merge(body.subject||''),previewHtml:emailShell({club,headline:'Please confirm your alternative session',preheader:sample.session_details,content:'<p style="line-height:1.7">'+htmlMessage+'</p>'})});
+      return Response.json({success:true,subject:merge(body.subject||''),previewHtml:emailShell({club,headline:'Please confirm your alternative session',preheader:sample.session_details,content:'<p style="line-height:1.7">'+htmlMessage+'</p>',brandKit})});
     }
     if(action==='change_offer_get'||action==='change_offer_reply'){
       const raw=clean(body.token,150);
@@ -1047,6 +1058,7 @@ Deno.serve(async(req)=>{
       const offer=await base44.asServiceRole.entities.GuestBookingChangeOffer.create({tenant_id:tenantId,club_id:clubId,booking_id:booking.id,source_session_id:source.id,target_session_id:target.id,token_hash:digest,status:'pending',expires_at:expires,created_at:new Date().toISOString(),created_by_user_id:user.id,guest_email:emailKey(booking.email),email_sent:false,target_label:label});
       const url='https://rallyhub.ie/booking-change/'+raw;
       const tenantClub=await clubBrand(base44,clubId);
+      const brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
       if(!tenantClub||tenantClub.slug!=='clare-pickleball')return Response.json({error:'Clare Pickleball tenant branding is unavailable.'},{status:409});
       let emailSent=false;
       try{
@@ -1061,7 +1073,7 @@ Deno.serve(async(req)=>{
         if(!bodyTemplate.includes('{{confirmation_link}}'))throw Error('Tenant template is missing its required confirmation link.');
         const message=merge(bodyTemplate);
         const htmlMessage=bodyTemplate.split('{{confirmation_link}}').map((part:string)=>escapeHtml(merge(part)).replace(/\n/g,'<br>')).join('<br><a href="'+escapeHtml(url)+'" style="display:inline-block;margin:10px 0;background:#081342;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">Yes, I’m attending / Respond to offer</a><br>');
-        await sendWithConfiguredEmailTransport(base44,scope,{to:booking.email,senderName:tenantClub.name,subject:merge(subjectTemplate),textBody:message+'\n\nClare Pickleball · Powered by RallyHub',htmlBody:emailShell({club:tenantClub,headline:'Please confirm your alternative session',preheader:label,content:'<p style="line-height:1.7">'+htmlMessage+'</p>'})});
+        await sendWithConfiguredEmailTransport(base44,scope,{to:booking.email,senderName:tenantClub.name,subject:merge(subjectTemplate),textBody:message+'\n\nClare Pickleball · Powered by RallyHub',htmlBody:emailShell({club:tenantClub,headline:'Please confirm your alternative session',preheader:label,content:'<p style="line-height:1.7">'+htmlMessage+'</p>',brandKit})});
         emailSent=true;
       }catch(e){console.error('Change offer email failed',e?.message||e);}
       if(emailSent)await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{email_sent:true});
