@@ -38,6 +38,8 @@ export default function GuestBookings(){
   const [expanded,setExpanded]=useState('');
   const [messagePreview,setMessagePreview]=useState(null);
   const [showArchived,setShowArchived]=useState(false);
+  const [showPastAttendees,setShowPastAttendees]=useState(false);
+  const [recentOfferLinks,setRecentOfferLinks]=useState({});
   const [approvalSelections,setApprovalSelections]=useState({});
   const [approvalFeedback,setApprovalFeedback]=useState({});
   const [changeBooking,setChangeBooking]=useState(null);
@@ -94,6 +96,16 @@ export default function GuestBookings(){
     return [...approved,...direct].sort((a,b)=>`${b.sessionDate||''} ${b.start||''}`.localeCompare(`${a.sessionDate||''} ${a.start||''}`));
   },[approvedRequests,sessions]);
 
+  const todayIreland=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const pastBookingRows=bookingRows.filter(row=>row.sessionDate&&row.sessionDate<todayIreland());
+  const visibleBookingRows=bookingRows.filter(row=>showPastAttendees?row.sessionDate&&row.sessionDate<todayIreland():!(row.sessionDate&&row.sessionDate<todayIreland()));
+  const offerWhatsApp=(row,url)=>{
+    const target=whatsappNumber(row.mobile);
+    if(!target){navigator.clipboard?.writeText(url);toast.info('No mobile number saved. Copy the private offer link instead.');return}
+    const first=String(row.fullName||'').split(/\s+/)[0]||'there';
+    const msg='Hi '+first+', Clare Pickleball has offered you an alternative session. Your original payment is already recorded; no further payment is requested. Please choose Yes, I’m attending or decline using your private link: '+url;
+    window.open('https://wa.me/'+target+'?text='+encodeURIComponent(msg),'_blank','noopener,noreferrer');
+  };
   const createSession=async()=>{
     if(!templateKey||!sessionDate){toast.error('Choose a session slot and date');return}
     setBusy('create');
@@ -155,7 +167,11 @@ export default function GuestBookings(){
       const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_change_offer',bookingId:changeBooking.bookingId,templateKey:changeSlot,sessionDate:changeDate});
       if(res.data?.error)throw new Error(res.data.error);
       if(!res.data?.success)throw new Error('Offer was not confirmed by the server.');
-      if(res.data.emailSent)toast.success('Alternative session offered — guest confirmation email sent.');
+      if(res.data.offerUrl){
+        setRecentOfferLinks(previous=>({...previous,[changeBooking.bookingId]:res.data.offerUrl}));
+        if(window.confirm('Offer created'+(res.data.emailSent?' and emailed':'')+'. Open WhatsApp with the same alternative-session offer?'))offerWhatsApp(changeBooking,res.data.offerUrl);
+      }
+      if(res.data.emailSent)toast.success('Alternative session offer emailed.');
       else {toast.warning('Offer created, but email was not sent. Copy the private response link.');if(res.data.offerUrl)copy(res.data.offerUrl,'Private response link copied');}
       setChangeBooking(null);setChangeSlot('');setChangeDate('');
       await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
@@ -241,7 +257,7 @@ export default function GuestBookings(){
     const first=String(row.fullName||'').split(/\s+/)[0]||'there';
     const when=`${row.sessionDate?niceDate(row.sessionDate):''}${row.start?` · ${row.start}${row.end?`–${row.end}`:''}`:''}`;
     const paymentLine=row.paymentStatus==='paid'?'Payment confirmed':row.paymentStatus==='cash_due'?'€5 hall contribution due to host':row.paymentStatus==='pending'?'Payment still pending':String(row.paymentStatus||'').replaceAll('_',' ');
-    const action=row.sumupCheckoutUrl?`\n\nComplete payment here:\n${row.sumupCheckoutUrl}`:'';
+    const action=row.sumupCheckoutUrl&&row.paymentStatus==='pending'?`\n\nComplete payment here:\n${row.sumupCheckoutUrl}`:'';
     const msg=`Clare Pickleball session booking\n\nHi ${first},\n${when}\n${row.venueName||''}\n${paymentLine}${action}\n\nRallyHub`;
     window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
   };
@@ -439,10 +455,10 @@ export default function GuestBookings(){
     <section className="glass rounded-2xl p-5 sm:p-6 space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div><h2 className="text-lg font-black">Session attendees & payment status</h2><p className="mt-1 text-xs text-muted-foreground">One working list for approved guests, people awaiting payment and completed bookings. Use this if somebody says they did not receive their booking email.</p></div>
-        <Badge variant="outline">{bookingRows.length} people</Badge>
+        <div className="flex gap-2"><Button size="sm" variant={!showPastAttendees?"default":"outline"} onClick={()=>setShowPastAttendees(false)}>Current ({bookingRows.length-pastBookingRows.length})</Button><Button size="sm" variant={showPastAttendees?"default":"outline"} onClick={()=>setShowPastAttendees(true)}>Past / archived ({pastBookingRows.length})</Button></div>
       </div>
-      {bookingRows.length===0?<p className="text-sm text-muted-foreground">No approved or booked session attendees yet.</p>:<div className="space-y-3">
-        {bookingRows.map(row=>{
+      {visibleBookingRows.length===0?<p className="text-sm text-muted-foreground">No bookings in this view.</p>:<div className="space-y-3">
+        {visibleBookingRows.map(row=>{
           const awaitingBooking=row.kind==='approved_request'&&!row.bookingId;
           const paid=['paid','partially_refunded','refunded'].includes(row.paymentStatus);
           const paymentLabel=awaitingBooking?'Approved · booking not completed':row.paymentStatus==='pending'?'Payment pending':row.paymentStatus==='cash_due'?'Hall contribution due':paid?'Paid':String(row.paymentStatus||row.bookingStatus||'').replaceAll('_',' ');
@@ -465,14 +481,14 @@ export default function GuestBookings(){
                   <Button size="sm" variant="outline" className="text-destructive" disabled={busy===`retract-${row.request.id}`} onClick={()=>retractApproval(row.request)}>{busy===`retract-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Retract / amend</Button>
                 </>}
                 {row.kind==='approved_request'&&row.bookingId&&<>
-                  <Button size="sm" variant="outline" onClick={()=>whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
+                  <Button size="sm" variant="outline" onClick={()=>recentOfferLinks[row.bookingId]?offerWhatsApp(row,recentOfferLinks[row.bookingId]):whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>{recentOfferLinks[row.bookingId]?"WhatsApp offer":"WhatsApp"}</Button>
                   {row.sumupCheckoutUrl&&row.paymentStatus==='pending'&&<Button size="sm" variant="outline" onClick={()=>copy(row.sumupCheckoutUrl,'Payment link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy payment link</Button>}
                   {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend confirmation</Button>}
                   {row.paymentMethod==='sumup'&&!paid&&<Button size="sm" variant="outline" disabled={busy===`verify-${row.bookingId}`} onClick={()=>verifyPayment(row.bookingId)}>{busy===`verify-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
                   {row.kind==='approved_request'&&!paid&&<Button size="sm" variant="outline" className="text-destructive" disabled={busy===`retract-${row.request.id}`} onClick={()=>retractApproval(row.request)}>{busy===`retract-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Retract / amend</Button>}
                 </>}
                 {row.kind==='booking'&&<>
-                  <Button size="sm" variant="outline" onClick={()=>whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>WhatsApp</Button>
+                  <Button size="sm" variant="outline" onClick={()=>recentOfferLinks[row.bookingId]?offerWhatsApp(row,recentOfferLinks[row.bookingId]):whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>{recentOfferLinks[row.bookingId]?"WhatsApp offer":"WhatsApp"}</Button>
                   {row.sumupCheckoutUrl&&row.paymentStatus==='pending'&&<Button size="sm" variant="outline" onClick={()=>copy(row.sumupCheckoutUrl,'Payment link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy payment link</Button>}
                   {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}Resend confirmation</Button>}
                   {row.paymentMethod==='sumup'&&!paid&&<Button size="sm" variant="outline" disabled={busy===`verify-${row.bookingId}`} onClick={()=>verifyPayment(row.bookingId)}>{busy===`verify-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
