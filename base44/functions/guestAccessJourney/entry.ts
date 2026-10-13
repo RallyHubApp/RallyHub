@@ -149,7 +149,13 @@ async function sendApprovedGuestInvite(base44:any,club:any,row:any,session:any,v
   const cash=/cash/i.test(String(session.paymentMethod||''));
   const mapsQuery=encodeURIComponent([venue.name,venue.address||venue.full_address||'',venue.eircode||'', 'County Clare Ireland'].filter(Boolean).join(', '));
   const mapsUrl='https://www.google.com/maps/search/?api=1&query='+mapsQuery;
-  const hostName=/clarecastle/i.test(venueName)?'John McLaughlin':/shannon/i.test(venueName)?'Liz Daley':'';
+  const startTime=String(session.start||'').trim();
+  const isEnnistymon=/ennistymon/i.test(venueName);
+  const hostName=/clarecastle/i.test(venueName)?'John McLaughlin'
+    :/shannon/i.test(venueName)?'Liz Daley'
+    :/corofin/i.test(venueName)?'Bróna McBreen'
+    :isEnnistymon&&startTime==='19:00'?'Mary Fahy'
+    :isEnnistymon&&startTime==='20:00'?'Jenny Martin':'';
   const details='<p style="font-size:15px;line-height:1.7">Hi '+escapeHtml(hello)+', your guest session has been approved.</p>'
     +'<div style="padding:16px;background:#f7f9fc;border:1px solid #dfe5ee;border-radius:12px;line-height:1.8"><strong>'+escapeHtml(formatDate(date))+'</strong><br>'+escapeHtml(String(session.start||'')+(session.end?'–'+session.end:''))+'<br>'+escapeHtml(venueName)+'<br>'+escapeHtml(payment)+'</div>'
     +'<p><a href="'+escapeHtml(mapsUrl)+'" style="color:#081342;text-decoration:underline">Directions to the venue (Google Maps)</a></p>'
