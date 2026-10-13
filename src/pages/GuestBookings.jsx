@@ -543,7 +543,9 @@ export default function GuestBookings(){
       </div>
     </div>}
 
-    <section className="glass rounded-2xl p-5 sm:p-6 space-y-5">
+    <details className="glass rounded-2xl p-5 sm:p-6" >
+      <summary className="cursor-pointer text-lg font-black">Create guest booking link <span className="ml-2 text-xs font-normal text-muted-foreground">Expand when needed</span></summary>
+      <div className="mt-5 space-y-5">
       <div><h2 className="text-lg font-black">Create guest booking link</h2><p className="mt-1 text-xs text-muted-foreground">Choose the actual session date. RallyHub checks that it matches the weekday of the selected slot.</p></div>
       <div className="grid lg:grid-cols-2 gap-4">
         <div>
@@ -575,9 +577,11 @@ export default function GuestBookings(){
         {busy==='create'?<RefreshCw className="h-4 w-4 animate-spin"/>:<CalendarCheck className="h-4 w-4"/>}
         {busy==='create'?'Creating…':'Create guest session'}
       </Button>
-    </section>
+      </div>
+    </details>
 
-    <section className="space-y-3">
+    <details className="space-y-3">
+      <summary className="cursor-pointer rounded-xl border bg-secondary/20 p-4 font-bold">Session booking links <span className="ml-2 text-xs font-normal text-muted-foreground">({sessions.length} links) · Expand to manage</span></summary>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-lg font-black">Session booking links</h2><p className="mt-1 text-xs text-muted-foreground">Past sessions are archived automatically and remain available for review. Test/empty sessions can be deleted; sessions with confirmed or financial history are retained.</p></div><div className="flex gap-2"><Button size="sm" variant={!showArchived?'default':'outline'} onClick={()=>setShowArchived(false)}>Current ({currentSessions.length})</Button><Button size="sm" variant={showArchived?'default':'outline'} onClick={()=>setShowArchived(true)}><History className="mr-1.5 h-3.5 w-3.5"/>Archived ({archivedSessions.length})</Button></div></div>
       {visibleSessions.length===0?<div className="glass rounded-2xl p-6 text-sm text-muted-foreground">{showArchived?'No archived sessions yet.':'No current guest booking links have been created yet.'}</div>:visibleSessions.map(s=>{
         const url=`${window.location.origin}/book/${s.token}`;
@@ -643,6 +647,6 @@ export default function GuestBookings(){
           </div>}
         </div>;
       })}
-    </section>
+    </details>
   </div>;
 }
