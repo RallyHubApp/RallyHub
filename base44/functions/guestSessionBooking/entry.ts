@@ -1169,7 +1169,10 @@ Deno.serve(async(req)=>{
           }
           rows.push({...safeSession(s),notificationEmail:s.notification_email||'',hostName:host?.name||'',hostEmail:host?.email||'',hostMobile:host?.mobile||'',bookings:bookingRows});
         }
-        return Response.json({success:true,sessions:rows,sumupConfigured});
+        const offers=await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({tenant_id:tenantId,club_id:clubId},'-created_at',500);
+        const latestOffers:Record<string,any>={};
+        for(const o of offers||[]){if(!latestOffers[o.booking_id])latestOffers[o.booking_id]={status:o.status,targetSessionId:o.target_session_id,targetLabel:o.target_label||'',respondedAt:o.responded_at||'',expiresAt:o.expires_at||''};}
+        return Response.json({success:true,sessions:rows,changeOffers:latestOffers,sumupConfigured});
       }
 
       if(action==='admin_archive_session'||action==='admin_restore_session'||action==='admin_delete_session'){
