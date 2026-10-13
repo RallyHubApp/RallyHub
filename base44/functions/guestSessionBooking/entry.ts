@@ -1337,6 +1337,12 @@ ${detailRow('Fee',session.payment_method==='none'?'No payment required':session.
         return Response.json({success:true,booking:updated});
       }
 
+      if(action==='admin_resend_emails'||action==='admin_resend_host_email'){
+        const offers=await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({booking_id:booking.id,tenant_id:tenantId,club_id:clubId,status:'pending'},'-created_at',20);
+        if((offers||[]).some((offer:any)=>Date.parse(offer.expires_at)>Date.now())){
+          return Response.json({error:'An alternative-session offer is awaiting the guest’s response. Do not resend the original session confirmation.'},{status:409});
+        }
+      }
       if(action==='admin_resend_emails'){
         if(booking.payment_status!=='paid' && booking.payment_status!=='partially_refunded' && booking.payment_status!=='refunded'){
           return Response.json({error:'Confirm the payment before resending booking emails.'},{status:409});
