@@ -45,6 +45,7 @@ const PublicInterclubRegistration = lazy(() => import('@/pages/PublicInterclubRe
 const PublicInterclubTeamManager = lazy(() => import('@/pages/PublicInterclubTeamManager'));
 const PublicInterclubCommittee = lazy(() => import('@/pages/PublicInterclubCommittee'));
 const PublicGuestSessionBooking = lazy(() => import('@/pages/PublicGuestSessionBooking'));
+const GuestBookingChange = lazy(() => import('@/pages/GuestBookingChange'));
 const PublicGuestRequest = lazy(() => import('@/pages/PublicGuestRequest'));
 const KotcHostSession = lazy(() => import('@/pages/KotcHostSession'));
 const PublicKotcResults = lazy(() => import('@/pages/PublicKotcResults'));
@@ -296,6 +297,7 @@ function App() {
             <Route path="/membership/:clubSlug" element={<PublicMembershipApplication />} />
             <Route path="/waiting-list/:clubSlug" element={<PublicWaitingList />} />
             <Route path="/book/:token" element={<PublicGuestSessionBooking />} />
+            <Route path="/booking-change/:token" element={<GuestBookingChange />} />
             <Route path="/club-challenge/display/:token" element={<PublicClubChallengeDisplay />} />
             <Route path="/interclub-results/:token" element={<PublicInterclubParticipantResult />} />
             <Route path="/club-challenge/vote/:token" element={<PublicClubChallengeVote />} />

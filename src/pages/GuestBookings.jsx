@@ -40,6 +40,9 @@ export default function GuestBookings(){
   const [showArchived,setShowArchived]=useState(false);
   const [approvalSelections,setApprovalSelections]=useState({});
   const [approvalFeedback,setApprovalFeedback]=useState({});
+  const [changeBooking,setChangeBooking]=useState(null);
+  const [changeSlot,setChangeSlot]=useState('');
+  const [changeDate,setChangeDate]=useState('');
 
   const {data:templateData={templates:[],sumupConfigured:false},isLoading:templatesLoading}=useQuery({
     queryKey:['guest-session-templates'],
@@ -143,6 +146,21 @@ export default function GuestBookings(){
       setApprovalFeedback(previous=>({...previous,[request.id]:{type:'error',message}}));
       toast.error(message);
     }finally{setBusy('')}
+  };
+
+  const offerBookingChange=async()=>{
+    if(!changeBooking||!changeSlot||!changeDate){toast.error('Choose a session and date');return}
+    setBusy('change-offer');
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_change_offer',bookingId:changeBooking.bookingId,templateKey:changeSlot,sessionDate:changeDate});
+      if(res.data?.error)throw new Error(res.data.error);
+      if(!res.data?.success)throw new Error('Offer was not confirmed by the server.');
+      if(res.data.emailSent)toast.success('Alternative session offered — guest confirmation email sent.');
+      else {toast.warning('Offer created, but email was not sent. Copy the private response link.');if(res.data.offerUrl)copy(res.data.offerUrl,'Private response link copied');}
+      setChangeBooking(null);setChangeSlot('');setChangeDate('');
+      await qc.invalidateQueries({queryKey:['guest-session-admin-list']});
+    }catch(e){toast.error(e?.response?.data?.error||e?.message||'Could not offer new session')}
+    finally{setBusy('')}
   };
 
   const rejectRequest=async(request)=>{
@@ -439,6 +457,7 @@ export default function GuestBookings(){
                 {row.kind==='booking'&&row.booking?.registeredAt&&<p className="mt-1 text-xs text-muted-foreground">Booking started {new Date(row.booking.registeredAt).toLocaleString('en-IE')}{row.booking?.paidAt?` · paid ${new Date(row.booking.paidAt).toLocaleString('en-IE')}`:''}</p>}
               </div>
               <div className="flex flex-wrap gap-2">
+                {!!row.bookingId&&row.bookingStatus!=='cancelled'&&<Button size="sm" variant="outline" onClick={()=>{setChangeBooking(row);setChangeSlot('');setChangeDate('')}}><CalendarCheck className="mr-1.5 h-3.5 w-3.5"/>Offer alternative</Button>}
                 {row.kind==='approved_request'&&!row.bookingId&&<>
                   <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>previewApprovedMessage(row.request,'email')}><Mail className="mr-1.5 h-3.5 w-3.5"/>Preview / resend email</Button>
                   <Button size="sm" variant="outline" disabled={busy===`link-${row.request.id}`} onClick={()=>previewApprovedMessage(row.request,'whatsapp')}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>Preview WhatsApp</Button>
@@ -465,6 +484,17 @@ export default function GuestBookings(){
         })}
       </div>}
     </section>
+
+    {changeBooking&&<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg space-y-4 rounded-2xl border bg-background p-6 shadow-xl">
+        <h2 className="text-xl font-black">Offer alternative to {changeBooking.fullName}</h2>
+        <p className="text-sm text-muted-foreground">Their existing booking stays unchanged until they accept the private offer. Only equal-fee and matching-payment sessions can be transferred automatically.</p>
+        <Label>New session</Label>
+        <Select value={changeSlot} onValueChange={setChangeSlot}><SelectTrigger><SelectValue placeholder="Select venue and time"/></SelectTrigger><SelectContent>{(templateData.templates||[]).map(t=><SelectItem key={t.key} value={t.key}>{t.venueName} · {t.weekday} {t.start}–{t.end} · €{Number(t.fee).toFixed(2)}</SelectItem>)}</SelectContent></Select>
+        <Label>New date</Label><Input type="date" value={changeDate} onChange={e=>setChangeDate(e.target.value)}/>
+        <div className="flex flex-wrap gap-2"><Button disabled={!!busy||!changeSlot||!changeDate} onClick={offerBookingChange}>{busy==='change-offer'&&<RefreshCw className="mr-2 h-4 w-4 animate-spin"/>}Send offer for guest acceptance</Button><Button variant="outline" disabled={!!busy} onClick={()=>setChangeBooking(null)}>Cancel</Button></div>
+      </div>
+    </div>}
 
     {messagePreview&&<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-background p-5 shadow-2xl sm:p-6">

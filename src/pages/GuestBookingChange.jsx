@@ -1,0 +1,10 @@
+import React,{useEffect,useState} from 'react';
+import {useParams} from 'react-router-dom';
+import {base44} from '@/api/base44Client';
+import {Button} from '@/components/ui/button';
+export default function GuestBookingChange(){
+ const {token}=useParams(),[offer,setOffer]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ useEffect(()=>{base44.functions.invoke('guestSessionBooking',{action:'change_offer_get',token}).then(r=>{if(r.data?.error)throw Error(r.data.error);setOffer(r.data)}).catch(e=>setError(e?.response?.data?.error||e.message))},[token]);
+ const reply=async(decision)=>{setBusy(true);setError('');try{const r=await base44.functions.invoke('guestSessionBooking',{action:'change_offer_reply',token,decision});if(r.data?.error)throw Error(r.data.error);setOffer(v=>({...v,status:r.data.status}))}catch(e){setError(e?.response?.data?.error||e.message)}finally{setBusy(false)}};
+ return <main className="mx-auto max-w-xl p-6 sm:p-12"><div className="rounded-2xl border bg-background p-6 shadow-sm space-y-5"><h1 className="text-2xl font-bold">Clare Pickleball · Alternative session</h1>{error&&<p role="alert" className="text-red-600">{error}</p>}{!offer&&!error&&<p>Loading your private invitation…</p>}{offer&&<><p>Hi {offer.guestName},</p><p>We can offer you this alternative session:</p><div className="rounded-lg border p-4"><strong>{offer.target.venueName}</strong><p>{offer.target.sessionDate} · {offer.target.startTime}–{offer.target.endTime}</p></div>{offer.status==='pending'?<><p>Your original booking remains in place until you accept.</p><div className="flex flex-wrap gap-3"><Button disabled={busy} onClick={()=>reply('accept')}>Yes, I'm attending</Button><Button variant="outline" disabled={busy} onClick={()=>reply('decline')}>No, thanks</Button></div></>:<p role="status" className="font-semibold">{offer.status==='accepted'?'Thank you — your new session is confirmed.':offer.status==='declined'?'You have declined the alternative. Your original booking remains unchanged.':'This offer is no longer available. Please contact the organiser.'}</p>}</>}</div></main>
+}
