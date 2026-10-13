@@ -386,8 +386,9 @@ Deno.serve(async(req)=>{
       const allocationOpens=priorityOpening({...session,venueName:venue.name},date);
       if(!allocationOpens)return Response.json({error:'Guest allocation schedule has not been configured for this venue.'},{status:409});
       if(Date.now()<allocationOpens.getTime())return Response.json({error:`Members have priority. Guest allocation opens ${allocationOpens.toLocaleString('en-IE',{timeZone:'Europe/Dublin',weekday:'long',hour:'2-digit',minute:'2-digit'})}.`},{status:409});
-      const checked=await applySpondAvailability(base44,club,[session]);
-      if(checked[0]?.spondStatus!=='available')return Response.json({error:'Guest approval is blocked until the current Spond event has been verified and a place is available.'},{status:409});
+      // Guest allocations are checked manually by the Clare club approver.
+      // Do not require Spond event bindings or API availability for guest approval.
+      // Member-priority timing and the other approval safeguards above remain enforced.
       const payment=/cash/i.test(String(session.paymentMethod||''))?'cash':'sumup';
       const price=Number(session.price||0)||(payment==='cash'?5:5.5);
       let guestSession=(await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId,session_date:date,start_time:String(session.start||''),venue_key:String(venue.id),active:true},'-created_at',10))?.[0];
