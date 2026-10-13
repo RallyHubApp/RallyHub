@@ -1,0 +1,89 @@
+{
+  "name": "GuestBookingChangeOffer",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "club_id": {
+      "type": "string"
+    },
+    "booking_id": {
+      "type": "string"
+    },
+    "source_session_id": {
+      "type": "string"
+    },
+    "target_session_id": {
+      "type": "string"
+    },
+    "token_hash": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "declined",
+        "expired",
+        "superseded"
+      ]
+    },
+    "expires_at": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "responded_at": {
+      "type": "string"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "guest_email": {
+      "type": "string"
+    },
+    "email_sent": {
+      "type": "boolean"
+    },
+    "target_label": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "club_id",
+    "booking_id",
+    "source_session_id",
+    "target_session_id",
+    "token_hash",
+    "status",
+    "expires_at",
+    "created_at",
+    "created_by_user_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
