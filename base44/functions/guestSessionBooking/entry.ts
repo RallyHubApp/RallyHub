@@ -1175,15 +1175,20 @@ Deno.serve(async(req)=>{
         const sessions=await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-session_date',200);
         const rows=[];
         const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-        for(let s of sessions||[]){
-          if(!s.archived_at && String(s.session_date||'') < today){
-            try{s=await base44.asServiceRole.entities.GuestSessionLink.update(s.id,{active:false,archived_at:new Date().toISOString(),archived_by_user_id:'system',archive_reason:'Session date has passed'});}catch{}
-          }
-          const host=await resolveSessionHostContact(base44,s);
-          const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:s.id},'-registered_at',200);
+        // Read-only listing: never archive sessions while someone is loading attendees.
+        // Fetch independent session data concurrently to avoid a long serial waterfall.
+        const sessionDetails=await Promise.all((sessions||[]).map(async s=>{
+          const [host,bookings]=await Promise.all([
+            resolveSessionHostContact(base44,s),
+            base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:s.id},'-registered_at',200)
+          ]);
+          const paymentsByBooking=await Promise.all((bookings||[]).map(b=>base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:b.id},'-created_date',10)));
+          return {s,host,bookings, paymentsByBooking};
+        }));
+        for(const {s,host,bookings,paymentsByBooking} of sessionDetails){
           const bookingRows=[];
-          for(const b of bookings||[]){
-            const payments=await base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:b.id},'-created_date',10);
+          for(const [bookingIndex,b] of (bookings||[]).entries()){
+            const payments=paymentsByBooking[bookingIndex]||[];
             const payment=payments?.[0]||null;
             const originalAmount=Number(payment?.amount||b.amount||0);
             const refundedAmount=Number(payment?.amount_refunded||0);
