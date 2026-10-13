@@ -1037,7 +1037,17 @@ Deno.serve(async(req)=>{
       let emailSent=false;
       try{
         const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId,clubId};
-        await sendWithConfiguredEmailTransport(base44,scope,{to:booking.email,senderName:tenantClub.name,subject:'Please confirm your alternative pickleball session',textBody:'Hi '+clean(booking.full_name,120)+',\n\nWe can offer you a different session: '+label+'.\n\nPlease confirm whether you are attending using your private link:\n'+url+'\n\nYour original booking remains unchanged until you accept.\n\nClare Pickleball · Powered by RallyHub',htmlBody:emailShell({club:tenantClub,headline:'Please confirm your alternative session',preheader:label,content:'<p>Hi '+escapeHtml(clean(booking.full_name,120))+',</p><p>We can offer you a different session:</p><p><strong>'+escapeHtml(label)+'</strong></p><p><a href="'+escapeHtml(url)+'" style="display:inline-block;background:#081342;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">Yes, I’m attending / Respond to offer</a></p><p>Your original booking remains unchanged until you accept.</p>'})});
+        const templateRows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_booking_change_offer'},'-created_date',30);
+        const savedTemplate=(templateRows||[]).find((t:any)=>t.owner_scope==='tenant'&&t.status!=='retired');
+        const guestName=clean(booking.full_name,120);
+        const defaultBody='Hi {{guest_name}},\n\nWe can offer you an alternative pickleball session:\n\n{{session_details}}\n\nPlease confirm whether you can attend:\n{{confirmation_link}}\n\nYour original booking remains unchanged until you accept.';
+        const bodyTemplate=String(savedTemplate?.plain_text_template||defaultBody);
+        const subjectTemplate=String(savedTemplate?.subject_template||'Clare Pickleball · Please confirm your alternative session');
+        const merge=(value:string)=>value.replace(/{{(guest_name|session_details|confirmation_link)}}/g,(_m:string,key:string)=>({guest_name:guestName,session_details:label,confirmation_link:url}[key]||''));
+        if(!bodyTemplate.includes('{{confirmation_link}}'))throw Error('Tenant template is missing its required confirmation link.');
+        const message=merge(bodyTemplate);
+        const htmlMessage=bodyTemplate.split('{{confirmation_link}}').map((part:string)=>escapeHtml(merge(part)).replace(/\n/g,'<br>')).join('<br><a href="'+escapeHtml(url)+'" style="display:inline-block;margin:10px 0;background:#081342;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">Yes, I’m attending / Respond to offer</a><br>');
+        await sendWithConfiguredEmailTransport(base44,scope,{to:booking.email,senderName:tenantClub.name,subject:merge(subjectTemplate),textBody:message+'\n\nClare Pickleball · Powered by RallyHub',htmlBody:emailShell({club:tenantClub,headline:'Please confirm your alternative session',preheader:label,content:'<p style="line-height:1.7">'+htmlMessage+'</p>'})});
         emailSent=true;
       }catch(e){console.error('Change offer email failed',e?.message||e);}
       if(emailSent)await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{email_sent:true});
