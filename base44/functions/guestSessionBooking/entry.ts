@@ -1174,17 +1174,23 @@ Deno.serve(async(req)=>{
       if(action==='admin_list'){
         const sessions=await base44.asServiceRole.entities.GuestSessionLink.filter({tenant_id:tenantId,club_id:clubId},'-session_date',200);
         const rows=[];
-        const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
         // Read-only listing: never archive sessions while someone is loading attendees.
         // Fetch independent session data concurrently to avoid a long serial waterfall.
-        const sessionDetails=await Promise.all((sessions||[]).map(async s=>{
+        const sessionDetails=[];
+        for(let offset=0;offset<(sessions||[]).length;offset+=8){
+          const batch=await Promise.all((sessions||[]).slice(offset,offset+8).map(async s=>{
           const [host,bookings]=await Promise.all([
             resolveSessionHostContact(base44,s),
             base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:s.id},'-registered_at',200)
           ]);
-          const paymentsByBooking=await Promise.all((bookings||[]).map(b=>base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:b.id},'-created_date',10)));
+          const paymentsByBooking=[];
+          for(let paymentOffset=0;paymentOffset<(bookings||[]).length;paymentOffset+=12){
+            paymentsByBooking.push(...await Promise.all((bookings||[]).slice(paymentOffset,paymentOffset+12).map(b=>base44.asServiceRole.entities.PaymentRecord.filter({purpose_type:'booking',purpose_id:b.id},'-created_date',10))));
+          }
           return {s,host,bookings, paymentsByBooking};
-        }));
+          }));
+          sessionDetails.push(...batch);
+        }
         for(const {s,host,bookings,paymentsByBooking} of sessionDetails){
           const bookingRows=[];
           for(const [bookingIndex,b] of (bookings||[]).entries()){
