@@ -106,6 +106,22 @@ export default function GuestBookings(){
   const centreOptions=[...new Set(bookingRows.map(row=>row.venueName).filter(Boolean))].sort();
   const timeOptions=[...new Set(bookingRows.filter(row=>attendeeCentre==='all'||row.venueName===attendeeCentre).map(row=>row.start).filter(Boolean))].sort();
   const visibleBookingRows=(showPastAttendees?pastBookingRows:currentBookingRows).filter(row=>(attendeeCentre==='all'||row.venueName===attendeeCentre)&&(attendeeTime==='all'||row.start===attendeeTime));
+  const remindAlternative=async(row,channel='whatsapp')=>{
+    if(!row.bookingId)return;
+    setBusy(`offer-reminder-${row.bookingId}`);
+    // Open a window synchronously so browsers do not block WhatsApp after the API request.
+    const popup=channel==='whatsapp'?window.open('about:blank','_blank'):null;
+    try{
+      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_offer_reminder',bookingId:row.bookingId,channel});
+      if(res.data?.error||!res.data?.success)throw new Error(res.data?.error||'Could not prepare alternative reminder');
+      if(channel==='email'){toast.success('Alternative offer reminder emailed.');return;}
+      const mobile=whatsappNumber(row.mobile);
+      if(!mobile){popup?.close();await copy(res.data.offerUrl,'Private alternative response link copied');return;}
+      const link='https://wa.me/'+mobile+'?text='+encodeURIComponent(res.data.message);
+      if(popup){popup.location.href=link;}else{await copy(res.data.message,'WhatsApp reminder copied');toast.info('WhatsApp popup blocked. Reminder copied.');}
+    }catch(e){popup?.close();toast.error(e?.response?.data?.error||e?.message||'Could not prepare alternative reminder');}
+    finally{setBusy('');}
+  };
   const offerWhatsApp=(row,url)=>{
     const target=whatsappNumber(row.mobile);
     if(!target){navigator.clipboard?.writeText(url);toast.info('No mobile number saved. Copy the private offer link instead.');return}
@@ -501,16 +517,16 @@ export default function GuestBookings(){
                   <Button size="sm" variant="outline" className="text-destructive" disabled={busy===`retract-${row.request.id}`} onClick={()=>retractApproval(row.request)}>{busy===`retract-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Retract / amend</Button>
                 </>}
                 {row.kind==='approved_request'&&row.bookingId&&<>
-                  <Button size="sm" variant="outline" onClick={()=>isPendingOffer(row)?(recentOfferLinks[row.bookingId]?offerWhatsApp(row,recentOfferLinks[row.bookingId]):toast.info('Alternative offer is pending. The private response link cannot be recovered; create a replacement offer to generate a new link.')):whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>{isPendingOffer(row)?'WhatsApp offer reminder':'WhatsApp'}</Button>
+                  <Button size="sm" variant="outline" onClick={()=>isPendingOffer(row)?remindAlternative(row,'whatsapp'):whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>{isPendingOffer(row)?'WhatsApp offer reminder':'WhatsApp'}</Button>
                   {row.sumupCheckoutUrl&&row.paymentStatus==='pending'&&<Button size="sm" variant="outline" onClick={()=>copy(row.sumupCheckoutUrl,'Payment link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy payment link</Button>}
-                  {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>isPendingOffer(row)?toast.info('Alternative offer pending: original confirmation cannot be resent. Create a replacement offer to send a fresh response link.'):resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}{isPendingOffer(row)?'Resend alternative offer':'Resend confirmation'}</Button>}
+                  {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>isPendingOffer(row)?remindAlternative(row,'email'):resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}{isPendingOffer(row)?'Resend alternative offer':'Resend confirmation'}</Button>}
                   {row.paymentMethod==='sumup'&&!paid&&<Button size="sm" variant="outline" disabled={busy===`verify-${row.bookingId}`} onClick={()=>verifyPayment(row.bookingId)}>{busy===`verify-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
                   {row.kind==='approved_request'&&!paid&&<Button size="sm" variant="outline" className="text-destructive" disabled={busy===`retract-${row.request.id}`} onClick={()=>retractApproval(row.request)}>{busy===`retract-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Retract / amend</Button>}
                 </>}
                 {row.kind==='booking'&&<>
-                  <Button size="sm" variant="outline" onClick={()=>isPendingOffer(row)?(recentOfferLinks[row.bookingId]?offerWhatsApp(row,recentOfferLinks[row.bookingId]):toast.info('Alternative offer is pending. The private response link cannot be recovered; create a replacement offer to generate a new link.')):whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>{isPendingOffer(row)?'WhatsApp offer reminder':'WhatsApp'}</Button>
+                  <Button size="sm" variant="outline" onClick={()=>isPendingOffer(row)?remindAlternative(row,'whatsapp'):whatsappBooking(row)}><MessageCircle className="mr-1.5 h-3.5 w-3.5"/>{isPendingOffer(row)?'WhatsApp offer reminder':'WhatsApp'}</Button>
                   {row.sumupCheckoutUrl&&row.paymentStatus==='pending'&&<Button size="sm" variant="outline" onClick={()=>copy(row.sumupCheckoutUrl,'Payment link copied')}><Copy className="mr-1.5 h-3.5 w-3.5"/>Copy payment link</Button>}
-                  {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>isPendingOffer(row)?toast.info('Alternative offer pending: original confirmation cannot be resent. Create a replacement offer to send a fresh response link.'):resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}{isPendingOffer(row)?'Resend alternative offer':'Resend confirmation'}</Button>}
+                  {paid&&<Button size="sm" variant="outline" disabled={busy===`email-${row.bookingId}`} onClick={()=>isPendingOffer(row)?remindAlternative(row,'email'):resendEmails(row.bookingId)}>{busy===`email-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<Mail className="mr-1.5 h-3.5 w-3.5"/>}{isPendingOffer(row)?'Resend alternative offer':'Resend confirmation'}</Button>}
                   {row.paymentMethod==='sumup'&&!paid&&<Button size="sm" variant="outline" disabled={busy===`verify-${row.bookingId}`} onClick={()=>verifyPayment(row.bookingId)}>{busy===`verify-${row.bookingId}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<ShieldCheck className="mr-1.5 h-3.5 w-3.5"/>}Verify payment</Button>}
                   {row.kind==='approved_request'&&!paid&&<Button size="sm" variant="outline" className="text-destructive" disabled={busy===`retract-${row.request.id}`} onClick={()=>retractApproval(row.request)}>{busy===`retract-${row.request.id}`?<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin"/>:<RotateCcw className="mr-1.5 h-3.5 w-3.5"/>}Retract / amend</Button>}
                 </>}
