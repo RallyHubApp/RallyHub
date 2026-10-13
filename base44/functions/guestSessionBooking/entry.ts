@@ -1056,6 +1056,35 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,status:'accepted',target:safeSession(target),guestConfirmationSent:!!confirmed?.guest_confirmation_sent_at,organiserNotificationSent:!!confirmed?.notification_sent_at});
     }
 
+    if(action==='admin_offer_reminder'){
+      const user=await base44.auth.me();
+      if(!user||user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
+      const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100);
+      const booking=(await base44.asServiceRole.entities.GuestSessionBooking.filter({id:clean(body.bookingId,100),tenant_id:tenantId,club_id:clubId}))?.[0];
+      if(!booking||booking.booking_status==='cancelled')return Response.json({error:'Active booking not found.'},{status:404});
+      const offers=await base44.asServiceRole.entities.GuestBookingChangeOffer.filter({booking_id:booking.id,tenant_id:tenantId,club_id:clubId,status:'pending'},'-created_at',10);
+      const offer=offers?.[0];
+      if(!offer)return Response.json({error:'No pending alternative offer exists.'},{status:409});
+      const target=(await base44.asServiceRole.entities.GuestSessionLink.filter({id:offer.target_session_id,tenant_id:tenantId,club_id:clubId}))?.[0];
+      if(!target)return Response.json({error:'Proposed session not found.'},{status:404});
+      if(Date.parse(offer.expires_at)<Date.now()||Date.parse(target.session_date+'T23:59:59Z')<Date.now())return Response.json({error:'This alternative offer has expired. Create a new offer.'},{status:409});
+      const raw='gco_'+Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const url='https://rallyhub.ie/booking-change/'+raw;
+      const label=offer.target_label||target.venue_name+' · '+target.session_date+' · '+target.start_time;
+      const first=String(booking.full_name||'').trim().split(/\s+/)[0]||'there';
+      const message='Hi '+first+', a reminder of your proposed Clare Pickleball session: '+label+'. Your original payment is recorded and no further payment is needed. Please accept or decline here: '+url;
+      // Rotate the private token; never expose an old hash or trigger a new payment.
+      await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{token_hash:digest});
+      if(body.channel==='email'){
+        const club=await clubBrand(base44,clubId),brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
+        if(!club)return Response.json({error:'Club brand not found.'},{status:409});
+        await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant' as const,purpose:'club_comms',tenantId,clubId},{to:booking.email,senderName:club.name,subject:'Clare Pickleball · Reminder: alternative session',textBody:message,htmlBody:emailShell({club,brandKit,headline:'Reminder: alternative session',preheader:label,content:'<p>'+escapeHtml(message).replace(url,'<a href="'+escapeHtml(url)+'">Respond to your offer</a>')+'</p>'})});
+        return Response.json({success:true,emailSent:true});
+      }
+      return Response.json({success:true,offerUrl:url,message});
+    }
+
     if(action==='admin_change_offer'){
       const user=await base44.auth.me();
       if(!user||user.role!=='admin')return Response.json({error:'Admin access required.'},{status:403});
