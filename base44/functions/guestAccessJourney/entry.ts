@@ -94,6 +94,43 @@ function previousSports(value:any){
   return cleaned.includes('None of these')?['None of these']:cleaned;
 }
 
+async function tenantEmailBrandKit(base44:any,tenantId:string,clubId:string){
+  const rows=await base44.asServiceRole.entities.CommunicationBrandKit.filter({tenant_id:tenantId,owner_scope:'tenant',status:'active'},'-updated_date',30);
+  return (rows||[]).find((k:any)=>!k.club_id||String(k.club_id)===String(clubId))||null;
+}
+
+function emailShell({club,headline,preheader,content,brandKit}:any){
+  const name=escapeHtml(club?.name||'Clare Pickleball');
+  const logo=escapeHtml(club?.logo_url||'');
+  const primary=escapeHtml(brandKit?.colours?.primary||club?.primary_colour||'#2667f2');
+  const secondary=escapeHtml(brandKit?.colours?.secondary||club?.secondary_colour||'#facc15');
+  const contact=brandKit?.contact||{};
+  const signatureConfig=brandKit?.channel_overrides?.email?.signature_block||{};
+  const style=(part:string,fallback:string)=>{const v=signatureConfig.styles?.[part]||{};return 'font-size:'+Number(v.size||13)+'px;font-weight:'+(v.bold?'800':'400')+';color:'+escapeHtml(v.color||fallback)+';text-align:'+(['left','right','center'].includes(v.align)?v.align:'left')};
+  const signature=brandKit&&contact.name&&signatureConfig.enabled_default!==false?'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #dbe5f1;border-radius:12px;background:#f8fafc"><tr><td width="5" style="background:'+secondary+';width:5px">&nbsp;</td><td style="padding:16px 18px"><div style="'+style('signoff','#64748b')+'">'+escapeHtml(contact.signoff||'Yours in sport,')+'</div><div style="'+style('name',primary)+';margin-top:5px">'+escapeHtml(contact.name)+'</div><div style="'+style('role','#172033')+'">'+escapeHtml(contact.role||'')+'</div><div style="'+style('organisation',primary)+'">'+escapeHtml(contact.organisation||'')+'</div>'+(signatureConfig.show_phone===false?'':'<div>'+escapeHtml(contact.phone_whatsapp||'')+'</div>')+(signatureConfig.show_email===false?'':'<div>'+escapeHtml(contact.email||'')+'</div>')+(signatureConfig.show_website===false?'':'<div>'+escapeHtml(contact.website||'')+'</div>')+'</td></tr></table>':'<div>Yours in sport,<br><strong>Brian Moore</strong><br>Chairperson, Clare Pickleball</div>';
+  const approvedPowered=String(brandKit?.compliance_footer?.powered_by_html||'').trim();
+  const powered=approvedPowered||'<a href="https://rallyhub.ie/" style="display:inline-block"><img src="https://rallyhub.ie/assets/brand/rallyhub-signature-light.png" alt="Powered by RallyHub" width="160" style="max-width:160px;height:auto;border:0"></a>';
+  return `<!doctype html>
+<html><body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader||headline||'')}</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 12px;"><tr><td align="center">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #d9e1ec;border-radius:18px;overflow:hidden;">
+<tr><td style="height:6px;background:${primary};border-bottom:3px solid ${secondary};"></td></tr>
+<tr><td style="padding:26px 28px 18px;text-align:center;">
+${logo?`<img src="${logo}" alt="${name} logo" width="72" height="72" style="display:block;margin:0 auto 12px;object-fit:contain;border-radius:12px;">`:''}
+<div style="font-size:25px;font-weight:800;color:#10182b;">${name}</div>
+<div style="margin-top:5px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b7280;">Guest Session Booking</div>
+</td></tr>
+<tr><td style="padding:0 28px 28px;">
+<h1 style="margin:0 0 18px;font-size:23px;line-height:1.25;color:#10182b;">${escapeHtml(headline)}</h1>
+${content}
+</td></tr>
+<tr><td style="padding:0 28px 22px;"><div style="border-top:1px solid #dbe5f1;padding-top:18px;">${signature}</div></td></tr>
+<tr><td style="padding:16px 20px;background:#f7f9fc;border-top:1px solid #e4e9f1;text-align:center;">${powered}</td></tr>
+</table>
+</td></tr></table></body></html>`;
+}
+
 async function sendApprovedGuestInvite(base44:any,club:any,row:any,session:any,venue:any,date:string,inviteUrl:string){
   const scope={scopeType:'tenant' as const,purpose:'club_comms',tenantId:club.tenant_id,clubId:club.id};
   const hello=firstName(row.full_name);
@@ -106,11 +143,20 @@ async function sendApprovedGuestInvite(base44:any,club:any,row:any,session:any,v
   const spondHtml=spondCode?`<div style="margin:20px 0;padding:16px;border:1px solid #dfe5ee;border-radius:12px;background:#f7f9fc;font-size:14px;line-height:1.7;"><strong>Want to keep playing with us?</strong><br>We use the free Spond app to organise future sessions. You are welcome to download Spond, create an account and <a href="${escapeHtml(spondUrl)}">join our group</a>. If asked for a group code, enter <strong>${escapeHtml(spondCode)}</strong>. You can then respond to future session invitations through Spond. Joining is optional for this booking.</div>`:'';
   const subject=`${club.name} · Guest request approved · ${formatDate(date)} ${session.start||''}`;
   const authorisedContact=[row.email?`email ${row.email}`:'',row.mobile?`mobile ${row.mobile}`:''].filter(Boolean).join(' or ');
-  const textBody=`Hi ${hello},\n\nYour guest request has been reviewed and approved.\n\nDate: ${formatDate(date)}\nTime: ${session.start||''}${session.end?`–${session.end}`:''}\nVenue: ${venue.name||''}\nFee: ${payment}\n\nComplete your waiver, Code of Conduct and booking/payment using your private link:\n${inviteUrl}\n\n${spondText}\n\nThis link is for you only. Please don't share it.\n\nHope you enjoy the session.\n\nYours in sport,\nBrian Moore\nChairperson, Clare Pickleball\n\nPowered by RallyHub`;
-  const logo=escapeHtml(club.logo_url||'');
-  const primary=escapeHtml(club.primary_colour||'#2667f2');
-  const secondary=escapeHtml(club.secondary_colour||'#facc15');
-  const htmlBody=`<!doctype html><html><body style="margin:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border:1px solid #d9e1ec;border-radius:18px;overflow:hidden;"><tr><td style="height:6px;background:${primary};border-bottom:3px solid ${secondary};"></td></tr><tr><td style="padding:26px 28px 18px;text-align:center;">${logo?`<img src="${logo}" alt="${escapeHtml(club.name)} logo" width="72" height="72" style="display:block;margin:0 auto 12px;object-fit:contain;border-radius:12px;">`:''}<div style="font-size:25px;font-weight:800;">${escapeHtml(club.name)}</div><div style="margin-top:5px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b7280;">Guest Session</div></td></tr><tr><td style="padding:0 28px 28px;"><h1 style="margin:0 0 18px;font-size:23px;line-height:1.25;">Guest request approved</h1><p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">Hi ${escapeHtml(hello)}, your guest request has been reviewed and approved.</p><div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;font-size:14px;line-height:1.7;"><strong>${escapeHtml(formatDate(date))}</strong><br>${escapeHtml(`${session.start||''}${session.end?`–${session.end}`:''}`)}<br>${escapeHtml(venue.name||'')}<br>${escapeHtml(payment)}</div><div style="text-align:center;margin:6px 0 24px;"><a href="${escapeHtml(inviteUrl)}" style="display:inline-block;padding:14px 24px;border-radius:10px;background:${primary};color:#fff;text-decoration:none;font-size:16px;font-weight:800;">Complete guest booking</a></div>${spondHtml}<p style="margin:0 0 18px;font-size:13px;line-height:1.55;color:#6b7280;"><strong>This link is for you only. Please don't share it.</strong></p><p style="margin:0 0 18px;font-size:15px;line-height:1.55;color:#374151;">Hope you enjoy the session.</p><p style="margin:0;font-size:15px;line-height:1.5;">Yours in sport,<br><strong>Brian Moore</strong><br>Chairperson, Clare Pickleball</p></td></tr><tr><td style="padding:16px 20px;background:#f7f9fc;border-top:1px solid #e4e9f1"><div style="text-align:center;line-height:1.3"><a href="https://rallyhub.ie/" target="_blank" style="display:inline-table;text-decoration:none;color:#081342"><span style="display:table-cell;vertical-align:middle;padding-right:7px"><img src="https://rallyhub.ie/assets/brand/rallyhub-icon-light.png" alt="RallyHub" width="28" height="28" style="display:block;width:28px;height:28px;object-fit:contain;border:0"></span><span style="display:table-cell;vertical-align:middle;text-align:left"><span style="display:block;font-size:10px;color:#7b8494">Powered by</span><span style="display:block;font-size:17px;font-weight:900;letter-spacing:-.4px;color:#081342">Rally<span style="color:#078e48">Hub</span></span></span></a></div></td></tr></table></td></tr></table></body></html>`;
+  const textBody=`Hi ${hello},\n\nYour guest request has been reviewed and approved.\n\nDate: ${formatDate(date)}\nTime: ${session.start||''}${session.end?`–${session.end}`:''}\nVenue: ${venue.name||''}\nFee: ${payment}\n\nYour private link for participation details:\n${inviteUrl}\n\n${spondText}\n\nThis link is for you only. Please don't share it.\n\nHope you enjoy the session.\n\nYours in sport,\nBrian Moore\nChairperson, Clare Pickleball\n\nPowered by RallyHub`;
+  const brandKit=await tenantEmailBrandKit(base44,club.tenant_id,club.id);
+  const cash=/cash/i.test(String(session.paymentMethod||''));
+  const mapsQuery=encodeURIComponent([venue.name,venue.address||venue.full_address||'',venue.eircode||'', 'County Clare Ireland'].filter(Boolean).join(', '));
+  const mapsUrl='https://www.google.com/maps/search/?api=1&query='+mapsQuery;
+  const hostName=/clarecastle/i.test(venueName)?'John McLaughlin':/shannon/i.test(venueName)?'Liz Daley':'';
+  const details='<p style="font-size:15px;line-height:1.7">Hi '+escapeHtml(hello)+', your guest session has been approved.</p>'
+    +'<div style="padding:16px;background:#f7f9fc;border:1px solid #dfe5ee;border-radius:12px;line-height:1.8"><strong>'+escapeHtml(formatDate(date))+'</strong><br>'+escapeHtml(String(session.start||'')+(session.end?'–'+session.end:''))+'<br>'+escapeHtml(venueName)+'<br>'+escapeHtml(payment)+'</div>'
+    +'<p><a href="'+escapeHtml(mapsUrl)+'" style="color:#081342;text-decoration:underline">Directions to the venue (Google Maps)</a></p>'
+    +(hostName?'<p>On arrival, please ask for <strong>'+escapeHtml(hostName)+'</strong>, your session host.</p>':'')
+    +(cash?'<p>Your place has been approved. Please bring '+escapeHtml(fee)+' cash for the hall contribution. No online payment is needed.</p>':'<p>To finish your online booking and payment, please use your private link below.</p><p><a href="'+escapeHtml(inviteUrl)+'" style="display:inline-block;background:#081342;color:#fff;padding:12px 20px;border-radius:9px;text-decoration:none;font-weight:700">Complete booking and payment</a></p>')
+    +spondHtml
+    +(cash?'<p style="font-size:12px;color:#64748b">If you still need to complete your participation declaration, use your <a href="'+escapeHtml(inviteUrl)+'">private guest details link</a>.</p>':'');
+  const htmlBody=emailShell({club,headline:'Your guest session is approved',preheader:formatDate(date)+' · '+venueName,content:details,brandKit});
   await sendWithConfiguredEmailTransport(base44,scope,{to:row.email,subject,textBody,htmlBody,senderName:club.name});
 }
 
