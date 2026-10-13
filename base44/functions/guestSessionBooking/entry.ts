@@ -805,6 +805,13 @@ async function sendConfirmations(base44:any,session:any,booking:any,force=false,
       : `${amount} paid online`;
 
   const isMember=booking.participant_type==='member';
+  const venueName=String(session.venue_name||'');
+  const startTime=String(session.start_time||'').trim();
+  const guestArrivalHost=/corofin/i.test(venueName)?'Bróna McBreen'
+    :/clarecastle/i.test(venueName)?'John McLaughlin'
+    :/shannon/i.test(venueName)?'Liz Daley'
+    :/ennistymon/i.test(venueName)&&startTime==='19:00'?'Mary Fahy'
+    :/ennistymon/i.test(venueName)&&startTime==='20:00'?'Jenny Martin':'';
   const vars={guest_name:firstName(booking.full_name),participant_name:booking.full_name||'',session_date:dateLabel,session_time:timeLabel,venue_name:session.venue_name||'',venue_address:session.venue_address||'',directions_url:session.google_maps_url||'',booking_reference:booking.confirmation_code||'',club_name:club.name||''};
   const guestCopy=await sessionEmailCopy(base44,session.tenant_id,'session_booking_guest',club.name+' · Guest booking confirmed · '+dateLabel+' '+session.start_time,'Your guest session is confirmed. We look forward to seeing you on court.',vars);
   const adminCopy=await sessionEmailCopy(base44,session.tenant_id,'session_booking_organiser','Booking confirmed · '+booking.full_name,'A guest booking has been confirmed for this session.',vars);
@@ -873,7 +880,7 @@ Venue: ${session.venue_name}
 Address: ${session.venue_address}, ${session.venue_eircode}
 Payment: ${paymentLabel}
 Booking reference: ${booking.confirmation_code}
-
+${guestArrivalHost?'On arrival, ask for '+guestArrivalHost+'.\n':''}
 Google Maps:
 ${session.google_maps_url}
 
@@ -894,7 +901,7 @@ Venue: ${session.venue_name}
 Address: ${session.venue_address}, ${session.venue_eircode}
 Payment: ${paymentLabel}
 Booking reference: ${booking.confirmation_code}
-
+${guestArrivalHost?'On arrival, ask for '+guestArrivalHost+'.\n':''}
 Google Maps:
 ${session.google_maps_url}
 
@@ -923,6 +930,7 @@ ${detailRow('Venue',session.venue_name)}
 ${detailRow('Address',`${session.venue_address}, ${session.venue_eircode}`)}
 ${detailRow('Payment',paymentLabel)}
 ${detailRow('Booking reference',booking.confirmation_code)}
+${guestArrivalHost?detailRow('Your host',guestArrivalHost):''}
 </table>
 </div>
 <div style="text-align:center;margin:0 0 22px;">
