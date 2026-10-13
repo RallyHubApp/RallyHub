@@ -163,8 +163,24 @@ async function sendApprovedGuestInvite(base44:any,club:any,row:any,session:any,v
     +(cash?'<p>Your place has been approved. Please bring '+escapeHtml(fee)+' cash for the hall contribution. No online payment is needed.</p>':'<p>To finish your online booking and payment, please use your private link below.</p><p><a href="'+escapeHtml(inviteUrl)+'" style="display:inline-block;background:#081342;color:#fff;padding:12px 20px;border-radius:9px;text-decoration:none;font-weight:700">Complete booking and payment</a></p>')
     +spondHtml
     +(cash?'<p style="font-size:12px;color:#64748b">If you still need to complete your participation declaration, use your <a href="'+escapeHtml(inviteUrl)+'">private guest details link</a>.</p>':'');
-  const htmlBody=emailShell({club,headline:'Your guest session is approved',preheader:formatDate(date)+' · '+venueName,content:details,brandKit});
-  await sendWithConfiguredEmailTransport(base44,scope,{to:row.email,subject,textBody,htmlBody,senderName:club.name});
+  // Communications Centre owns approved wording. Venue-specific approved templates
+  // take precedence over the generic guest approval template. Existing messages
+  // remain a compatibility fallback until each venue has an approved template.
+  const venueKey=/shannon/i.test(venueName)?'shannon':/clarecastle/i.test(venueName)?'clarecastle':/corofin/i.test(venueName)?'corofin':/ennistymon/i.test(venueName)?'ennistymon':'';
+  const purposes=[...(venueKey?[`guest_request_approved_${venueKey}`]:[]),'guest_request_approved'];
+  let approvedTemplate:any=null;
+  for(const purpose of purposes){
+    const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:club.tenant_id,purpose},'-created_date',30);
+    approvedTemplate=(templates||[]).find((t:any)=>t.owner_scope==='tenant'&&t.status==='approved');
+    if(approvedTemplate)break;
+  }
+  const fields:Record<string,string>={guest_name:hello,guest_full_name:String(row.full_name||''),club_name:String(club.name||''),session_date:formatDate(date),session_time:String(session.start||''),venue_name:venueName,host_name:hostName,fee:fee,payment:payment,maps_url:mapsUrl,spond_code:spondCode,spond_url:spondUrl,private_link:inviteUrl};
+  const merge=(value:string)=>String(value||'').replace(/{{([a-z_]+)}}/g,(_match:string,key:string)=>fields[key]??'');
+  const renderedSubject=approvedTemplate?.subject_template?merge(approvedTemplate.subject_template):subject;
+  const renderedText=approvedTemplate?.plain_text_template?merge(approvedTemplate.plain_text_template):textBody;
+  const renderedContent=approvedTemplate?.html_template?merge(approvedTemplate.html_template):details;
+  const htmlBody=emailShell({club,headline:'Your guest session is approved',preheader:formatDate(date)+' · '+venueName,content:renderedContent,brandKit});
+  await sendWithConfiguredEmailTransport(base44,scope,{to:row.email,subject:renderedSubject,textBody:renderedText,htmlBody,senderName:club.name});
 }
 
 async function loadClub(base44:any,slug:string){
