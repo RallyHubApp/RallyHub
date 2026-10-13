@@ -385,7 +385,13 @@ Deno.serve(async(req)=>{
       if(weekday(date)!==String(session.day||''))return Response.json({error:`That date is not a ${session.day}.`},{status:400});
       const allocationOpens=priorityOpening({...session,venueName:venue.name},date);
       if(!allocationOpens)return Response.json({error:'Guest allocation schedule has not been configured for this venue.'},{status:409});
-      if(Date.now()<allocationOpens.getTime())return Response.json({error:`Members have priority. Guest allocation opens ${allocationOpens.toLocaleString('en-IE',{timeZone:'Europe/Dublin',weekday:'long',hour:'2-digit',minute:'2-digit'})}.`},{status:409});
+      if(Date.now()<allocationOpens.getTime()){
+        const warning=`Members have priority. Guest allocation opens ${allocationOpens.toLocaleString('en-IE',{timeZone:'Europe/Dublin',weekday:'long',hour:'2-digit',minute:'2-digit'})}.`;
+        // An admin may explicitly override the timing gate for an individual guest.
+        // The request must be repeated with an affirmative override; no silent bypass.
+        if(body.overrideMemberPriority!==true)return Response.json({error:warning,overrideAvailable:true,warning},{status:409});
+        console.info('Guest allocation priority override',{requestId:id,adminUserId:user.id,clubId,sessionKey:approvedSessionKey,date});
+      }
       // Guest allocations are checked manually by the Clare club approver.
       // Do not require Spond event bindings or API availability for guest approval.
       // Member-priority timing and the other approval safeguards above remain enforced.

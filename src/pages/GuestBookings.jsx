@@ -144,7 +144,19 @@ export default function GuestBookings(){
     setBusy(`approve-${request.id}`);
     setApprovalFeedback(previous=>({...previous,[request.id]:{type:'working',message:'Checking availability and submitting approval…'}}));
     try{
-      const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_approve',requestId:request.id,sessionId});
+      let res;
+      try{
+        res=await base44.functions.invoke('guestAccessJourney',{action:'admin_approve',requestId:request.id,sessionId});
+      }catch(error){
+        const detail=error?.response?.data||{};
+        if(!detail.overrideAvailable)throw error;
+        const warning=detail.warning||detail.error||'Members have priority.';
+        if(!window.confirm(warning+'\n\nAre you sure you want to send it?')){
+          setApprovalFeedback(previous=>({...previous,[request.id]:{type:'warning',message:'Guest approval cancelled; member priority retained.'}}));
+          return;
+        }
+        res=await base44.functions.invoke('guestAccessJourney',{action:'admin_approve',requestId:request.id,sessionId,overrideMemberPriority:true});
+      }
       if(res.data?.error)throw new Error(res.data.error);
       if(res.data?.success!==true)throw new Error('Approval was not confirmed by the server. Check the request before retrying.');
       const message=res.data.emailSent?'Approved — confirmation email sent.':'Approved, but confirmation email was not sent. Use the private link or resend the email.';
