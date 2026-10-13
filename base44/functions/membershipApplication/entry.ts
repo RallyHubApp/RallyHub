@@ -4,6 +4,7 @@ function clubRestrictionResponse(v:string){return Response.json({error:v==='deny
 
 import { createCheckout, retrievePayment, providerConfigured, type ProviderAccount } from './payments.ts';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
+import { membershipPaidTemplate } from '../membershipPaidTemplate.ts';
 
 function clean(v:any,max=500){return String(v??'').trim().replace(/\s+/g,' ').slice(0,max)}
 function raw(v:any,max=20000){return String(v??'').trim().slice(0,max)}
@@ -260,7 +261,8 @@ ${signoffText(config,club)}`;
 <div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#eef8f1;border:1px solid #b9e2c4;"><div style="font-size:15px;font-weight:800;color:#23452d;">Payment received · ${escapeHtml(fee)}</div><div style="margin-top:5px;font-size:13px;color:#3f6348;">Membership reference: ${escapeHtml(app.confirmation_code)}</div></div>
 <p style="margin:0;font-size:15px;line-height:1.65;color:#374151;">Thank you for being part of ${escapeHtml(club.name)}.</p>${signoffHtml(config,club)}`});
   try{
-    await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,subject:`${club.name} membership confirmed · ${app.membership_season}`,textBody,htmlBody});
+    const content=await membershipPaidTemplate(base44,config,club,app,{subject:`${club.name} membership confirmed · ${app.membership_season}`,textBody,htmlBody});
+    await sendWithConfiguredEmailTransport(base44,scope,{to:app.email,...content});
     const note=`${clean(app.admin_notes,1200)} paid-confirmation-sent`.trim();
     return await base44.asServiceRole.entities.MembershipApplication.update(app.id,{admin_notes:note,follow_up_status:'complete'});
   }catch(e){console.error('membership paid confirmation failed',e?.message||e);return app}

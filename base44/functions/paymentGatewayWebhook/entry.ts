@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { sendWithConfiguredEmailTransport } from './emailRouter.ts';
+import { membershipPaidTemplate } from '../membershipPaidTemplate.ts';
 
 function clean(v:any,max=500){return String(v??'').trim().slice(0,max)}
 function nameKey(v:any){return clean(v,180).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
@@ -143,7 +144,8 @@ Powered by RallyHub`;
 <p style="margin:0;font-size:15px;line-height:1.65;color:#374151;">Thank you for being part of ${escapeHtml(club.name)}.</p>
 <p style="margin:24px 0 0;font-size:15px;line-height:1.5;"><strong>${escapeHtml(signatoryName)}</strong>${signatoryTitle?`<br>${escapeHtml(signatoryTitle)}`:''}<br>${escapeHtml(club.name)}</p>`});
   try{
-    await sendWithConfiguredEmailTransport(base44,scope,{to:application.email,subject:`${club.name} membership confirmed · ${application.membership_season}`,textBody,htmlBody});
+    const content=await membershipPaidTemplate(base44,config,club,application,{subject:`${club.name} membership confirmed · ${application.membership_season}`,textBody,htmlBody});
+    await sendWithConfiguredEmailTransport(base44,scope,{to:application.email,...content});
     return await base44.asServiceRole.entities.MembershipApplication.update(application.id,{
       admin_notes:`${clean(application.admin_notes,1200)} paid-confirmation-sent`.trim(),follow_up_status:'complete'
     });
