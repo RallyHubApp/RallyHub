@@ -145,6 +145,7 @@ async function sendApprovedGuestInvite(base44:any,club:any,row:any,session:any,v
   const authorisedContact=[row.email?`email ${row.email}`:'',row.mobile?`mobile ${row.mobile}`:''].filter(Boolean).join(' or ');
   const textBody=`Hi ${hello},\n\nYour guest request has been reviewed and approved.\n\nDate: ${formatDate(date)}\nTime: ${session.start||''}${session.end?`–${session.end}`:''}\nVenue: ${venue.name||''}\nFee: ${payment}\n\nYour private link for participation details:\n${inviteUrl}\n\n${spondText}\n\nThis link is for you only. Please don't share it.\n\nHope you enjoy the session.\n\nYours in sport,\nBrian Moore\nChairperson, Clare Pickleball\n\nPowered by RallyHub`;
   const brandKit=await tenantEmailBrandKit(base44,club.tenant_id,club.id);
+  if(!brandKit)console.warn('Guest approval email: no active tenant brand kit; using club fallback',club.id);
   const cash=/cash/i.test(String(session.paymentMethod||''));
   const mapsQuery=encodeURIComponent([venue.name,venue.address||venue.full_address||'',venue.eircode||'', 'County Clare Ireland'].filter(Boolean).join(', '));
   const mapsUrl='https://www.google.com/maps/search/?api=1&query='+mapsQuery;
