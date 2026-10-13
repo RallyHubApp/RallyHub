@@ -771,7 +771,7 @@ async function sendHostBookingEmail(base44:any,scope:any,club:any,session:any,bo
     headline:`New ${isMember?'member':'guest'} booking for your session`,
     preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
     content:`
-<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">${hostCopy.intro}</p>
+<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">${escapeHtml(hostCopy.intro)}</p>
 <div style="white-space:pre-wrap;margin:0 0 20px;padding:14px 16px;border-radius:12px;background:#f7f9fc;border:1px solid #dfe5ee;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#172033;">${escapeHtml(summary)}</div>
 <p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">You are receiving this because you are recorded as the host for this club session.</p>`,
   });
@@ -783,7 +783,7 @@ async function sendHostBookingEmail(base44:any,scope:any,club:any,session:any,bo
   return true;
 }
 
-async function sendConfirmations(base44:any,session:any,booking:any,force=false){
+async function sendConfirmations(base44:any,session:any,booking:any,force=false,attendanceAccepted=false){
   if(!force && booking.notification_sent_at && booking.guest_confirmation_sent_at) return booking;
   const summary=hostText(session,booking);
   const now=new Date().toISOString();
@@ -822,7 +822,7 @@ async function sendConfirmations(base44:any,session:any,booking:any,force=false)
           headline:`New ${typeLabel} booking confirmed`,
           preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
           content:`
-<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">${adminCopy.intro}</p>
+<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">${escapeHtml(adminCopy.intro)}</p>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 20px;">
 ${detailRow(isMember?'Member':'Guest',booking.full_name)}
 ${detailRow('Email',booking.email||'—')}
@@ -846,9 +846,9 @@ ${isMember?'':`<div style="margin:0 0 20px;padding:14px 16px;border-radius:12px;
         });
       }catch(e){organiserNotificationsOk=false;console.error('club/admin booking notification failed',e?.message||e)}
     }
-    const acceptanceHostOnly=force&&session.venue_key==='ennistymon'&&session.weekday==='Wednesday'&&session.start_time==='19:00';
+    const acceptanceHostOnly=attendanceAccepted&&session.venue_key==='ennistymon'&&session.weekday==='Wednesday'&&session.start_time==='19:00';
     const resolvedHost=acceptanceHostOnly?{name:'Mary Fahy',email:'mary_fahy@hotmail.com'}:host;
-    if(resolvedHost?.email&&emailKey(resolvedHost.email)!==emailKey(session.notification_email||'')&&!(!force&&session.venue_key==='ennistymon'&&session.weekday==='Wednesday'&&session.start_time==='19:00')){
+    if(resolvedHost?.email&&emailKey(resolvedHost.email)!==emailKey(session.notification_email||'')&&!(!attendanceAccepted&&session.venue_key==='ennistymon'&&session.weekday==='Wednesday'&&session.start_time==='19:00')){
       organiserNotificationExpected=true;
       try{await sendHostBookingEmail(base44,scope,club,session,booking,resolvedHost,summary)}
       catch(e){organiserNotificationsOk=false;console.error('session host booking notification failed',e?.message||e)}
@@ -914,7 +914,7 @@ Powered by RallyHub`;
         headline:`Thanks for your booking, ${guestFirst}`,
         preheader:`${dateLabel} · ${timeLabel} · ${session.venue_name}`,
         content:`
-<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">${guestCopy.intro}</p>
+<p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#374151;">${escapeHtml(guestCopy.intro)}</p>
 <div style="margin:0 0 20px;padding:16px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe5ee;">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
 ${detailRow('Date',dateLabel)}
@@ -1044,7 +1044,7 @@ Deno.serve(async(req)=>{
       await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{status:'accepted',responded_at:new Date().toISOString()});
       // A session change must issue a fresh confirmation and updated organiser/host notifications.
       // Reuse the existing paid/cash booking confirmation path and preserve the original payment.
-      const confirmed=await sendConfirmations(base44,target,moved,true);
+      const confirmed=await sendConfirmations(base44,target,moved,true,true);
       return Response.json({success:true,status:'accepted',target:safeSession(target),guestConfirmationSent:!!confirmed?.guest_confirmation_sent_at,organiserNotificationSent:!!confirmed?.notification_sent_at});
     }
 
