@@ -4,7 +4,7 @@ import { BarChart3, CalendarDays, ChevronRight, MapPin, Menu, Monitor, Rocket, T
 import Seo from '@/components/public/Seo';
 import PublicCopyrightFooter from '@/components/public/PublicCopyrightFooter';
 
-const LOGO='/assets/brand/rallyhub-icon-light.png';
+const LOGO='/assets/brand/rallyhub-app-icon-approved.png';
 const CARD='/assets/about/';
 // About hero and closing banner retain their existing approved artwork.
 const APPROVED_MASTER='/assets/about-locked/about-master-approved.png?v=20260921-locked';

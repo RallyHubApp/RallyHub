@@ -65,8 +65,8 @@ self.addEventListener('push', (event) => {
   const title = payload.title || 'RallyHub';
   const options = {
     body: payload.body || 'You have a new RallyHub notification.',
-    icon: '/assets/brand/rallyhub-icon-dark.png',
-    badge: '/assets/brand/rallyhub-icon-dark.png',
+    icon: '/assets/brand/rallyhub-app-icon-approved.png',
+    badge: '/assets/brand/rallyhub-app-icon-approved.png',
     tag: payload.tag || 'rallyhub-notification',
     renotify: true,
     data: { url: payload.url || '/app' },

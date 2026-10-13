@@ -9,6 +9,6 @@ export const RALLYHUB_BRAND = Object.freeze({
   reversedWithSignature: 'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/85b0612d8_rallyhub-1fa08c810cc2f349fd52.png',
   footerFlatSignature: 'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/85b0612d8_rallyhub-1fa08c810cc2f349fd52.png',
   compact: '/assets/brand/rallyhub-compact-light.png',
-  icon: '/assets/brand/rallyhub-icon-light.png',
-  iconDark: '/assets/brand/rallyhub-icon-dark.png',
+  icon: '/assets/brand/rallyhub-app-icon-approved.png',
+  iconDark: '/assets/brand/rallyhub-app-icon-approved.png',
 });

@@ -48,7 +48,7 @@ export default function AndroidInstallPrompt() {
       <div className="glass-strong rounded-2xl p-4 flex items-center gap-3 border border-primary/20 shadow-2xl">
         <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
           <img
-            src="/assets/brand/rallyhub-icon-dark.png"
+            src="/assets/brand/rallyhub-app-icon-approved.png"
             alt="RallyHub"
             className="w-full h-full object-cover"
           />

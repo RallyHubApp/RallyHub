@@ -9,16 +9,16 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/assets/brand/rallyhub-icon-dark.png",
-      "sizes": "192x192",
+      "src": "/assets/brand/rallyhub-app-icon-approved.png",
+      "sizes": "1254x1254",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/assets/brand/rallyhub-icon-dark.png",
-      "sizes": "512x512",
+      "src": "/assets/brand/rallyhub-app-icon-approved.png",
+      "sizes": "1254x1254",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
