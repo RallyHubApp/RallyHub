@@ -107,6 +107,13 @@ export default function GuestBookings(){
   const timeOptions=[...new Set(bookingRows.filter(row=>attendeeCentre==='all'||row.venueName===attendeeCentre).map(row=>row.start).filter(Boolean))].sort();
   const visibleBookingRows=(showPastAttendees?pastBookingRows:currentBookingRows).filter(row=>(attendeeCentre==='all'||row.venueName===attendeeCentre)&&(attendeeTime==='all'||row.start===attendeeTime));
   const remindAlternative=async(row,channel='whatsapp')=>{
+    const offer=offerFor(row);
+    if(!offer||offer.status!=='pending'){toast.error('No pending alternative offer found');return;}
+    const first=String(row.fullName||'').trim().split(/\s+/)[0]||'there';
+    const message=`Hi ${first},\n\nA reminder of your proposed Clare Pickleball session:\n${offer.targetLabel||'Alternative session'}\n\nYour original payment is recorded. No further payment is required.\n\nPlease accept or decline using your private response link:\n{{confirmation_link}}\n\nYours in sport,\nBrian Moore\nChairperson, Clare Pickleball`;
+    setMessagePreview({channel,request:{fullName:row.fullName,email:row.email,mobile:row.mobile},bookingId:row.bookingId,kind:'alternative_reminder',subject:'Clare Pickleball · Alternative session reminder',message});
+  };
+  const legacyRemindAlternative=async(row,channel='whatsapp')=>{
     if(!row.bookingId)return;
     setBusy(`offer-reminder-${row.bookingId}`);
     // Open a window synchronously so browsers do not block WhatsApp after the API request.
@@ -275,6 +282,28 @@ export default function GuestBookings(){
   const sendPreviewedMessage=async()=>{
     const preview=messagePreview;
     if(!preview)return;
+    if(preview.kind==='alternative_reminder'){
+      setBusy('send-offer-preview');
+      const popup=preview.channel==='whatsapp'?window.open('about:blank','_blank'):null;
+      try{
+        const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_offer_reminder',bookingId:preview.bookingId,channel:'whatsapp'});
+        if(res.data?.error||!res.data?.offerUrl)throw new Error(res.data?.error||'Could not prepare response link');
+        const message=preview.message.replace('{{confirmation_link}}',res.data.offerUrl);
+        if(preview.channel==='whatsapp'){
+          const target=whatsappNumber(preview.request.mobile);
+          if(!target){popup?.close();await copy(message,'Reminder copied — no valid mobile number');}
+          else if(popup)popup.location.href=`https://wa.me/${target}?text=${encodeURIComponent(message)}`;
+          else {await copy(message,'Reminder copied — WhatsApp popup blocked');}
+        }else{
+          // Never claim edited email copy was sent through a backend that ignores edits.
+          popup?.close();await copy(message,'Edited reminder copied; paste into your email client');
+          toast.info('Edited email copied. Automated sending of edited email is not yet supported.');
+        }
+        setMessagePreview(null);
+      }catch(e){popup?.close();toast.error(e?.response?.data?.error||e?.message||'Reminder could not be prepared');}
+      finally{setBusy('');}
+      return;
+    }
     if(preview.channel==='email'){
       const sent=await approvedPrivateLink(preview.request,{sendEmail:true});
       if(sent?.emailSent)setMessagePreview(null);
@@ -553,9 +582,9 @@ export default function GuestBookings(){
         <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-primary">{messagePreview.channel==='email'?'Email preview':'WhatsApp preview'}</p><h2 className="mt-1 text-xl font-black">Clare Pickleball guest booking</h2></div><Button size="sm" variant="ghost" onClick={()=>setMessagePreview(null)}>Close</Button></div>
         <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2"><div className="rounded-xl border p-3"><span className="text-xs text-muted-foreground">From</span><p className="font-bold">Clare Pickleball</p></div><div className="rounded-xl border p-3"><span className="text-xs text-muted-foreground">To</span><p className="font-bold break-all">{messagePreview.channel==='email'?messagePreview.request.email:messagePreview.request.mobile}</p></div></div>
         {messagePreview.channel==='email'&&<div className="mt-3 rounded-xl border p-3"><span className="text-xs text-muted-foreground">Subject</span><p className="mt-1 font-semibold">{messagePreview.subject}</p></div>}
-        <div className="mt-3 rounded-xl border bg-secondary/20 p-4"><p className="whitespace-pre-wrap text-sm leading-6">{messagePreview.message}</p></div>
+        <div className="mt-3 rounded-xl border bg-secondary/20 p-4"><textarea aria-label="Edit message before sending" className="min-h-48 w-full resize-y rounded-lg border bg-background p-3 text-sm leading-6" value={messagePreview.message} onChange={e=>setMessagePreview(prev=>({...prev,message:e.target.value}))}/></div>
         <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground"><strong className="text-foreground">Branding:</strong> this communication is from Clare Pickleball. RallyHub appears only as the technology provider / “Powered by RallyHub”.</div>
-        <div className="mt-4 flex flex-wrap gap-2"><Button onClick={sendPreviewedMessage}>{messagePreview.channel==='email'?<Mail className="mr-2 h-4 w-4"/>:<MessageCircle className="mr-2 h-4 w-4"/>}{messagePreview.channel==='email'?'Send email':'Open WhatsApp'}</Button><Button variant="outline" onClick={()=>copy(messagePreview.message,'Message copied')}><Copy className="mr-2 h-4 w-4"/>Copy message</Button><Button variant="ghost" onClick={()=>setMessagePreview(null)}>Cancel</Button></div>
+        <div className="mt-4 flex flex-wrap gap-2"><Button onClick={sendPreviewedMessage}>{messagePreview.channel==='email'?<Mail className="mr-2 h-4 w-4"/>:<MessageCircle className="mr-2 h-4 w-4"/>}{messagePreview.channel==='email'?(messagePreview.kind==='alternative_reminder'?'Prepare edited email':'Send email'):'Open WhatsApp'}</Button><Button variant="outline" onClick={()=>copy(messagePreview.message,'Message copied')}><Copy className="mr-2 h-4 w-4"/>Copy message</Button><Button variant="ghost" onClick={()=>setMessagePreview(null)}>Cancel</Button></div>
       </div>
     </div>}
 
