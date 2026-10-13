@@ -776,6 +776,7 @@ async function sendConfirmations(base44:any,session:any,booking:any,force=false)
   const summary=hostText(session,booking);
   const now=new Date().toISOString();
   const updates:any={};
+  const brandKit=await tenantEmailBrandKit(base44,session.tenant_id,session.club_id);
   const club=(await clubBrand(base44,session.club_id))||{
     name:'Clare Pickleball',
     logo_url:'https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/6e59058fc_ClarePBLogo.jpg',
@@ -802,7 +803,7 @@ async function sendConfirmations(base44:any,session:any,booking:any,force=false)
         const typeLabel=isMember?'member':'guest';
         const adminText=`New ${club.name} ${typeLabel} booking confirmed.\n\n${summary}\n\n${isMember?'Member':'Guest'} email: ${booking.email||'—'}\n\nThis session notification was generated automatically by RallyHub.\n\n${club.name}\nPowered by RallyHub`;
         const adminHtml=emailShell({
-          club,
+          club,brandKit,
           headline:`New ${typeLabel} booking confirmed`,
           preheader:`${booking.full_name} · ${dateLabel} · ${timeLabel}`,
           content:`
@@ -892,7 +893,7 @@ Chairperson, Clare Pickleball
 
 Powered by RallyHub`;
       const guestHtml=emailShell({
-        club,
+        club,brandKit,
         headline:`Thanks for your booking, ${guestFirst}`,
         preheader:`${dateLabel} · ${timeLabel} · ${session.venue_name}`,
         content:`
@@ -1022,9 +1023,12 @@ Deno.serve(async(req)=>{
       const occupied=existing.filter((b:any)=>b.booking_status!=='cancelled').length;
       if(Number(target.capacity)>0&&occupied>=Number(target.capacity))return Response.json({error:'This session is now full. Contact the organiser.'},{status:409});
       if(existing.some((b:any)=>b.id!==booking.id&&emailKey(b.email)===emailKey(booking.email)&&b.booking_status!=='cancelled'))return Response.json({error:'You already have a booking in this session.'},{status:409});
-      await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{session_link_id:target.id});
+      const moved=await base44.asServiceRole.entities.GuestSessionBooking.update(booking.id,{session_link_id:target.id});
       await base44.asServiceRole.entities.GuestBookingChangeOffer.update(offer.id,{status:'accepted',responded_at:new Date().toISOString()});
-      return Response.json({success:true,status:'accepted',target:safeSession(target)});
+      // A session change must issue a fresh confirmation and updated organiser/host notifications.
+      // Reuse the existing paid/cash booking confirmation path and preserve the original payment.
+      const confirmed=await sendConfirmations(base44,target,moved,true);
+      return Response.json({success:true,status:'accepted',target:safeSession(target),guestConfirmationSent:!!confirmed?.guest_confirmation_sent_at,organiserNotificationSent:!!confirmed?.notification_sent_at});
     }
 
     if(action==='admin_change_offer'){
