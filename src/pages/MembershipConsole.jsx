@@ -1129,6 +1129,14 @@ export default function MembershipConsole() {
                 })}
               </div> : null}
 
+              {(applicationData.approvedInvitations||[]).length>0&&<div className="mb-5 space-y-2">
+                <div className="flex items-center justify-between"><p className="text-sm font-bold">Approved — awaiting membership completion</p><Badge variant="outline">{applicationData.approvedInvitations.length}</Badge></div>
+                {(applicationData.approvedInvitations||[]).map(request=><div key={request.id} className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 sm:p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2"><strong>{request.fullName}</strong><Badge variant="outline">Approved · membership not completed</Badge></div>
+                  <p className="mt-1 text-xs text-muted-foreground">{request.email}{request.mobile?' · '+request.mobile:''}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Approved {request.approvedAt?new Date(request.approvedAt).toLocaleString('en-IE'):'—'} · Membership payment not recorded</p>
+                </div>)}
+              </div>}
               {applicationsLoading ? <p className="py-6 text-center text-sm text-muted-foreground">Loading applications…</p> :
                 !(applicationData.applications || []).length ? <p className="py-6 text-center text-sm text-muted-foreground">{(applicationData.pendingApprovals || []).length ? 'No approved applications have reached payment yet.' : 'No membership applications have been submitted through RallyHub yet.'}</p> :
                 <div className="space-y-2">

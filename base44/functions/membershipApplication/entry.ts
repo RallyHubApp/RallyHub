@@ -460,15 +460,19 @@ Deno.serve(async(req)=>{
         }
         const accessRequests=await base44.asServiceRole.entities.ClubAccessRequest.filter({tenant_id:tenantId,club_id:clubId,request_type:'membership_application'},'-submitted_at',200);
         const pendingApprovals=(accessRequests||[]).filter((r:any)=>r.status==='pending_approval').map((r:any)=>({id:r.id,fullName:r.full_name,email:r.email,mobile:r.mobile||'',dateOfBirth:r.date_of_birth||'',submittedAt:r.submitted_at||r.created_date,notes:r.notes||''}));
+        const approvedInvitations=(accessRequests||[]).filter((r:any)=>r.status==='approved'&&!rows.some((a:any)=>emailKey(a.email)===emailKey(r.email))).map((r:any)=>({
+          id:r.id,fullName:r.full_name,email:r.email,mobile:r.mobile||'',submittedAt:r.submitted_at||r.created_date,
+          approvedAt:r.approved_at||'',status:'approved',paymentStatus:'not_started'
+        }));
         const counts={
-          total:rows.length,
+          total:rows.length+approvedInvitations.length,
           awaitingApproval:pendingApprovals.length,
           awaitingPayment:rows.filter(x=>['pending','failed'].includes(x.paymentStatus)).length,
           paid:rows.filter(x=>x.paymentStatus==='paid').length,
           newMembers:rows.filter(x=>x.applicationType==='new').length,
           renewals:rows.filter(x=>x.applicationType==='renewal').length
         };
-        return Response.json({success:true,config:safeConfig(config,club,{}),publicUrl:`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}`,counts,pendingApprovals,applications:rows});
+        return Response.json({success:true,config:safeConfig(config,club,{}),publicUrl:`https://rallyhub.ie/membership/${encodeURIComponent(config.public_slug)}`,counts,pendingApprovals,approvedInvitations,applications:rows});
       }
 
       if(action==='admin_create_invite'){
