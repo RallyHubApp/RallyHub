@@ -490,7 +490,7 @@ export default function GuestBookings(){
         <h2 className="text-xl font-black">Offer alternative to {changeBooking.fullName}</h2>
         <p className="text-sm text-muted-foreground">Their existing booking stays unchanged until they accept the private offer. Only equal-fee and matching-payment sessions can be transferred automatically.</p>
         <Label>New session</Label>
-        <Select value={changeSlot} onValueChange={setChangeSlot}><SelectTrigger><SelectValue placeholder="Select venue and time"/></SelectTrigger><SelectContent>{(templateData.templates||[]).map(t=><SelectItem key={t.key} value={t.key}>{t.venueName} · {t.weekday} {t.start}–{t.end} · €{Number(t.fee).toFixed(2)}</SelectItem>)}</SelectContent></Select>
+        <Select value={changeSlot} onValueChange={setChangeSlot}><SelectTrigger><SelectValue placeholder="Select venue and time"/></SelectTrigger><SelectContent className="z-[200] max-h-[min(60vh,24rem)]" position="popper" side="bottom" sideOffset={8}>{(templateData.templates||[]).map(t=><SelectItem key={t.key} value={t.key}>{t.venueName} · {t.weekday} {t.start}–{t.end} · €{Number(t.fee).toFixed(2)}</SelectItem>)}</SelectContent></Select>
         <Label>New date</Label><Input type="date" value={changeDate} onChange={e=>setChangeDate(e.target.value)}/>
         <div className="flex flex-wrap gap-2"><Button disabled={!!busy||!changeSlot||!changeDate} onClick={offerBookingChange}>{busy==='change-offer'&&<RefreshCw className="mr-2 h-4 w-4 animate-spin"/>}Send offer for guest acceptance</Button><Button variant="outline" disabled={!!busy} onClick={()=>setChangeBooking(null)}>Cancel</Button></div>
       </div>
