@@ -971,6 +971,20 @@ Deno.serve(async(req)=>{
     const body=await req.json().catch(()=>({}));
     const action=clean(body.action||'public_get',40);
 
+    if(action==='admin_change_offer_preview'){
+      const user=await base44.auth.me();
+      if(!user||user.role!=='admin')return Response.json({error:'Unauthorized'},{status:403});
+      const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100);
+      if(!tenantId||!clubId)return Response.json({error:'Select a tenant and club.'},{status:400});
+      const club=await clubBrand(base44,clubId);
+      if(!club||club.slug!=='clare-pickleball')return Response.json({error:'Clare Pickleball club branding unavailable.'},{status:409});
+      const sample={guest_name:'Sample Guest',session_details:'Ennistymon Community Centre · Wednesday 14 October · 19:00–20:00',confirmation_link:'https://rallyhub.ie/booking-change/SAMPLE-LINK-NOT-ACTIVE'};
+      const merge=(v:string)=>String(v||'').replace(/{{(guest_name|session_details|confirmation_link)}}/g,(_m:string,key:string)=>(sample as any)[key]||'');
+      const bodyTemplate=String(body.messageBody||'');
+      if(!bodyTemplate.includes('{{confirmation_link}}'))return Response.json({error:'The message must include the confirmation link.'},{status:400});
+      const htmlMessage=bodyTemplate.split('{{confirmation_link}}').map((part:string)=>escapeHtml(merge(part)).replace(/\n/g,'<br>')).join('<br><a href="'+escapeHtml(sample.confirmation_link)+'" style="display:inline-block;margin:10px 0;background:#081342;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">Yes, I’m attending / Respond to offer</a><br>');
+      return Response.json({success:true,subject:merge(body.subject||''),previewHtml:emailShell({club,headline:'Please confirm your alternative session',preheader:sample.session_details,content:'<p style="line-height:1.7">'+htmlMessage+'</p>'})});
+    }
     if(action==='change_offer_get'||action==='change_offer_reply'){
       const raw=clean(body.token,150);
       if(!/^gco_[a-f0-9]{64}$/.test(raw))return Response.json({error:'Invalid offer link.'},{status:400});
