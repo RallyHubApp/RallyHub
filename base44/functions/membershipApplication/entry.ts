@@ -443,12 +443,17 @@ Deno.serve(async(req)=>{
         const apps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300);
         const liveApps=(apps||[]).filter((app:any)=>app.status!=='withdrawn'&&!String(app.source_system||'').includes('membership_qa'));
         const rows=[];
-        for(const app of liveApps){
-          let paymentUrl='';
-          if(app.payment_record_id){
+        // Limit concurrent payment lookups instead of serially awaiting every application.
+        const paymentUrls=new Map<string,string>();
+        const paidLookupApps=liveApps.filter((app:any)=>app.payment_record_id);
+        for(let offset=0;offset<paidLookupApps.length;offset+=12){
+          await Promise.all(paidLookupApps.slice(offset,offset+12).map(async(app:any)=>{
             const p=await first(base44,'PaymentRecord',{id:app.payment_record_id,tenant_id:tenantId,club_id:clubId});
-            paymentUrl=p?.provider_checkout_url||'';
-          }
+            paymentUrls.set(app.id,p?.provider_checkout_url||'');
+          }));
+        }
+        for(const app of liveApps){
+          const paymentUrl=paymentUrls.get(app.id)||'';
           rows.push({
             id:app.id,applicationType:app.application_type,status:app.status,paymentStatus:app.payment_status,
             fullName:app.full_name,email:app.email,mobile:app.mobile,seasonLabel:app.membership_season,
