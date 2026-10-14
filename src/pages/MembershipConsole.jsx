@@ -146,10 +146,13 @@ export default function MembershipConsole() {
   const [training, setTraining] = useState({ trainingName: '', sportId: '', status: 'completed', completionDate: '', provider: '', levelCategory: '', notes: '' });
   const [qualification, setQualification] = useState({ title: '', sportId: '', verificationStatus: 'unverified', level: '', governingBody: '', awardDate: '', expiryDate: '', notes: '' });
 
-  const { data: meta = {}, isLoading: metaLoading } = useQuery({
+  const membershipRead = (name, payload) => Promise.race([base44.functions.invoke(name, payload), new Promise((_, reject) => setTimeout(() => reject(new Error(`${name} did not respond within 15 seconds`)), 15000))]);
+
+  const { data: meta = {}, isLoading: metaLoading, isError: metaError, refetch: retryMeta } = useQuery({
     queryKey: ['membership-console-meta', user?.active_tenant_id, user?.active_club_id],
+    retry: false,
     queryFn: async () => {
-      const response = await base44.functions.invoke('membershipRecord', { action: 'admin_meta' });
+      const response = await membershipRead('membershipRecord', { action: 'admin_meta' });
       if (response.data?.error) throw new Error(response.data.error);
       return response.data || {};
     },
@@ -180,10 +183,11 @@ export default function MembershipConsole() {
     retry: false
   });
 
-  const { data: listData = { rows: [], counts: {} }, isLoading: listLoading, refetch: refetchList } = useQuery({
+  const { data: listData = { rows: [], counts: {} }, isLoading: listLoading, isError: listError, refetch: refetchList } = useQuery({
     queryKey: ['membership-console-list', user?.active_tenant_id, user?.active_club_id],
+    retry: false,
     queryFn: async () => {
-      const response = await base44.functions.invoke('membershipRecord', { action: 'admin_list' });
+      const response = await membershipRead('membershipRecord', { action: 'admin_list' });
       if (response.data?.error) throw new Error(response.data.error);
       return response.data || { rows: [], counts: {} };
     },
@@ -193,7 +197,7 @@ export default function MembershipConsole() {
   const { data: dashboardData = { counts: {} }, refetch: refetchDashboard } = useQuery({
     queryKey: ['membership-dashboard-counts', user?.active_tenant_id, user?.active_club_id],
     queryFn: async () => {
-      const response = await base44.functions.invoke('membershipRecord', { action: 'admin_dashboard_counts' });
+      const response = await membershipRead('membershipRecord', { action: 'admin_dashboard_counts' });
       if (response.data?.error) throw new Error(response.data.error);
       return response.data || { counts: {} };
     },
@@ -202,10 +206,11 @@ export default function MembershipConsole() {
     refetchOnWindowFocus: true
   });
 
-  const { data: applicationData = { applications: [], counts: {} }, isLoading: applicationsLoading, refetch: refetchApplications } = useQuery({
+  const { data: applicationData = { applications: [], counts: {} }, isLoading: applicationsLoading, isError: applicationsError, refetch: refetchApplications } = useQuery({
     queryKey: ['membership-applications', user?.active_tenant_id, user?.active_club_id],
+    retry: false,
     queryFn: async () => {
-      const response = await base44.functions.invoke('membershipApplication', { action: 'admin_list' });
+      const response = await membershipRead('membershipApplication', { action: 'admin_list' });
       if (response.data?.error) throw new Error(response.data.error);
       return response.data || { applications: [], counts: {} };
     },
@@ -1039,6 +1044,9 @@ export default function MembershipConsole() {
         </div>
       </PageHeader>
 
+      {metaError && <div role="alert" className="rounded-xl border border-red-500/40 p-4 text-sm"><strong>Membership settings are unavailable.</strong> Retry to restore the full console. <Button size="sm" variant="outline" className="ml-2" onClick={() => retryMeta()}>Retry settings</Button></div>}
+      {listError && <div role="alert" className="rounded-xl border border-amber-500/40 p-4 text-sm">Member records could not be loaded. <Button size="sm" variant="outline" className="ml-2" onClick={() => refetchList()}>Retry records</Button></div>}
+      {applicationsError && <div role="alert" className="rounded-xl border border-amber-500/40 p-4 text-sm">Membership applications could not be loaded. <Button size="sm" variant="outline" className="ml-2" onClick={() => refetchApplications()}>Retry applications</Button></div>}
       {metaLoading ? (
         <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">Loading membership console…</div>
       ) : (
