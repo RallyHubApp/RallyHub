@@ -218,6 +218,7 @@ export default function DirectoryListingEdit() {
   const [logoApprovalId, setLogoApprovalId] = useState('');
   const [stagingSourceLogo, setStagingSourceLogo] = useState(false);
   const [sourceLogoReceipt, setSourceLogoReceipt] = useState(null);
+  const [sourceLogoStatus, setSourceLogoStatus] = useState({kind:'idle',message:''});
   const [inviting, setInviting] = useState(false);
   const [inviteMessage, setInviteMessage] = useState('');
   const [autoWhatsApp, setAutoWhatsApp] = useState(false);
@@ -560,7 +561,9 @@ export default function DirectoryListingEdit() {
   };
 
   const stageSourceLogo = async () => {
-    setStagingSourceLogo(true); setError(''); setSourceLogoReceipt(null);
+    if (stagingSourceLogo || sourceLogoReceipt) return; // Never submit a second staging request accidentally.
+    setStagingSourceLogo(true);
+    setSourceLogoStatus({kind:'loading',message:'Contacting RallyHub, downloading the official image and checking storage. Please wait; do not press again.'});
     try {
       const r = await base44.functions.invoke('directoryLogoIngest', {
         listingSlug: slug, sourceUrl: logoSourceUrl.trim(),
@@ -568,10 +571,13 @@ export default function DirectoryListingEdit() {
       });
       const receipt = r.data || {};
       if (!receipt.success || receipt.status !== 'staged' || !receipt.readbackVerified || receipt.listingSlug !== slug || receipt.sha256 !== logoExpectedHash.trim().toLowerCase())
-        throw new Error(receipt.error || 'Artwork failed verification');
+        throw new Error(receipt.error || 'RallyHub did not return a verified storage receipt. The file may have reached storage; please check before trying again.');
       setSourceLogoReceipt(receipt);
-    } catch (e) { setError(e?.message || 'Could not stage verified club logo'); }
-    finally { setStagingSourceLogo(false); }
+      setSourceLogoStatus({kind:'success',message:'Success — the logo is stored and its checksum is verified. It is not published.'});
+    } catch (e) {
+      const detail = e?.response?.data?.error || e?.data?.error || e?.message || 'No response from RallyHub';
+      setSourceLogoStatus({kind:'error',message:`Could not confirm upload: ${detail}. Do not retry until the storage receipt has been checked, as the first request may have uploaded the file.`});
+    } finally { setStagingSourceLogo(false); }
   };
 
   const addVenue = () => { setSaved(false); setForm(prev => ({ ...prev, venues: [...(prev.venues || []), emptyVenue((prev.venues || []).length + 1)] })); };
@@ -844,12 +850,15 @@ export default function DirectoryListingEdit() {
                         {isClubListing && <div className="mt-3 rounded-xl border border-border p-3 space-y-2 max-w-xl">
                           <p className="text-sm font-bold">Stage approved official logo from HTTPS</p>
                           <p className="text-xs text-muted-foreground">Uses the existing server-side artwork download and checksum readback pattern. Staging does not save or publish the logo. Only approved official artwork hosts are accepted.</p>
-                          <Input type="url" aria-label="Approved original logo image URL" placeholder="https://official-source.example/club-logo.png" value={logoSourceUrl} onChange={e => {setLogoSourceUrl(e.target.value);setSourceLogoReceipt(null);}} />
-                          <Input aria-label="Approved logo SHA-256" placeholder="Expected SHA-256 (64 hexadecimal characters)" value={logoExpectedHash} onChange={e => {setLogoExpectedHash(e.target.value);setSourceLogoReceipt(null);}} />
-                          <Input aria-label="Logo approval reference" placeholder="Approval reference, e.g. RHLOGO-20261013-18" value={logoApprovalId} onChange={e => {setLogoApprovalId(e.target.value);setSourceLogoReceipt(null);}} />
-                          <Button type="button" variant="outline" disabled={stagingSourceLogo || !logoSourceUrl.trim() || !/^[a-f0-9]{64}$/i.test(logoExpectedHash.trim()) || logoApprovalId.trim().length < 6} onClick={stageSourceLogo}>
-                            {stagingSourceLogo ? 'Staging and verifying…' : 'Stage and verify logo'}
+                          <Input type="url" aria-label="Approved original logo image URL" placeholder="https://official-source.example/club-logo.png" value={logoSourceUrl} onChange={e => {setLogoSourceUrl(e.target.value);setSourceLogoReceipt(null);setSourceLogoStatus({kind:'idle',message:''});}} />
+                          <Input aria-label="Approved logo SHA-256" placeholder="Expected SHA-256 (64 hexadecimal characters)" value={logoExpectedHash} onChange={e => {setLogoExpectedHash(e.target.value);setSourceLogoReceipt(null);setSourceLogoStatus({kind:'idle',message:''});}} />
+                          <Input aria-label="Logo approval reference" placeholder="Approval reference, e.g. RHLOGO-20261013-18" value={logoApprovalId} onChange={e => {setLogoApprovalId(e.target.value);setSourceLogoReceipt(null);setSourceLogoStatus({kind:'idle',message:''});}} />
+                          <Button type="button" className="w-full sm:w-auto min-h-12 bg-green-700 hover:bg-green-800 text-white font-bold disabled:opacity-60" disabled={stagingSourceLogo || !!sourceLogoReceipt || !logoSourceUrl.trim() || !/^[a-f0-9]{64}$/i.test(logoExpectedHash.trim()) || logoApprovalId.trim().length < 6} onClick={stageSourceLogo} aria-busy={stagingSourceLogo}>
+                            {stagingSourceLogo ? <><Loader2 className="mr-2 h-5 w-5 animate-spin"/>Uploading and verifying…</> : sourceLogoReceipt ? <><CheckCircle2 className="mr-2 h-5 w-5"/>Logo verified</> : <><Upload className="mr-2 h-5 w-5"/>Stage and verify logo</>}
                           </Button>
+                          {sourceLogoStatus.kind !== 'idle' && <div role={sourceLogoStatus.kind === 'error' ? 'alert' : 'status'} aria-live="polite" className={`rounded-lg border p-3 text-sm font-medium break-words ${sourceLogoStatus.kind === 'success' ? 'border-green-600/50 bg-green-600/10 text-green-800' : sourceLogoStatus.kind === 'error' ? 'border-red-500/50 bg-red-500/10 text-red-800' : 'border-blue-500/40 bg-blue-500/10 text-foreground'}`}>
+                            <div className="flex items-start gap-2">{sourceLogoStatus.kind === 'loading' && <Loader2 className="h-4 w-4 shrink-0 mt-0.5 animate-spin"/>}{sourceLogoStatus.kind === 'success' && <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5"/>}<span>{sourceLogoStatus.message}</span></div>
+                          </div>}
                           {sourceLogoReceipt && <div role="status" className="rounded-lg border border-green-500/30 bg-green-500/5 p-3 space-y-2">
                             <p className="text-sm font-semibold">Stored and verified — not published</p>
                             <p className="text-xs break-all">SHA-256: {sourceLogoReceipt.sha256}</p>
