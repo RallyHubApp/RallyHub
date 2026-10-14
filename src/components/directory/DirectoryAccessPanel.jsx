@@ -23,18 +23,20 @@ export default function DirectoryAccessPanel({ listingSlug, clubName, county = '
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [loadWarning, setLoadWarning] = useState('');
   const [invite, setInvite] = useState({ name: '', email: '', phone: '' });
   const [preparedInvite, setPreparedInvite] = useState(null);
 
   const load = async () => {
     setLoading(true);
-    setError('');
+    setError(''); setLoadWarning('');
     try {
       const res = await base44.functions.invoke('directoryClaim', { action: 'access_list', listingSlug });
       if (res.data?.error) throw new Error(res.data.error);
       setPeople(res.data?.people || []);
       setPending(res.data?.pendingInvitations || []);
       setCanManage(!!res.data?.canManageAccess);
+      if (res.data?.partialData) setLoadWarning((res.data?.warnings || []).join(' '));
     } catch (err) {
       setError(err?.message || 'Could not load directory access.');
     } finally {
@@ -120,6 +122,7 @@ export default function DirectoryAccessPanel({ listingSlug, clubName, county = '
         <p><strong className="text-foreground">Security:</strong> delegated access uses a single-use 72-hour invitation tied to the chosen email address or mobile number. A forwarded link cannot be accepted by somebody whose verified details do not match the invitation. Primary Owner access cannot be removed from this screen.</p>
       </div>
 
+      {loadWarning && <p role="status" className="rounded-lg border border-amber-500/30 p-3 text-sm text-amber-700">{loadWarning}</p>}
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> Loading authorised people…</div>
       ) : (
