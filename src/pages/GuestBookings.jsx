@@ -48,7 +48,7 @@ export default function GuestBookings(){
   const [changeSlot,setChangeSlot]=useState('');
   const [changeDate,setChangeDate]=useState('');
 
-  const {data:templateData={templates:[],sumupConfigured:false},isLoading:templatesLoading}=useQuery({
+  const {data:templateData={templates:[],sumupConfigured:false},isLoading:templatesLoading,isError:templatesError,refetch:retryTemplates}=useQuery({
     queryKey:['guest-session-templates'],
     queryFn:async()=>{
       const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_templates'});
@@ -58,7 +58,7 @@ export default function GuestBookings(){
     enabled:user?.role==='admin',
   });
 
-  const {data:listData={sessions:[],sumupConfigured:false},isLoading:listLoading}=useQuery({
+  const {data:listData={sessions:[],sumupConfigured:false},isLoading:listLoading,isError:listError,refetch:retryList}=useQuery({
     queryKey:['guest-session-admin-list'],
     queryFn:async()=>{
       const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_list'});
@@ -68,7 +68,7 @@ export default function GuestBookings(){
     enabled:user?.role==='admin',
   });
 
-  const {data:requestData={requests:[]},isLoading:requestsLoading}=useQuery({
+  const {data:requestData={requests:[]},isLoading:requestsLoading,isError:requestsError,refetch:retryRequests}=useQuery({
     queryKey:['guest-access-requests'],
     queryFn:async()=>{
       const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_list'});
@@ -483,7 +483,7 @@ export default function GuestBookings(){
   };
 
   if(user?.role!=='admin')return <div className="min-h-[50vh] grid place-items-center text-center"><div><ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground/40"/><p className="mt-3 font-semibold">Admin access required</p></div></div>;
-  if(templatesLoading||listLoading||requestsLoading)return <div className="min-h-[50vh] grid place-items-center"><RefreshCw className="h-6 w-6 animate-spin"/></div>;
+  if(templatesLoading||listLoading||requestsLoading||templatesError||listError||requestsError)return <div className="mx-auto max-w-3xl p-6 space-y-3" role="status"><h1 className="text-xl font-bold">Session Bookings</h1><p className="text-sm text-muted-foreground">Some booking services are still loading or unavailable. You can retry them individually.</p>{[["Session settings",templatesLoading,templatesError,retryTemplates],["Session list",listLoading,listError,retryList],["Guest requests",requestsLoading,requestsError,retryRequests]].map(([name,loading,failed,retry])=><div key={name} className="flex items-center justify-between gap-3 rounded-lg border p-3"><span>{name}: {failed?'Unavailable':loading?'Loading…':'Ready'}</span>{failed&&<Button type="button" variant="outline" size="sm" onClick={()=>retry()}>Retry</Button>}</div>)}</div>;
 
   return <div className="mx-auto max-w-6xl space-y-6">
     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
