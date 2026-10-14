@@ -12,17 +12,18 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Error: expect(locator).toHaveCount(expected) failed
 
-Locator: getByText('Doora Barefield')
-Expected: visible
-Error: strict mode violation: getByText('Doora Barefield') resolved to 2 elements:
-    1) <p data-dynamic-content="false" class="text-sm text-muted-foreground" data-source-location="src/pages/PublicGuestRequest.jsx:191:455">Experienced guest places shown here are the Ennis…</p> aka getByText('Experienced guest places')
-    2) <p class="font-black" data-dynamic-content="true" data-collection-item-field="venueName" data-collection-item-id="db-mon-social" data-source-location="src/pages/PublicGuestRequest.jsx:191:1179">Doora Barefield</p> aka getByText('Doora Barefield', { exact: true })
+Locator:  getByText('Ennistymon Community Centre')
+Expected: 0
+Received: 2
+Timeout:  3000ms
 
 Call log:
-  - Expect "toBeVisible" getByText('Doora Barefield') with timeout 3000ms
-  - waiting for getByText('Doora Barefield')
+  - Expect "toHaveCount" getByText('Ennistymon Community Centre') with timeout 3000ms
+  - waiting for getByText('Ennistymon Community Centre')
+    10 × locator resolved to 2 elements
+       - unexpected value "2"
 
 ```
 
@@ -133,7 +134,6 @@ Call log:
 # Test source
 
 ```ts
-  3   | const club = {
   4   |   id: 'club-clare', name: 'Clare Pickleball', slug: 'clare-pickleball',
   5   |   logo_url: '', primary_colour: '#2667f2', secondary_colour: '#facc15'
   6   | };
@@ -233,10 +233,10 @@ Call log:
   100 |     await page.getByRole('button',{name:/I’m an experienced player/}).click();
   101 |     await expect(page.getByRole('heading',{name:'3. Previous sporting experience'})).toHaveCount(0);
   102 |     await expect(page.getByRole('heading',{name:'3. Health & medical information'})).toBeVisible();
-> 103 |     await expect(page.getByText('Doora Barefield')).toBeVisible();
-      |                                                     ^ Error: expect(locator).toBeVisible() failed
-  104 |     await expect(page.getByText('Ennistymon Community Centre')).toHaveCount(2);
-  105 |     await expect(page.getByText('Corofin GAA Sports Hall')).toBeVisible();
+  103 |     await expect(page.getByText('Doora Barefield',{exact:true})).toBeVisible();
+> 104 |     await expect(page.getByText('Ennistymon Community Centre')).toHaveCount(0);
+      |                                                                 ^ Error: expect(locator).toHaveCount(expected) failed
+  105 |     await expect(page.getByText('Corofin GAA Sports Hall')).toHaveCount(0);
   106 |     await page.getByLabel('DUPR').fill('No DUPR');
   107 |     await page.getByLabel('Club you normally play with').fill('Galway Pickleball');
   108 |     await page.getByLabel('No',{exact:true}).check();
@@ -244,7 +244,7 @@ Call log:
   110 |     await page.getByLabel('Email').fill('experienced@example.test');
   111 |     await page.getByLabel('Mobile').fill('0877654321');
   112 |     await page.getByLabel(/I confirm that I am 18 years of age or over/).check();
-  113 |     await page.getByText('Doora Barefield').click();
+  113 |     await page.getByText('Doora Barefield',{exact:true}).click();
   114 |     await page.getByRole('button',{name:'Send guest request'}).click();
   115 |     await expect(page.getByRole('heading',{name:'Request sent'})).toBeVisible();
   116 |     const submit=calls.find(x=>x.name==='guestAccessJourney'&&x.body.action==='public_submit');
@@ -259,7 +259,7 @@ Call log:
   125 |     await page.goto('/guest/clare-pickleball');
   126 |     await page.getByRole('button',{name:/I’m a guest/}).click();
   127 |     await expect(page.getByText('Beginner guest places are available at Ennistymon, Corofin, Clarecastle and Shannon, subject to session availability.')).toBeVisible();
-  128 |     await expect(page.getByText('Doora Barefield')).toHaveCount(0);
+  128 |     await expect(page.getByText('Doora Barefield',{exact:true})).toHaveCount(0);
   129 |     await expect(page.getByText('Ennistymon Community Centre')).toHaveCount(2);
   130 |     await expect(page.getByText('Corofin GAA Sports Hall')).toBeVisible();
   131 |     await expect(page.getByRole('heading',{name:'3. Previous sporting experience'})).toBeVisible();
@@ -274,7 +274,7 @@ Call log:
   140 |     await page.getByLabel('Email').fill('guest@example.test');
   141 |     await page.getByLabel('Mobile').fill('0871234567');
   142 |     await page.getByLabel(/I confirm that I am 18 years of age or over/).check();
-  143 |     await page.getByText('Ennistymon Community Centre').first().click();
+  143 |     await page.getByText('Ennistymon Community Centre',{exact:true}).first().click();
   144 |     await expect(page.getByText(/No payment is taken with this request/)).toBeVisible();
   145 |     await page.getByRole('button',{name:'Send guest request'}).click();
   146 |     await expect(page.getByRole('heading',{name:'Request sent'})).toBeVisible();

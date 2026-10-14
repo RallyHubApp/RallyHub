@@ -100,9 +100,9 @@ test.describe('member or guest session booking mobile flow', () => {
     await page.getByRole('button',{name:/I’m an experienced player/}).click();
     await expect(page.getByRole('heading',{name:'3. Previous sporting experience'})).toHaveCount(0);
     await expect(page.getByRole('heading',{name:'3. Health & medical information'})).toBeVisible();
-    await expect(page.getByText('Doora Barefield')).toBeVisible();
-    await expect(page.getByText('Ennistymon Community Centre')).toHaveCount(2);
-    await expect(page.getByText('Corofin GAA Sports Hall')).toBeVisible();
+    await expect(page.getByText('Doora Barefield',{exact:true})).toBeVisible();
+    await expect(page.getByText('Ennistymon Community Centre')).toHaveCount(0);
+    await expect(page.getByText('Corofin GAA Sports Hall')).toHaveCount(0);
     await page.getByLabel('DUPR').fill('No DUPR');
     await page.getByLabel('Club you normally play with').fill('Galway Pickleball');
     await page.getByLabel('No',{exact:true}).check();
@@ -110,7 +110,7 @@ test.describe('member or guest session booking mobile flow', () => {
     await page.getByLabel('Email').fill('experienced@example.test');
     await page.getByLabel('Mobile').fill('0877654321');
     await page.getByLabel(/I confirm that I am 18 years of age or over/).check();
-    await page.getByText('Doora Barefield').click();
+    await page.getByText('Doora Barefield',{exact:true}).click();
     await page.getByRole('button',{name:'Send guest request'}).click();
     await expect(page.getByRole('heading',{name:'Request sent'})).toBeVisible();
     const submit=calls.find(x=>x.name==='guestAccessJourney'&&x.body.action==='public_submit');
@@ -125,7 +125,7 @@ test.describe('member or guest session booking mobile flow', () => {
     await page.goto('/guest/clare-pickleball');
     await page.getByRole('button',{name:/I’m a guest/}).click();
     await expect(page.getByText('Beginner guest places are available at Ennistymon, Corofin, Clarecastle and Shannon, subject to session availability.')).toBeVisible();
-    await expect(page.getByText('Doora Barefield')).toHaveCount(0);
+    await expect(page.getByText('Doora Barefield',{exact:true})).toHaveCount(0);
     await expect(page.getByText('Ennistymon Community Centre')).toHaveCount(2);
     await expect(page.getByText('Corofin GAA Sports Hall')).toBeVisible();
     await expect(page.getByRole('heading',{name:'3. Previous sporting experience'})).toBeVisible();
@@ -140,7 +140,7 @@ test.describe('member or guest session booking mobile flow', () => {
     await page.getByLabel('Email').fill('guest@example.test');
     await page.getByLabel('Mobile').fill('0871234567');
     await page.getByLabel(/I confirm that I am 18 years of age or over/).check();
-    await page.getByText('Ennistymon Community Centre').first().click();
+    await page.getByText('Ennistymon Community Centre',{exact:true}).first().click();
     await expect(page.getByText(/No payment is taken with this request/)).toBeVisible();
     await page.getByRole('button',{name:'Send guest request'}).click();
     await expect(page.getByRole('heading',{name:'Request sent'})).toBeVisible();
