@@ -487,7 +487,7 @@ export default function GuestBookings(){
   };
 
   if(user?.role!=='admin')return <div className="min-h-[50vh] grid place-items-center text-center"><div><ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground/40"/><p className="mt-3 font-semibold">Admin access required</p></div></div>;
-  if(templatesLoading||listLoading||requestsLoading||templatesError||listError||requestsError)return <div className="mx-auto max-w-3xl p-6 space-y-3" role="status"><h1 className="text-xl font-bold">Session Bookings</h1><p className="text-sm text-muted-foreground">Some booking services are still loading or unavailable. You can retry them individually.</p>{[["Session settings",templatesLoading,templatesError,retryTemplates],["Session list",listLoading,listError,retryList],["Guest requests",requestsLoading,requestsError,retryRequests]].map(([name,loading,failed,retry])=><div key={name} className="flex items-center justify-between gap-3 rounded-lg border p-3"><span>{name}: {failed?'Unavailable':loading?'Loading…':'Ready'}</span>{failed&&<Button type="button" variant="outline" size="sm" onClick={()=>retry()}>Retry</Button>}</div>)}</div>;
+  if(templatesLoading&&listLoading&&requestsLoading)return <div className="mx-auto max-w-3xl p-6 space-y-3" role="status"><h1 className="text-xl font-bold">Session Bookings</h1><p className="text-sm text-muted-foreground">Some booking services are still loading or unavailable. You can retry them individually.</p>{[["Session settings",templatesLoading,templatesError,retryTemplates],["Session list",listLoading,listError,retryList],["Guest requests",requestsLoading,requestsError,retryRequests]].map(([name,loading,failed,retry])=><div key={name} className="flex items-center justify-between gap-3 rounded-lg border p-3"><span>{name}: {failed?'Unavailable':loading?'Loading…':'Ready'}</span>{failed&&<Button type="button" variant="outline" size="sm" onClick={()=>retry()}>Retry</Button>}</div>)}</div>;
 
   return <div className="mx-auto max-w-6xl space-y-6">
     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -500,6 +500,7 @@ export default function GuestBookings(){
       </Badge></div>
     </div>
 
+    {(templatesError||listError||requestsError||templatesLoading||listLoading||requestsLoading)&&<div className="rounded-xl border border-amber-500/30 p-3 space-y-2"><p className="font-semibold text-sm">Some booking services are unavailable. Available records are shown below.</p>{[["Session settings",templatesLoading,templatesError,retryTemplates],["Session list",listLoading,listError,retryList],["Guest requests",requestsLoading,requestsError,retryRequests]].filter(([,loading,error])=>loading||error).map(([name,loading,error,retry])=><div key={name} className="flex items-center justify-between gap-3 text-sm"><span>{name}: {loading?'Loading…':'Unavailable'}</span>{error&&<Button type="button" size="sm" variant="outline" onClick={()=>retry()}>Retry</Button>}</div>)}</div>}
     {user?.role==='admin'&&<EnnisDiamondSpondPilot/>}
 
     {!templateData.sumupConfigured&&<div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
