@@ -86,17 +86,26 @@ export default function GuestBookings(){
   const archivedSessions=useMemo(()=>sessions.filter(s=>!!s.archivedAt),[sessions]);
   const visibleSessions=showArchived?archivedSessions:currentSessions;
   const bookingRows=useMemo(()=>{
-    const approvedBookingIds=new Set(approvedRequests.map(r=>r.bookingId).filter(Boolean));
-    const approved=approvedRequests.map(r=>({kind:'approved_request',key:`request-${r.id}`,request:r,fullName:r.fullName,email:r.email,mobile:r.mobile,sessionDate:r.approvedSessionDate,day:r.day,start:r.start,end:r.end,venueName:r.venueName,bookingStatus:r.bookingStatus||'approved',paymentStatus:r.paymentStatus||'not_started',amount:r.amount,paymentMethod:r.paymentMethod,bookingId:r.bookingId||'',sumupCheckoutUrl:r.sumupCheckoutUrl||''}));
-    const direct=[];
-    for(const s of sessions){
-      for(const b of (s.bookings||[])){
-        if(approvedBookingIds.has(b.id))continue;
-        direct.push({kind:'booking',key:`booking-${b.id}`,booking:b,session:s,fullName:b.fullName,email:b.email,mobile:b.mobile,sessionDate:s.sessionDate,day:s.weekday||'',start:s.startTime,end:s.endTime,venueName:s.venueName,bookingStatus:b.bookingStatus,paymentStatus:b.paymentStatus,amount:b.amount,paymentMethod:b.paymentMethod,bookingId:b.id,sumupCheckoutUrl:b.sumupCheckoutUrl||''});
-      }
+    const sessionById=new Map(sessions.map(s=>[s.id,s]));
+    const booked=new Map();
+    for(const s of sessions)for(const b of (s.bookings||[])){
+      booked.set(b.id,{kind:'booking',key:`booking-${b.id}`,booking:b,session:s,fullName:b.fullName,email:b.email,mobile:b.mobile,sessionDate:s.sessionDate,day:s.weekday||'',start:s.startTime,end:s.endTime,venueName:s.venueName,bookingStatus:b.bookingStatus,paymentStatus:b.paymentStatus,amount:b.amount,paymentMethod:b.paymentMethod,bookingId:b.id,sumupCheckoutUrl:b.sumupCheckoutUrl||''});
     }
-    return [...approved,...direct].sort((a,b)=>`${b.sessionDate||''} ${b.start||''}`.localeCompare(`${a.sessionDate||''} ${a.start||''}`));
-  },[approvedRequests,sessions]);
+    // The paid booking is the financial record; accepted transfers change its current session.
+    // Pending offers appear against their proposed date without treating them as accepted.
+    const rows=[...booked.values()].map(row=>{
+      const offer=listData.changeOffers?.[row.bookingId];
+      if(offer?.status!=='pending')return row;
+      const target=sessionById.get(offer.targetSessionId);
+      if(!target)return row;
+      return {...row,key:`offer-${row.bookingId}`,sessionDate:target.sessionDate,day:target.weekday||'',start:target.startTime,end:target.endTime,venueName:target.venueName,pendingAlternative:true,originalSessionDate:row.sessionDate,originalVenueName:row.venueName};
+    });
+    for(const request of approvedRequests){
+      if(request.bookingId&&booked.has(request.bookingId))continue;
+      rows.push({kind:'approved_request',key:`request-${request.id}`,request,fullName:request.fullName,email:request.email,mobile:request.mobile,sessionDate:request.approvedSessionDate,day:request.day,start:request.start,end:request.end,venueName:request.venueName,bookingStatus:request.bookingStatus||'approved',paymentStatus:request.paymentStatus||'not_started',amount:request.amount,paymentMethod:request.paymentMethod,bookingId:request.bookingId||'',sumupCheckoutUrl:request.sumupCheckoutUrl||''});
+    }
+    return rows.sort((a,b)=>`${b.sessionDate||''} ${b.start||''}`.localeCompare(`${a.sessionDate||''} ${a.start||''}`));
+  },[approvedRequests,sessions,listData.changeOffers]);
 
   const todayIreland=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Dublin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const offerFor=row=>listData.changeOffers?.[row.bookingId]||null;
@@ -514,10 +523,10 @@ export default function GuestBookings(){
           return <div key={row.key} className="rounded-xl border bg-secondary/20 p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2"><p className="font-black">{row.fullName}</p><Badge variant="outline" className={paid?'border-green-500/40 text-green-600':awaitingBooking||row.paymentStatus==='pending'?'border-amber-500/40 text-amber-700':''}>{paymentLabel}</Badge>{offerFor(row)&&<Badge variant="outline" className={offerFor(row).status==='accepted'?'border-green-500/40 text-green-700':'border-amber-500/40 text-amber-700'}>Alternative {offerFor(row).status}{offerFor(row).targetLabel?' · '+offerFor(row).targetLabel:''}</Badge>}</div>
+                <div className="flex flex-wrap items-center gap-2"><p className="font-black">{row.fullName}</p><Badge variant="outline" className={paid?'border-green-500/40 text-green-600':awaitingBooking||row.paymentStatus==='pending'?'border-amber-500/40 text-amber-700':''}>{paymentLabel}</Badge>{row.pendingAlternative&&<Badge variant="outline">Awaiting acceptance — not yet confirmed</Badge>}{offerFor(row)&&<Badge variant="outline" className={offerFor(row).status==='accepted'?'border-green-500/40 text-green-700':'border-amber-500/40 text-amber-700'}>Alternative {offerFor(row).status}{offerFor(row).targetLabel?' · '+offerFor(row).targetLabel:''}</Badge>}</div>
                 <p className="mt-1 text-sm text-muted-foreground">{row.email}{row.mobile?` · ${row.mobile}`:''}</p>
                 <p className="mt-2 text-sm font-semibold">{row.sessionDate?niceDate(row.sessionDate):'Session date pending'}{row.start?` · ${row.start}${row.end?`–${row.end}`:''}`:''}</p>
-                <p className="text-sm text-muted-foreground">{row.venueName||'Venue pending'}{row.amount!==null&&row.amount!==undefined?` · €${Number(row.amount||0).toFixed(2)}`:''}</p>
+                {row.pendingAlternative&&<p className="text-xs text-muted-foreground">Original paid booking: {niceDate(row.originalSessionDate)} · {row.originalVenueName}</p>}<p className="text-sm text-muted-foreground">{row.venueName||'Venue pending'}{row.amount!==null&&row.amount!==undefined?` · €${Number(row.amount||0).toFixed(2)}`:''}</p>
                 {row.kind==='approved_request'&&row.request?.approvedAt&&<p className="mt-1 text-xs text-muted-foreground">Approved {new Date(row.request.approvedAt).toLocaleString('en-IE')}</p>}
                 {row.kind==='booking'&&row.booking?.registeredAt&&<p className="mt-1 text-xs text-muted-foreground">Booking started {new Date(row.booking.registeredAt).toLocaleString('en-IE')}{row.booking?.paidAt?` · paid ${new Date(row.booking.paidAt).toLocaleString('en-IE')}`:''}</p>}
               </div>
