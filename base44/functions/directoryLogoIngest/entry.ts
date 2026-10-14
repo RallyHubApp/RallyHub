@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.51';
+import { seedDirectorySlugs } from './seedDirectorySlugs.ts';
 
 // Directory artwork staging only. Never changes DirectoryListingProfile or publishes a logo.
 const MAX_BYTES = 12_000_000;
@@ -82,7 +83,11 @@ Deno.serve(async req => {
     }
     const profiles = await b.asServiceRole.entities.DirectoryListingProfile.filter({listing_slug:slug,status:'active'},'-updated_at',1);
     const records = await b.asServiceRole.entities.DirectoryListingRecord.filter({slug,status:'active'},'-published_at',1);
-    if (!profiles?.length && !records?.length) return Response.json({error:'Directory listing not found'}, {status:404});
+    // Existing public Directory includes curated/imported seed clubs that have
+    // never been saved as DirectoryListingProfile/DirectoryListingRecord rows.
+    // Validate those against a source-generated slug allowlist, never arbitrary user input.
+    if (!profiles?.length && !records?.length && !seedDirectorySlugs.has(slug))
+      return Response.json({error:'Directory listing not found'}, {status:404});
     const url = sourceUrl(body?.sourceUrl);
     const response = await fetch(url.toString(), {redirect:'error',signal:AbortSignal.timeout(15000),headers:{'accept':'image/png,image/jpeg,image/webp'}});
     if (!response.ok) return Response.json({error:'Approved image source unavailable'}, {status:422});
