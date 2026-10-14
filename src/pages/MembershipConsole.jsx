@@ -1149,7 +1149,10 @@ export default function MembershipConsole() {
                 !(applicationData.applications || []).length ? <p className="py-6 text-center text-sm text-muted-foreground">{(applicationData.pendingApprovals || []).length ? 'No approved applications have reached payment yet.' : 'No membership applications have been submitted through RallyHub yet.'}</p> :
                 <div className="space-y-2">
                   {(applicationData.applications || []).map(application => {
-                    const waiting = application.paymentStatus !== 'paid';
+                    const status = String(application.paymentStatus || '').toLowerCase();
+                    const waiting = ['pending','unpaid','awaiting_payment','payment_pending','created'].includes(status);
+                    const paid = status === 'paid';
+                    const noResponse = application.followUpStatus === 'no_response';
                     const busy = applicationBusyId === application.id;
                     return <div key={application.id} className="rounded-xl border bg-background/35 p-3 sm:p-4">
                       <div className="flex flex-col xl:flex-row xl:items-center gap-3">
@@ -1166,10 +1169,10 @@ export default function MembershipConsole() {
                         <div className="flex flex-wrap gap-2 xl:justify-end">
                           {waiting && application.paymentUrl ? <Button size="sm" variant="outline" onClick={() => copyApplicationPaymentLink(application)} disabled={busy}><ClipboardCopy className="w-3.5 h-3.5 mr-1.5" />Payment link</Button> : null}
                           {waiting ? <Button size="sm" variant="outline" onClick={() => previewApplicationReminder(application)} disabled={busy}><FileText className="w-3.5 h-3.5 mr-1.5" />Preview</Button> : null}
-                          {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','email')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Send email</Button> : null}
-                          {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','whatsapp')} disabled={busy}><MessageCircle className="w-3.5 h-3.5 mr-1.5" />WhatsApp</Button> : null}
+                          {waiting && !noResponse ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','email')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Send email</Button> : null}
+                          {waiting && !noResponse ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_send_reminder','whatsapp')} disabled={busy}><MessageCircle className="w-3.5 h-3.5 mr-1.5" />WhatsApp</Button> : null}
                           {waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_verify_payment')} disabled={busy}><RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${busy ? 'animate-spin' : ''}`} />Verify</Button> : null}
-                          {!waiting ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_resend_confirmation')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Resend confirmation</Button> : null}
+                          {paid ? <Button size="sm" variant="outline" onClick={() => runApplicationAction(application,'admin_resend_confirmation')} disabled={busy}><Mail className="w-3.5 h-3.5 mr-1.5" />Resend confirmation</Button> : null}
                           {waiting && application.followUpStatus !== 'no_response' ? <Button size="sm" variant="ghost" onClick={() => runApplicationAction(application,'admin_mark_no_response')} disabled={busy}>No response</Button> : null}
                         </div>
                       </div>
