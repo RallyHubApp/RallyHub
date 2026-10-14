@@ -97,8 +97,7 @@ test.describe('member or guest session booking mobile flow', () => {
   test('experienced pickleball guest skips previous sports, keeps health screening, and sees all experienced sessions', async ({ page }) => {
     const calls=await mockPublicApi(page);
     await page.goto('/guest/clare-pickleball');
-    await page.getByRole('button',{name:/I’m a guest/}).click();
-    await page.getByRole('button',{name:/Experienced pickleball player/}).click();
+    await page.getByRole('button',{name:/I’m an experienced player/}).click();
     await expect(page.getByRole('heading',{name:'3. Previous sporting experience'})).toHaveCount(0);
     await expect(page.getByRole('heading',{name:'3. Health & medical information'})).toBeVisible();
     await expect(page.getByText('Doora Barefield')).toBeVisible();
@@ -125,8 +124,7 @@ test.describe('member or guest session booking mobile flow', () => {
     const calls=await mockPublicApi(page);
     await page.goto('/guest/clare-pickleball');
     await page.getByRole('button',{name:/I’m a guest/}).click();
-    await page.getByRole('button',{name:/Beginner/}).click();
-    await expect(page.getByText('Beginner guest places are currently available only at Ennistymon and Corofin, as Ennis is full at the moment.')).toBeVisible();
+    await expect(page.getByText('Beginner guest places are available at Ennistymon, Corofin, Clarecastle and Shannon, subject to session availability.')).toBeVisible();
     await expect(page.getByText('Doora Barefield')).toHaveCount(0);
     await expect(page.getByText('Ennistymon Community Centre')).toHaveCount(2);
     await expect(page.getByText('Corofin GAA Sports Hall')).toBeVisible();
