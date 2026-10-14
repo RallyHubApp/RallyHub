@@ -783,7 +783,20 @@ async function sendHostBookingEmail(base44:any,scope:any,club:any,session:any,bo
   return true;
 }
 
+// Coalesce overlapping confirmation attempts for the same booking within one runtime.
+// Persistent sent timestamps remain the cross-invocation guard.
+const confirmationInFlight=new Map<string,Promise<any>>();
 async function sendConfirmations(base44:any,session:any,booking:any,force=false,attendanceAccepted=false){
+  if(force)return sendConfirmationsUnprotected(base44,session,booking,true,attendanceAccepted);
+  const key=String(booking.id||'');
+  if(!key)return sendConfirmationsUnprotected(base44,session,booking,false,attendanceAccepted);
+  const existing=confirmationInFlight.get(key);
+  if(existing)return existing;
+  const pending=sendConfirmationsUnprotected(base44,session,booking,false,attendanceAccepted);
+  confirmationInFlight.set(key,pending);
+  try{return await pending}finally{if(confirmationInFlight.get(key)===pending)confirmationInFlight.delete(key)}
+}
+async function sendConfirmationsUnprotected(base44:any,session:any,booking:any,force=false,attendanceAccepted=false){
   if(!force && booking.notification_sent_at && booking.guest_confirmation_sent_at) return booking;
   const summary=hostText(session,booking);
   const now=new Date().toISOString();

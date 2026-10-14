@@ -193,7 +193,8 @@ export default function GuestBookings(){
       try{await Promise.all([qc.invalidateQueries({queryKey:['guest-access-requests']}),qc.invalidateQueries({queryKey:['guest-access-requests','pending-count']}),qc.invalidateQueries({queryKey:['guest-session-admin-list']})]);}
       catch(refreshError){toast.warning('Approved, but the list could not refresh. Reload to see the updated status.');}
     }catch(e){
-      const message=e?.response?.data?.error||e?.message||'Approval could not be confirmed. Check the request before retrying.';
+      const rawMessage=e?.response?.data?.error||e?.message||'Approval could not be confirmed. Check the request before retrying.';
+      const message=/rate limit|too many requests|429/i.test(rawMessage)?'Booking service rate limit reached. Do not press Approve again yet; check the request status before retrying.':rawMessage;
       setApprovalFeedback(previous=>({...previous,[request.id]:{type:'error',message}}));
       toast.error(message);
     }finally{setBusy('')}
