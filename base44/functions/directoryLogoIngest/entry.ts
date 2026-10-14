@@ -9,6 +9,22 @@ const SOURCE_HOSTS = new Set([
   'www.deryckpayne.eu', 'deryckpayne.eu', 'primary.jwwb.nl',
   'base44.app', 'www.base44.app'
 ]);
+// Reuse the universal asset intake's staging-only service secret, never a directory publish credential.
+async function validTransferKey(req: Request) {
+  const configured = Deno.env.get('RALLYHUB_ASSET_TRANSFER_SECRET') || '';
+  const header = req.headers.get('authorization') || '';
+  const candidate = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (configured.length < 32 || candidate.length !== configured.length) return false;
+  const encoder = new TextEncoder();
+  const [a,b] = await Promise.all([
+    crypto.subtle.digest('SHA-256',encoder.encode(candidate)),
+    crypto.subtle.digest('SHA-256',encoder.encode(configured))
+  ]);
+  const aa = new Uint8Array(a), bb = new Uint8Array(b);
+  let diff = 0;
+  for (let i = 0; i < aa.length; i++) diff |= aa[i] ^ bb[i];
+  return diff === 0;
+}
 const HASH = async bytes => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)))
   .map(n => n.toString(16).padStart(2, '0')).join('');
 function sourceUrl(value) {
@@ -48,8 +64,9 @@ Deno.serve(async req => {
   try {
     if (req.method !== 'POST') return Response.json({error:'POST required'}, {status:405});
     const b = createClientFromRequest(req);
-    const user = await b.auth.me();
-    if (!user) return Response.json({error:'Sign in required'}, {status:401});
+    const serviceAuthenticated = await validTransferKey(req);
+    const user = serviceAuthenticated ? null : await b.auth.me().catch(() => null);
+    if (!serviceAuthenticated && !user) return Response.json({success:false,error:'Authentication required'}, {status:401});
     const body = await req.json();
     const slug = String(body?.listingSlug || '').trim();
     const expected = String(body?.expectedSha256 || '').trim().toLowerCase();
@@ -57,7 +74,9 @@ Deno.serve(async req => {
     if (!/^[a-z0-9][a-z0-9-]{1,179}$/.test(slug) ||
         !/^[a-f0-9]{64}$/.test(expected) || !/^[a-zA-Z0-9:_-]{6,160}$/.test(approvalId))
       return Response.json({error:'Valid listing slug, approval reference and expected SHA-256 required'}, {status:400});
-    if (user.role !== 'admin') {
+    // A valid service credential may stage approved checksummed artwork only.
+    // Directory owners and other users still require their existing listing access.
+    if (!serviceAuthenticated && user.role !== 'admin') {
       const rows = await b.asServiceRole.entities.DirectoryListingAccess.filter({listing_slug:slug,user_id:user.id,status:'active'},'-granted_at',5);
       if (!rows?.length) return Response.json({error:'Directory editor permission required'}, {status:403});
     }
@@ -83,7 +102,7 @@ Deno.serve(async req => {
     // This operation only stages a verified file. An explicitly authorised profile save is required to use it.
     return Response.json({success:true,status:'staged',listingSlug:slug,approvalId,sourceUrl:url.toString(),
       fileUrl:uploaded.file_url,sha256:digest,bytes:bytes.length,format:type.format,
-      readbackVerified:true,requiresApproval:true,published:false});
+      readbackVerified:true,authMethod:serviceAuthenticated?'service-staging':'directory-session',requiresApproval:true,published:false});
   } catch (e) {
     console.error('directoryLogoIngest staging failed',String(e?.message || e));
     return Response.json({success:false,error:String(e?.message || 'Logo staging failed')},{status:422});
