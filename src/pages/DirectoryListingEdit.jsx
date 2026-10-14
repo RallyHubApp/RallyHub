@@ -213,6 +213,11 @@ export default function DirectoryListingEdit() {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoDraft, setLogoDraft] = useState(null);
+  const [logoSourceUrl, setLogoSourceUrl] = useState('');
+  const [logoExpectedHash, setLogoExpectedHash] = useState('');
+  const [logoApprovalId, setLogoApprovalId] = useState('');
+  const [stagingSourceLogo, setStagingSourceLogo] = useState(false);
+  const [sourceLogoReceipt, setSourceLogoReceipt] = useState(null);
   const [inviting, setInviting] = useState(false);
   const [inviteMessage, setInviteMessage] = useState('');
   const [autoWhatsApp, setAutoWhatsApp] = useState(false);
@@ -554,6 +559,21 @@ export default function DirectoryListingEdit() {
     } finally { setUploadingLogo(false); }
   };
 
+  const stageSourceLogo = async () => {
+    setStagingSourceLogo(true); setError(''); setSourceLogoReceipt(null);
+    try {
+      const r = await base44.functions.invoke('directoryLogoIngest', {
+        listingSlug: slug, sourceUrl: logoSourceUrl.trim(),
+        expectedSha256: logoExpectedHash.trim().toLowerCase(), approvalId: logoApprovalId.trim()
+      });
+      const receipt = r.data || {};
+      if (!receipt.success || receipt.status !== 'staged' || !receipt.readbackVerified || receipt.listingSlug !== slug || receipt.sha256 !== logoExpectedHash.trim().toLowerCase())
+        throw new Error(receipt.error || 'Artwork failed verification');
+      setSourceLogoReceipt(receipt);
+    } catch (e) { setError(e?.message || 'Could not stage verified club logo'); }
+    finally { setStagingSourceLogo(false); }
+  };
+
   const addVenue = () => { setSaved(false); setForm(prev => ({ ...prev, venues: [...(prev.venues || []), emptyVenue((prev.venues || []).length + 1)] })); };
   const removeVenue = index => {
     const venue = form?.venues?.[index];
@@ -821,6 +841,23 @@ export default function DirectoryListingEdit() {
                           {form.logoUrl && <Button type="button" variant="outline" onClick={() => setField('logoUrl', '')}>Remove logo</Button>}
                         </div>
                         <p className="text-xs text-muted-foreground">JPG, PNG or WebP up to 5 MB. RallyHub automatically removes common transparent/white padding, centres the crest, then lets you resize and reposition it before upload.</p>
+                        {isClubListing && <div className="mt-3 rounded-xl border border-border p-3 space-y-2 max-w-xl">
+                          <p className="text-sm font-bold">Stage approved official logo from HTTPS</p>
+                          <p className="text-xs text-muted-foreground">Uses the existing server-side artwork download and checksum readback pattern. Staging does not save or publish the logo. Only approved official artwork hosts are accepted.</p>
+                          <Input type="url" aria-label="Approved original logo image URL" placeholder="https://official-source.example/club-logo.png" value={logoSourceUrl} onChange={e => {setLogoSourceUrl(e.target.value);setSourceLogoReceipt(null);}} />
+                          <Input aria-label="Approved logo SHA-256" placeholder="Expected SHA-256 (64 hexadecimal characters)" value={logoExpectedHash} onChange={e => {setLogoExpectedHash(e.target.value);setSourceLogoReceipt(null);}} />
+                          <Input aria-label="Logo approval reference" placeholder="Approval reference, e.g. RHLOGO-20261013-18" value={logoApprovalId} onChange={e => {setLogoApprovalId(e.target.value);setSourceLogoReceipt(null);}} />
+                          <Button type="button" variant="outline" disabled={stagingSourceLogo || !logoSourceUrl.trim() || !/^[a-f0-9]{64}$/i.test(logoExpectedHash.trim()) || logoApprovalId.trim().length < 6} onClick={stageSourceLogo}>
+                            {stagingSourceLogo ? 'Staging and verifying…' : 'Stage and verify logo'}
+                          </Button>
+                          {sourceLogoReceipt && <div role="status" className="rounded-lg border border-green-500/30 bg-green-500/5 p-3 space-y-2">
+                            <p className="text-sm font-semibold">Stored and verified — not published</p>
+                            <p className="text-xs break-all">SHA-256: {sourceLogoReceipt.sha256}</p>
+                            <img src={sourceLogoReceipt.fileUrl} alt="Verified staged club logo" className="h-28 w-28 bg-white rounded-lg object-contain p-2" />
+                            <Button type="button" variant="outline" onClick={() => {setField('logoUrl',sourceLogoReceipt.fileUrl);setSourceLogoReceipt(null);}}>Use in unsaved listing draft</Button>
+                            <p className="text-xs text-muted-foreground">The public logo changes only after you explicitly choose Save changes for this listing.</p>
+                          </div>}
+                        </div>}
                       </div>
                     </div>
                     {logoDraft && (
