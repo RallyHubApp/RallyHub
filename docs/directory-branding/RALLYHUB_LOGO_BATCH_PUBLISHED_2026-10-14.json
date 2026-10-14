@@ -1,0 +1,306 @@
+{
+  "date": "2026-10-14",
+  "sourceApproval": "Pasted text(6).txt, 30 explicitly checked entries",
+  "processed": 30,
+  "verifiedAndAppliedToDirectorySource": 29,
+  "held": [
+    {
+      "number": 17,
+      "name": "Eyva's Invitational Series",
+      "reason": "No exact existing directoryImported club listing; artwork from generic Google image cache needs identity review; not published"
+    }
+  ],
+  "ezpickleballProtected": true,
+  "entries": [
+    {
+      "num": 1,
+      "name": "ABC Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/2b9f2dac1_directory-logo-batch-20261014-01-65c3be41126c90bc.jpg",
+      "sha256": "65c3be41126c90bce7b888c5eacd5139bbd3c04897ed0866e117d60f0175df29",
+      "bytes": 8674,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 2,
+      "name": "Ards Blair Mayne Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/9e2ce0d37_rh-logo-02-a3a53d96d87e5b35.jpg",
+      "sha256": "a3a53d96d87e5b35bbd3c9bc640bbe5fe0e19b2dfb0b681b3a7a399e057ebb26",
+      "bytes": 70549,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 3,
+      "name": "Athboy Pickleball",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/7ad853651_rh-logo-20261014-03-e194f6bfdef0cf13.jpg",
+      "sha256": "e194f6bfdef0cf13d22fb77e33c88d55b2f259f4eb7e40fba146c78dadb43369",
+      "bytes": 41515,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 4,
+      "name": "Balbriggan Pickleball",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/b84058759_rh-logo-20261014-04-7364cbf2bef88093.jpg",
+      "sha256": "7364cbf2bef88093ae2841db171cb97328b8131d819167be64cc108f72164306",
+      "bytes": 40386,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 5,
+      "name": "Belfast Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/e01d42d58_rh-logo-20261014-05-f9ce66e01d409dd4.jpg",
+      "sha256": "f9ce66e01d409dd413202e8f70b1275ddec6e6d631dabe5aea7ae48d7378da7b",
+      "bytes": 9474,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 6,
+      "name": "Better Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/519927f8b_rh-logo-20261014-06-117f5e4e932de732.jpg",
+      "sha256": "117f5e4e932de7322eaeb028bcf19c6069f6089343df7e7dccc73e9776e7c5eb",
+      "bytes": 175086,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 7,
+      "name": "Blackrock Pickleball",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/6c33f28ae_rh-logo-20261014-07-d53ecd54474c696e.jpg",
+      "sha256": "d53ecd54474c696e4c3dc10a40e77dd18840edfeb0a79a01bfab900cf524502c",
+      "bytes": 4565,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 8,
+      "name": "Carlingford Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/99f0d6b6e_rh-logo-20261014-08-c85794ac4a712169.jpg",
+      "sha256": "c85794ac4a712169088f422486b3f4baadf5fb516f65be621c6d2de53c917915",
+      "bytes": 7083,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 9,
+      "name": "Carlow/Tullow Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/34344d98d_rh-logo-20261014-09-715e1c94deb6c702.jpg",
+      "sha256": "715e1c94deb6c7025f93d416e5efbea207d0f9cfa5f638264b964fa753d142e0",
+      "bytes": 7552,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 11,
+      "name": "Cobh Pickleball",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/5427dc801_rh-logo-20261014-11-62dd4dd12f5810a4.jpg",
+      "sha256": "62dd4dd12f5810a47e0bdc2f4ba82b3bd95fd6635a9a97dc2fa7c60969361fc8",
+      "bytes": 5931,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 13,
+      "name": "Cork Pickleballers",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/89ecbe8b9_rh-logo-20261014-13-03f7763f9cbbcfaf.jpg",
+      "sha256": "03f7763f9cbbcfaf19404ae3a849a34159eb964c812d9608ccffb62dae2c6c1e",
+      "bytes": 39171,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 15,
+      "name": "Duhallow Pickleball",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/e4725c7e8_rh-logo-20261014-15-f5ce513c37f91de4.png",
+      "sha256": "f5ce513c37f91de45854021c8938e3d083d4c2b24b50cfa53c8eae0d44dc7957",
+      "bytes": 333087,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 16,
+      "name": "East Meath Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/a04ae03bd_rh-logo-20261014-16-74e3b035e854c0be.jpg",
+      "sha256": "74e3b035e854c0befeca53d0cb3979587803a121593c050249d6c7eb5ad44c5b",
+      "bytes": 10369,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 19,
+      "name": "Kildare Pickleball Assoc.",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/ebd113bcd_rh-logo-20261014-19-46d37830a6611870.jpg",
+      "sha256": "46d37830a661187079b2ce8cfd67f37d454ea5b5971505935cc4995f7d213ca8",
+      "bytes": 9453,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 20,
+      "name": "Lecanvey Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/55fea37d1_rh-logo-20261014-20-eecdcc23df4567ea.jpg",
+      "sha256": "eecdcc23df4567eac6bc83020b22a2c1adc65857172825f8d10699dccc9e9430",
+      "bytes": 11461,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 22,
+      "name": "Midleton Pickleball",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/c31a76012_rh-logo-20261014-22-76bd32d0197c77e1.jpg",
+      "sha256": "76bd32d0197c77e136d3b0614081015b25df8d34528941d7b5e53dcd42c9effc",
+      "bytes": 8126,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 25,
+      "name": "Multyfarnham Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/b9b000a7f_rh-logo-20261014-25-42db1fba20e07640.jpg",
+      "sha256": "42db1fba20e0764002df70873db4a3cbde24cbaf2b0d2e74082ea49ce529c88c",
+      "bytes": 27838,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 26,
+      "name": "Naas Pickleball",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/1eed7e435_rh-logo-20261014-26-3facc3384897ae07.jpg",
+      "sha256": "3facc3384897ae07fd9af75eed5a159ac84f51a94ac3c596ab45113511730c25",
+      "bytes": 7360,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 27,
+      "name": "North Star Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/a9722f310_rh-logo-20261014-27-f279504279cd272e.jpg",
+      "sha256": "f279504279cd272ea0dc6c0cda3caf9f0061c7922c44ccfb12a58bbf0c3d4bba",
+      "bytes": 7882,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 28,
+      "name": "Pickleball South Dublin",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/a2ab587e5_rh-logo-20261014-28-f93bb863f7c37ee1.jpg",
+      "sha256": "f93bb863f7c37ee132c6c7674a28279e495f4908430417e2fcf55530afe759f8",
+      "bytes": 7732,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 29,
+      "name": "Pickleball Wexford",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/dfc8019e4_rh-logo-20261014-29-d70c7a2771d98a6c.jpg",
+      "sha256": "d70c7a2771d98a6cfb81740240700a41ff937f4a15e94f66b7a66363e548aaf6",
+      "bytes": 10095,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 31,
+      "name": "Portarlington Pickleball",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/c854d1290_rh-logo-20261014-31-e941b5994e2ac9b9.jpg",
+      "sha256": "e941b5994e2ac9b93fc5ffe0daab258c6bf2e81ecaca08059f489d4ea68787a3",
+      "bytes": 51335,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 32,
+      "name": "Rebel Pickleball",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/5de06fb59_rh-logo-20261014-32-e78b33fbc8c9667a.jpg",
+      "sha256": "e78b33fbc8c9667af3adf55c641fe1cb96727be9adeb741dbe787f5e4b2b528c",
+      "bytes": 6051,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 33,
+      "name": "Roundwood Pickleball Group",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/7d5c89685_rh-logo-20261014-33-f4013c5351e593c4.jpg",
+      "sha256": "f4013c5351e593c4649856685b8ef814eda8f96b6287bfc5b88fc83690498251",
+      "bytes": 6315,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 34,
+      "name": "Sandyford Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/b3a5cddf2_rh-logo-20261014-34-b432fdb3ea531929.jpg",
+      "sha256": "b432fdb3ea53192997ddbb95e15177e661362bd9ef9d3650e2d2ba4eb242a2c4",
+      "bytes": 51991,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 35,
+      "name": "Sligo Tennis Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/fb63143ce_rh-logo-20261014-35-20e95cda2b095b52.png",
+      "sha256": "20e95cda2b095b5275891a1abc0ce39336a1b79b29d3a9669a4ffdc85c9244d0",
+      "bytes": 8705,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 36,
+      "name": "Southside Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/e818d47f7_rh-logo-20261014-36-08fc83e51d6eba26.png",
+      "sha256": "08fc83e51d6eba2645133bfe418a08a791172551e24a13b4eb7e9cf0161b7e9f",
+      "bytes": 36022,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 38,
+      "name": "Terenure Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/fd38c5a9a_rh-logo-20261014-38-b52f73a956aa5959.jpg",
+      "sha256": "b52f73a956aa59595f4b83ed17cd0a45ad63ec899c4ccac56b9330c3215e7456",
+      "bytes": 50525,
+      "readbackVerified": true,
+      "published": false
+    },
+    {
+      "num": 39,
+      "name": "Wallace Park Pickleball Club",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/d9ad2cbdb_rh-logo-20261014-39-056263d4e90e8d08.jpg",
+      "sha256": "056263d4e90e8d086d32338fe2e7d63be6237ec6936584643c76689820c9604b",
+      "bytes": 45221,
+      "readbackVerified": true,
+      "published": false
+    }
+  ]
+}
