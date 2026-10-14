@@ -1337,14 +1337,19 @@ export default function MembershipConsole() {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead className="w-10"><Checkbox checked={rows.length > 0 && selected.size === rows.length} onCheckedChange={toggleAll} /></TableHead>
+                  <TableHead className="sm:hidden">Member / status</TableHead>
                   {activeFields.map(field => <TableHead key={field.key} className="whitespace-nowrap">{field.label}</TableHead>)}
                   <TableHead className="text-right">Open</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {!rows.length ? <TableRow><TableCell colSpan={activeFields.length + 2} className="text-center py-10 text-muted-foreground">No membership records match this view.</TableCell></TableRow> :
+                  {!rows.length ? <TableRow><TableCell colSpan={activeFields.length + 3} className="text-center py-10 text-muted-foreground">No membership records match this view.</TableCell></TableRow> :
                     rows.map(row => (
                       <TableRow key={row.person_id} className="hover:bg-secondary/40">
                         <TableCell><Checkbox checked={selected.has(row.person_id)} onCheckedChange={() => toggleSelected(row.person_id)} /></TableCell>
+                        <TableCell className="sm:hidden min-w-[170px]">
+                          <button type="button" className="block text-left font-semibold text-primary hover:underline break-words" onClick={() => openMember(row)}>{row.full_name || 'Name unavailable'}</button>
+                          <div className="mt-1 flex flex-wrap gap-1"><Badge variant="outline">{label(row.membership_status || 'unknown')}</Badge><Badge variant="outline">{label(row.payment_status || 'unknown')}</Badge></div>
+                        </TableCell>
                         {activeFields.map(field => (
                           <TableCell key={field.key} className={field.key === 'full_name' ? 'font-semibold whitespace-nowrap' : 'text-xs whitespace-nowrap'}>
                             {field.key === 'full_name' ? <button type="button" className="text-left text-primary hover:underline min-h-10 touch-manipulation" onClick={() => openMember(row)}>{cellValue(row, field.key, currency)}</button> :
