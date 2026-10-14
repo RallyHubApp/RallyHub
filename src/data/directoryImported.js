@@ -1801,7 +1801,7 @@ export const importedDirectoryClubs = [
     "status": "listed",
     "membershipStatus": "Unclaimed listing — contact club",
     "affiliation": null,
-    "logoUrl": null,
+    "logoUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/a1a179bfa_directory-logo-ezpickleball-a63c7cf0ef03a6d0.png",
     "website": "https://www.ezpickleball.ie",
     "instagram": "https://www.instagram.com/ezpickleball.ie/",
     "facebook": null,
