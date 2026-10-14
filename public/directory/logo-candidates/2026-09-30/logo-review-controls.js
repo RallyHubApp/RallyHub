@@ -30,7 +30,7 @@
     const number=card.querySelector('.num')?.textContent.trim();
     const name=card.querySelector('h2')?.textContent.trim()||'Unknown club';
     const existingPhoto=card.querySelector('.image img');
-    const imported=number==='18';
+    const imported=card.dataset.imported==='true';
     const controls=document.createElement('div');
     controls.className='review-control';
     if(imported){
