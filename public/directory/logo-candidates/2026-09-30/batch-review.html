@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RallyHub · Review nine Directory logos</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#0c2257;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1130px;margin:auto;padding:16px}.intro{background:#0c2257;color:white;padding:22px;border-radius:18px;margin:6px 0 18px}.intro h1{font-size:clamp(22px,4vw,32px);margin:0 0 8px}.intro p{margin:6px 0;color:#dbeafe;line-height:1.5}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.item{background:white;border:2px solid #dae2ed;border-radius:17px;padding:11px;min-width:0}.item.selected{border-color:#12844e;background:#f1fff7}.preview{height:165px;border-radius:10px;background:white;border:1px solid #edf1f6;display:flex;align-items:center;justify-content:center;padding:7px}.preview img{display:block;max-width:100%;max-height:100%;object-fit:contain}.item h2{font-size:15px;line-height:1.3;margin:10px 0 6px;min-height:38px}.select{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:750;cursor:pointer;line-height:1.3}.select input{accent-color:#12844e;width:20px;height:20px;flex-shrink:0}.source{font-size:12px;margin:8px 0 0;overflow-wrap:anywhere}.source a{color:#0066b6}.hint{font-size:11px;color:#64748b;margin:6px 0 0;min-height:27px}.broken{display:none;color:#991b1b;font-size:11px;font-weight:700}.item.error .broken{display:block}.footer{position:sticky;bottom:0;background:#fff;border-top:1px solid #d1d5db;box-shadow:0 -4px 18px #0c22571c;margin:20px -16px -16px;padding:14px 16px}.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:1130px;margin:auto}.count{font-weight:800;flex:1;min-width:145px}button{border:1px solid #c7d2e2;border-radius:10px;padding:11px 13px;font-weight:750;background:#fff;color:#0c2257;cursor:pointer}button.primary{background:#087d45;color:white;border-color:#087d45}button:disabled{opacity:.4;cursor:not-allowed}#result{margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:100px;overflow:auto}#copyResult{font-size:12px;font-weight:650}#copyResult.ok{color:#047857}.small{font-size:12px;color:#536175;margin:12px 0}a{word-break:break-word}@media(min-width:680px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.preview{height:195px}.item h2{min-height:20px}.wrap{padding:22px}.footer{margin-left:-22px;margin-right:-22px}.item{padding:14px}}
+</style></head><body><main class="wrap"><section class="intro"><h1>Directory logo approval · 9 remaining</h1><p>Check the actual archived artwork against the official club source. Tick only the correct logos. Unchecked clubs stay on HOLD.</p><p><strong>Review only:</strong> this page cannot upload or publish anything.</p></section><section class="grid" id="grid"></section>
+<p class="small">The image preview is the exact September archive candidate. Some original social-network image URLs expire; official source links are provided so you can compare current branding before approving.</p>
+<section class="footer" aria-label="Approval controls"><div class="bar"><div class="count" id="count" aria-live="polite">0 approved · 9 held</div><button type="button" id="clear">Clear ticks</button><button type="button" class="primary" id="copy" disabled>Copy selected approvals</button></div><div class="bar"><div id="copyResult" role="status" aria-live="polite"></div></div><div class="bar"><div id="result"></div></div></section></main>
+<script>
+const DIR='/directory/logo-candidates/2026-09-30/';
+const candidates=[
+['ards-blair-mayne-pickleball-club','Ards Blair Mayne','02-ards-blair-mayne-pickleball-club.jpg','https://facebook.com/ardspickleballclub','Archived Facebook image'],
+['balbriggan-pickleball','Balbriggan','04-balbriggan-pickleball.jpg','https://www.facebook.com/balbrigganpickleball','Archived Facebook image'],
+['duhallow-pickleball','Duhallow','15-duhallow-pickleball.png','https://www.duhallowpickleball.com/','Official website; original image was HTTP'],
+['lisburn-pickleball-club','Lisburn','21-lisburn-pickleball-club.png','https://lisburnpickleball.club/','Official website image'],
+['multyfarnham-pickleball-club','Multyfarnham','25-multyfarnham-pickleball-club.jpg','https://m.facebook.com/multypickleball/','Archived Facebook image'],
+['portarlington-pickleball','Portarlington','31-portarlington-pickleball.jpg','https://www.facebook.com/PortarlingtonPickleball','Archived Facebook image'],
+['sandyford-pickleball-club','Sandyford','34-sandyford-pickleball-club.jpg','https://www.facebook.com/Sandyfordpickleball','Archived Facebook image'],
+['southside-pickleball-club','Southside','36-southside-pickleball-club.png','https://primary.jwwb.nl/public/x/o/h/temp-nhmmdaiuktrfbbouyhmw/logoss-high-3phmzf.png','Official website image'],
+['terenure-pickleball-club','Terenure','38-terenure-pickleball-club.jpg','https://www.facebook.com/Terenure.Pickleball.Club','Archived Facebook image']];
+const grid=document.getElementById('grid');
+for(const [slug,name,file,url,hint] of candidates){
+ const article=document.createElement('article');article.className='item';
+ article.innerHTML='<div class="preview"><img loading="lazy" alt="'+name+' logo candidate" src="'+DIR+file+'"><span class="broken">Image unavailable — hold for review</span></div><h2>'+name+'</h2><label class="select"><input type="checkbox" value="'+slug+'"> Approve this image</label><p class="source"><a href="'+url+'" target="_blank" rel="noopener noreferrer">Check official source ↗</a></p><p class="hint">'+hint+'</p>';
+ article.querySelector('img').addEventListener('error',()=>{article.classList.add('error');article.querySelector('input').checked=false;update()});
+ article.querySelector('input').addEventListener('change',update);
+ grid.append(article);
+}
+const checkboxes=[...grid.querySelectorAll('input[type=checkbox]')];
+function update(){
+ const selected=checkboxes.filter(c=>c.checked).map(c=>c.value);
+ document.getElementById('count').textContent=selected.length+' approved · '+(9-selected.length)+' held';
+ document.getElementById('copy').disabled=selected.length===0;
+ for(const c of checkboxes)c.closest('.item').classList.toggle('selected',c.checked);
+ document.getElementById('copyResult').textContent='';
+}
+document.getElementById('clear').addEventListener('click',()=>{checkboxes.forEach(c=>c.checked=false);update()});
+document.getElementById('copy').addEventListener('click',async()=>{
+ const approved=checkboxes.filter(c=>c.checked).map(c=>c.value);
+ const hold=checkboxes.filter(c=>!c.checked).map(c=>c.value);
+ const text='RallyHub Directory logo review — visually approved archived logo candidates: '+approved.join(', ')+'. HOLD (do not upload/publish): '+hold.join(', ')+'. Stage approved assets only after HTTPS/source/checksum verification; report exceptions and request explicit publication approval.';
+ try{await navigator.clipboard.writeText(text);document.getElementById('copyResult').textContent='Approval list copied. Paste it into the RallyHub ChatGPT conversation.';document.getElementById('copyResult').className='ok';document.getElementById('result').textContent='';}
+ catch{document.getElementById('copyResult').textContent='Select and copy the text below, then paste it into ChatGPT.';document.getElementById('result').textContent=text;}
+});
+update();
+</script></body></html>
