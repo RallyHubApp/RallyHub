@@ -13,14 +13,15 @@ export default function KotcHostSession(){
   const { user, logout }=useAuth();
   const {data:state,isLoading,error}=useQuery({
     queryKey:['kotc-host-state',sessionId],
-    queryFn:async()=> (await base44.functions.invoke('getKotcV2State',{sessionId})).data,
+    queryFn:async()=> { const result=await Promise.race([base44.functions.invoke('getKotcV2State',{sessionId}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Session service did not respond within 15 seconds')),15000))]); if(result.data?.error)throw new Error(result.data.error); return result.data; },
     enabled:!!sessionId,
+    retry:false,
     staleTime:Infinity,
     refetchOnWindowFocus:false,
   });
 
   if(isLoading)return <div className="min-h-screen bg-background flex items-center justify-center"><div className="text-sm text-muted-foreground">Opening session host mode…</div></div>;
-  if(error||!state?.session)return <div className="min-h-screen bg-background p-4 flex items-center justify-center"><div className="max-w-md w-full glass rounded-xl p-5 space-y-3"><h1 className="font-bold">Session access unavailable</h1><p className="text-sm text-muted-foreground">This host link is invalid, expired, revoked, or your account has not been granted access to this session.</p><Button variant="outline" onClick={()=>logout()}>Sign out</Button></div></div>;
+  if(error||!state?.session)return <div className="min-h-screen bg-background p-4 flex items-center justify-center"><div className="max-w-md w-full glass rounded-xl p-5 space-y-3"><h1 className="font-bold">Session access unavailable</h1><p className="text-sm text-muted-foreground">{error ? (error.message || 'The session service is unavailable. Try again.') : 'This host link is invalid, expired, revoked, or your account has not been granted access to this session.'}</p><div className="flex flex-wrap gap-2"><Button onClick={()=>queryClient.refetchQueries({queryKey:['kotc-host-state',sessionId]})}>Retry session</Button><Button variant="outline" onClick={()=>logout()}>Sign out</Button></div></div></div>;
 
   const session=state.session;
   const players=(state.participants||[]).map(p=>({id:p.player_id||p.id,full_name:p.display_name||'Player',skill_rating:p.rating_snapshot??null,dupr_rating:p.dupr_rating_snapshot??null}));
