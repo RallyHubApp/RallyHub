@@ -1238,25 +1238,25 @@ export default function MembershipConsole() {
 
           <div className="glass rounded-xl p-4 space-y-3">
             <div className="flex flex-col xl:flex-row xl:items-center gap-3">
-              <div className="relative flex-1 min-w-[240px]">
+              <div className="relative w-full min-w-0 flex-1 sm:min-w-[240px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input type="search" aria-label="Search membership records" className="pl-9 min-h-11 touch-manipulation" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, email, mobile, membership ID or rating ID…" />
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                 <Select value={filters.membershipStatus} onValueChange={value => setFilters(f => ({ ...f, membershipStatus: value }))}>
-                  <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full min-w-0 sm:w-[170px]"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="all">All membership</SelectItem>{(meta.membershipStatuses || []).map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent>
                 </Select>
                 <Select value={filters.paymentStatus} onValueChange={value => setFilters(f => ({ ...f, paymentStatus: value }))}>
-                  <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full min-w-0 sm:w-[150px]"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="all">All payments</SelectItem>{(meta.paymentStatuses || []).map(value => <SelectItem key={value} value={value}>{label(value)}</SelectItem>)}</SelectContent>
                 </Select>
                 <Select value={filters.sport} onValueChange={value => setFilters(f => ({ ...f, sport: value }))}>
-                  <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full min-w-0 sm:w-[150px]"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="all">All sports</SelectItem>{(meta.sports || []).map(sport => <SelectItem key={sport.id} value={String(sport.id)}>{sport.name}</SelectItem>)}</SelectContent>
                 </Select>
                 <Select value={filters.ageBand} onValueChange={value => setFilters(f => ({ ...f, ageBand: value }))}>
-                  <SelectTrigger className="w-[165px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full min-w-0 sm:w-[165px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All ages</SelectItem>
                     <SelectItem value="18_plus">18+ · ages 18–49</SelectItem>
