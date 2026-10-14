@@ -1150,9 +1150,10 @@ export default function MembershipConsole() {
                 <div className="space-y-2">
                   {(applicationData.applications || []).map(application => {
                     const status = String(application.paymentStatus || '').toLowerCase();
-                    const waiting = ['pending','unpaid','awaiting_payment','payment_pending','created'].includes(status);
+                    const waiting = ['pending','not_started','failed','unpaid','awaiting_payment','payment_pending'].includes(status);
                     const paid = status === 'paid';
                     const noResponse = application.followUpStatus === 'no_response';
+                    const paymentFailed = status === 'failed';
                     const busy = applicationBusyId === application.id;
                     return <div key={application.id} className="rounded-xl border bg-background/35 p-3 sm:p-4">
                       <div className="flex flex-col xl:flex-row xl:items-center gap-3">
@@ -1160,7 +1161,7 @@ export default function MembershipConsole() {
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="font-semibold">{application.fullName}</p>
                             <Badge variant="outline">{application.applicationType === 'renewal' ? 'Renewal' : 'New member'}</Badge>
-                            <Badge variant={application.paymentStatus === 'paid' ? 'default' : 'outline'}>{label(application.paymentStatus)}</Badge>
+                            <Badge variant={paid ? 'default' : 'outline'}>{paymentFailed ? 'Payment failed — action needed' : status === 'not_required' ? 'No payment required' : label(application.paymentStatus)}</Badge>
                             {application.followUpStatus && application.followUpStatus !== 'none' ? <Badge variant="outline">{label(application.followUpStatus)}</Badge> : null}
                           </div>
                           <p className="mt-1 text-xs text-muted-foreground break-words">{application.email} · {application.mobile || 'No mobile'} · Ref {application.confirmationCode}</p>
