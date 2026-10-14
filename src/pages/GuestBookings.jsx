@@ -47,11 +47,13 @@ export default function GuestBookings(){
   const [changeBooking,setChangeBooking]=useState(null);
   const [changeSlot,setChangeSlot]=useState('');
   const [changeDate,setChangeDate]=useState('');
+  const invokeWithTimeout=(name,payload)=>Promise.race([base44.functions.invoke(name,payload),new Promise((_,reject)=>setTimeout(()=>reject(new Error(`${name} did not respond within 15 seconds. Retry this section.`)),15000))]);
 
   const {data:templateData={templates:[],sumupConfigured:false},isLoading:templatesLoading,isError:templatesError,refetch:retryTemplates}=useQuery({
     queryKey:['guest-session-templates'],
+    retry:false,
     queryFn:async()=>{
-      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_templates'});
+      const res=await invokeWithTimeout('guestSessionBooking',{action:'admin_templates'});
       if(res.data?.error)throw new Error(res.data.error);
       return res.data;
     },
@@ -60,8 +62,9 @@ export default function GuestBookings(){
 
   const {data:listData={sessions:[],sumupConfigured:false},isLoading:listLoading,isError:listError,refetch:retryList}=useQuery({
     queryKey:['guest-session-admin-list'],
+    retry:false,
     queryFn:async()=>{
-      const res=await base44.functions.invoke('guestSessionBooking',{action:'admin_list'});
+      const res=await invokeWithTimeout('guestSessionBooking',{action:'admin_list'});
       if(res.data?.error)throw new Error(res.data.error);
       return res.data;
     },
@@ -70,8 +73,9 @@ export default function GuestBookings(){
 
   const {data:requestData={requests:[]},isLoading:requestsLoading,isError:requestsError,refetch:retryRequests}=useQuery({
     queryKey:['guest-access-requests'],
+    retry:false,
     queryFn:async()=>{
-      const res=await base44.functions.invoke('guestAccessJourney',{action:'admin_list'});
+      const res=await invokeWithTimeout('guestAccessJourney',{action:'admin_list'});
       if(res.data?.error)throw new Error(res.data.error);
       return res.data;
     },
