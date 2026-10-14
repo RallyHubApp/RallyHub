@@ -1920,6 +1920,19 @@ Brian`;
               </p>
             </div>
 
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3" data-testid="directory-admin-quick-edit">
+              <h3 className="text-base font-bold">Find and edit a Directory club</h3>
+              <p className="text-xs text-muted-foreground">Super Admin: search any club and open its editor directly.</p>
+              <Input value={directoryClubSearch} onChange={e => setDirectoryClubSearch(e.target.value)} placeholder="Search club name, county or contact…" aria-label="Find a Directory club to edit" />
+              {directoryClubSearch.trim() ? <div className="max-h-72 overflow-y-auto divide-y divide-border rounded-lg border border-border bg-background">
+                {filteredDirectoryAdminListings.slice(0,30).map(listing => <div key={listing.slug} className="flex items-center justify-between gap-3 p-3">
+                  <div className="min-w-0"><p className="text-sm font-semibold truncate">{listing.name}</p><p className="text-xs text-muted-foreground">{listing.county || 'County not set'} · {listing.slug}</p></div>
+                  <Link to={`/directory/${encodeURIComponent(listing.slug)}/edit`} className="shrink-0 inline-flex min-h-10 items-center rounded-lg border border-primary px-3 py-2 text-xs font-bold text-primary" aria-label={`Edit ${listing.name}`}>Edit listing</Link>
+                </div>)}
+                {filteredDirectoryAdminListings.length === 0 && <p className="p-3 text-sm text-muted-foreground">{directoryVerificationFetched ? 'No matching clubs.' : 'Loading Directory clubs…'}</p>}
+                {filteredDirectoryAdminListings.length > 30 && <p className="p-3 text-xs text-muted-foreground">Showing first 30 matches. Refine your search.</p>}
+              </div> : <p className="text-xs text-muted-foreground">{directoryVerificationFetched ? `${directoryAdminListings.length} clubs available. Type to find one.` : 'Loading Directory clubs…'}</p>}
+            </div>
             <DirectoryCategoryManager />
 
             <div className="order-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1962,7 +1975,7 @@ Brian`;
                       <p className="text-xs text-muted-foreground">{listing.county || 'County not set'} · {status}{pending.length ? ` · ${pending.length} active invitation${pending.length === 1 ? '' : 's'}` : ''}</p>
                       {contactSummary && <p className="mt-1 text-xs text-muted-foreground break-all">{contactSummary}</p>}
                     </div>
-                    <Button type="button" size="sm" variant={ownerInvite.listingSlug === listing.slug ? 'default' : 'outline'} onClick={() => chooseDirectoryClubForInvite(listing)} className="shrink-0 gap-1"><UserPlus className="w-3.5 h-3.5" /> {ownerInvite.listingSlug === listing.slug ? 'Selected' : accesses.length ? 'Manage' : 'Contact / invite'}</Button>
+                    <div className="flex flex-wrap items-center gap-2 shrink-0"><Link to={`/directory/${encodeURIComponent(listing.slug)}/edit`} className="inline-flex min-h-9 items-center rounded-md border border-primary px-3 text-xs font-semibold text-primary" aria-label={`Edit ${listing.name}`}>Edit listing</Link><Button type="button" size="sm" variant={ownerInvite.listingSlug === listing.slug ? 'default' : 'outline'} onClick={() => chooseDirectoryClubForInvite(listing)} className="shrink-0 gap-1"><UserPlus className="w-3.5 h-3.5" /> {ownerInvite.listingSlug === listing.slug ? 'Selected' : accesses.length ? 'Manage' : 'Contact / invite'}</Button></div>
                   </div>;
                 })}
                 {filteredDirectoryAdminListings.length === 0 && <p className="p-4 text-sm text-muted-foreground">No Directory clubs match that search.</p>}
