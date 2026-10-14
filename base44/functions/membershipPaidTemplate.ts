@@ -7,7 +7,7 @@ export async function membershipPaidTemplate(base44:any,config:any,club:any,app:
   const clubId=app.club_id||config.club_id;
   const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'membership_paid_welcome'},'-updated_date',30);
   const approved=(templates||[]).find((t:any)=>t.status==='approved'&&(!t.club_id||t.club_id===clubId));
-  if(!approved)return legacy;
+  if(!approved)throw new Error(`Approved membership_paid_welcome template missing for tenant ${tenantId}; refusing to send legacy paid-confirmation email`);
   const first=String(app.full_name||'').trim().split(/\s+/)[0]||'Member';
   const amount=Number(app.membership_fee||0);
   const currency=app.currency||config.currency||'EUR';
@@ -21,8 +21,9 @@ export async function membershipPaidTemplate(base44:any,config:any,club:any,app:
     APPROVED_SIGNATURE:[config.signatory_name,config.signatory_title].filter(Boolean).join(' · ')||String(club.name||'Club team')
   };
   const merge=(s:string,html=false)=>String(s||'').replace(/{{\s*([A-Za-z_]+)\s*}}/g,(_m,k)=>html?escape(fields[k]??''):fields[k]??'');
-  const subject=merge(approved.subject_template||legacy.subject);
-  const textBody=merge(approved.plain_text_template||legacy.textBody);
+  if(!approved.subject_template||!approved.plain_text_template||!approved.html_template)throw new Error('Approved membership welcome template incomplete; refusing legacy fallback');
+  const subject=merge(approved.subject_template||'');
+  const textBody=merge(approved.plain_text_template||'');
   const rawHtml=approved.html_template?merge(approved.html_template.replace(/<p[^>]*>\s*{{APPROVED_SIGNATURE}}\s*<\/p>/gi,''),true):escape(textBody).replace(/\n/g,'<br>');
   // The saved template is body content only. Presentation is always sourced
   // from the active Communications Centre brand kit, never from ad-hoc colours.
