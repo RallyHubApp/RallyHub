@@ -576,7 +576,10 @@ export default function DirectoryListingEdit() {
       setSourceLogoStatus({kind:'success',message:'Success — the logo is stored and its checksum is verified. It is not published.'});
     } catch (e) {
       const detail = e?.response?.data?.error || e?.data?.error || e?.message || 'No response from RallyHub';
-      setSourceLogoStatus({kind:'error',message:`Could not confirm upload: ${detail}. Do not retry until the storage receipt has been checked, as the first request may have uploaded the file.`});
+      const beforeUpload = /directory listing not found|directory editor permission required|authentication required|valid listing slug|source url must be from an approved/i.test(String(detail));
+      setSourceLogoStatus({kind:'error',message:beforeUpload
+        ? `Upload was stopped before file storage: ${detail}. No logo was staged by this request.`
+        : `Could not confirm upload: ${detail}. Do not retry until the storage receipt has been checked, as the request may have uploaded the file.`});
     } finally { setStagingSourceLogo(false); }
   };
 
