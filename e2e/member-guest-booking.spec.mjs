@@ -112,7 +112,7 @@ test.describe('member or guest session booking mobile flow', () => {
     await page.getByLabel(/I confirm that I am 18 years of age or over/).check();
     await page.getByText('Doora Barefield',{exact:true}).click();
     await page.getByRole('button',{name:'Send guest request'}).click();
-    await expect(page.getByRole('heading',{name:'Request sent'}), await page.locator('body').innerText()).toBeVisible();
+    await expect(page.getByRole('heading',{name:'Request received — awaiting club approval'})).toBeVisible();
     const submit=calls.find(x=>x.name==='guestAccessJourney'&&x.body.action==='public_submit');
     expect(submit.body.experienceLevel).toBe('experienced');
     expect(submit.body.previousSports).toEqual([]);
@@ -143,7 +143,7 @@ test.describe('member or guest session booking mobile flow', () => {
     await page.getByText('Ennistymon Community Centre',{exact:true}).first().click();
     await expect(page.getByText(/No payment is taken with this request/)).toBeVisible();
     await page.getByRole('button',{name:'Send guest request'}).click();
-    await expect(page.getByRole('heading',{name:'Request sent'}), await page.locator('body').innerText()).toBeVisible();
+    await expect(page.getByRole('heading',{name:'Request received — awaiting club approval'})).toBeVisible();
     const submit=calls.find(x=>x.name==='guestAccessJourney'&&x.body.action==='public_submit');
     expect(submit.body.previousSports).toEqual(['Tennis','Badminton']);
     expect(submit.body.sportingBackgroundNote).toContain('volleyball');
