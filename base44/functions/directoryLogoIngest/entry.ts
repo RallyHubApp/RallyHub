@@ -54,7 +54,7 @@ async function readBack(url, digest) {
     const next = new URL(location,src);
     if (next.protocol !== 'https:' || next.hostname !== 'media.base44.com')
       throw Error('Storage redirected to untrusted host');
-    res = await fetch(next.toString(), {redirect:'error',signal:AbortSignal.timeout(15000)});
+    res = await fetch(next.toString(), {redirect:'manual',signal:AbortSignal.timeout(15000)});
   }
   if (!res.ok) throw Error('Storage readback failed');
   const data = new Uint8Array(await res.arrayBuffer());
@@ -89,7 +89,7 @@ Deno.serve(async req => {
     if (!profiles?.length && !records?.length && !seedDirectorySlugs.has(slug))
       return Response.json({error:'Directory listing not found'}, {status:404});
     const url = sourceUrl(body?.sourceUrl);
-    const response = await fetch(url.toString(), {redirect:'error',signal:AbortSignal.timeout(15000),headers:{'accept':'image/png,image/jpeg,image/webp'}});
+    const response = await fetch(url.toString(), {redirect:'manual',signal:AbortSignal.timeout(15000),headers:{'accept':'image/png,image/jpeg,image/webp'}});
     if (!response.ok) return Response.json({error:'Approved image source unavailable'}, {status:422});
     const len = Number(response.headers.get('content-length') || 0);
     if (len > MAX_BYTES) return Response.json({error:'Image exceeds 12 MB'}, {status:413});
