@@ -319,15 +319,16 @@ export default function AdminPanel() {
     enabled: canAccessAdmin
   });
 
-  const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [], listingRecords: [], listingProfiles: [], invitations: [] }, isFetched: directoryVerificationFetched } = useQuery({
+  const { data: directoryVerification = { claims: [], accesses: [], listingRequests: [], listingRecords: [], listingProfiles: [], invitations: [] }, isFetched: directoryVerificationFetched, isError: directoryVerificationError, error: directoryVerificationFailure, refetch: retryDirectoryVerification, isFetching: directoryVerificationFetching } = useQuery({
     queryKey: ['directory-verification'],
     queryFn: async () => {
-      const res = await base44.functions.invoke('directoryClaim', { action: 'list_admin' });
+      const res = await Promise.race([base44.functions.invoke('directoryClaim', { action: 'list_admin' }), new Promise((_, reject) => setTimeout(() => reject(new Error('Directory administration did not respond within 15 seconds')), 15000))]);
       if (res.data?.error) throw new Error(res.data.error);
       return { claims: res.data?.claims || [], accesses: res.data?.accesses || [], listingRequests: res.data?.listingRequests || [], listingRecords: res.data?.listingRecords || [], listingProfiles: res.data?.listingProfiles || [], invitations: res.data?.invitations || [] }; 
     },
     enabled: canAccessAdmin,
     staleTime: 0,
+    retry: false,
     refetchOnMount: 'always',
     refetchOnWindowFocus: 'always'
   });
@@ -1619,7 +1620,7 @@ Brian`;
       {activeAdminTab === 'directory' ? (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5 sm:gap-3">
           <GlassCard role="button" tabIndex={0} onClick={() => scrollToDirectorySection('directory-clubs')} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToDirectorySection('directory-clubs'); } }} delay={0} className="min-h-[112px] p-3 sm:p-4 text-left cursor-pointer select-none transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <p className="text-2xl sm:text-3xl font-black text-foreground">{directoryVerificationFetched ? directoryAdminListings.length : '—'}</p>
+            <p className="text-2xl sm:text-3xl font-black text-foreground">{directoryVerificationError ? <button type="button" className="text-sm underline text-destructive" disabled={directoryVerificationFetching} onClick={() => retryDirectoryVerification()} title={directoryVerificationFailure?.message || 'Directory load failed'}>{directoryVerificationFetching ? 'Retrying…' : 'Load failed — Retry'}</button> : directoryVerificationFetched ? directoryAdminListings.length : '—'}</p>
             <p className="mt-1 text-xs sm:text-sm font-semibold">Directory listings</p>
             <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">All current club listings</p>
           </GlassCard>
