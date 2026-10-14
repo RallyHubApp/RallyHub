@@ -2,6 +2,10 @@
 (() => {
   const cards = [...document.querySelectorAll('main.grid article.card')];
   const selections = new Map();
+  const STORAGE_KEY = 'rallyhub-directory-logo-review-2026-09-30-v1';
+  let restored = [];
+  try { const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); if (Array.isArray(saved)) restored = saved; } catch { /* Private browsing may restrict storage. */ }
+  const persist = () => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...selections.values()])); } catch { /* Copy/export still available. */ } };
   const encoded = v => encodeURIComponent(v);
   const safeLink = url => {
     try { const u=new URL(url,location.origin); return ['https:','http:'].includes(u.protocol) ? u.href : null; }
@@ -15,7 +19,8 @@
   const count=footer.querySelector('#review-count');
   const result=footer.querySelector('#review-result');
   const copy=footer.querySelector('#review-copy');
-  const update=() => {
+  const update=(save=true) => {
+    if (save) persist();
     const n=selections.size;
     count.textContent=n+' selected for next batch · '+(cards.length-1-n)+' held · 1 already imported';
     copy.disabled=n===0;
@@ -45,6 +50,7 @@
     const hint=document.createElement('p');
     hint.className='review-hint';
     const candidate=Boolean(existingPhoto);
+    const recovered=restored.find(x=>String(x.number)===number && x.name===name && !!x.image);
     hint.textContent=candidate?'Candidate only — not imported. Unticked by default; check the official source before selecting.':'No verified logo candidate yet. Search official sources and enter an image URL to propose one.';
     controls.append(hint);
     const research=document.createElement('div');
@@ -73,11 +79,12 @@
         const current=++sequence;
         const url=safeLink(entry.value.trim());
         if(!url || !url.startsWith('https://')){status.textContent=entry.value.trim()?'Use a direct HTTPS image URL.':'A preview must load before this can be submitted.';return;}
-        preview.onload=()=>{if(current!==sequence)return;proposedUrl=url;checkbox.disabled=false;preview.style.display='block';status.textContent='Image preview loaded; candidate is not yet source or checksum verified.';};
+        preview.onload=()=>{if(current!==sequence)return;proposedUrl=url;checkbox.disabled=false;preview.style.display='block';status.textContent='Image preview loaded; candidate is not yet source or checksum verified.';if(recovered?.proposed && recovered.image===url){checkbox.checked=true;selections.set(number,{number,name,image:url,proposed:true});update();}};
         preview.onerror=()=>{if(current!==sequence)return;status.textContent='Could not load this image. Try another official source URL.';};
         preview.src=url;
       });
       controls.append(entry,preview,status);
+      if (recovered?.proposed) { entry.value=recovered.image; entry.dispatchEvent(new Event('input')); }
     }
     existingPhoto?.addEventListener('error',()=>{
       checkbox.disabled=true;checkbox.checked=false;selections.delete(number);hint.textContent='Archived thumbnail unavailable — on HOLD until replaced.';update();
@@ -90,6 +97,7 @@
       }else selections.delete(number);
       update();
     });
+    if(candidate && recovered && !recovered.proposed && recovered.image===existingPhoto?.getAttribute('src')) { checkbox.checked=true;selections.set(number,recovered); }
     card.append(controls);
   }
   footer.querySelector('#review-clear').addEventListener('click',()=>{
@@ -100,13 +108,44 @@
     const lines=[...selections.values()].sort((a,b)=>Number(a.number)-Number(b.number))
       .map(x=>'#'+x.number+' '+x.name+' | '+(x.proposed?'PROPOSED HTTPS IMAGE (requires independent verification)':'ARCHIVED CANDIDATE')+' | '+x.image);
     const note='RallyHub Directory logo visual review (not publication approval). Approved for staging checks:\n'+lines.join('\n')+
-      '\nAll unselected entries remain HOLD. ezPICKLEBALL #18 is already imported; do not overwrite. Check official sources, image hashes and duplicates before staging. Request separate explicit approval before publishing.';
-    try{
-      await navigator.clipboard.writeText(note);
-      result.textContent='Copied '+lines.length+' selected logo'+(lines.length===1?'':'s')+'. Paste into the RallyHub ChatGPT conversation.';
-    }catch{
-      result.textContent='Copy the text below and paste it into RallyHub ChatGPT:\n'+note;
+      '\nAll unselected entries remain HOLD. ezPICKLEBALL #18 is excluded from new uploads. Check official sources, image hashes and duplicates before staging. Request separate explicit approval before publishing.';
+    persist();
+    // Always display a manual-copy export BEFORE attempting the clipboard API.
+    // Clipboard permissions can fail or hang silently on some mobile browsers.
+    result.replaceChildren();
+    const heading=document.createElement('p');
+    heading.textContent=lines.length+' reviewed logos ready — copy or share the full batch below.';
+    const manual=document.createElement('textarea');
+    manual.value=note;
+    manual.readOnly=true;
+    manual.setAttribute('aria-label','Reviewed logo batch text — long press to copy');
+    manual.style.cssText='box-sizing:border-box;display:block;width:100%;min-height:150px;margin:8px 0;padding:10px;border:2px solid #0b7650;border-radius:8px;font-size:13px;line-height:1.4;background:#fff;color:#111;';
+    const help=document.createElement('p');
+    help.textContent='If automatic copying is blocked, long-press the text above, select all and copy. You can also save a text-file backup.';
+    const download=document.createElement('button');
+    download.type='button';download.textContent='Save reviewed batch as text file';
+    download.addEventListener('click',()=>{
+      const blob=new Blob([note],{type:'text/plain;charset=utf-8'});
+      const objectUrl=URL.createObjectURL(blob);
+      const link=document.createElement('a');link.href=objectUrl;link.download='rallyhub-reviewed-logo-batch.txt';
+      document.body.append(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(objectUrl),30000);
+    });
+    const status=document.createElement('p');status.setAttribute('role','status');status.textContent='Batch is shown below. Attempting clipboard copy…';
+    result.append(heading,manual,help,download,status);
+    result.scrollIntoView({block:'nearest',behavior:'smooth'});
+    // Keep the manual text visible even when clipboard permission is denied.
+    // A short timeout ensures mobile users are not stuck waiting forever.
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+      const copied=await Promise.race([
+        navigator.clipboard.writeText(note).then(()=>true),
+        new Promise(resolve=>setTimeout(()=>resolve(false),2500))
+      ]);
+      status.textContent=copied ? 'Copied '+lines.length+' reviewed logos. Paste into ChatGPT.' : 'Clipboard did not respond. Use the visible text or Save reviewed batch as text file.';
+    } catch {
+      status.textContent='Automatic clipboard copy blocked. Use the visible text or Save reviewed batch as text file.';
     }
   });
-  update();
+  update(false);
 })();
