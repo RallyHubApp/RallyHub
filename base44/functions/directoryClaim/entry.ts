@@ -1395,7 +1395,17 @@ Deno.serve(async (req) => {
       if (user.role !== 'admin' && !ownAccess) return Response.json({ error: 'Directory access required' }, { status: 403 });
 
       const accesses = await base44.asServiceRole.entities.DirectoryListingAccess.filter({ listing_slug: listingSlug, status: 'active' }, 'granted_at', 50);
-      const users = await base44.asServiceRole.entities.User.list('-created_date', 500);
+      // User directory enrichment must not break access management if the SDK's
+      // broad User.list lookup is unavailable or rate limited. Never relax the
+      // listing permission gate above; use only authorised access records.
+      let users:any[] = [];
+      const warnings:string[] = [];
+      try {
+        users = await base44.asServiceRole.entities.User.list('-created_date', 500) || [];
+      } catch (lookupError) {
+        console.warn('directoryClaim access_list: optional user lookup failed', String(lookupError?.message || lookupError));
+        warnings.push('User names are temporarily unavailable. Access permissions remain unchanged.');
+      }
       const userMap = new Map((users || []).map((row:any) => [String(row.id), row]));
       const canManageAccess = user.role === 'admin' || ownAccess?.role === 'owner';
       const people = (accesses || []).map((row:any) => {
@@ -1405,7 +1415,7 @@ Deno.serve(async (req) => {
           id: row.id,
           userId: row.user_id,
           role: row.role === 'owner' ? 'owner' : 'editor',
-          name: person?.full_name || person?.display_name || person?.email || 'Directory user',
+          name: person?.full_name || person?.display_name || person?.email || (isCurrentUser ? (user.full_name || user.display_name || user.email || 'You') : 'Directory user'),
           email: canManageAccess || isCurrentUser ? (person?.email || null) : null,
           grantedAt: row.granted_at || null,
           isCurrentUser,
@@ -1413,7 +1423,13 @@ Deno.serve(async (req) => {
       });
       let pendingInvitations:any[] = [];
       if (canManageAccess) {
-        const invitations = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ listing_slug: listingSlug, status: 'pending' }, '-created_date', 30);
+        let invitations:any[] = [];
+        try {
+          invitations = await base44.asServiceRole.entities.DirectoryClaimInvitation.filter({ listing_slug: listingSlug, status: 'pending' }, '-created_date', 30) || [];
+        } catch (inviteError) {
+          console.warn('directoryClaim access_list: optional invitations lookup failed', String(inviteError?.message || inviteError));
+          warnings.push('Pending invitations could not be loaded. No invitation records were changed.');
+        }
         pendingInvitations = (invitations || [])
           .filter((row:any) => row.access_role === 'editor' && (!row.expires_at || Date.parse(row.expires_at) >= Date.now()))
           .map((row:any) => ({
@@ -1424,7 +1440,7 @@ Deno.serve(async (req) => {
             expiresAt: row.expires_at || null,
           }));
       }
-      return Response.json({ success: true, people, pendingInvitations, canManageAccess });
+      return Response.json({ success: true, people, pendingInvitations, canManageAccess, partialData: warnings.length > 0, warnings });
     }
 
     if (action === 'invite_editor') {
