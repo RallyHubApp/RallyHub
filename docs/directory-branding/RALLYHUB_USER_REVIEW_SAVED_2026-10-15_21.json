@@ -13,7 +13,13 @@
       "bytes": 46555,
       "sha256": "82868b909e9e10cf2fa1475baaae5642021faa0640d6a0e9bf7199214760a7b1",
       "mime": "image/jpeg",
-      "sourceURL": "./02-22-annascaul-kingdom-selected.jpg"
+      "sourceURL": "./02-22-annascaul-kingdom-selected.jpg",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/b18d06b46_rallyhub-staging-20261015-02-22-annascaul-kingdom-selected.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "82868b909e9e10cf2fa1475baaae5642021faa0640d6a0e9bf7199214760a7b1"
+      }
     },
     {
       "number": "07",
@@ -26,7 +32,13 @@
       "bytes": 6332,
       "sha256": "3e6a22c5a44eab543d32fa92635e29abd4179a13a3a3d2c59230928fe9a1d36d",
       "mime": "image/avif",
-      "sourceURL": "https://user45450.na.imgto.link/public/20261015/85d8c69087c192cd65f1dd7e-bluestack-logo.avif"
+      "sourceURL": "https://user45450.na.imgto.link/public/20261015/85d8c69087c192cd65f1dd7e-bluestack-logo.avif",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/52686c7e1_rallyhub-stage-20261015-07-07-bluestack-pickleball-club-saved-from-review.avif",
+        "httpStatus": 200,
+        "sha256Readback": "3e6a22c5a44eab543d32fa92635e29abd4179a13a3a3d2c59230928fe9a1d36d"
+      }
     },
     {
       "number": "15",
@@ -44,7 +56,13 @@
       "bytes": 8126,
       "sha256": "76bd32d0197c77e136d3b0614081015b25df8d34528941d7b5e53dcd42c9effc",
       "mime": "image/jpeg",
-      "sourceURL": "./15-east-cork-user-selected.jpg"
+      "sourceURL": "./15-east-cork-user-selected.jpg",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/1ed8ddd33_rallyhub-staging-20261015-15-east-cork-user-selected.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "76bd32d0197c77e136d3b0614081015b25df8d34528941d7b5e53dcd42c9effc"
+      }
     },
     {
       "number": "20",
@@ -57,7 +75,11 @@
         "x": 0,
         "y": -30
       },
-      "publicationApproved": false
+      "publicationApproved": false,
+      "staging": {
+        "status": "existing_live_logo_no_new_upload",
+        "layoutPreserved": true
+      }
     },
     {
       "number": "22",
@@ -70,7 +92,13 @@
       "bytes": 46555,
       "sha256": "82868b909e9e10cf2fa1475baaae5642021faa0640d6a0e9bf7199214760a7b1",
       "mime": "image/jpeg",
-      "sourceURL": "./02-22-annascaul-kingdom-selected.jpg"
+      "sourceURL": "./02-22-annascaul-kingdom-selected.jpg",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/b18d06b46_rallyhub-staging-20261015-02-22-annascaul-kingdom-selected.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "82868b909e9e10cf2fa1475baaae5642021faa0640d6a0e9bf7199214760a7b1"
+      }
     },
     {
       "number": "24",
@@ -83,7 +111,11 @@
         "x": 0,
         "y": -20
       },
-      "publicationApproved": false
+      "publicationApproved": false,
+      "staging": {
+        "status": "existing_live_logo_no_new_upload",
+        "layoutPreserved": true
+      }
     },
     {
       "number": "26",
@@ -96,7 +128,11 @@
         "x": 0,
         "y": 0
       },
-      "publicationApproved": false
+      "publicationApproved": false,
+      "staging": {
+        "status": "existing_live_logo_no_new_upload",
+        "layoutPreserved": true
+      }
     },
     {
       "number": "28",
@@ -114,7 +150,13 @@
       "bytes": 107295,
       "sha256": "f15992b0f1c83faeb00abaf7d1414277c0ef75e63ed8d17504a3bca1b9211baf",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.fdub7-1.fna.fbcdn.net/v/t39.30808-6/524188313_122141192054695547_5953721243886863612_n.jpg?stp=dst-jpg_tt6&cstp=mx1024x1024&ctp=s1024x1024&_nc_cat=105&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=SYXHIa5HN5QQ7kNvwHRmYfk&_nc_oc=AdpxQ0O8Zig4d-OjgHN--XgQztX7WQ4lRmdO8XSc_WZeBQsE2oUbiBfppjWzaJTjTww&_nc_zt=23&_nc_ht=scontent.fdub7-1.fna&_nc_gid=Yv-I9U60P5FV0DzLwzg15w&_nc_ss=7a2a8&oh=00_AQPmhx07_divKfaou-evOn0FAdd7wrMuZJ23_AnseAmdew&oe=6AD6962B"
+      "sourceURL": "https://scontent.fdub7-1.fna.fbcdn.net/v/t39.30808-6/524188313_122141192054695547_5953721243886863612_n.jpg?stp=dst-jpg_tt6&cstp=mx1024x1024&ctp=s1024x1024&_nc_cat=105&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=SYXHIa5HN5QQ7kNvwHRmYfk&_nc_oc=AdpxQ0O8Zig4d-OjgHN--XgQztX7WQ4lRmdO8XSc_WZeBQsE2oUbiBfppjWzaJTjTww&_nc_zt=23&_nc_ht=scontent.fdub7-1.fna&_nc_gid=Yv-I9U60P5FV0DzLwzg15w&_nc_ss=7a2a8&oh=00_AQPmhx07_divKfaou-evOn0FAdd7wrMuZJ23_AnseAmdew&oe=6AD6962B",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/c99575d69_rallyhub-stage-20261015-28-28-user-reviewed-20261015.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "f15992b0f1c83faeb00abaf7d1414277c0ef75e63ed8d17504a3bca1b9211baf"
+      }
     },
     {
       "number": "31",
@@ -132,7 +174,13 @@
       "bytes": 42950,
       "sha256": "53c48ba2999875ff383e48e61e01446c9480049d37ccf197472d63e4e9aa0550",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-6/518365459_10161269765596436_6489633983285357661_n.jpg?stp=dst-jpg_tt6&cstp=mx512x512&ctp=s512x512&_nc_cat=110&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=aa7b47&_nc_ohc=NL3Z9d8JQRUQ7kNvwHzbhlO&_nc_oc=AdrJgOkPomaDfXyAmOHK16HfGDA_huCfAPg6erZ1GWYOR4mK5-AotxVV9Teha3vC-8w&_nc_zt=23&_nc_ht=scontent.fdub4-2.fna&_nc_gid=1Ql0v80XPN4hbRkIL5yeYQ&_nc_ss=7a2a8&oh=00_AQMXM_E9aLYrEuWkEkWfx2_9HATiCo3sDlN5bt8Nm6QRrQ&oe=6AD6922D"
+      "sourceURL": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-6/518365459_10161269765596436_6489633983285357661_n.jpg?stp=dst-jpg_tt6&cstp=mx512x512&ctp=s512x512&_nc_cat=110&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=aa7b47&_nc_ohc=NL3Z9d8JQRUQ7kNvwHzbhlO&_nc_oc=AdrJgOkPomaDfXyAmOHK16HfGDA_huCfAPg6erZ1GWYOR4mK5-AotxVV9Teha3vC-8w&_nc_zt=23&_nc_ht=scontent.fdub4-2.fna&_nc_gid=1Ql0v80XPN4hbRkIL5yeYQ&_nc_ss=7a2a8&oh=00_AQMXM_E9aLYrEuWkEkWfx2_9HATiCo3sDlN5bt8Nm6QRrQ&oe=6AD6922D",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/89cd13c3b_rallyhub-staging-20261015-31-newport-pickleball-saved-from-review.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "53c48ba2999875ff383e48e61e01446c9480049d37ccf197472d63e4e9aa0550"
+      }
     },
     {
       "number": "32",
@@ -150,7 +198,13 @@
       "bytes": 10116,
       "sha256": "b0d515128b697f00788e1f675cd9dabdd71a18622103fdf2a140bfa4d4ee5c81",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/464912502_122176046174243155_1491742954555393625_n.jpg?stp=dst-jpg_tt6&cstp=mx957x960&ctp=s200x200&_nc_cat=103&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=lNRmnQbB16kQ7kNvwGlx-dQ&_nc_oc=AdqQ8WMZKpQ3XT7HWbdkpp3y3FT8_uDgH2fI8WJGPoZ5CQsAQ_87ZPSW6Ol1w_h4xzI&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=fmhFMiJbfgDAJkJ9irXrMg&_nc_ss=7a2a8&oh=00_AQN5yqixi4s-bJmwC05UjJonE-XZwAZHQzzE40YRcoUBhA&oe=6AD6969A"
+      "sourceURL": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/464912502_122176046174243155_1491742954555393625_n.jpg?stp=dst-jpg_tt6&cstp=mx957x960&ctp=s200x200&_nc_cat=103&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=lNRmnQbB16kQ7kNvwGlx-dQ&_nc_oc=AdqQ8WMZKpQ3XT7HWbdkpp3y3FT8_uDgH2fI8WJGPoZ5CQsAQ_87ZPSW6Ol1w_h4xzI&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=fmhFMiJbfgDAJkJ9irXrMg&_nc_ss=7a2a8&oh=00_AQN5yqixi4s-bJmwC05UjJonE-XZwAZHQzzE40YRcoUBhA&oe=6AD6969A",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/830ab70bb_rallyhub-stage-20261015-32-32-pickleball-arklow-saved-from-review.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "b0d515128b697f00788e1f675cd9dabdd71a18622103fdf2a140bfa4d4ee5c81"
+      }
     },
     {
       "number": "35",
@@ -168,7 +222,13 @@
       "bytes": 10116,
       "sha256": "b0d515128b697f00788e1f675cd9dabdd71a18622103fdf2a140bfa4d4ee5c81",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/464912502_122176046174243155_1491742954555393625_n.jpg?stp=dst-jpg_tt6&cstp=mx957x960&ctp=s200x200&_nc_cat=103&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=lNRmnQbB16kQ7kNvwGlx-dQ&_nc_oc=AdqQ8WMZKpQ3XT7HWbdkpp3y3FT8_uDgH2fI8WJGPoZ5CQsAQ_87ZPSW6Ol1w_h4xzI&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=fmhFMiJbfgDAJkJ9irXrMg&_nc_ss=7a2a8&oh=00_AQN5yqixi4s-bJmwC05UjJonE-XZwAZHQzzE40YRcoUBhA&oe=6AD6969A"
+      "sourceURL": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/464912502_122176046174243155_1491742954555393625_n.jpg?stp=dst-jpg_tt6&cstp=mx957x960&ctp=s200x200&_nc_cat=103&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=lNRmnQbB16kQ7kNvwGlx-dQ&_nc_oc=AdqQ8WMZKpQ3XT7HWbdkpp3y3FT8_uDgH2fI8WJGPoZ5CQsAQ_87ZPSW6Ol1w_h4xzI&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=fmhFMiJbfgDAJkJ9irXrMg&_nc_ss=7a2a8&oh=00_AQN5yqixi4s-bJmwC05UjJonE-XZwAZHQzzE40YRcoUBhA&oe=6AD6969A",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/830ab70bb_rallyhub-stage-20261015-32-32-pickleball-arklow-saved-from-review.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "b0d515128b697f00788e1f675cd9dabdd71a18622103fdf2a140bfa4d4ee5c81"
+      }
     },
     {
       "number": "36",
@@ -186,7 +246,13 @@
       "bytes": 10122,
       "sha256": "afe642458a93ac26db0002d65c11b82af981cf173b1955cf219087f4109015e4",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.fdub8-1.fna.fbcdn.net/v/t39.30808-1/438164510_122124301004257888_4371463820844220809_n.jpg?stp=dst-jpg_tt6&cstp=mx953x953&ctp=s200x200&_nc_cat=101&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=4X-hJy5RXcMQ7kNvwH9_2Xj&_nc_oc=AdqEwcCU7ZUJrK-rK4MiYeA2K0EnVjlsMOnEgddEVFdeXYfM_JFw48g-eI1OJI3J-8c&_nc_zt=24&_nc_ht=scontent.fdub8-1.fna&_nc_gid=EB_mqsbh3L_yfIz8SAf5Tw&_nc_ss=7a2a8&oh=00_AQOCweYVhMP5GoqQgY8dry9SoB87ss4IBcIsACEYAGHkaw&oe=6AD6BEE1"
+      "sourceURL": "https://scontent.fdub8-1.fna.fbcdn.net/v/t39.30808-1/438164510_122124301004257888_4371463820844220809_n.jpg?stp=dst-jpg_tt6&cstp=mx953x953&ctp=s200x200&_nc_cat=101&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=4X-hJy5RXcMQ7kNvwH9_2Xj&_nc_oc=AdqEwcCU7ZUJrK-rK4MiYeA2K0EnVjlsMOnEgddEVFdeXYfM_JFw48g-eI1OJI3J-8c&_nc_zt=24&_nc_ht=scontent.fdub8-1.fna&_nc_gid=EB_mqsbh3L_yfIz8SAf5Tw&_nc_ss=7a2a8&oh=00_AQOCweYVhMP5GoqQgY8dry9SoB87ss4IBcIsACEYAGHkaw&oe=6AD6BEE1",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/0dfa4c068_rallyhub-stage-20261015-36-36-sligo-pickleball-club-saved-from-review.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "afe642458a93ac26db0002d65c11b82af981cf173b1955cf219087f4109015e4"
+      }
     },
     {
       "number": "37",
@@ -194,7 +260,10 @@
       "slug": "sports-lab-pickleball",
       "action": "remove_incorrect_candidate",
       "layout": null,
-      "publicationApproved": false
+      "publicationApproved": false,
+      "staging": {
+        "status": "review_request_only_no_record_change"
+      }
     },
     {
       "number": "39",
@@ -207,7 +276,13 @@
       "bytes": 12823,
       "sha256": "4538972a7c3317080b022a291eb4205ee6bcbe2256d01c6470134dcd48697281",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.fdub7-1.fna.fbcdn.net/v/t39.30808-1/700658296_122096411691325447_7849593995983872797_n.jpg?stp=dst-jpg_tt6&cstp=mx2039x2048&ctp=s200x200&_nc_cat=101&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=SCVNuznESn4Q7kNvwHtZLNp&_nc_oc=Ado-XZxxlBHBYO8WI0um4RsxJbwBZ669O73YMrevi89MhNKxcMK18GmUmRdUoLXBT6Y&_nc_zt=24&_nc_ht=scontent.fdub7-1.fna&_nc_gid=YO6uieAAIbMh2Ba3AQiiGA&_nc_ss=7a2a8&oh=00_AQOC4igCeAX3X9i3XY86TA1vnL0srL9zK4KiZIG85GSdrw&oe=6AD6BE64"
+      "sourceURL": "https://scontent.fdub7-1.fna.fbcdn.net/v/t39.30808-1/700658296_122096411691325447_7849593995983872797_n.jpg?stp=dst-jpg_tt6&cstp=mx2039x2048&ctp=s200x200&_nc_cat=101&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=SCVNuznESn4Q7kNvwHtZLNp&_nc_oc=Ado-XZxxlBHBYO8WI0um4RsxJbwBZ669O73YMrevi89MhNKxcMK18GmUmRdUoLXBT6Y&_nc_zt=24&_nc_ht=scontent.fdub7-1.fna&_nc_gid=YO6uieAAIbMh2Ba3AQiiGA&_nc_ss=7a2a8&oh=00_AQOC4igCeAX3X9i3XY86TA1vnL0srL9zK4KiZIG85GSdrw&oe=6AD6BE64",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/ea7ff679c_rallyhub-staging-20261015-39-user-reviewed-20261015.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "4538972a7c3317080b022a291eb4205ee6bcbe2256d01c6470134dcd48697281"
+      }
     },
     {
       "number": "40",
@@ -220,7 +295,13 @@
       "bytes": 17440,
       "sha256": "2e321c1f96eaf24fe076a68503718532a454e35e75df95416e11119fa11b14b8",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.fdub8-1.fna.fbcdn.net/v/t39.30808-6/432210607_387150230868918_4329232315674586696_n.jpg?stp=dst-jpg_tt6&cstp=mx500x500&ctp=s500x500&_nc_cat=109&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=9XABu5X1hfkQ7kNvwEngq3D&_nc_oc=AdoxZwX_6LVRkec2JCQUF4tyWzrVsWjH0PEPfZle9pVRVfI-NPFTP3W5DxLWZcsLwVM&_nc_zt=23&_nc_ht=scontent.fdub8-1.fna&_nc_gid=IDsYGW4e8doLLb3pw59Gwg&_nc_ss=7a2a8&oh=00_AQPJxqknxcGrfocu5dGLIixiZW47L8-MBP7cu-g6Op0I3A&oe=6AD69EAB"
+      "sourceURL": "https://scontent.fdub8-1.fna.fbcdn.net/v/t39.30808-6/432210607_387150230868918_4329232315674586696_n.jpg?stp=dst-jpg_tt6&cstp=mx500x500&ctp=s500x500&_nc_cat=109&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=9XABu5X1hfkQ7kNvwEngq3D&_nc_oc=AdoxZwX_6LVRkec2JCQUF4tyWzrVsWjH0PEPfZle9pVRVfI-NPFTP3W5DxLWZcsLwVM&_nc_zt=23&_nc_ht=scontent.fdub8-1.fna&_nc_gid=IDsYGW4e8doLLb3pw59Gwg&_nc_ss=7a2a8&oh=00_AQPJxqknxcGrfocu5dGLIixiZW47L8-MBP7cu-g6Op0I3A&oe=6AD69EAB",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/d933f4637_rallyhub-stage-20261015-40-40-user-reviewed-20261015.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "2e321c1f96eaf24fe076a68503718532a454e35e75df95416e11119fa11b14b8"
+      }
     },
     {
       "number": "41",
@@ -233,7 +314,13 @@
       "bytes": 11461,
       "sha256": "eecdcc23df4567eac6bc83020b22a2c1adc65857172825f8d10699dccc9e9430",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/311433428_112969721588820_3319665967307168068_n.jpg?stp=dst-jpg_tt6&cstp=mx1478x1478&ctp=s200x200&_nc_cat=102&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=iwfFfCfrGAIQ7kNvwGY0aHi&_nc_oc=AdoAl0YeE2DOrKFJ5IOKLEkVCXeJXOJct3fW8_8ysK6ChJnqB79keTeOHGEVwo3n0GA&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=YWdjRvu3nk8wGnxj7HI2jQ&_nc_ss=7a2a8&oh=00_AQPTJDRWzhGBeplTTx0coj0O8A9KBz1nNTwgCbPB6aYMyA&oe=6AD6C060"
+      "sourceURL": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/311433428_112969721588820_3319665967307168068_n.jpg?stp=dst-jpg_tt6&cstp=mx1478x1478&ctp=s200x200&_nc_cat=102&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=iwfFfCfrGAIQ7kNvwGY0aHi&_nc_oc=AdoAl0YeE2DOrKFJ5IOKLEkVCXeJXOJct3fW8_8ysK6ChJnqB79keTeOHGEVwo3n0GA&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=YWdjRvu3nk8wGnxj7HI2jQ&_nc_ss=7a2a8&oh=00_AQPTJDRWzhGBeplTTx0coj0O8A9KBz1nNTwgCbPB6aYMyA&oe=6AD6C060",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/95d1d86d1_rallyhub-stage-20261015-41-41-user-reviewed-20261015.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "eecdcc23df4567eac6bc83020b22a2c1adc65857172825f8d10699dccc9e9430"
+      }
     },
     {
       "number": "42",
@@ -246,7 +333,13 @@
       "bytes": 10116,
       "sha256": "b0d515128b697f00788e1f675cd9dabdd71a18622103fdf2a140bfa4d4ee5c81",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/464912502_122176046174243155_1491742954555393625_n.jpg?stp=dst-jpg_tt6&cstp=mx957x960&ctp=s200x200&_nc_cat=103&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=lNRmnQbB16kQ7kNvwGlx-dQ&_nc_oc=AdqQ8WMZKpQ3XT7HWbdkpp3y3FT8_uDgH2fI8WJGPoZ5CQsAQ_87ZPSW6Ol1w_h4xzI&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=7adVNleSOsxU-ivHyc_3nw&_nc_ss=7a2a8&oh=00_AQNk2W-Y4hc9iy3y16Ryy2G8VQ5sBO9zrs8eOJ8E0M3j5A&oe=6AD6969A"
+      "sourceURL": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/464912502_122176046174243155_1491742954555393625_n.jpg?stp=dst-jpg_tt6&cstp=mx957x960&ctp=s200x200&_nc_cat=103&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=lNRmnQbB16kQ7kNvwGlx-dQ&_nc_oc=AdqQ8WMZKpQ3XT7HWbdkpp3y3FT8_uDgH2fI8WJGPoZ5CQsAQ_87ZPSW6Ol1w_h4xzI&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=7adVNleSOsxU-ivHyc_3nw&_nc_ss=7a2a8&oh=00_AQNk2W-Y4hc9iy3y16Ryy2G8VQ5sBO9zrs8eOJ8E0M3j5A&oe=6AD6969A",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/830ab70bb_rallyhub-stage-20261015-32-32-pickleball-arklow-saved-from-review.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "b0d515128b697f00788e1f675cd9dabdd71a18622103fdf2a140bfa4d4ee5c81"
+      }
     },
     {
       "number": "43",
@@ -259,7 +352,13 @@
       "bytes": 5668,
       "sha256": "6648fe756bd2f0d3c4ae02c0f751f8952d183ebd855540de85b2c7b35fd44cb0",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.cdninstagram.com/v/t51.82787-19/844321385_18179833375434364_4850448717723798122_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_cat=111&ccb=7-5&_nc_sid=f7ccc5&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy4xMDgwLkMzIn0%3D&_nc_ohc=QhjZEbgB4BcQ7kNvwElCMyO&_nc_oc=Adqlbzy1ZMks3gEkBeVyDoJiYKFE_8Qv5KIDBLfh69NZFMregZP--_YOBtXA2OQXtBw&_nc_zt=24&_nc_ht=scontent.cdninstagram.com&_nc_gid=RyShsbpOTpIjY77WcO94nw&_nc_ss=7c689&oh=00_AQMFIuQ9ISNGr7Pio-sV4rovIGfGLZmxcDXFmPDGt3cqLw&oe=6AD6A49E"
+      "sourceURL": "https://scontent.cdninstagram.com/v/t51.82787-19/844321385_18179833375434364_4850448717723798122_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_cat=111&ccb=7-5&_nc_sid=f7ccc5&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy4xMDgwLkMzIn0%3D&_nc_ohc=QhjZEbgB4BcQ7kNvwElCMyO&_nc_oc=Adqlbzy1ZMks3gEkBeVyDoJiYKFE_8Qv5KIDBLfh69NZFMregZP--_YOBtXA2OQXtBw&_nc_zt=24&_nc_ht=scontent.cdninstagram.com&_nc_gid=RyShsbpOTpIjY77WcO94nw&_nc_ss=7c689&oh=00_AQMFIuQ9ISNGr7Pio-sV4rovIGfGLZmxcDXFmPDGt3cqLw&oe=6AD6A49E",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/b58f4a741_rallyhub-stage-20261015-43-43-user-reviewed-20261015.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "6648fe756bd2f0d3c4ae02c0f751f8952d183ebd855540de85b2c7b35fd44cb0"
+      }
     },
     {
       "number": "45",
@@ -272,7 +371,13 @@
       "bytes": 41632,
       "sha256": "b585ea3fcd0efbddb267e74e3b86cedac4e825ee25e2d7ca5ae1ef4975d0198b",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.fdub8-1.fna.fbcdn.net/v/t39.30808-6/627612508_122095878027248590_481439151436096111_n.jpg?stp=dst-jpg_tt6&cstp=mx536x536&ctp=s536x536&_nc_cat=101&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NllTjPVcrKcQ7kNvwHkwU3s&_nc_oc=AdpTeb3LSkMatDPw1cptbuutJjliwg1cDVU6kuHBydy96Yr6BjVjPDOhd1_H2S52NEc&_nc_zt=23&_nc_ht=scontent.fdub8-1.fna&_nc_gid=kwHyg94iquLIKxoKpAE75A&_nc_ss=7a2a8&oh=00_AQOgfyDMmzHgOACJPCaGtvYnHi7lQLWaJ6hdHUeOFIXXFA&oe=6AD6C9A2"
+      "sourceURL": "https://scontent.fdub8-1.fna.fbcdn.net/v/t39.30808-6/627612508_122095878027248590_481439151436096111_n.jpg?stp=dst-jpg_tt6&cstp=mx536x536&ctp=s536x536&_nc_cat=101&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NllTjPVcrKcQ7kNvwHkwU3s&_nc_oc=AdpTeb3LSkMatDPw1cptbuutJjliwg1cDVU6kuHBydy96Yr6BjVjPDOhd1_H2S52NEc&_nc_zt=23&_nc_ht=scontent.fdub8-1.fna&_nc_gid=kwHyg94iquLIKxoKpAE75A&_nc_ss=7a2a8&oh=00_AQOgfyDMmzHgOACJPCaGtvYnHi7lQLWaJ6hdHUeOFIXXFA&oe=6AD6C9A2",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/cbb12128e_rallyhub-stage-20261015-45-45-user-reviewed-20261015.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "b585ea3fcd0efbddb267e74e3b86cedac4e825ee25e2d7ca5ae1ef4975d0198b"
+      }
     },
     {
       "number": "55",
@@ -285,7 +390,13 @@
       "bytes": 7634,
       "sha256": "af1319ffa6d87c5d3904c78e80a28d32f474b2d8fb7224f04449e0fd899ead60",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.cdninstagram.com/v/t51.82787-19/757347211_17918704365428387_7750173360786070944_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_cat=108&ccb=7-5&_nc_sid=f7ccc5&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy4xMDgwLkMzIn0%3D&_nc_ohc=fjy2zHVnSfgQ7kNvwHIo9Lr&_nc_oc=AdoCQ5O6ZY1VFLZpKhVJ2j1XB57asPzAVv30Me9HqOsRbNKgPqbRB1brXunyxSD1N5I&_nc_zt=24&_nc_ht=scontent.cdninstagram.com&_nc_gid=8o6CKQbk-mg7_vMp0iprGw&_nc_ss=7c689&oh=00_AQPHhAEoVcop5CJSNSJ0SSvt_bTQrZFfkakaaFJNgUuVKA&oe=6AD6AA7D"
+      "sourceURL": "https://scontent.cdninstagram.com/v/t51.82787-19/757347211_17918704365428387_7750173360786070944_n.jpg?stp=dst-jpg_s150x150_tt6&_nc_cat=108&ccb=7-5&_nc_sid=f7ccc5&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy4xMDgwLkMzIn0%3D&_nc_ohc=fjy2zHVnSfgQ7kNvwHIo9Lr&_nc_oc=AdoCQ5O6ZY1VFLZpKhVJ2j1XB57asPzAVv30Me9HqOsRbNKgPqbRB1brXunyxSD1N5I&_nc_zt=24&_nc_ht=scontent.cdninstagram.com&_nc_gid=8o6CKQbk-mg7_vMp0iprGw&_nc_ss=7c689&oh=00_AQPHhAEoVcop5CJSNSJ0SSvt_bTQrZFfkakaaFJNgUuVKA&oe=6AD6AA7D",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/ae3a25cc4_rallyhub-stage-20261015-55-55-user-reviewed-20261015.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "af1319ffa6d87c5d3904c78e80a28d32f474b2d8fb7224f04449e0fd899ead60"
+      }
     },
     {
       "number": "56",
@@ -298,7 +409,18 @@
       "bytes": 41251,
       "sha256": "8e5827ad69253899909ea5c653309378547000f4400b68533ec6d19f4b570b7e",
       "mime": "image/jpeg",
-      "sourceURL": "https://scontent.fdub7-1.fna.fbcdn.net/v/t39.30808-6/305761378_515280117265566_3065860548849763872_n.jpg?stp=dst-jpg_tt6&cstp=mx565x565&ctp=s565x565&_nc_cat=108&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=yJ6mFb859WIQ7kNvwF2-Yua&_nc_oc=AdrL_wuLSJ5mQYpjEqwuYvYWYdi8HxQaQP0MMNDSTfcxlelbyCMaCk0x-K3E2v3a9VY&_nc_zt=23&_nc_ht=scontent.fdub7-1.fna&_nc_gid=PbCmEvT3YhfbsjAecV-9bQ&_nc_ss=7a2a8&oh=00_AQMgI3eM537-JOTK9P6XNBNFS0iA99_6IMfRYEjTeOM3oA&oe=6AD6C5B2"
+      "sourceURL": "https://scontent.fdub7-1.fna.fbcdn.net/v/t39.30808-6/305761378_515280117265566_3065860548849763872_n.jpg?stp=dst-jpg_tt6&cstp=mx565x565&ctp=s565x565&_nc_cat=108&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=yJ6mFb859WIQ7kNvwF2-Yua&_nc_oc=AdrL_wuLSJ5mQYpjEqwuYvYWYdi8HxQaQP0MMNDSTfcxlelbyCMaCk0x-K3E2v3a9VY&_nc_zt=23&_nc_ht=scontent.fdub7-1.fna&_nc_gid=PbCmEvT3YhfbsjAecV-9bQ&_nc_ss=7a2a8&oh=00_AQMgI3eM537-JOTK9P6XNBNFS0iA99_6IMfRYEjTeOM3oA&oe=6AD6C5B2",
+      "staging": {
+        "status": "uploaded_and_verified",
+        "url": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/d47542b5f_rallyhub-stage-20261015-56-56-user-reviewed-20261015.jpg",
+        "httpStatus": 200,
+        "sha256Readback": "8e5827ad69253899909ea5c653309378547000f4400b68533ec6d19f4b570b7e"
+      }
     }
-  ]
+  ],
+  "status": "assets_staged_no_directory_publishing",
+  "stagedLogos": 17,
+  "uniqueStoredAssetCount": 14,
+  "remoteFileChecksumsVerified": 17,
+  "publishedToDirectory": false
 }
