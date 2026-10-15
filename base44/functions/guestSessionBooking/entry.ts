@@ -1151,7 +1151,7 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,emailSent,offerStatus:'pending',offerUrl:url,target:safeSession(target)});
     }
 
-    if(['attendance_list','attendance_save','followup_preview','followup_send','followup_history'].includes(action)){
+    if(['attendance_list','attendance_save','followup_preview','followup_send','followup_history','followup_template','followup_test'].includes(action)){
       const user=await base44.auth.me();
       if(!user||user.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
       const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100),sessionId=clean(body.sessionId,100);
@@ -1163,12 +1163,39 @@ Deno.serve(async(req)=>{
       const records=await base44.asServiceRole.entities.GuestSessionAttendance.filter({session_link_id:sessionId,tenant_id:tenantId,club_id:clubId});
       if(action==='attendance_list')return Response.json({success:true,attendance:records.map((r:any)=>({bookingId:r.booking_id,status:r.status}))});
       const bookingId=clean(body.bookingId,100);
+      if(action==='followup_template'){
+        const rows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
+        let current=rows.find((t:any)=>t.status==='approved')||rows[0];
+        if(body.operation==='create'&&!current){
+          current=await base44.asServiceRole.entities.CommunicationTemplate.create({owner_scope:'tenant',tenant_id:tenantId,module:'Session Bookings',name:'Guest Session — Thank You & Next Steps',purpose:'guest_session_followup',version:'1',status:'draft',subject_template:'Thanks for joining Clare Pickleball, {{recipient.first_name}}!',plain_text_template:'Hi {{recipient.first_name}},\n\nThanks for joining us for pickleball. It was lovely to have you along, and we hope you enjoyed the session.\n\nIf you would like to join Clare Pickleball, you can find membership details here:\nhttps://www.clarepickleball.ie/membership\n\nYou are also very welcome to book another guest session:\nhttps://www.clarepickleball.ie/book\n\nWe hope to see you on court again soon!\n\nYours in sport,\nBrian Moore\nChairperson, Clare Pickleball',created_by_user_id:user.id});
+        }
+        if(body.operation==='approve'&&current?.status==='draft'){
+          if(!current.subject_template||!current.plain_text_template)return Response.json({error:'Template is incomplete'},{status:400});
+          await base44.asServiceRole.entities.CommunicationTemplate.update(current.id,{status:'approved',approved_by_user_id:user.id,approved_at:new Date().toISOString()});current={...current,status:'approved'};
+        }
+        return Response.json({success:true,template:current?{id:current.id,status:current.status,subject:current.subject_template,body:current.plain_text_template}:null});
+      }
+      if(action==='followup_test'){
+        if(body.confirmSend!==true)return Response.json({error:'Confirm the test email explicitly'},{status:400});
+        const rows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
+        const approved=rows.find((t:any)=>t.status==='approved');
+        if(!approved)return Response.json({error:'Approve the template first'},{status:409});
+        const destination=clean(user.email,200).toLowerCase();
+        if(!destination||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destination))return Response.json({error:'Admin email unavailable'},{status:400});
+        const club=await clubBrand(base44,clubId),brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
+        const first=clean(user.full_name||user.name||'Brian',100).split(' ')[0];
+        const subject='[TEST] '+String(approved.subject_template||'Guest follow-up').replaceAll('{{recipient.first_name}}',first);
+        const textBody=String(approved.plain_text_template||'').replaceAll('{{recipient.first_name}}',first);
+        const htmlBody=emailShell({club,brandKit,headline:'Thank You & Next Steps',preheader:'Test guest follow-up',content:'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody)+'</p>'});
+        const delivery=await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId,clubId},{to:destination,senderName:club.name,subject,textBody,htmlBody});
+        return Response.json({success:true,to:destination,provider:delivery.provider});
+      }
       if(action==='followup_send'){
         if(body.confirmSend!==true)return Response.json({error:'Explicit send confirmation required'},{status:400});
         const ids=Array.isArray(body.bookingIds)?[...new Set(body.bookingIds.map((v:any)=>clean(v,100)))]:[];
         if(!ids.length||ids.length>50)return Response.json({error:'Select 1–50 guests'},{status:400});
         const selectedBookings=ids.map((bid:string)=>bookings.find((b:any)=>b.id===bid));
-        if(selectedBookings.some((b:any)=>!b||b.booking_status==='cancelled'||records.find((r:any)=>r.booking_id===b.id)?.status!=='attended'))return Response.json({error:'Only saved attended bookings can be contacted'},{status:400});
+        if(selectedBookings.some((b:any)=>!b||!['confirmed','cash_due'].includes(b.booking_status)||records.find((r:any)=>r.booking_id===b.id)?.status!=='attended'))return Response.json({error:'Only saved attended bookings can be contacted'},{status:400});
         const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
         const approved=templates.find((t:any)=>t.status==='approved');
         if(!approved)return Response.json({error:'Approve the guest follow-up template first'},{status:409});
@@ -1181,6 +1208,9 @@ Deno.serve(async(req)=>{
           const key='guest_session_followup:'+tenantId+':'+sessionId+':'+booking.id;
           const previous=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({tenant_id:tenantId,idempotency_key:key},'-created_date',20);
           if(previous.some((a:any)=>['sent','accepted','delivered','sending','queued'].includes(a.status))){results.push({bookingId:booking.id,status:'skipped_duplicate'});continue;}
+          const suppressed=booking.person_id?await base44.asServiceRole.entities.CommunicationSuppression.filter({tenant_id:tenantId,person_id:booking.person_id,channel:'email',active:true}):[];
+          const preferences=booking.person_id?await base44.asServiceRole.entities.CommunicationPreference.filter({tenant_id:tenantId,person_id:booking.person_id,channel:'email'}):[];
+          if(suppressed.length||preferences.some((p:any)=>p.status==='withdrawn')){results.push({bookingId:booking.id,status:'suppressed'});continue;}
           const first=clean(booking.full_name,150).split(' ')[0]||'there';
           const merge=(s:string)=>String(s||'').replaceAll('{{recipient.first_name}}',first);
           const subject=merge(approved.subject_template),textBody=merge(approved.plain_text_template);
@@ -1213,7 +1243,7 @@ Deno.serve(async(req)=>{
       if(!ids.length||ids.length>100)return Response.json({error:'Select 1–100 attendees'},{status:400});
       const chosen=ids.map((bid:string)=>bookings.find((b:any)=>b.id===bid));
       if(chosen.some((b:any)=>!b))return Response.json({error:'Unknown booking'},{status:400});
-      if(chosen.some((b:any)=>b.booking_status==='cancelled'||records.find((r:any)=>r.booking_id===b.id)?.status!=='attended'))return Response.json({error:'Only confirmed attendees can receive a follow-up'},{status:400});
+      if(chosen.some((b:any)=>!['confirmed','cash_due'].includes(b.booking_status)||records.find((r:any)=>r.booking_id===b.id)?.status!=='attended'))return Response.json({error:'Only confirmed attendees can receive a follow-up'},{status:400});
       const club=await clubBrand(base44,clubId),brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
       const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
       const approved=templates.find((t:any)=>t.status==='approved');
