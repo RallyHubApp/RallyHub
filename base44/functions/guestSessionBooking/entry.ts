@@ -1151,7 +1151,7 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,emailSent,offerStatus:'pending',offerUrl:url,target:safeSession(target)});
     }
 
-    if(['attendance_list','attendance_save','followup_preview'].includes(action)){
+    if(['attendance_list','attendance_save','followup_preview','followup_send','followup_history'].includes(action)){
       const user=await base44.auth.me();
       if(!user||user.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
       const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100),sessionId=clean(body.sessionId,100);
@@ -1163,6 +1163,42 @@ Deno.serve(async(req)=>{
       const records=await base44.asServiceRole.entities.GuestSessionAttendance.filter({session_link_id:sessionId,tenant_id:tenantId,club_id:clubId});
       if(action==='attendance_list')return Response.json({success:true,attendance:records.map((r:any)=>({bookingId:r.booking_id,status:r.status}))});
       const bookingId=clean(body.bookingId,100);
+      if(action==='followup_send'){
+        if(body.confirmSend!==true)return Response.json({error:'Explicit send confirmation required'},{status:400});
+        const ids=Array.isArray(body.bookingIds)?[...new Set(body.bookingIds.map((v:any)=>clean(v,100)))]:[];
+        if(!ids.length||ids.length>50)return Response.json({error:'Select 1–50 guests'},{status:400});
+        const selectedBookings=ids.map((bid:string)=>bookings.find((b:any)=>b.id===bid));
+        if(selectedBookings.some((b:any)=>!b||b.booking_status==='cancelled'||records.find((r:any)=>r.booking_id===b.id)?.status!=='attended'))return Response.json({error:'Only saved attended bookings can be contacted'},{status:400});
+        const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
+        const approved=templates.find((t:any)=>t.status==='approved');
+        if(!approved)return Response.json({error:'Approve the guest follow-up template first'},{status:409});
+        const cc=Array.isArray(body.cc)?body.cc:[];
+        const allowed=['John McLoughlin','Bróna McBreen','Liz Daly','Jenny Martin','Mary Fahey'];
+        if(cc.some((c:any)=>!allowed.includes(c.name)||!/^\S+@\S+\.\S+$/.test(String(c.email||''))))return Response.json({error:'Invalid CC recipient'},{status:400});
+        const club=await clubBrand(base44,clubId),brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
+        const results=[];
+        for(const booking of selectedBookings){
+          const key='guest_session_followup:'+tenantId+':'+sessionId+':'+booking.id;
+          const previous=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({tenant_id:tenantId,idempotency_key:key},'-created_date',20);
+          if(previous.some((a:any)=>['sent','accepted','delivered','sending','queued'].includes(a.status))){results.push({bookingId:booking.id,status:'skipped_duplicate'});continue;}
+          const first=clean(booking.full_name,150).split(' ')[0]||'there';
+          const merge=(s:string)=>String(s||'').replaceAll('{{recipient.first_name}}',first);
+          const subject=merge(approved.subject_template),textBody=merge(approved.plain_text_template);
+          if(!subject||!textBody){results.push({bookingId:booking.id,status:'failed',error:'Template incomplete'});continue;}
+          const htmlBody=emailShell({club,brandKit,headline:'Thank You & Next Steps',preheader:'Thanks for playing',content:'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody)+'</p>'});
+          const attempt=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.create({campaign_id:'guest_session_followup:'+sessionId,recipient_id:booking.id,tenant_id:tenantId,channel:'email',status:'sending',idempotency_key:key,attempt_number:(previous||[]).length+1,queued_at:new Date().toISOString(),metadata:{sessionId,cc:cc.map((c:any)=>({name:c.name,email:c.email})),templateId:approved.id}});
+          try{
+            const delivery=await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId,clubId},{to:booking.email,cc:cc.map((c:any)=>c.email),senderName:club.name,subject,textBody,htmlBody});
+            await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{status:'sent',provider:delivery.provider,sent_at:new Date().toISOString()});
+            results.push({bookingId:booking.id,status:'sent'});
+          }catch(e){await base44.asServiceRole.entities.CommunicationDeliveryAttempt.update(attempt.id,{status:'failed',error_message:clean(e?.message,500)});results.push({bookingId:booking.id,status:'failed',error:clean(e?.message,300)})}
+        }
+        return Response.json({success:true,results});
+      }
+      if(action==='followup_history'){
+        const attempts=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.filter({tenant_id:tenantId,campaign_id:'guest_session_followup:'+sessionId},'-created_date',200);
+        return Response.json({success:true,history:attempts.map((a:any)=>({bookingId:a.recipient_id,status:a.status,sentAt:a.sent_at,cc:a.metadata?.cc||[]}))});
+      }
       if(action==='attendance_save'){
         const status=clean(body.status,20);
         if(!['attended','no_show','cancelled','unconfirmed'].includes(status))return Response.json({error:'Invalid attendance status'},{status:400});
