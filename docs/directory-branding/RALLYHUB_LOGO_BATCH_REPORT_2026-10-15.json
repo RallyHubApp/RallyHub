@@ -104,5 +104,12 @@
   ],
   "imported": 5,
   "heldOrFailed": 5,
-  "published": false
+  "published": true,
+  "productionVerification": {
+    "siteDeploy": "Site deployed successfully",
+    "directoryReferencesVerified": 5,
+    "imageChecksumsVerified": 5,
+    "reviewPageImportedCardCount": 5,
+    "verificationDate": "2026-10-15"
+  }
 }
