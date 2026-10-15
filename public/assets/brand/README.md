@@ -9,3 +9,8 @@ All production filenames and URLs are listed in manifest.json. Import the consta
 Revised footer lockup (flat PNG, original approved paddle, no shadow): `rallyhub-signature-dark-approved-source.png` — use on the navy homepage footer.
 
 The footer must use `rallyhub-signature-dark-approved-source.png`, which contains the actual approved paddle extracted from the original RallyHub source. The earlier hand-drawn SVG is superseded and must not be used.
+
+## Guest email footer decision — 15 October 2026
+
+APPROVED full-colour original: `/assets/rallyhub-logo-transparent.png` (small, white-background Powered by lockup).
+REJECTED for Clare Pickleball email footer: `rallyhub-horizontal-light.png` (paddle/composite), `rallyhub-signature-dark.png` (shadow/reverse), `rallyhub-signature-dark-approved-source.png` (reverse), `rallyhub-signature-light.png` (superseded footer selection). Keep historical assets for existing references; do not select them for new Clare Pickleball email footers.
