@@ -1198,13 +1198,13 @@ Deno.serve(async(req)=>{
         const rows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
         const approved=rows.find((t:any)=>t.status==='approved');
         if(!approved)return Response.json({error:'Approve the template first'},{status:409});
-        const destination=clean(user.email,200).toLowerCase();
+        const destination='brian.moore007@gmail.com';
         if(!destination||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destination))return Response.json({error:'Admin email unavailable'},{status:400});
         const club=await clubBrand(base44,clubId),brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
         const first=clean(user.full_name||user.name||'Brian',100).split(' ')[0];
         const subject='[TEST] '+String(approved.subject_template||'Guest follow-up').replaceAll('{{recipient.first_name}}',first);
         const textBody=String(approved.plain_text_template||'').replaceAll('{{recipient.first_name}}',first);
-        const htmlBody=renderBasicBrandedEmail(String(approved.html_template||'').trim()||'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
+        const htmlBody=renderBasicBrandedEmail(String(approved.html_template||'').replaceAll('{{recipient.first_name}}',first).trim()||'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
         const delivery=await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId,clubId},{to:destination,senderName:club.name,subject,textBody,htmlBody});
         return Response.json({success:true,to:destination,provider:delivery.provider});
       }
@@ -1233,7 +1233,7 @@ Deno.serve(async(req)=>{
           const merge=(s:string)=>String(s||'').replaceAll('{{recipient.first_name}}',first);
           const subject=merge(approved.subject_template),textBody=merge(approved.plain_text_template);
           if(!subject||!textBody){results.push({bookingId:booking.id,status:'failed',error:'Template incomplete'});continue;}
-          const htmlBody=renderBasicBrandedEmail(String(approved.html_template||'').trim()||'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
+          const htmlBody=renderBasicBrandedEmail(String(approved.html_template||'').replaceAll('{{recipient.first_name}}',first).trim()||'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
           const attempt=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.create({campaign_id:'guest_session_followup:'+sessionId,recipient_id:booking.id,tenant_id:tenantId,channel:'email',status:'sending',idempotency_key:key,attempt_number:(previous||[]).length+1,queued_at:new Date().toISOString(),metadata:{sessionId,cc:cc.map((c:any)=>({name:c.name,email:c.email})),templateId:approved.id}});
           try{
             const delivery=await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId,clubId},{to:booking.email,cc:cc.map((c:any)=>c.email),senderName:club.name,subject,textBody,htmlBody});
@@ -1273,7 +1273,7 @@ Deno.serve(async(req)=>{
         const first=clean(b.full_name,150).split(' ')[0]||'there';
         const merge=(s:string)=>String(s||'').replaceAll('{{recipient.first_name}}',first);
         const subject=merge(approved.subject_template),textBody=merge(approved.plain_text_template);
-        const htmlBody=renderBasicBrandedEmail(String(approved.html_template||'').trim()||'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
+        const htmlBody=renderBasicBrandedEmail(String(approved.html_template||'').replaceAll('{{recipient.first_name}}',first).trim()||'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
         return {bookingId:b.id,to:b.email,cc,subject,textBody,htmlBody};
       });
       return Response.json({success:true,previews,sendEnabled:false});
