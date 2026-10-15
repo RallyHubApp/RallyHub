@@ -42,6 +42,7 @@ function mimeHeader(value: string) {
 
 function gmailRawEmail({
   to,
+  cc,
   senderEmail,
   senderName,
   replyTo,
@@ -50,6 +51,7 @@ function gmailRawEmail({
   htmlBody,
 }: {
   to: string;
+  cc?: string[];
   senderEmail: string;
   senderName: string;
   replyTo?: string | null;
@@ -61,6 +63,7 @@ function gmailRawEmail({
   const headers = [
     `From: ${mimeHeader(senderName)} <${senderEmail}>`,
     `To: ${to}`,
+    ...(cc?.length?[`Cc: ${cc.join(', ')}`]:[]),
     `Reply-To: ${replyTo || senderEmail}`,
     `Subject: ${mimeHeader(subject)}`,
     'MIME-Version: 1.0',
@@ -99,7 +102,7 @@ function gmailRawEmail({
 export async function sendWithConfiguredEmailTransport(
   base44: any,
   scope: EmailScope,
-  message: { to: string; subject: string; textBody: string; htmlBody?: string | null; senderName?: string | null },
+  message: { to: string; cc?: string[]; subject: string; textBody: string; htmlBody?: string | null; senderName?: string | null },
 ) {
   const config = await requireConfiguredEmailTransport(base44, scope);
   const senderName = String(message.senderName || config.sender_name || 'RallyHub').trim();
@@ -116,6 +119,7 @@ export async function sendWithConfiguredEmailTransport(
       body: JSON.stringify({
         raw: gmailRawEmail({
           to: message.to,
+          cc: message.cc,
           senderEmail: config.sender_email,
           senderName,
           replyTo: config.reply_to,
@@ -142,6 +146,7 @@ export async function sendWithConfiguredEmailTransport(
       body: JSON.stringify({
         secret,
         to: message.to,
+        cc: message.cc||[],
         subject: message.subject,
         textBody: message.textBody,
         htmlBody: message.htmlBody || '',
@@ -157,6 +162,7 @@ export async function sendWithConfiguredEmailTransport(
   }
 
   if (config.provider === 'base44_core') {
+    if(message.cc?.length)throw new Error('CC is not supported by the configured core email transport.');
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: message.to,
       from_name: senderName,
