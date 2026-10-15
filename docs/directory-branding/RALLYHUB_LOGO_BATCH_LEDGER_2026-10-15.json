@@ -3,9 +3,9 @@
   "source": "Current live public_list and seed; 14 October ledger and review; Facebook > Instagram > website",
   "reviewed": 10,
   "readyForUserVisualApproval": 4,
-  "needsFurtherVisualConfirmation": 1,
-  "heldWithoutClubArtwork": 5,
-  "repoOnlyCandidateFiles": 5,
+  "needsFurtherVisualConfirmation": 0,
+  "heldWithoutClubArtwork": 6,
+  "repoOnlyCandidateFiles": 4,
   "permanentHttpsStaged": 0,
   "productionRecordsChanged": 0,
   "deployed": false,
@@ -48,18 +48,18 @@
     {
       "slug": "coillte-pickleball-club",
       "name": "Coillte Pickleball Club",
-      "status": "visual_check",
+      "status": "hold_photo_not_logo",
       "facebookChecked": true,
       "facebookUrl": "https://www.facebook.com/share/18YRb1HLuf/",
       "instagramChecked": true,
       "instagramUrl": null,
       "websiteChecked": true,
       "websiteUrl": null,
-      "note": "Facebook identifies Coillte Pickleballers; verify alias and inspect artwork before approval.",
+      "note": "Official Facebook Coillte Pickleballers profile image is a group photograph, not a club logo. Rejected; no club-specific logo verified.",
       "liveLogoMissing": true,
       "productionChanged": false,
       "permanentHttpsStaged": false,
-      "repositoryCandidateAsset": "docs/directory-branding/candidates/2026-10-15/coillte-pickleball-club-facebook-UNVERIFIED.jpg",
+      "rejectedEvidenceAsset": "docs/directory-branding/candidates/2026-10-15/coillte-pickleball-club-facebook-UNVERIFIED.jpg",
       "sha256": "822c9092d39e11cbbd2f3c7105a5d2d7d894f47a800a5b3eab253e6ac9b17820",
       "repositoryChecksumReadback": true
     },
@@ -199,5 +199,5 @@
   "excludedAlreadyHasLiveLogo": [
     "dublin-15-pickleball"
   ],
-  "storageNote": "Five source images saved to repository candidate staging with matching SHA-256 readback. No permanent HTTPS upload or production write before explicit artwork approval."
+  "storageNote": "Four valid logo candidates retained in repository-only staging, plus one rejected Facebook group photo retained as non-publishable evidence. No permanent HTTPS upload or production write before explicit approval."
 }
