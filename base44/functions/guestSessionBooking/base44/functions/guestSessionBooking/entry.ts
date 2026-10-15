@@ -1195,7 +1195,7 @@ Deno.serve(async(req)=>{
         const ids=Array.isArray(body.bookingIds)?[...new Set(body.bookingIds.map((v:any)=>clean(v,100)))]:[];
         if(!ids.length||ids.length>50)return Response.json({error:'Select 1–50 guests'},{status:400});
         const selectedBookings=ids.map((bid:string)=>bookings.find((b:any)=>b.id===bid));
-        if(selectedBookings.some((b:any)=>!b||!['confirmed','cash_due'].includes(b.booking_status)||records.find((r:any)=>r.booking_id===b.id)?.status!=='attended'))return Response.json({error:'Only saved attended bookings can be contacted'},{status:400});
+        if(selectedBookings.some((b:any)=>!b))return Response.json({error:'One or more selected bookings do not belong to this session'},{status:400});
         const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
         const approved=templates.find((t:any)=>t.status==='approved');
         if(!approved)return Response.json({error:'Approve the guest follow-up template first'},{status:409});
