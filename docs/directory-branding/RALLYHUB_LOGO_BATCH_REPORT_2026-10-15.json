@@ -1,0 +1,108 @@
+{
+  "source": "User selected 10 logos in conversation 15 October 2026",
+  "entries": [
+    {
+      "num": 2,
+      "slug": "annascaul-picklers",
+      "name": "Annascaul Picklers",
+      "status": "held",
+      "reason": "Same supplied original image URL as Kingdom Pickleball Club (#22); club identity/branding conflict"
+    },
+    {
+      "num": 7,
+      "slug": "bluestack-pickleball-club",
+      "name": "Bluestack Pickleball Club",
+      "url": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/340225939_1648655438911907_1969184217105252593_n.jpg?stp=dst-jpg_tt6&cstp=mx959x960&ctp=s200x200&_nc_cat=106&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=e9vWA9jf3Y0Q7kNvwGMqM4R&_nc_oc=Adq7s9Jslz-I7Jp3hZ-Rfo2OqibG-YvPFYbWlt7QI4cW24AToPd25WEcf_wX6tgxR38&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=yLfbwE8cZg-RxVwC7m5SXQ&_nc_ss=7c289&oh=00_AQOFzlo9k3e-gnSMnRWx7gbDPtY5WrwbLoqS34vHyf5iLg&oe=6AD66F19",
+      "status": "failed",
+      "reason": "HTTP Error 403: Forbidden"
+    },
+    {
+      "num": 11,
+      "slug": "connemara-pickleball-club",
+      "name": "Connemara Pickleball Club",
+      "url": "https://scontent.fdub5-2.fna.fbcdn.net/v/t39.30808-6/417706865_122133093212107339_1785016136699799720_n.jpg?stp=dst-jpg_tt6&cstp=mx930x937&ctp=s930x937&_nc_cat=106&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=nQjBYnuMwmAQ7kNvwH_SLGt&_nc_oc=AdoBC6T8iB69ylhjx8P_lolZm5e6PFuHyxuC2fTRY7TFRaddoAUcWlogs9ENKeNW6us&_nc_zt=23&_nc_ht=scontent.fdub5-2.fna&_nc_gid=Xtpi-iipIUgC0NsHwDc8pQ&_nc_ss=7a289&oh=00_AQNPF22MDu8cEqPzg35NM9nvOETApgcN30ce8OCb2WRUnQ&oe=6AD67655",
+      "httpStatus": 200,
+      "sha256": "8432230aafc947b4a4f1f5302ac55990cd9e7b2ae70fc62f84927451d8c46aa7",
+      "bytes": 71069,
+      "local": "/tmp/rh-batch-20261015-images/11-8432230aafc947b4.jpg",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/721b6cf35_rallyhub-review-20261015-11-8432230aafc947b4.jpg",
+      "readbackVerified": true
+    },
+    {
+      "num": 15,
+      "slug": "east-cork-pickleball",
+      "name": "East Cork Pickleball",
+      "status": "held",
+      "reason": "Supplied profile image matches previously imported Midleton Pickleball image filename; requires explicit club identity confirmation"
+    },
+    {
+      "num": 18,
+      "slug": "hook-pickleball",
+      "name": "Hook Pickleball",
+      "url": "https://scontent.fdub5-2.fna.fbcdn.net/v/t39.30808-1/536280035_623970870787214_4182603902275192502_n.jpg?stp=dst-jpg_tt6&cstp=mx640x640&ctp=s200x200&_nc_cat=101&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=Bun7Fi6xQDwQ7kNvwGbUGFm&_nc_oc=AdofPg1L7ugziJV0E46ZUklh2j7cHw-YEMAr5LBRNNHinP4fKci70EwAInHzb6XG6-Y&_nc_zt=24&_nc_ht=scontent.fdub5-2.fna&_nc_gid=J8CAf5oTwWCq-0nQ-FB4Uw&_nc_ss=7a289&oh=00_AQPGBuA2-qVKk2jB0bFODhgMFAY7ULAYVvq9QUU0bYsYNQ&oe=6AD67E4C",
+      "httpStatus": 200,
+      "sha256": "7111204b5eec8f27d85ce92fcfcf27a3212b6db66ed0d18241b3a7f4d8ed0a7c",
+      "bytes": 6274,
+      "local": "/tmp/rh-batch-20261015-images/18-7111204b5eec8f27.jpg",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/dbfb57237_rallyhub-review-20261015-18-7111204b5eec8f27.jpg",
+      "readbackVerified": true
+    },
+    {
+      "num": 20,
+      "slug": "kilcullen-pickleball-panthers",
+      "name": "Kilcullen Pickleball Panthers",
+      "url": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/456559883_8167903533230934_1676339109865690847_n.jpg?stp=c65.65.370.370a_dst-jpg_tt6&cstp=mx370x370&ctp=s200x200&_nc_cat=110&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=ezj6qJ6UBoAQ7kNvwEy5gXi&_nc_oc=AdpLYnlsSXYBO0h_8Y60u9poStP0q0O84WkZgfcNmnsp-LVhh151OzXUrFcWjMSvA0U&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=ftkhHbnikz9ztXLWE70URw&_nc_ss=7a289&oh=00_AQMURwzwk4TWvpIv7BHRgS_f2va2YlIGXkxvoYDLRUANKw&oe=6AD661AE",
+      "httpStatus": 200,
+      "sha256": "a9d0690703c930ce471ccfb394f7196d96df1ae9c8e150740bf3c4ba9dbb285b",
+      "bytes": 13093,
+      "local": "/tmp/rh-batch-20261015-images/20-a9d0690703c930ce.jpg",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/2a947d965_rallyhub-review-20261015-20-a9d0690703c930ce.jpg",
+      "readbackVerified": true
+    },
+    {
+      "num": 22,
+      "slug": "kingdom-pickleball-club",
+      "name": "Kingdom Pickleball Club",
+      "status": "held",
+      "reason": "Same supplied original image URL as Annascaul Picklers (#02); club identity/branding conflict"
+    },
+    {
+      "num": 24,
+      "slug": "kinvara-pickleball",
+      "name": "Kinvara Pickleball",
+      "url": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-6/329951883_588180593238035_2966582090902733746_n.jpg?stp=dst-jpg_tt6&cstp=mx960x960&ctp=s960x960&_nc_cat=111&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=J-J5VmLFScgQ7kNvwEFXdvp&_nc_oc=AdpdiHP2MBqGVsIoLW4YP9EjpeGjQOLue754vF9t1K_SoqJqn6JzaDCQ1pIO9glIkLY&_nc_zt=23&_nc_ht=scontent.fdub4-2.fna&_nc_gid=JeAmzQh59E4KVqcGtigC0w&_nc_ss=7a289&oh=00_AQO_wVvFyjpiRd5Z-FnUKy_vuA_Ft8tCBx2mO_1RG_idiQ&oe=6AD65DE2",
+      "httpStatus": 200,
+      "sha256": "77b0e406e233fc747d21ec83c1327c68b076945311cd1797b2b2916026fe5b9f",
+      "bytes": 67391,
+      "local": "/tmp/rh-batch-20261015-images/24-77b0e406e233fc74.jpg",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/978420b93_rallyhub-review-20261015-24-77b0e406e233fc74.jpg",
+      "readbackVerified": true
+    },
+    {
+      "num": 26,
+      "slug": "lisburn-pickleball-club",
+      "name": "Lisburn Pickleball Club",
+      "archive": "public/directory/logo-candidates/2026-10-15/26-lisburn-pickleball-club-facebook.jpg",
+      "sha256": "923fe0bb2f03cb9f960bdc0a2273c63980ddc917374ed8122ab2adb114f38ec3",
+      "bytes": 7284,
+      "local": "/tmp/rh-batch-20261015-images/26-923fe0bb2f03cb9f.jpg",
+      "status": "staged",
+      "fileUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/81699ecd3_rallyhub-review-20261015-26-923fe0bb2f03cb9f.jpg",
+      "readbackVerified": true
+    },
+    {
+      "num": 46,
+      "slug": "coolmine-pickleheads-club",
+      "name": "Coolmine Pickleheads Club",
+      "status": "held",
+      "reason": "Archived SVG is a generic Pickleheads website asset, not verified as the individual club's logo"
+    }
+  ],
+  "imported": 5,
+  "heldOrFailed": 5,
+  "published": false
+}
