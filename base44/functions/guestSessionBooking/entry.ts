@@ -1152,6 +1152,23 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,emailSent,offerStatus:'pending',offerUrl:url,target:safeSession(target)});
     }
 
+    if(['followup_editor_save','followup_design_preview'].includes(action)){
+      const user=await base44.auth.me();if(!user||user.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
+      const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100);
+      if(!tenantId||!clubId)return Response.json({error:'Active club required'},{status:400});
+      const subject=String(body.subject||'').trim().slice(0,250),plain=String(body.plain||'').slice(0,16000),html=String(body.html||'').slice(0,40000);
+      if(!subject||!plain.trim())return Response.json({error:'Subject and message body are required'},{status:400});
+      if(action==='followup_design_preview'){
+        const club=await clubBrand(base44,clubId),kit=await tenantEmailBrandKit(base44,tenantId,clubId);
+        const safeHtml=html.trim()||'<p style="white-space:pre-line">'+escapeHtml(plain)+'</p>';
+        return Response.json({success:true,html:renderBasicBrandedEmail(safeHtml,kit,club,club?.name||'Clare Pickleball','Thank You & Next Steps')});
+      }
+      const rows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
+      const existing=rows.find((t:any)=>t.status==='approved')||rows[0];
+      const data={owner_scope:'tenant',tenant_id:tenantId,club_id:clubId,module:'Session Bookings',name:'Guest Booking — Thank You & Next Steps',purpose:'guest_session_followup',version:String(Date.now()),status:'draft',subject_template:subject,plain_text_template:plain,html_template:html,updated_by_user_id:user.id};
+      const template=existing?await base44.asServiceRole.entities.CommunicationTemplate.update(existing.id,data):await base44.asServiceRole.entities.CommunicationTemplate.create(data);
+      return Response.json({success:true,template:{id:template.id,name:data.name,status:'draft'}});
+    }
     if(['attendance_list','attendance_save','followup_preview','followup_send','followup_history','followup_template','followup_test'].includes(action)){
       const user=await base44.auth.me();
       if(!user||user.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
@@ -1187,7 +1204,7 @@ Deno.serve(async(req)=>{
         const first=clean(user.full_name||user.name||'Brian',100).split(' ')[0];
         const subject='[TEST] '+String(approved.subject_template||'Guest follow-up').replaceAll('{{recipient.first_name}}',first);
         const textBody=String(approved.plain_text_template||'').replaceAll('{{recipient.first_name}}',first);
-        const htmlBody=renderBasicBrandedEmail('<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
+        const htmlBody=renderBasicBrandedEmail(String(approved.html_template||'').trim()||'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
         const delivery=await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId,clubId},{to:destination,senderName:club.name,subject,textBody,htmlBody});
         return Response.json({success:true,to:destination,provider:delivery.provider});
       }
@@ -1216,7 +1233,7 @@ Deno.serve(async(req)=>{
           const merge=(s:string)=>String(s||'').replaceAll('{{recipient.first_name}}',first);
           const subject=merge(approved.subject_template),textBody=merge(approved.plain_text_template);
           if(!subject||!textBody){results.push({bookingId:booking.id,status:'failed',error:'Template incomplete'});continue;}
-          const htmlBody=renderBasicBrandedEmail('<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
+          const htmlBody=renderBasicBrandedEmail(String(approved.html_template||'').trim()||'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
           const attempt=await base44.asServiceRole.entities.CommunicationDeliveryAttempt.create({campaign_id:'guest_session_followup:'+sessionId,recipient_id:booking.id,tenant_id:tenantId,channel:'email',status:'sending',idempotency_key:key,attempt_number:(previous||[]).length+1,queued_at:new Date().toISOString(),metadata:{sessionId,cc:cc.map((c:any)=>({name:c.name,email:c.email})),templateId:approved.id}});
           try{
             const delivery=await sendWithConfiguredEmailTransport(base44,{scopeType:'tenant',purpose:'club_comms',tenantId,clubId},{to:booking.email,cc:cc.map((c:any)=>c.email),senderName:club.name,subject,textBody,htmlBody});
@@ -1256,7 +1273,7 @@ Deno.serve(async(req)=>{
         const first=clean(b.full_name,150).split(' ')[0]||'there';
         const merge=(s:string)=>String(s||'').replaceAll('{{recipient.first_name}}',first);
         const subject=merge(approved.subject_template),textBody=merge(approved.plain_text_template);
-        const htmlBody=renderBasicBrandedEmail('<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
+        const htmlBody=renderBasicBrandedEmail(String(approved.html_template||'').trim()||'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody.replace(/\n(?:Yours in sport,|Regards,)[\s\S]*$/i,''))+'</p>',brandKit,club,club.name||'Clare Pickleball','Thank You & Next Steps');
         return {bookingId:b.id,to:b.email,cc,subject,textBody,htmlBody};
       });
       return Response.json({success:true,previews,sendEnabled:false});
