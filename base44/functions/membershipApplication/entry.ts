@@ -432,6 +432,13 @@ Deno.serve(async(req)=>{
       if(!config)return Response.json({error:'Membership applications are not configured for this club.'},{status:404});
       const club=await clubBrand(base44,clubId,tenantId);
 
+      if(action==='admin_communications_preview_membership'){
+        const app=body.applicationId?await first(base44,'MembershipApplication',{id:clean(body.applicationId,100),tenant_id:tenantId,club_id:clubId}):null;
+        if(body.applicationId&&(!app||app.payment_status!=='paid'))return Response.json({error:'Paid membership record not found'},{status:404});
+        const sample=app||{tenant_id:tenantId,club_id:clubId,full_name:'Sample Member',membership_season:'2026–2027',membership_fee:36,currency:'EUR',confirmation_code:'SAMPLE-123',paid_at:'2026-10-15'};
+        const rendered=await membershipPaidTemplate(base44,config,club,sample,{subject:'',textBody:'',htmlBody:''});
+        return Response.json({success:true,...rendered,previewSource:'approved_template'});
+      }
       if(action==='admin_count'){
         const apps=await base44.asServiceRole.entities.MembershipApplication.filter({tenant_id:tenantId,club_id:clubId},'-submitted_at',300);
         const liveApps=(apps||[]).filter((app:any)=>app.status!=='withdrawn'&&!String(app.source_system||'').includes('membership_qa'));
