@@ -60,6 +60,7 @@ test('public KOTC link: assignments → live scores → permanent final results 
   await expect(page.getByTestId('public-kotc-current-round')).toHaveCount(0);
   await page.getByRole('button',{name:'Rounds',exact:true}).click();
   await expect(page.getByTestId('public-kotc-round-history')).toBeVisible();
+  await page.getByRole('button',{name:'Results',exact:true}).click();
   await expect(page.getByTestId('public-kotc-podium').getByText('Guest One')).toBeVisible();
   const podiumItems=page.getByTestId('public-kotc-podium').locator('[role="listitem"]');
   await expect(podiumItems).toHaveCount(3);
