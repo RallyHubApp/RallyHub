@@ -1164,10 +1164,20 @@ Deno.serve(async(req)=>{
         return Response.json({success:true,html:renderBasicBrandedEmail(safeHtml,kit,club,club?.name||'Clare Pickleball','Thank You & Next Steps')});
       }
       const rows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
-      const existing=rows.find((t:any)=>t.status==='approved')||rows[0];
+      const existing=rows.find((t:any)=>t.status==='draft')||null;
       const data={owner_scope:'tenant',tenant_id:tenantId,club_id:clubId,module:'Session Bookings',name:'Guest Booking — Thank You & Next Steps',purpose:'guest_session_followup',version:String(Date.now()),status:'draft',subject_template:subject,plain_text_template:plain,html_template:html,updated_by_user_id:user.id};
       const template=existing?await base44.asServiceRole.entities.CommunicationTemplate.update(existing.id,data):await base44.asServiceRole.entities.CommunicationTemplate.create(data);
       return Response.json({success:true,template:{id:template.id,name:data.name,status:'draft'}});
+    }
+    if(action==='followup_admin_approve'){
+      const user=await base44.auth.me();if(!user||user.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
+      const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100);
+      if(!tenantId||!clubId)return Response.json({error:'Active club required'},{status:400});
+      const rows=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',30);
+      const draft=rows.find((t:any)=>t.status==='draft'&&(!t.club_id||t.club_id===clubId));
+      if(!draft||!draft.subject_template?.trim()||!draft.plain_text_template?.trim())return Response.json({error:'Save a complete guest follow-up draft before approving'},{status:409});
+      const approved=await base44.asServiceRole.entities.CommunicationTemplate.update(draft.id,{status:'approved',approved_by_user_id:user.id,approved_at:new Date().toISOString()});
+      return Response.json({success:true,template:{id:approved.id,status:'approved',subject:approved.subject_template,body:approved.plain_text_template,html:approved.html_template}});
     }
     if(['attendance_list','attendance_save','followup_preview','followup_send','followup_history','followup_template','followup_test'].includes(action)){
       const user=await base44.auth.me();
