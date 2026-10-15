@@ -22,7 +22,7 @@
   const update=(save=true) => {
     if (save) persist();
     const n=selections.size;
-    count.textContent=n+' selected for review · '+(cards.length-n)+' remaining unselected';
+    count.textContent=n+' selected for review/change · '+(cards.length-n)+' cards without selections';
     copy.disabled=n===0;
     for(const card of cards){const number=card.querySelector('.num')?.textContent.trim();card.classList.toggle('review-approved',selections.has(number));}
   };
@@ -34,9 +34,45 @@
     const controls=document.createElement('div');
     controls.className='review-control';
     if(imported){
+      // An imported logo is live and immutable from this review page, but the
+      // super admin can submit a clearly labelled replace/remove REQUEST.
       card.classList.add('imported');
-      controls.innerHTML='<div class="review-hint"><strong>Already imported.</strong> This is the exact live RallyHub logo, excluded from new uploads. No approval tick available.</div>';
-      card.appendChild(controls);
+      const current=card.querySelector('.image img')?.getAttribute('src') || '';
+      const imageBox=card.querySelector('.image');
+      const originalMarkup=imageBox.innerHTML;
+      const recovered=restored.find(x=>String(x.number)===number && x.name===name && ['replace','remove'].includes(x.action));
+      const note=document.createElement('p');note.className='review-hint';
+      note.textContent='Currently live. Replace or Remove creates a review request only; the public Directory will not change until separately authorised.';
+      const research=document.createElement('div');research.className='research-links';
+      for(const [title,query] of [['Facebook',name+' pickleball site:facebook.com'],['Instagram',name+' pickleball site:instagram.com'],['Website',name+' pickleball official website']]){
+        const a=document.createElement('a');a.textContent=title+' ↗';a.target='_blank';a.rel='noopener noreferrer';a.href='https://www.google.com/search?q='+encoded(query);research.append(a);
+      }
+      const buttons=document.createElement('div');buttons.className='logo-actions';
+      const replaceBtn=document.createElement('button');replaceBtn.type='button';replaceBtn.textContent='Replace logo';
+      const removeBtn=document.createElement('button');removeBtn.type='button';removeBtn.textContent='Remove logo';
+      const restoreBtn=document.createElement('button');restoreBtn.type='button';restoreBtn.textContent='Cancel change';restoreBtn.className='secondary';
+      buttons.append(replaceBtn,removeBtn,restoreBtn);
+      const entry=document.createElement('input');entry.type='url';entry.placeholder='Paste replacement HTTPS logo image URL';
+      entry.setAttribute('aria-label',name+' replacement image URL');entry.className='logo-url-input';entry.hidden=true;
+      const confirm=document.createElement('button');confirm.type='button';confirm.textContent='Add replacement to review batch';confirm.hidden=true;
+      const warning=document.createElement('p');warning.className='review-hint';
+      let ready='';let seq=0;
+      const reset=()=>{++seq;ready='';entry.value='';entry.hidden=true;confirm.hidden=true;imageBox.innerHTML=originalMarkup;warning.textContent='Current live image kept. No change requested.';selections.delete(number);update();};
+      const showReplace=()=>{entry.hidden=false;confirm.hidden=false;confirm.disabled=true;warning.textContent='Paste an HTTPS image. After its preview loads, add it to the batch.';entry.focus();};
+      replaceBtn.addEventListener('click',showReplace);
+      entry.addEventListener('input',()=>{
+        const url=safeLink(entry.value.trim());const serial=++seq;ready='';confirm.disabled=true;
+        if(!url||!url.startsWith('https://')){warning.textContent='Use a direct HTTPS image URL.';return;}
+        const img=new Image();img.onload=()=>{if(serial!==seq)return;ready=url;confirm.disabled=false;imageBox.replaceChildren(img);warning.textContent='Replacement preview ready. Confirm to include it in the review batch.';};
+        img.onerror=()=>{if(serial!==seq)return;warning.textContent='Image did not load. The current live image remains unchanged.';};
+        img.alt=name+' replacement preview';img.src=url;
+      });
+      confirm.addEventListener('click',()=>{if(!ready)return;selections.set(number,{number,name,action:'replace',image:ready,currentImage:current});warning.textContent='REPLACE requested, not published. Included in copied review batch.';update();});
+      removeBtn.addEventListener('click',()=>{++seq;ready='';imageBox.innerHTML=originalMarkup;entry.hidden=true;confirm.hidden=true;selections.set(number,{number,name,action:'remove',image:current,currentImage:current});warning.textContent='REMOVE requested, not published. Included in copied review batch.';update();});
+      restoreBtn.addEventListener('click',reset);
+      controls.append(note,research,buttons,entry,confirm,warning);card.append(controls);
+      if(recovered?.action==='remove'){selections.set(number,recovered);warning.textContent='Previously selected REMOVE request restored; not published.';}
+      else if(recovered?.action==='replace' && recovered.image){entry.value=recovered.image;showReplace();entry.dispatchEvent(new Event('input'));selections.set(number,recovered);warning.textContent='Replacement request restored. Preview loading; not published.';}
       continue;
     }
     const checkbox=document.createElement('input');
@@ -144,9 +180,9 @@
   });
   copy.addEventListener('click',async()=>{
     const lines=[...selections.values()].sort((a,b)=>Number(a.number)-Number(b.number))
-      .map(x=>'#'+x.number+' '+x.name+' | '+(x.proposed?'PROPOSED HTTPS IMAGE (requires independent verification)':'ARCHIVED CANDIDATE')+' | '+x.image);
+      .map(x=>'#'+x.number+' '+x.name+' | '+(x.action==='remove'?'REQUEST REMOVE LIVE LOGO (requires explicit publication approval)':x.action==='replace'?'REQUEST REPLACE LIVE LOGO (requires explicit publication approval)':x.proposed?'PROPOSED HTTPS IMAGE (requires independent verification)':'ARCHIVED CANDIDATE')+' | '+(x.action==='remove'?'CURRENT: '+(x.currentImage||x.image):x.image));
     const note='RallyHub Directory logo visual review (not publication approval). Approved for staging checks:\n'+lines.join('\n')+
-      '\nAll unselected entries remain HOLD. Existing RallyHub logos are excluded from this 56-club queue. Check official sources, image hashes and duplicates before staging. Request separate explicit approval before publishing.';
+      '\nAll unselected entries remain HOLD. Replace/Remove requests for live logos are NOT executed automatically. Check sources and ownership before staging. Request separate explicit approval before publishing.';
     persist();
     // Always display a manual-copy export BEFORE attempting the clipboard API.
     // Clipboard permissions can fail or hang silently on some mobile browsers.
