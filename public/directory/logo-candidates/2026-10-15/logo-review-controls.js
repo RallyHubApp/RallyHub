@@ -60,44 +60,77 @@
       const anchor=document.createElement('a');anchor.textContent=labelText+' ↗';anchor.target='_blank';anchor.rel='noopener noreferrer';anchor.href='https://www.google.com/search?q='+encoded(q);research.append(anchor);
     }
     controls.append(research);
+    // Always allow a different candidate, even if this card has an archived image.
+    // Keep the original candidate in view until a replacement has loaded.
     let proposedUrl='';
-    if(!candidate){
-      checkbox.disabled=true;
-      const entry=document.createElement('input');
-      entry.type='url';entry.placeholder='Paste official logo image HTTPS URL';
-      entry.setAttribute('aria-label',name+' official image URL');
-      entry.style.cssText='display:block;width:100%;margin:10px 0 5px;padding:9px;border:1px solid #b6c4d5;border-radius:8px;font-size:12px';
-      const preview=document.createElement('img');
-      preview.alt=name+' proposed logo (unverified preview)';
-      preview.style.cssText='display:none;max-width:100%;max-height:140px;object-fit:contain;margin:8px auto';
-      const status=document.createElement('div');status.className='review-hint';
-      status.textContent='A preview must load before this can be submitted for further verification.';
-      let sequence=0;
-      entry.addEventListener('input',()=>{
-        checkbox.checked=false;selections.delete(number);update();
-        proposedUrl='';preview.style.display='none';checkbox.disabled=true;
-        const current=++sequence;
-        const url=safeLink(entry.value.trim());
-        if(!url || !url.startsWith('https://')){status.textContent=entry.value.trim()?'Use a direct HTTPS image URL.':'A preview must load before this can be submitted.';return;}
-        preview.onload=()=>{if(current!==sequence)return;proposedUrl=url;checkbox.disabled=false;preview.style.display='block';status.textContent='Image preview loaded; candidate is not yet source or checksum verified.';if(recovered?.proposed && recovered.image===url){checkbox.checked=true;selections.set(number,{number,name,image:url,proposed:true});update();}};
-        preview.onerror=()=>{if(current!==sequence)return;status.textContent='Could not load this image. Try another official source URL.';};
-        preview.src=url;
-      });
-      controls.append(entry,preview,status);
-      if (recovered?.proposed) { entry.value=recovered.image; entry.dispatchEvent(new Event('input')); }
-    }
-    existingPhoto?.addEventListener('error',()=>{
-      checkbox.disabled=true;checkbox.checked=false;selections.delete(number);hint.textContent='Archived thumbnail unavailable — on HOLD until replaced.';update();
-    });
-    checkbox.addEventListener('change',()=>{
-      if(checkbox.checked){
-        const src=candidate ? existingPhoto?.getAttribute('src') : proposedUrl;
-        if(!src){checkbox.checked=false;return;}
-        selections.set(number,{number,name,image:src,proposed:!candidate});
-      }else selections.delete(number);
+    let replacementReady=false;
+    const originalSrc=existingPhoto?.getAttribute('src') || '';
+    const imageBox=card.querySelector('.image');
+    const imageContent=imageBox.innerHTML;
+    const entry=document.createElement('input');
+    entry.type='url';
+    entry.placeholder=candidate?'Paste a BETTER logo HTTPS image URL':'Paste official logo image HTTPS URL';
+    entry.setAttribute('aria-label',name+' replacement or new official image URL');
+    entry.style.cssText='display:block;width:100%;margin:10px 0 5px;padding:9px;border:1px solid #b6c4d5;border-radius:8px;font-size:12px';
+    const status=document.createElement('div');status.className='review-hint';
+    status.textContent=candidate?'Not happy with this candidate? Paste a better direct image URL to replace it.':'A preview must load before this can be submitted for verification.';
+    const reset=document.createElement('button');
+    reset.type='button';reset.className='review-reset';reset.textContent='Use original candidate';
+    reset.style.cssText='display:none;margin:5px 0 0;padding:7px 9px;border-radius:7px;border:1px solid #b6c4d5;background:#f2f7fd;color:#0c2257;cursor:pointer;font-weight:700';
+    let sequence=0;
+    const showOriginal=()=>{
+      imageBox.innerHTML=imageContent;
+      replacementReady=false;proposedUrl='';reset.style.display='none';
+      checkbox.disabled=!candidate;
+    };
+    const recordSelected=()=>{
+      if(!checkbox.checked){selections.delete(number);update();return;}
+      const src=replacementReady ? proposedUrl : originalSrc;
+      if(!src){checkbox.checked=false;selections.delete(number);update();return;}
+      selections.set(number,{number,name,image:src,proposed:replacementReady});
       update();
+    };
+    entry.addEventListener('input',()=>{
+      const current=++sequence;
+      const url=safeLink(entry.value.trim());
+      if(!entry.value.trim()){
+        showOriginal();status.textContent=candidate?'Original candidate restored. You can still paste a replacement.':'Paste an HTTPS image address to preview it.';
+        // Existing approval reverts to the original candidate instead of keeping a stale replacement URL.
+        recordSelected();return;
+      }
+      replacementReady=false;proposedUrl='';checkbox.disabled=true;
+      if(checkbox.checked){checkbox.checked=false;selections.delete(number);update();}
+      status.textContent='Checking replacement image…';
+      if(!url || !url.startsWith('https://')){status.textContent='Use a direct HTTPS image URL.';return;}
+      const test=new Image();
+      test.onload=()=>{
+        if(current!==sequence)return;
+        proposedUrl=url;replacementReady=true;checkbox.disabled=false;
+        imageBox.replaceChildren(test);
+        test.alt=name+' replacement candidate (not yet verified)';
+        test.style.cssText='max-width:92%;max-height:92%;width:auto;height:auto;object-fit:contain';
+        reset.style.display=candidate?'inline-block':'none';
+        status.textContent='Replacement preview loaded. Tick Approve for next batch to select THIS image instead of the original.';
+        if(recovered?.proposed && recovered.image===url){checkbox.checked=true;recordSelected();}
+      };
+      test.onerror=()=>{if(current!==sequence)return;status.textContent='Image did not load. Paste another direct image URL. Original candidate is not approved.';};
+      test.src=url;
     });
-    if(candidate && recovered && !recovered.proposed && recovered.image===existingPhoto?.getAttribute('src')) { checkbox.checked=true;selections.set(number,recovered); }
+    reset.addEventListener('click',()=>{
+      entry.value='';++sequence;showOriginal();status.textContent='Original archived candidate restored.';
+      checkbox.checked=false;selections.delete(number);update();
+    });
+    controls.append(entry,reset,status);
+    // If the underlying archived image fails, an HTTPS replacement remains possible.
+    existingPhoto?.addEventListener('error',()=>{
+      if(replacementReady)return;
+      checkbox.disabled=true;checkbox.checked=false;selections.delete(number);
+      hint.textContent='Archived thumbnail unavailable — paste a replacement HTTPS image URL.';update();
+    });
+    checkbox.addEventListener('change',recordSelected);
+    if(recovered?.proposed){entry.value=recovered.image;entry.dispatchEvent(new Event('input'));}
+    else if(candidate && recovered && recovered.image===originalSrc){checkbox.checked=true;recordSelected();}
+    else if(!candidate)checkbox.disabled=true;
     card.append(controls);
   }
   footer.querySelector('#review-clear').addEventListener('click',()=>{
