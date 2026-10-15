@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-15",
+  "source": "User pasted review export in RallyHub chat",
+  "publicationAuthorised": false,
+  "entries": [
+    {
+      "number": "02",
+      "slug": "annascaul-picklers",
+      "name": "Annascaul Picklers",
+      "image": "./02-22-annascaul-kingdom-selected.jpg",
+      "proposed": false,
+      "action": "approve",
+      "status": "user_selected_for_staging"
+    },
+    {
+      "number": "07",
+      "slug": "bluestack-pickleball-club",
+      "name": "Bluestack Pickleball Club",
+      "image": "https://user45450.na.imgto.link/public/20261015/85d8c69087c192cd65f1dd7e-bluestack-logo.avif",
+      "proposed": true,
+      "action": "approve",
+      "status": "user_selected_for_staging",
+      "archivedPreview": "./07-bluestack-pickleball-club-saved-from-review.avif",
+      "sha256": "3e6a22c5a44eab543d32fa92635e29abd4179a13a3a3d2c59230928fe9a1d36d",
+      "bytes": 6332
+    },
+    {
+      "number": "15",
+      "slug": "east-cork-pickleball",
+      "name": "East Cork Pickleball",
+      "image": "./15-east-cork-user-selected.jpg",
+      "proposed": false,
+      "action": "approve",
+      "status": "user_selected_for_staging"
+    },
+    {
+      "number": "22",
+      "slug": "kingdom-pickleball-club",
+      "name": "Kingdom Pickleball Club",
+      "image": "./02-22-annascaul-kingdom-selected.jpg",
+      "proposed": false,
+      "action": "approve",
+      "status": "user_selected_for_staging"
+    },
+    {
+      "number": "31",
+      "slug": "newport-pickleball",
+      "name": "Newport Pickleball",
+      "image": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-6/518365459_10161269765596436_6489633983285357661_n.jpg?stp=dst-jpg_tt6&cstp=mx512x512&ctp=s512x512&_nc_cat=110&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=aa7b47&_nc_ohc=NL3Z9d8JQRUQ7kNvwHzbhlO&_nc_oc=AdrJgOkPomaDfXyAmOHK16HfGDA_huCfAPg6erZ1GWYOR4mK5-AotxVV9Teha3vC-8w&_nc_zt=23&_nc_ht=scontent.fdub4-2.fna&_nc_gid=1Ql0v80XPN4hbRkIL5yeYQ&_nc_ss=7a2a8&oh=00_AQMXM_E9aLYrEuWkEkWfx2_9HATiCo3sDlN5bt8Nm6QRrQ&oe=6AD6922D",
+      "proposed": true,
+      "action": "approve",
+      "status": "user_selected_for_staging",
+      "archivedPreview": "./31-newport-pickleball-saved-from-review.jpg",
+      "sha256": "53c48ba2999875ff383e48e61e01446c9480049d37ccf197472d63e4e9aa0550",
+      "bytes": 42950
+    },
+    {
+      "number": "32",
+      "slug": "pickleball-arklow",
+      "name": "Pickleball Arklow",
+      "image": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/464912502_122176046174243155_1491742954555393625_n.jpg?stp=dst-jpg_tt6&cstp=mx957x960&ctp=s200x200&_nc_cat=103&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=lNRmnQbB16kQ7kNvwGlx-dQ&_nc_oc=AdqQ8WMZKpQ3XT7HWbdkpp3y3FT8_uDgH2fI8WJGPoZ5CQsAQ_87ZPSW6Ol1w_h4xzI&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=fmhFMiJbfgDAJkJ9irXrMg&_nc_ss=7a2a8&oh=00_AQN5yqixi4s-bJmwC05UjJonE-XZwAZHQzzE40YRcoUBhA&oe=6AD6969A",
+      "proposed": true,
+      "action": "approve",
+      "status": "user_selected_for_staging",
+      "archivedPreview": "./32-pickleball-arklow-saved-from-review.jpg",
+      "sha256": "b0d515128b697f00788e1f675cd9dabdd71a18622103fdf2a140bfa4d4ee5c81",
+      "bytes": 10116
+    },
+    {
+      "number": "35",
+      "slug": "rathdrum-pickleball",
+      "name": "Rathdrum Pickleball",
+      "image": "https://scontent.fdub4-2.fna.fbcdn.net/v/t39.30808-1/464912502_122176046174243155_1491742954555393625_n.jpg?stp=dst-jpg_tt6&cstp=mx957x960&ctp=s200x200&_nc_cat=103&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=lNRmnQbB16kQ7kNvwGlx-dQ&_nc_oc=AdqQ8WMZKpQ3XT7HWbdkpp3y3FT8_uDgH2fI8WJGPoZ5CQsAQ_87ZPSW6Ol1w_h4xzI&_nc_zt=24&_nc_ht=scontent.fdub4-2.fna&_nc_gid=fmhFMiJbfgDAJkJ9irXrMg&_nc_ss=7a2a8&oh=00_AQN5yqixi4s-bJmwC05UjJonE-XZwAZHQzzE40YRcoUBhA&oe=6AD6969A",
+      "proposed": true,
+      "action": "approve",
+      "status": "user_selected_for_staging",
+      "archivedPreview": "./35-rathdrum-pickleball-saved-from-review.jpg",
+      "sha256": "b0d515128b697f00788e1f675cd9dabdd71a18622103fdf2a140bfa4d4ee5c81",
+      "bytes": 10116
+    },
+    {
+      "number": "36",
+      "slug": "sligo-pickleball-club",
+      "name": "Sligo Pickleball Club",
+      "image": "https://scontent.fdub8-1.fna.fbcdn.net/v/t39.30808-1/438164510_122124301004257888_4371463820844220809_n.jpg?stp=dst-jpg_tt6&cstp=mx953x953&ctp=s200x200&_nc_cat=101&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=4X-hJy5RXcMQ7kNvwH9_2Xj&_nc_oc=AdqEwcCU7ZUJrK-rK4MiYeA2K0EnVjlsMOnEgddEVFdeXYfM_JFw48g-eI1OJI3J-8c&_nc_zt=24&_nc_ht=scontent.fdub8-1.fna&_nc_gid=EB_mqsbh3L_yfIz8SAf5Tw&_nc_ss=7a2a8&oh=00_AQOCweYVhMP5GoqQgY8dry9SoB87ss4IBcIsACEYAGHkaw&oe=6AD6BEE1",
+      "proposed": true,
+      "action": "approve",
+      "status": "user_selected_for_staging",
+      "archivedPreview": "./36-sligo-pickleball-club-saved-from-review.jpg",
+      "sha256": "afe642458a93ac26db0002d65c11b82af981cf173b1955cf219087f4109015e4",
+      "bytes": 10122
+    }
+  ]
+}
