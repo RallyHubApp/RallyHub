@@ -1,8 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const input = JSON.parse(fs.readFileSync('docs/directory-branding/RALLYHUB_DIRECTORY_LOGO_AUDIT_2026-09-30.json', 'utf8'))
-  .listings.filter(row => row.auditStatus === 'Missing · source lead');
+const auditPath = process.env.RALLYHUB_LOGO_AUDIT_PATH || 'docs/directory-branding/RALLYHUB_DIRECTORY_LOGO_AUDIT_2026-09-30.json';
+// For current sweeps pass a fresh audit; the September file is historical, not today's entire Directory.
+const input = JSON.parse(fs.readFileSync(auditPath, 'utf8'))
+  .listings.filter(row => String(row.auditStatus || '').startsWith('Missing') || row.auditStatus === 'Existing · broken/unreadable');
 const batchDate = process.env.RALLYHUB_LOGO_BATCH_DATE || new Date().toISOString().slice(0,10);
 if (!/^20[0-9]{2}-[01][0-9]-[0-3][0-9]$/.test(batchDate) || batchDate === '2026-09-30') throw Error('Use a new YYYY-MM-DD batch date to preserve archived September evidence');
 const outDir = path.resolve('public/directory/logo-candidates',batchDate);
