@@ -55,8 +55,10 @@
     const save=document.createElement('button');save.type='button';save.textContent='Save position for review';
     const reset=document.createElement('button');reset.type='button';reset.textContent='Reset image position';
     actions.append(save,reset);
-    const note=document.createElement('p');note.className='review-hint';
-    note.textContent='Changes are preview-only. Save the adjustment to include it in your copied batch.';
+    const note=document.createElement('p');note.className='review-hint logo-save-status';
+    note.setAttribute('role','status');note.setAttribute('aria-live','polite');
+    const showStatus=(message,state='info')=>{note.textContent=message;note.dataset.state=state;};
+    showStatus('NOT SAVED — move the sliders, then click Save position for review.');
     const activeImage=()=>imageBox?.querySelector('img');
     const paint=()=>{
       const img=activeImage();if(!img)return;
@@ -74,19 +76,29 @@
     const changed=()=>{
       layout={fit:fit.value,scale:Number(scale.input.value),x:Number(horizontal.input.value),y:Number(vertical.input.value)};
       reflect();
-      note.textContent='Preview adjusted. Select Save position for review to include this change.';
+      save.textContent='Save position for review';
+      showStatus('UNSAVED CHANGES — click Save position for review.','pending');
     };
     [fit,scale.input,horizontal.input,vertical.input].forEach(x=>x.addEventListener('input',changed));
     save.addEventListener('click',()=>{
       const previous=prior();
       const next=previous?.action==='remove_listing'?{number,name,image:activeImage()?.getAttribute('src')||'',action:'adjust'}:{...(previous||{}),number,name,image:previous?.image||activeImage()?.getAttribute('src')||'',action:previous?.action||'adjust'};
-      next.layout={...layout};selections.set(number,next);update();
-      note.textContent='Position saved in review batch. No live image has been altered.';
+      next.layout={...layout};next.layoutSavedAt=new Date().toISOString();selections.set(number,next);update();
+      let confirmed=false;
+      try{const stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');confirmed=stored.some(x=>String(x.number)===number&&x.name===name&&JSON.stringify(x.layout)===JSON.stringify(layout));}catch{}
+      if(confirmed){
+        save.textContent='✓ Position saved';
+        showStatus('✓ SAVED IN THIS BROWSER — '+layout.scale+'% size, '+layout.fit+' fit, '+layout.x+'px horizontal, '+layout.y+'px vertical. You can refresh to confirm; these values will return. No live logo changed.','saved');
+      }else{
+        save.textContent='Copy batch to back up';
+        showStatus('⚠ Browser storage could not be verified. The position is in your review batch; click Copy reviewed batch below and paste it into ChatGPT before refreshing.','warning');
+      }
     });
     reset.addEventListener('click',()=>{
       layout=defaultLayout();reflect();const previous=prior();
       if(previous?.layout){const next={...previous};delete next.layout;if(next.action==='adjust')selections.delete(number);else selections.set(number,next);update();}
-      note.textContent='Image position reset to defaults.';
+      save.textContent='Save position for review';
+      showStatus('↺ RESET TO DEFAULTS — 100% size, centred, whole image. Previous saved positioning cleared from the review batch.','reset');
     });
     panel.append(heading,fields,actions,note);
     const listingPanel=document.createElement('div');listingPanel.className='listing-review-panel';
@@ -110,6 +122,10 @@
     controls.append(panel,listingPanel);
     if(!baseImage){panel.hidden=true;}
     const restoredRequest=restored.find(x=>String(x.number)===number&&x.name===name);
+    if(restoredRequest?.layout){
+      save.textContent='✓ Position saved';
+      showStatus('✓ RESTORED SAVED POSITION — '+layout.scale+'% size, '+layout.fit+' fit, '+layout.x+'px horizontal, '+layout.y+'px vertical. Your previous adjustment was recovered after page load.','saved');
+    }
     if(restoredRequest?.action==='adjust')selections.set(number,restoredRequest);
     if(prior()?.action==='remove_listing'||restoredRequest?.action==='remove_listing'){
       const saved=prior()||restored.find(x=>String(x.number)===number&&x.name===name);
