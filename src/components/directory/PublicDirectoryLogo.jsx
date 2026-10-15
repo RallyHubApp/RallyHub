@@ -26,6 +26,65 @@ export const normaliseDirectoryAssetUrl = value => {
   }
 };
 
+
+// Super Admin-approved Directory logo framing, 15 October 2026.
+const logoDisplayByName = {
+  "East Cork Pickleball": {
+    "fit": "contain",
+    "scale": 60,
+    "x": 0,
+    "y": 0
+  },
+  "Kilcullen Pickleball Panthers": {
+    "fit": "contain",
+    "scale": 65,
+    "x": 0,
+    "y": -30
+  },
+  "Kinvara Pickleball": {
+    "fit": "contain",
+    "scale": 60,
+    "x": 0,
+    "y": -20
+  },
+  "Lisburn Pickleball Club": {
+    "fit": "contain",
+    "scale": 70,
+    "x": 0,
+    "y": 0
+  },
+  "Moate Pickleball Club": {
+    "fit": "contain",
+    "scale": 80,
+    "x": 0,
+    "y": -15
+  },
+  "Newport Pickleball": {
+    "fit": "contain",
+    "scale": 75,
+    "x": 0,
+    "y": -30
+  },
+  "Pickleball Arklow": {
+    "fit": "contain",
+    "scale": 60,
+    "x": 0,
+    "y": -25
+  },
+  "Rathdrum Pickleball": {
+    "fit": "contain",
+    "scale": 75,
+    "x": 0,
+    "y": -25
+  },
+  "Sligo Pickleball Club": {
+    "fit": "contain",
+    "scale": 75,
+    "x": 0,
+    "y": -20
+  }
+};
+
 const initials = name => String(name || '')
   .split(/\s+/)
   .filter(Boolean)
@@ -41,6 +100,7 @@ export default function PublicDirectoryLogo({
   fallbackClassName = '',
 }) {
   const normalised = normaliseDirectoryAssetUrl(src);
+  const framing = logoDisplayByName[name];
   const [currentSrc, setCurrentSrc] = useState(normalised);
   const [retryCount, setRetryCount] = useState(0);
   const [failed, setFailed] = useState(!normalised);
@@ -74,6 +134,7 @@ export default function PublicDirectoryLogo({
       src={currentSrc}
       alt={alt || `${name} logo`}
       className={imageClassName}
+      style={framing ? { objectFit: framing.fit, transform: `translate(${framing.x}px, ${framing.y}px) scale(${framing.scale / 100})`, transformOrigin: 'center center' } : undefined}
       onError={handleError}
       referrerPolicy="no-referrer"
       decoding="async"
