@@ -1151,6 +1151,50 @@ Deno.serve(async(req)=>{
       return Response.json({success:true,emailSent,offerStatus:'pending',offerUrl:url,target:safeSession(target)});
     }
 
+    if(['attendance_list','attendance_save','followup_preview'].includes(action)){
+      const user=await base44.auth.me();
+      if(!user||user.role!=='admin')return Response.json({error:'Admin access required'},{status:403});
+      const tenantId=clean(user.active_tenant_id,100),clubId=clean(user.active_club_id,100),sessionId=clean(body.sessionId,100);
+      if(!tenantId||!clubId||!sessionId)return Response.json({error:'Active club and session required'},{status:400});
+      const sessions=await base44.asServiceRole.entities.GuestSessionLink.filter({id:sessionId,tenant_id:tenantId,club_id:clubId});
+      const session=sessions?.[0];
+      if(!session)return Response.json({error:'Session not found'},{status:404});
+      const bookings=await base44.asServiceRole.entities.GuestSessionBooking.filter({session_link_id:sessionId,tenant_id:tenantId,club_id:clubId});
+      const records=await base44.asServiceRole.entities.GuestSessionAttendance.filter({session_link_id:sessionId,tenant_id:tenantId,club_id:clubId});
+      if(action==='attendance_list')return Response.json({success:true,attendance:records.map((r:any)=>({bookingId:r.booking_id,status:r.status}))});
+      const bookingId=clean(body.bookingId,100);
+      if(action==='attendance_save'){
+        const status=clean(body.status,20);
+        if(!['attended','no_show','cancelled','unconfirmed'].includes(status))return Response.json({error:'Invalid attendance status'},{status:400});
+        if(!bookings.some((b:any)=>b.id===bookingId))return Response.json({error:'Booking does not belong to session'},{status:404});
+        const existing=records.find((r:any)=>r.booking_id===bookingId);
+        const data={tenant_id:tenantId,club_id:clubId,session_link_id:sessionId,booking_id:bookingId,status,marked_by_user_id:user.id,marked_at:new Date().toISOString()};
+        if(existing)await base44.asServiceRole.entities.GuestSessionAttendance.update(existing.id,data);
+        else await base44.asServiceRole.entities.GuestSessionAttendance.create(data);
+        return Response.json({success:true,bookingId,status});
+      }
+      const ids=Array.isArray(body.bookingIds)?[...new Set(body.bookingIds.map((v:any)=>clean(v,100)))]:[];
+      if(!ids.length||ids.length>100)return Response.json({error:'Select 1–100 attendees'},{status:400});
+      const chosen=ids.map((bid:string)=>bookings.find((b:any)=>b.id===bid));
+      if(chosen.some((b:any)=>!b))return Response.json({error:'Unknown booking'},{status:400});
+      if(chosen.some((b:any)=>b.booking_status==='cancelled'||records.find((r:any)=>r.booking_id===b.id)?.status!=='attended'))return Response.json({error:'Only confirmed attendees can receive a follow-up'},{status:400});
+      const club=await clubBrand(base44,clubId),brandKit=await tenantEmailBrandKit(base44,tenantId,clubId);
+      const templates=await base44.asServiceRole.entities.CommunicationTemplate.filter({tenant_id:tenantId,purpose:'guest_session_followup'},'-updated_date',20);
+      const approved=templates.find((t:any)=>t.status==='approved');
+      if(!approved)return Response.json({error:'Follow-up template must first be approved in Communications Centre'},{status:409});
+      const ccNames=['John McLoughlin','Bróna McBreen','Liz Daly','Jenny Martin','Mary Fahey'];
+      const cc=Array.isArray(body.cc)?body.cc:[];
+      if(cc.some((c:any)=>!ccNames.includes(c.name)||!/^\S+@\S+\.\S+$/.test(String(c.email||''))))return Response.json({error:'Invalid CC contact'},{status:400});
+      const previews=chosen.map((b:any)=>{
+        const first=clean(b.full_name,150).split(' ')[0]||'there';
+        const merge=(s:string)=>String(s||'').replaceAll('{{recipient.first_name}}',first);
+        const subject=merge(approved.subject_template),textBody=merge(approved.plain_text_template);
+        const htmlBody=emailShell({club,brandKit,headline:'Thank You & Next Steps',preheader:'Thanks for playing',content:'<p style="white-space:pre-line;line-height:1.7">'+escapeHtml(textBody)+'</p>'});
+        return {bookingId:b.id,to:b.email,cc,subject,textBody,htmlBody};
+      });
+      return Response.json({success:true,previews,sendEnabled:false});
+    }
+
     if(['admin_templates','admin_list','admin_create','admin_close','admin_archive_session','admin_restore_session','admin_delete_session','admin_delete_booking','admin_send_invite','admin_create_magic_invite','admin_mark_cash_paid','admin_verify_payment','admin_refund_payment','admin_resend_emails','admin_resend_host_email'].includes(action)){
       const user=await base44.auth.me();
       if(!user)return Response.json({error:'Unauthorized'},{status:401});
