@@ -1,0 +1,53 @@
+{
+  "archivedAt": "2026-10-15",
+  "reason": "Owner confirms club no longer exists; remove obsolete public listing",
+  "record": {
+    "id": "midleton-pickleball",
+    "slug": "midleton-pickleball",
+    "name": "Midleton Pickleball",
+    "sport": "Pickleball",
+    "county": "Cork",
+    "region": "Munster",
+    "founded": null,
+    "status": "listed",
+    "membershipStatus": "Unclaimed listing — contact club",
+    "affiliation": null,
+    "logoUrl": "https://base44.app/api/apps/6a01dc00702b7dd2a2978c28/files/mp/public/6a01dc00702b7dd2a2978c28/c31a76012_rh-logo-20261014-22-76bd32d0197c77e1.jpg",
+    "website": null,
+    "instagram": "https://www.instagram.com/midletonpickleball/",
+    "facebook": "https://www.facebook.com/profile.php?id=61552680935624",
+    "waitingListUrl": null,
+    "joiningCtaLabel": "Contact club",
+    "policyLabel": "Attendance information",
+    "description": "Midleton Pickleball is listed in the RallyHub Club Directory for County Cork. This listing has not yet been claimed and can be updated by an authorised club representative.",
+    "guestPolicy": "Contact the club directly before attending. Session times, access arrangements and membership details have not yet been verified by RallyHub.",
+    "scheduleUpdatedAt": null,
+    "source": "PickleBook club list (Pickleball Ireland)",
+    "sourceUrl": "https://www.picklebook.org/a/pb/clublocator",
+    "sourceCheckedAt": "16 September 2026",
+    "verificationStatus": "unclaimed",
+    "contact": {
+      "name": null,
+      "phone": null,
+      "phoneHref": null,
+      "whatsapp": null,
+      "email": null
+    },
+    "secondaryContacts": [],
+    "venues": [
+      {
+        "id": "midleton-college",
+        "name": "Midleton College",
+        "shortName": "Midleton College",
+        "address": "Midleton College, Midleton, Co Cork",
+        "eircode": null,
+        "indoor": null,
+        "courts": null,
+        "latitude": 51.9155294,
+        "longitude": -8.1684799,
+        "mapUrl": "https://maps.google.com/?q=Midleton%20College%2C%20Midleton%2C%20Co%20Cork"
+      }
+    ],
+    "sessions": []
+  }
+}
