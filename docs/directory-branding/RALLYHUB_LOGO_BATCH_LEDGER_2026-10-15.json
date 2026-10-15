@@ -195,5 +195,9 @@
       "productionChanged": false,
       "permanentHttpsStaged": false
     }
-  ]
+  ],
+  "excludedAlreadyHasLiveLogo": [
+    "dublin-15-pickleball"
+  ],
+  "storageNote": "Five source images saved to repository candidate staging with matching SHA-256 readback. No permanent HTTPS upload or production write before explicit artwork approval."
 }
